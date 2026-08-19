@@ -48,7 +48,7 @@ yarn-error.log*
 public/vs
 upload
 
-# /plan-and-commit work artifacts now live in ~/sy_llm_ai_plans/<repo>/, outside
+# /plan-and-commit work artifacts now live in ~/sy/ai_llm/plans/<repo>/, outside
 # every repo. These patterns stay as a safety net so a stray plan written into
 # the repo root by an older agent still can't be committed.
 /plan-*.md

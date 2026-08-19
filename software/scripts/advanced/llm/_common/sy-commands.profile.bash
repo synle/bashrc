@@ -57,7 +57,7 @@
 #   SY_SKILL_MODE=native sy-review-pr <pr-url>
 #   export SY_SKILL_MODE=native          # opt in for the whole shell
 #
-# Prompt bodies live in `~/sy_llm_ai/skills/sy-<name>/SKILL.md` — the ONE
+# Prompt bodies live in `$LLM_HOME_FOLDER/skills/sy-<name>/SKILL.md` — the ONE
 # physical copy, deployed by `deploySharedLLMSkills()` from the shared
 # `_common/commands/<name>.md` source and symlinked into every CLI's skills
 # folder. Adding a new command:
@@ -66,7 +66,7 @@
 #   2. Re-run `bash run.sh --preset=llm` to deploy the body.
 #   3. Open a new shell. The dispatcher loop below auto-registers `sy-<name>`
 #      and every `<cli>_skill_<name>` from anything matching
-#      `~/sy_llm_ai/skills/sy-*/SKILL.md`, so no edit here is ever required.
+#      `$LLM_HOME_FOLDER/skills/sy-*/SKILL.md`, so no edit here is ever required.
 #
 # --- Where each thing is controlled ---
 #
@@ -137,10 +137,16 @@ _SY_LLM_SPECS=(
 )
 
 # Directory where the deployed prompt bodies live. Single canonical location
-# is `~/sy_llm_ai/skills/sy-*/SKILL.md`; every CLI skills folder and the
+# is `$LLM_HOME_FOLDER/skills/sy-*/SKILL.md`; every CLI skills folder and the
 # `~/.config/opencode/commands/` mirror are symlinks pointing back here, so
 # this stays authoritative regardless of which CLI you ultimately dispatch to.
-_SY_SKILLS_DIR="$HOME/sy_llm_ai/skills"
+#
+# $LLM_HOME_FOLDER is declared once in software/bootstrap/common-env.sh and
+# re-exported into ~/.bash_syle_common, which is the same value llm-common.js
+# deploys into. Never hardcode the folder here — that is how the two surfaces
+# drift apart the next time the LLM home moves. The fallback only covers this
+# partial being sourced on its own (a test, a bare shell).
+_SY_SKILLS_DIR="${LLM_HOME_FOLDER:-${SY_HOME_FOLDER:-$HOME}/ai_llm}/skills"
 
 # Reserved wrapper name for the raw-prompt family — `sy-inline` and
 # `<cli>_skill_inline`. Not a skill: nothing is read off disk, the arguments
@@ -426,7 +432,7 @@ function _sy_dispatch_inline_any() {
 # hand and the one a skill dispatch goes through are the same function.
 #
 # Args:
-#   $1 = command name (matches `~/sy_llm_ai/skills/sy-<name>/SKILL.md`)
+#   $1 = command name (matches `$LLM_HOME_FOLDER/skills/sy-<name>/SKILL.md`)
 #   $_SY_LLM (caller-set local) = pre-classified CLI override (or empty)
 #   $2..$N = forwarded prompt arguments
 function _sy_run() {
@@ -544,7 +550,7 @@ function _sy_dispatch_cli() {
 # --- Registration ---
 
 # Auto-register `sy-<name>` plus one `<cli>_skill_<name>` per CLI for every
-# `~/sy_llm_ai/skills/sy-*/SKILL.md` on disk, plus the skill-less raw-prompt
+# `$LLM_HOME_FOLDER/skills/sy-*/SKILL.md` on disk, plus the skill-less raw-prompt
 # pair (`sy-inline`, `<cli>_skill_inline`) that does not depend on the glob.
 # Idempotent — re-running the loop redefines the same wrappers. When the skills
 # dir is absent (e.g. on a machine where no setup.js has ever run), the glob

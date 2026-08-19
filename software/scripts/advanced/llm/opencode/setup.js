@@ -13,7 +13,7 @@
  * User-authored slash commands are symlinked from `~/.claude/commands/` in
  * `_syncOpencodeCommandSymlinks` below — no separate copy.
  *
- * Sy-managed skills live once at `~/sy_llm_ai/skills/<name>/SKILL.md` and are
+ * Sy-managed skills live once at `$LLM_HOME_FOLDER/skills/<name>/SKILL.md` and are
  * symlinked into `~/.config/opencode/skills/` by the shared
  * `deploySharedLLMSkills()` (llm-common.js), which is what makes them
  * discoverable (https://opencode.ai/docs/skills/) and model-invocable through the
@@ -284,7 +284,7 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     // Read from disk rather than hardcoded: getSharedLLMInstructionFilePaths() lists
     // whatever deploySharedLLMInstructions() just wrote, so a file added to the
     // registry later needs no edit here, and a hand-authored note dropped into
-    // ~/sy_llm_ai/instructions/ is picked up too.
+    // $LLM_HOME_FOLDER/instructions/ is picked up too.
     instructions: getSharedLLMInstructionFilePaths(),
     // Never expose a session URL. Work happens in private repos; the default
     // ("manual") leaves a one-keystroke publish path we have no use for.
@@ -459,7 +459,10 @@ async function _syncOpencodeSymlinkedCommands(ownedRoot, pairs, label) {
   const opencodeCommandsDir = _getOpencodeCommandsDir();
   await mkdir(opencodeCommandsDir);
 
-  // Cleanup pass — unlink owned symlinks resolving under `ownedRoot`.
+  // Cleanup pass — unlink owned symlinks resolving under `ownedRoot`, plus any left
+  // pointing at a former shared LLM home. Without the second test a link written
+  // before the home moved is never recognized as ours: it dangles, and the deploy
+  // pass below then counts it as a foreign entry and refuses to replace it.
   for (const entry of fs.readdirSync(opencodeCommandsDir)) {
     /** @type {string} Absolute path to the existing entry under inspection. */
     const fullPath = path.join(opencodeCommandsDir, entry);
@@ -480,7 +483,7 @@ async function _syncOpencodeSymlinkedCommands(ownedRoot, pairs, label) {
     }
     /** @type {string} Target resolved to absolute (handles relative + absolute symlinks). */
     const resolved = path.isAbsolute(target) ? target : path.resolve(path.dirname(fullPath), target);
-    if (resolved === ownedRoot || resolved.startsWith(ownedRoot + path.sep)) {
+    if (resolved === ownedRoot || resolved.startsWith(ownedRoot + path.sep) || isUnderSharedLLMHome(resolved)) {
       fs.unlinkSync(fullPath);
     }
   }
@@ -544,7 +547,7 @@ async function _syncOpencodeCommandSymlinks() {
 
 /**
  * Exposes every GLOBAL agent skill as a directly-invocable `/skill-name` slash
- * command by symlinking `~/sy_llm_ai/skills/<name>/SKILL.md` into
+ * command by symlinking `$LLM_HOME_FOLDER/skills/<name>/SKILL.md` into
  * `~/.config/opencode/commands/<name>.md`.
  *
  * Sources the SHARED folder (LLM_SHARED_SKILLS_FOLDER), not `~/.claude/skills/` —
@@ -590,7 +593,7 @@ async function _syncOpencodeSkillCommandSymlinks() {
     pairs.push({ sourcePath: skillFile, destName: `${entry}.md` });
   }
 
-  await _syncOpencodeSymlinkedCommands(sharedSkillsDir, pairs, "~/sy_llm_ai/skills/");
+  await _syncOpencodeSymlinkedCommands(sharedSkillsDir, pairs, `${sharedSkillsDir}/`);
 }
 
 // --- Auth persistence ---

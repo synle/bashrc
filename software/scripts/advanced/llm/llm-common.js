@@ -545,16 +545,28 @@ function resolveOpencodeAgentConfig(providersArray = []) {
 /**
  * Root for every Sy-managed LLM artifact that lives outside a repo checkout.
  *
- * One root with subfolders (instead of a sibling `sy_llm_ai_*` per concern) so a
- * single `ls ~/sy_llm_ai/` shows everything the LLM tooling owns in the home
- * directory, and so a new artifact class is a new subfolder rather than a new
- * top-level name to remember.
+ * One root with subfolders (instead of a sibling folder per concern) so a single
+ * `ls` shows everything the LLM tooling owns, and so a new artifact class is a new
+ * subfolder rather than a new top-level name to remember.
  *
- * Uses BASE_HOMEDIR_LINUX rather than `os.homedir()` because the latter reads
- * /etc/passwd and returns `/root` under `sudo -E` on RHEL/Fedora.
+ * Sits under SY_HOME_FOLDER — the personal root declared once in
+ * `software/bootstrap/common-env.sh` — so this setup owns exactly one visible
+ * folder in the home directory instead of scattering `sy*` siblings across it.
+ *
+ * THE LOCATION IS DECIDED IN ONE PLACE — `LLM_HOME_FOLDER` in
+ * `software/bootstrap/common-env.sh`. It is declared there rather than here because
+ * the shell dispatcher partial needs the same folder and cannot read a JS constant:
+ * common-env.sh is the only file that reaches both surfaces (inlined into run.sh for
+ * node, re-exported into ~/.bash_syle_common for interactive shells). Everything
+ * below is derived from this, and every piece of migration LOGIC lives in this file.
+ *
+ * The fallback names the personal root's subfolder only for the case where index.js
+ * runs outside run.sh (unit-test sandbox, direct invocation);
+ * `software/tests/llmHomeFolder.spec.js` pins it against the real declaration so the
+ * two cannot drift.
  * @type {string}
  */
-const LLM_SHARED_ROOT_FOLDER = path.join(BASE_HOMEDIR_LINUX, "sy_llm_ai");
+const LLM_SHARED_ROOT_FOLDER = process.env.LLM_HOME_FOLDER || path.join(SY_HOME_FOLDER, "ai_llm");
 
 /**
  * On-demand instruction files, referenced by plain (backticked) path from the
@@ -577,12 +589,45 @@ const LLM_SHARED_INSTRUCTIONS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "instru
 const LLM_SHARED_PLANS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "plans");
 
 /**
- * Pre-consolidation plans folder. Migrated into {@link LLM_SHARED_PLANS_FOLDER}
- * once, then removed. Kept as a named constant so the migration can be deleted
- * in one place after every machine has run it.
+ * Pre-move LLM home, when the whole tree sat directly in the home directory rather
+ * than under the personal root. Named because it is not only a migration source:
+ * the link-ownership check consults it so a link written before the move is still
+ * recognized as ours and can be repaired or swept.
+ *
+ * Uses BASE_HOMEDIR_LINUX rather than `os.homedir()` because the latter reads
+ * /etc/passwd and returns `/root` under `sudo -E` on RHEL/Fedora.
+ * @type {string}
+ */
+const LLM_LEGACY_ROOT_FOLDER = path.join(BASE_HOMEDIR_LINUX, "sy_llm_ai");
+
+/**
+ * Pre-consolidation plans folder, from before plans moved under the LLM home.
  * @type {string}
  */
 const LLM_LEGACY_PLANS_FOLDER = path.join(BASE_HOMEDIR_LINUX, "sy_llm_ai_plans");
+
+/**
+ * The single registry of one-time folder moves this deploy still has to perform.
+ *
+ * Same "one registry, never a scattered list" rule as LLM_COMMAND_DEPLOY_MAP.
+ * Three passes read it and none of them hardcodes a path: the migration itself,
+ * the plan-symlink retargeting that repairs links pointing at a moved folder, and
+ * the docs. Moving the LLM home again is one new row here plus the edit to
+ * {@link LLM_SHARED_ROOT_FOLDER} — never a second copy of a move routine.
+ *
+ * ORDER IS LOAD-BEARING: the whole-root move runs first so `<old-root>/plans`
+ * lands under the new root, and only then does the older standalone plans folder
+ * merge into that same destination. Reversing them would migrate plans into a
+ * folder that is about to move again.
+ *
+ * A migration whose source is absent is a no-op, which is the steady state after
+ * the first run on a machine and the only state on a fresh one.
+ * @type {Array<{from: string, to: string, label: string}>}
+ */
+const LLM_LEGACY_FOLDER_MIGRATIONS = [
+  { from: LLM_LEGACY_ROOT_FOLDER, to: LLM_SHARED_ROOT_FOLDER, label: "llm home" },
+  { from: LLM_LEGACY_PLANS_FOLDER, to: LLM_SHARED_PLANS_FOLDER, label: "plans" },
+];
 
 /**
  * The single registry of instruction files split out of the always-loaded block.
@@ -656,73 +701,163 @@ const LLM_SHARED_INSTRUCTION_LINK_FOLDERS = {
 };
 
 /**
- * Moves a pre-consolidation `~/sy_llm_ai_plans/` into `~/sy_llm_ai/plans/` and removes
- * the old folder. Idempotent and non-destructive: an entry already present at the
- * destination is left alone and its source kept, so nothing is ever overwritten and
- * the old folder survives whenever anything was skipped.
+ * Moves every entry from one folder into another and removes the source. Idempotent
+ * and non-destructive: an entry already present at the destination is left alone and
+ * its source kept, so nothing is ever overwritten and the source folder survives
+ * whenever anything was skipped.
  *
- * No-ops when the legacy folder is absent, which is the steady state after the first
- * run on a machine and the only state on a fresh one.
+ * The single implementation behind every row in {@link LLM_LEGACY_FOLDER_MIGRATIONS}
+ * — a second folder move is a row in that registry, never a second copy of this.
  *
+ * No-ops when the source is absent, which is the steady state after the first run on
+ * a machine and the only state on a fresh one.
+ *
+ * @param {string} from - Folder to drain.
+ * @param {string} to - Folder to fill (created when missing).
+ * @param {string} label - Short name used in log lines, e.g. "plans".
  * @returns {Promise<number>} Count of entries moved (0 when there was nothing to do).
  */
-async function migrateLegacyLLMPlansFolder() {
-  if (!fs.existsSync(LLM_LEGACY_PLANS_FOLDER)) return 0;
+async function migrateLegacyLLMFolder(from, to, label) {
+  if (!fs.existsSync(from) || path.resolve(from) === path.resolve(to)) return 0;
 
-  fs.mkdirSync(LLM_SHARED_PLANS_FOLDER, { recursive: true });
+  fs.mkdirSync(to, { recursive: true });
 
   /** @type {string[]} Everything in the legacy folder, dotfiles included. */
-  const entries = fs.readdirSync(LLM_LEGACY_PLANS_FOLDER);
+  const entries = fs.readdirSync(from);
   /** @type {number} Entries actually relocated. */
   let moved = 0;
   /** @type {string[]} Entries left behind because the destination already had them. */
   const skipped = [];
 
   for (const entry of entries) {
-    const from = path.join(LLM_LEGACY_PLANS_FOLDER, entry);
-    const to = path.join(LLM_SHARED_PLANS_FOLDER, entry);
+    const source = path.join(from, entry);
+    const destination = path.join(to, entry);
 
-    if (fs.existsSync(to)) {
+    if (fs.existsSync(destination)) {
       skipped.push(entry);
       continue;
     }
 
     try {
-      fs.renameSync(from, to);
+      fs.renameSync(source, destination);
       moved++;
     } catch (e) {
       // EXDEV: legacy folder on a different filesystem — copy, then drop the original.
       try {
-        fs.cpSync(from, to, { recursive: true });
-        fs.rmSync(from, { recursive: true, force: true });
+        fs.cpSync(source, destination, { recursive: true });
+        fs.rmSync(source, { recursive: true, force: true });
         moved++;
       } catch (copyError) {
         skipped.push(entry);
-        log(`>> plans migration: could not move ${entry}: ${copyError.message}`);
+        log(`>> ${label} migration: could not move ${entry}: ${copyError.message}`);
       }
     }
   }
 
   if (skipped.length === 0) {
-    fs.rmSync(LLM_LEGACY_PLANS_FOLDER, { recursive: true, force: true });
-    log(`>> plans migration: moved ${moved} entries, removed ${LLM_LEGACY_PLANS_FOLDER}`);
+    fs.rmSync(from, { recursive: true, force: true });
+    log(`>> ${label} migration: moved ${moved} entries, removed ${from}`);
   } else {
-    log(
-      `>> plans migration: moved ${moved}, kept ${LLM_LEGACY_PLANS_FOLDER} (${skipped.length} already at destination: ${skipped.join(", ")})`,
-    );
+    log(`>> ${label} migration: moved ${moved}, kept ${from} (${skipped.length} already at destination: ${skipped.join(", ")})`);
   }
 
   return moved;
 }
 
 /**
- * Repoints symlinks that still target the pre-consolidation plans folder.
+ * Runs every one-time folder move in {@link LLM_LEGACY_FOLDER_MIGRATIONS}, in
+ * registry order (see that constant — the order is load-bearing).
  *
- * A plan file symlinked across repos (`tde-tool-ui/plan-x.md` ->
- * `~/sy_llm_ai_plans/tde-tool-backend/plan-x.md`) keeps its literal target when the
- * folder is moved, so removing the old folder leaves a dangling link that reads as a
- * missing plan rather than as a migration bug. Rewrites each absolute legacy target
- * to the same relative position under the new folder.
+ * @param {Array<{from: string, to: string, label: string}>} [migrations] - Rows to run. Defaults to the registry.
+ * @returns {Promise<number>} Total entries moved across all migrations.
+ */
+async function migrateLegacyLLMFolders(migrations = LLM_LEGACY_FOLDER_MIGRATIONS) {
+  /** @type {number} Entries relocated across every row. */
+  let moved = 0;
+
+  for (const { from, to, label } of migrations) {
+    moved += await migrateLegacyLLMFolder(from, to, label);
+  }
+
+  return moved;
+}
+
+/**
+ * In-flight or settled migration promise, so the one-time move runs exactly once per
+ * process no matter how many deploy entry points ask for it.
+ * @type {Promise<number> | null}
+ */
+let _llmHomeMigrationPromise = null;
+
+/**
+ * Guarantees the legacy folders have been migrated before anything writes into the
+ * shared LLM home.
+ *
+ * ORDER IS THE WHOLE POINT. {@link migrateLegacyLLMFolder} deliberately refuses to
+ * overwrite an entry that already exists at the destination, so whichever deploy runs
+ * first would otherwise create the new home's `skills` folder, make the migration skip
+ * that entry, and strand the legacy folder forever — which is exactly what happened on
+ * the first real run. Every entry point that writes into the shared home therefore
+ * awaits this first, and memoizing keeps the four setup scripts from each repeating the
+ * walk.
+ *
+ * @returns {Promise<number>} Total entries relocated (0 on every call after the first).
+ */
+async function ensureLLMHomeMigrated() {
+  if (!_llmHomeMigrationPromise) _llmHomeMigrationPromise = migrateLegacyLLMFolders();
+  return _llmHomeMigrationPromise;
+}
+
+/**
+ * True when `target` sits directly inside `<root>/<subfolder>` for the current shared
+ * root or any pre-move one.
+ *
+ * Both prune passes use it to answer the same question — "is this link ours to
+ * remove?" — and both would otherwise answer it against the *current* root only. That
+ * is the exact hole a root move opens: a link written before the move points at the
+ * old root, so a retired skill or instruction file leaves a dangling link that neither
+ * pass will touch because it no longer looks like ours.
+ *
+ * Deliberately `dirname` rather than a prefix test: a link two levels deep belongs to
+ * something else, and a plugin's or the user's own link must always survive.
+ *
+ * @param {string} target - Resolved absolute symlink target.
+ * @param {string} subfolder - Shared subfolder name, e.g. "skills" or "instructions".
+ * @returns {boolean} True when this deploy owns the link.
+ */
+function isSharedLLMArtifactTarget(target, subfolder) {
+  return [LLM_SHARED_ROOT_FOLDER, LLM_LEGACY_ROOT_FOLDER].map((root) => path.join(root, subfolder)).includes(path.dirname(target));
+}
+
+/**
+ * True when `target` sits anywhere inside the shared LLM home — the current one or any
+ * root a migration row moved away from.
+ *
+ * The depth-insensitive companion to {@link isSharedLLMArtifactTarget}, for links that
+ * point deeper than one subfolder (the opencode command mirror targets
+ * `<root>/skills/<name>/SKILL.md`, three levels down). Both exist so that "is this link
+ * ours?" is answered against every root we have ever used, not just the current one:
+ * a cleanup pass that only knows the current root leaves a link written before a move
+ * dangling forever, and the deploy pass that follows then misreads that dangling link
+ * as a user-authored file and refuses to replace it.
+ *
+ * @param {string} target - Resolved absolute symlink target.
+ * @returns {boolean} True when the target lives under a current or former shared home.
+ */
+function isUnderSharedLLMHome(target) {
+  return [LLM_SHARED_ROOT_FOLDER, ...LLM_LEGACY_FOLDER_MIGRATIONS.map((row) => row.from)].some(
+    (root) => target === root || target.startsWith(root + path.sep),
+  );
+}
+
+/**
+ * Repoints symlinks that still target a pre-move folder.
+ *
+ * A plan file symlinked across repos (`myapp-ui/plan-x.md` ->
+ * `<old-folder>/myapp-backend/plan-x.md`) keeps its literal target when the folder is
+ * moved, so removing the old folder leaves a dangling link that reads as a missing
+ * plan rather than as a migration bug. Rewrites each legacy target to the same
+ * relative position under that migration's destination.
  *
  * Runs on every deploy rather than only during migration: the machine that already
  * migrated has no legacy folder left to trigger a migration, but may still be holding
@@ -731,14 +866,32 @@ async function migrateLegacyLLMPlansFolder() {
  * repointed at nothing.
  *
  * @param {string} [plansFolder] - Folder to scan. Defaults to the shared plans folder.
- * @param {string} [legacyFolder] - Old folder prefix to rewrite. Defaults to the legacy plans folder.
+ * @param {Array<{from: string, to: string}>} [migrations] - Moves to rewrite. Defaults to the registry.
  * @returns {number} Count of symlinks retargeted.
  */
-function retargetLegacyPlanSymlinks(plansFolder = LLM_SHARED_PLANS_FOLDER, legacyFolder = LLM_LEGACY_PLANS_FOLDER) {
+function retargetLegacyPlanSymlinks(plansFolder = LLM_SHARED_PLANS_FOLDER, migrations = LLM_LEGACY_FOLDER_MIGRATIONS) {
   if (!fs.existsSync(plansFolder)) return 0;
 
   /** @type {number} Links successfully repointed. */
   let repaired = 0;
+
+  /**
+   * Rebases a legacy target onto its migration destination.
+   *
+   * Matches on a path boundary, never a bare `startsWith`: the legacy root is a
+   * string prefix of the legacy plans folder, so a substring test would rebase
+   * `<home>/sy_llm_ai_plans/x` as if it lived under `<home>/sy_llm_ai`.
+   *
+   * @param {string} target - The link's literal target.
+   * @returns {string} Rebased path, or "" when no migration claims this target.
+   */
+  const rebase = (target) => {
+    for (const { from, to } of migrations) {
+      if (target !== from && !target.startsWith(from + path.sep)) continue;
+      return path.join(to, path.relative(from, target));
+    }
+    return "";
+  };
 
   /** @param {string} folder - Folder to walk, depth-first. */
   const walk = (folder) => {
@@ -748,10 +901,10 @@ function retargetLegacyPlanSymlinks(plansFolder = LLM_SHARED_PLANS_FOLDER, legac
       if (entry.isSymbolicLink()) {
         /** @type {string} The link's literal target, which may be absolute or relative. */
         const target = fs.readlinkSync(full);
-        if (!target.startsWith(legacyFolder)) continue;
+        /** @type {string} Same position, rebased onto the new folder. */
+        const retargeted = rebase(target);
+        if (!retargeted) continue;
 
-        /** @type {string} Same position, rebased onto the new plans folder. */
-        const retargeted = path.join(plansFolder, path.relative(legacyFolder, target));
         if (!fs.existsSync(retargeted)) {
           log(`>> plans migration: left dangling link ${full} (target missing: ${retargeted})`);
           continue;
@@ -774,8 +927,9 @@ function retargetLegacyPlanSymlinks(plansFolder = LLM_SHARED_PLANS_FOLDER, legac
 }
 
 /**
- * Creates the shared LLM home folders, migrates any legacy plans folder, and writes
- * every file in LLM_SHARED_INSTRUCTION_FILES into `~/sy_llm_ai/instructions/`.
+ * Creates the shared LLM home folders, runs any pending legacy folder migration, and
+ * writes every file in LLM_SHARED_INSTRUCTION_FILES into the shared instructions
+ * folder.
  *
  * Called by all four setup scripts. Writing the same bytes from each is intentional
  * and safe — writeText skips when content is unchanged, so whichever CLI runs first
@@ -785,10 +939,11 @@ function retargetLegacyPlanSymlinks(plansFolder = LLM_SHARED_PLANS_FOLDER, legac
  * @returns {Promise<void>}
  */
 async function deploySharedLLMInstructions() {
+  await ensureLLMHomeMigrated();
+
   fs.mkdirSync(LLM_SHARED_INSTRUCTIONS_FOLDER, { recursive: true });
   fs.mkdirSync(LLM_SHARED_PLANS_FOLDER, { recursive: true });
 
-  await migrateLegacyLLMPlansFolder();
   retargetLegacyPlanSymlinks();
 
   pruneStaleSharedLLMInstructions();
@@ -824,7 +979,7 @@ async function deploySharedLLMInstructions() {
  *
  * Deliberately a targeted prune, not a `rm -rf` of the folders. Two things live
  * alongside ours and must survive: user-authored notes dropped into
- * `~/sy_llm_ai/instructions/`, and plugin-owned files in a CLI's instruction folder
+ * the shared instructions folder, and plugin-owned files in a CLI's instruction folder
  * (`captain.instructions.md`). So deletion is limited to things provably ours:
  *
  * - In the shared folder: a `.md` file NOT in LLM_SHARED_INSTRUCTION_FILES whose first
@@ -897,9 +1052,9 @@ function pruneStaleSharedLLMInstructions() {
         continue;
       }
 
-      // Only ours: a link that points into the shared folder. Anything else is a
-      // plugin's or the user's, including a link to a completely unrelated file.
-      if (path.dirname(target) !== LLM_SHARED_INSTRUCTIONS_FOLDER) continue;
+      // Only ours: a link into the shared instructions folder, under the current root
+      // or one we moved away from. Anything else is a plugin's or the user's.
+      if (!isSharedLLMArtifactTarget(target, "instructions")) continue;
 
       try {
         fs.unlinkSync(entryPath);
@@ -1207,7 +1362,7 @@ async function readLLMCommandSource(sourceName) {
 
 /**
  * The ONE physical location of every Sy-managed agent skill:
- * `~/sy_llm_ai/skills/<name>/SKILL.md`.
+ * `<shared-skills-folder>/<name>/SKILL.md`.
  *
  * Before this existed, the same command body was written three times — a real
  * file in `~/.claude/commands/<name>.md`, a generated copy in
@@ -1217,7 +1372,7 @@ async function readLLMCommandSource(sourceName) {
  * stale copy structurally impossible.
  *
  * Sits beside `instructions/` and `plans/` under {@link LLM_SHARED_ROOT_FOLDER}
- * for the same reason they do: one `ls ~/sy_llm_ai/` shows everything the LLM
+ * for the same reason they do: one `ls` of the LLM home shows everything the LLM
  * tooling owns outside a repo checkout.
  * @type {string}
  */
@@ -1226,7 +1381,7 @@ const LLM_SHARED_SKILLS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "skills");
 /**
  * Every CLI skills folder that receives a symlink to each shared skill.
  *
- * PER-SKILL links (`~/.copilot/skills/sy-debug -> ~/sy_llm_ai/skills/sy-debug`),
+ * PER-SKILL links (`~/.copilot/skills/sy-debug -> <shared-skills-folder>/sy-debug`),
  * deliberately NOT a whole-folder symlink (`~/.copilot/skills -> …`). A folder
  * symlink hijacks the destination: `copilot plugin install`, `gemini skills
  * install`, and any hand-authored skill would then land inside the shared folder
@@ -1441,9 +1596,10 @@ function linkSharedLLMSkills() {
         const raw = fs.readlinkSync(entryPath);
         /** @type {string} Resolved absolute target. */
         const target = path.isAbsolute(raw) ? raw : path.resolve(destFolder, raw);
-        // Only ours: a link into the shared skills folder. Anything else belongs
-        // to the user or a plugin, including a link to an unrelated location.
-        if (path.dirname(target) !== LLM_SHARED_SKILLS_FOLDER) continue;
+        // Only ours: a link into the shared skills folder, under the current root or
+        // one we moved away from. Anything else belongs to the user or a plugin,
+        // including a link to an unrelated location.
+        if (!isSharedLLMArtifactTarget(target, "skills")) continue;
         fs.unlinkSync(entryPath);
         log(`>> shared skills: removed stale link ${entryPath}`);
       } catch (e) {
@@ -1460,7 +1616,7 @@ function linkSharedLLMSkills() {
 
 /**
  * Writes every {@link LLM_COMMAND_DEPLOY_MAP} entry into
- * `~/sy_llm_ai/skills/<name>/SKILL.md`, prunes retired ones, then symlinks the
+ * `<shared-skills-folder>/<name>/SKILL.md`, prunes retired ones, then symlinks the
  * result into every CLI skills folder.
  *
  * Called by all four setup scripts. Writing the same bytes from each is
@@ -1475,6 +1631,10 @@ function linkSharedLLMSkills() {
  * @returns {Promise<void>}
  */
 async function deploySharedLLMSkills() {
+  // Before the mkdir — creating the folder first makes the migration treat `skills`
+  // as already-present and strand the legacy home. See ensureLLMHomeMigrated().
+  await ensureLLMHomeMigrated();
+
   fs.mkdirSync(LLM_SHARED_SKILLS_FOLDER, { recursive: true });
 
   log(">> Shared LLM Skills:", LLM_SHARED_SKILLS_FOLDER);

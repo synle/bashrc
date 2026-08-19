@@ -31,7 +31,7 @@
 //                   the number itself is deliberately not repeated here).
 //                   Deliberately NOT routed through
 //                   LLM_SHARED_INSTRUCTION_FILES: that registry deploys to
-//                   ~/sy_llm_ai/instructions/ and is read by opencode and
+//                   $LLM_HOME_FOLDER/instructions/ and is read by opencode and
 //                   linked into other CLIs, so a Copilot-only limit put there
 //                   would leak onto harnesses that do not have it. Written as
 //                   a REAL file (not a symlink) into the same folder the
@@ -53,7 +53,7 @@
 //                    writeJson() block at the bottom of _doCopilotKeysWork().
 //
 //   ✅ Skills — ~/.copilot/skills/sy-<name> is a SYMLINK to the one physical
-//                    skill at ~/sy_llm_ai/skills/sy-<name>/SKILL.md, created by
+//                    skill at $LLM_HOME_FOLDER/skills/sy-<name>/SKILL.md, created by
 //                    the shared deploySharedLLMSkills() in llm-common.js.
 //                    Copilot has no `~/.copilot/commands/*.md` fallthrough the
 //                    way Claude does, and it does NOT read `~/.claude/commands/`
@@ -544,7 +544,7 @@ const COPILOT_TWEAKS_TARGET_NAME = "copilot-tweaks.instructions.md";
  * stay harness-agnostic and name no number.
  *
  * Deliberately NOT an entry in `LLM_SHARED_INSTRUCTION_FILES`: that registry writes to
- * `~/sy_llm_ai/instructions/`, which opencode loads by absolute path and other CLIs link
+ * `$LLM_HOME_FOLDER/instructions/`, which opencode loads by absolute path and other CLIs link
  * into, so a Copilot-only limit placed there would leak onto harnesses that do not have
  * it — the exact bug this file exists to prevent.
  *
@@ -620,7 +620,7 @@ async function doWork() {
   await deploySharedLLMInstructions();
   await _doCopilotInstructionsWork(targetDir);
   await _doCopilotTweaksWork(targetDir);
-  // Skills live once in ~/sy_llm_ai/skills and are symlinked into ~/.copilot/skills
+  // Skills live once in $LLM_HOME_FOLDER/skills and are symlinked into ~/.copilot/skills
   // by the shared deploy — Copilot reads no other skill path.
   await deploySharedLLMSkills();
 }

@@ -40,8 +40,12 @@ function loadLlmCommon(registryPayload, opts = {}) {
   const sandbox = {
     is_os_mac: false,
     path,
-    // llm-common.js builds ~/sy_llm_ai/* paths from this at top level.
+    // llm-common.js derives every legacy folder from this at top level.
     BASE_HOMEDIR_LINUX: "/tmp/sandbox-home",
+    // ...and the current LLM home from the personal root.
+    SY_HOME_FOLDER: "/tmp/sandbox-home/sy",
+    // Empty on purpose - LLM_SHARED_ROOT_FOLDER prefers process.env.LLM_HOME_FOLDER.
+    process: { env: {} },
     log: () => {},
     probedHosts,
     readJson: async (strings, ...values) => {

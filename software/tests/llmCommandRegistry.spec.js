@@ -31,8 +31,12 @@ function loadLlmCommon() {
   /** @type {Record<string, any>} */
   const sandbox = {
     path,
-    // llm-common.js builds ~/sy_llm_ai/* paths from this at top level.
+    // llm-common.js derives every legacy folder from this at top level.
     BASE_HOMEDIR_LINUX: "/tmp/sandbox-home",
+    // ...and the current LLM home from the personal root.
+    SY_HOME_FOLDER: "/tmp/sandbox-home/sy",
+    // Empty on purpose - LLM_SHARED_ROOT_FOLDER prefers process.env.LLM_HOME_FOLDER.
+    process: { env: {} },
     log: () => {},
     is_os_mac: 0,
     readJson: () => ({}),
@@ -92,8 +96,8 @@ describe("llm-common.js registry constants", () => {
 // ---- Shared skills folder ----
 
 describe("shared skills deploy constants", () => {
-  it("puts the one physical skill copy under ~/sy_llm_ai/skills", () => {
-    expect(llm.LLM_SHARED_SKILLS_FOLDER).toBe("/tmp/sandbox-home/sy_llm_ai/skills");
+  it("puts the one physical skill copy under the shared LLM home", () => {
+    expect(llm.LLM_SHARED_SKILLS_FOLDER).toBe("/tmp/sandbox-home/sy/ai_llm/skills");
   });
 
   it("links every skill into each CLI's own skills folder, per-skill (never a folder symlink)", () => {
