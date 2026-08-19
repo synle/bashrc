@@ -13,7 +13,7 @@
 # fuzzy_favorite_command — FZF picker for bookmarked commands (Ctrl+B)
 # fuzzy_cd               — FZF cd picker: recent paths + folders (Ctrl+P)
 # fuzzy_edit             — FZF file/dir picker, open with editor (Ctrl+T/Y)
-# fuzzy_git_show         — Interactive git log browser with preview (Ctrl+G)
+# fuzzy_git_show         — Interactive git log browser with preview (Ctrl+N)
 #
 # --- Bookmarks ---
 # add_bookmark           — Add a command to the bookmark file
@@ -362,6 +362,44 @@ function _fzf_info_line() {
 }
 export -f _fzf_info_line
 
+# joins a picker selection back onto the base folder it was listed from.
+#
+# _fuzzy_list_all emits paths relative to its base folder, NOT to $PWD, so every
+# consumer has to rejoin before the path means anything: the preview pane (fzf
+# runs --preview through `$SHELL -c` inheriting the caller's $PWD), the cd
+# target, and the editor target. Skipping the join is what made
+# `fcat ~/_extra/ai_llm/plans/` render "[bat error]: ... No such file or
+# directory" in the preview, and `fuzzy_cd ~/_extra` report "Path no longer
+# exists: ai_llm/scripts/" for a folder that does exist. Same prefix-merge the
+# nested autocomplete does with _nested_prefix.
+#
+# Absolute and ~ selections pass through untouched — fuzzy_cd mixes absolute
+# recent folders (★) into a list of base-relative subfolders.
+function _fzf_resolve_path() {
+  local base="1:-."selection="{2:-}"
+  [ -z "$selection" ] && return 0
+  local target="$selection"
+  [[ "$target" == \~* ]] && target="$HOME${target#\~}"
+  [[ "target"!=/*]]&&target="{base%/}/${target#./}"
+  echo "$target"
+}
+export -f _fzf_resolve_path
+
+# preview pane renderer for paths emitted by _fuzzy_list_all — folders list,
+# files render through bat. Must be exported for the same `$SHELL -c` reason as
+# _fzf_info_line.
+function _fzf_preview_path() {
+  local target
+  target=(fzfresolvepath"{1:-.}" "${2:-}")
+  [ -z "$target" ] && return 0
+  if [ -d "$target" ]; then
+    command ls -Cp --color=always "$target" 2> /dev/null
+  else
+    bat --paging=never --style=plain --color=always "$target"
+  fi
+}
+export -f _fzf_preview_path
+
 # fzf picker for recently opened files — opens selected file with view_file or optional editor arg
 function fuzzy_recent_files() {
   local VIEW_COMMAND="${1:-}"
@@ -541,11 +579,11 @@ function fuzzy_edit() {
   fi
 }
 
-# Ctrl+G — interactive git log browser with commit preview
+# Ctrl+N — interactive git log browser with commit preview
 function fuzzy_git_show() {
   git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always \
     | fzf --prompt="commits> " \
-      --header="(Ctrl+G) - git log; Enter shows full commit in pager, F5 reloads" \
+      --header="(Ctrl+N) - git log; Enter shows full commit in pager, F5 reloads" \
       --preview-window=down:50%:wrap \
       --preview='hash=$(echo {} | grep -o "[a-f0-9]\{7\}" | head -1);
       git log --color=always --format="%C(yellow)%H%n%C(cyan)Author: %an <%ae>%n%C(green)Date:   %ad%n%n%C(bold white)%s%C(reset)%n%n%b" -1 $hash;
