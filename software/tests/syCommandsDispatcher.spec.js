@@ -12,7 +12,7 @@ let sandbox;
 
 /**
  * Create a fresh sandbox dir with:
- *   - `sandbox/home/sy_llm_ai/skills/sy-<name>/SKILL.md` seeded with the supplied body.
+ *   - `sandbox/home/sy/ai_llm/skills/sy-<name>/SKILL.md` seeded with the supplied body.
  *   - PATH-shadowed stubs for `claude`, `copilot`, `gemini`, `opencode` that
  *     echo their name + every argument they were called with to stdout so the
  *     test can assert which CLI fired with which prompt.
@@ -23,7 +23,7 @@ let sandbox;
  */
 beforeEach(() => {
   sandbox = fs.mkdtempSync("/tmp/sycommands-test-");
-  fs.mkdirSync(path.join(sandbox, "home/sy_llm_ai/skills"), { recursive: true });
+  fs.mkdirSync(path.join(sandbox, "home/sy/ai_llm/skills"), { recursive: true });
   fs.mkdirSync(path.join(sandbox, "bin"), { recursive: true });
   for (const cli of ["claude", "copilot", "gemini", "opencode"]) {
     const stubPath = path.join(sandbox, "bin", cli);
@@ -43,14 +43,14 @@ afterEach(() => {
 });
 
 /**
- * Write a prompt body to `sandbox/home/sy_llm_ai/skills/sy-<name>/SKILL.md`.
+ * Write a prompt body to `sandbox/home/sy/ai_llm/skills/sy-<name>/SKILL.md`.
  *
  * @param {string} name - Command name without the `sy-` prefix and `.md` suffix.
  * @param {string} body - Prompt body content.
  */
 function writeCommand(name, body) {
   /** @type {string} Folder-form skill location the dispatcher globs at shell start. */
-  const skillFolder = path.join(sandbox, `home/sy_llm_ai/skills/sy-${name}`);
+  const skillFolder = path.join(sandbox, `home/sy/ai_llm/skills/sy-${name}`);
   fs.mkdirSync(skillFolder, { recursive: true });
   fs.writeFileSync(path.join(skillFolder, "SKILL.md"), body);
 }
@@ -60,11 +60,17 @@ function writeCommand(name, body) {
  * partial already sourced. Returns stdout (the CLI stub output captures
  * cleanly so the caller can assert which CLI fired and with what prompt).
  *
+ * `SY_HOME_FOLDER` is exported because the dispatcher resolves its skills folder
+ * as `${LLM_HOME_FOLDER:-${SY_HOME_FOLDER:-$HOME}/ai_llm}/skills` — the same
+ * chain a real shell sees once run.sh re-exports both into ~/.bash_syle_common.
+ * Setting the middle rung rather than `LLM_HOME_FOLDER` keeps the fixture layout
+ * (`home/sy/ai_llm/skills`) identical to the real one on disk.
+ *
  * @param {string} script - Bash script body, executed after the helpers + partial are sourced.
  * @returns {string} Captured stdout (trimmed).
  */
 function runBash(script) {
-  const cmd = `HOME='${sandbox}/home' PATH='${sandbox}/bin':"$PATH" bash -c '
+  const cmd = `HOME='${sandbox}/home' SY_HOME_FOLDER='${sandbox}/home/sy' PATH='${sandbox}/bin':"$PATH" bash -c '
     source "${sandbox}/helpers.bash"
     source "${PARTIAL}"
     ${script}
@@ -73,7 +79,7 @@ function runBash(script) {
 }
 
 describe("sy-commands dispatcher", () => {
-  it("defines sy-<name> for each ~/sy_llm_ai/skills/sy-<name>/SKILL.md on disk", () => {
+  it("defines sy-<name> for each ~/sy/ai_llm/skills/sy-<name>/SKILL.md on disk", () => {
     writeCommand("foo", "prompt for foo");
     writeCommand("bar", "prompt for bar");
     // compgen is a bash builtin — no awk/tr/single-quote pitfalls when this
@@ -164,7 +170,7 @@ describe("sy-commands dispatcher", () => {
 
   it("echoes the resolved CLI to stderr so the user sees the routing decision", () => {
     writeCommand("foo", "body");
-    const cmd = `HOME='${sandbox}/home' PATH='${sandbox}/bin':"$PATH" bash -c '
+    const cmd = `HOME='${sandbox}/home' SY_HOME_FOLDER='${sandbox}/home/sy' PATH='${sandbox}/bin':"$PATH" bash -c '
       source "${sandbox}/helpers.bash"
       source "${PARTIAL}"
       sy-foo gemini 2>/tmp/sycommands-stderr-${process.pid}.log

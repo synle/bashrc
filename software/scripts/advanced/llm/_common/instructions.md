@@ -130,7 +130,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 **These rules live in a separate file, and you are required to read it.**
 
-- **Read `~/sy_llm_ai/instructions/debugging.md` in full before your first fix attempt on anything broken**, and follow it as written. It picks up where the Validation Cadence ladder drops you; `/sy-debug` runs it as a phased loop. A bug you have already started guessing at is exactly the case it exists for.
+- **Read `~/sy/ai_llm/instructions/debugging.md` in full before your first fix attempt on anything broken**, and follow it as written. It picks up where the Validation Cadence ladder drops you; `/sy-debug` runs it as a phased loop. A bug you have already started guessing at is exactly the case it exists for.
 - The rules there are binding exactly as if they appeared here. Highest-cost ones, so you know what you are missing until you read it: no fix without a reproduction, one hypothesis per observation, read the **first** failure, fix the cause not the symptom, never round an unexplained remainder up to "fixed".
 - If that file is missing, say so rather than improvising a debugging loop, and re-run `bash run.sh --files="claude/setup.js"` (or any LLM setup script) to redeploy it.
 
@@ -138,7 +138,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 **These rules live in a separate file, and you are required to read it.**
 
-- **Read `~/sy_llm_ai/instructions/testing.md` in full before writing, reviewing, or trusting a test**, and follow it as written. Validation Cadence says when tests run; that file says whether they were worth running.
+- **Read `~/sy/ai_llm/instructions/testing.md` in full before writing, reviewing, or trusting a test**, and follow it as written. Validation Cadence says when tests run; that file says whether they were worth running.
 - The rules there are binding exactly as if they appeared here. Highest-cost ones, so you know what you are missing until you read it: test behavior not implementation, a test that passes before the fix is not a regression test, assert values not the absence of an explosion, don't mock what you don't own, no logic in tests, deterministic or deleted.
 - If that file is missing, say so rather than improvising a testing standard, and re-run `bash run.sh --files="claude/setup.js"` (or any LLM setup script) to redeploy it.
 
@@ -146,7 +146,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 **These rules live in a separate file, and you are required to read it.**
 
-Everything governing branches, commits, pull requests, worktrees, links, merging, and review is in `~/sy_llm_ai/instructions/pr-workflow.md` — roughly a hundred rules, kept out of this file so it stays small enough to load every session.
+Everything governing branches, commits, pull requests, worktrees, links, merging, and review is in `~/sy/ai_llm/instructions/pr-workflow.md` — roughly a hundred rules, kept out of this file so it stays small enough to load every session.
 
 - **Read that file in full before your first branch, commit, push, PR, or review action of a session**, and follow it as written. It is not a reference to consult if something looks unclear; not having read it is not a reason to skip a rule in it.
 - The rules there are binding exactly as if they appeared here. "It wasn't in my instructions" is wrong — this pointer is the instruction.
@@ -155,7 +155,7 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 ## Plans & Wrap-Ups
 
-- All plan artifacts live in `~/sy_llm_ai/plans/<repo>/`, never in the repo working tree (`mkdir -p` before the first write; `<repo>` from the remote, not the folder name). Files are `plan-YYYY-MM-DD-<slug>.md` and `plan-YYYY-MM-DD-<slug>.diff` (what it actually changed) — the date is the creation date (`date +%Y-%m-%d`), fixed at first write and never re-dated; `<slug>` is the kebab-case feature name and alone feeds the branch `<group-slug>`. An RFC for the same work uses `rfc-YYYY-MM-DD-<slug>.md` so both sort together and share one slug. Outside the repo means no `.gitignore` entry, no accidental commit, and `ls ~/sy_llm_ai/plans/` is the inventory. Harness-managed scratch (Copilot's session `plan.md`, Claude's todo list) stays where the harness puts it.
+- All plan artifacts live in `~/sy/ai_llm/plans/<repo>/`, never in the repo working tree (`mkdir -p` before the first write; `<repo>` from the remote, not the folder name). Files are `plan-YYYY-MM-DD-<slug>.md` and `plan-YYYY-MM-DD-<slug>.diff` (what it actually changed) — the date is the creation date (`date +%Y-%m-%d`), fixed at first write and never re-dated; `<slug>` is the kebab-case feature name and alone feeds the branch `<group-slug>`. An RFC for the same work uses `rfc-YYYY-MM-DD-<slug>.md` so both sort together and share one slug. Outside the repo means no `.gitignore` entry, no accidental commit, and `ls ~/sy/ai_llm/plans/` is the inventory. Harness-managed scratch (Copilot's session `plan.md`, Claude's todo list) stays where the harness puts it.
 - Every plan opens with a `## TLDR` — two or three plain sentences, above every other section, stating what changes and why to someone with zero context. If it can't be said short, the plan is doing too much.
 - Ship a wrap-up with every implemented feature: `## Wrap-Up` at the bottom of that task's plan file — if the work was ad-hoc, create the file after the fact with TLDR + Wrap-Up only. Covers every file touched (path → one-line what changed), what was added / removed / renamed, deviations from the plan and why, the validation command and result, and follow-ups or gaps. Enough to review from alone. Skip only for trivial edits — typo, version bump, one-line config flip.
 
@@ -248,4 +248,4 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 - Everything above is rules; the persona at the top of this file is the voice they ship in. Answer as it defines — terse, fragments, substance intact, never named out loud.
 - It sits first in context and so decays first: over a long session, after compaction, after a wall of tool output. This reminder is last so it is also the most recent. Slipped into normal prose? Rewrite the sentence.
-- Exemptions and the full rule set: `~/sy_llm_ai/instructions/persona.md`.
+- Exemptions and the full rule set: `~/sy/ai_llm/instructions/persona.md`.

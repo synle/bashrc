@@ -15,8 +15,18 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/
 #   bash   "$SY_HOME_FOLDER/<thing>" - run.sh re-exports it into
 #          ~/.bash_syle_common, so interactive shells and profile partials see it
 #   node   SY_HOME_FOLDER in software/index.js, read from this same env var
-# Planned follow-up: ~/sy_llm_ai -> $SY_HOME_FOLDER/llm_ai.
 export SY_HOME_FOLDER="$HOME/sy"
+
+# LLM home - every Sy-managed LLM artifact that lives outside a repo checkout
+# (instructions/, plans/, skills/). Declared HERE rather than in llm-common.js
+# because both surfaces need it and only common-env.sh reaches both: node reads
+# it as an env var, and run.sh re-exports it into ~/.bash_syle_common so the
+# shell dispatcher partial resolves the same folder without a second literal.
+# All the LOGIC (migration registry, symlink retargeting) stays in
+# software/scripts/advanced/llm/llm-common.js — this is only the location.
+# Moving it means editing this line and adding a row to
+# LLM_LEGACY_FOLDER_MIGRATIONS so existing machines migrate themselves.
+export LLM_HOME_FOLDER="$SY_HOME_FOLDER/ai_llm"
 export LIMITED_SUPPORT_OSES="is_os_android_termux,is_os_mingw64"
 export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_android_termux,is_os_arch_linux,is_os_steamos,is_os_redhat,is_os_windows,is_os_wsl"
 

@@ -20,7 +20,7 @@ for junk_folder in \
   "$HOME/.gemini" \
   "$HOME/.config/opencode" \
   "$HOME/.agents" \
-  "$HOME/sy_llm_ai"; do
+  "${LLM_HOME_FOLDER:-${SY_HOME_FOLDER:-$HOME}/ai_llm}"; do
   clean_junk_macosx_files "$junk_folder"
 done
 

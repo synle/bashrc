@@ -599,7 +599,7 @@ slash commands.
 | `/remove-os`       | Dropping OS support                                                                                    |
 | `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it                          |
 | `/check`           | Verifying session changes survived a merge/rebase/hook                                                 |
-| `/plan-and-commit` | Multi-file change worth recording — writes `~/sy_llm_ai/plans/bashrc/plan-YYYY-MM-DD-<slug>.{md,diff}` |
+| `/plan-and-commit` | Multi-file change worth recording — writes `~/sy/ai_llm/plans/bashrc/plan-YYYY-MM-DD-<slug>.{md,diff}` |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
 invisible to every loader. Folder name is kebab-case and must equal the frontmatter
@@ -682,17 +682,17 @@ That map is the **single registry** every CLI's `setup.js` reads via
 once:
 
 Deploy is **one physical copy plus symlinks**, not a per-CLI write:
-`deploySharedLLMSkills()` writes `~/sy_llm_ai/skills/<key>/SKILL.md` once, then
+`deploySharedLLMSkills()` writes `~/sy/ai_llm/skills/<key>/SKILL.md` once, then
 per-skill symlinks it into each folder in `LLM_SKILL_LINK_FOLDERS`.
 
 | CLI        | Where the one shared skill is linked                                                              |
 | ---------- | ------------------------------------------------------------------------------------------------- |
-| `claude`   | `~/.claude/skills/<key>` → `~/sy_llm_ai/skills/<key>`                                             |
+| `claude`   | `~/.claude/skills/<key>` → `~/sy/ai_llm/skills/<key>`                                             |
 | `copilot`  | `~/.copilot/skills/<key>` → same target (its only slot)                                           |
 | `opencode` | `~/.config/opencode/skills/<key>` + a `/…/commands/<key>.md` mirror                               |
 | `gemini`   | `~/.gemini/skills/<key>` → same target                                                            |
 | any CLI    | `~/.agents/skills/<key>` → same target (interoperable path)                                       |
-| shell      | `sy-<name>` + `<cli>_skill_<name>` bash wrappers, auto-registered from `~/sy_llm_ai/skills/sy-*/` |
+| shell      | `sy-<name>` + `<cli>_skill_<name>` bash wrappers, auto-registered from `~/sy/ai_llm/skills/sy-*/` |
 
 **Per-skill links, never a folder symlink.** Pointing `~/.copilot/skills` at the
 shared folder wholesale would hijack the destination — `copilot plugin install`,
@@ -718,7 +718,7 @@ source time. **Adding a CLI is one record and nothing else**; never a second arr
 never an arm in a dispatch function, never a name hardcoded into a wrapper — a test
 fails the build on any CLI name outside the registry block. Both wrapper families
 (`sy-<name>` and `<cli>_skill_<name>`) come out of one registration loop over
-`~/sy_llm_ai/skills/sy-*/SKILL.md`, so no command name is ever written there either.
+`~/sy/ai_llm/skills/sy-*/SKILL.md`, so no command name is ever written there either.
 
 **`inline` is a reserved wrapper name, and the one exec path.** `<cli>_skill_inline`
 (and its call-time twin `sy-inline`) take raw prompt text with no `SKILL.md` behind
@@ -740,7 +740,7 @@ Verified today: `copilot -p "/sy-<name>"` (fires `skill(...)`, v1.0.81) and
 empty. An empty kind degrades to `inline`, which always works — so leaving it empty is
 the correct move when you cannot test, never a guess.
 
-### 13.2 The shared LLM home folder — `~/sy_llm_ai/`
+### 13.2 The shared LLM home folder — `~/sy/ai_llm/`
 
 Everything the LLM tooling owns outside a repo checkout lives under one root, created and
 maintained by `deploySharedLLMInstructions()` in `llm-common.js`, which **all four**
@@ -748,20 +748,39 @@ setup scripts call:
 
 | Path                        | Holds                                                                     |
 | --------------------------- | ------------------------------------------------------------------------- |
-| `~/sy_llm_ai/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES` |
-| `~/sy_llm_ai/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)     |
-| `~/sy_llm_ai/plans/`        | Plan / RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`)   |
+| `~/sy/ai_llm/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES` |
+| `~/sy/ai_llm/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)     |
+| `~/sy/ai_llm/plans/`        | Plan / RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`)   |
 
-`~/sy_llm_ai_plans/` was the pre-consolidation plans folder. `migrateLegacyLLMPlansFolder()`
-moves it in once and deletes it; `retargetLegacyPlanSymlinks()` then repoints any
-cross-repo plan symlink that still names the old path. Both are idempotent and both run on
-every deploy — delete them only once every machine has migrated.
+**The location is decided in exactly one place — `LLM_HOME_FOLDER` in
+`software/bootstrap/common-env.sh`.** It sits there rather than in `llm-common.js` because
+both surfaces need the same answer and only `common-env.sh` reaches both: it is inlined
+into `run.sh` (so node reads it as an env var) and re-exported into `~/.bash_syle_common`
+(so `sy-commands.profile.bash` resolves the same folder without a second literal). Adding
+a shared var to `common-env.sh` alone is **silently insufficient** — the hand-written
+export block in `run.sh` must list it too, or interactive shells never see it. All the
+migration LOGIC stays in `llm-common.js`; only the location lives in `common-env.sh`.
+
+Consumers derive rather than re-spell the folder, so `ai_llm` is never a second literal:
+`${LLM_HOME_FOLDER:-${SY_HOME_FOLDER:-$HOME}/ai_llm}` in bash, and
+`process.env.LLM_HOME_FOLDER || path.join(SY_HOME_FOLDER, "ai_llm")` in node.
+
+**Moving the folder again is two edits: this one line, plus a row in
+`LLM_LEGACY_FOLDER_MIGRATIONS`.** That registry is the single list of one-time moves;
+`migrateLegacyLLMFolders()` walks it in order and `migrateLegacyLLMFolder()` does the
+work, so there is no per-folder move code to duplicate. Registry order is load-bearing —
+the whole legacy root moves before the older standalone plans folder, which lands inside
+the folder the first row just created. A row whose destination already holds a colliding
+entry **keeps** the source rather than destroying it. `retargetLegacyPlanSymlinks()` then
+repoints any cross-repo plan symlink still naming an old path, matching on a path boundary
+so `<home>/sy_llm_ai` does not swallow `<home>/sy_llm_ai_plans`. All idempotent, all run on
+every deploy — delete a row only once every machine has migrated.
 
 **The always-loaded block has a hard size budget.** `instructions.md` is deployed verbatim
 into `~/.claude/CLAUDE.md` and its three siblings, and Claude Code refuses to load a
 `CLAUDE.md` over **40k chars**. That is why the PR workflow, debugging, and testing rules
 live in `_common/instructions-{pr-workflow,debugging,testing}.md`, deployed to
-`~/sy_llm_ai/instructions/{pr-workflow,debugging,testing}.md` and referenced from
+`~/sy/ai_llm/instructions/{pr-workflow,debugging,testing}.md` and referenced from
 `instructions.md` by a pointer.
 
 - **Reference split files as a backticked path, never as `@path`.** Per Claude Code's
