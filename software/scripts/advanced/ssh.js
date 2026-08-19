@@ -87,5 +87,5 @@ async function doWork() {
   // writeText writes to a tmp file and renames over the target, so the new inode
   // carries the umask default (0644) rather than the 0600 the config had before.
   // These files list every host reachable from this machine, so re-tighten them.
-  await execBash(`chmod 600 "targetPath""{backupPath}" 2>/dev/null || true`);
+  await execBash(`chmod 600 "$targetPath" "$backupPath" 2>/dev/null || true`);
 }

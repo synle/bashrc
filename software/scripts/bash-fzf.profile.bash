@@ -175,6 +175,10 @@ function filter_unwanted() {
 [ -z "${_IGNORED_FILES_JSON+x}" ] && _IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlight-","\\.Trashes$","\\.fseventsd$","\\.com\\.apple\\.","\\.localized$","\\.a$","\\.class$","\\.dll$","\\.dylib$","\\.exe$","\\.lib$","\\.o$","\\.obj$","\\.pyc$","\\.pyo$","\\.so$","\\.swo$","\\.swp$","\\.wasm$"]'
 # text file extension allowlist — used by text_files mode
 [ -z "${_FUZZY_TEXT_FILES_JSON+x}" ] && _FUZZY_TEXT_FILES_JSON='["\\.bash$","\\.c$","\\.cfg$","\\.clj$","\\.cmake$","\\.coffee$","\\.conf$","\\.cpp$","\\.cs$","\\.css$","\\.csv$","\\.dart$","\\.diff$","\\.dockerfile$","\\.el$","\\.elm$","\\.env$","\\.erl$","\\.ex$","\\.fish$","\\.go$","\\.graphql$","\\.groovy$","\\.h$","\\.hpp$","\\.hs$","\\.html$","\\.ini$","\\.java$","\\.js$","\\.json$","\\.jsonc$","\\.jsx$","\\.kt$","\\.less$","\\.lisp$","\\.log$","\\.lua$","\\.m$","\\.md$","\\.mk$","\\.ml$","\\.nim$","\\.nix$","\\.php$","\\.pl$","\\.proto$","\\.ps1$","\\.py$","\\.r$","\\.rb$","\\.rs$","\\.rst$","\\.sass$","\\.scala$","\\.scss$","\\.sh$","\\.sql$","\\.svelte$","\\.swift$","\\.tcl$","\\.tex$","\\.tf$","\\.toml$","\\.ts$","\\.tsx$","\\.txt$","\\.v$","\\.vim$","\\.vue$","\\.xml$","\\.yaml$","\\.yml$","\\.zig$","\\.zsh$","Dockerfile$","Makefile$","Rakefile$","Gemfile$","Vagrantfile$","\\.gitignore$","\\.gitattributes$","\\.editorconfig$","\\.eslintrc$","\\.prettierrc$","\\.babelrc$"]'
+# Exported because _fuzzy_list_all passes all three straight to node as argv, and
+# fzf's F5 reload re-invokes it inside a `$SHELL -c` subshell — unexported they
+# arrive empty, JSON.parse('') throws, and the picker reloads to nothing.
+export _IGNORED_FOLDERS_JSON _IGNORED_FILES_JSON _FUZZY_TEXT_FILES_JSON
 
 # usage: _fuzzy_list_all [dir] [mode] [max_depth] [timeout] [filter]
 #   dir       — directory to list (default: .)
@@ -338,6 +342,11 @@ function _fuzzy_list_all() {
     })();
   " "$dir" "$mode" "$max_depth" "$_IGNORED_FOLDERS_JSON" "$_IGNORED_FILES_JSON" "$_FUZZY_TEXT_FILES_JSON" "$max_timeout" "$filter" < /dev/null 2> /dev/null
 }
+# fzf runs --bind reload(...) through `$SHELL -c`, which cannot see a
+# non-exported shell function — without this the F5 rebind in fuzzy_cd and
+# fuzzy_edit forks a subshell that dies with "command not found" and silently
+# empties the picker. Same reason _fzf_info_line is exported below.
+export -f _fuzzy_list_all
 
 ################################################################################
 # --- FZF Functions ---
@@ -376,11 +385,11 @@ export -f _fzf_info_line
 # Absolute and ~ selections pass through untouched — fuzzy_cd mixes absolute
 # recent folders (★) into a list of base-relative subfolders.
 function _fzf_resolve_path() {
-  local base="1:-."selection="{2:-}"
+  local base="${1:-.}" selection="${2:-}"
   [ -z "$selection" ] && return 0
   local target="$selection"
   [[ "$target" == \~* ]] && target="$HOME${target#\~}"
-  [[ "target"!=/*]]&&target="{base%/}/${target#./}"
+  [[ "$target" != /* ]] && target="${base%/}/${target#./}"
   echo "$target"
 }
 export -f _fzf_resolve_path
@@ -390,7 +399,7 @@ export -f _fzf_resolve_path
 # _fzf_info_line.
 function _fzf_preview_path() {
   local target
-  target=(fzfresolvepath"{1:-.}" "${2:-}")
+  target=$(_fzf_resolve_path "${1:-.}" "${2:-}")
   [ -z "$target" ] && return 0
   if [ -d "$target" ]; then
     command ls -Cp --color=always "$target" 2> /dev/null
@@ -505,24 +514,34 @@ function _fuzzy_cd_list() {
   _fuzzy_list_all "$dir" "folders" "" 10 | awk '{print "  \t" $0}'
   _recent_folders 2> /dev/null | awk '{print "★ \t" $0}'
 }
+# exported so the F5 reload subshell can resolve it (see _fuzzy_list_all)
+export -f _fuzzy_cd_list
 function fuzzy_cd() {
   local dir="${1:-.}"
   local abs_dir
   abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
+  # base folder is interpolated into the fzf option strings because --preview and
+  # --bind run in their own `$SHELL -c` subshells that never see these locals
+  local base_q
+  base_q=$(printf '%q' "$abs_dir")
   local OUT=$(_fuzzy_cd_list "$dir" | awk -F'\t' '!seen[$2]++' | fzf +m \
     --delimiter=$'\t' --with-nth=1,2 --nth=2 \
     --prompt="cd> " \
     --header="(Ctrl+P) - cd; ★ recent folders, plain = subfolders under ${abs_dir}" \
-    --preview='ls -Cp --color=always {2} 2>/dev/null' \
+    --preview="_fzf_preview_path $base_q {2}" \
     --preview-window=down:50%:wrap \
-    --bind "f5:reload(_fuzzy_cd_list '$dir' | awk -F'\t' '!seen[\$2]++')")
+    --bind "f5:reload(_fuzzy_cd_list $base_q | awk -F'\t' '!seen[\$2]++')")
   if [ -n "$OUT" ]; then
     OUT="${OUT##*$'\t'}"
-    if [ -d "$OUT" ]; then
-      print_action_summary "$OUT"
-      cd "$OUT"
+    # subfolder entries are relative to "$abs_dir" while ★ recent folders are
+    # already absolute — _fzf_resolve_path handles both
+    local FULL_PATH
+    FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
+    if [ -d "$FULL_PATH" ]; then
+      print_action_summary "$FULL_PATH"
+      cd "$FULL_PATH"
     else
-      echo "Path no longer exists: $OUT"
+      echo "Path no longer exists: $FULL_PATH"
     fi
   fi
 }
@@ -533,11 +552,15 @@ function fuzzy_edit() {
   local dir="${2:-.}"
   local abs_dir
   abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
+  # base folder is interpolated into the fzf option strings because --preview and
+  # --bind run in their own `$SHELL -c` subshells that never see these locals
+  local base_q
+  base_q=$(printf '%q' "$abs_dir")
   local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="edit> " \
     --header="(Ctrl+T) - edit files under ${abs_dir}" \
-    --preview="[ -d {} ] && ls -Cp --color=always {} 2>/dev/null || (bat --paging=never --style=plain --color=always {})" \
+    --preview="_fzf_preview_path $base_q {}" \
     --preview-window=down:50%:wrap \
-    --bind "f5:reload(_fuzzy_list_all '$dir' 'paths' '' 10)")
+    --bind "f5:reload(_fuzzy_list_all $base_q 'paths' '' 10)")
 
   if [ -z "$OUT" ]; then
     return
@@ -557,7 +580,8 @@ function fuzzy_edit() {
   # No such file or directory" error) for every selection made from a
   # subdirectory of a repo, and handed the editor a path relative to the wrong
   # base whenever fuzzy_edit was called with an explicit "$dir".
-  FULL_PATH=$(cd "$abs_dir" 2> /dev/null && realpath "$OUT" 2> /dev/null) || FULL_PATH="$abs_dir/$OUT"
+  FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
+  FULL_PATH=$(realpath "$FULL_PATH" 2> /dev/null) || FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
 
   # Folder selections: just print PWD + cd. File selections: also print the editor line
   # (mirrors what we're about to invoke). print_action_summary handles the format.
