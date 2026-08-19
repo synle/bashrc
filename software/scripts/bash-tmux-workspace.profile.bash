@@ -31,19 +31,26 @@
 # --- Temp workspaces ---
 # For a single throwaway command that should outlive the shell that started it,
 # skip the config entirely - workspace_temp_create is a thin alias into tmux
-# against one hardcoded session name ($WORKSPACE_TEMP_SESSION):
+# against one hardcoded session name ($_WORKSPACE_TEMP_SESSION):
 #   workspace_temp_create --force --detach long_running_job
 #   workspace_temp_open      # watch it
 #   workspace_temp_close     # kill every temp session
 ################################################################################
 
-WORKSPACE_CONFIG_FOLDER="$HOME/.config/workspaces"
+## $SY_HOME_FOLDER comes from common-env.sh, the single place the personal root
+## is named. The fallback degrades to a bare $HOME rather than repeating "sy"
+## here, so this partial stays sourceable on its own (tests, a bare shell)
+## without becoming a second declaration that can drift.
+WORKSPACE_CONFIG_FOLDER="${SY_HOME_FOLDER:-$HOME}/workspaces_tmux"
 
 ## every workspace_temp_* helper shares ONE hardcoded session name, so a
 ## throwaway job always lands in the same place and `workspace_temp_open` needs
 ## no argument. Also the PREFIX workspace_temp_close matches on, so a suffixed
 ## variant would still be reaped.
-WORKSPACE_TEMP_SESSION="workspace_temp"
+## underscore-prefixed and personally namespaced on purpose: this is internal,
+## and a bare name like "workspace_temp" is common enough to collide with a
+## session someone else (or another tool) created.
+_WORKSPACE_TEMP_SESSION="syle_temp_workspace"
 
 # attach from outside tmux, switch from inside it (attach errors when $TMUX is set)
 function _workspace_attach() {
@@ -52,6 +59,17 @@ function _workspace_attach() {
   else
     tmux attach-session -t "=$1"
   fi
+}
+
+# _workspace_attach, unless the caller passed --detach. $1 = the detach flag,
+# $2 = the session. Attaching blocks a script until a human detaches, so every
+# public builder ends here rather than calling _workspace_attach directly.
+function _workspace_attach_unless_detached() {
+  if is_truthy "$1"; then
+    echo "workspace: '$2' left running detached - workspace_open $2 to attach"
+    return 0
+  fi
+  _workspace_attach "$2"
 }
 
 # guard: jq present, tmux present
@@ -87,29 +105,32 @@ function _workspace_resolve_config() {
 function workspace_create() {
   if is_help_arg "${1:-}"; then
     echo "workspace_create: build or attach a tmux session described by a JSON file
-  Usage: workspace_create <name|path.json> [--force]
+  Usage: workspace_create <name|path.json> [--force] [--detach]
   When the session already exists you are asked whether to kill and rebuild it;
   answering no (the default) attaches to the running session instead.
   Flags:
     --force    kill the existing session and rebuild it, skipping the prompt
+    --detach   build the session and return instead of attaching, for scripts
   Lookup order for <name>:
     <name>  <name>.json  \$PWD/<name>.json  $WORKSPACE_CONFIG_FOLDER/<name>.json
   Examples:
-    workspace_create my_project.json
-    workspace_create my_project --force
-    workspace_sample_json && workspace_create \$(ls -t *.json | head -1)"
+    workspace_create my_project.json                # build from ./my_project.json, then attach
+    workspace_create my_project                     # same file, found via the lookup order above
+    workspace_create my_project --force             # kill the running session and rebuild, no prompt
+    workspace_create my_project --force --detach    # rebuild but stay in this shell - the script form
+    workspace_sample_json && workspace_create \$(ls -t *.json | head -1)   # scaffold, then build it"
     return 1
   fi
 
   _workspace_require || return 1
 
-  local config_file="" force=false arg
+  local config_file="" force=false detach=false arg
   for arg in "$@"; do
-    if [ "$arg" = "--force" ]; then
-      force=true
-    elif [ -z "$config_file" ]; then
-      config_file="$arg"
-    fi
+    case "$arg" in
+    --force) force=true ;;
+    --detach) detach=true ;;
+    *) [ -n "$config_file" ] || config_file="$arg" ;;
+    esac
   done
 
   local found
@@ -137,10 +158,10 @@ function workspace_create() {
   ## bare Enter both keep today's behavior: attach to what is already running.
   ## "=" forces an exact match - without it "api" also matches "api_staging"
   if tmux has-session -t "=$session" 2> /dev/null; then
-    if [ "$force" = "true" ] || prompt_yes_no "workspace_create: session '$session' already exists. Kill it and rebuild?"; then
+    if is_truthy "$force" || prompt_yes_no "workspace_create: session '$session' already exists. Kill it and rebuild?"; then
       tmux kill-session -t "=$session"
     else
-      _workspace_attach "$session"
+      _workspace_attach_unless_detached "$detach" "$session"
       return $?
     fi
   fi
@@ -179,7 +200,7 @@ function workspace_create() {
   fi
 
   tmux select-window -t "=$session:" > /dev/null 2>&1
-  _workspace_attach "$session"
+  _workspace_attach_unless_detached "$detach" "$session"
 }
 
 # write a sample config named <datetime>.json, session name carrying the same stamp
@@ -189,10 +210,15 @@ function workspace_sample_json() {
   Usage: workspace_sample_json [folder|file] [--stdout]
   Flags:
     --stdout   print the config instead of writing it
+  Notes:
+    writes into \$PWD unless given a folder, and prints the path it wrote so the
+    result can be piped straight into workspace_create
   Examples:
-    workspace_sample_json
-    workspace_sample_json $WORKSPACE_CONFIG_FOLDER
-    workspace_create \"\$(workspace_sample_json)\""
+    workspace_sample_json                            # writes \$PWD/<datetime>.json, prints that path
+    workspace_sample_json $WORKSPACE_CONFIG_FOLDER   # writes <datetime>.json into that folder instead
+    workspace_sample_json my_project.json            # writes exactly that filename
+    workspace_sample_json --stdout                   # prints the config, writes nothing
+    workspace_create \"\$(workspace_sample_json)\"       # scaffold a config and build it in one go"
     return 1
   fi
 
@@ -225,15 +251,23 @@ function workspace_sample_json() {
 JSON_EOF
   )
 
-  if [ "$to_stdout" = "true" ]; then
+  if is_truthy "$to_stdout"; then
     printf '%s\n' "$json"
     return 0
   fi
 
   [ -n "$target" ] || target="$PWD"
-  if [ -d "$target" ]; then
+  ## anything not ending in .json is a folder, existing or not - create it and
+  ## name the file inside. Without this, `workspace_sample_json
+  ## $WORKSPACE_CONFIG_FOLDER` on a fresh machine writes a FILE at that path and
+  ## quietly breaks every later lookup.
+  case "$target" in
+  *.json) ;;
+  *)
+    safe_mkdir "$target" || return 1
     target="$target/$stamp.json"
-  fi
+    ;;
+  esac
   printf '%s\n' "$json" > "$target" || return 1
   echo "$target"
 }
@@ -247,13 +281,18 @@ function workspace_freeze() {
     --force    overwrite an existing output file
   Notes:
     with no session, freezes the session you are currently in
-    with no output file, prints to stdout
+    with no output file, prints to stdout - nothing is written anywhere
+    with an output file, writes it relative to \$PWD and prints the path it wrote
     tmux only reports the running process NAME, so 'tail -f app.log' freezes as
     'tail' - fill the arguments back in by hand
   Examples:
-    workspace_freeze my_active_session my_project.json
-    workspace_freeze my_active_session
-    workspace_freeze"
+    workspace_freeze                                     # current session -> stdout, writes nothing
+    workspace_freeze my_active_session                   # that session   -> stdout, writes nothing
+    workspace_freeze my_active_session my_project.json   # writes \$PWD/my_project.json, prints that path
+    workspace_freeze my_active_session my_project.json --force   # same, overwriting the existing file
+    workspace_freeze my_active_session $WORKSPACE_CONFIG_FOLDER/my_project.json   # park it where
+                                                         # workspace_create's <name> lookup finds it
+    workspace_create \"\$(workspace_freeze my_active_session my_project.json)\"   # freeze, then rebuild"
     return 1
   fi
 
@@ -304,7 +343,7 @@ function workspace_freeze() {
     return 0
   fi
 
-  if [ -e "$out" ] && [ "$force" != "true" ]; then
+  if [ -e "$out" ] && ! is_truthy "$force"; then
     echo "workspace_freeze: $out exists (pass --force to overwrite)" >&2
     return 1
   fi
@@ -321,8 +360,8 @@ function workspace_open() {
   With no name, or when the name does not exist, the running sessions are
   listed and you pick one by number (just Enter aborts).
   Examples:
-    workspace_open my_project_session
-    workspace_open"
+    workspace_open my_project_session   # attach to it (switch-client if already inside tmux)
+    workspace_open                      # list what is running and pick one by number"
     return 1
   fi
 
@@ -374,7 +413,7 @@ function workspace_close() {
     echo "workspace_close: kill a single tmux session by exact name
   Usage: workspace_close <session>
   Examples:
-    workspace_close my_project_session"
+    workspace_close my_project_session   # kills exactly that name, never a prefix match"
     return 1
   fi
 
@@ -401,8 +440,8 @@ function workspace_close_all() {
     every process in every session dies and cannot be recovered - unsaved editor
     buffers, running builds, other people's agent sessions included
   Examples:
-    workspace_close_all
-    workspace_close_all --force"
+    workspace_close_all           # prints the list and the count, then asks y/N
+    workspace_close_all --force   # kills everything with no prompt - scripts only"
     return 1
   fi
 
@@ -421,7 +460,7 @@ function workspace_close_all() {
   ## destructive and unrecoverable - always show the list before asking
   echo "workspace_close_all: about to kill $(echo "$sessions" | wc -l | tr -d ' ') session(s):"
   echo "$sessions" | sed 's/^/  /'
-  if [ "$force" != "true" ]; then
+  if ! is_truthy "$force"; then
     local reply=""
     printf 'Kill all of them? [y/N] '
     read -r reply
@@ -448,7 +487,7 @@ function workspace_list() {
     echo "workspace_list: list running tmux sessions and their window counts
   Usage: workspace_list
   Examples:
-    workspace_list"
+    workspace_list   # one line per session: name, window count, attached/detached"
     return 1
   fi
 
@@ -456,17 +495,20 @@ function workspace_list() {
     || echo "workspace_list: no tmux sessions running"
 }
 
+################################################################################
 # --- Temp workspaces ---
+################################################################################
 # The no-JSON path: park one throwaway command in a tmux session so it survives
 # the shell that launched it. No config file, no schema - straight to tmux.
-# Everything shares $WORKSPACE_TEMP_SESSION, so nothing has to name a session.
+# Everything shares $_WORKSPACE_TEMP_SESSION, so nothing has to name a session.
+################################################################################
 
 # run one command in the shared temp session, building the session if needed
 function workspace_temp_create() {
   if is_help_arg "${1:-}"; then
     echo "workspace_temp_create: run a command in the shared temp tmux session
   Usage: workspace_temp_create [--force] [--detach] <command...>
-  The session is always '$WORKSPACE_TEMP_SESSION' - no config file, no session
+  The session is always '$_WORKSPACE_TEMP_SESSION' - no config file, no session
   name to pick. When it already exists you are asked whether to kill and
   rebuild it; answering no (the default) attaches to the running session and
   leaves the command unrun.
@@ -474,9 +516,9 @@ function workspace_temp_create() {
     --force    kill the existing session and rebuild it, skipping the prompt
     --detach   build the session and return instead of attaching, for scripts
   Examples:
-    workspace_temp_create htop
-    workspace_temp_create --force 'make validate'
-    workspace_temp_create --force --detach long_running_job"
+    workspace_temp_create htop                               # run htop in the temp session, attach
+    workspace_temp_create --force 'make validate'            # rebuild without asking, then attach
+    workspace_temp_create --force --detach long_running_job  # park it and return - the script form"
     return 1
   fi
 
@@ -501,11 +543,11 @@ function workspace_temp_create() {
   ## same policy as workspace_create: --force rebuilds outright, otherwise ask,
   ## and a no (also the unattended default) attaches to what is already running
   ## rather than killing someone's job. "=" forces an exact name match.
-  if tmux has-session -t "=$WORKSPACE_TEMP_SESSION" 2> /dev/null; then
-    if [ "$force" = "true" ] || prompt_yes_no "workspace_temp_create: session '$WORKSPACE_TEMP_SESSION' already exists. Kill it and rebuild?"; then
-      tmux kill-session -t "=$WORKSPACE_TEMP_SESSION"
+  if tmux has-session -t "=$_WORKSPACE_TEMP_SESSION" 2> /dev/null; then
+    if is_truthy "$force" || prompt_yes_no "workspace_temp_create: session '$_WORKSPACE_TEMP_SESSION' already exists. Kill it and rebuild?"; then
+      tmux kill-session -t "=$_WORKSPACE_TEMP_SESSION"
     else
-      _workspace_attach "$WORKSPACE_TEMP_SESSION"
+      _workspace_attach_unless_detached "$detach" "$_WORKSPACE_TEMP_SESSION"
       return $?
     fi
   fi
@@ -518,13 +560,9 @@ function workspace_temp_create() {
   ## readable, matching workspace_create.
   local quoted
   quoted=$(printf '%q' "$cmd; exec bash")
-  tmux new-session -d -s "$WORKSPACE_TEMP_SESSION" -n "$window" -c "$PWD" "bash -ic $quoted" || return 1
+  tmux new-session -d -s "$_WORKSPACE_TEMP_SESSION" -n "$window" -c "$PWD" "bash -ic $quoted" || return 1
 
-  if [ "$detach" = "true" ]; then
-    echo "workspace_temp_create: running '$cmd' in '$WORKSPACE_TEMP_SESSION' (detached; workspace_temp_open to watch)"
-    return 0
-  fi
-  _workspace_attach "$WORKSPACE_TEMP_SESSION"
+  _workspace_attach_unless_detached "$detach" "$_WORKSPACE_TEMP_SESSION"
 }
 
 # attach to the shared temp session
@@ -532,14 +570,14 @@ function workspace_temp_open() {
   if is_help_arg "${1:-}"; then
     echo "workspace_temp_open: attach to the shared temp tmux session
   Usage: workspace_temp_open
-  Thin wrapper over workspace_open pinned to '$WORKSPACE_TEMP_SESSION'.
+  Thin wrapper over workspace_open pinned to '$_WORKSPACE_TEMP_SESSION'.
   Never builds anything - use workspace_temp_create for that.
   Examples:
-    workspace_temp_open"
+    workspace_temp_open   # attach to '$_WORKSPACE_TEMP_SESSION', or say it is not running"
     return 1
   fi
 
-  workspace_open "$WORKSPACE_TEMP_SESSION"
+  workspace_open "$_WORKSPACE_TEMP_SESSION"
 }
 
 # kill every temp session
@@ -547,18 +585,18 @@ function workspace_temp_close() {
   if is_help_arg "${1:-}"; then
     echo "workspace_temp_close: kill every temp tmux session
   Usage: workspace_temp_close
-  Matches '$WORKSPACE_TEMP_SESSION' and anything prefixed with it. Temp
+  Matches '$_WORKSPACE_TEMP_SESSION' and anything prefixed with it. Temp
   sessions are disposable by definition, so there is no prompt - every process
   inside them dies. Use workspace_close_all for non-temp sessions.
   Examples:
-    workspace_temp_close"
+    workspace_temp_close   # kills '$_WORKSPACE_TEMP_SESSION' and anything prefixed with it"
     return 1
   fi
 
   _workspace_require || return 1
 
   local sessions
-  sessions=$(tmux list-sessions -F '#{session_name}' 2> /dev/null | command grep "^$WORKSPACE_TEMP_SESSION")
+  sessions=$(tmux list-sessions -F '#{session_name}' 2> /dev/null | command grep "^$_WORKSPACE_TEMP_SESSION")
   if [ -z "$sessions" ]; then
     echo "workspace_temp_close: no temp sessions running"
     return 0
@@ -573,13 +611,18 @@ function workspace_temp_close() {
 }
 
 # --- Aliases ---
+## first letter of each word after "workspace", with two carve-outs:
+##   ws / wst   bare prefix = create, the primary verb - so wsc is free for close
+##              (create and close both start with c; nothing else collides)
+##   wsls       workspace_list, NOT wsl - `wsl` is the Windows Subsystem for
+##              Linux launcher and is on PATH under MinGW / Git Bash
 alias ws="workspace_create"
 alias wso="workspace_open"
 alias wsls="workspace_list"
 alias wsf="workspace_freeze"
-alias wsn="workspace_sample_json"
-alias wsx="workspace_close"
-alias wsxa="workspace_close_all"
+alias wssj="workspace_sample_json"
+alias wsc="workspace_close"
+alias wsca="workspace_close_all"
 alias wst="workspace_temp_create"
 alias wsto="workspace_temp_open"
-alias wstx="workspace_temp_close"
+alias wstc="workspace_temp_close"

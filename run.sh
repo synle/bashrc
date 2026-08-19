@@ -43,7 +43,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 82e99a50a8e8c40854fc4e67dc7a4f98 | 6.9 KB
+# software/bootstrap/common-env.sh | 3835b4ba5950e52c0f20d15b70a3f318 | 7.5 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -51,6 +51,16 @@ export REPO_BRANCH_NAME="main"
 export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/blob/HEAD" # https://github.com/synle/bashrc/blob/HEAD
+# Personal root - one visible folder under $HOME owning everything this setup
+# creates for the user rather than for a tool. `sy` matches the namespace
+# already used everywhere else (sy-commands, /sy-* commands, _SY_LLM_SPECS).
+# THIS IS THE ONLY DECLARATION. Consumers derive their own subfolder from it and
+# never write a second $HOME literal:
+#   bash   "$SY_HOME_FOLDER/<thing>" - run.sh re-exports it into
+#          ~/.bash_syle_common, so interactive shells and profile partials see it
+#   node   SY_HOME_FOLDER in software/index.js, read from this same env var
+# Planned follow-up: ~/sy_llm_ai -> $SY_HOME_FOLDER/llm_ai.
+export SY_HOME_FOLDER="$HOME/sy"
 export LIMITED_SUPPORT_OSES="is_os_android_termux,is_os_mingw64"
 export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_android_termux,is_os_arch_linux,is_os_steamos,is_os_redhat,is_os_windows,is_os_wsl"
 
@@ -603,6 +613,7 @@ export BASH_PROFILE_CODE_REPO_RAW_URL='$BASH_PROFILE_CODE_REPO_RAW_URL'
 export BASH_SYLE_PATH='$BASH_SYLE_PATH'
 export BASH_SYLE_COMMON_PATH='$BASH_SYLE_COMMON_PATH'
 export BASHRC_TEMP_ROOT_DIR='$BASHRC_TEMP_ROOT_DIR'
+export SY_HOME_FOLDER='$SY_HOME_FOLDER'
 
 export LINE_BREAK_COUNT='$LINE_BREAK_COUNT'
 export LINE_BREAK_HASH='$LINE_BREAK_HASH'
