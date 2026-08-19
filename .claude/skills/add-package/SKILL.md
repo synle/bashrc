@@ -151,7 +151,7 @@ If you created or modified files in `software/scripts/`, write or update unit te
 
 Never:
 
-- add a binary to the `required` list in `ci-binaries.json` unless it is present on *every* platform and installed in the foreground on macOS — a background-queued binary there fails CI. Use `warn` when unsure.
+- add a binary to the `required` list in `ci-binaries.json` unless it is present on _every_ platform and installed in the foreground on macOS — a background-queued binary there fails CI. Use `warn` when unsure.
 - hand-edit the generated `ci-binary-checks` block in `action.yml` — edit the JSON and run `make format_ci_binaries`
 - `rm` an installed launcher to force a reinstall — the freshness gate already treats a missing binary as broken; use `--refresh` / `--force-refresh`
 - introduce bash 4+ syntax in a new script — no `&>>`, no `mapfile`, no heredoc nested inside `$( ... )`
