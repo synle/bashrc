@@ -40,10 +40,12 @@ async function doWork() {
         TCPKeepAlive no # Disable OS-level heartbeats to prevent accidental drops on Wi-Fi
 
         # --- IDENTITY & SECURITY ---
+        # Deliberately no "IdentitiesOnly yes" here: it makes ssh ignore every identity
+        # the agent offers, which breaks any host authenticating with a short-lived
+        # certificate, since those live only in the agent and never as a file on disk.
         User ${REPO_USER_NAME}
         IdentityFile ~/.ssh/id_rsa
         ForwardAgent yes
-        IdentitiesOnly yes # Prevent the client from trying every key in your agent
 
         # --- LATENCY REDUCTION ---
         CheckHostIP no # Skip DNS lookups on the client side
@@ -77,7 +79,13 @@ async function doWork() {
   await writeBuildArtifact([{ file: `${BUILD_DIR}/ssh-config`, data: sshConfigTextContent }]);
 
   // make a backup
-  await backupText(path.join(BASE_HOMEDIR_LINUX, ".ssh", "bak.config"), sshConfigTextContent);
+  const backupPath = path.join(baseSshPath, "bak.config");
+  await backupText(backupPath, sshConfigTextContent);
 
   await writeText(targetPath, sshConfigTextContent);
+
+  // writeText writes to a tmp file and renames over the target, so the new inode
+  // carries the umask default (0644) rather than the 0600 the config had before.
+  // These files list every host reachable from this machine, so re-tighten them.
+  await execBash(`chmod 600 "targetPath""{backupPath}" 2>/dev/null || true`);
 }

@@ -1,6 +1,6 @@
 /** doWork tests for software/scripts/advanced/ssh.js. */
 import { describe, it, expect } from "vitest";
-import { fileSystem, runScript, getIndexConstant } from "../../setup.js";
+import { fileSystem, runScript, getIndexConstant, mockExecCommands } from "../../setup.js";
 
 const BASE_HOMEDIR_LINUX = getIndexConstant("BASE_HOMEDIR_LINUX");
 const BUILD_DIR = getIndexConstant("BUILD_DIR");
@@ -44,5 +44,24 @@ describe("advanced/ssh.js doWork", () => {
 
     const sshConfig = fileSystem[`${BASE_HOMEDIR_LINUX}/.ssh/config`];
     expect(sshConfig).toContain("IdentityFile");
+  });
+
+  it("should not set IdentitiesOnly, which would suppress agent-held certificates", async () => {
+    await runScript("software/scripts/advanced/ssh.js");
+
+    const sshConfig = fileSystem[`${BASE_HOMEDIR_LINUX}/.ssh/config`];
+    const directives = sshConfig.split("\n").filter((line) => !line.trim().startsWith("#"));
+
+    expect(directives.join("\n")).not.toContain("IdentitiesOnly");
+  });
+
+  it("should restrict the config and its backup to 0600 after writing", async () => {
+    await runScript("software/scripts/advanced/ssh.js");
+
+    const chmod = mockExecCommands.find((cmd) => cmd.startsWith("chmod 600"));
+
+    expect(chmod).toBeDefined();
+    expect(chmod).toContain(`${BASE_HOMEDIR_LINUX}/.ssh/config`);
+    expect(chmod).toContain(`${BASE_HOMEDIR_LINUX}/.ssh/bak.config`);
   });
 });
