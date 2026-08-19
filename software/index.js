@@ -400,6 +400,9 @@ const { exec, execSync } = require("child_process");
 /** @type {string} Base home directory path for the current user. Read from env var set by run.sh before any sudo runs. RHEL/Fedora sudoers has `always_set_home` which resets $HOME to /root even with `sudo -E`, and os.homedir() reads /etc/passwd which also returns /root. This custom env var survives sudo because sudoers only resets HOME, not arbitrary vars. Falls back to os.homedir() for non-run.sh contexts (tests, direct invocation). */
 const BASE_HOMEDIR_LINUX = process.env.BASE_HOMEDIR_LINUX || process.env.HOME || os.homedir();
 
+/** @type {string} Personal root folder — one visible folder under $HOME owning everything this setup creates for the user rather than for a tool (tmux workspace configs today, the LLM home next). Declared once in `software/bootstrap/common-env.sh` as SY_HOME_FOLDER and re-exported by run.sh into ~/.bash_syle_common, so bash and JS resolve the same path. Derive a subfolder from this; never write a second $HOME literal. The fallback degrades to a bare home folder rather than repeating the folder name, so running index.js outside run.sh (tests, direct invocation) still works without becoming a second declaration that can drift. */
+const SY_HOME_FOLDER = process.env.SY_HOME_FOLDER || BASE_HOMEDIR_LINUX;
+
 /** @type {string} Path to the main ~/.bash_syle profile file */
 const BASH_SYLE_PATH = getRuntimeOption("BASH_SYLE_PATH");
 /** @type {string} Path to the ~/.bash_syle_common shared config file */
@@ -3489,7 +3492,6 @@ function exitIfCannotInstallChromiumExtension() {
   if (is_os_mac || is_os_windows) return;
   exitIfNoChromiumBrowser();
 }
-
 
 /**
  * Removes empty BEGIN/END marker pairs (where the content between markers is blank after trimming).

@@ -13,16 +13,52 @@ The workspace functions described below ship for real in
 | Function                | Alias  | Does                                                       |
 | ----------------------- | ------ | ---------------------------------------------------------- |
 | `workspace_create`      | `ws`   | Build a session from a JSON config, or attach if it exists |
-| `workspace_sample_json` | `wsn`  | Write a starter config named `<datetime>.json`             |
+| `workspace_open`        | `wso`  | Attach to a running session, or pick one from a list       |
+| `workspace_sample_json` | `wssj` | Write a starter config named `<datetime>.json`             |
 | `workspace_freeze`      | `wsf`  | Snapshot a running session back into a config              |
 | `workspace_list`        | `wsls` | List sessions with window counts                           |
-| `workspace_close`       | `wsx`  | Kill one session by exact name                             |
-| `workspace_close_all`   | `wsxa` | Kill every session, after confirming                       |
+| `workspace_close`       | `wsc`  | Kill one session by exact name                             |
+| `workspace_close_all`   | `wsca` | Kill every session, after confirming                       |
+| `workspace_temp_create` | `wst`  | Run one throwaway command in the shared temp session       |
+| `workspace_temp_open`   | `wsto` | Attach to the shared temp session                          |
+| `workspace_temp_close`  | `wstc` | Kill every temp session                                    |
+
+Aliases are the first letter of each word after `workspace`, with two carve-outs. The bare
+prefix (`ws`, `wst`) is **create**, the primary verb — which is what frees `wsc` for
+`workspace_close`, since `create` and `close` both start with `c`. And `workspace_list` is
+`wsls`, not `wsl`, because `wsl` is the Windows Subsystem for Linux launcher and sits on
+`PATH` under MinGW / Git Bash.
 
 The shipped versions use the **simple schema** (one window per entry, no panes) and depend
 only on `tmux` + `jq`. The pane-capable `workspace_tmuxp` and the Node converter further
 down are documented here but deliberately not installed — reach for real `tmuxp` when you
 need panes and layouts.
+
+Configs live in `$WORKSPACE_CONFIG_FOLDER`, which is `$SY_HOME_FOLDER/workspaces_tmux` —
+i.e. `~/sy/workspaces_tmux`. `$SY_HOME_FOLDER` is declared once in
+`software/bootstrap/common-env.sh` as the personal root: one visible folder under `$HOME`
+owning everything this setup creates for the user rather than for a tool, named to match
+the `sy` namespace already used by `sy-commands`, the `/sy-*` corpus, and `_SY_LLM_SPECS`.
+Derive a subfolder from it; never write a second `$HOME` path.
+
+That one declaration reaches both surfaces, so bash and node always agree on the path:
+
+| Surface             | How it gets there                                                                               |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `run.sh` and node   | `common-env.sh` is inlined into `run.sh` and sourced, so every script inherits it as an env var |
+| Interactive shells  | `run.sh` re-exports it into `~/.bash_syle_common`, which is wired up as `$BASH_ENV`             |
+| `software/index.js` | the `SY_HOME_FOLDER` global reads that same env var                                             |
+
+Declaring it in `common-env.sh` alone is **not** enough for an interactive shell — only a
+hand-listed subset of those exports is re-emitted into `~/.bash_syle_common`. Adding a new
+shared variable means adding it to that block too; `software/tests/syHomeFolder.spec.js`
+pins both halves.
+
+Consumers fall back to a bare `$HOME` when the variable is unset (`${SY_HOME_FOLDER:-$HOME}`),
+never to a repeated `sy` — that keeps a partial sourceable on its own in a test or a bare
+shell without becoming a second declaration that can drift out of sync. The name `sy`
+appears in exactly one hand-written file, and the spec above fails the build if a second
+copy shows up.
 
 ---
 
@@ -240,7 +276,7 @@ function workspace() {
     echo "workspace: build or attach a tmux session from a JSON config
   workspace <name|path.json> [--force]
   --force    kill the existing session and rebuild it
-  looks up <name> as ./<name>.json then \$HOME/.config/workspaces/<name>.json"
+  looks up <name> as ./<name>.json then \$HOME/sy/workspaces_tmux/<name>.json"
     return 0
   fi
 
@@ -260,7 +296,7 @@ function workspace() {
 
   ## resolve a bare name to a config file
   local candidate found=""
-  for candidate in "$config_file" "$config_file.json" "$PWD/$config_file.json" "$HOME/.config/workspaces/$config_file.json"; do
+  for candidate in "$config_file" "$config_file.json" "$PWD/$config_file.json" "$HOME/sy/workspaces_tmux/$config_file.json"; do
     if [ -n "$config_file" ] && [ -f "$candidate" ]; then
       found="$candidate"
       break
@@ -904,7 +940,7 @@ The temp helpers are a thin alias into tmux against **one hardcoded session name
 nothing ever has to name a session:
 
 ```bash
-WORKSPACE_TEMP_SESSION="workspace_temp"
+_WORKSPACE_TEMP_SESSION="syle_temp_workspace"
 
 workspace_temp_create --force --detach 'long_running_job'   # park it
 workspace_temp_open                                          # watch it
@@ -915,13 +951,18 @@ workspace_temp_close                                         # kill every temp s
   argument because there is only ever one place to look, and `workspace_temp_close` needs
   no list because it matches the name as a _prefix_. The cost is that a second
   `workspace_temp_create` collides with the first — which is exactly why it asks.
+- **The name is underscore-prefixed and personally namespaced.** `_WORKSPACE_TEMP_SESSION`
+  is internal, and its value is not a bare `workspace_temp` — a name that generic will
+  eventually collide with a session another tool or another person created on the same box,
+  and `workspace_temp_close` kills by prefix.
 - **`--force` matches `workspace_create`'s meaning**, and nothing else: it skips the
   "session already exists, kill it and rebuild?" prompt. Answering no — also what an
   unattended shell answers — attaches to the running session and leaves the command unrun,
   so a stray call never destroys a job someone is watching.
-- **`--detach` is what makes it scriptable.** `workspace_create` attaches at the end, which
-  blocks a script until a human detaches. `--detach` builds the session, prints where it
-  went, and returns. This is the flag a setup script wants.
+- **`--detach` is what makes it scriptable, and `workspace_create` takes it too.** Both
+  builders attach at the end, which blocks a script until a human detaches; `--detach`
+  builds the session, says where it went, and returns. One `_workspace_attach_unless_detached`
+  helper implements it for both, so the two cannot drift.
 - **`bash -ic '<cmd>; exec bash'`**, same as `workspace_create`: `-i` so the window sees the
   profile's functions and aliases, `exec bash` so the window survives the command and its
   output stays readable instead of the pane vanishing on exit.

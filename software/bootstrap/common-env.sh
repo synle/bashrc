@@ -7,6 +7,16 @@ export REPO_BRANCH_NAME="main"
 export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/blob/HEAD" # https://github.com/synle/bashrc/blob/HEAD
+# Personal root - one visible folder under $HOME owning everything this setup
+# creates for the user rather than for a tool. `sy` matches the namespace
+# already used everywhere else (sy-commands, /sy-* commands, _SY_LLM_SPECS).
+# THIS IS THE ONLY DECLARATION. Consumers derive their own subfolder from it and
+# never write a second $HOME literal:
+#   bash   "$SY_HOME_FOLDER/<thing>" - run.sh re-exports it into
+#          ~/.bash_syle_common, so interactive shells and profile partials see it
+#   node   SY_HOME_FOLDER in software/index.js, read from this same env var
+# Planned follow-up: ~/sy_llm_ai -> $SY_HOME_FOLDER/llm_ai.
+export SY_HOME_FOLDER="$HOME/sy"
 export LIMITED_SUPPORT_OSES="is_os_android_termux,is_os_mingw64"
 export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_android_termux,is_os_arch_linux,is_os_steamos,is_os_redhat,is_os_windows,is_os_wsl"
 
