@@ -43,6 +43,7 @@ need panes and layouts.
   - [`workspace_sample_json` — a config to start from](#workspace_sample_json--a-config-to-start-from)
   - [`workspace_freeze` — the cheap knockoff of `tmuxp freeze`](#workspace_freeze--the-cheap-knockoff-of-tmuxp-freeze)
   - [`workspace_close` / `workspace_close_all` — tearing down](#workspace_close--workspace_close_all--tearing-down)
+  - [`workspace_temp_*` — one throwaway command, no JSON](#workspace_temp_--one-throwaway-command-no-json)
   - [Which one to use](#which-one-to-use)
 
 ---
@@ -891,6 +892,45 @@ function workspace_close_all() {
 - **The list is captured before the loop**, so a session started mid-teardown is left alone
   rather than raced.
 
+### `workspace_temp_*` — one throwaway command, no JSON
+
+Everything above builds a _named_ session from a _config_. The opposite need shows up
+constantly and is badly served by that: one long command — a migration, a build, an agent
+job — that has to outlive the shell that launched it, with no session name worth inventing
+and no config worth writing. `nohup cmd &` loses the output; `tmux new-session -d -s
+$(date +%s) "cmd"` works but leaves a graveyard of sessions nobody can name to kill.
+
+The temp helpers are a thin alias into tmux against **one hardcoded session name**, so
+nothing ever has to name a session:
+
+```bash
+WORKSPACE_TEMP_SESSION="workspace_temp"
+
+workspace_temp_create --force --detach 'long_running_job'   # park it
+workspace_temp_open                                          # watch it
+workspace_temp_close                                         # kill every temp session
+```
+
+- **One shared name is the feature, not a shortcut.** `workspace_temp_open` takes no
+  argument because there is only ever one place to look, and `workspace_temp_close` needs
+  no list because it matches the name as a _prefix_. The cost is that a second
+  `workspace_temp_create` collides with the first — which is exactly why it asks.
+- **`--force` matches `workspace_create`'s meaning**, and nothing else: it skips the
+  "session already exists, kill it and rebuild?" prompt. Answering no — also what an
+  unattended shell answers — attaches to the running session and leaves the command unrun,
+  so a stray call never destroys a job someone is watching.
+- **`--detach` is what makes it scriptable.** `workspace_create` attaches at the end, which
+  blocks a script until a human detaches. `--detach` builds the session, prints where it
+  went, and returns. This is the flag a setup script wants.
+- **`bash -ic '<cmd>; exec bash'`**, same as `workspace_create`: `-i` so the window sees the
+  profile's functions and aliases, `exec bash` so the window survives the command and its
+  output stays readable instead of the pane vanishing on exit.
+- **No prompt on close.** `workspace_close_all` confirms because it kills sessions you named
+  and care about; a temp session is disposable by definition and its name says so. It still
+  prints each kill, and it still captures the list before the loop.
+- **Reach for `workspace_create` the moment there are two commands.** A second window means
+  it is a workspace, and a workspace deserves a name and a config.
+
 ### Which one to use
 
 | Situation                                                              | Use                                                                                                 |
@@ -902,3 +942,4 @@ function workspace_close_all() {
 | Snapshotting a session you built by hand                               | `workspace_freeze`, then fill the command arguments back in                                         |
 | The short schema plus tmuxp's features                                 | the Node converter above                                                                            |
 | A single project you launch daily and nothing else                     | `dev_workspace` — the hardcoded function above is fine, do not build a config format for one caller |
+| One throwaway command that must outlive the shell, no name, no config  | `workspace_temp_create --force --detach '<cmd>'`                                                    |
