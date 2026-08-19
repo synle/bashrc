@@ -157,6 +157,11 @@ const sandbox = {
       FNM_DEFAULT_NODE_PATH: "/mock/home/.fnm/node",
       LINE_BREAK_COUNT: "80",
       LIMITED_SUPPORT_OSES: "is_os_android_termux,is_os_mingw64",
+      // run.sh always exports these before any node script runs, so a sandbox without
+      // them is not a realistic environment — both are read directly with no default,
+      // so their absence is a hard failure rather than a silent bare-home fallback.
+      SY_ROOT_FOLDER: "/mock/home/_extra",
+      LLM_ROOT_FOLDER: "/mock/home/_extra/ai_llm",
     },
     exit: () => {
       processExitCalled = true;

@@ -34,11 +34,12 @@ only on `tmux` + `jq`. The pane-capable `workspace_tmuxp` and the Node converter
 down are documented here but deliberately not installed — reach for real `tmuxp` when you
 need panes and layouts.
 
-Configs live in `$WORKSPACE_CONFIG_FOLDER`, which is `$SY_HOME_FOLDER/workspaces_tmux` —
-i.e. `~/sy/workspaces_tmux`. `$SY_HOME_FOLDER` is declared once in
+Configs live in `$WORKSPACE_CONFIG_FOLDER`, which is `$SY_ROOT_FOLDER/workspaces_tmux` —
+i.e. `~/_extra/workspaces_tmux`. `$SY_ROOT_FOLDER` is declared once in
 `software/bootstrap/common-env.sh` as the personal root: one visible folder under `$HOME`
-owning everything this setup creates for the user rather than for a tool, named to match
-the `sy` namespace already used by `sy-commands`, the `/sy-*` corpus, and `_SY_LLM_SPECS`.
+owning everything this setup creates for the user rather than for a tool. `_extra` already
+held the custom-tweaks staging, so adopting it keeps ONE personal folder under `$HOME`
+instead of standing a second one beside it.
 Derive a subfolder from it; never write a second `$HOME` path.
 
 That one declaration reaches both surfaces, so bash and node always agree on the path:
@@ -47,18 +48,20 @@ That one declaration reaches both surfaces, so bash and node always agree on the
 | ------------------- | ----------------------------------------------------------------------------------------------- |
 | `run.sh` and node   | `common-env.sh` is inlined into `run.sh` and sourced, so every script inherits it as an env var |
 | Interactive shells  | `run.sh` re-exports it into `~/.bash_syle_common`, which is wired up as `$BASH_ENV`             |
-| `software/index.js` | the `SY_HOME_FOLDER` global reads that same env var                                             |
+| `software/index.js` | the `SY_ROOT_FOLDER` global reads that same env var                                             |
 
 Declaring it in `common-env.sh` alone is **not** enough for an interactive shell — only a
 hand-listed subset of those exports is re-emitted into `~/.bash_syle_common`. Adding a new
 shared variable means adding it to that block too; `software/tests/syHomeFolder.spec.js`
 pins both halves.
 
-Consumers fall back to a bare `$HOME` when the variable is unset (`${SY_HOME_FOLDER:-$HOME}`),
-never to a repeated `sy` — that keeps a partial sourceable on its own in a test or a bare
-shell without becoming a second declaration that can drift out of sync. The name `sy`
-appears in exactly one hand-written file, and the spec above fails the build if a second
-copy shows up.
+Consumers read `${SY_ROOT_FOLDER}` **directly — no `:-` default**. A per-consumer fallback
+is a second declaration wearing a disguise: it looks defensive, but the day the real root
+moves every copy goes on resolving happily to the old path and the surfaces disagree
+silently. The default belongs to the single declaration in `common-env.sh`. Unset means
+`run.sh` never ran, and an obviously-broken path is the correct, visible outcome. The name
+`_extra` appears in exactly one hand-written file, and the spec above fails the build if a
+second copy shows up.
 
 ---
 
@@ -276,7 +279,7 @@ function workspace() {
     echo "workspace: build or attach a tmux session from a JSON config
   workspace <name|path.json> [--force]
   --force    kill the existing session and rebuild it
-  looks up <name> as ./<name>.json then \$HOME/sy/workspaces_tmux/<name>.json"
+  looks up <name> as ./<name>.json then \$HOME/_extra/workspaces_tmux/<name>.json"
     return 0
   fi
 
@@ -296,7 +299,7 @@ function workspace() {
 
   ## resolve a bare name to a config file
   local candidate found=""
-  for candidate in "$config_file" "$config_file.json" "$PWD/$config_file.json" "$HOME/sy/workspaces_tmux/$config_file.json"; do
+  for candidate in "$config_file" "$config_file.json" "$PWD/$config_file.json" "$HOME/_extra/workspaces_tmux/$config_file.json"; do
     if [ -n "$config_file" ] && [ -f "$candidate" ]; then
       found="$candidate"
       break

@@ -8,14 +8,24 @@ export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/blob/HEAD" # https://github.com/synle/bashrc/blob/HEAD
 # Personal root - one visible folder under $HOME owning everything this setup
-# creates for the user rather than for a tool. `sy` matches the namespace
-# already used everywhere else (sy-commands, /sy-* commands, _SY_LLM_SPECS).
+# creates for the user rather than for a tool. `_extra` is the folder that
+# already held the custom-tweaks staging (fonts, downloaded binaries, per-OS
+# scratch), so adopting it as the root keeps ONE personal folder under $HOME
+# instead of standing a second one beside it.
 # THIS IS THE ONLY DECLARATION. Consumers derive their own subfolder from it and
-# never write a second $HOME literal:
-#   bash   "$SY_HOME_FOLDER/<thing>" - run.sh re-exports it into
+# never write a second $HOME literal, and they read it DIRECTLY - no `${...:-...}`
+# default anywhere else. A per-consumer default looks defensive but is a second
+# declaration in disguise: the day this line moves, every copy goes on resolving
+# happily to the old path and the surfaces disagree silently. Unset means run.sh
+# never ran, and an obviously-broken path is the correct, visible outcome.
+#   bash   "$SY_ROOT_FOLDER/<thing>" - run.sh re-exports it into
 #          ~/.bash_syle_common, so interactive shells and profile partials see it
-#   node   SY_HOME_FOLDER in software/index.js, read from this same env var
-export SY_HOME_FOLDER="$HOME/sy"
+#   node   SY_ROOT_FOLDER in software/index.js, read from this same env var
+#   docs   deployed LLM docs write the <SY_ROOT_FOLDER> / <LLM_ROOT_FOLDER>
+#          placeholder, resolved to a real path by llm-common.js at deploy time
+# NOTE: `make nuke` must never rm -rf this folder wholesale - it holds authored
+# plan files that no re-run can regenerate. See the nuke target.
+export SY_ROOT_FOLDER="$HOME/_extra"
 
 # LLM home - every Sy-managed LLM artifact that lives outside a repo checkout
 # (instructions/, plans/, skills/). Declared HERE rather than in llm-common.js
@@ -26,7 +36,7 @@ export SY_HOME_FOLDER="$HOME/sy"
 # software/scripts/advanced/llm/llm-common.js — this is only the location.
 # Moving it means editing this line and adding a row to LLM_LEGACY_FOLDERS so a
 # machine left holding the old folder is told about it rather than stranded.
-export LLM_HOME_FOLDER="$SY_HOME_FOLDER/ai_llm"
+export LLM_ROOT_FOLDER="$SY_ROOT_FOLDER/ai_llm"
 export LIMITED_SUPPORT_OSES="is_os_android_termux,is_os_mingw64"
 export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_android_termux,is_os_arch_linux,is_os_steamos,is_os_redhat,is_os_windows,is_os_wsl"
 

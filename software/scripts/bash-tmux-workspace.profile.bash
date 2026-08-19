@@ -37,11 +37,13 @@
 #   workspace_temp_close     # kill every temp session
 ################################################################################
 
-## $SY_HOME_FOLDER comes from common-env.sh, the single place the personal root
-## is named. The fallback degrades to a bare $HOME rather than repeating "sy"
-## here, so this partial stays sourceable on its own (tests, a bare shell)
-## without becoming a second declaration that can drift.
-WORKSPACE_CONFIG_FOLDER="${SY_HOME_FOLDER:-$HOME}/workspaces_tmux"
+## $SY_ROOT_FOLDER comes from common-env.sh, the single place the personal root
+## is named, and run.sh re-exports it into ~/.bash_syle_common so every shell
+## that sources this partial already has it. Read it DIRECTLY — no `:-` default
+## here, because a per-consumer default is a second declaration that silently
+## disagrees with the real one the day the root moves. If it is empty, the env
+## is broken and an obviously-wrong path is the correct, visible outcome.
+WORKSPACE_CONFIG_FOLDER="${SY_ROOT_FOLDER}/workspaces_tmux"
 
 ## every workspace_temp_* helper shares ONE hardcoded session name, so a
 ## throwaway job always lands in the same place and `workspace_temp_open` needs

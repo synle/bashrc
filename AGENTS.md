@@ -591,15 +591,15 @@ Load these instead of improvising the workflow. Each is
 OpenCode, and Copilot CLI; `.opencode/commands/<name>.md` symlinks make them `/name`
 slash commands.
 
-| Skill              | Use when                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------ |
-| `/add-package`     | Adding a CLI tool / package across platforms                                                           |
-| `/remove-package`  | Dropping a tool                                                                                        |
-| `/add-os`          | Onboarding a new distro / platform                                                                     |
-| `/remove-os`       | Dropping OS support                                                                                    |
-| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it                          |
-| `/check`           | Verifying session changes survived a merge/rebase/hook                                                 |
-| `/plan-and-commit` | Multi-file change worth recording — writes `~/sy/ai_llm/plans/bashrc/plan-YYYY-MM-DD-<slug>.{md,diff}` |
+| Skill              | Use when                                                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `/add-package`     | Adding a CLI tool / package across platforms                                                               |
+| `/remove-package`  | Dropping a tool                                                                                            |
+| `/add-os`          | Onboarding a new distro / platform                                                                         |
+| `/remove-os`       | Dropping OS support                                                                                        |
+| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it                              |
+| `/check`           | Verifying session changes survived a merge/rebase/hook                                                     |
+| `/plan-and-commit` | Multi-file change worth recording — writes `~/_extra/ai_llm/plans/bashrc/plan-YYYY-MM-DD-<slug>.{md,diff}` |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
 invisible to every loader. Folder name is kebab-case and must equal the frontmatter
@@ -682,17 +682,17 @@ That map is the **single registry** every CLI's `setup.js` reads via
 once:
 
 Deploy is **one physical copy plus symlinks**, not a per-CLI write:
-`deploySharedLLMSkills()` writes `~/sy/ai_llm/skills/<key>/SKILL.md` once, then
+`deploySharedLLMSkills()` writes `~/_extra/ai_llm/skills/<key>/SKILL.md` once, then
 per-skill symlinks it into each folder in `LLM_SKILL_LINK_FOLDERS`.
 
-| CLI        | Where the one shared skill is linked                                                              |
-| ---------- | ------------------------------------------------------------------------------------------------- |
-| `claude`   | `~/.claude/skills/<key>` → `~/sy/ai_llm/skills/<key>`                                             |
-| `copilot`  | `~/.copilot/skills/<key>` → same target (its only slot)                                           |
-| `opencode` | `~/.config/opencode/skills/<key>` + a `/…/commands/<key>.md` mirror                               |
-| `gemini`   | `~/.gemini/skills/<key>` → same target                                                            |
-| any CLI    | `~/.agents/skills/<key>` → same target (interoperable path)                                       |
-| shell      | `sy-<name>` + `<cli>_skill_<name>` bash wrappers, auto-registered from `~/sy/ai_llm/skills/sy-*/` |
+| CLI        | Where the one shared skill is linked                                                                  |
+| ---------- | ----------------------------------------------------------------------------------------------------- |
+| `claude`   | `~/.claude/skills/<key>` → `~/_extra/ai_llm/skills/<key>`                                             |
+| `copilot`  | `~/.copilot/skills/<key>` → same target (its only slot)                                               |
+| `opencode` | `~/.config/opencode/skills/<key>` + a `/…/commands/<key>.md` mirror                                   |
+| `gemini`   | `~/.gemini/skills/<key>` → same target                                                                |
+| any CLI    | `~/.agents/skills/<key>` → same target (interoperable path)                                           |
+| shell      | `sy-<name>` + `<cli>_skill_<name>` bash wrappers, auto-registered from `~/_extra/ai_llm/skills/sy-*/` |
 
 **Per-skill links, never a folder symlink.** Pointing `~/.copilot/skills` at the
 shared folder wholesale would hijack the destination — `copilot plugin install`,
@@ -718,7 +718,7 @@ source time. **Adding a CLI is one record and nothing else**; never a second arr
 never an arm in a dispatch function, never a name hardcoded into a wrapper — a test
 fails the build on any CLI name outside the registry block. Both wrapper families
 (`sy-<name>` and `<cli>_skill_<name>`) come out of one registration loop over
-`~/sy/ai_llm/skills/sy-*/SKILL.md`, so no command name is ever written there either.
+`~/_extra/ai_llm/skills/sy-*/SKILL.md`, so no command name is ever written there either.
 
 **`inline` is a reserved wrapper name, and the one exec path.** `<cli>_skill_inline`
 (and its call-time twin `sy-inline`) take raw prompt text with no `SKILL.md` behind
@@ -740,19 +740,19 @@ Verified today: `copilot -p "/sy-<name>"` (fires `skill(...)`, v1.0.81) and
 empty. An empty kind degrades to `inline`, which always works — so leaving it empty is
 the correct move when you cannot test, never a guess.
 
-### 13.2 The shared LLM home folder — `~/sy/ai_llm/`
+### 13.2 The shared LLM home folder — `~/_extra/ai_llm/`
 
 Everything the LLM tooling owns outside a repo checkout lives under one root, created and
 maintained by `deploySharedLLMInstructions()` in `llm-common.js`, which **all four**
 setup scripts call:
 
-| Path                        | Holds                                                                     |
-| --------------------------- | ------------------------------------------------------------------------- |
-| `~/sy/ai_llm/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES` |
-| `~/sy/ai_llm/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)     |
-| `~/sy/ai_llm/plans/`        | Plan / RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`)   |
+| Path                            | Holds                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------- |
+| `~/_extra/ai_llm/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES` |
+| `~/_extra/ai_llm/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)     |
+| `~/_extra/ai_llm/plans/`        | Plan / RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`)   |
 
-**The location is decided in exactly one place — `LLM_HOME_FOLDER` in
+**The location is decided in exactly one place — `LLM_ROOT_FOLDER` in
 `software/bootstrap/common-env.sh`.** It sits there rather than in `llm-common.js` because
 both surfaces need the same answer and only `common-env.sh` reaches both: it is inlined
 into `run.sh` (so node reads it as an env var) and re-exported into `~/.bash_syle_common`
@@ -762,8 +762,30 @@ export block in `run.sh` must list it too, or interactive shells never see it. A
 folder LOGIC stays in `llm-common.js`; only the location lives in `common-env.sh`.
 
 Consumers derive rather than re-spell the folder, so `ai_llm` is never a second literal:
-`${LLM_HOME_FOLDER:-${SY_HOME_FOLDER:-$HOME}/ai_llm}` in bash, and
-`process.env.LLM_HOME_FOLDER || path.join(SY_HOME_FOLDER, "ai_llm")` in node.
+`${LLM_ROOT_FOLDER}` in bash, and `process.env.LLM_ROOT_FOLDER` in node — read **directly,
+with no `:-` or `||` default**. A per-consumer default is a second declaration wearing a
+disguise: it looks defensive, but the day the real root moves every copy goes on resolving
+happily to the old path, and the surfaces disagree silently. The default belongs to the one
+declaration in `common-env.sh`. Unset means `run.sh` never ran, and an obviously-broken path
+(or a `path.join` that throws) is the correct, visible outcome.
+
+**Deployed docs reference the folder through a `<LLM_ROOT_FOLDER>` placeholder, resolved at
+deploy time.** A repo source cannot hardcode `~/_extra/ai_llm/...` — that is the same second
+spelling, and it is wrong outright on a machine whose home layout differs. It cannot carry
+`$LLM_ROOT_FOLDER` either: an agent reading `~/.claude/CLAUDE.md` has no shell expanding
+anything, and an unexpanded variable inside a `mkdir -p` is a write at the filesystem root.
+So the source writes `` `<LLM_ROOT_FOLDER>/plans/<repo>/` `` and `resolveLLMDocPlaceholders()`
+bakes in the absolute path on the way out. The token name matches the env var name exactly.
+
+- **Every deployed doc is read through `readLLMDocSource()`** — the always-loaded
+  instructions, each split instruction file, every `/sy-*` skill body, and each CLI's own
+  tweaks file. Never call `readText` directly on a doc that gets deployed: a source that
+  skips resolution ships `<LLM_ROOT_FOLDER>` verbatim to an agent, which reads as a literal
+  folder name and fails silently.
+- **Repo-local docs keep the literal path instead** — this file, `docs/`, `llm.md`, and
+  `.claude/skills/*/SKILL.md` are read straight from the checkout with nothing resolving
+  them, so a placeholder there would be a permanently-unexpanded token. `<SY_ROOT_FOLDER>`
+  is available in the same map for docs that mean the personal root rather than the LLM home.
 
 **Moving the folder again is two edits: this one line, plus a row in
 `LLM_LEGACY_FOLDERS`.** Nothing is moved automatically — the one-time migration that
@@ -790,7 +812,7 @@ only once no machine can still be holding that folder.
 into `~/.claude/CLAUDE.md` and its three siblings, and Claude Code refuses to load a
 `CLAUDE.md` over **40k chars**. That is why the PR workflow, debugging, and testing rules
 live in `_common/instructions-{pr-workflow,debugging,testing}.md`, deployed to
-`~/sy/ai_llm/instructions/{pr-workflow,debugging,testing}.md` and referenced from
+`~/_extra/ai_llm/instructions/{pr-workflow,debugging,testing}.md` and referenced from
 `instructions.md` by a pointer.
 
 - **Reference split files as a backticked path, never as `@path`.** Per Claude Code's

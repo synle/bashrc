@@ -380,10 +380,11 @@ nuke:
 	  ~/.local/share/fnm \
 	  ~/.hushlogin \
 	  ~/.syle* \
-	  ~/_extra/ \
 	  ~/.fzf \
 	  ~/.fzf.bash \
 	  ~/.powershell_syle
+	# ~/_extra is deliberately NOT nuked: it is the personal root (SY_ROOT_FOLDER),
+	# and ai_llm/plans holds authored plan files no re-run can regenerate.
 	$(MAKE) clean
 	rm -rf \
 	  ./node_modules \

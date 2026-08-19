@@ -271,7 +271,7 @@ async function doWork() {
   await _doSettingsWork(targetDir);
   await _doMcpWork(targetDir);
   await _doKeysWork(targetDir);
-  // Skills are written once to $LLM_HOME_FOLDER/skills and symlinked into
+  // Skills are written once to $LLM_ROOT_FOLDER/skills and symlinked into
   // ~/.claude/skills — no CLI-local copy of a command body exists anymore.
   await deploySharedLLMSkills();
   // Shared on-demand instruction files must exist before the always-loaded block
