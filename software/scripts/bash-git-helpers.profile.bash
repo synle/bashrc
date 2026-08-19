@@ -614,6 +614,35 @@ function _git_patch_upload() {
   fi
 }
 
+# _git_patch_subject: the commit subject a patch carries, cleaned or not
+# `git patch-clean` deliberately empties the `Subject: [PATCH]` header and moves the
+# real subject below a `##########` fence, which makes `git mailinfo` — and `git am` —
+# report no subject at all. Every patch this repo produces goes through that filter, so
+# reading the header alone silently commits every transferred patch as "applied patch".
+# Try the header first (uncleaned patches, RFC-2047 decoding), then the fence.
+function _git_patch_subject() {
+  local patch_file="$1"
+  [ -f "$patch_file" ] || return 1
+
+  local subject
+  subject=$(git mailinfo /dev/null /dev/null < "$patch_file" 2> /dev/null \
+    | command grep "^Subject: " | sed 's/^Subject: //')
+  if [ -n "$subject" ]; then
+    echo "$subject"
+    return 0
+  fi
+
+  # Fenced form. format-patch folds a long subject across lines with a leading
+  # space (RFC 5322), so continuation lines are unfolded back onto one line.
+  command awk '
+    /^Subject: \[PATCH/ { insub = 1; next }
+    insub && /^##########$/ { fence = 1; next }
+    fence && /^$/ { exit }
+    fence { line = $0; sub(/^ /, "", line); out = (out == "" ? line : out " " line) }
+    END { if (out != "") print out }
+  ' "$patch_file"
+}
+
 # _git_patch_apply_from_dropbox: apply the newest shared patch, then commit and archive it
 function _git_patch_apply_from_dropbox() {
   local dropbox_folder
@@ -648,10 +677,11 @@ _PATCH_FIND_EOF_
     return 1
   fi
 
-  # Decoded commit subject from the patch itself (handles RFC-2047 headers), so
-  # the commit lands on this machine under the message it was authored with.
+  # Decoded commit subject from the patch itself (handles both the RFC-2047 header
+  # and the `##########` fence patch-clean leaves behind), so the commit lands on
+  # this machine under the message it was authored with.
   local commit_msg
-  commit_msg=$(git mailinfo /dev/null /dev/null < "$latest_patch" | command grep "^Subject: " | sed 's/^Subject: //')
+  commit_msg=$(_git_patch_subject "$latest_patch")
   commit_msg="${commit_msg:-applied patch}"
 
   echo ">>> applying shared patch $latest_patch"
@@ -719,7 +749,11 @@ function git_patch_create() {
   echo ">>> patch copied to clipboard"
   echo ">>> patch file created $patch_file"
   _git_patch_upload "$patch_file" "$repo_name"
-  print_action_summary "$patch_file" git_patch_apply
+  # cd to the REPO, not to the patch. `git_patch_apply` runs `git apply`, whose
+  # paths are repo-relative, so the default "cd to the file's folder" block sent
+  # you into the throwaway /tmp patch folder — not a git repo — where every hunk
+  # failed with "No such file or directory" and the patch looked corrupt.
+  print_action_summary --run-folder="$repo_root" "$patch_file" git_patch_apply
 }
 
 # git_patch_apply: apply a patch from a file, the clipboard, or the shared folder
