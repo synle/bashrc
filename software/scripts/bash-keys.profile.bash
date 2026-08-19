@@ -25,7 +25,8 @@
 # Ctrl+Y   — fuzzy recent files (default editor)
 # Ctrl+P   — fuzzy cd to directory
 # Ctrl+B   — fuzzy favorite command picker
-# Ctrl+G   — fuzzy git log browser
+# Ctrl+N   — fuzzy git log browser
+# Ctrl+G   — open command in $EDITOR (alias of Ctrl+X; matches the AI CLI chord)
 # Ctrl+X   — open command in $EDITOR
 #
 # All bindings guarded by interactive shell check ([[ $- == *i* ]]).
@@ -71,7 +72,19 @@ if [[ $- == *i* ]]; then
   bind '"\C-y": "fuzzy_recent_files\r"'     # Ctrl+Y — fuzzy recent files (default editor)
   bind '"\C-p": "fuzzy_cd\r"'               # Ctrl+P — fuzzy cd to directory
   bind '"\C-b": "fuzzy_favorite_command\r"' # Ctrl+B — fuzzy favorite command picker
-  bind '"\C-g": "fuzzy_git_show\r"'         # Ctrl+G — fuzzy git log browser
+  bind '"\C-n": "fuzzy_git_show\r"'         # Ctrl+N — fuzzy git log browser
+
+  # Ctrl+G — second chord for edit-and-execute-command, alongside Ctrl+X above.
+  # ctrl+g is the canonical "open $EDITOR" chord across all four AI CLIs (Claude
+  # Code, Copilot CLI, Gemini CLI, opencode — see docs/editor-keybindings.md →
+  # "AI CLI Assistants"), so bash honors it too and the muscle memory carries in
+  # and out of a TUI. The git log browser that used to own this chord moved to
+  # Ctrl+N (readline's next-history default there was already orphaned, since
+  # Ctrl+P is bound to fuzzy_cd above).
+  # TRADEOFF: readline's default Ctrl+G (abort) is given up. Low impact — its
+  # main job is cancelling an incremental search, and Ctrl+R is bound to fzf's
+  # fuzzy_history below, which aborts on Esc / Ctrl+C instead.
+  bind '"\C-g": edit-and-execute-command'
 
   # Ctrl+L — kill input line first, then clear the screen. Readline can't chain native
   # commands in one bind, so use bind -x with a function. Order: discard first so the
