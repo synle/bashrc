@@ -545,7 +545,16 @@ Because Copilot's in-app keymap is unreachable, the equivalents of Claude's chor
 | `ctrl+y`               | Fuzzy recent files          |  ✅   |        ✅         |
 | `ctrl+p`               | Fuzzy cd                    |  ✅   |        ✅         |
 | `ctrl+b`               | Favorite command picker     |  ✅   |        ✅         |
-| `ctrl+g`               | Git log browser             |  ✅   |        ✅         |
-| `ctrl+n`               | Make-component scaffold     |  ✅   |        ✅         |
-| `ctrl+x`               | Open in $EDITOR             |  ✅   |        ✅         |
+| `ctrl+n`               | Git log browser             |  ✅   |        ✅         |
+| `ctrl+g` / `ctrl+x`    | Open in $EDITOR             |  ✅   |        ✅         |
 | `ctrl+l`               | Clear screen + kill input   |  ✅   |        ✅         |
+
+**`ctrl+g` open-in-`$EDITOR` parity:** `ctrl+g` and `ctrl+x` both run readline's
+`edit-and-execute-command`, matching the AI CLI chord pair in the table above — `ctrl+g` is
+the canonical open-`$EDITOR` chord on Claude Code, Copilot CLI, Gemini CLI, and opencode, so
+the same keystroke works whether you're at a bash prompt or inside a TUI. The git log browser
+that previously owned `ctrl+g` moved to `ctrl+n`, whose readline default (`next-history`) was
+already orphaned because `ctrl+p` (`previous-history`) is bound to fuzzy cd. TRADEOFF:
+readline's default `ctrl+g` (`abort`) is given up — low impact, since its main job is
+cancelling an incremental search and `ctrl+r` is bound to fzf, which aborts on `esc` /
+`ctrl+c`. The `glog` alias also still opens the git log browser.
