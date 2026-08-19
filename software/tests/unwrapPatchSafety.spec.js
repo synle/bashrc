@@ -200,8 +200,30 @@ describe("saved patch files", () => {
     expect(created.length).toBe(2);
   });
 
-  it("should print a copy-paste-runnable action summary for the saved patch", () => {
-    expect(source).toContain('print_action_summary "$patch_file" git_patch_apply');
+  it("should print a copy-paste-runnable action summary that cds into the REPO, not the patch folder", () => {
+    expect(source).toContain('print_action_summary --run-folder="$repo_root" "$patch_file" git_patch_apply');
+
+    // The bug this pins: `git apply` resolves paths relative to the repo, but the
+    // default action-summary block cds to the folder holding the target file — a
+    // throwaway /tmp/patch-XXXXXX. Following the printed block verbatim landed you
+    // outside any git repo, where every hunk failed with "No such file or directory"
+    // and the patch itself looked corrupt.
+    expect(source, "the cd target must be overridden — the bare form cds to the /tmp patch folder").not.toContain(
+      'print_action_summary "$patch_file" git_patch_apply',
+    );
+  });
+
+  it("should recover the commit subject from a patch-clean'd patch, not just the header", () => {
+    // `git patch-clean` empties `Subject: [PATCH]` and moves the real subject below a
+    // `##########` fence, so `git mailinfo` reports nothing. Reading only the header
+    // committed every transferred patch as the fallback string "applied patch".
+    expect(source).toContain("function _git_patch_subject()");
+    expect(source).toContain('commit_msg=$(_git_patch_subject "$latest_patch")');
+    expect(source, "mailinfo alone silently loses the subject on every patch this repo produces").not.toMatch(
+      /commit_msg=\$\(git mailinfo .*\| command grep "\^Subject: "/,
+    );
+    // Folded continuation lines (RFC 5322) must be unwrapped back onto one line.
+    expect(source).toContain('sub(/^ /, "", line)');
   });
 
   it("should quote every path expansion so temp roots with spaces survive", () => {

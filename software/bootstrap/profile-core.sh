@@ -225,14 +225,32 @@ function to_windows_path() {
 }
 
 # print_action_summary <target_path> [<binary> [<extra_args>...]] - Render a copy-paste-
-# runnable summary block for an "act on a path" operation.
+# print_action_summary [--run-folder=<folder>] <target_path> [<binary> [<extra_args>...]] -
+# Render a copy-paste-runnable summary block for an "act on a path" operation.
 function print_action_summary() {
   if is_help_arg "${1:-}"; then
     echo "print_action_summary: show copy-paste-runnable action summary
-  Usage: print_action_summary <target_path> [<binary> [<extra_args>...]]
-  Prints PWD, cd command, and optional binary invocation."
+  Usage: print_action_summary [--run-folder=<folder>] <target_path> [<binary> [<extra_args>...]]
+  Prints PWD, cd command, and optional binary invocation.
+  --run-folder overrides the cd target for commands that must run somewhere
+  other than where the file lives (e.g. applying a patch from inside the repo)."
     return 0
   fi
+
+  # Optional cd override. Default (the folder holding the target) is right for
+  # cd / view / edit / cat, where the file IS the thing being acted on. It is
+  # wrong whenever the binary needs a different working folder than the file's:
+  # a patch lives in a throwaway /tmp folder while `git_patch_apply` only works
+  # inside the repo, so the default block cd'd out of the repo and every hunk
+  # failed with "No such file or directory".
+  local run_folder=""
+  case "${1:-}" in
+  --run-folder=*)
+    run_folder="${1#--run-folder=}"
+    shift
+    ;;
+  esac
+
   local target="$1"
   shift || return 1
   local binary="${1:-}"
@@ -251,9 +269,19 @@ function print_action_summary() {
     [ -z "$_dir" ] && target_abs="$target"
   fi
 
-  # cd target = the folder. Parent for files, self for directories.
+  # cd target = the override when given, else the folder. Parent for files, self
+  # for directories. The override is resolved the same way as the target so the
+  # block never mixes /tmp and /private/tmp spellings of the same folder; an
+  # unresolvable override is printed as given rather than silently dropped.
   local dir
-  if [ -d "$target_abs" ]; then
+  if [ -n "$run_folder" ]; then
+    if type -P realpath &> /dev/null; then
+      dir=$(realpath "$run_folder" 2> /dev/null) || dir="$run_folder"
+    else
+      dir=$(cd -P "$run_folder" 2> /dev/null && pwd -P) || dir="$run_folder"
+    fi
+    [ -z "$dir" ] && dir="$run_folder"
+  elif [ -d "$target_abs" ]; then
     dir="$target_abs"
   else
     dir=$(dirname "$target_abs")

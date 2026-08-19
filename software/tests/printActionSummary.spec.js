@@ -113,6 +113,60 @@ function rp(p) {
 }
 
 describe("print_action_summary", () => {
+  describe("--run-folder override", () => {
+    it("cds to the override instead of the folder holding the file", () => {
+      // The patch-transfer bug: `git_patch_apply` runs `git apply`, whose paths are
+      // repo-relative, but the patch itself lives in a throwaway /tmp/patch-XXXXXX.
+      // The default block cd'd there — outside any git repo — so every hunk failed
+      // with "No such file or directory" and the patch read as corrupt.
+      const repo = path.join(sandbox, "home", "myrepo");
+      const patchDir = path.join(sandbox, "home", "patch-abc123");
+      fs.mkdirSync(repo);
+      fs.mkdirSync(patchDir);
+      const patch = path.join(patchDir, "myrepo.patch");
+      fs.writeFileSync(patch, "");
+
+      const out = callSummary({ args: [`--run-folder=${repo}`, patch, "git_patch_apply"] });
+      expect(out).toBe(
+        [
+          "====================================",
+          `PWD: "${path.join(sandbox, "home")}"`,
+          `cd "${rp(repo)}"`,
+          `git_patch_apply "${rp(patch)}"`,
+          "====================================",
+          "",
+        ].join("\n"),
+      );
+
+      // The target keeps pointing at the patch — only the cd moved.
+      expect(out).not.toContain(`cd "${rp(patchDir)}"`);
+    });
+
+    it("leaves the default cd behavior untouched when the flag is absent", () => {
+      const dir = path.join(sandbox, "home", "proj");
+      fs.mkdirSync(dir);
+      const file = path.join(dir, "notes.md");
+      fs.writeFileSync(file, "");
+
+      const out = callSummary({ args: [file, "vim"] });
+      expect(out).toContain(`cd "${rp(dir)}"`);
+    });
+
+    it("still prints the block when the override folder does not exist", () => {
+      // A non-existent cd target must degrade to a visibly wrong path rather than
+      // silently falling back to the patch folder, which is the failure mode that
+      // reads as correct.
+      const dir = path.join(sandbox, "home", "proj2");
+      fs.mkdirSync(dir);
+      const file = path.join(dir, "x.patch");
+      fs.writeFileSync(file, "");
+
+      const out = callSummary({ args: [`--run-folder=/no/such/repo`, file, "git_patch_apply"] });
+      expect(out).toContain(`cd "/no/such/repo"`);
+      expect(out).not.toContain(`cd "${rp(dir)}"`);
+    });
+  });
+
   it("prints PWD + cd <parent> + binary <file> for a file selection with binary", () => {
     const dir = path.join(sandbox, "home", "proj");
     fs.mkdirSync(dir);
