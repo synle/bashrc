@@ -219,12 +219,18 @@ function _prepend_recents() {
 ################################################################################
 _RECENT_FOLDERS_FILE=~/.bash_syle_paths
 _RECENT_FOLDERS_MAX=100
+# exported so _recent_folders still resolves the file when fzf's F5 reload runs
+# it inside a `$SHELL -c` subshell (see the export below)
+export _RECENT_FOLDERS_FILE
 
 # reads the folders file, removes entries that no longer exist, and outputs the cleaned list
 function _recent_folders() {
   _prune_recents "$_RECENT_FOLDERS_FILE" -d
   command cat "$_RECENT_FOLDERS_FILE"
 }
+# exported because _fuzzy_cd_list calls it from fzf's F5 reload subshell, which
+# runs through `$SHELL -c` and cannot see a non-exported shell function
+export -f _recent_folders _prune_recents
 
 # prepends the current directory to the folders file (deduped, capped at _RECENT_FOLDERS_MAX)
 # skips home directory. runs automatically via PROMPT_COMMAND.

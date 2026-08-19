@@ -54,6 +54,9 @@ async function doWork() {
       _IGNORED_FILES_JSON='${filesJson}'
       # Text-file allowlist — fuzzy-picker-specific (text_files mode in _fuzzy_list_all)
       _FUZZY_TEXT_FILES_JSON='${textJson}'
+      # Exported so _fuzzy_list_all still receives them when fzf's F5 reload
+      # re-invokes it inside a \`$SHELL -c\` subshell
+      export _IGNORED_FOLDERS_JSON _IGNORED_FILES_JSON _FUZZY_TEXT_FILES_JSON
     `,
   );
 }
