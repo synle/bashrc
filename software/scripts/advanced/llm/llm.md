@@ -19,12 +19,24 @@ disk.
 
 ### Single sources of truth
 
-| Shared file                                                        | Consumed by                                                                                                                                                                                                                                           |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_common/instructions.md`                                          | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                                                                                                    |
-| `_common/commands/*.md`                                            | `~/sy/ai_llm/skills/sy-*/SKILL.md` (the ONE deployed copy) → symlinked into `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`, `~/.gemini/skills/`, `~/.agents/skills/`, plus `~/.config/opencode/commands/sy-*.md` for `/sy-*` |
-| `_common/mcp-servers.jsonc`                                        | `~/.claude/settings.json::mcpServers`, `~/.copilot/mcp-config.json::mcpServers`, `~/.gemini/settings.json::mcpServers`, `~/.config/opencode/opencode.json::mcp` (translated)                                                                          |
-| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                                                                                                                                                                      |
+| Shared file                                                        | Consumed by                                                                                                                                                                                                                                               |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `_common/instructions.md`                                          | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                                                                                                        |
+| `_common/commands/*.md`                                            | `~/_extra/ai_llm/skills/sy-*/SKILL.md` (the ONE deployed copy) → symlinked into `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`, `~/.gemini/skills/`, `~/.agents/skills/`, plus `~/.config/opencode/commands/sy-*.md` for `/sy-*` |
+| `_common/mcp-servers.jsonc`                                        | `~/.claude/settings.json::mcpServers`, `~/.copilot/mcp-config.json::mcpServers`, `~/.gemini/settings.json::mcpServers`, `~/.config/opencode/opencode.json::mcp` (translated)                                                                              |
+| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                                                                                                                                                                          |
+
+**Every deployed doc above is read through `readLLMDocSource()`, never `readText` directly.**
+That reader resolves the `<LLM_ROOT_FOLDER>` / `<SY_ROOT_FOLDER>` path placeholders to this
+machine's real folders on the way out. A repo source must not hardcode `~/_extra/ai_llm/...`
+— that re-spells a folder `common-env.sh` already declares, and is wrong outright on a
+machine with a different home layout — and must not carry `$LLM_ROOT_FOLDER` either, since
+the agent reading the deployed file has no shell expanding anything and an unexpanded
+variable inside a `mkdir -p` writes at the filesystem root. Repo-local docs (this file,
+`AGENTS.md`, `docs/`, `.claude/skills/`) keep the literal path instead: nothing resolves
+them, so a placeholder there would never expand. `llmInstructionsSplit.spec.js` fails the
+build on a hardcoded path in a deployed source, on a placeholder that survives resolution,
+and on a deployed doc read with bare `readText`.
 
 Run all four CLIs end-to-end with:
 
@@ -40,12 +52,12 @@ bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
 
 ### Surface parity matrix
 
-|              | Instructions                                                                                        | Slash commands                                               | Keybindings                                                      | Managed settings              | MCP servers                                               |
-| ------------ | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
-| **claude**   | ✅ `~/.claude/CLAUDE.md`                                                                            | ✅ skills — `~/.claude/skills/sy-*` → `~/sy/ai_llm/skills/`  | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  | ✅ additive into `~/.claude/settings.json::mcpServers`    |
-| **copilot**  | ✅ `~/.copilot/copilot-instructions.md` (+ symlink `AGENTS.md`)                                     | ✅ skills — `~/.copilot/skills/sy-*` → `~/sy/ai_llm/skills/` | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` | ✅ additive into `~/.copilot/mcp-config.json::mcpServers` |
-| **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ✅ skills — `~/.gemini/skills/sy-*` → `~/sy/ai_llm/skills/`  | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  | ✅ additive into `~/.gemini/settings.json::mcpServers`    |
-| **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ skills + `/sy-*` commands, both → `~/sy/ai_llm/skills/`   | ✅ inline `keybinds` in `~/.config/opencode/tui.json`            | ✅ inline in `opencode.json`  | ✅ inline `mcp` in `opencode.json` (translated shape)     |
+|              | Instructions                                                                                        | Slash commands                                                   | Keybindings                                                      | Managed settings              | MCP servers                                               |
+| ------------ | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
+| **claude**   | ✅ `~/.claude/CLAUDE.md`                                                                            | ✅ skills — `~/.claude/skills/sy-*` → `~/_extra/ai_llm/skills/`  | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  | ✅ additive into `~/.claude/settings.json::mcpServers`    |
+| **copilot**  | ✅ `~/.copilot/copilot-instructions.md` (+ symlink `AGENTS.md`)                                     | ✅ skills — `~/.copilot/skills/sy-*` → `~/_extra/ai_llm/skills/` | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` | ✅ additive into `~/.copilot/mcp-config.json::mcpServers` |
+| **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ✅ skills — `~/.gemini/skills/sy-*` → `~/_extra/ai_llm/skills/`  | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  | ✅ additive into `~/.gemini/settings.json::mcpServers`    |
+| **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ skills + `/sy-*` commands, both → `~/_extra/ai_llm/skills/`   | ✅ inline `keybinds` in `~/.config/opencode/tui.json`            | ✅ inline in `opencode.json`  | ✅ inline `mcp` in `opencode.json` (translated shape)     |
 
 Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today.
 
@@ -99,7 +111,7 @@ call out anywhere it can't be expressed.
 | Per-role agent models                  | n/a                                       | n/a                                   | n/a                                                          | `agent` from `AGENT_TO_MODEL_MAP`                 |
 | Language servers (diagnostics)         | native                                    | native                                | native                                                       | `lsp: true` (omitted = DISABLED)                  |
 | Code formatters on edit                | native (hooks)                            | native                                | native                                                       | `formatter: true` (omitted = DISABLED)            |
-| Load split PR-workflow rules           | native (`@` import budget)                | symlink in `~/.copilot/instructions/` | native                                                       | `instructions: [~/sy/ai_llm/instructions/…]`      |
+| Load split PR-workflow rules           | native (`@` import budget)                | symlink in `~/.copilot/instructions/` | native                                                       | `instructions: [~/_extra/ai_llm/instructions/…]`  |
 | Terminal cursor style                  | n/a                                       | n/a                                   | n/a                                                          | `cursor: { style: "block" }`                      |
 | Leader-chord timeout                   | n/a                                       | n/a                                   | n/a                                                          | `leader_timeout: 1500`                            |
 | Prompt textarea height cap             | n/a                                       | n/a                                   | n/a                                                          | `prompt.max_height: 20`                           |
@@ -278,7 +290,7 @@ recreate by hand before any other CLI feels comparable:
 | -------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | Global instructions        | `~/.claude/CLAUDE.md`                                                    | System-prompt-level engineering rules applied to every conversation |
 | Global slash commands      | `~/.claude/commands/*.md` (user-authored only)                           | User-invocable `/foo` prompts not managed by this repo              |
-| Global skills              | `~/sy/ai_llm/skills/<name>/SKILL.md` → symlinked into every CLI          | Loadable playbooks, incl. every `/sy-*` workflow                    |
+| Global skills              | `~/_extra/ai_llm/skills/<name>/SKILL.md` → symlinked into every CLI      | Loadable playbooks, incl. every `/sy-*` workflow                    |
 | Global keybindings         | `~/.claude/keybindings.json`                                             | Chord and single-key bindings inside the TUI                        |
 | Global settings            | `~/.claude/settings.json`                                                | Model choice, banner, telemetry, auto-update, hooks, permissions    |
 | Per-project instructions   | `<repo>/CLAUDE.md`                                                       | Codebase-specific rules merged on top of global instructions        |
@@ -294,17 +306,17 @@ its own `~/.config/opencode/AGENTS.md` is missing** (per
 [opencode.ai/docs/rules](https://opencode.ai/docs/rules/), unless
 `OPENCODE_DISABLE_CLAUDE_CODE=1` is set).
 
-| From (Claude Code)                      | To (OpenCode)                                            | Notes                                                                                                                                      |
-| --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `~/.claude/CLAUDE.md`                   | `~/.config/opencode/AGENTS.md`                           | Copy verbatim — same Markdown-as-system-prompt model. OpenCode falls through to Claude's file if absent.                                   |
-| `~/.claude/commands/*.md`               | `~/.config/opencode/commands/*.md`                       | Same file format. Symlinking is safe and is what this repo does.                                                                           |
-| `~/sy/ai_llm/skills/<name>/SKILL.md`    | `~/.config/opencode/skills/<name>` (symlink)             | One physical skill, per-skill symlinks into every CLI. Model-invoked; `opencode/setup.js` also mirrors it as `/name` in the commands slot. |
-| `~/.claude/keybindings.json`            | `keybinds: { ... }` inside `~/.config/opencode/tui.json` | Schema differs — chord syntax is OpenCode-specific. Re-author rather than mechanically translate.                                          |
-| `~/.claude/settings.json`               | top-level keys inside `~/.config/opencode/opencode.json` | Single file holds providers, models, autoupdate, share-mode, experimental flags.                                                           |
-| `<repo>/CLAUDE.md`                      | `<repo>/AGENTS.md`                                       | OpenCode looks for `AGENTS.md` first. If you keep `CLAUDE.md` only, fallback works but is brittle.                                         |
-| `<repo>/.claude/skills/<name>/SKILL.md` | ✅ read natively (same path)                             | Walks up from cwd to the git worktree root. Zero setup — this repo's seven skills already load in OpenCode as-is.                          |
-| `<repo>/.claude/settings.json` hooks    | ❌ no hook system today                                  | OpenCode has no PreToolUse/Stop/PostToolUse equivalent. Skill-able as wrapper scripts but not config-driven.                               |
-| `~/.claude/projects/.../memory/*.md`    | ❌ no auto-memory layer today                            | OpenCode has no persistent memory store. Anything load-bearing must move into `AGENTS.md`.                                                 |
+| From (Claude Code)                       | To (OpenCode)                                            | Notes                                                                                                                                      |
+| ---------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `~/.claude/CLAUDE.md`                    | `~/.config/opencode/AGENTS.md`                           | Copy verbatim — same Markdown-as-system-prompt model. OpenCode falls through to Claude's file if absent.                                   |
+| `~/.claude/commands/*.md`                | `~/.config/opencode/commands/*.md`                       | Same file format. Symlinking is safe and is what this repo does.                                                                           |
+| `~/_extra/ai_llm/skills/<name>/SKILL.md` | `~/.config/opencode/skills/<name>` (symlink)             | One physical skill, per-skill symlinks into every CLI. Model-invoked; `opencode/setup.js` also mirrors it as `/name` in the commands slot. |
+| `~/.claude/keybindings.json`             | `keybinds: { ... }` inside `~/.config/opencode/tui.json` | Schema differs — chord syntax is OpenCode-specific. Re-author rather than mechanically translate.                                          |
+| `~/.claude/settings.json`                | top-level keys inside `~/.config/opencode/opencode.json` | Single file holds providers, models, autoupdate, share-mode, experimental flags.                                                           |
+| `<repo>/CLAUDE.md`                       | `<repo>/AGENTS.md`                                       | OpenCode looks for `AGENTS.md` first. If you keep `CLAUDE.md` only, fallback works but is brittle.                                         |
+| `<repo>/.claude/skills/<name>/SKILL.md`  | ✅ read natively (same path)                             | Walks up from cwd to the git worktree root. Zero setup — this repo's seven skills already load in OpenCode as-is.                          |
+| `<repo>/.claude/settings.json` hooks     | ❌ no hook system today                                  | OpenCode has no PreToolUse/Stop/PostToolUse equivalent. Skill-able as wrapper scripts but not config-driven.                               |
+| `~/.claude/projects/.../memory/*.md`     | ❌ no auto-memory layer today                            | OpenCode has no persistent memory store. Anything load-bearing must move into `AGENTS.md`.                                                 |
 
 ### Claude Code → GitHub Copilot CLI
 
@@ -316,8 +328,8 @@ You will lose ergonomics. Plan accordingly.
 | From (Claude Code)                      | To (Copilot CLI)                           | Notes                                                                                                                                                                                                                                                                            |
 | --------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `~/.claude/CLAUDE.md`                   | `~/.copilot/copilot-instructions.md`       | Same Markdown-as-system-prompt model.                                                                                                                                                                                                                                            |
-| `~/sy/ai_llm/skills/sy-<name>/`         | ✅ `~/.copilot/skills/sy-<name>` (symlink) | No `~/.copilot/commands/` slot exists, so the shared `_common/commands/*.md` corpus is deployed once as folder-form **skills** with generated YAML frontmatter and symlinked here. Gives `/sy-*` in Copilot plus model-triggering off `description` — no plugin manifest needed. |
-| `~/.claude/skills/<name>/SKILL.md`      | ✅ `~/.copilot/skills/<name>` (symlink)    | Copilot does NOT read `~/.claude/skills/` (verified `v1.0.76` — a probe skill there never appears in `available_skills`). Irrelevant now: both folders hold per-skill symlinks into `~/sy/ai_llm/skills/`, so neither CLI depends on the other's path.                           |
+| `~/_extra/ai_llm/skills/sy-<name>/`     | ✅ `~/.copilot/skills/sy-<name>` (symlink) | No `~/.copilot/commands/` slot exists, so the shared `_common/commands/*.md` corpus is deployed once as folder-form **skills** with generated YAML frontmatter and symlinked here. Gives `/sy-*` in Copilot plus model-triggering off `description` — no plugin manifest needed. |
+| `~/.claude/skills/<name>/SKILL.md`      | ✅ `~/.copilot/skills/<name>` (symlink)    | Copilot does NOT read `~/.claude/skills/` (verified `v1.0.76` — a probe skill there never appears in `available_skills`). Irrelevant now: both folders hold per-skill symlinks into `~/_extra/ai_llm/skills/`, so neither CLI depends on the other's path.                       |
 | `~/.claude/keybindings.json`            | ❌ no live keymap config in v1.0.48        | This repo still builds a `copilot-keys.*.jsonc` artifact so the schema stays exercised for the day upstream ships one.                                                                                                                                                           |
 | `~/.claude/settings.json`               | `~/.copilot/settings.json`                 | Different key names — see the settings-intent table above for the cross-CLI mapping.                                                                                                                                                                                             |
 | `<repo>/CLAUDE.md`                      | `<repo>/AGENTS.md`                         | Copilot CLI also reads `AGENTS.md` at the repo root.                                                                                                                                                                                                                             |
@@ -359,7 +371,7 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
   - `~/.gemini/GEMINI.md`
   - `~/.config/opencode/AGENTS.md`
 - **One command corpus feeds all four CLIs without duplication.**
-  `_common/commands/*.md` is deployed ONCE to `~/sy/ai_llm/skills/sy-*/SKILL.md`
+  `_common/commands/*.md` is deployed ONCE to `~/_extra/ai_llm/skills/sy-*/SKILL.md`
   by `deploySharedLLMSkills()` (llm-common.js), then **per-skill symlinked** into
   `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`,
   `~/.gemini/skills/`, and `~/.agents/skills/`. Per-skill, never a folder
@@ -429,7 +441,7 @@ Copilot's own path list comes from `copilot skill --help` on `v1.0.76`. Note the
 asymmetry: it reads `<repo>/.claude/skills/` but **not** `~/.claude/skills/`. That
 asymmetry no longer costs anything, because no CLI reads another's folder here:
 `deploySharedLLMSkills()` (llm-common.js) writes each `_common/commands/<name>.md`
-once to `~/sy/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then
+once to `~/_extra/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then
 symlinks that folder into every CLI's own skills path — Claude, Copilot, Gemini,
 OpenCode, and the interoperable `~/.agents/skills/`.
 

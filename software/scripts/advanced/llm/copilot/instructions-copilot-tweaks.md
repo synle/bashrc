@@ -1,7 +1,7 @@
 # Copilot CLI — harness-specific tweaks
 
 Everything in this file is true of **GitHub Copilot CLI and nothing else**. It is deployed
-only into `~/.copilot/instructions/`, never into the shared `~/sy/ai_llm/instructions/`
+only into `~/.copilot/instructions/`, never into the shared `<LLM_ROOT_FOLDER>/instructions/`
 folder, precisely because the other harnesses must not inherit these limits: Claude Code,
 Gemini CLI, and OpenCode read the same shared instructions and run the same `/sy-*` command
 set, and none of them has the constraints below.

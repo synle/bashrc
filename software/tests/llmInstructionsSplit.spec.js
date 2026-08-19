@@ -37,7 +37,7 @@ const LLM_COMMON_PATH = path.join(ROOT, "software/scripts/advanced/llm/llm-commo
 const SANDBOX_HOME = "/tmp/sandbox-home";
 
 /**
- * Stand-in for SY_HOME_FOLDER, the personal root the LLM home hangs off.
+ * Stand-in for SY_ROOT_FOLDER, the personal root the LLM home hangs off.
  * @type {string}
  */
 const SANDBOX_SY_HOME = `${SANDBOX_HOME}/sy`;
@@ -127,10 +127,11 @@ function loadLlmCommon() {
     fs,
     BASE_HOMEDIR_LINUX: SANDBOX_HOME,
     // The LLM home hangs off the personal root, not the bare home folder.
-    SY_HOME_FOLDER: SANDBOX_SY_HOME,
-    // Deliberately empty: LLM_SHARED_ROOT_FOLDER prefers process.env.LLM_HOME_FOLDER,
-    // and inheriting the real one would make these assertions depend on whoever ran them.
-    process: { env: {} },
+    SY_ROOT_FOLDER: SANDBOX_SY_HOME,
+    // LLM_SHARED_ROOT_FOLDER reads LLM_ROOT_FOLDER directly with no default, so the
+    // sandbox has to supply it. Set to the sandbox root rather than inherited from the
+    // real environment, which would make these assertions depend on whoever ran them.
+    process: { env: { LLM_ROOT_FOLDER: `${SANDBOX_SY_HOME}/ai_llm` } },
     log: () => {},
     // The legacy-folder detector frames its warning with the shared separator.
     LINE_BREAK_HASH: "#".repeat(80),
@@ -157,10 +158,11 @@ const splitFiles = Object.entries(llm.LLM_SHARED_INSTRUCTION_FILES).map(([target
 }));
 
 /**
- * The shared instructions folder as it appears in the deployed pointers (`~/...`).
+ * The shared instructions folder exactly as the DEPLOYED pointers spell it —
+ * absolute, because the placeholder resolves to a real path on the way out.
  * @type {string}
  */
-const SHARED_FOLDER_TILDE = llm.LLM_SHARED_INSTRUCTIONS_FOLDER.replace(SANDBOX_HOME, "~");
+const SHARED_FOLDER_RESOLVED = llm.LLM_SHARED_INSTRUCTIONS_FOLDER;
 
 /**
  * Counts markdown list items, which is how a "rule" is expressed in every file.
@@ -184,14 +186,27 @@ describe("always-loaded instructions stay within the CLAUDE.md budget", () => {
 });
 
 describe("split file pointers", () => {
-  it("should point at every registered file by its deployed path, in backticks", () => {
+  it("should point at every registered file through a placeholder that resolves on deploy", () => {
+    /** @type {string} Exactly what the deploy pass writes to disk. */
+    const deployed = llm.resolveLLMDocPlaceholders(instructions);
+
     for (const { target } of splitFiles) {
-      // `@~/path/to.md` outside backticks is an import and loads at launch; backticks
-      // keep it literal and on-demand. Assert the backticked form is present...
-      expect(instructions, `pointer for ${target}`).toContain(`\`${SHARED_FOLDER_TILDE}/${target}\``);
-      // ...and that no bare @-import of it exists anywhere in the file.
+      // The SOURCE stays symbolic. A hardcoded `~/_extra/ai_llm/...` here would be a
+      // second spelling of a folder common-env.sh already declares, and would be
+      // outright wrong on a machine whose home layout differs.
+      expect(instructions, `placeholder pointer for ${target}`).toContain(`\`<LLM_ROOT_FOLDER>/instructions/${target}\``);
+      // The DEPLOYED bytes carry the resolved absolute path, because the agent reading
+      // them has no shell to expand anything — an unexpanded variable in a `mkdir -p`
+      // is a write at the filesystem root.
+      expect(deployed, `resolved pointer for ${target}`).toContain(`\`${SHARED_FOLDER_RESOLVED}/${target}\``);
+      // `@~/path/to.md` outside backticks is an import that loads at launch; backticks
+      // keep it literal and on-demand.
       expect(instructions, `@-import of ${target}`).not.toMatch(new RegExp(`@[^\\s\`]*${target.replace(".", "\\.")}`));
     }
+
+    // Nothing may survive unresolved — a literal `<LLM_ROOT_FOLDER>` reaching an agent
+    // reads as a folder name and fails silently.
+    expect(deployed, "unresolved placeholder in the deployed instructions").not.toContain("<LLM_ROOT_FOLDER>");
   });
 
   it("should keep a Source Control section that points at the PR workflow file", () => {
@@ -286,7 +301,8 @@ describe("plans folder references", () => {
   });
 
   it("should point plan artifacts at the consolidated folder", () => {
-    expect(instructions).toContain("~/sy/ai_llm/plans/");
+    expect(instructions).toContain("<LLM_ROOT_FOLDER>/plans/");
+    expect(llm.resolveLLMDocPlaceholders(instructions)).toContain(`${llm.LLM_SHARED_ROOT_FOLDER}/plans/`);
   });
 
   it("should not name the pre-consolidation LLM home anywhere", () => {
@@ -448,5 +464,81 @@ describe("shared-home ownership tests", () => {
     expect(llm.isUnderSharedLLMHome(`${SANDBOX_HOME}/unrelated`)).toBe(false);
     // Path-boundary, not string-prefix: a sibling folder sharing the prefix is not ours.
     expect(llm.isUnderSharedLLMHome(`${llm.LLM_SHARED_ROOT_FOLDER}-backup/skills/x`)).toBe(false);
+  });
+});
+
+describe("deployed docs name folders by placeholder, never by hardcoded path", () => {
+  /**
+   * Every repo markdown source that reaches an agent through a deploy pass: the
+   * always-loaded instructions, each split instruction file, every `/sy-*` skill
+   * body, and each CLI's own tweaks file.
+   *
+   * Discovered from the registries and the commands folder rather than listed here,
+   * so a new deployed doc is covered with no second edit.
+   * @type {Array<{label: string, text: string}>}
+   */
+  const deployedSources = [
+    { label: "instructions.md", text: instructions },
+    ...splitFiles.map(({ target, text }) => ({ label: target, text })),
+    ...fs
+      .readdirSync(path.join(ROOT, COMMON_FOLDER, "commands"))
+      .filter((name) => name.endsWith(".md"))
+      .map((name) => ({
+        label: `commands/${name}`,
+        text: fs.readFileSync(path.join(ROOT, COMMON_FOLDER, "commands", name), "utf-8"),
+      })),
+    {
+      label: "instructions-copilot-tweaks.md",
+      text: fs.readFileSync(path.join(ROOT, "software/scripts/advanced/llm/copilot/instructions-copilot-tweaks.md"), "utf-8"),
+    },
+  ];
+
+  it("should never hardcode the personal root or the LLM home", () => {
+    // A hardcoded path is a second spelling of a folder common-env.sh already owns:
+    // it goes stale the day the root moves, and is wrong outright on a machine whose
+    // home layout differs. Every one of these must be a placeholder instead.
+    for (const { label, text } of deployedSources) {
+      for (const forbidden of ["~/_extra", "$HOME/_extra", "~/sy/", "/ai_llm/", "sy_llm_ai"]) {
+        expect(text, `${label} hardcodes ${forbidden}`).not.toContain(forbidden);
+      }
+    }
+  });
+
+  it("should resolve every placeholder it uses to a real absolute folder", () => {
+    for (const { label, text } of deployedSources) {
+      const deployed = llm.resolveLLMDocPlaceholders(text);
+      for (const token of Object.keys(llm.LLM_DOC_PATH_PLACEHOLDERS)) {
+        expect(deployed, `${label} left ${token} unresolved`).not.toContain(token);
+      }
+    }
+
+    // The map itself must point somewhere real, or resolution quietly bakes in
+    // "undefined" and every deployed pointer is a broken path.
+    for (const [token, value] of Object.entries(llm.LLM_DOC_PATH_PLACEHOLDERS)) {
+      expect(typeof value, `${token} resolves to a non-string`).toBe("string");
+      expect(path.isAbsolute(value), `${token} resolves to a relative path`).toBe(true);
+    }
+  });
+
+  it("should route every deployed doc through the one reader that resolves placeholders", () => {
+    // readText alone skips resolution, which ships `<LLM_ROOT_FOLDER>` verbatim to an
+    // agent — it reads as a literal folder name and fails silently. readLLMDocSource
+    // is the only sanctioned reader for a doc that gets deployed.
+    const readerFiles = [
+      "software/scripts/advanced/llm/llm-common.js",
+      "software/scripts/advanced/llm/claude/setup.js",
+      "software/scripts/advanced/llm/copilot/setup.js",
+      "software/scripts/advanced/llm/gemini/setup.js",
+      "software/scripts/advanced/llm/opencode/setup.js",
+    ];
+
+    for (const file of readerFiles) {
+      const source = fs.readFileSync(path.join(ROOT, file), "utf-8");
+      for (const line of source.split("\n")) {
+        // Only the definition of readLLMDocSource itself may call readText on a doc.
+        if (line.includes("resolveLLMDocPlaceholders(await readText")) continue;
+        expect(line, `${file} reads a deployed doc with readText`).not.toMatch(/readText`[^`]*\.md`/);
+      }
+    }
   });
 });

@@ -45,7 +45,9 @@ if ((is_os_android_termux)); then
   exit 0
 fi
 
-LM_STUDIO_DIR="$HOME/_extra/lm-studio"
+# $SY_ROOT_FOLDER is declared once in software/bootstrap/common-env.sh, which
+# run.sh sources before any script runs. Read it directly — no `:-` default.
+LM_STUDIO_DIR="${SY_ROOT_FOLDER}/lm-studio"
 LM_STUDIO_BIN="$HOME/.local/bin/lm-studio"
 LM_STUDIO_DESKTOP="$HOME/.local/share/applications/lm-studio.desktop"
 LM_STUDIO_ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"

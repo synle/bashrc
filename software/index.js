@@ -400,8 +400,19 @@ const { exec, execSync } = require("child_process");
 /** @type {string} Base home directory path for the current user. Read from env var set by run.sh before any sudo runs. RHEL/Fedora sudoers has `always_set_home` which resets $HOME to /root even with `sudo -E`, and os.homedir() reads /etc/passwd which also returns /root. This custom env var survives sudo because sudoers only resets HOME, not arbitrary vars. Falls back to os.homedir() for non-run.sh contexts (tests, direct invocation). */
 const BASE_HOMEDIR_LINUX = process.env.BASE_HOMEDIR_LINUX || process.env.HOME || os.homedir();
 
-/** @type {string} Personal root folder — one visible folder under $HOME owning everything this setup creates for the user rather than for a tool (tmux workspace configs today, the LLM home next). Declared once in `software/bootstrap/common-env.sh` as SY_HOME_FOLDER and re-exported by run.sh into ~/.bash_syle_common, so bash and JS resolve the same path. Derive a subfolder from this; never write a second $HOME literal. The fallback degrades to a bare home folder rather than repeating the folder name, so running index.js outside run.sh (tests, direct invocation) still works without becoming a second declaration that can drift. */
-const SY_HOME_FOLDER = process.env.SY_HOME_FOLDER || BASE_HOMEDIR_LINUX;
+/** @type {string} Personal root folder — one visible folder under $HOME owning everything this setup creates for the user rather than for a tool (the custom-tweaks staging, tmux workspace configs, the LLM home). Declared once in `software/bootstrap/common-env.sh` as SY_ROOT_FOLDER and re-exported by run.sh into ~/.bash_syle_common, so bash and JS resolve the same path. Derive a subfolder from this; never write a second $HOME literal. Read DIRECTLY with no `||` default: the default belongs to the single declaration, and a second one here would keep resolving to a stale path long after the real root moved. Undefined means run.sh never ran, which throws at the first path.join — loudly, where you can see it. */
+const SY_ROOT_FOLDER = process.env.SY_ROOT_FOLDER;
+
+/**
+ * TEMPORARY — delete once every machine has migrated off it.
+ *
+ * The personal root briefly lived at `$HOME/sy` before being folded into the
+ * pre-existing `~/_extra`. This names the abandoned root so
+ * {@link ensureSyHomeMigrated} can carry its content across exactly once.
+ * Nothing else may read it; consumers derive from SY_ROOT_FOLDER.
+ * @type {string}
+ */
+const SY_LEGACY_ROOT_FOLDER = path.join(BASE_HOMEDIR_LINUX, "sy");
 
 /** @type {string} Path to the main ~/.bash_syle profile file */
 const BASH_SYLE_PATH = getRuntimeOption("BASH_SYLE_PATH");
@@ -2489,13 +2500,89 @@ async function getWindowsApplicationBinaryDir(applicationName) {
 }
 
 /**
- * Returns a path under the user's custom tweaks directory (~/_extra or {WindowsHome}/_extra).
+ * Returns a path under the user's custom tweaks directory (the personal root, or {WindowsHome}/_extra).
  * @param {string} [subPath] - Optional subdirectory to join after the base directory
  * @returns {string} The resolved path
  */
 function getCustomTweaksPath(subPath) {
-  const baseDir = is_os_windows ? path.join(getWindowUserBaseDir(), "_extra") : path.join(BASE_HOMEDIR_LINUX, "_extra");
+  // Windows stays an inline literal on purpose: it hangs off the Windows-side user
+  // folder reached through WSL, not off the personal root this machine's shell exports.
+  const baseDir = is_os_windows ? path.join(getWindowUserBaseDir(), "_extra") : SY_ROOT_FOLDER;
   return subPath ? path.join(baseDir, subPath) : baseDir;
+}
+
+/**
+ * TEMPORARY — the whole block below goes away once every machine has migrated.
+ *
+ * Resolves once per process so several scripts sharing one node heredoc migrate once.
+ * @type {boolean}
+ */
+let _syHomeMigrationDone = false;
+
+/**
+ * Carries anything left in the abandoned `$HOME/sy` personal root into the current one.
+ *
+ * Merges rather than replaces: `~/_extra` predates the move and is full of tool
+ * staging, so this walks the legacy root's top-level entries and moves across only the
+ * names that do not already exist at the destination. A colliding name is **kept** where
+ * it is rather than overwritten — losing a file to a migration is far worse than leaving
+ * one behind, and the leftover folder is reported so it can be resolved by hand.
+ *
+ * Deliberately synchronous and called before anything writes into the new root. Creating
+ * a destination subfolder first would make its legacy twin look like a collision and
+ * strand it permanently, which is exactly how the previous LLM-home move went wrong.
+ *
+ * Never throws: a machine that cannot complete this must still finish its setup.
+ *
+ * @returns {{moved: string[], kept: string[]}} Entry names carried across, and those left behind.
+ */
+function ensureSyHomeMigrated() {
+  /** @type {{moved: string[], kept: string[]}} Outcome per top-level entry. */
+  const result = { moved: [], kept: [] };
+  if (_syHomeMigrationDone) return result;
+  _syHomeMigrationDone = true;
+
+  if (SY_LEGACY_ROOT_FOLDER === SY_ROOT_FOLDER || !fs.existsSync(SY_LEGACY_ROOT_FOLDER)) return result;
+
+  try {
+    fs.mkdirSync(SY_ROOT_FOLDER, { recursive: true });
+
+    for (const entry of fs.readdirSync(SY_LEGACY_ROOT_FOLDER)) {
+      /** @type {string} Where this entry is now. */
+      const from = path.join(SY_LEGACY_ROOT_FOLDER, entry);
+      /** @type {string} Where it belongs. */
+      const to = path.join(SY_ROOT_FOLDER, entry);
+
+      if (fs.existsSync(to)) {
+        result.kept.push(entry);
+        continue;
+      }
+
+      fs.renameSync(from, to);
+      result.moved.push(entry);
+    }
+
+    if (result.kept.length === 0) {
+      // Only ever removes a folder it has just emptied itself.
+      fs.rmdirSync(SY_LEGACY_ROOT_FOLDER);
+      log(`>> Migrated the personal root: ${SY_LEGACY_ROOT_FOLDER} -> ${SY_ROOT_FOLDER} (${result.moved.length} entry/entries)`);
+    } else {
+      log(LINE_BREAK_HASH);
+      log(`>> WARNING: could not finish migrating ${SY_LEGACY_ROOT_FOLDER} -> ${SY_ROOT_FOLDER}.`);
+      log(`>> Moved: ${result.moved.join(", ") || "(nothing)"}`);
+      log(`>> Left behind because the destination already has that name: ${result.kept.join(", ")}`);
+      log(">> Nothing was overwritten. Merge the remainder by hand, then remove the old folder:");
+      for (const entry of result.kept) {
+        log(`>>   rsync -a '${path.join(SY_LEGACY_ROOT_FOLDER, entry)}/' '${path.join(SY_ROOT_FOLDER, entry)}/'`);
+      }
+      log(LINE_BREAK_HASH);
+    }
+  } catch (e) {
+    // A failed migration must not fail the run — the old folder is still intact.
+    log(`>> WARNING: personal-root migration failed, leaving ${SY_LEGACY_ROOT_FOLDER} untouched:`, e.message);
+  }
+
+  return result;
 }
 
 /**

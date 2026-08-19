@@ -39,7 +39,7 @@
 //                    mean generating that scaffolding — out of scope.
 //
 //   ✅ Skills — ~/.gemini/skills/sy-<name> is a SYMLINK to the one physical
-//                    skill at $LLM_HOME_FOLDER/skills/sy-<name>/SKILL.md, created by
+//                    skill at $LLM_ROOT_FOLDER/skills/sy-<name>/SKILL.md, created by
 //                    the shared deploySharedLLMSkills() in llm-common.js. No
 //                    `gemini skills install/link` call is needed — the user
 //                    skills folder is read directly, and skills installed there
@@ -397,6 +397,6 @@ async function doWork() {
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
   await deploySharedLLMInstructions();
   await _doGeminiInstructionsWork(targetDir);
-  // Skills live once in $LLM_HOME_FOLDER/skills and are symlinked into ~/.gemini/skills.
+  // Skills live once in $LLM_ROOT_FOLDER/skills and are symlinked into ~/.gemini/skills.
   await deploySharedLLMSkills();
 }

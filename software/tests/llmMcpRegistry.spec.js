@@ -43,9 +43,9 @@ function loadLlmCommon(registryPayload, opts = {}) {
     // llm-common.js derives every legacy folder from this at top level.
     BASE_HOMEDIR_LINUX: "/tmp/sandbox-home",
     // ...and the current LLM home from the personal root.
-    SY_HOME_FOLDER: "/tmp/sandbox-home/sy",
-    // Empty on purpose - LLM_SHARED_ROOT_FOLDER prefers process.env.LLM_HOME_FOLDER.
-    process: { env: {} },
+    SY_ROOT_FOLDER: "/tmp/sandbox-home/sy",
+    // LLM_SHARED_ROOT_FOLDER reads LLM_ROOT_FOLDER directly with no default.
+    process: { env: { LLM_ROOT_FOLDER: "/tmp/sandbox-home/sy/ai_llm" } },
     log: () => {},
     probedHosts,
     readJson: async (strings, ...values) => {

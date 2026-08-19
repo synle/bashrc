@@ -1,5 +1,5 @@
 /**
- * Tests for SY_HOME_FOLDER — the personal root folder ($HOME/sy).
+ * Tests for SY_ROOT_FOLDER — the personal root folder ($HOME/_extra).
  *
  * It is declared once in software/bootstrap/common-env.sh and consumed from both bash
  * (profile partials) and JS (software/index.js). Two failure modes, both silent:
@@ -7,13 +7,13 @@
  * 1. Declaring it in common-env.sh is NOT enough to reach an interactive shell.
  *    common-env.sh is inlined into run.sh and sourced there, but only a hand-listed
  *    subset of its exports is re-emitted into ~/.bash_syle_common (the file wired up as
- *    $BASH_ENV). SY_HOME_FOLDER was missing from that list, so `echo $SY_HOME_FOLDER`
+ *    $BASH_ENV). SY_ROOT_FOLDER was missing from that list, so `echo $SY_ROOT_FOLDER`
  *    printed nothing in a real shell while every :- fallback quietly papered over it.
  *
- * 2. A consumer writing its own "$HOME/sy" literal instead of deriving from the variable
+ * 2. A consumer writing its own "$HOME/_extra" literal instead of deriving from the variable
  *    means the folder is no longer controlled in one place, and moving it silently
  *    strands whatever kept the copy. Consumers therefore fall back to a bare home folder,
- *    never to a repeated "sy" — the name appears only in the single declaration.
+ *    never to a repeated "_extra" — the name appears only in the single declaration.
  */
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "child_process";
@@ -43,75 +43,67 @@ function readRepoFile(relativePath) {
   return fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8");
 }
 
-describe("SY_HOME_FOLDER", () => {
+describe("SY_ROOT_FOLDER", () => {
   it("is declared exactly once in common-env.sh", () => {
     const declarations = fs
       .readFileSync(COMMON_ENV, "utf8")
       .split("\n")
-      .filter((line) => /^\s*export\s+SY_HOME_FOLDER=/.test(line));
+      .filter((line) => /^\s*export\s+SY_ROOT_FOLDER=/.test(line));
 
     expect(declarations).toHaveLength(1);
-    expect(declarations[0]).toContain('"$HOME/sy"');
+    expect(declarations[0]).toContain('"$HOME/_extra"');
   });
 
   it("is re-exported by run.sh into the shared common profile so interactive shells see it", () => {
     // The block writes already-resolved values in single quotes into $BASH_SYLE_COMMON_PATH.
-    expect(fs.readFileSync(RUN_SH, "utf8")).toContain("export SY_HOME_FOLDER='$SY_HOME_FOLDER'");
+    expect(fs.readFileSync(RUN_SH, "utf8")).toContain("export SY_ROOT_FOLDER='$SY_ROOT_FOLDER'");
   });
 
   it("resolves to the same path in bash whether or not run.sh already exported it", () => {
     const script = `
-      unset SY_HOME_FOLDER
+      unset SY_ROOT_FOLDER
       HOME=/fake/home
       . "${COMMON_ENV}" > /dev/null 2>&1
-      echo "$SY_HOME_FOLDER"
+      echo "$SY_ROOT_FOLDER"
     `;
     const resolved = execFileSync("bash", ["-c", script], { encoding: "utf8" }).trim();
 
-    expect(resolved).toBe("/fake/home/sy");
+    expect(resolved).toBe("/fake/home/_extra");
   });
 
-  it("is exposed to JS from the same env var, not a re-derived path", () => {
+  it("is exposed to JS from the same env var, read directly with no second default", () => {
     const source = fs.readFileSync(INDEX_JS, "utf8");
 
-    expect(source).toMatch(/const SY_HOME_FOLDER = process\.env\.SY_HOME_FOLDER \|\| BASE_HOMEDIR_LINUX;/);
+    expect(source).toMatch(/const SY_ROOT_FOLDER = process\.env\.SY_ROOT_FOLDER;/);
+    expect(source).not.toMatch(/const SY_ROOT_FOLDER = process\.env\.SY_ROOT_FOLDER \|\|/);
   });
 
-  it("wins over the JS fallback when run.sh has exported it", () => {
-    const probe = `
-      const os = require("os");
-      const BASE_HOMEDIR_LINUX = process.env.BASE_HOMEDIR_LINUX || process.env.HOME || os.homedir();
-      const SY_HOME_FOLDER = process.env.SY_HOME_FOLDER || BASE_HOMEDIR_LINUX;
-      process.stdout.write(SY_HOME_FOLDER);
-    `;
+  it("resolves in JS to exactly what run.sh exported", () => {
+    const probe = `process.stdout.write(String(process.env.SY_ROOT_FOLDER));`;
     const withExport = execFileSync("node", ["-e", probe], {
       encoding: "utf8",
-      env: { ...process.env, SY_HOME_FOLDER: "/elsewhere/sy" },
-    });
-    const withoutExport = execFileSync("node", ["-e", probe], {
-      encoding: "utf8",
-      env: { ...process.env, SY_HOME_FOLDER: "", HOME: "/fake/home", BASE_HOMEDIR_LINUX: "" },
+      env: { ...process.env, SY_ROOT_FOLDER: "/elsewhere/_extra" },
     });
 
-    expect(withExport).toBe("/elsewhere/sy");
-    expect(withoutExport).toBe("/fake/home");
+    expect(withExport).toBe("/elsewhere/_extra");
   });
 
-  it("leaves a consumer under a bare home folder when it is unset, never a second copy of the name", () => {
+  it("leaves a consumer with an obviously broken path when unset, never a silent second default", () => {
     const script = `
-      unset SY_HOME_FOLDER
+      unset SY_ROOT_FOLDER
       HOME=/fake/home
       . "${WORKSPACE_PARTIAL}" > /dev/null 2>&1
       echo "$WORKSPACE_CONFIG_FOLDER"
     `;
     const resolved = execFileSync("bash", ["-c", script], { encoding: "utf8" }).trim();
 
-    expect(resolved).toBe("/fake/home/workspaces_tmux");
+    expect(resolved).toBe("/workspaces_tmux");
+    expect(resolved).not.toContain("/fake/home");
   });
 
   it("relocates every consumer when it is set", () => {
     const script = `
-      SY_HOME_FOLDER=/elsewhere/root
+      SY_ROOT_FOLDER=/elsewhere/root
       HOME=/fake/home
       . "${WORKSPACE_PARTIAL}" > /dev/null 2>&1
       echo "$WORKSPACE_CONFIG_FOLDER"
@@ -128,7 +120,7 @@ describe("SY_HOME_FOLDER", () => {
       .filter((file) => !file.startsWith("software/tests/"))
       .filter((file) => !ALLOWED_LITERAL_FILES.includes(file));
 
-    const offenders = tracked.filter((file) => /\$\{?HOME\}?\/sy(?![_a-zA-Z0-9])/.test(readRepoFile(file)));
+    const offenders = tracked.filter((file) => /\$\{?HOME\}?\/_extra(?![_a-zA-Z0-9])/.test(readRepoFile(file)));
 
     expect(offenders).toEqual([]);
   });

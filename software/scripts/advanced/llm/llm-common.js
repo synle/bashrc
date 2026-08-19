@@ -549,24 +549,82 @@ function resolveOpencodeAgentConfig(providersArray = []) {
  * `ls` shows everything the LLM tooling owns, and so a new artifact class is a new
  * subfolder rather than a new top-level name to remember.
  *
- * Sits under SY_HOME_FOLDER — the personal root declared once in
+ * Sits under SY_ROOT_FOLDER — the personal root declared once in
  * `software/bootstrap/common-env.sh` — so this setup owns exactly one visible
  * folder in the home directory instead of scattering `sy*` siblings across it.
  *
- * THE LOCATION IS DECIDED IN ONE PLACE — `LLM_HOME_FOLDER` in
+ * THE LOCATION IS DECIDED IN ONE PLACE — `LLM_ROOT_FOLDER` in
  * `software/bootstrap/common-env.sh`. It is declared there rather than here because
  * the shell dispatcher partial needs the same folder and cannot read a JS constant:
  * common-env.sh is the only file that reaches both surfaces (inlined into run.sh for
  * node, re-exported into ~/.bash_syle_common for interactive shells). Everything
  * below is derived from this, and every piece of migration LOGIC lives in this file.
  *
- * The fallback names the personal root's subfolder only for the case where index.js
- * runs outside run.sh (unit-test sandbox, direct invocation);
- * `software/tests/llmHomeFolder.spec.js` pins it against the real declaration so the
- * two cannot drift.
+ * Read DIRECTLY with no `||` default. A fallback here would re-spell `ai_llm` a
+ * second time, and the copy would go on resolving happily the day the real
+ * declaration moves — the two surfaces silently disagreeing is the exact failure
+ * this single-declaration rule exists to prevent.
  * @type {string}
  */
-const LLM_SHARED_ROOT_FOLDER = process.env.LLM_HOME_FOLDER || path.join(SY_HOME_FOLDER, "ai_llm");
+const LLM_SHARED_ROOT_FOLDER = process.env.LLM_ROOT_FOLDER;
+
+// --- Deployed-doc path placeholders ---
+
+/**
+ * The tokens a deployed LLM doc writes instead of a machine-specific folder, and
+ * the real path each resolves to on THIS machine.
+ *
+ * Repo sources cannot hardcode `~/_extra/ai_llm/...`: that is a second spelling of
+ * a folder already declared in `software/bootstrap/common-env.sh`, so it goes stale
+ * the day the root moves and — worse — it is wrong on any machine whose home layout
+ * differs. But the deployed file cannot carry `$LLM_ROOT_FOLDER` either: an agent
+ * reading `~/.claude/CLAUDE.md` has no shell expanding anything, and an unexpanded
+ * `$LLM_ROOT_FOLDER/plans` in a `mkdir -p` is a write at the filesystem root.
+ *
+ * The placeholder resolves that: sources stay symbolic and reviewable, and
+ * {@link resolveLLMDocPlaceholders} bakes the absolute path in at deploy time, so
+ * what lands on disk is a path the reader can use verbatim.
+ *
+ * Token name matches the env var name exactly, so `<LLM_ROOT_FOLDER>` in a doc and
+ * `$LLM_ROOT_FOLDER` in a script are visibly the same thing.
+ * @type {Record<string, string>}
+ */
+const LLM_DOC_PATH_PLACEHOLDERS = {
+  "<LLM_ROOT_FOLDER>": LLM_SHARED_ROOT_FOLDER,
+  "<SY_ROOT_FOLDER>": SY_ROOT_FOLDER,
+};
+
+/**
+ * Replaces every {@link LLM_DOC_PATH_PLACEHOLDERS} token with its resolved path.
+ *
+ * Plain split/join rather than a regex so a token never has to be escaped and a
+ * stray `<` elsewhere in the prose can never be captured.
+ * @param {string} text Raw doc content read from a repo source.
+ * @returns {string} The same content with every placeholder resolved.
+ */
+function resolveLLMDocPlaceholders(text) {
+  let resolved = text;
+  for (const [token, value] of Object.entries(LLM_DOC_PATH_PLACEHOLDERS)) {
+    resolved = resolved.split(token).join(value);
+  }
+  return resolved;
+}
+
+/**
+ * The ONE reader for any repo doc destined for a deployed LLM surface — the
+ * always-loaded instructions, every split instruction file, every `/sy-*` skill
+ * body, and each CLI's own tweaks file.
+ *
+ * Every one of them goes through here rather than calling `readText` directly, so
+ * placeholder resolution can never be forgotten on a new deploy path. A doc that
+ * skipped it would ship `<LLM_ROOT_FOLDER>` verbatim to an agent, which reads as a
+ * literal folder name and fails silently.
+ * @param {string} sourcePath Repo-relative path to the markdown source.
+ * @returns {Promise<string>} Deploy-ready content with paths resolved.
+ */
+async function readLLMDocSource(sourcePath) {
+  return resolveLLMDocPlaceholders(await readText`${sourcePath}`);
+}
 
 /**
  * On-demand instruction files, referenced by plain (backticked) path from the
@@ -819,6 +877,10 @@ function isUnderSharedLLMHome(target) {
  * @returns {Promise<void>}
  */
 async function deploySharedLLMInstructions() {
+  // TEMPORARY — a --files= run does not include _init.js, so the personal-root
+  // migration has to be guarded here too: creating <root>/ai_llm first would make
+  // the legacy twin look like a collision and strand it. Delete with SY_LEGACY_ROOT_FOLDER.
+  ensureSyHomeMigrated();
   warnAboutLegacyLLMFolders();
 
   fs.mkdirSync(LLM_SHARED_INSTRUCTIONS_FOLDER, { recursive: true });
@@ -828,7 +890,7 @@ async function deploySharedLLMInstructions() {
 
   for (const [targetName, sourcePath] of Object.entries(LLM_SHARED_INSTRUCTION_FILES)) {
     /** @type {string} Raw split-instruction content from the repo source of truth. */
-    const content = (await readText`${sourcePath}`).trim();
+    const content = (await readLLMDocSource(sourcePath)).trim();
 
     if (!content) {
       log(`>> shared instructions: SKIPPED ${targetName} — empty source ${sourcePath}`);
@@ -1067,7 +1129,7 @@ function linkSharedLLMInstructions() {
  */
 async function getLLMCustomInstructions() {
   /** @type {string} Raw instructions from the single source of truth. */
-  const content = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
+  const content = (await readLLMDocSource("software/scripts/advanced/llm/_common/instructions.md")).trim();
   return [
     `<!-- ${getAutoGeneratedText(content.length).trim()} -->`,
     content,
@@ -1233,7 +1295,7 @@ const LLM_COMMAND_RETIRED_NAMES = [
  * @returns {Promise<string>} The command markdown, right-trimmed.
  */
 async function readLLMCommandSource(sourceName) {
-  return (await readText`${LLM_COMMAND_SOURCE_FOLDER}/${sourceName}.md`).trimEnd();
+  return (await readLLMDocSource(`${LLM_COMMAND_SOURCE_FOLDER}/${sourceName}.md`)).trimEnd();
 }
 
 // --- Shared Skills Folder (one physical skill, symlinked into every CLI) ---
@@ -1509,6 +1571,10 @@ function linkSharedLLMSkills() {
  * @returns {Promise<void>}
  */
 async function deploySharedLLMSkills() {
+  // TEMPORARY — a --files= run does not include _init.js, so the personal-root
+  // migration has to be guarded here too: creating <root>/ai_llm first would make
+  // the legacy twin look like a collision and strand it. Delete with SY_LEGACY_ROOT_FOLDER.
+  ensureSyHomeMigrated();
   warnAboutLegacyLLMFolders();
 
   fs.mkdirSync(LLM_SHARED_SKILLS_FOLDER, { recursive: true });

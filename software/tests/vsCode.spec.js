@@ -37,8 +37,8 @@ function loadVsCode(overrides = {}) {
     getOsxApplicationSupportCodeUserPath: () => "/mock/home/Library/Application Support",
     BASE_HOMEDIR_LINUX: "/mock/home",
     // llm-common.js (SOURCEd in) derives the LLM home from these two.
-    SY_HOME_FOLDER: "/mock/home/sy",
-    process: { env: {} },
+    SY_ROOT_FOLDER: "/mock/home/sy",
+    process: { env: { LLM_ROOT_FOLDER: "/mock/home/sy/ai_llm" } },
     EDITOR_CONFIGS: {
       fontFamily: "FiraCode",
       fontFamilyDefaultFallback: "monospace",

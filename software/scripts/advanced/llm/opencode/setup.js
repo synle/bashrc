@@ -13,7 +13,7 @@
  * User-authored slash commands are symlinked from `~/.claude/commands/` in
  * `_syncOpencodeCommandSymlinks` below — no separate copy.
  *
- * Sy-managed skills live once at `$LLM_HOME_FOLDER/skills/<name>/SKILL.md` and are
+ * Sy-managed skills live once at `$LLM_ROOT_FOLDER/skills/<name>/SKILL.md` and are
  * symlinked into `~/.config/opencode/skills/` by the shared
  * `deploySharedLLMSkills()` (llm-common.js), which is what makes them
  * discoverable (https://opencode.ai/docs/skills/) and model-invocable through the
@@ -284,7 +284,7 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     // Read from disk rather than hardcoded: getSharedLLMInstructionFilePaths() lists
     // whatever deploySharedLLMInstructions() just wrote, so a file added to the
     // registry later needs no edit here, and a hand-authored note dropped into
-    // $LLM_HOME_FOLDER/instructions/ is picked up too.
+    // $LLM_ROOT_FOLDER/instructions/ is picked up too.
     instructions: getSharedLLMInstructionFilePaths(),
     // Never expose a session URL. Work happens in private repos; the default
     // ("manual") leaves a one-keystroke publish path we have no use for.
@@ -547,7 +547,7 @@ async function _syncOpencodeCommandSymlinks() {
 
 /**
  * Exposes every GLOBAL agent skill as a directly-invocable `/skill-name` slash
- * command by symlinking `$LLM_HOME_FOLDER/skills/<name>/SKILL.md` into
+ * command by symlinking `$LLM_ROOT_FOLDER/skills/<name>/SKILL.md` into
  * `~/.config/opencode/commands/<name>.md`.
  *
  * Sources the SHARED folder (LLM_SHARED_SKILLS_FOLDER), not `~/.claude/skills/` —

@@ -60,17 +60,17 @@ function writeCommand(name, body) {
  * partial already sourced. Returns stdout (the CLI stub output captures
  * cleanly so the caller can assert which CLI fired and with what prompt).
  *
- * `SY_HOME_FOLDER` is exported because the dispatcher resolves its skills folder
- * as `${LLM_HOME_FOLDER:-${SY_HOME_FOLDER:-$HOME}/ai_llm}/skills` — the same
- * chain a real shell sees once run.sh re-exports both into ~/.bash_syle_common.
- * Setting the middle rung rather than `LLM_HOME_FOLDER` keeps the fixture layout
- * (`home/sy/ai_llm/skills`) identical to the real one on disk.
+ * `LLM_ROOT_FOLDER` is exported because the dispatcher resolves its skills folder
+ * as `${LLM_ROOT_FOLDER}/skills`, read directly with no default — the same value a
+ * real shell sees once run.sh re-exports it into ~/.bash_syle_common. It has to be
+ * set here for that reason: with the `:-` chain gone there is nothing to fall back
+ * to, which is exactly the loud failure the direct read is meant to produce.
  *
  * @param {string} script - Bash script body, executed after the helpers + partial are sourced.
  * @returns {string} Captured stdout (trimmed).
  */
 function runBash(script) {
-  const cmd = `HOME='${sandbox}/home' SY_HOME_FOLDER='${sandbox}/home/sy' PATH='${sandbox}/bin':"$PATH" bash -c '
+  const cmd = `HOME='${sandbox}/home' LLM_ROOT_FOLDER='${sandbox}/home/sy/ai_llm' PATH='${sandbox}/bin':"$PATH" bash -c '
     source "${sandbox}/helpers.bash"
     source "${PARTIAL}"
     ${script}
@@ -170,7 +170,7 @@ describe("sy-commands dispatcher", () => {
 
   it("echoes the resolved CLI to stderr so the user sees the routing decision", () => {
     writeCommand("foo", "body");
-    const cmd = `HOME='${sandbox}/home' SY_HOME_FOLDER='${sandbox}/home/sy' PATH='${sandbox}/bin':"$PATH" bash -c '
+    const cmd = `HOME='${sandbox}/home' LLM_ROOT_FOLDER='${sandbox}/home/sy/ai_llm' PATH='${sandbox}/bin':"$PATH" bash -c '
       source "${sandbox}/helpers.bash"
       source "${PARTIAL}"
       sy-foo gemini 2>/tmp/sycommands-stderr-${process.pid}.log
