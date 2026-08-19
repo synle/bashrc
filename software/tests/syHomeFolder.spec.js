@@ -124,4 +124,19 @@ describe("SY_ROOT_FOLDER", () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it("is never deleted by make nuke", () => {
+    // The personal root holds authored plan files that no re-run can regenerate, so the
+    // blanket rm -rf that once sat in `nuke` must stay gone. Outlived the one-time
+    // migration that first added this guard.
+    const makefile = readRepoFile("Makefile");
+    const nuke = makefile.slice(makefile.indexOf("\nnuke:"), makefile.indexOf("$(MAKE) clean", makefile.indexOf("\nnuke:")));
+    // Comment lines are allowed to name it — they are why it is spared.
+    const commands = nuke
+      .split("\n")
+      .filter((line) => !/^\s*#/.test(line))
+      .join("\n");
+
+    expect(commands).not.toMatch(/~\/_extra/);
+  });
 });

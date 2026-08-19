@@ -3,10 +3,6 @@
  * so that later scripts can update blocks in place via registerWithBashSyleProfile.
  */
 async function doWork() {
-  // TEMPORARY — before anything else writes under the personal root, carry across
-  // whatever the abandoned $HOME/sy root still holds. Delete with SY_LEGACY_ROOT_FOLDER.
-  ensureSyHomeMigrated();
-
   // backup current profile files before any modifications
   await backupProfileFilesToTempDir("before");
 
