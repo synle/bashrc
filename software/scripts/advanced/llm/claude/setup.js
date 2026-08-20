@@ -278,4 +278,10 @@ async function doWork() {
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
   await deploySharedLLMInstructions();
   await _doInstructionsWork(targetDir);
+
+  // Named worker agents. Rendered per CLI from one shared source — see
+  // LLM_AGENT_DEPLOY_FOLDERS. Safe to call from every setup script: the bytes are
+  // deterministic, so whichever CLI runs first does the work and the rest no-op,
+  // and each CLI stays able to repair the shared corpus on its own.
+  await deploySharedLLMAgents();
 }

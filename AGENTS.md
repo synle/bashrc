@@ -740,7 +740,59 @@ Verified today: `copilot -p "/sy-<name>"` (fires `skill(...)`, v1.0.81) and
 empty. An empty kind degrades to `inline`, which always works — so leaving it empty is
 the correct move when you cannot test, never a guess.
 
-### 13.2 The shared LLM home folder — `~/_extra/ai_llm/`
+### 13.2 Named agents — a persona, never a workflow
+
+A **skill** is a workflow; an **agent** is the worker that runs it. The two are
+separate corpora on purpose, and the split is what keeps either one from becoming a
+second copy of the other. Registry: `LLM_AGENT_DEPLOY_MAP` in `llm-common.js`,
+sources in `_common/agents/<name>.md`.
+
+- **An agent source describes who the worker is, never what it does** — its lens,
+  what it owns, what it must never touch, how it reports. The steps, cadence,
+  safety list, and verification stay in the matching `SKILL.md`. An agent that also
+  carried the workflow would drift from it the first time either side is edited,
+  and nothing would fail loudly when it did.
+- **Agent sources obey the same portability contract as skills (§13.0)** — no
+  frontmatter, no CLI name, no tool name (`Task`, `Agent`, `@name`), no model. Each
+  opens with the same first-line `[Sy] <what this is>` marker the command sources
+  use, so one description derivation and one orphan-detection rule serve both.
+- **Agents are rendered per CLI, not symlinked to one shared copy** — the one place
+  this corpus diverges from `LLM_SKILL_LINK_FOLDERS`. A skill is byte-identical
+  everywhere; an agent is not, because each CLI demands its own frontmatter shape
+  and filename suffix, so a single physical file could only ever be correct for one
+  of them. `LLM_AGENT_DEPLOY_FOLDERS` holds **only** that shape difference — folder,
+  suffix, frontmatter builder — never which agents exist.
+- **Agent names are NOT `sy-` prefixed**, unlike commands. A command name is typed
+  into a picker, where clustering and collision-avoidance pay for the prefix; an
+  agent name is a label a harness renders beside a running worker, so the shortest
+  honest noun wins.
+- **A new CLI entry requires a live probe, not a doc.** A wrong folder or a wrong
+  frontmatter key fails **silently** on every one of these CLIs — the file is parsed
+  as ordinary documentation and the agent never appears. Both claude and copilot
+  enumerate every agent they resolved when handed one that does not exist, before
+  spending a model turn, which makes the check free:
+
+  ```bash
+  claude  --agent zz-nope -p x   # -> "not found. Available agents: ..."
+  copilot --agent zz-nope -p x   # -> "No such agent: zz-nope, available: ..."
+  opencode agent list            # -> "<name> (subagent)"
+  ```
+
+  Verified: claude 2.1.223 (`~/.claude/agents/<name>.md`, `name` key **required** —
+  a file with only `description` is ignored), copilot 1.0.81
+  (`~/.copilot/agents/<name>.agent.md`), opencode 1.18.18
+  (`~/.config/opencode/agent/<name>.md`, name from the FILENAME, no `name` key).
+  Gemini 0.55.1 has no agent surface and is deliberately absent. **OpenCode's
+  discovery lags a file write by several seconds** — a check run immediately after
+  deploy is a false negative, not a failure.
+
+- **Never name an agent inside a skill body.** Selecting a specialized worker is
+  phrased by behavior — "where the environment offers a worker specialized for
+  reviewing a pull request, dispatch to that one" — exactly like every other
+  handoff in §13.0. Renaming or deleting an agent adds the old name to
+  `LLM_AGENT_RETIRED_NAMES` in the same commit.
+
+### 13.3 The shared LLM home folder — `~/_extra/ai_llm/`
 
 Everything the LLM tooling owns outside a repo checkout lives under one root, created and
 maintained by `deploySharedLLMInstructions()` in `llm-common.js`, which **all four**

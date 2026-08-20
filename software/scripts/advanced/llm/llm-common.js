@@ -1686,15 +1686,45 @@ const LLM_AGENT_RETIRED_NAMES = [];
  *     so that is what we write. Discovery lags a file write by a few seconds —
  *     a check run immediately after deploy is a false negative, not a failure.
  *
- * Deliberately absent until verified the same way: claude, copilot, gemini. Each
- * is believed to read `<home>/.<cli>/agents/*.md` with a `name` + `description`
- * frontmatter, but believed is not read, and a wrong frontmatter key fails
- * SILENTLY — the file is parsed as ordinary documentation and the agent simply
- * never appears. Adding one is a single entry here plus a call in that CLI's
- * setup.js, once someone has watched its own agent-list command print the name.
+ *   - claude — `~/.claude/agents/<name>.md`, frontmatter `name` + `description`.
+ *     The `name` key is REQUIRED: a probe file carrying only `description` was
+ *     silently ignored, while the identical file plus `name` appeared. Confirmed
+ *     on Claude Code 2.1.223.
+ *   - copilot — `~/.copilot/agents/<name>.agent.md`, frontmatter `name` +
+ *     `description`. A plain `<name>.md` in the same folder is ALSO picked up;
+ *     `.agent.md` is the documented form and is what we write, which also keeps
+ *     our files distinguishable from anything else dropped there. Confirmed on
+ *     GitHub Copilot CLI 1.0.81.
+ *
+ * Deliberately absent: gemini. Version 0.55.1 exposes `gemini skills` but no
+ * agents subcommand and no `--agent` flag, so there is nothing to write to and
+ * nothing that could confirm a write landed. Add it once a released version
+ * offers a surface that can be probed.
+ *
+ * How each of the above was verified — the probe is free, so re-run it rather
+ * than trusting this comment after a CLI upgrade. Both claude and copilot
+ * enumerate every agent they resolved when handed one that does not exist, and
+ * they do it before spending a model turn:
+ *
+ *   claude  --agent zz-nope -p x     # → "not found. Available agents: …"
+ *   copilot --agent zz-nope -p x     # → "No such agent: zz-nope, available: …"
+ *
+ * A wrong folder or a wrong frontmatter key fails SILENTLY on every one of these
+ * CLIs — the file is parsed as ordinary documentation and the agent simply never
+ * appears — which is exactly why "believed" is not good enough to earn an entry.
  * @type {Record<string, {folder: string, suffix: string, frontmatter: (name: string, description: string) => string}>}
  */
 const LLM_AGENT_DEPLOY_FOLDERS = {
+  claude: {
+    folder: path.join(BASE_HOMEDIR_LINUX, ".claude", "agents"),
+    suffix: ".md",
+    frontmatter: (name, description) => `name: ${name}\ndescription: "${description}"`,
+  },
+  copilot: {
+    folder: path.join(BASE_HOMEDIR_LINUX, ".copilot", "agents"),
+    suffix: ".agent.md",
+    frontmatter: (name, description) => `name: ${name}\ndescription: "${description}"`,
+  },
   opencode: {
     folder: path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "agent"),
     suffix: ".md",
