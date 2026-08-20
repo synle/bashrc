@@ -820,4 +820,9 @@ async function doWork() {
   // the /name command mirror below points at them.
   await deploySharedLLMSkills();
   await _syncOpencodeSkillCommandSymlinks();
+
+  // Named worker agents for the PR fan-outs. Independent of the skills above —
+  // a skill supplies the workflow, an agent supplies the worker persona and, on
+  // opencode specifically, the label its subagent tab strip renders.
+  await deploySharedLLMAgents();
 }

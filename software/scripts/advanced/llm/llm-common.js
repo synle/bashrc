@@ -1595,3 +1595,221 @@ async function deploySharedLLMSkills() {
   _pruneStaleSharedSkills();
   linkSharedLLMSkills();
 }
+
+// --- Shared Agents (one canonical spec, one native file per CLI) ---
+
+/**
+ * Repo-relative folder holding the canonical source of every Sy-managed agent.
+ *
+ * One `.md` per agent, describing a **worker persona** — who the agent is, what
+ * it owns, what it must never touch — and deliberately NOT the workflow it runs.
+ * The workflow lives in the matching skill; an agent that also carried the steps
+ * would be a second copy of them, drifting the moment either side is edited.
+ *
+ * Sources are vendor-neutral prose with no frontmatter: they name no CLI, no tool
+ * (`Task`, `Agent`, `@name`), and no model. Each opens with the same first-line
+ * `[Sy] <what this is>` marker the command sources use, so one description
+ * derivation and one orphan-detection rule serve both corpora.
+ * @type {string}
+ */
+const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/agents";
+
+/**
+ * The one registry of Sy-managed agents, shared by every LLM CLI setup.
+ *
+ * Key   = deployed agent name, **without** any extension (e.g. `pr-babysitter`).
+ *         Every CLI derives its own filename from this key via the per-CLI
+ *         `suffix` in {@link LLM_AGENT_DEPLOY_FOLDERS}, which is what lets one
+ *         map serve `~/.config/opencode/agent/<key>.md` and
+ *         `~/.copilot/agents/<key>.agent.md` at once.
+ * Value = source basename (no `.md`) under {@link LLM_AGENT_SOURCE_FOLDER}.
+ *
+ * Deliberately NOT `sy-` prefixed, unlike {@link LLM_COMMAND_DEPLOY_MAP}. A
+ * command name is a thing the user types into a picker, where clustering and
+ * collision-avoidance pay for the prefix. An agent name is a **label the harness
+ * renders** next to a running worker (this whole registry exists because
+ * OpenCode's subagent tab strip showed five identical `General` entries), so the
+ * shortest honest noun wins.
+ *
+ * Editing an agent: edit `<LLM_AGENT_SOURCE_FOLDER>/<value>.md`.
+ * Adding an agent: drop the new `.md` there + add ONE entry here — every CLI in
+ *   {@link LLM_AGENT_DEPLOY_FOLDERS} picks it up on its next setup run.
+ * Renaming / removing: move the OLD key into {@link LLM_AGENT_RETIRED_NAMES}.
+ *
+ * @type {Record<string, string>}
+ */
+const LLM_AGENT_DEPLOY_MAP = {
+  "pr-babysitter": "pr-babysitter",
+  "pr-reviewer": "pr-reviewer",
+};
+
+/**
+ * Agent names we used to deploy but no longer do. Same contract and same
+ * maintenance rule as {@link LLM_COMMAND_RETIRED_NAMES}: whenever an agent is
+ * renamed or deleted, its OLD name goes here in the same commit, or every dev
+ * machine keeps an orphan the harness still offers.
+ *
+ * Entries record WHEN they were retired so a future maintainer can prune safely
+ * (rule of thumb: ~3+ months after the retirement commit, AND every dev machine
+ * has re-run at least once).
+ * @type {string[]} deployed agent names, no extension
+ */
+const LLM_AGENT_RETIRED_NAMES = [];
+
+/**
+ * Every CLI agents folder that receives a native copy of each shared agent.
+ *
+ * REAL FILES, not symlinks — the one place this corpus deliberately diverges from
+ * {@link LLM_SKILL_LINK_FOLDERS}. A skill is byte-identical everywhere, so one
+ * physical copy plus symlinks makes staleness structurally impossible. An agent
+ * is not: each CLI demands its own frontmatter shape and its own filename suffix,
+ * so a shared physical file could only ever be correct for one of them. The
+ * single source of truth stays the repo source; the per-CLI file is a rendered
+ * artifact, regenerated on every deploy.
+ *
+ * Same "one registry, never a per-CLI list" rule as every other map here: this is
+ * the only place a CLI's agents folder or frontmatter shape is named, and adding
+ * a CLI is one entry here rather than an edit to its setup.js.
+ *
+ * Per-entry fields:
+ *   - `folder`      — absolute destination folder, created if absent.
+ *   - `suffix`      — appended to the registry key to form the filename.
+ *   - `frontmatter` — builds that CLI's YAML block from the shared name +
+ *                     description. The shape difference lives HERE and nowhere
+ *                     else; the body below it is byte-identical across CLIs.
+ *
+ * Verified destinations:
+ *   - opencode — `~/.config/opencode/agent/<name>.md`, frontmatter `description` +
+ *     `mode: subagent`, agent name taken from the FILENAME (no `name` key).
+ *     Confirmed on opencode 1.18.18 via `opencode agent list`. Both `agent/` and
+ *     `agents/` are scanned; the singular is what the bundled docs table names,
+ *     so that is what we write. Discovery lags a file write by a few seconds —
+ *     a check run immediately after deploy is a false negative, not a failure.
+ *
+ * Deliberately absent until verified the same way: claude, copilot, gemini. Each
+ * is believed to read `<home>/.<cli>/agents/*.md` with a `name` + `description`
+ * frontmatter, but believed is not read, and a wrong frontmatter key fails
+ * SILENTLY — the file is parsed as ordinary documentation and the agent simply
+ * never appears. Adding one is a single entry here plus a call in that CLI's
+ * setup.js, once someone has watched its own agent-list command print the name.
+ * @type {Record<string, {folder: string, suffix: string, frontmatter: (name: string, description: string) => string}>}
+ */
+const LLM_AGENT_DEPLOY_FOLDERS = {
+  opencode: {
+    folder: path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "agent"),
+    suffix: ".md",
+    frontmatter: (_name, description) => `description: "${description}"\nmode: subagent`,
+  },
+};
+
+/**
+ * Reads an agent body from {@link LLM_AGENT_SOURCE_FOLDER}, trailing whitespace
+ * trimmed. Shared so every CLI setup reads the identical bytes from the identical
+ * path instead of each hardcoding the folder in its own readText.
+ *
+ * @param {string} sourceName - Source basename without `.md` (a {@link LLM_AGENT_DEPLOY_MAP} value).
+ * @returns {Promise<string>} The agent markdown, right-trimmed.
+ */
+async function readLLMAgentSource(sourceName) {
+  return (await readLLMDocSource(`${LLM_AGENT_SOURCE_FOLDER}/${sourceName}.md`)).trimEnd();
+}
+
+/**
+ * Removes deployed agents that fell out of {@link LLM_AGENT_DEPLOY_MAP}.
+ *
+ * A file is ours to delete when its name is in {@link LLM_AGENT_RETIRED_NAMES}
+ * (an explicit retirement) or when its body still carries a
+ * {@link LLM_SKILL_MARKERS} prefix (any future rename, with no list to maintain).
+ * A user-authored agent dropped into the same folder matches neither and
+ * survives — this reads a destructive `rmSync`, so anything unrecognized fails
+ * closed and is left on disk.
+ *
+ * @param {string} destFolder - Absolute agents folder to sweep.
+ * @param {string} suffix - Filename suffix this CLI uses, e.g. `.md`.
+ * @returns {number} Count of agent files removed.
+ */
+function _pruneStaleDeployedAgents(destFolder, suffix) {
+  if (!fs.existsSync(destFolder)) return 0;
+
+  /** @type {Set<string>} Filenames the registry still declares for this CLI. */
+  const declared = new Set(Object.keys(LLM_AGENT_DEPLOY_MAP).map((name) => `${name}${suffix}`));
+  /** @type {Set<string>} Filenames explicitly retired, so they go even without a marker. */
+  const retired = new Set(LLM_AGENT_RETIRED_NAMES.map((name) => `${name}${suffix}`));
+  /** @type {number} Files removed this run. */
+  let removed = 0;
+
+  for (const entry of fs.readdirSync(destFolder)) {
+    if (declared.has(entry) || !entry.endsWith(suffix)) continue;
+
+    /** @type {string} Absolute path of the candidate orphan. */
+    const entryPath = path.join(destFolder, entry);
+    /** @type {string} Reason label printed in the log line — only set when we decide to remove. */
+    let reason = "";
+    if (retired.has(entry)) {
+      reason = "retired";
+    } else {
+      try {
+        /** @type {string} First body line, past the generated frontmatter fence. */
+        const firstLine = _readSkillBodyFirstLine(fs.readFileSync(entryPath, "utf-8"));
+        if (LLM_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "marker";
+      } catch {}
+    }
+    if (!reason) continue;
+
+    try {
+      fs.rmSync(entryPath, { force: true });
+      removed++;
+      log(`>> shared agents: removed prior Sy agent (${reason}): ${entryPath}`);
+    } catch (e) {
+      log(`>> shared agents: could not remove ${entryPath} — ${e.message}`);
+    }
+  }
+
+  return removed;
+}
+
+/**
+ * Renders every {@link LLM_AGENT_DEPLOY_MAP} entry into each folder in
+ * {@link LLM_AGENT_DEPLOY_FOLDERS}, in that CLI's native format, then prunes
+ * orphans.
+ *
+ * Safe to call from every setup script: the rendered bytes are deterministic, so
+ * whichever CLI runs first does the work and the rest are no-ops. Each CLI stays
+ * independently able to repair its own folder without another being a
+ * prerequisite.
+ *
+ * Frontmatter is generated here rather than stored in the repo source — the
+ * source has to stay vendor-neutral (it feeds four different frontmatter shapes),
+ * and adding any upstream would break the first-line `[Sy] ` marker that orphan
+ * detection relies on.
+ *
+ * @returns {Promise<void>}
+ */
+async function deploySharedLLMAgents() {
+  /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
+  const sourceCache = {};
+
+  for (const [cli, { folder, suffix, frontmatter }] of Object.entries(LLM_AGENT_DEPLOY_FOLDERS)) {
+    fs.mkdirSync(folder, { recursive: true });
+
+    /** @type {number} Agent files written or refreshed for this CLI. */
+    let written = 0;
+
+    for (const [agentName, sourceName] of Object.entries(LLM_AGENT_DEPLOY_MAP)) {
+      if (!(sourceName in sourceCache)) {
+        sourceCache[sourceName] = await readLLMAgentSource(sourceName);
+      }
+      /** @type {string} Verbatim markdown body of the shared agent source. */
+      const body = sourceCache[sourceName];
+
+      await writeText(
+        path.join(folder, `${agentName}${suffix}`),
+        `---\n${frontmatter(agentName, buildLLMSkillDescription(body))}\n---\n\n${body}\n`,
+      );
+      written++;
+    }
+
+    _pruneStaleDeployedAgents(folder, suffix);
+    log(`>> shared agents: deployed ${written} agent(s) for ${cli} into ${folder}`);
+  }
+}
