@@ -217,7 +217,11 @@ function _prepend_recents() {
 #   last_folder - cd to the most recently visited directory
 #   fuzzy_cd - fzf cd picker for directories
 ################################################################################
-_RECENT_FOLDERS_FILE=~/.bash_syle_paths
+# Both recents lists live under the personal root, same as every other piece of
+# Sy-owned state. The folder is created once here so _prune_recents' touch has
+# somewhere to land; the -d test keeps the common case fork-free.
+[ -d "$SY_ROOT_FOLDER" ] || command mkdir -p "$SY_ROOT_FOLDER" 2> /dev/null
+_RECENT_FOLDERS_FILE="${SY_ROOT_FOLDER}/.bash_syle_paths"
 _RECENT_FOLDERS_MAX=100
 # exported so _recent_folders still resolves the file when fzf's F5 reload runs
 # it inside a `$SHELL -c` subshell (see the export below)
@@ -295,7 +299,7 @@ _prompt_command_add "_rewrite_last_history_entry; _track_folder; history -a; ech
 #   last_file - open the most recently opened file
 #   fuzzy_recent_files - fzf picker for recently opened files
 ################################################################################
-_RECENT_FILES_FILE=~/.bash_syle_recent_files
+_RECENT_FILES_FILE="${SY_ROOT_FOLDER}/.bash_syle_recent_files"
 _RECENT_FILES_MAX=100
 
 # reads the files list, removes entries that no longer exist, and outputs the cleaned list
