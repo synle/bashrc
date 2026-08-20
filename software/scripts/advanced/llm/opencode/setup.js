@@ -313,6 +313,13 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
       "opencode-supermemory",
       // Surfaces running subagent state in the statusline.
       "opencode-subagent-statusline",
+      // Desktop notification when a long-running turn finishes, so a session
+      // left alone for a 25-minute babysit pass does not need watching.
+      "opencode-notify",
+      // Git worktree-scoped sessions. Complements the worktree rules in the PR
+      // workflow rather than replacing them — `git create-worktree` stays the
+      // sanctioned creator for anything a command or skill drives.
+      "opencode-worktree",
     ],
     provider: providers,
   };
