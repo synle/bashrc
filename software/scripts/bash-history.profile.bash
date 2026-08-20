@@ -8,10 +8,10 @@
 # history_restore      — Restore ~/.bash_history from a backup by date
 #
 # Automatic daily backup on shell startup with rotation (7-day retention).
-# Backups stored in: ~/.bash_history_backups/bash_history_YYYY-MM-DD
+# Backups stored in: $SY_ROOT_FOLDER/.bash_history_backups/bash_history_YYYY-MM-DD
 ################################################################################
 #
-HISTORY_BACKUP_DIR="$HOME/.bash_history_backups"
+HISTORY_BACKUP_DIR="${SY_ROOT_FOLDER}/.bash_history_backups"
 HISTORY_BACKUP_MAX=7
 
 # history_cleanup: deep-clean $HISTFILE in place. Sole history-file cleaner —

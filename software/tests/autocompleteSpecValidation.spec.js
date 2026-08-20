@@ -995,19 +995,19 @@ describe("bash-fzf.profile.bash (direct)", () => {
       expect(results).toContain("HAS_FUZZY_FAVORITE");
     });
 
-    it("should set BOOKMARK_PATH based on USER", () => {
-      const results = runFzfHelper('echo "$BOOKMARK_PATH"');
-      expect(results[0]).toMatch(/\.\w+_bookmark$/);
+    it("should set BOOKMARK_SYLE_PATH under the personal root", () => {
+      const results = runFzfHelper('echo "$BOOKMARK_SYLE_PATH"');
+      expect(results[0]).toMatch(/\.syle_bookmark$/);
     });
 
     it("should add and dedupe bookmarks", () => {
       const results = runFzfHelper(`
-        export BOOKMARK_PATH="/tmp/_test_bookmark_$$"
+        export BOOKMARK_SYLE_PATH="/tmp/_test_bookmark_$$"
         add_bookmark "cd /tmp"
         add_bookmark "cd /tmp"
         add_bookmark "cd /var"
-        cat "\$BOOKMARK_PATH"
-        rm -f "\$BOOKMARK_PATH"
+        cat "\$BOOKMARK_SYLE_PATH"
+        rm -f "\$BOOKMARK_SYLE_PATH"
       `);
       const cdTmpCount = results.filter((l) => l === "cd /tmp").length;
       expect(cdTmpCount).toBe(1);
