@@ -447,16 +447,16 @@ Pulse (2 moved, 2 steady, 1 new):
 
 | PR | Status | Agent |
 | --- | --- | --- |
-| github.com/acme/widget-store/pull/109<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (loop 1/3) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
-| github.com/acme/web/pull/7<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (loop 2/3) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| github.com/acme/widget-store/pull/109<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| github.com/acme/web/pull/7<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
 | github.com/acme/api/pull/51<br>🌊 slot 2 · oauth-migration — new OAuth token refresh<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED — slot 2, position 2 of 2 — behind github.com/acme/web/pull/7<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
 
 ### 🌊 Standalone (2) — acme/widget-store, acme/api
 
 | PR | Status | Agent |
 | --- | --- | --- |
-| github.com/acme/widget-store/pull/113<br>🌊 slot 1 · standalone<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (loop 2/3) — ended 16:58 · ran 26m · next 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/42<br>🌊 slot 1 · standalone<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (loop 3/3) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
+| github.com/acme/widget-store/pull/113<br>🌊 slot 1 · standalone<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) — ended 16:58 · ran 26m · next check 17:02<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/42<br>🌊 slot 1 · standalone<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
 
 **Grouping — one feature set is one block, top to bottom.**
@@ -572,23 +572,23 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 - **Agent** — what the dispatched job is doing. **Two lines, not three:** line 1 is the state token plus its clock, line 2 is the counters line. The timing used to sit on its own line; it is folded into line 1 because "which state, since when, for how long" is one thought and reads worse split across two rows. No delta here — that lives under the TLDR in the PR cell.
 
-  **Line 1 — `<state token>[ (loop N/M)] — <clock>`.**
+  **Line 1 — `<state token>[ (pass N · <HH:MM> left)] — <clock>`.**
 
   | Token                   | When                                                            | Clock                                                                 |
   | ----------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------- |
-  | `⚪ NOT STARTED`        | Assigned to a slot, first pass not yet run                      | `slot 2, position 2 of 2 — behind <link>` (no clock; nothing started) |
+  | `⚪ NOT STARTED`        | Enrolled, first pass not yet run                                | `queued, position 2 of 5` (no clock; nothing started)                 |
   | `🔄 IN PROGRESS`        | Job actively working this pass                                  | `started 17:12 · running 22m`                                         |
-  | `⏸️ WAITING`            | Pass done, sleeping until the next one                          | `ended 16:58 · ran 19m · next 17:23`                                  |
-  | `👁️ WATCHING`           | **Not terminal** — slot parked, dispatcher polling cheaply      | `blocked on Owner Approval · tick 4 · next check 17:23`               |
+  | `⏸️ WAITING`            | Pass done, polling until something moves                        | `ended 16:58 · ran 19m · next check 17:02`                            |
+  | `👁️ WATCHING`           | **Not terminal** — no worker held, dispatcher polling cheaply   | `blocked on Owner Approval · probe 4 · next check 17:02`              |
   | `✅ COMPLETED`          | Job finished all passes, or the PR merged                       | `ended 17:05 · 48m total`                                             |
-  | `⏭️ SKIPPED`            | **Terminal** — every pass was skipped and no pass remains       | `17:02 — draft, all 10 passes`                                        |
-  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, later passes still to run | `17:02 — draft · next 17:27`                                          |
+  | `⏭️ SKIPPED`            | **Terminal** — skipped, and the run budget is spent             | `17:02 — draft, budget spent`                                         |
+  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, run budget still open     | `17:02 — draft · next check 17:02`                                    |
   | `⚠️ ESCALATED`          | Job stopped and needs human judgment                            | `stopped 17:01 · ran 19m — needs human`                               |
   | `❌ FAILED`             | Job errored out                                                 | `failed 16:44 · ran 4m — worktree conflict`                           |
 
-  **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip on pass 1 of 10 is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-pass ETA. Only when the passes are exhausted does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal _and_ loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
+  **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip while the run budget is still open is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-check ETA. Only when the budget is spent does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal _and_ loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
 
-  **`👁️ WATCHING` means the round is being served cheaply, not that it was dropped.** The dispatcher parked this PR's slot because every PR in it is externally blocked, and is polling the state fingerprint itself instead of dispatching an agent (`/sy-babysit-prs` Step 4b, `/sy-review-prs` Step 5b). The row is **not terminal** — it keeps its loop counter and its next-check ETA, the pulse keeps running, and the slot relaunches the instant the fingerprint moves. Its clock reads `blocked on <what> · tick <N> · next check <HH:MM>`: what it is waiting on, how many ticks it has spent there, and when the next probe lands. Never render it as `⏸️ WAITING` (which claims a dispatched job is asleep) or as `⏭️ SKIPPED` (which claims nobody is coming back).
+  **`👁️ WATCHING` means the PR is being served cheaply, not that it was dropped.** This PR is externally blocked, so the dispatcher released its worker slot and is polling the state fingerprint itself (`/sy-babysit-prs` Step 4b, `/sy-review-prs` Step 5b). The row is **not terminal** — it keeps its pass counter and its next-check ETA, the pulse keeps running, and a worker is dispatched the instant the fingerprint moves. Its clock reads `blocked on <what> · probe <N> · next check <HH:MM>`: what it is waiting on, how many probes it has spent there, and when the next one lands. Never render it as `⏸️ WAITING` (which claims a dispatched job is asleep) or as `⏭️ SKIPPED` (which claims nobody is coming back).
 
   **A merged or closed PR is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
 
@@ -596,12 +596,12 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   - `running <N>m` on `🔄 IN PROGRESS` is **elapsed since the current loop started**, recomputed at render time (`now − loop start`), not the total across loops. That is the number a human actually wants: "has this pass been stuck for 45 minutes?"
   - `ran <N>m` on a finished-pass state is that pass's own wall time (`pass end − pass start`).
-  - `<N>m total` on `✅ COMPLETED` is the whole job, first dispatch to final pass end, across every loop.
+  - `<N>m total` on `✅ COMPLETED` is the whole job, first dispatch to final pass end, across every pass.
   - A clock field with no data prints nothing rather than `0m` or `--`; drop the field and its `·` separator. Never invent a start time to fill the slot.
 
-  The loop counter is `(loop N/M)` whenever the per-PR command loops. Both looping commands run ≥10 passes 25 min apart, so `M = 10` for `/sy-babysit-pr` and for `/sy-review-pr` alike. Drop the counter entirely only for a genuinely single-pass per-PR command (`🔄 IN PROGRESS — started 17:12 · running 6m`).
+  The pass counter is `(pass N · <HH:MM> left)` whenever the per-PR command loops — how many full passes that PR has had, and how much of the shared run budget remains. There is no pass quota, so never render a denominator. Drop the counter entirely only for a genuinely single-pass per-PR command (`🔄 IN PROGRESS — started 17:12 · running 6m`).
 
-  **The clock is excluded from the change-marker diff.** Elapsed time moves on every pulse by definition, so counting it as a change would render `Δ` on every running row forever and destroy the marker's only job. Diff the state token, the loop number, the Status cell, and the counters line — never `running <N>m`, never a recomputed `next <HH:MM>`. A row whose only difference is the clock ticking is `▫️`.
+  **The clock is excluded from the change-marker diff.** Elapsed time moves on every pulse by definition, so counting it as a change would render `Δ` on every running row forever and destroy the marker's only job. Diff the state token, the pass number, the Status cell, and the counters line — never `running <N>m`, never a recomputed `next check <HH:MM>`, never the remaining-budget figure. A row whose only difference is the clock ticking is `▫️`.
 
   **Line 2 — counters line.** One line, always printed, always all three fields, always this order, `·`-separated:
 
@@ -617,7 +617,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Counts come from the caller's ledger where the agent tracked them; standalone with no ledger, fill `💬` / `✔` from `reviewThreads` and print `⚠️ 0 need attention` (nothing has judged them). On a failed fetch, print `?` in the affected field rather than guessing `0`.
 
-**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, **dispatch slot number and position within that slot**, first dispatch time, last pass start / end, next pass ETA, **watch state plus its blocker, tick count, and next-check time when the slot is parked**, and the open / resolved / need-attention thread counts) alongside the scope. Every clock field on the Agent line is read from that ledger — `/sy-list-prs` computes only the elapsed subtraction (`now − loop start`), never the timestamps themselves. The slot number is read from the ledger too and never invented; with no slot for a PR, the group line drops its `slot <N> · ` prefix rather than guessing one. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED — no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board, grouped by feature cluster alone.
+**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: ledger state, pass count, **slot number when active and queue position when queued**, first dispatch time, last pass start / end, next check ETA, **watch state plus its blocker, probe count, and next-check time when watching**, and the open / resolved / need-attention thread counts) alongside the scope. Every clock field on the Agent line is read from that ledger — `/sy-list-prs` computes only the elapsed subtraction (`now − loop start`), never the timestamps themselves. The slot number is read from the ledger too and never invented; with no slot for a PR, the group line drops its `slot <N> · ` prefix rather than guessing one. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED — no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board, grouped by feature cluster alone.
 
 **The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, component lines, and counters line. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` with `🆕 First ping-pong — no prior snapshot` on line 4 of the PR cell.
 
