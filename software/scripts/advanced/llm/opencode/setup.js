@@ -320,6 +320,12 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
       // workflow rather than replacing them — `git create-worktree` stays the
       // sanctioned creator for anything a command or skill drives.
       "opencode-worktree",
+      // Filters noisy shell output before it reaches the model, via the `snip`
+      // binary installed by opencode/install.sh. NOTE: this trims what the MODEL
+      // sees, not merely what the TUI renders — a filter that is too aggressive
+      // shows up as the agent "missing" a file it was never shown. If output
+      // starts looking suspiciously incomplete, drop this entry first.
+      "opencode-snip",
     ],
     provider: providers,
   };
