@@ -21,3 +21,26 @@ echo '> Installing opencode'
 npm uninstall -g opencode-darwin-arm64 > /dev/null 2>&1
 npm uninstall -g opencode-ai > /dev/null 2>&1
 npm_install_global opencode-ai opencode
+
+# install snip - shell-output filter (https://github.com/edouard-claude/snip)
+#
+# Required by the `opencode-snip` plugin registered in opencode/setup.js: the
+# plugin shells out to this binary, and without it the plugin is a silent no-op.
+#
+# The official installer is one POSIX-sh script covering macOS (Intel + Apple
+# Silicon) and Linux (x86_64 + ARM), so no per-OS branch is needed. It installs
+# to /usr/local/bin when writable and falls back to ~/.local/bin otherwise, which
+# is already on PATH here — so this never needs sudo.
+#
+# Piped through `run_native` because the installer picks its download by parsing
+# `uname -m`, which lies under Rosetta 2: an Intel-launched shell on Apple
+# Silicon reports x86_64, and every child inherits it, so a plain `| sh` would
+# fetch the Intel build and install a translated binary that works but runs slow
+# and reports the wrong arch forever after.
+#
+# Guarded by has_persistent_binary so a re-run is a no-op; force a refresh by
+# removing the binary, since the installer always fetches the latest release.
+if ! has_persistent_binary snip; then
+  echo '> Installing snip (required by the opencode-snip plugin)'
+  curl -fsSL https://raw.githubusercontent.com/edouard-claude/snip/master/install.sh | run_native sh > /dev/null
+fi

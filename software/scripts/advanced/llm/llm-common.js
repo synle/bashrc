@@ -1761,34 +1761,32 @@ async function readLLMAgentSource(sourceName) {
 }
 
 /**
- * Removes deployed agents that fell out of {@link LLM_AGENT_DEPLOY_MAP}.
+ * Removes shared agents that fell out of {@link LLM_AGENT_DEPLOY_MAP}.
  *
  * A file is ours to delete when its name is in {@link LLM_AGENT_RETIRED_NAMES}
  * (an explicit retirement) or when its body still carries a
  * {@link LLM_SKILL_MARKERS} prefix (any future rename, with no list to maintain).
- * A user-authored agent dropped into the same folder matches neither and
- * survives — this reads a destructive `rmSync`, so anything unrecognized fails
+ * A user-authored agent dropped into the shared folder matches neither and
+ * survives — this feeds a destructive `rmSync`, so anything unrecognized fails
  * closed and is left on disk.
  *
- * @param {string} destFolder - Absolute agents folder to sweep.
- * @param {string} suffix - Filename suffix this CLI uses, e.g. `.md`.
- * @returns {number} Count of agent files removed.
+ * @returns {number} Count of shared agent files removed.
  */
-function _pruneStaleDeployedAgents(destFolder, suffix) {
-  if (!fs.existsSync(destFolder)) return 0;
+function _pruneStaleSharedAgents() {
+  if (!fs.existsSync(LLM_SHARED_AGENTS_FOLDER)) return 0;
 
-  /** @type {Set<string>} Filenames the registry still declares for this CLI. */
-  const declared = new Set(Object.keys(LLM_AGENT_DEPLOY_MAP).map((name) => `${name}${suffix}`));
+  /** @type {Set<string>} Filenames the registry still declares. */
+  const declared = new Set(Object.keys(LLM_AGENT_DEPLOY_MAP).map((name) => `${name}.md`));
   /** @type {Set<string>} Filenames explicitly retired, so they go even without a marker. */
-  const retired = new Set(LLM_AGENT_RETIRED_NAMES.map((name) => `${name}${suffix}`));
+  const retired = new Set(LLM_AGENT_RETIRED_NAMES.map((name) => `${name}.md`));
   /** @type {number} Files removed this run. */
   let removed = 0;
 
-  for (const entry of fs.readdirSync(destFolder)) {
-    if (declared.has(entry) || !entry.endsWith(suffix)) continue;
+  for (const entry of fs.readdirSync(LLM_SHARED_AGENTS_FOLDER)) {
+    if (declared.has(entry) || !entry.endsWith(".md")) continue;
 
     /** @type {string} Absolute path of the candidate orphan. */
-    const entryPath = path.join(destFolder, entry);
+    const entryPath = path.join(LLM_SHARED_AGENTS_FOLDER, entry);
     /** @type {string} Reason label printed in the log line — only set when we decide to remove. */
     let reason = "";
     if (retired.has(entry)) {
@@ -1815,47 +1813,215 @@ function _pruneStaleDeployedAgents(destFolder, suffix) {
 }
 
 /**
- * Renders every {@link LLM_AGENT_DEPLOY_MAP} entry into each folder in
- * {@link LLM_AGENT_DEPLOY_FOLDERS}, in that CLI's native format, then prunes
- * orphans.
+ * Removes every Sy-owned agent artifact in the CLI link folders that the registry
+ * no longer justifies.
  *
- * Safe to call from every setup script: the rendered bytes are deterministic, so
- * whichever CLI runs first does the work and the rest are no-ops. Each CLI stays
- * independently able to repair its own folder without another being a
- * prerequisite.
+ * Runs BEFORE the write/link pass, mirroring the instructions corpus: the link
+ * pass then stays pure and may treat any surviving non-symlink as genuinely
+ * foreign. Inlining this cleanup into the link loop is what previously forced
+ * that loop to carve out an exception for its own leftovers.
  *
- * Frontmatter is generated here rather than stored in the repo source — the
- * source has to stay vendor-neutral (it feeds four different frontmatter shapes),
- * and adding any upstream would break the first-line `[Sy] ` marker that orphan
- * detection relies on.
+ * Three classes of leftover are swept, each ours by evidence rather than by path,
+ * so a user- or plugin-authored entry matches none and survives:
+ *   1. Dangling links (target gone) that pointed into a shared agents folder.
+ *   2. Stale links, including ones under a root we have since moved away from.
+ *   3. Real files still carrying our `[Sy] ` marker — leftovers from the earlier
+ *      render-per-CLI model, which wrote real files at exactly these paths.
+ *      Without this, a machine that ran that version keeps them forever and never
+ *      links, because the link pass correctly refuses to touch real files.
+ *
+ * `lstat` / `readlink` are used throughout rather than `existsSync`, so a dangling
+ * link is inspected rather than skipped as absent.
+ *
+ * @returns {number} Count of artifacts removed.
+ */
+function pruneOrphanedSharedLLMAgents() {
+  /** @type {number} Artifacts removed this run, across every folder. */
+  let removed = 0;
+
+  for (const { folder: destFolder, suffix } of LLM_AGENT_LINK_FOLDERS) {
+    if (!fs.existsSync(destFolder)) continue;
+
+    /** @type {Set<string>} Link basenames the registry still justifies in this folder. */
+    const expected = new Set(Object.keys(LLM_AGENT_DEPLOY_MAP).map((name) => `${name}${suffix}`));
+
+    for (const entry of fs.readdirSync(destFolder)) {
+      /** @type {string} Absolute path of the candidate leftover. */
+      const entryPath = path.join(destFolder, entry);
+
+      /** @type {fs.Stats|undefined} Lstat of the entry itself — never followed, so danglers show up. */
+      let stat;
+      try {
+        stat = fs.lstatSync(entryPath);
+      } catch (e) {
+        log(`>> shared agents: could not inspect ${entryPath} while pruning — ${e.message}`);
+        continue;
+      }
+
+      /** @type {string} Why this entry is ours to delete — empty means leave it alone. */
+      let reason = "";
+
+      if (stat.isSymbolicLink()) {
+        /** @type {string} Resolved link target, whether or not it still exists. */
+        let target = "";
+        try {
+          /** @type {string} Raw target as stored on disk (may be relative). */
+          const raw = fs.readlinkSync(entryPath);
+          target = path.isAbsolute(raw) ? raw : path.resolve(destFolder, raw);
+        } catch (e) {
+          log(`>> shared agents: could not read link ${entryPath} while pruning — ${e.message}`);
+          continue;
+        }
+        // Only ours: a link into a shared agents folder, under the current root or
+        // one we moved away from. Anything else is a plugin's or the user's.
+        if (!isSharedLLMArtifactTarget(target, "agents")) continue;
+        if (!fs.existsSync(target)) reason = "dangling link";
+        else if (!expected.has(entry)) reason = "stale link";
+      } else if (stat.isFile()) {
+        // A real file is ours only when it still carries our own marker — the
+        // render-per-CLI leftover case. Unreadable or unmarked fails closed.
+        try {
+          /** @type {string} First body line, past any generated frontmatter fence. */
+          const firstLine = _readSkillBodyFirstLine(fs.readFileSync(entryPath, "utf-8"));
+          if (LLM_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "prior rendered copy";
+        } catch {}
+      }
+
+      if (!reason) continue;
+
+      try {
+        fs.rmSync(entryPath, { force: true });
+        removed++;
+        log(`>> shared agents: removed ${reason} ${entryPath}`);
+      } catch (e) {
+        log(`>> shared agents: could not remove ${entryPath} — ${e.message}`);
+      }
+    }
+  }
+
+  return removed;
+}
+
+/**
+ * Symlinks every agent currently in {@link LLM_SHARED_AGENTS_FOLDER} into every
+ * folder in {@link LLM_AGENT_LINK_FOLDERS}, renaming each link to carry that
+ * CLI's suffix.
+ *
+ * Reads the shared folder rather than the registry on purpose — the link pass is
+ * then dynamic, picking up a hand-authored agent dropped into the shared folder
+ * with no code change, and it links what actually exists rather than what was
+ * declared.
+ *
+ * Idempotent: a link already pointing at the right target is left alone, a link
+ * pointing at a stale target is replaced, and anything that is not a symlink is
+ * never touched — our own leftovers were already cleared by
+ * {@link pruneOrphanedSharedLLMAgents}.
+ *
+ * @returns {void}
+ */
+function linkSharedLLMAgents() {
+  if (!fs.existsSync(LLM_SHARED_AGENTS_FOLDER)) return;
+
+  /** @type {string[]} Agent basenames (no extension) that actually exist in the shared folder. */
+  const agentNames = fs
+    .readdirSync(LLM_SHARED_AGENTS_FOLDER)
+    .filter((entry) => entry.endsWith(".md"))
+    .map((entry) => path.basename(entry, ".md"))
+    .sort();
+
+  for (const { folder: destFolder, suffix } of LLM_AGENT_LINK_FOLDERS) {
+    fs.mkdirSync(destFolder, { recursive: true });
+
+    /** @type {number} Links created or repaired this run. */
+    let linked = 0;
+    /** @type {number} Destinations skipped because a real file already occupies them. */
+    let skippedForeign = 0;
+
+    for (const agentName of agentNames) {
+      /** @type {string} The shared agent file this link points at — the single source of truth. */
+      const sourcePath = path.join(LLM_SHARED_AGENTS_FOLDER, `${agentName}.md`);
+      /** @type {string} Absolute destination path, carrying this CLI's own suffix. */
+      const destPath = path.join(destFolder, `${agentName}${suffix}`);
+
+      /** @type {fs.Stats|undefined} Lstat of whatever occupies the destination, if anything. */
+      let stat;
+      try {
+        stat = fs.lstatSync(destPath);
+      } catch {}
+
+      if (stat && !stat.isSymbolicLink()) {
+        // Anything still a real file here belongs to a plugin or the user.
+        skippedForeign++;
+        continue;
+      }
+
+      if (stat) {
+        /** @type {string} Existing link target, resolved to absolute. */
+        let existing = "";
+        try {
+          /** @type {string} Raw link target as stored on disk (may be relative). */
+          const raw = fs.readlinkSync(destPath);
+          existing = path.isAbsolute(raw) ? raw : path.resolve(destFolder, raw);
+        } catch {}
+        if (existing === sourcePath) continue;
+        try {
+          fs.unlinkSync(destPath);
+        } catch {}
+      }
+
+      safeSymlink(sourcePath, destPath);
+      linked++;
+    }
+
+    log(
+      `>> shared agents: linked ${linked} agent(s) into ${destFolder}` +
+        (skippedForeign ? ` (skipped ${skippedForeign} foreign / user-authored entries)` : ""),
+    );
+  }
+}
+
+/**
+ * Writes every {@link LLM_AGENT_DEPLOY_MAP} entry into
+ * `<shared-agents-folder>/<name>.md`, prunes orphans, then symlinks the result
+ * into every CLI agents folder.
+ *
+ * Called by all four setup scripts. Writing the same bytes from each is
+ * intentional and safe — the content is byte-identical, so whichever CLI runs
+ * first does the work and the rest are no-ops. That keeps every CLI
+ * independently able to repair the shared corpus without one being a prerequisite.
+ *
+ * Frontmatter is generated here rather than stored in the repo source: adding it
+ * upstream would break the first-line `[Sy] ` marker that orphan detection relies
+ * on, and the source has to stay vendor-neutral prose.
  *
  * @returns {Promise<void>}
  */
 async function deploySharedLLMAgents() {
+  fs.mkdirSync(LLM_SHARED_AGENTS_FOLDER, { recursive: true });
+
+  log(">> Shared LLM Agents:", LLM_SHARED_AGENTS_FOLDER);
+
+  // Clear our own leftovers first — dangling links, links under a retired name,
+  // and real files from the earlier render-per-CLI model — so the link pass below
+  // can treat every surviving non-symlink as genuinely foreign.
+  pruneOrphanedSharedLLMAgents();
+
   /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
   const sourceCache = {};
 
-  for (const [cli, { folder, suffix, frontmatter }] of Object.entries(LLM_AGENT_DEPLOY_FOLDERS)) {
-    fs.mkdirSync(folder, { recursive: true });
-
-    /** @type {number} Agent files written or refreshed for this CLI. */
-    let written = 0;
-
-    for (const [agentName, sourceName] of Object.entries(LLM_AGENT_DEPLOY_MAP)) {
-      if (!(sourceName in sourceCache)) {
-        sourceCache[sourceName] = await readLLMAgentSource(sourceName);
-      }
-      /** @type {string} Verbatim markdown body of the shared agent source. */
-      const body = sourceCache[sourceName];
-
-      await writeText(
-        path.join(folder, `${agentName}${suffix}`),
-        `---\n${frontmatter(agentName, buildLLMSkillDescription(body))}\n---\n\n${body}\n`,
-      );
-      written++;
+  for (const [agentName, sourceName] of Object.entries(LLM_AGENT_DEPLOY_MAP)) {
+    if (!(sourceName in sourceCache)) {
+      sourceCache[sourceName] = await readLLMAgentSource(sourceName);
     }
+    /** @type {string} Verbatim markdown body of the shared agent source. */
+    const body = sourceCache[sourceName];
 
-    _pruneStaleDeployedAgents(folder, suffix);
-    log(`>> shared agents: deployed ${written} agent(s) for ${cli} into ${folder}`);
+    await writeText(
+      path.join(LLM_SHARED_AGENTS_FOLDER, `${agentName}.md`),
+      `---\n${buildLLMAgentFrontmatter(agentName, buildLLMSkillDescription(body))}\n---\n\n${body}\n`,
+    );
   }
+
+  _pruneStaleSharedAgents();
+  linkSharedLLMAgents();
 }
