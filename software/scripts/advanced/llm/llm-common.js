@@ -1182,6 +1182,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-draft-pr": "draft-pr",
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
+  "sy-loop": "loop",
   "sy-maintenance-day": "maintenance-day",
   "sy-onboard-repo": "onboard-repo",
   "sy-plan-grill-me": "plan-grill-me",
