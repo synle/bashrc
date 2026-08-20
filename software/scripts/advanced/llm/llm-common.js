@@ -1617,9 +1617,9 @@ const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/agents";
 /**
  * The one registry of Sy-managed agents, shared by every LLM CLI setup.
  *
- * Key   = deployed agent name, **without** any extension (e.g. `pr-babysitter`).
+ * Key   = deployed agent name, **without** any extension (e.g. `sy-pr-babysitter`).
  *         Every CLI derives its own filename from this key via the per-CLI
- *         `suffix` in {@link LLM_AGENT_DEPLOY_FOLDERS}, which is what lets one
+ *         `suffix` in {@link LLM_AGENT_LINK_FOLDERS}, which is what lets one
  *         map serve `~/.config/opencode/agent/<key>.md` and
  *         `~/.copilot/agents/<key>.agent.md` at once.
  * Value = source basename (no `.md`) under {@link LLM_AGENT_SOURCE_FOLDER}.
@@ -1633,16 +1633,21 @@ const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/agents";
  * answering at a glance, and a bare `Pr-Reviewer` sitting beside a vendor agent
  * answers it for nobody. Same prefix, same reason, one convention to remember.
  *
+ * Source filenames stay BARE (`pr-babysitter.md`), exactly like the command
+ * sources: the prefix is purely a deploy-time decoration, so editing an agent
+ * never means typing it, and a future prefix change is one edit to this map
+ * rather than a rename of every file in the corpus.
+ *
  * Editing an agent: edit `<LLM_AGENT_SOURCE_FOLDER>/<value>.md`.
  * Adding an agent: drop the new `.md` there + add ONE entry here — every CLI in
- *   {@link LLM_AGENT_DEPLOY_FOLDERS} picks it up on its next setup run.
+ *   {@link LLM_AGENT_LINK_FOLDERS} picks it up on its next setup run.
  * Renaming / removing: move the OLD key into {@link LLM_AGENT_RETIRED_NAMES}.
  *
  * @type {Record<string, string>}
  */
 const LLM_AGENT_DEPLOY_MAP = {
-  "sy-pr-babysitter": "sy-pr-babysitter",
-  "sy-pr-reviewer": "sy-pr-reviewer",
+  "sy-pr-babysitter": "pr-babysitter",
+  "sy-pr-reviewer": "pr-reviewer",
 };
 
 /**
@@ -1666,80 +1671,82 @@ const LLM_AGENT_RETIRED_NAMES = [
 ];
 
 /**
- * Every CLI agents folder that receives a native copy of each shared agent.
+ * The ONE physical location of every Sy-managed agent: `<shared-agents-folder>/<name>.md`.
  *
- * REAL FILES, not symlinks — the one place this corpus deliberately diverges from
- * {@link LLM_SKILL_LINK_FOLDERS}. A skill is byte-identical everywhere, so one
- * physical copy plus symlinks makes staleness structurally impossible. An agent
- * is not: each CLI demands its own frontmatter shape and its own filename suffix,
- * so a shared physical file could only ever be correct for one of them. The
- * single source of truth stays the repo source; the per-CLI file is a rendered
- * artifact, regenerated on every deploy.
+ * Sits beside `skills/`, `instructions/`, and `plans/` under
+ * {@link LLM_SHARED_ROOT_FOLDER} for the same reason they do: one `ls` of the
+ * LLM home shows everything the LLM tooling owns outside a repo checkout.
+ * @type {string}
+ */
+const LLM_SHARED_AGENTS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "agents");
+
+/**
+ * Every CLI agents folder that receives a symlink to each shared agent.
  *
- * Same "one registry, never a per-CLI list" rule as every other map here: this is
- * the only place a CLI's agents folder or frontmatter shape is named, and adding
- * a CLI is one entry here rather than an edit to its setup.js.
+ * ONE physical file, symlinked everywhere — same model as
+ * {@link LLM_SKILL_LINK_FOLDERS}, and for the same reason: a stale per-CLI copy
+ * becomes structurally impossible. This corpus briefly rendered a separate file
+ * per CLI on the assumption that their frontmatter shapes were irreconcilable.
+ * They are not. Claude and Copilot want `name` + `description`; OpenCode wants
+ * `description` + `mode: subagent` and takes the name from the filename. All
+ * three **ignore keys they do not recognize**, so the union of those keys is a
+ * single file every one of them accepts — verified live, see below.
  *
- * Per-entry fields:
- *   - `folder`      — absolute destination folder, created if absent.
- *   - `suffix`      — appended to the registry key to form the filename.
- *   - `frontmatter` — builds that CLI's YAML block from the shared name +
- *                     description. The shape difference lives HERE and nowhere
- *                     else; the body below it is byte-identical across CLIs.
+ * The filename difference is absorbed by the link, not the target: a symlink may
+ * be named differently from what it points at, so Copilot's `<name>.agent.md`
+ * and everyone else's `<name>.md` both resolve to the same shared file.
  *
- * Verified destinations:
- *   - opencode — `~/.config/opencode/agent/<name>.md`, frontmatter `description` +
- *     `mode: subagent`, agent name taken from the FILENAME (no `name` key).
- *     Confirmed on opencode 1.18.18 via `opencode agent list`. Both `agent/` and
- *     `agents/` are scanned; the singular is what the bundled docs table names,
- *     so that is what we write. Discovery lags a file write by a few seconds —
- *     a check run immediately after deploy is a false negative, not a failure.
+ * PER-AGENT links, deliberately NOT a whole-folder symlink — pointing
+ * `~/.claude/agents` at the shared folder would hijack the destination and
+ * destroy anything a plugin or the user put there. Same tradeoff already made by
+ * {@link LLM_SKILL_LINK_FOLDERS} and {@link LLM_SHARED_INSTRUCTION_LINK_FOLDERS}.
  *
- *   - claude — `~/.claude/agents/<name>.md`, frontmatter `name` + `description`.
- *     The `name` key is REQUIRED: a probe file carrying only `description` was
- *     silently ignored, while the identical file plus `name` appeared. Confirmed
- *     on Claude Code 2.1.223.
- *   - copilot — `~/.copilot/agents/<name>.agent.md`, frontmatter `name` +
- *     `description`. A plain `<name>.md` in the same folder is ALSO picked up;
- *     `.agent.md` is the documented form and is what we write, which also keeps
- *     our files distinguishable from anything else dropped there. Confirmed on
- *     GitHub Copilot CLI 1.0.81.
+ * Verified destinations (a wrong folder or frontmatter key fails SILENTLY on all
+ * of these — the file is read as ordinary documentation and the agent simply
+ * never appears, so each entry is earned by a live probe, never by a doc):
+ *   - claude   — `~/.claude/agents/<name>.md`, Claude Code 2.1.223.
+ *   - copilot  — `~/.copilot/agents/<name>.agent.md`, Copilot CLI 1.0.81. A
+ *     plain `<name>.md` also resolves; `.agent.md` is the documented form.
+ *   - opencode — `~/.config/opencode/agent/<name>.md`, opencode 1.18.18.
+ *
+ * The probe is free — claude and copilot both enumerate every agent they
+ * resolved when handed one that does not exist, before spending a model turn:
+ *
+ *   claude  --agent zz-nope -p x     # -> "not found. Available agents: ..."
+ *   copilot --agent zz-nope -p x     # -> "No such agent: zz-nope, available: ..."
+ *   opencode agent list              # -> "<name> (subagent)"
  *
  * Deliberately absent: gemini. Version 0.55.1 exposes `gemini skills` but no
- * agents subcommand and no `--agent` flag, so there is nothing to write to and
- * nothing that could confirm a write landed. Add it once a released version
- * offers a surface that can be probed.
+ * agents subcommand and no `--agent` flag, so there is nothing to link into and
+ * nothing that could confirm a link landed.
  *
- * How each of the above was verified — the probe is free, so re-run it rather
- * than trusting this comment after a CLI upgrade. Both claude and copilot
- * enumerate every agent they resolved when handed one that does not exist, and
- * they do it before spending a model turn:
- *
- *   claude  --agent zz-nope -p x     # → "not found. Available agents: …"
- *   copilot --agent zz-nope -p x     # → "No such agent: zz-nope, available: …"
- *
- * A wrong folder or a wrong frontmatter key fails SILENTLY on every one of these
- * CLIs — the file is parsed as ordinary documentation and the agent simply never
- * appears — which is exactly why "believed" is not good enough to earn an entry.
- * @type {Record<string, {folder: string, suffix: string, frontmatter: (name: string, description: string) => string}>}
+ * OpenCode's discovery lags a file write by several seconds — a check run
+ * immediately after deploy is a false negative, not a failure.
+ * @type {Array<{folder: string, suffix: string}>}
  */
-const LLM_AGENT_DEPLOY_FOLDERS = {
-  claude: {
-    folder: path.join(BASE_HOMEDIR_LINUX, ".claude", "agents"),
-    suffix: ".md",
-    frontmatter: (name, description) => `name: ${name}\ndescription: "${description}"`,
-  },
-  copilot: {
-    folder: path.join(BASE_HOMEDIR_LINUX, ".copilot", "agents"),
-    suffix: ".agent.md",
-    frontmatter: (name, description) => `name: ${name}\ndescription: "${description}"`,
-  },
-  opencode: {
-    folder: path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "agent"),
-    suffix: ".md",
-    frontmatter: (_name, description) => `description: "${description}"\nmode: subagent`,
-  },
-};
+const LLM_AGENT_LINK_FOLDERS = [
+  { folder: path.join(BASE_HOMEDIR_LINUX, ".claude", "agents"), suffix: ".md" },
+  { folder: path.join(BASE_HOMEDIR_LINUX, ".copilot", "agents"), suffix: ".agent.md" },
+  { folder: path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "agent"), suffix: ".md" },
+];
+
+/**
+ * Frontmatter written above every shared agent body — the union of what each
+ * CLI requires, since every one of them ignores the keys it does not know.
+ *
+ * `name` is REQUIRED by Claude Code (a file carrying only `description` is
+ * silently skipped) and used by Copilot; OpenCode ignores it and takes the name
+ * from the filename. `mode: subagent` is required by OpenCode to classify the
+ * agent as dispatchable rather than primary; Claude and Copilot ignore it.
+ * Dropping either key breaks one CLI without any visible error.
+ *
+ * @param {string} name - Deployed agent name (a {@link LLM_AGENT_DEPLOY_MAP} key).
+ * @param {string} description - Derived, YAML-safe trigger description.
+ * @returns {string} The YAML block, without its enclosing `---` fences.
+ */
+function buildLLMAgentFrontmatter(name, description) {
+  return `name: ${name}\ndescription: "${description}"\nmode: subagent`;
+}
 
 /**
  * Reads an agent body from {@link LLM_AGENT_SOURCE_FOLDER}, trailing whitespace
@@ -1798,7 +1805,7 @@ function _pruneStaleDeployedAgents(destFolder, suffix) {
     try {
       fs.rmSync(entryPath, { force: true });
       removed++;
-      log(`>> shared agents: removed prior Sy agent (${reason}): ${entryPath}`);
+      log(`>> shared agents: removed prior Sy agent (${reason}): ${entry}`);
     } catch (e) {
       log(`>> shared agents: could not remove ${entryPath} — ${e.message}`);
     }

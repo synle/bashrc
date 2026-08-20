@@ -756,12 +756,24 @@ sources in `_common/agents/<name>.md`.
   frontmatter, no CLI name, no tool name (`Task`, `Agent`, `@name`), no model. Each
   opens with the same first-line `[Sy] <what this is>` marker the command sources
   use, so one description derivation and one orphan-detection rule serve both.
-- **Agents are rendered per CLI, not symlinked to one shared copy** — the one place
-  this corpus diverges from `LLM_SKILL_LINK_FOLDERS`. A skill is byte-identical
-  everywhere; an agent is not, because each CLI demands its own frontmatter shape
-  and filename suffix, so a single physical file could only ever be correct for one
-  of them. `LLM_AGENT_DEPLOY_FOLDERS` holds **only** that shape difference — folder,
-  suffix, frontmatter builder — never which agents exist.
+- **One physical agent, symlinked everywhere**, exactly like the skill corpus:
+  `<LLM_ROOT_FOLDER>/agents/<name>.md`, linked into each folder in
+  `LLM_AGENT_LINK_FOLDERS`. This was briefly rendered as a separate file per CLI,
+  on the belief that the frontmatter shapes were irreconcilable. They are not —
+  every one of these CLIs **ignores keys it does not recognize**, so the union
+  (`name` + `description` + `mode: subagent`) is a single file all three accept,
+  and the filename difference is absorbed by the link rather than the target
+  (Copilot's `<name>.agent.md` and everyone else's `<name>.md` point at the same
+  file). One copy makes a stale per-CLI artifact structurally impossible.
+- **Never drop a key from that union to "clean it up".** `name` is REQUIRED by
+  Claude Code — a file carrying only `description` is silently skipped — and
+  `mode: subagent` is what OpenCode needs to classify the agent as dispatchable.
+  Each removal breaks exactly one CLI, with no error anywhere.
+- **Per-agent links, never a folder symlink.** Pointing `~/.claude/agents` at the
+  shared folder hijacks the destination and destroys anything a plugin or the user
+  put there. Same tradeoff already made by the skills and instructions corpora. A
+  real file at a link destination is left alone unless it still carries our own
+  `[Sy] ` marker, which is the one case it is a leftover of ours to replace.
 - **Agent names ARE `sy-` prefixed**, exactly like commands. This was briefly the
   opposite, on the theory that a prefix only pays off in a picker and that a
   rendered label should be the shortest honest noun. Wrong in the one place the
@@ -805,6 +817,7 @@ setup scripts call:
 | ------------------------------- | ------------------------------------------------------------------------- |
 | `~/_extra/ai_llm/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES` |
 | `~/_extra/ai_llm/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)     |
+| `~/_extra/ai_llm/agents/`       | The ONE copy of every named agent, symlinked into every CLI (§13.2)       |
 | `~/_extra/ai_llm/plans/`        | Plan / RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`)   |
 
 **The location is decided in exactly one place — `LLM_ROOT_FOLDER` in

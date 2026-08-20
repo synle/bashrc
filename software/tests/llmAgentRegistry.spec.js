@@ -2,16 +2,16 @@
  * Registry integrity for the Sy-managed LLM agent corpus.
  *
  * `LLM_AGENT_DEPLOY_MAP` in `llm-common.js` is the single registry every CLI's
- * `setup.js` iterates (see AGENTS.md §13.2), and `LLM_AGENT_DEPLOY_FOLDERS` is the
- * only place a per-CLI destination or frontmatter shape is named. Both fail
- * SILENTLY when wrong: a typo in a map value deploys an agent whose body is
- * missing, and a wrong frontmatter key leaves the file on disk as ordinary
- * documentation that no CLI ever resolves. Neither shows up in any other gate.
+ * `setup.js` iterates (see AGENTS.md §13.2), and `LLM_AGENT_LINK_FOLDERS` is the
+ * only place a per-CLI destination is named. Both fail SILENTLY when wrong: a
+ * typo in a map value deploys an agent whose body is missing, and a wrong folder
+ * or frontmatter key leaves the file on disk as ordinary documentation that no
+ * CLI ever resolves. Neither shows up in any other gate.
  *
  * These tests close that gap from both directions — every registered agent has a
- * source file, every source file is registered — and pin the two frontmatter
- * shapes that were verified live against the real binaries, so a well-meaning
- * "cleanup" that unifies them fails here rather than on a dev machine weeks later.
+ * source file, every source file is registered — and pin the union frontmatter
+ * that was verified live against all three real binaries, so a well-meaning
+ * "cleanup" that drops a key fails here rather than on a dev machine weeks later.
  */
 import { describe, it, expect } from "vitest";
 import fs from "fs";
@@ -48,8 +48,16 @@ function loadLlmCommon() {
   return sandbox;
 }
 
-const { LLM_AGENT_DEPLOY_MAP, LLM_AGENT_DEPLOY_FOLDERS, LLM_AGENT_RETIRED_NAMES, LLM_AGENT_SOURCE_FOLDER, LLM_SKILL_MARKER } =
-  loadLlmCommon();
+const {
+  LLM_AGENT_DEPLOY_MAP,
+  pruneOrphanedSharedLLMAgents,
+  LLM_AGENT_LINK_FOLDERS,
+  LLM_AGENT_RETIRED_NAMES,
+  LLM_AGENT_SOURCE_FOLDER,
+  LLM_SHARED_AGENTS_FOLDER,
+  LLM_SKILL_MARKER,
+  buildLLMAgentFrontmatter,
+} = loadLlmCommon();
 
 /** @type {string} Absolute path of the canonical agent source folder. */
 const AGENT_SOURCE_DIR = path.join(ROOT, LLM_AGENT_SOURCE_FOLDER);
@@ -129,6 +137,16 @@ describe("LLM agent registry", () => {
     expect(unprefixed).toEqual([]);
   });
 
+  it("keeps source filenames bare, with `sy-` applied only at deploy time", () => {
+    // Same split as the command corpus: the key is what gets deployed, the
+    // value is the file on disk. A prefixed source filename would mean a future
+    // prefix change renames every file instead of editing one map.
+    /** @type {string[]} Registry values that leaked the deploy-time prefix onto disk. */
+    const prefixedSources = Object.values(LLM_AGENT_DEPLOY_MAP).filter((name) => name.startsWith("sy-"));
+
+    expect(prefixedSources).toEqual([]);
+  });
+
   it("never re-registers a retired agent name", () => {
     /** @type {string[]} Names present in both the live registry and the retired list. */
     const resurrected = Object.keys(LLM_AGENT_DEPLOY_MAP).filter((name) => LLM_AGENT_RETIRED_NAMES.includes(name));
@@ -137,39 +155,75 @@ describe("LLM agent registry", () => {
   });
 });
 
-describe("LLM agent deploy folders", () => {
-  it("gives every CLI a folder, a suffix, and a frontmatter builder", () => {
-    for (const [cli, entry] of Object.entries(LLM_AGENT_DEPLOY_FOLDERS)) {
-      expect(path.isAbsolute(entry.folder), `${cli} folder is absolute`).toBe(true);
-      expect(entry.suffix.startsWith("."), `${cli} suffix starts with a dot`).toBe(true);
-      expect(typeof entry.frontmatter, `${cli} frontmatter is a builder`).toBe("function");
+describe("LLM agent link folders", () => {
+  it("keeps ONE physical agent folder beside the other shared corpora", () => {
+    // The whole point of the symlink model: agents live next to skills,
+    // instructions, and plans, so one `ls` of the LLM home shows everything.
+    expect(LLM_SHARED_AGENTS_FOLDER).toBe("/tmp/sandbox-home/sy/ai_llm/agents");
+  });
+
+  it("gives every CLI a folder and a suffix", () => {
+    for (const { folder, suffix } of LLM_AGENT_LINK_FOLDERS) {
+      expect(path.isAbsolute(folder), `${folder} is absolute`).toBe(true);
+      expect(suffix.startsWith("."), `${suffix} starts with a dot`).toBe(true);
     }
   });
 
-  it("pins the frontmatter each CLI was verified to require", () => {
-    // Verified live (AGENTS.md §13.2): claude 2.1.223 and copilot 1.0.81 both
-    // require a `name` key and ignore a file without one; opencode 1.18.18 takes
-    // the name from the filename and instead requires `mode: subagent`. These
-    // are NOT interchangeable, and getting one wrong fails silently.
-    expect(LLM_AGENT_DEPLOY_FOLDERS.claude.frontmatter("sy-pr-x", "d")).toBe('name: sy-pr-x\ndescription: "d"');
-    expect(LLM_AGENT_DEPLOY_FOLDERS.copilot.frontmatter("sy-pr-x", "d")).toBe('name: sy-pr-x\ndescription: "d"');
-    expect(LLM_AGENT_DEPLOY_FOLDERS.opencode.frontmatter("sy-pr-x", "d")).toBe('description: "d"\nmode: subagent');
+  it("links each CLI into its own verified folder and suffix", () => {
+    expect(LLM_AGENT_LINK_FOLDERS).toEqual([
+      { folder: "/tmp/sandbox-home/.claude/agents", suffix: ".md" },
+      { folder: "/tmp/sandbox-home/.copilot/agents", suffix: ".agent.md" },
+      { folder: "/tmp/sandbox-home/.config/opencode/agent", suffix: ".md" },
+    ]);
   });
 
-  it("writes each CLI into its own verified folder and suffix", () => {
-    expect(LLM_AGENT_DEPLOY_FOLDERS.claude.folder).toBe("/tmp/sandbox-home/.claude/agents");
-    expect(LLM_AGENT_DEPLOY_FOLDERS.claude.suffix).toBe(".md");
-    expect(LLM_AGENT_DEPLOY_FOLDERS.copilot.folder).toBe("/tmp/sandbox-home/.copilot/agents");
-    expect(LLM_AGENT_DEPLOY_FOLDERS.copilot.suffix).toBe(".agent.md");
-    expect(LLM_AGENT_DEPLOY_FOLDERS.opencode.folder).toBe("/tmp/sandbox-home/.config/opencode/agent");
-    expect(LLM_AGENT_DEPLOY_FOLDERS.opencode.suffix).toBe(".md");
-  });
-
-  it("omits gemini, which has no agent surface to write to", () => {
+  it("omits gemini, which has no agent surface to link into", () => {
     // Gemini 0.55.1 exposes `gemini skills` but no agents subcommand and no
-    // --agent flag. An entry here would write files nothing reads, and no probe
-    // could tell us it had gone stale.
-    expect(LLM_AGENT_DEPLOY_FOLDERS.gemini).toBeUndefined();
+    // --agent flag. An entry would link files nothing reads, and no probe could
+    // tell us it had gone stale.
+    expect(LLM_AGENT_LINK_FOLDERS.some(({ folder }) => folder.includes(".gemini"))).toBe(false);
+  });
+
+  it("writes the union frontmatter every CLI was verified to accept", () => {
+    // Verified live (AGENTS.md §13.2): `name` is REQUIRED by Claude Code, which
+    // silently skips a file without it, and used by Copilot. `mode: subagent` is
+    // required by OpenCode to classify the agent as dispatchable. Each CLI
+    // ignores the keys it does not know, which is what lets ONE file serve all
+    // three — dropping either key breaks one of them with no visible error.
+    expect(buildLLMAgentFrontmatter("sy-pr-x", "d")).toBe('name: sy-pr-x\ndescription: "d"\nmode: subagent');
+  });
+});
+
+describe("LLM agent orphan cleanup", () => {
+  it("exposes a prune pass that the deploy calls before linking", () => {
+    // Same shape as the instructions corpus: prune first, so the link pass may
+    // treat every surviving non-symlink as genuinely foreign. Inlining the
+    // cleanup into the link loop is what made the link pass need a carve-out for
+    // its own leftovers, which is exactly the bug this ordering removes.
+    expect(typeof pruneOrphanedSharedLLMAgents).toBe("function");
+
+    const common = fs.readFileSync(LLM_COMMON_PATH, "utf-8");
+    /** @type {string} Body of deploySharedLLMAgents, where the ordering must hold. */
+    const deploy = common.slice(common.indexOf("async function deploySharedLLMAgents"));
+    /** @type {number} Offset of the prune call inside the deploy body. */
+    const pruneAt = deploy.indexOf("pruneOrphanedSharedLLMAgents()");
+    /** @type {number} Offset of the link call inside the deploy body. */
+    const linkAt = deploy.indexOf("linkSharedLLMAgents()");
+
+    expect(pruneAt).toBeGreaterThan(-1);
+    expect(linkAt).toBeGreaterThan(-1);
+    expect(pruneAt, "prune runs before link").toBeLessThan(linkAt);
+  });
+
+  it("keeps the link pass free of its own cleanup carve-outs", () => {
+    // A non-symlink reaching the link pass is someone else's, unconditionally.
+    // A marker check here would mean prune had not done its job.
+    const common = fs.readFileSync(LLM_COMMON_PATH, "utf-8");
+    const linkFn = common.slice(common.indexOf("function linkSharedLLMAgents"));
+    const body = linkFn.slice(0, linkFn.indexOf("\n}\n"));
+
+    expect(body).not.toContain("LLM_SKILL_MARKERS");
+    expect(body).toContain("skippedForeign++");
   });
 });
 
