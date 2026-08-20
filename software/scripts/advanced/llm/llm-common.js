@@ -595,7 +595,38 @@ const LLM_DOC_PATH_PLACEHOLDERS = {
 };
 
 /**
- * Replaces every {@link LLM_DOC_PATH_PLACEHOLDERS} token with its resolved path.
+ * The tuning constants the PR loop commands read, declared ONCE here instead of
+ * being spelled as a bare number in every command source.
+ *
+ * `/sy-babysit-pr`, `/sy-review-pr`, and both fan-out wrappers all share one
+ * cadence: a run budget, a cheap poll interval, and a retry window for a
+ * GitHub or model service that has gone unreachable. Writing `60` into four
+ * markdown files is four places to miss when the number changes, and a doc
+ * whose cadence disagrees with its sibling is a scheduler bug nobody can see.
+ *
+ * Values are seconds so a doc never has to state a unit conversion, and the
+ * token name says the unit outright.
+ *
+ * These are deliberately NOT in {@link LLM_DOC_PATH_PLACEHOLDERS}: that map is
+ * asserted to hold absolute folder paths, and a number is neither.
+ * @type {Record<string, string>}
+ */
+const LLM_DOC_TUNING_PLACEHOLDERS = {
+  /** How long one babysit / review run keeps working before it stops on its own. */
+  "<SY_PR_RUN_BUDGET_SECONDS>": "21600",
+  /** How often a quiet PR is re-probed read-only for a state change. */
+  "<SY_PR_POLL_INTERVAL_SECONDS>": "60",
+  /** How long a full pass is forced even when nothing in the digest moved. */
+  "<SY_PR_KEEPALIVE_INTERVAL_SECONDS>": "1500",
+  /** How long to wait between retries of an unreachable GitHub / model call. */
+  "<SY_PR_RETRY_INTERVAL_SECONDS>": "15",
+  /** How many consecutive unreachable retries end the run. */
+  "<SY_PR_RETRY_MAX_FAILURES>": "5",
+};
+
+/**
+ * Replaces every {@link LLM_DOC_PATH_PLACEHOLDERS} and
+ * {@link LLM_DOC_TUNING_PLACEHOLDERS} token with its resolved value.
  *
  * Plain split/join rather than a regex so a token never has to be escaped and a
  * stray `<` elsewhere in the prose can never be captured.
@@ -604,7 +635,7 @@ const LLM_DOC_PATH_PLACEHOLDERS = {
  */
 function resolveLLMDocPlaceholders(text) {
   let resolved = text;
-  for (const [token, value] of Object.entries(LLM_DOC_PATH_PLACEHOLDERS)) {
+  for (const [token, value] of Object.entries({ ...LLM_DOC_PATH_PLACEHOLDERS, ...LLM_DOC_TUNING_PLACEHOLDERS })) {
     resolved = resolved.split(token).join(value);
   }
   return resolved;

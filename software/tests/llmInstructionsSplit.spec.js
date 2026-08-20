@@ -520,6 +520,23 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
     }
   });
 
+  it("should resolve every PR-loop tuning placeholder to a positive number of seconds", () => {
+    // These carry the babysit / review cadence, so an unresolved token ships the
+    // literal `<SY_PR_POLL_INTERVAL_SECONDS>` to an agent, which reads as prose and
+    // silently loses the interval it was supposed to sleep.
+    for (const { label, text } of deployedSources) {
+      const deployed = llm.resolveLLMDocPlaceholders(text);
+      for (const token of Object.keys(llm.LLM_DOC_TUNING_PLACEHOLDERS)) {
+        expect(deployed, `${label} left ${token} unresolved`).not.toContain(token);
+      }
+    }
+
+    for (const [token, value] of Object.entries(llm.LLM_DOC_TUNING_PLACEHOLDERS)) {
+      expect(value, `${token} resolves to a non-string`).toBeTypeOf("string");
+      expect(Number(value), `${token} resolves to a non-positive number`).toBeGreaterThan(0);
+    }
+  });
+
   it("should route every deployed doc through the one reader that resolves placeholders", () => {
     // readText alone skips resolution, which ships `<LLM_ROOT_FOLDER>` verbatim to an
     // agent — it reads as a literal folder name and fails silently. readLLMDocSource
