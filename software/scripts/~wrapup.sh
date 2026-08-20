@@ -68,6 +68,24 @@ if [ -n "${SY_ROOT_FOLDER:-}" ]; then
 		command cp -Rn "$old_history_backups/." "$new_history_backups/" 2>/dev/null
 		command mv -f "$old_history_backups" "$old_history_backups.migrated"
 	fi
+
+	# 4. Recents lists - ~/.bash_syle_paths and ~/.bash_syle_recent_files into
+	# $SY_ROOT_FOLDER. Each is an ordered most-recent-first list, so a concat would
+	# scramble the ordering the readers rely on: full copy, and only when the new
+	# file does not already exist.
+	for recents_name in ".bash_syle_paths" ".bash_syle_recent_files"; do
+		old_recents="$HOME/$recents_name"
+		new_recents="$SY_ROOT_FOLDER/$recents_name"
+		[ -f "$old_recents" ] || continue
+		[ "$old_recents" = "$new_recents" ] && continue
+		if [ -f "$new_recents" ]; then
+			echo "Keeping existing $new_recents; retiring $old_recents"
+		else
+			echo "Migrating recents: $old_recents -> $new_recents"
+			command cp -p "$old_recents" "$new_recents"
+		fi
+		command mv -f "$old_recents" "$old_recents.migrated"
+	done
 fi
 
 # dump fullsetup log in CI for debugging package install errors
