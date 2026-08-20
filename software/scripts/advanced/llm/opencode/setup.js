@@ -306,26 +306,12 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     experimental: {
       batch_tool: true,
     },
+    // Only auto-continue stays. The others tried (supermemory,
+    // subagent-statusline, notify, worktree, snip) were buggy or silent
+    // no-ops, so they were dropped rather than left as dead entries.
     plugin: [
       // Re-prompts a session that went idle mid-task instead of leaving it parked.
       "opencode-auto-continue",
-      // Cross-session memory (hosted at supermemory.ai; needs a login / SUPERMEMORY_API_KEY).
-      "opencode-supermemory",
-      // Surfaces running subagent state in the statusline.
-      "opencode-subagent-statusline",
-      // Desktop notification when a long-running turn finishes, so a session
-      // left alone for a 25-minute babysit pass does not need watching.
-      "opencode-notify",
-      // Git worktree-scoped sessions. Complements the worktree rules in the PR
-      // workflow rather than replacing them — `git create-worktree` stays the
-      // sanctioned creator for anything a command or skill drives.
-      "opencode-worktree",
-      // Filters noisy shell output before it reaches the model, via the `snip`
-      // binary installed by opencode/install.sh. NOTE: this trims what the MODEL
-      // sees, not merely what the TUI renders — a filter that is too aggressive
-      // shows up as the agent "missing" a file it was never shown. If output
-      // starts looking suspiciously incomplete, drop this entry first.
-      "opencode-snip",
     ],
     provider: providers,
   };
