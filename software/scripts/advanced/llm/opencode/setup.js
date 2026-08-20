@@ -306,7 +306,14 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     experimental: {
       batch_tool: true,
     },
-    plugin: ["opencode-auto-continue"],
+    plugin: [
+      // Re-prompts a session that went idle mid-task instead of leaving it parked.
+      "opencode-auto-continue",
+      // Cross-session memory (hosted at supermemory.ai; needs a login / SUPERMEMORY_API_KEY).
+      "opencode-supermemory",
+      // Surfaces running subagent state in the statusline.
+      "opencode-subagent-statusline",
+    ],
     provider: providers,
   };
 
