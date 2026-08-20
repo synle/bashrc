@@ -65,93 +65,93 @@ alias fcode='fuzzy_edit code'
 # Single source of truth — sourced into profile-advanced.sh and autocomplete tests.
 ################################################################################
 function filter_unwanted() {
-  # _IGNORED_FOLDER_PATTERNS / _IGNORED_FILE_PATTERNS are bootstrapped from
-  # EDITOR_CONFIGS.{ignoredFoldersRegex,ignoredFilesRegex} by
-  # software/scripts/advanced/fuzzy-patterns.js. Both arrays feed into a
-  # single grep -v -E so callers (pack_text, cprepo, fuzzy_edit, autocomplete)
-  # share a single source of truth for both folder excludes
-  # (node_modules, .venv, .git/, etc.) and file-extension excludes
-  # (.swp, .exe, .pyc, etc.). Fallback list below covers minimal shell
-  # environments (e.g. tests sourcing this file standalone) where the
-  # bootstrap hasn't run yet.
-  local patterns=()
-  if declare -p _IGNORED_FOLDER_PATTERNS &> /dev/null; then
-    patterns+=("${_IGNORED_FOLDER_PATTERNS[@]}")
-  fi
-  if declare -p _IGNORED_FILE_PATTERNS &> /dev/null; then
-    patterns+=("${_IGNORED_FILE_PATTERNS[@]}")
-  fi
-  if [ ${#patterns[@]} -eq 0 ]; then
-    patterns=(
-      # folder regex
-      '\.DS_Store'
-      '\.angular/'
-      '\.cache/'
-      '\.git/'
-      '\.gradle/'
-      '\.hg/'
-      '\.idea/'
-      '\.ipynb_checkpoints/'
-      '\.mypy_cache/'
-      '\.next/'
-      '\.nuxt/'
-      '\.parcel-cache/'
-      '\.pyc'
-      '\.pytest_cache/'
-      '\.ruff_'
-      '\.sass-cache/'
-      '\.svelte-kit/'
-      '\.svn/'
-      '\.terraform/'
-      '\.tox/'
-      '\.turbo/'
-      '\.uv/'
-      '\.venv/'
-      '\.yarn/'
-      '__pycache'
-      'bower_components'
-      'node_modules'
-      '/build/'
-      '/coverage/'
-      '/cov/'
-      '/DerivedData/'
-      '/dist/'
-      '/htmlcov/'
-      '/out/'
-      '/Pods/'
-      '/target/'
-      '/vendor/'
-      # file regex (anchored to end of basename / line)
-      '\.DS_Store$'
-      'Thumbs\.db$'
-      'desktop\.ini$'
-      '\.Spotlight-'
-      '\.Trashes$'
-      '\.fseventsd$'
-      '\.com\.apple\.'
-      '\.localized$'
-      '\.a$'
-      '\.class$'
-      '\.dll$'
-      '\.dylib$'
-      '\.exe$'
-      '\.lib$'
-      '\.o$'
-      '\.obj$'
-      '\.pyc$'
-      '\.pyo$'
-      '\.so$'
-      '\.swo$'
-      '\.swp$'
-      '\.wasm$'
-    )
-  fi
-  local joined
-  joined=$(
-    IFS='|'
-    echo "${patterns[*]}"
-  )
-  command grep -v -E "$joined"
+	# _IGNORED_FOLDER_PATTERNS / _IGNORED_FILE_PATTERNS are bootstrapped from
+	# EDITOR_CONFIGS.{ignoredFoldersRegex,ignoredFilesRegex} by
+	# software/scripts/advanced/fuzzy-patterns.js. Both arrays feed into a
+	# single grep -v -E so callers (pack_text, cprepo, fuzzy_edit, autocomplete)
+	# share a single source of truth for both folder excludes
+	# (node_modules, .venv, .git/, etc.) and file-extension excludes
+	# (.swp, .exe, .pyc, etc.). Fallback list below covers minimal shell
+	# environments (e.g. tests sourcing this file standalone) where the
+	# bootstrap hasn't run yet.
+	local patterns=()
+	if declare -p _IGNORED_FOLDER_PATTERNS &>/dev/null; then
+		patterns+=("${_IGNORED_FOLDER_PATTERNS[@]}")
+	fi
+	if declare -p _IGNORED_FILE_PATTERNS &>/dev/null; then
+		patterns+=("${_IGNORED_FILE_PATTERNS[@]}")
+	fi
+	if [ ${#patterns[@]} -eq 0 ]; then
+		patterns=(
+			# folder regex
+			'\.DS_Store'
+			'\.angular/'
+			'\.cache/'
+			'\.git/'
+			'\.gradle/'
+			'\.hg/'
+			'\.idea/'
+			'\.ipynb_checkpoints/'
+			'\.mypy_cache/'
+			'\.next/'
+			'\.nuxt/'
+			'\.parcel-cache/'
+			'\.pyc'
+			'\.pytest_cache/'
+			'\.ruff_'
+			'\.sass-cache/'
+			'\.svelte-kit/'
+			'\.svn/'
+			'\.terraform/'
+			'\.tox/'
+			'\.turbo/'
+			'\.uv/'
+			'\.venv/'
+			'\.yarn/'
+			'__pycache'
+			'bower_components'
+			'node_modules'
+			'/build/'
+			'/coverage/'
+			'/cov/'
+			'/DerivedData/'
+			'/dist/'
+			'/htmlcov/'
+			'/out/'
+			'/Pods/'
+			'/target/'
+			'/vendor/'
+			# file regex (anchored to end of basename / line)
+			'\.DS_Store$'
+			'Thumbs\.db$'
+			'desktop\.ini$'
+			'\.Spotlight-'
+			'\.Trashes$'
+			'\.fseventsd$'
+			'\.com\.apple\.'
+			'\.localized$'
+			'\.a$'
+			'\.class$'
+			'\.dll$'
+			'\.dylib$'
+			'\.exe$'
+			'\.lib$'
+			'\.o$'
+			'\.obj$'
+			'\.pyc$'
+			'\.pyo$'
+			'\.so$'
+			'\.swo$'
+			'\.swp$'
+			'\.wasm$'
+		)
+	fi
+	local joined
+	joined=$(
+		IFS='|'
+		echo "${patterns[*]}"
+	)
+	command grep -v -E "$joined"
 }
 
 ################################################################################
@@ -187,51 +187,51 @@ export _IGNORED_FOLDERS_JSON _IGNORED_FILES_JSON _FUZZY_TEXT_FILES_JSON
 #   timeout   — max seconds before self-terminating (default: 3)
 #   filter    — prefix filter for top-level entries (default: '' = no filter)
 function _fuzzy_list_all() {
-  local dir="${1:-.}" mode="${2:-paths}" max_depth="${3:-}" max_timeout="${4:-3}" filter="${5:-}"
-  # resolve tilde, relative paths, and trailing slashes so "." check and node both work
-  [[ "$dir" == \~* ]] && eval dir="$dir" 2> /dev/null
-  dir="${dir%/}"
-  # edge case: dir="/" becomes "" after stripping trailing slash — restore to "/" (root), not "."
-  [ -z "$dir" ] && dir="/"
-  # BFS directory crawler in node.
-  #
-  # Walks `dir` and emits relative paths to stdout, filtered by `mode`:
-  #   paths      — files + folders (single git ls-files call, dirs derived from paths)
-  #   files      — files only
-  #   text_files — files matching text-file extensions only
-  #   folders    — folders only
-  #
-  # Git fast path: when a directory is a git repo (has .git/), runs async
-  # `git ls-files` / `git ls-tree` in parallel with the readdir BFS. For
-  # `paths` mode only one git command runs (ls-files) and directories are
-  # derived from file paths to avoid a second call. Nested git repos
-  # discovered during BFS are processed in parallel via Promise.all. The
-  # BFS keeps running alongside git output to surface untracked files
-  # (e.g. brand-new files, `.env`, locally generated artifacts) that
-  # `git ls-files` would miss; emit() dedups overlap via a Set. When root
-  # is a git repo, BFS depth is capped at GIT_BFS_DEPTH (3) since the deep
-  # tracked tree is already covered by git ls-files.
-  #
-  # Prefix filter (optional `filter` arg): when set, only top-level entries
-  # whose name starts with `filter` are processed. This is the key perf
-  # optimisation for tab-completion — e.g. `vim ~/.gi<tab>` passes dir="~/"
-  # and filter=".gi", so only .git/, .github/, .gitconfig etc. are crawled
-  # instead of the entire home directory. The filter is case-insensitive.
-  # When filter is empty (fzf pickers like fvim), everything is listed.
-  #
-  # Self-terminates after max_timeout seconds (deadline-based).
-  #
-  # stdin and stderr MUST be detached from the terminal (see the redirects on
-  # the closing line). At startup node snapshots the termios of every tty
-  # among fd 0/1/2 and restores that snapshot when it exits (node::ResetStdio).
-  # This lister runs as the producer half of `_fuzzy_list_all | fzf`, so node
-  # starts a moment before fzf switches the terminal to raw mode, snapshots the
-  # still-cooked termios, and on exit puts the terminal back into cooked mode
-  # underneath the running fzf. The visible symptom is arrow keys echoing as
-  # literal ^[[A / ^[[B into the fzf query instead of moving the selection.
-  # The same applies to readline during fzf tab-completion. Only fd 1 (the pipe
-  # to fzf) may stay attached.
-  node -e "
+	local dir="${1:-.}" mode="${2:-paths}" max_depth="${3:-}" max_timeout="${4:-3}" filter="${5:-}"
+	# resolve tilde, relative paths, and trailing slashes so "." check and node both work
+	[[ "$dir" == \~* ]] && eval dir="$dir" 2>/dev/null
+	dir="${dir%/}"
+	# edge case: dir="/" becomes "" after stripping trailing slash — restore to "/" (root), not "."
+	[ -z "$dir" ] && dir="/"
+	# BFS directory crawler in node.
+	#
+	# Walks `dir` and emits relative paths to stdout, filtered by `mode`:
+	#   paths      — files + folders (single git ls-files call, dirs derived from paths)
+	#   files      — files only
+	#   text_files — files matching text-file extensions only
+	#   folders    — folders only
+	#
+	# Git fast path: when a directory is a git repo (has .git/), runs async
+	# `git ls-files` / `git ls-tree` in parallel with the readdir BFS. For
+	# `paths` mode only one git command runs (ls-files) and directories are
+	# derived from file paths to avoid a second call. Nested git repos
+	# discovered during BFS are processed in parallel via Promise.all. The
+	# BFS keeps running alongside git output to surface untracked files
+	# (e.g. brand-new files, `.env`, locally generated artifacts) that
+	# `git ls-files` would miss; emit() dedups overlap via a Set. When root
+	# is a git repo, BFS depth is capped at GIT_BFS_DEPTH (3) since the deep
+	# tracked tree is already covered by git ls-files.
+	#
+	# Prefix filter (optional `filter` arg): when set, only top-level entries
+	# whose name starts with `filter` are processed. This is the key perf
+	# optimisation for tab-completion — e.g. `vim ~/.gi<tab>` passes dir="~/"
+	# and filter=".gi", so only .git/, .github/, .gitconfig etc. are crawled
+	# instead of the entire home directory. The filter is case-insensitive.
+	# When filter is empty (fzf pickers like fvim), everything is listed.
+	#
+	# Self-terminates after max_timeout seconds (deadline-based).
+	#
+	# stdin and stderr MUST be detached from the terminal (see the redirects on
+	# the closing line). At startup node snapshots the termios of every tty
+	# among fd 0/1/2 and restores that snapshot when it exits (node::ResetStdio).
+	# This lister runs as the producer half of `_fuzzy_list_all | fzf`, so node
+	# starts a moment before fzf switches the terminal to raw mode, snapshots the
+	# still-cooked termios, and on exit puts the terminal back into cooked mode
+	# underneath the running fzf. The visible symptom is arrow keys echoing as
+	# literal ^[[A / ^[[B into the fzf query instead of moving the selection.
+	# The same applies to readline during fzf tab-completion. Only fd 1 (the pipe
+	# to fzf) may stay attached.
+	node -e "
     const fs = require('fs');
     const path = require('path');
     const {exec} = require('child_process');
@@ -340,7 +340,7 @@ function _fuzzy_list_all() {
     }
     await Promise.all(gitPromises);
     })();
-  " "$dir" "$mode" "$max_depth" "$_IGNORED_FOLDERS_JSON" "$_IGNORED_FILES_JSON" "$_FUZZY_TEXT_FILES_JSON" "$max_timeout" "$filter" < /dev/null 2> /dev/null
+  " "$dir" "$mode" "$max_depth" "$_IGNORED_FOLDERS_JSON" "$_IGNORED_FILES_JSON" "$_FUZZY_TEXT_FILES_JSON" "$max_timeout" "$filter" </dev/null 2>/dev/null
 }
 # fzf runs --bind reload(...) through `$SHELL -c`, which cannot see a
 # non-exported shell function — without this the F5 rebind in fuzzy_cd and
@@ -357,17 +357,17 @@ export -f _fuzzy_list_all
 # forks a doomed subshell and the info line stays blank.
 # Patterns must match the lowercase --prompt strings used by the pickers below.
 function _fzf_info_line() {
-  local label="results"
-  case "$FZF_PROMPT" in
-  *"edit>"*) label="paths" ;;
-  *"cd>"*) label="folders" ;;
-  *"commits>"*) label="commits" ;;
-  *"bookmark>"*) label="bookmarks" ;;
-  *"recent files>"*) label="recent files" ;;
-  *"history>"*) label="commands" ;;
-  "> "*) label="completions" ;;
-  esac
-  echo "$FZF_MATCH_COUNT of $FZF_TOTAL_COUNT $label"
+	local label="results"
+	case "$FZF_PROMPT" in
+	*"edit>"*) label="paths" ;;
+	*"cd>"*) label="folders" ;;
+	*"commits>"*) label="commits" ;;
+	*"bookmark>"*) label="bookmarks" ;;
+	*"recent files>"*) label="recent files" ;;
+	*"history>"*) label="commands" ;;
+	"> "*) label="completions" ;;
+	esac
+	echo "$FZF_MATCH_COUNT of $FZF_TOTAL_COUNT $label"
 }
 export -f _fzf_info_line
 
@@ -385,12 +385,12 @@ export -f _fzf_info_line
 # Absolute and ~ selections pass through untouched — fuzzy_cd mixes absolute
 # recent folders (★) into a list of base-relative subfolders.
 function _fzf_resolve_path() {
-  local base="${1:-.}" selection="${2:-}"
-  [ -z "$selection" ] && return 0
-  local target="$selection"
-  [[ "$target" == \~* ]] && target="$HOME${target#\~}"
-  [[ "$target" != /* ]] && target="${base%/}/${target#./}"
-  echo "$target"
+	local base="${1:-.}" selection="${2:-}"
+	[ -z "$selection" ] && return 0
+	local target="$selection"
+	[[ "$target" == \~* ]] && target="$HOME${target#\~}"
+	[[ "$target" != /* ]] && target="${base%/}/${target#./}"
+	echo "$target"
 }
 export -f _fzf_resolve_path
 
@@ -398,35 +398,35 @@ export -f _fzf_resolve_path
 # files render through bat. Must be exported for the same `$SHELL -c` reason as
 # _fzf_info_line.
 function _fzf_preview_path() {
-  local target
-  target=$(_fzf_resolve_path "${1:-.}" "${2:-}")
-  [ -z "$target" ] && return 0
-  if [ -d "$target" ]; then
-    command ls -Cp --color=always "$target" 2> /dev/null
-  else
-    bat --paging=never --style=plain --color=always "$target"
-  fi
+	local target
+	target=$(_fzf_resolve_path "${1:-.}" "${2:-}")
+	[ -z "$target" ] && return 0
+	if [ -d "$target" ]; then
+		command ls -Cp --color=always "$target" 2>/dev/null
+	else
+		bat --paging=never --style=plain --color=always "$target"
+	fi
 }
 export -f _fzf_preview_path
 
 # fzf picker for recently opened files — opens selected file with view_file or optional editor arg
 function fuzzy_recent_files() {
-  local VIEW_COMMAND="${1:-}"
-  local OUT=$(echo "$(_recent_files)" | fzf +m --prompt="recent files> " \
-    --header="(Ctrl+Y) - recently opened files" \
-    --preview="bat --paging=never --style=plain --color=always {}" \
-    --preview-window=down:50%:wrap)
-  if [ -n "$OUT" ] && [ -f "$OUT" ]; then
-    # Gate on is_runnable_command, not `type -P` — GUI editors (zed, code, subl,
-    # smerge) are bash function wrappers from editor-launchers.js, not PATH
-    # binaries, so `type -P` silently fell through to view_file for them.
-    local EDIT_CMD="view_file"
-    if is_runnable_command "$VIEW_COMMAND"; then
-      EDIT_CMD="$VIEW_COMMAND"
-    fi
-    print_action_summary "$OUT" "$EDIT_CMD"
-    "$EDIT_CMD" "$OUT"
-  fi
+	local VIEW_COMMAND="${1:-}"
+	local OUT=$(echo "$(_recent_files)" | fzf +m --prompt="recent files> " \
+		--header="(Ctrl+Y) - recently opened files" \
+		--preview="bat --paging=never --style=plain --color=always {}" \
+		--preview-window=down:50%:wrap)
+	if [ -n "$OUT" ] && [ -f "$OUT" ]; then
+		# Gate on is_runnable_command, not `type -P` — GUI editors (zed, code, subl,
+		# smerge) are bash function wrappers from editor-launchers.js, not PATH
+		# binaries, so `type -P` silently fell through to view_file for them.
+		local EDIT_CMD="view_file"
+		if is_runnable_command "$VIEW_COMMAND"; then
+			EDIT_CMD="$VIEW_COMMAND"
+		fi
+		print_action_summary "$OUT" "$EDIT_CMD"
+		"$EDIT_CMD" "$OUT"
+	fi
 }
 
 ################################################################################
@@ -441,29 +441,34 @@ function fuzzy_recent_files() {
 # which is why `type -P` is not used here.
 _VIEW_FILE_EDITORS=(zed subl code vim)
 function view_file() {
-  if [[ $# -eq 0 ]]; then
-    return 1 # silent exit
-  fi
-  local editorCmd="" candidate
-  for candidate in "${_VIEW_FILE_EDITORS[@]}"; do
-    if is_runnable_command "$candidate"; then
-      editorCmd="$candidate"
-      break
-    fi
-  done
-  if [ -z "$editorCmd" ]; then
-    echo "view_file: no editor found (tried: ${_VIEW_FILE_EDITORS[*]})" >&2
-    return 1
-  fi
-  print_action_summary "$1" "$editorCmd"
-  "$editorCmd" "$1"
+	if [[ $# -eq 0 ]]; then
+		return 1 # silent exit
+	fi
+	local editorCmd="" candidate
+	for candidate in "${_VIEW_FILE_EDITORS[@]}"; do
+		if is_runnable_command "$candidate"; then
+			editorCmd="$candidate"
+			break
+		fi
+	done
+	if [ -z "$editorCmd" ]; then
+		echo "view_file: no editor found (tried: ${_VIEW_FILE_EDITORS[*]})" >&2
+		return 1
+	fi
+	print_action_summary "$1" "$editorCmd"
+	"$editorCmd" "$1"
 }
 
 ################################################################################
 # --- FZF Advanced Helper Functions ---
 ################################################################################
 # --- Bookmark Fzf Helper Functions ---
-BOOKMARK_PATH="$HOME/.${USER}_bookmark"
+# Single source for the bookmark file location. Lives under the personal root
+# ($SY_ROOT_FOLDER) so every piece of Sy-owned state sits in one folder.
+BOOKMARK_SYLE_PATH="${SY_ROOT_FOLDER}/.syle_bookmark"
+
+# view_bookmark - print the bookmark file
+alias view_bookmark='command cat "$BOOKMARK_SYLE_PATH"'
 
 # add_bookmark <command> [<command>...] - add one or more commands to the bookmark file
 #
@@ -474,35 +479,36 @@ BOOKMARK_PATH="$HOME/.${USER}_bookmark"
 # measured at ~1ms per call in a bare shell but ~7.6ms once a large profile is
 # loaded, which made a 31-entry seeding loop cost ~236ms of shell startup.
 function add_bookmark() {
-  [ $# -eq 0 ] && return 0
-  local content
-  content=$({
-    printf '%s\n' "$@"
-    command cat "$BOOKMARK_PATH" 2> /dev/null
-  } | sort -u)
-  echo "$content" > "$BOOKMARK_PATH"
+	[ $# -eq 0 ] && return 0
+	local content
+	command mkdir -p "$(dirname "$BOOKMARK_SYLE_PATH")" 2>/dev/null
+	content=$({
+		printf '%s\n' "$@"
+		command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null
+	} | sort -u)
+	echo "$content" >"$BOOKMARK_SYLE_PATH"
 }
 
 function add_bookmark_dir() {
-  dir="${1:-$(pwd)}"
-  add_bookmark "cd $dir"
+	dir="${1:-$(pwd)}"
+	add_bookmark "cd $dir"
 }
 
 # Ctrl+B — fuzzy favorite command picker
 function fuzzy_favorite_command() {
-  local cmd
-  cmd=$(command cat "$BOOKMARK_PATH" 2> /dev/null | sort -u | fzf --prompt="bookmark> " \
-    --header="(Ctrl+B) - bookmarked commands" \
-    --preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"; } | bat --paging=never --style=plain --color=always --language=bash' \
-    --preview-window=down:50%:wrap \
-    --bind 'f5:reload(command cat "$BOOKMARK_PATH" 2>/dev/null | sort -u)')
+	local cmd
+	cmd=$(command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null | sort -u | fzf --prompt="bookmark> " \
+		--header="(Ctrl+B) - bookmarked commands" \
+		--preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"; } | bat --paging=never --style=plain --color=always --language=bash' \
+		--preview-window=down:50%:wrap \
+		--bind 'f5:reload(command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null | sort -u)')
 
-  if [ -n "$cmd" ]; then
-    echo "### Command Selected from Bookmarks ###"
-    echo "$cmd"
-    eval "$cmd"
-    history -s "$cmd"
-  fi
+	if [ -n "$cmd" ]; then
+		echo "### Command Selected from Bookmarks ###"
+		echo "$cmd"
+		eval "$cmd"
+		history -s "$cmd"
+	fi
 }
 
 # --- File related Fzf Helper Functions ---
@@ -510,111 +516,111 @@ function fuzzy_favorite_command() {
 # Each line is "<marker>\t<path>"; fzf shows both columns but searches only the path
 # (--nth=2). Selection extracts the path via "${OUT##*$'\t'}".
 function _fuzzy_cd_list() {
-  local dir="${1:-.}"
-  _fuzzy_list_all "$dir" "folders" "" 10 | awk '{print "  \t" $0}'
-  _recent_folders 2> /dev/null | awk '{print "★ \t" $0}'
+	local dir="${1:-.}"
+	_fuzzy_list_all "$dir" "folders" "" 10 | awk '{print "  \t" $0}'
+	_recent_folders 2>/dev/null | awk '{print "★ \t" $0}'
 }
 # exported so the F5 reload subshell can resolve it (see _fuzzy_list_all)
 export -f _fuzzy_cd_list
 function fuzzy_cd() {
-  local dir="${1:-.}"
-  local abs_dir
-  abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
-  # base folder is interpolated into the fzf option strings because --preview and
-  # --bind run in their own `$SHELL -c` subshells that never see these locals
-  local base_q
-  base_q=$(printf '%q' "$abs_dir")
-  local OUT=$(_fuzzy_cd_list "$dir" | awk -F'\t' '!seen[$2]++' | fzf +m \
-    --delimiter=$'\t' --with-nth=1,2 --nth=2 \
-    --prompt="cd> " \
-    --header="(Ctrl+P) - cd; ★ recent folders, plain = subfolders under ${abs_dir}" \
-    --preview="_fzf_preview_path $base_q {2}" \
-    --preview-window=down:50%:wrap \
-    --bind "f5:reload(_fuzzy_cd_list $base_q | awk -F'\t' '!seen[\$2]++')")
-  if [ -n "$OUT" ]; then
-    OUT="${OUT##*$'\t'}"
-    # subfolder entries are relative to "$abs_dir" while ★ recent folders are
-    # already absolute — _fzf_resolve_path handles both
-    local FULL_PATH
-    FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
-    if [ -d "$FULL_PATH" ]; then
-      print_action_summary "$FULL_PATH"
-      cd "$FULL_PATH"
-    else
-      echo "Path no longer exists: $FULL_PATH"
-    fi
-  fi
+	local dir="${1:-.}"
+	local abs_dir
+	abs_dir=$(cd "$dir" 2>/dev/null && command pwd || echo "$dir")
+	# base folder is interpolated into the fzf option strings because --preview and
+	# --bind run in their own `$SHELL -c` subshells that never see these locals
+	local base_q
+	base_q=$(printf '%q' "$abs_dir")
+	local OUT=$(_fuzzy_cd_list "$dir" | awk -F'\t' '!seen[$2]++' | fzf +m \
+		--delimiter=$'\t' --with-nth=1,2 --nth=2 \
+		--prompt="cd> " \
+		--header="(Ctrl+P) - cd; ★ recent folders, plain = subfolders under ${abs_dir}" \
+		--preview="_fzf_preview_path $base_q {2}" \
+		--preview-window=down:50%:wrap \
+		--bind "f5:reload(_fuzzy_cd_list $base_q | awk -F'\t' '!seen[\$2]++')")
+	if [ -n "$OUT" ]; then
+		OUT="${OUT##*$'\t'}"
+		# subfolder entries are relative to "$abs_dir" while ★ recent folders are
+		# already absolute — _fzf_resolve_path handles both
+		local FULL_PATH
+		FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
+		if [ -d "$FULL_PATH" ]; then
+			print_action_summary "$FULL_PATH"
+			cd "$FULL_PATH"
+		else
+			echo "Path no longer exists: $FULL_PATH"
+		fi
+	fi
 }
 
 # Ctrl+T (vim) / Ctrl+Y (default editor) — fzf editor picker for files and directories
 function fuzzy_edit() {
-  local VIEW_COMMAND="$1"
-  local dir="${2:-.}"
-  local abs_dir
-  abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
-  # base folder is interpolated into the fzf option strings because --preview and
-  # --bind run in their own `$SHELL -c` subshells that never see these locals
-  local base_q
-  base_q=$(printf '%q' "$abs_dir")
-  local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="edit> " \
-    --header="(Ctrl+T) - edit files under ${abs_dir}" \
-    --preview="_fzf_preview_path $base_q {}" \
-    --preview-window=down:50%:wrap \
-    --bind "f5:reload(_fuzzy_list_all $base_q 'paths' '' 10)")
+	local VIEW_COMMAND="$1"
+	local dir="${2:-.}"
+	local abs_dir
+	abs_dir=$(cd "$dir" 2>/dev/null && command pwd || echo "$dir")
+	# base folder is interpolated into the fzf option strings because --preview and
+	# --bind run in their own `$SHELL -c` subshells that never see these locals
+	local base_q
+	base_q=$(printf '%q' "$abs_dir")
+	local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="edit> " \
+		--header="(Ctrl+T) - edit files under ${abs_dir}" \
+		--preview="_fzf_preview_path $base_q {}" \
+		--preview-window=down:50%:wrap \
+		--bind "f5:reload(_fuzzy_list_all $base_q 'paths' '' 10)")
 
-  if [ -z "$OUT" ]; then
-    return
-  fi
+	if [ -z "$OUT" ]; then
+		return
+	fi
 
-  # check if selection is a directory (trailing /)
-  local IS_DIR=false
-  if [[ "$OUT" == */ ]]; then
-    IS_DIR=true
-    OUT="${OUT%/}"
-  fi
+	# check if selection is a directory (trailing /)
+	local IS_DIR=false
+	if [[ "$OUT" == */ ]]; then
+		IS_DIR=true
+		OUT="${OUT%/}"
+	fi
 
-  local FULL_PATH
-  # _fuzzy_list_all emits paths relative to "$dir", so resolve the selection
-  # against "$abs_dir" — not against PWD and not against the git toplevel.
-  # Resolving from the git root left FULL_PATH empty (and leaked a "realpath:
-  # No such file or directory" error) for every selection made from a
-  # subdirectory of a repo, and handed the editor a path relative to the wrong
-  # base whenever fuzzy_edit was called with an explicit "$dir".
-  FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
-  FULL_PATH=$(realpath "$FULL_PATH" 2> /dev/null) || FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
+	local FULL_PATH
+	# _fuzzy_list_all emits paths relative to "$dir", so resolve the selection
+	# against "$abs_dir" — not against PWD and not against the git toplevel.
+	# Resolving from the git root left FULL_PATH empty (and leaked a "realpath:
+	# No such file or directory" error) for every selection made from a
+	# subdirectory of a repo, and handed the editor a path relative to the wrong
+	# base whenever fuzzy_edit was called with an explicit "$dir".
+	FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
+	FULL_PATH=$(realpath "$FULL_PATH" 2>/dev/null) || FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
 
-  # Folder selections: just print PWD + cd. File selections: also print the editor line
-  # (mirrors what we're about to invoke). print_action_summary handles the format.
-  if [ "$IS_DIR" = true ]; then
-    print_action_summary "$FULL_PATH"
-    cd "$FULL_PATH"
-  else
-    # `type -P` only resolves PATH binaries, so it missed every GUI editor
-    # wrapper that editor-launchers.js defines as a bash function (zed, code,
-    # subl, smerge). `fuzzy_edit zed` therefore fell through to view_file (i.e.
-    # Sublime) on any host without a zed shim in PATH. is_runnable_command also
-    # accepts shell functions and builtins.
-    local EDIT_CMD="view_file"
-    if is_runnable_command "$VIEW_COMMAND"; then
-      EDIT_CMD="$VIEW_COMMAND"
-    fi
-    print_action_summary "$FULL_PATH" "$EDIT_CMD"
-    "$EDIT_CMD" "$FULL_PATH"
-  fi
+	# Folder selections: just print PWD + cd. File selections: also print the editor line
+	# (mirrors what we're about to invoke). print_action_summary handles the format.
+	if [ "$IS_DIR" = true ]; then
+		print_action_summary "$FULL_PATH"
+		cd "$FULL_PATH"
+	else
+		# `type -P` only resolves PATH binaries, so it missed every GUI editor
+		# wrapper that editor-launchers.js defines as a bash function (zed, code,
+		# subl, smerge). `fuzzy_edit zed` therefore fell through to view_file (i.e.
+		# Sublime) on any host without a zed shim in PATH. is_runnable_command also
+		# accepts shell functions and builtins.
+		local EDIT_CMD="view_file"
+		if is_runnable_command "$VIEW_COMMAND"; then
+			EDIT_CMD="$VIEW_COMMAND"
+		fi
+		print_action_summary "$FULL_PATH" "$EDIT_CMD"
+		"$EDIT_CMD" "$FULL_PATH"
+	fi
 }
 
 # Ctrl+N — interactive git log browser with commit preview
 function fuzzy_git_show() {
-  git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always \
-    | fzf --prompt="commits> " \
-      --header="(Ctrl+N) - git log; Enter shows full commit in pager, F5 reloads" \
-      --preview-window=down:50%:wrap \
-      --preview='hash=$(echo {} | grep -o "[a-f0-9]\{7\}" | head -1);
+	git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always |
+		fzf --prompt="commits> " \
+			--header="(Ctrl+N) - git log; Enter shows full commit in pager, F5 reloads" \
+			--preview-window=down:50%:wrap \
+			--preview='hash=$(echo {} | grep -o "[a-f0-9]\{7\}" | head -1);
       git log --color=always --format="%C(yellow)%H%n%C(cyan)Author: %an <%ae>%n%C(green)Date:   %ad%n%n%C(bold white)%s%C(reset)%n%n%b" -1 $hash;
       echo "$LINE_BREAK_HASH";
       git diff-tree --no-commit-id --stat --color=always $hash;
       echo "";
       git diff-tree --no-commit-id -p --color=always $hash' \
-      --bind "ctrl-m:execute:(echo {} | grep -o '[a-f0-9]\{7\}' | head -1 | xargs -I % sh -c 'git show --color=always % | (bat --paging=always --style=plain 2>/dev/null || batcat --paging=always --style=plain 2>/dev/null || less -R)')" \
-      --bind "f5:reload(git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always)"
+			--bind "ctrl-m:execute:(echo {} | grep -o '[a-f0-9]\{7\}' | head -1 | xargs -I % sh -c 'git show --color=always % | (bat --paging=always --style=plain 2>/dev/null || batcat --paging=always --style=plain 2>/dev/null || less -R)')" \
+			--bind "f5:reload(git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always)"
 }
