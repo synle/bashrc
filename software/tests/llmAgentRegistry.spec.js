@@ -119,10 +119,14 @@ describe("LLM agent registry", () => {
     expect(violations).toEqual([]);
   });
 
-  it("never `sy-` prefixes an agent name", () => {
-    // Deliberate divergence from LLM_COMMAND_DEPLOY_MAP — an agent name is a
-    // rendered label, not a picker entry, so it carries no clustering prefix.
-    expect(Object.keys(LLM_AGENT_DEPLOY_MAP).filter((name) => name.startsWith("sy-"))).toEqual([]);
+  it("`sy-` prefixes every agent name", () => {
+    // Same convention as LLM_COMMAND_DEPLOY_MAP. The prefix is what makes a
+    // rendered agent label legible as ours next to a vendor- or plugin-supplied
+    // one, which is the only place the name is ever read.
+    /** @type {string[]} Registry keys missing the ownership prefix. */
+    const unprefixed = Object.keys(LLM_AGENT_DEPLOY_MAP).filter((name) => !name.startsWith("sy-"));
+
+    expect(unprefixed).toEqual([]);
   });
 
   it("never re-registers a retired agent name", () => {
@@ -147,9 +151,9 @@ describe("LLM agent deploy folders", () => {
     // require a `name` key and ignore a file without one; opencode 1.18.18 takes
     // the name from the filename and instead requires `mode: subagent`. These
     // are NOT interchangeable, and getting one wrong fails silently.
-    expect(LLM_AGENT_DEPLOY_FOLDERS.claude.frontmatter("pr-x", "d")).toBe('name: pr-x\ndescription: "d"');
-    expect(LLM_AGENT_DEPLOY_FOLDERS.copilot.frontmatter("pr-x", "d")).toBe('name: pr-x\ndescription: "d"');
-    expect(LLM_AGENT_DEPLOY_FOLDERS.opencode.frontmatter("pr-x", "d")).toBe('description: "d"\nmode: subagent');
+    expect(LLM_AGENT_DEPLOY_FOLDERS.claude.frontmatter("sy-pr-x", "d")).toBe('name: sy-pr-x\ndescription: "d"');
+    expect(LLM_AGENT_DEPLOY_FOLDERS.copilot.frontmatter("sy-pr-x", "d")).toBe('name: sy-pr-x\ndescription: "d"');
+    expect(LLM_AGENT_DEPLOY_FOLDERS.opencode.frontmatter("sy-pr-x", "d")).toBe('description: "d"\nmode: subagent');
   });
 
   it("writes each CLI into its own verified folder and suffix", () => {

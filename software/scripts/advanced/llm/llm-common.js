@@ -1624,12 +1624,14 @@ const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/agents";
  *         `~/.copilot/agents/<key>.agent.md` at once.
  * Value = source basename (no `.md`) under {@link LLM_AGENT_SOURCE_FOLDER}.
  *
- * Deliberately NOT `sy-` prefixed, unlike {@link LLM_COMMAND_DEPLOY_MAP}. A
- * command name is a thing the user types into a picker, where clustering and
- * collision-avoidance pay for the prefix. An agent name is a **label the harness
- * renders** next to a running worker (this whole registry exists because
- * OpenCode's subagent tab strip showed five identical `General` entries), so the
- * shortest honest noun wins.
+ * `sy-` prefixed, exactly like {@link LLM_COMMAND_DEPLOY_MAP}. The prefix was
+ * briefly omitted on the theory that it only pays off in a command picker, where
+ * clustering and collision-avoidance matter, and that an agent name — a **label
+ * the harness renders** beside a running worker — should be the shortest honest
+ * noun instead. That was wrong in the one place it is actually read: a rendered
+ * label is precisely where "is this mine, or something a plugin installed?" needs
+ * answering at a glance, and a bare `Pr-Reviewer` sitting beside a vendor agent
+ * answers it for nobody. Same prefix, same reason, one convention to remember.
  *
  * Editing an agent: edit `<LLM_AGENT_SOURCE_FOLDER>/<value>.md`.
  * Adding an agent: drop the new `.md` there + add ONE entry here — every CLI in
@@ -1639,8 +1641,8 @@ const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/agents";
  * @type {Record<string, string>}
  */
 const LLM_AGENT_DEPLOY_MAP = {
-  "pr-babysitter": "pr-babysitter",
-  "pr-reviewer": "pr-reviewer",
+  "sy-pr-babysitter": "sy-pr-babysitter",
+  "sy-pr-reviewer": "sy-pr-reviewer",
 };
 
 /**
@@ -1654,7 +1656,14 @@ const LLM_AGENT_DEPLOY_MAP = {
  * has re-run at least once).
  * @type {string[]} deployed agent names, no extension
  */
-const LLM_AGENT_RETIRED_NAMES = [];
+const LLM_AGENT_RETIRED_NAMES = [
+  // 2026-08-20: every Sy-managed agent gained the `sy-` prefix its command
+  // counterparts already carry, so ownership is legible in the harness label
+  // that renders it. The OLD unprefixed names below are retired — re-running any
+  // setup.js on a machine still holding them will delete them.
+  "pr-babysitter", // renamed to sy-pr-babysitter (2026-08-20)
+  "pr-reviewer", // renamed to sy-pr-reviewer (2026-08-20)
+];
 
 /**
  * Every CLI agents folder that receives a native copy of each shared agent.

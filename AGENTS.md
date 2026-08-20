@@ -762,10 +762,13 @@ sources in `_common/agents/<name>.md`.
   and filename suffix, so a single physical file could only ever be correct for one
   of them. `LLM_AGENT_DEPLOY_FOLDERS` holds **only** that shape difference — folder,
   suffix, frontmatter builder — never which agents exist.
-- **Agent names are NOT `sy-` prefixed**, unlike commands. A command name is typed
-  into a picker, where clustering and collision-avoidance pay for the prefix; an
-  agent name is a label a harness renders beside a running worker, so the shortest
-  honest noun wins.
+- **Agent names ARE `sy-` prefixed**, exactly like commands. This was briefly the
+  opposite, on the theory that a prefix only pays off in a picker and that a
+  rendered label should be the shortest honest noun. Wrong in the one place the
+  name is actually read: a label beside a running worker is precisely where "mine
+  or a plugin's?" needs answering at a glance, and a bare `Pr-Reviewer` sitting
+  next to a vendor agent answers it for nobody. One prefix convention, both
+  corpora.
 - **A new CLI entry requires a live probe, not a doc.** A wrong folder or a wrong
   frontmatter key fails **silently** on every one of these CLIs — the file is parsed
   as ordinary documentation and the agent never appears. Both claude and copilot
