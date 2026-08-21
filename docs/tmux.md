@@ -78,6 +78,7 @@ second copy shows up.
   - [Review notes — what the first draft got wrong](#review-notes--what-the-first-draft-got-wrong)
   - [Generating a tmuxp config from the simple schema (Node)](#generating-a-tmuxp-config-from-the-simple-schema-node)
   - [Template: one function per project, config inline](#template-one-function-per-project-config-inline)
+  - [Choosing the selected window](#choosing-the-selected-window)
   - [`workspace_tmuxp` — parse tmuxp's schema with no tmuxp](#workspace_tmuxp--parse-tmuxps-schema-with-no-tmuxp)
   - [`workspace_sample_json` — a config to start from](#workspace_sample_json--a-config-to-start-from)
   - [`workspace_freeze` — the cheap knockoff of `tmuxp freeze`](#workspace_freeze--the-cheap-knockoff-of-tmuxp-freeze)
@@ -537,6 +538,30 @@ JSON_EOF
 }
 ```
 
+Option 2 — same launcher, no temp file at all. `-` tells `workspace_create` to read the
+config on stdin, so the heredoc goes straight in and nothing is written anywhere:
+
+```bash
+# my_workspace: build or attach the project workspace, config on stdin
+function my_workspace() {
+  workspace_create - "$@" << 'JSON_EOF'
+{
+  "session": "my_project_session",
+  "active_window": 2,
+  "windows": [
+    { "name": "Build the App", "command": "build_project" },
+    { "name": "Run the Tests", "command": "run_tests --watch" },
+    { "name": "Watch the Logs", "command": "watch_logs" }
+  ]
+}
+JSON_EOF
+}
+```
+
+`active_window` is the 1-based window to select once the session is built — see
+[Choosing the selected window](#choosing-the-selected-window). Pick option 1 when the config
+should also be reachable later by name (`ws <name>`); option 2 otherwise.
+
 ```console
 $ my_workspace            # build it, or attach if it is already running
 $ my_workspace --force    # rebuild from scratch
@@ -561,8 +586,41 @@ Why this beats the hand-rolled `tmux new-session` / `new-window` function it rep
 Swap the three dummy commands for whatever the project actually needs — a dev server, a log
 tail, a REPL, a spare shell (omit `command` entirely for that one).
 
-### `workspace_tmuxp` — parse tmuxp's schema with no tmuxp
+### Choosing the selected window
 
+Without an explicit `select-window`, tmux leaves the **last** window created active, so a
+freshly built workspace opens on the right-most tab — almost never the one you want. The
+selection is config data, and the spelling is borrowed from tmuxp, which marks it per window
+with `focus: true`:
+
+```json
+{
+  "session": "my_project_session",
+  "windows": [
+    { "name": "Build the App", "command": "build_project" },
+    { "name": "Run the Tests", "command": "run_tests --watch", "focus": true },
+    { "name": "Watch the Logs", "command": "watch_logs" }
+  ]
+}
+```
+
+Resolution order, first hit wins:
+
+| Source                             | Meaning                                       |
+| ---------------------------------- | --------------------------------------------- |
+| `focus: true` on a window          | that window (tmuxp's spelling; first one wins) |
+| `active_window: <n>` at the top    | the nth window, **1-based**                    |
+| nothing                            | the first window                               |
+
+- **Out of range or not a number falls back to the first window**, never an error — a bad
+  index must not fail an otherwise-good session.
+- **The selection is made by window ID read back from tmux**, not by `<session>:<n>`. Window
+  indexes depend on `base-index` (this repo's `tmux.config` sets it to `1`), and the config
+  knows nothing about that setting.
+- Panes are out of scope: `focus` on a pane is a real tmuxp feature this simple mode does not
+  implement — reach for real `tmuxp` when panes matter.
+
+### `workspace_tmuxp` — parse tmuxp's schema with no tmuxp
 If the config is already in tmuxp's shape but you do not want the Python runtime on that
 machine, parse it directly. This is a sibling of `workspace`, not a replacement — `workspace`
 reads the short schema, `workspace_tmuxp` reads `session_name` / `window_name` /

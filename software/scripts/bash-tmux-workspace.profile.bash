@@ -7,6 +7,7 @@
 #   {
 #     "session": "my_project_session",
 #     "folder": "~/git/my_project",
+#     "active_window": 2,
 #     "windows": [
 #       { "name": "shell",  "command": "git status --short --branch" },
 #       { "name": "logs",   "command": "tail -f logs/app.log", "folder": "/var/log" }
@@ -14,14 +15,27 @@
 #   }
 #
 # folder is optional at both levels: window wins, then session, then $PWD.
-# a per-project launcher is a heredoc plus one call - see docs/tmux.md:
+# the selected window follows tmuxp: a window carrying "focus": true wins, else
+# the 1-based "active_window" at the top, else the first window.
+# a per-project launcher is a heredoc plus one call - see docs/tmux.md. Either
+# spool the config to a file, or hand it to workspace_create on stdin with "-":
 #   function my_workspace() {
+#     ## option 1 - config on disk
 #     local config="${TMPDIR:-/tmp}/my_workspace.json"
 #     command cat > "$config" << 'JSON_EOF'
 #   { "session": "my_project_session",
 #     "windows": [ { "name": "Build the App", "command": "build_project" } ] }
 #   JSON_EOF
 #     workspace_create "$config" "$@"
+#   }
+#
+#   function my_workspace_no_temp_file() {
+#     ## option 2 - same thing, straight down stdin, nothing written anywhere
+#     workspace_create - "$@" << 'JSON_EOF'
+#   { "session": "my_project_session",
+#     "active_window": 1,
+#     "windows": [ { "name": "Build the App", "command": "build_project" } ] }
+#   JSON_EOF
 #   }
 #
 # jq does the parsing (installed by every _full-setup.sh); tmuxp is NOT required.
@@ -107,9 +121,13 @@ function _workspace_resolve_config() {
 function workspace_create() {
   if is_help_arg "${1:-}"; then
     echo "workspace_create: build or attach a tmux session described by a JSON file
-  Usage: workspace_create <name|path.json> [--force] [--detach]
+  Usage: workspace_create <name|path.json|-> [--force] [--detach]
   When the session already exists you are asked whether to kill and rebuild it;
   answering no (the default) attaches to the running session instead.
+  Reading '-' takes the config on stdin, so a launcher needs no temp file.
+  Selected window: a window with \"focus\": true (tmuxp's spelling) wins,
+  otherwise the 1-based \"active_window\" at the top level, otherwise the first
+  window. An out-of-range or non-numeric value falls back to the first.
   Flags:
     --force    kill the existing session and rebuild it, skipping the prompt
     --detach   build the session and return instead of attaching, for scripts
@@ -120,6 +138,7 @@ function workspace_create() {
     workspace_create my_project                     # same file, found via the lookup order above
     workspace_create my_project --force             # kill the running session and rebuild, no prompt
     workspace_create my_project --force --detach    # rebuild but stay in this shell - the script form
+    workspace_create - --force < my_project.json    # config on stdin, no file lookup at all
     workspace_sample_json && workspace_create \$(ls -t *.json | head -1)   # scaffold, then build it"
     return 1
   fi
@@ -135,16 +154,28 @@ function workspace_create() {
     esac
   done
 
-  local found
-  found=$(_workspace_resolve_config "$config_file")
-  if [ -z "$found" ]; then
-    echo "workspace_create: config not found: ${config_file:-<none>}" >&2
-    return 1
+  ## "-" reads the config from stdin, so a launcher can pipe a heredoc straight
+  ## in and never own a temp file. jq is asked for several fields at different
+  ## points, and stdin can only be read once, so it is spooled to a temp file
+  ## here and removed on every exit path below.
+  local tmp_config=""
+  if [ "$config_file" = "-" ]; then
+    tmp_config=$(mktemp "${TMPDIR:-/tmp}/workspace_stdin.XXXXXX") || return 1
+    command cat > "$tmp_config"
+    config_file="$tmp_config"
+  else
+    local found
+    found=$(_workspace_resolve_config "$config_file")
+    if [ -z "$found" ]; then
+      echo "workspace_create: config not found: ${config_file:-<none>}" >&2
+      return 1
+    fi
+    config_file="$found"
   fi
-  config_file="$found"
 
   if ! jq -e . "$config_file" > /dev/null 2>&1; then
-    echo "workspace_create: invalid JSON: $config_file" >&2
+    echo "workspace_create: invalid JSON: ${tmp_config:-$config_file}" >&2
+    [ -z "$tmp_config" ] || command rm -f "$tmp_config"
     return 1
   fi
 
@@ -152,6 +183,7 @@ function workspace_create() {
   session=$(jq -r '.session // .session_name // empty' "$config_file")
   if [ -z "$session" ]; then
     echo "workspace_create: config has no .session" >&2
+    [ -z "$tmp_config" ] || command rm -f "$tmp_config"
     return 1
   fi
 
@@ -163,6 +195,7 @@ function workspace_create() {
     if is_truthy "$force" || prompt_yes_no "workspace_create: session '$session' already exists. Kill it and rebuild?"; then
       tmux kill-session -t "=$session"
     else
+      [ -z "$tmp_config" ] || command rm -f "$tmp_config"
       _workspace_attach_unless_detached "$detach" "$session"
       return $?
     fi
@@ -189,19 +222,55 @@ function workspace_create() {
     fi
 
     if [ "$index" -eq 0 ]; then
-      tmux new-session -d -s "$session" -n "$name" -c "$folder" ${quoted:+"$quoted"} || return 1
+      tmux new-session -d -s "$session" -n "$name" -c "$folder" ${quoted:+"$quoted"} || {
+        [ -z "$tmp_config" ] || command rm -f "$tmp_config"
+        return 1
+      }
     else
-      tmux new-window -t "=$session:" -n "$name" -c "$folder" ${quoted:+"$quoted"} || return 1
+      tmux new-window -t "=$session:" -n "$name" -c "$folder" ${quoted:+"$quoted"} || {
+        [ -z "$tmp_config" ] || command rm -f "$tmp_config"
+        return 1
+      }
     fi
     index=$((index + 1))
   done < <(jq -r '.windows[]? | [(.name // .window_name // ""), (.command // ""), (.folder // .start_directory // "")] | @tsv' "$config_file")
 
   if [ "$index" -eq 0 ]; then
     echo "workspace_create: no windows defined in $config_file" >&2
+    [ -z "$tmp_config" ] || command rm -f "$tmp_config"
     return 1
   fi
 
-  tmux select-window -t "=$session:" > /dev/null 2>&1
+  ## which window ends up selected. tmuxp marks it per window with `focus: true`,
+  ## so that spelling wins; `active_window` is the same thing as a 1-based
+  ## position for configs that would rather say it once at the top. Default is 1
+  ## (the first window) - without an explicit select, tmux leaves the LAST window
+  ## created active, which is never what a launcher wants.
+  local focus_index
+  focus_index=$(jq -r '
+      ( [ (.windows // []) | to_entries[]
+          | select((.value.focus // false) | tostring == "true")
+          | .key + 1 ][0]
+        // .active_window // .focus_window // 1 )' "$config_file")
+  [ -z "$tmp_config" ] || command rm -f "$tmp_config"
+
+  ## bounds-check rather than trust the config: a non-number, a 0, or an index
+  ## past the last window falls back to the first window instead of failing the
+  ## build of an otherwise-good session
+  case "$focus_index" in
+  '' | *[!0-9]*) focus_index=1 ;;
+  esac
+  if [ "$focus_index" -lt 1 ] || [ "$focus_index" -gt "$index" ]; then
+    focus_index=1
+  fi
+
+  ## select by window ID read back from tmux, not by "$session:$n" - the index a
+  ## window gets depends on the base-index option, which this config knows
+  ## nothing about (tmux.config sets it to 1)
+  local target_window
+  target_window=$(tmux list-windows -t "=$session" -F '#{window_id}' 2> /dev/null | sed -n "${focus_index}p")
+  [ -n "$target_window" ] && tmux select-window -t "$target_window" > /dev/null 2>&1
+
   _workspace_attach_unless_detached "$detach" "$session"
 }
 
