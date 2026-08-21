@@ -670,9 +670,9 @@ async function readLLMDocSource(sourcePath) {
 const LLM_SHARED_INSTRUCTIONS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "instructions");
 
 /**
- * Plan and RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`), kept
- * out of repo working trees so they need no `.gitignore` entry and can't be
- * committed by accident.
+ * Plan artifacts and their sidecars (`<repo>-<feature>.md`, `.diff`, `.rfc.md`),
+ * kept flat in one folder and out of repo working trees so they need no
+ * `.gitignore` entry and can't be committed by accident.
  * @type {string}
  */
 const LLM_SHARED_PLANS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "plans");

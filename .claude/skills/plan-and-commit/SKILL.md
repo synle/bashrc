@@ -1,6 +1,6 @@
 ---
 name: plan-and-commit
-description: Write a plan, execute it, commit the result, and leave behind plan-YYYY-MM-DD-<slug>.md plus plan-YYYY-MM-DD-<slug>.diff in ~/_extra/ai_llm/plans/<repo>/. Use for any multi-file or multi-step change where the reasoning is worth recording alongside the code.
+description: Write a plan, execute it, commit the result, and leave behind <repo>-<feature>.md plus <repo>-<feature>.diff in the flat ~/_extra/ai_llm/plans/ folder. Use for any multi-file or multi-step change where the reasoning is worth recording alongside the code.
 ---
 
 ## Purpose
@@ -13,14 +13,16 @@ Use this when the change spans multiple files or steps and the reasoning is wort
 
 ## Artifacts
 
-| File                                                       | Contents                                                                            |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `~/_extra/ai_llm/plans/<repo>/plan-YYYY-MM-DD-<slug>.md`   | The plan — TLDR, goal, decisions, per-file change table, risks, validation, wrap-up |
-| `~/_extra/ai_llm/plans/<repo>/plan-YYYY-MM-DD-<slug>.diff` | Unified diff of exactly what the commit(s) changed                                  |
+| File                                          | Contents                                                                            |
+| --------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `~/_extra/ai_llm/plans/<repo>-<feature>.md`   | The plan — TLDR, goal, decisions, per-file change table, risks, validation, wrap-up |
+| `~/_extra/ai_llm/plans/<repo>-<feature>.diff` | Unified diff of exactly what the commit(s) changed                                  |
 
-`<repo>` is the repo name from `git remote get-url origin`, never the folder name (see Repo Identification). `YYYY-MM-DD` is the creation date (`date +%Y-%m-%d`), fixed at first write and never re-dated on later edits, so `ls ~/_extra/ai_llm/plans/<repo>/` reads as a date-ordered inventory. `<slug>` is kebab-case, derived from the task's feature name (`plan-2026-08-12-llm-instructions.md`, `plan-2026-08-12-fix-auth-retry.md`); reuse the `<slug>` alone — not the date — as the branch `<group-slug>` if the work spans several branches. An RFC written for the same work uses the parallel name `rfc-YYYY-MM-DD-<slug>.md`, so plan and RFC sort together by date and share the feature slug.
+`<repo>` is the repo name from `git remote get-url origin`, never the folder name (see Repo Identification). **The single `-` after the repo is the separator, so `<feature>` is snake_case** — `bashrc-llm_instructions.md`, `widget-store-fix_auth_retry.md`. Repo names carry their own hyphens, so keeping the feature on underscores is what makes the boundary readable at a glance. Kebab-case it when reusing it as the branch `<group-slug>`. No date and no `plan-` prefix — the mtime already carries the date, and a baked-in one goes stale the first time the plan is revised. A full rewrite gets a `_v<N>` suffix (`bashrc-llm_instructions_v2.md`) and leaves the earlier file alone.
 
-**Artifacts live outside every repo** — `mkdir -p "$HOME/_extra/ai_llm/plans/<repo>"` before the first write. Nothing lands in the working tree, so there is no `.gitignore` entry to maintain, nothing to accidentally commit, and no untracked noise in `git status`. Full rationale in the rules file (see Plans & Wrap-Ups). If the user explicitly wants a plan tracked in the repo, copy it in and `git add` it in a clearly-labeled follow-up commit — never silently.
+Anything else the task produces is a **sidecar sharing the plan's stem** — `<repo>-<feature>.<name>.<ext>`, `<name>` snake_case like the feature: the diff above, an RFC as `<repo>-<feature>.rfc.md`, a helper script as `widget-store-fix_auth_retry.migrate_local_db.sh`, likewise any CSV, JSON, or SQL dump. The stem is the only thing tying a generated file to the work that generated it, so never write one to a bare name.
+
+**Artifacts live outside every repo, flat in one folder** — `mkdir -p "$HOME/_extra/ai_llm/plans"` before the first write, and never create a subfolder under it: no per-repo folder, no `scripts/` folder, no date folder. The repo name is in the filename, so `ls` is the whole inventory and `ls <repo>-*` is the per-repo one. Nothing lands in the working tree, so there is no `.gitignore` entry to maintain, nothing to accidentally commit, and no untracked noise in `git status`. Full rationale in the rules file (see Plans & Wrap-Ups). If the user explicitly wants a plan tracked in the repo, copy it in and `git add` it in a clearly-labeled follow-up commit — never silently.
 
 ## Steps
 
@@ -31,7 +33,7 @@ Use this when the change spans multiple files or steps and the reasoning is wort
 - `git status --porcelain` — if the tree is dirty, list the pre-existing changes and ask whether to (a) stash them, (b) proceed and leave them out of the commit, or (c) abort. **Never fold someone else's uncommitted work into your commit.** Note every pre-existing dirty path; those paths are excluded from staging in Step 5.
 - Read the repo's rules file (`AGENTS.md` / `CLAUDE.md`) and its map (`DEV.md`, `ARCHITECTURE.md`) before planning. Rules without the map produce locally-correct, architecturally-wrong changes.
 
-### 2. Write `plan-YYYY-MM-DD-<slug>.md`
+### 2. Write `<repo>-<feature>.md`
 
 Sections, in order:
 
@@ -52,14 +54,14 @@ Apply Scope Discipline (YAGNI) here, not after: state rungs 1-6 out loud before 
 Show the user the plan's Goal + Changes and ask: `"Execute this plan? (yes / edit / no)"`.
 
 - **yes** → proceed to Step 4.
-- **edit** → take their corrections, rewrite `plan-YYYY-MM-DD-<slug>.md`, ask again.
+- **edit** → take their corrections, rewrite `<repo>-<feature>.md`, ask again.
 - **no** → stop. The plan file stays on disk; nothing was changed.
 
 Skip this confirmation only when the user already pre-approved (e.g. "just do it", autopilot mode).
 
 ### 4. Execute
 
-Work through the plan. If reality diverges — a file isn't where you expected, an approach doesn't work, a new constraint appears — **update `plan-YYYY-MM-DD-<slug>.md` to match what you actually did**. A plan that describes a different change than the diff is worse than no plan.
+Work through the plan. If reality diverges — a file isn't where you expected, an approach doesn't work, a new constraint appears — **update `<repo>-<feature>.md` to match what you actually did**. A plan that describes a different change than the diff is worse than no plan.
 
 ### 5. Validate, then commit
 
@@ -69,14 +71,14 @@ Work through the plan. If reality diverges — a file isn't where you expected, 
 4. Run the Commit-author check (see Source Control & PRs) before committing.
 5. Commit once, with a real message: subject line describing the change, body summarizing the plan's Goal.
 
-### 6. Append the wrap-up and emit `plan-YYYY-MM-DD-<slug>.diff`
+### 6. Append the wrap-up and emit `<repo>-<feature>.diff`
 
-Write `## Wrap-Up` at the bottom of `plan-YYYY-MM-DD-<slug>.md` (see Plans & Wrap-Ups): every file touched (path → one-line what changed), what was added / removed / renamed, every deviation from the plan and why, the validation command and its result, plus follow-ups or known gaps. A reader who never saw the diff should be able to review the change from this section alone.
+Write `## Wrap-Up` at the bottom of `<repo>-<feature>.md` (see Plans & Wrap-Ups): every file touched (path → one-line what changed), what was added / removed / renamed, every deviation from the plan and why, the validation command and its result, plus follow-ups or known gaps. A reader who never saw the diff should be able to review the change from this section alone.
 
-Then emit the diff — `$PLANS` is `~/_extra/ai_llm/plans/<repo>`:
+Then emit the diff — `$PLANS` is `~/_extra/ai_llm/plans`:
 
 ```bash
-git diff <base-sha>..HEAD > "$PLANS/plan-YYYY-MM-DD-<slug>.diff"
+git diff <base-sha>..HEAD > "$PLANS/<repo>-<feature>.diff"
 ```
 
 Use the base SHA from Step 1, so the diff covers the whole task even if it took more than one commit. No excludes needed — the artifacts live outside the repo.
@@ -90,8 +92,8 @@ State: the commit SHA(s), the two artifact paths, the validation command and its
 - **Stop at the commit.** Never `git push`, never `gh pr create`, never merge. Landing the work is a separate, explicit decision — when the user wants a PR, run whatever pull-request workflow the environment provides as its own step.
 - **The plan is written before the code, not after.** A plan reverse-engineered from a finished diff is a changelog, not a plan, and skips the review moment in Step 3 that makes this skill worth running.
 - **Plan and diff must agree.** If you deviated during execution, the plan gets updated and the Wrap-Up says so. Verify before reporting.
-- **One task, one slug.** Don't overwrite an existing `~/_extra/ai_llm/plans/<repo>/plan-YYYY-MM-DD-<slug>.*` pair from earlier work — pick a distinct slug or ask.
-- **Artifacts are prose, not code.** Persona overlays (e.g. Caveman Speak) never apply to `plan-YYYY-MM-DD-<slug>.md` or to commit messages — both are read by humans other than the requester.
+- **One task, one feature name.** Don't overwrite an existing `~/_extra/ai_llm/plans/<repo>-<feature>.*` set from earlier work — pick a distinct feature name, or bump to `_v<N>` and keep both, or ask.
+- **Artifacts are prose, not code.** Persona overlays (e.g. Caveman Speak) never apply to `<repo>-<feature>.md` or to commit messages — both are read by humans other than the requester.
 - **Never commit secrets** surfaced while planning. If the diff would contain a credential, stop and report instead.
 
 ## Safety
@@ -103,6 +105,7 @@ Never:
 - rebase, force-push, reset, or drop a stash to get a clean starting point — Step 1 stops and asks instead
 - commit while validation is red, or write a Wrap-Up claiming a validation you did not run
 - overwrite an existing plan or diff artifact from earlier work
+- create any subfolder under `~/_extra/ai_llm/plans/`, or write a generated script or data file to a name that does not start with its plan's stem
 
 If the working tree holds unrelated uncommitted changes, or the plan turns out to need a scope the user did not approve in Step 3, stop and ask.
 

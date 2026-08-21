@@ -591,15 +591,15 @@ Load these instead of improvising the workflow. Each is
 OpenCode, and Copilot CLI; `.opencode/commands/<name>.md` symlinks make them `/name`
 slash commands.
 
-| Skill              | Use when                                                                                                   |
-| ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `/add-package`     | Adding a CLI tool / package across platforms                                                               |
-| `/remove-package`  | Dropping a tool                                                                                            |
-| `/add-os`          | Onboarding a new distro / platform                                                                         |
-| `/remove-os`       | Dropping OS support                                                                                        |
-| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it                              |
-| `/check`           | Verifying session changes survived a merge/rebase/hook                                                     |
-| `/plan-and-commit` | Multi-file change worth recording — writes `~/_extra/ai_llm/plans/bashrc/plan-YYYY-MM-DD-<slug>.{md,diff}` |
+| Skill              | Use when                                                                                      |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| `/add-package`     | Adding a CLI tool / package across platforms                                                  |
+| `/remove-package`  | Dropping a tool                                                                               |
+| `/add-os`          | Onboarding a new distro / platform                                                            |
+| `/remove-os`       | Dropping OS support                                                                           |
+| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it                 |
+| `/check`           | Verifying session changes survived a merge/rebase/hook                                        |
+| `/plan-and-commit` | Multi-file change worth recording — writes `~/_extra/ai_llm/plans/bashrc-<feature>.{md,diff}` |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
 invisible to every loader. Folder name is kebab-case and must equal the frontmatter
@@ -813,12 +813,12 @@ Everything the LLM tooling owns outside a repo checkout lives under one root, cr
 maintained by `deploySharedLLMInstructions()` in `llm-common.js`, which **all four**
 setup scripts call:
 
-| Path                            | Holds                                                                     |
-| ------------------------------- | ------------------------------------------------------------------------- |
-| `~/_extra/ai_llm/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES` |
-| `~/_extra/ai_llm/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)     |
-| `~/_extra/ai_llm/agents/`       | The ONE copy of every named agent, symlinked into every CLI (§13.2)       |
-| `~/_extra/ai_llm/plans/`        | Plan / RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`)   |
+| Path                            | Holds                                                                      |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| `~/_extra/ai_llm/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES`  |
+| `~/_extra/ai_llm/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)      |
+| `~/_extra/ai_llm/agents/`       | The ONE copy of every named agent, symlinked into every CLI (§13.2)        |
+| `~/_extra/ai_llm/plans/`        | Flat plan artifacts + sidecars (`<repo>-<feature>.md`, `.diff`, `.rfc.md`) |
 
 **The location is decided in exactly one place — `LLM_ROOT_FOLDER` in
 `software/bootstrap/common-env.sh`.** It sits there rather than in `llm-common.js` because
@@ -842,7 +842,7 @@ deploy time.** A repo source cannot hardcode `~/_extra/ai_llm/...` — that is t
 spelling, and it is wrong outright on a machine whose home layout differs. It cannot carry
 `$LLM_ROOT_FOLDER` either: an agent reading `~/.claude/CLAUDE.md` has no shell expanding
 anything, and an unexpanded variable inside a `mkdir -p` is a write at the filesystem root.
-So the source writes `` `<LLM_ROOT_FOLDER>/plans/<repo>/` `` and `resolveLLMDocPlaceholders()`
+So the source writes `` `<LLM_ROOT_FOLDER>/plans/` `` and `resolveLLMDocPlaceholders()`
 bakes in the absolute path on the way out. The token name matches the env var name exactly.
 
 - **Every deployed doc is read through `readLLMDocSource()`** — the always-loaded
