@@ -579,6 +579,18 @@ Why this beats the hand-rolled `tmux new-session` / `new-window` function it rep
   care at all.
 - **`command cat`**, not a bare `cat`, since `cat` may be aliased to `bat` and would mangle
   the JSON.
+- **Attaching still works with the heredoc parked on fd 0.** The `-` form leaves stdin
+  pointing at the heredoc, and `tmux attach-session` reads its own identity from
+  `ttyname(stdin)` — so it would otherwise die with `open terminal failed: not a terminal`
+  and leave the session built but never entered. `_workspace_attach` re-points fd 0 at the
+  terminal first. It resolves the **real** device (`/dev/ttys004`, `/dev/pts/3`) via
+  `ps -o tty= -p $$` rather than redirecting from `/dev/tty`: on macOS an fd opened on the
+  `/dev/tty` alias reports back as `/dev/tty` verbatim, and the tmux server rejects exactly
+  that string with `open terminal failed: can't use /dev/tty`
+  (`server_client_open`, `server-client.c`). The redirect is `<>` (read-**write**), never
+  `<` — the server draws the whole UI back down the descriptor it got from the client's
+  fd 0, so a read-only open attaches successfully and then renders nothing, which looks
+  exactly like a hang.
 - **`${TMPDIR:-/tmp}`** keeps the generated file out of the repo. Point it at
   `$WORKSPACE_CONFIG_FOLDER/<name>.json` instead when you want `ws <name>` to find it by
   name later.
