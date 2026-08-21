@@ -1150,8 +1150,14 @@ if type -P eza &>/dev/null; then
 	function ls() { command eza -1 -F --color=always "$@"; }
 	# --time-style: eza's default drops the year ("5 Aug 09:30"), so a file from
 	# last August is indistinguishable from one from this week. This renders
-	# "26/8/5 9:30am" — year first, no leading zeros, lowercase am/pm.
-	alias ll="ls -lah --time-style='+%y/%-m/%-d %-I:%M%P'"
+	# "2026/08/20 6:35PM" — full year first and zero-padded month/day so every
+	# date is the same width and the column scans as a block; the hour keeps no
+	# leading zero so it reads as a clock rather than a second padded number.
+	# --no-permissions: the "drwxr-xr-x@" column is 11 characters of noise on
+	# every row; reach for `ls -l` or `stat` on the rare occasion a mode matters.
+	# eza cannot reorder columns (the name is always last in long view), so
+	# trimming columns is the only lever on the layout.
+	alias ll="ls -lah --no-permissions --time-style='+%Y/%m/%d %-I:%M%p'"
 	# eza sorts ASCENDING by default, so a bare --sort=modified puts the newest
 	# entry LAST and --sort=size puts the biggest LAST. Each alias therefore
 	# spells out its own flags: --reverse does not cancel when applied twice, so
