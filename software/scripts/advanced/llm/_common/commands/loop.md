@@ -33,7 +33,7 @@ Produce all five before touching code, and put them in the durable file:
 4. **Remaining list** — the enumerated work, one line per item, ordered cheapest-and-most-informative first. Derive it from the check output where possible rather than guessing.
 5. **Out of scope** — what this loop will not touch, named explicitly. This is what the "only shrinks" rule is enforced against.
 
-The durable file lives at `<LLM_ROOT_FOLDER>/plans/<repo>/loop-YYYY-MM-DD-<slug>.md`, where the date is today's (`date +%Y-%m-%d`, fixed at first write) and `<slug>` is the kebab-case goal. Create the folder if missing. When the goal already came from a plan or RFC file, append the loop state to that file instead of opening a second one — one artifact per piece of work.
+The durable file lives flat in `<LLM_ROOT_FOLDER>/plans/` as `<repo>-<feature>.loop.md`, a sidecar sharing the stem of the plan it belongs to (see Plans & Wrap-Ups); with no plan behind it, `<feature>` is the snake_case goal. Never create a subfolder to hold it. When the goal already came from a plan or RFC file, append the loop state to that file instead of opening a second one — one artifact per piece of work.
 
 ### Phase 1 — Iterate
 

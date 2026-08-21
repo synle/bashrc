@@ -379,7 +379,7 @@ export -f _fzf_info_line
 # target, and the editor target. Skipping the join is what made
 # `fcat ~/_extra/ai_llm/plans/` render "[bat error]: ... No such file or
 # directory" in the preview, and `fuzzy_cd ~/_extra` report "Path no longer
-# exists: ai_llm/scripts/" for a folder that does exist. Same prefix-merge the
+# exists: ai_llm/skills/" for a folder that does exist. Same prefix-merge the
 # nested autocomplete does with _nested_prefix.
 #
 # Absolute and ~ selections pass through untouched — fuzzy_cd mixes absolute
