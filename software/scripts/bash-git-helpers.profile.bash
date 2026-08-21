@@ -254,18 +254,27 @@ function _clean_log_step() {
 # every other untracked working-tree file alone. Also sweeps nested .DS_Store Finder junk.
 # Also deletes stale local branches (squash-merged PRs), branches fully merged into the default
 # branch, local tags that no longer exist on origin, and prunes and removes merged/gone worktrees.
+# With --force / -f, every worktree is removed instead, skipping the dirty/merged checks.
 function clean() {
 	if is_help_arg "${1:-}"; then
 		echo "clean: safely reset current branch to origin's default branch
-  Usage: clean
+  Usage: clean [--force|-f]
   Notes:
     - Stashes ALL changes (staged + unstaged + untracked) first as a safety backup
     - Recover from stash with: git stash list  |  git stash pop
     - Deletes untracked *.rej files (failed 'git apply' hunk rejects); keeps all other untracked files
     - Deletes nested .DS_Store files (macOS Finder junk)
-    - Also deletes stale local branches (squash-merged PRs), merged branches, stale local tags, and prunes and removes merged/gone worktrees"
+    - Also deletes stale local branches (squash-merged PRs), merged branches, stale local tags, and prunes and removes merged/gone worktrees
+    - --force / -f: ALSO remove EVERY worktree, skipping the dirty/merged checks (uncommitted work in those worktrees is lost)"
 		return 1
 	fi
+
+	local force_worktrees=0
+	case "${1:-}" in
+	--force | -f)
+		force_worktrees=1
+		;;
+	esac
 
 	local total_steps=15
 	_CLEAN_TOTAL=$total_steps
@@ -357,9 +366,15 @@ function clean() {
 	_clean_log_step "Deleting merged local branches and tags pruned from origin..."
 	git clean-merged-branches-and-tags
 
-	_clean_log_step "Cleaning worktrees (prune + remove merged/gone worktrees)..."
-	git clean-worktree
-	worktree_clean
+	if ((force_worktrees)); then
+		_clean_log_step "Removing ALL worktrees (--force: dirty/merged checks skipped)..."
+		git worktree prune
+		worktree_clean --force
+	else
+		_clean_log_step "Cleaning worktrees (prune + remove merged/gone worktrees)..."
+		git clean-worktree
+		worktree_clean
+	fi
 
 	echo "# ---- Reset to origin/$default_branch (100% done) ----"
 	git lastd

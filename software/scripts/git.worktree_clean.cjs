@@ -70,13 +70,14 @@ function paint(text, code, enabled) {
 /**
  * Parse command-line options.
  * @param {string[]} argv
- * @returns {{dryRun: boolean, noColor: boolean, help: boolean}}
+ * @returns {{dryRun: boolean, noColor: boolean, force: boolean, help: boolean}}
  */
 function parseArgs(argv) {
-  const options = { dryRun: false, noColor: false, help: false };
+  const options = { dryRun: false, noColor: false, force: false, help: false };
 
   for (const arg of argv) {
     if (arg === `--dry-run`) options.dryRun = true;
+    else if (arg === `--force` || arg === `-f`) options.force = true;
     else if (arg === `--no-color`) options.noColor = true;
     else if (arg === `--help` || arg === `-h`) options.help = true;
     else die(`unknown option '${arg}'`);
@@ -318,11 +319,13 @@ function pullRequestState(repoRoot, branch, ghAvailable) {
  * @param {string} repoRoot
  * @param {string|null} defaultRef
  * @param {boolean} ghAvailable
+ * @param {boolean} [force] Remove every non-primary worktree, skipping dirty/merged checks.
  * @returns {{remove: boolean, reason: string}}
  */
-function cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailable) {
+function cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailable, force = false) {
   if (worktree.path === primaryPath) return { remove: false, reason: `primary worktree` };
   if (worktree.bare) return { remove: false, reason: `bare repository entry` };
+  if (force) return { remove: true, reason: `forced removal (--force)` };
   if (worktree.prunable) return { remove: false, reason: `prunable entry; run git worktree prune separately` };
   if (worktree.locked) return { remove: false, reason: `locked worktree` };
   if (worktree.detached || !worktree.branch) return { remove: false, reason: `detached worktree` };
@@ -346,14 +349,16 @@ function cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailabl
 }
 
 /**
- * Remove one worktree without force.
+ * Remove one worktree.
  * @param {string} repoRoot
  * @param {string} worktreePath
+ * @param {boolean} [force] Pass `--force` so dirty or locked worktrees still go.
  * @returns {{removed: boolean, reason: string}}
  */
-function removeWorktree(repoRoot, worktreePath) {
-  const result = runCommand(`git`, [`worktree`, `remove`, worktreePath], repoRoot);
-  if (result.status === 0) return { removed: true, reason: `removed` };
+function removeWorktree(repoRoot, worktreePath, force = false) {
+  const args = force ? [`worktree`, `remove`, `--force`, `--force`, worktreePath] : [`worktree`, `remove`, worktreePath];
+  const result = runCommand(`git`, args, repoRoot);
+  if (result.status === 0) return { removed: true, reason: force ? `removed (forced)` : `removed` };
   const message = (result.stderr || `git worktree remove failed`).trim().split(/\r?\n/)[0];
   return { removed: false, reason: message };
 }
@@ -365,7 +370,8 @@ function removeWorktree(repoRoot, worktreePath) {
 function printHelp() {
   print(`worktree_clean: remove clean worktrees whose branches are merged`);
   print(`  Scope: current working folder and nested repositories (depth ${MAX_DEPTH})`);
-  print(`  Usage: worktree_clean [--dry-run] [--no-color]`);
+  print(`  Usage: worktree_clean [--dry-run] [--force|-f] [--no-color]`);
+  print(`  --force: remove EVERY non-primary worktree, skipping the dirty/merged checks`);
 }
 
 /**
@@ -389,6 +395,9 @@ function main() {
 
   print(`${paint(`🧭 PWD`, ANSI.bold + ANSI.yellow, color)} ${scanRoot}`);
   print(`${paint(`🔎 SCOPE`, ANSI.dim, color)} current folder + nested repositories`);
+  if (options.force) {
+    print(`${paint(`💥 FORCE`, ANSI.bold + ANSI.red, color)} removing every non-primary worktree, dirty/merged checks skipped`);
+  }
 
   if (repos.length === 0) {
     print(`${paint(`⚠️`, ANSI.yellow, color)} no git repositories found below PWD`);
@@ -411,7 +420,7 @@ function main() {
 
     const primaryPath = worktrees.find((worktree) => !worktree.bare)?.path || ``;
     for (const worktree of worktrees) {
-      const decision = cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailable);
+      const decision = cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailable, options.force);
       const branch = worktree.branch ? worktree.branch.replace(/^refs\/heads\//, ``) : `detached`;
       let icon = `⏭️`;
       let action = `KEEP`;
@@ -424,7 +433,7 @@ function main() {
           actionColor = ANSI.cyan;
           wouldRemove += 1;
         } else {
-          const result = removeWorktree(repoRoot, worktree.path);
+          const result = removeWorktree(repoRoot, worktree.path, options.force);
           if (result.removed) {
             icon = `🧹`;
             action = `REMOVED`;

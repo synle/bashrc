@@ -152,8 +152,32 @@ describe("worktree_clean", () => {
     }
   });
 
-  it("rejects unknown flags", () => {
-    const folder = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-clean-args-"));
+  it("removes dirty and unmerged worktrees with --force", () => {
+    const parent = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-clean-force-"));
+    const repo = path.join(parent, "repo");
+    const dirty = path.join(parent, "dirty");
+    const active = path.join(parent, "active");
+
+    try {
+      initRepo(repo);
+      createMergedWorktree(repo, dirty, "dirty");
+      fs.writeFileSync(path.join(dirty, "local-only.txt"), "keep me\n");
+      createActiveWorktree(repo, active, "active");
+
+      const result = runCli(parent, ["--force"]);
+
+      expect(result.status).toBe(0);
+      expect(fs.existsSync(dirty)).toBe(false);
+      expect(fs.existsSync(active)).toBe(false);
+      expect(fs.existsSync(repo)).toBe(true);
+      expect(result.stdout).toContain(`forced removal (--force)`);
+      expect(result.stdout).toContain(`removed 2`);
+    } finally {
+      fs.rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects unknown flags", () => {    const folder = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-clean-args-"));
     try {
       const result = runCli(folder, ["--nope"]);
       expect(result.status).not.toBe(0);
