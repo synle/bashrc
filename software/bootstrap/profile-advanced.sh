@@ -1148,11 +1148,19 @@ alias clear='printf "\033[H\033[2J\033[3J"'
 # --- Aliases: File Listing (eza override) ---
 if type -P eza &>/dev/null; then
 	function ls() { command eza -1 -F --color=always "$@"; }
-	alias ll="ls -lah --git"
-	alias ls_newest="ll --sort=modified"         # sort by modification time (newest first)
-	alias ls_newest_last="ls_newest --reverse"   # sort by modification time (oldest first)
-	alias ls_biggest="ll --sort=size"            # sort by file size (biggest first)
-	alias ls_biggest_last="ls_biggest --reverse" # sort by file size (smallest first)
+	# --time-style: eza's default drops the year ("5 Aug 09:30"), so a file from
+	# last August is indistinguishable from one from this week. This renders
+	# "26/8/5 9:30am" — year first, no leading zeros, lowercase am/pm.
+	alias ll="ls -lah --time-style='+%y/%-m/%-d %-I:%M%P'"
+	# eza sorts ASCENDING by default, so a bare --sort=modified puts the newest
+	# entry LAST and --sort=size puts the biggest LAST. Each alias therefore
+	# spells out its own flags: --reverse does not cancel when applied twice, so
+	# these must not be derived from one another. eza's own --sort=newest is the
+	# opposite of what it reads like (it lists oldest first) — don't use it.
+	alias ls_newest="ll --sort=modified --reverse" # newest first
+	alias ls_newest_last="ll --sort=modified"      # newest last (oldest first)
+	alias ls_biggest="ll --sort=size --reverse"    # biggest first
+	alias ls_biggest_last="ll --sort=size"         # biggest last (smallest first)
 fi
 
 # --- find (fd wrapper) ---
