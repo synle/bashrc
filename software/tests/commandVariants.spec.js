@@ -82,6 +82,27 @@ describe("register_command_variants", () => {
     ).toBe("one args=[cat tail] mode=on\nNOT_GENERATED");
   });
 
+  it("flattens an alias whose body starts with another alias", () => {
+    // A variant is a FUNCTION, and bash expands no aliases inside a function
+    // body. `ls_newest -> ll -> ls` therefore has to be resolved down to the
+    // function/binary at the head, or the variant dies with "command not found".
+    expect(
+      run(`function base_cmd() { echo "base args=[$*]"; }
+        alias mid='base_cmd --mid'
+        alias top='mid --top'
+        register_command_variants --suffix=_x --select-alias-name='^top$' --args='--extra'
+        top_x caller`),
+    ).toBe("base args=[--mid --top caller --extra]");
+  });
+
+  it("terminates on a self-referential alias", () => {
+    // Same stopping rule bash itself uses: expand the head once, never again.
+    expect(
+      run(`alias loopy='loopy --again'
+        register_command_variants --suffix=_x --select-alias-name='^loopy$' --dry-run`),
+    ).toBe('loopy_x -> loopy --again "$@"');
+  });
+
   it("selects aliases by name", () => {
     expect(
       run(`${FAMILY}

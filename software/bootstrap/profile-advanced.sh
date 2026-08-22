@@ -1159,14 +1159,27 @@ if type -P eza &>/dev/null; then
 	# trimming columns is the only lever on the layout.
 	alias ll="ls -lah --no-permissions --time-style='+%Y/%m/%d %-I:%M%p'"
 	# eza sorts ASCENDING by default, so a bare --sort=modified puts the newest
-	# entry LAST and --sort=size puts the biggest LAST. Each alias therefore
-	# spells out its own flags: --reverse does not cancel when applied twice, so
-	# these must not be derived from one another. eza's own --sort=newest is the
-	# opposite of what it reads like (it lists oldest first) — don't use it.
-	alias ls_newest="ll --sort=modified --reverse" # newest first
-	alias ls_newest_last="ll --sort=modified"      # newest last (oldest first)
-	alias ls_biggest="ll --sort=size --reverse"    # biggest first
-	alias ls_biggest_last="ll --sort=size"         # biggest last (smallest first)
+	# entry LAST and --sort=size puts the biggest LAST. eza's own --sort=newest
+	# is the opposite of what it reads like (it lists oldest first) — don't use it.
+	#
+	# The BASE alias is the ascending one, which is also the useful default in a
+	# terminal: the interesting row lands next to the prompt instead of scrolling
+	# off the top. The `_first` twin is then the base plus --reverse, so it is
+	# purely ADDITIVE and register_command_variants can generate it (see the
+	# ls_*_first block right below). The old `_last` names are gone — `_last` is
+	# now what the bare name does.
+	alias ls_newest="ll --sort=modified" # newest last (oldest first)
+	alias ls_biggest="ll --sort=size"    # biggest last (smallest first)
+
+	# ls_newest_first / ls_biggest_first — the same listing, reversed. Generated
+	# rather than written out so a new ls_* alias picks up its reversed twin for
+	# free. --reverse is appended after "$@", and applying it twice does NOT
+	# cancel, which is exactly why the base must stay unreversed.
+	# `command_variants ls_` shows what came out.
+	register_command_variants \
+		--suffix=_first \
+		--select-alias-name='^ls_[a-z]*$' \
+		--args='--reverse'
 fi
 
 # --- find (fd wrapper) ---
