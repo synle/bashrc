@@ -37,6 +37,11 @@ async function writeTmuxCopyShim() {
   const shimPath = path.join(BASE_HOMEDIR_LINUX, ".local", "bin", "sy-tmux-copy");
 
   log(">> Updating tmux copy shim", shimPath);
+
+  if (!IS_DRY_RUN) {
+    fs.mkdirSync(path.dirname(shimPath), { recursive: true });
+  }
+
   await writeText(
     shimPath,
     code`
@@ -49,11 +54,17 @@ async function writeTmuxCopyShim() {
       if type copy > /dev/null 2>&1; then
         copy --raw
       else
+        # No profile clipboard on this host. Drain stdin so the pipe never
+        # blocks - tmux has already set its own buffer and emitted OSC 52,
+        # which is the fallback clipboard path.
         command cat > /dev/null
         echo "sy-tmux-copy: copy() not available" >&2
         exit 1
       fi
     `,
   );
-  await execBash(`chmod +x "${shimPath}"`);
+
+  if (!IS_DRY_RUN) {
+    fs.chmodSync(shimPath, 0o755);
+  }
 }

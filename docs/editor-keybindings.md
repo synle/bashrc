@@ -337,10 +337,28 @@ working in any tmux, including one running a config this repo did not write.
 | `ctrl+b` then `arrow` | Focus the split in that direction (`select-pane`)                          |
 | `ctrl+b` then `alt+arrow` | Resize the split by 5 — hold `ctrl+b`, tap repeatedly (built-in)     |
 | `ctrl+b` then `ctrl+arrow` | Resize the split by 1 (built-in)                                   |
+| `ctrl+b` then `y` | Copy the whole visible pane to the clipboard                                   |
 | `ctrl+b` then `'` | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)        |
 
 Copy mode is pinned to vi keys (`setw -g mode-keys vi`) so `g`/`G`/`/` behave as listed —
-without it tmux picks emacs keys whenever `$EDITOR` is not vim-like.
+without it tmux picks emacs keys whenever `$EDITOR` is not vim-like. `mode-keys vi` alone
+does **not** give vim's selection keys, though: stock tmux binds `space` to start a
+selection, `enter` to copy, and `v` to *rectangle-toggle*. These bindings restore the vim
+mapping inside copy mode:
+
+| Copy-mode key | Action                                            |
+| ------------- | ------------------------------------------------- |
+| `v`           | Start a selection (visual)                        |
+| `V`           | Select the whole line                             |
+| `ctrl+v`      | Toggle block (rectangle) selection                |
+| `y`           | Yank the selection to the clipboard and exit      |
+| `enter`       | Same as `y`                                       |
+
+Yanking pipes through `~/.local/bin/sy-tmux-copy`, a shim written by `advanced/tmux.js`.
+tmux runs copy targets under `sh -c` with no shell profile, so the profile's `copy()`
+function is not on PATH there — the shim sources the profile first. On a host with no
+clipboard tool at all (headless, ssh), tmux's own OSC 52 sequence carries the selection to
+the outer terminal instead.
 
 These six chords cover most day-to-day tmux use and need no mouse. Prefer them over the
 `alt+` chords when a terminal emulator or remote host swallows `alt`.
