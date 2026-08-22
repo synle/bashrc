@@ -55,10 +55,17 @@ if [[ $- == *i* ]]; then
   bind '"\e[1;5C": forward-word'      # Ctrl+Right — jump one word forward
 
   # Cursor Movement — macOS (Option key)
+  # Two encodings: Terminal.app / iTerm2 send a meta-prefixed CSI ("\e\e[C"),
+  # while Ghostty is configured to send the true alt+arrow CSI ("\e[1;3C") so
+  # tmux can tell alt+arrow apart from M-f / M-b. Bind both.
   bind '"\e\e[C": forward-word'      # Option+Right — jump one word forward
   bind '"\e\e[D": backward-word'     # Option+Left — jump one word backward
   bind '"\e\e[A": beginning-of-line' # Option+Up — jump to beginning of line
   bind '"\e\e[B": end-of-line'       # Option+Down — jump to end of line
+  bind '"\e[1;3C": forward-word'      # Option+Right — Ghostty CSI form
+  bind '"\e[1;3D": backward-word'     # Option+Left — Ghostty CSI form
+  bind '"\e[1;3A": beginning-of-line' # Option+Up — Ghostty CSI form
+  bind '"\e[1;3B": end-of-line'       # Option+Down — Ghostty CSI form
 
   # History Navigation
   bind '"\e[A": history-search-backward' # Up arrow — search history backward matching prefix

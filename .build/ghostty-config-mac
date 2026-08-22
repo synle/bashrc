@@ -123,6 +123,16 @@ cursor-style-blink = false
 cursor-opacity = 0.8
 # ---- macOS-specific ----
 macos-option-as-alt = true
+# Ghostty's macOS defaults rewrite option+arrow into `esc:b` / `esc:f`
+# (readline word-motion), which means a real alt+arrow never reaches the
+# terminal - tmux sees M-b / M-f instead, so prefix+alt+arrow resize and
+# the alt+arrow pane-nav binds silently no-op. Send the true CSI 1;3X
+# sequences instead; word-motion is preserved by matching readline binds
+# in bash-keys.profile.bash.
+keybind = alt+arrow_left=csi:1;3D
+keybind = alt+arrow_right=csi:1;3C
+keybind = alt+arrow_up=csi:1;3A
+keybind = alt+arrow_down=csi:1;3B
 macos-titlebar-style = tabs
 # Renamed key: `macos-non-native-fullscreen = visible-menu` is the
 # pre-1.2 spelling. Still accepted as a compat alias, but `fullscreen`
