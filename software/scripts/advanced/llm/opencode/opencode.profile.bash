@@ -75,12 +75,18 @@ Related files NOT inside the dir:
 # `message` with role=user; their text content lives in `part` rows of
 # type=text linked by message_id. `m.time_created` is epoch-ms; divide by
 # 1000 and feed to jq's `todate` to get an ISO-8601 string.
+#
+# Sub-agent prompts are EXCLUDED. opencode gives every dispatched subagent its
+# own row in `session` carrying a non-null `parent_id`, and the "user" messages
+# inside those child sessions are orchestration text the PARENT agent generated
+# ("Run /sy-babysit-pr ... INLINE in this job ..."), never anything a human
+# typed. Only root sessions (`parent_id IS NULL`) hold real typed prompts.
 function _opencode_list_prompts_ts() {
   local db="$HOME/.local/share/opencode/opencode.db"
   [ -f "$db" ] || return 0
   type -P sqlite3 > /dev/null 2>&1 || return 0
   type -P jq > /dev/null 2>&1 || return 0
-  sqlite3 -json "$db" "SELECT json_extract(p.data,'\$.text') AS c, (m.time_created/1000) AS ts_s FROM message m JOIN part p ON p.message_id=m.id WHERE json_extract(m.data,'\$.role')='user' AND json_extract(p.data,'\$.type')='text' ORDER BY m.time_created DESC LIMIT $((_LLM_PROMPTS_LIMIT * 2));" 2> /dev/null \
+  sqlite3 -json "$db" "SELECT json_extract(p.data,'\$.text') AS c, (m.time_created/1000) AS ts_s FROM message m JOIN part p ON p.message_id=m.id JOIN session s ON s.id=m.session_id WHERE s.parent_id IS NULL AND json_extract(m.data,'\$.role')='user' AND json_extract(p.data,'\$.type')='text' ORDER BY m.time_created DESC LIMIT $((_LLM_PROMPTS_LIMIT * 2));" 2> /dev/null \
     | jq -j '.[] | select(.c != null and .c != "") | (.ts_s|todate), "\t", .c, "\u0000"' 2> /dev/null
 }
 

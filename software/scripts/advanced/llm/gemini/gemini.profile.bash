@@ -87,6 +87,9 @@ Files inside ~/.gemini/ worth knowing about:
 # `messages` array; user prompts have type=user (or role=user) and a STRING
 # `content`. Filenames are ISO-timestamped; reverse filename sort is a good
 # coarse newest-first ordering before the dedupe-cap stage.
+#
+# Sub-agent filtering: not applicable — Gemini CLI exposes no sub-agent
+# surface, so every session file holds typed prompts only.
 function _gemini_list_prompts_ts() {
   local dir="$HOME/.gemini/tmp"
   [ -d "$dir" ] || return 0

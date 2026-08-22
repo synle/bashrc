@@ -36,6 +36,12 @@
 #   prompts(type TEXT, ts TEXT, prompt TEXT, UNIQUE(type, prompt))
 # UPSERT on collision updates ts so repeated refreshes are idempotent and
 # keep the newest ts for each (type, prompt) pair.
+#
+# Only prompts a HUMAN typed are harvested. Each raw lister drops the prompts
+# a parent agent generated for a dispatched sub-agent (claude sidechains,
+# opencode child sessions) — those are orchestration text, never run by hand,
+# and they drowned the picker. See each `_<cli>_list_prompts_ts` for the
+# per-CLI discriminator (and for copilot/gemini, why there is none).
 ################################################################################
 
 # Cap on emitted prompts per lister. Single place to tune for ALL four CLIs.
@@ -44,6 +50,14 @@ _LLM_PROMPTS_LIMIT=500
 # Cache thresholds.
 _LLM_PROMPTS_CACHE_DB="${XDG_CACHE_HOME:-$HOME/.cache}/llm-prompts.db"
 _LLM_PROMPTS_CACHE_MIN_SIZE=5
+
+# Cache generation, stored in the DB's `PRAGMA user_version`. BUMP THIS
+# whenever a raw `_<cli>_list_prompts_ts` lister changes WHICH prompts it
+# emits — the cache is UPSERT-only, so rows harvested under the old rules
+# would otherwise survive forever. Bumping wipes the table on next init and
+# forces a clean re-crawl.
+#   1 — sub-agent / sidechain prompts excluded (claude, opencode)
+_LLM_PROMPTS_CACHE_VERSION=1
 
 # Minimum prompt length (trimmed) before fzf surfaces a row. Raw listers and
 # `*_list_prompts` still emit everything; this only filters the picker view
@@ -182,6 +196,14 @@ JS_EOF
 #
 # Returns non-zero only when sqlite3 itself is missing — callers should treat
 # that as "cache disabled" and fall back to the live pipeline.
+#
+# Also enforces the cache generation. `PRAGMA user_version` holds
+# _LLM_PROMPTS_CACHE_VERSION; an older value means the rows on disk were
+# harvested by a lister whose filtering has since changed, so they are dropped
+# and re-crawled. Refreshes are UPSERT-only and never delete, so without this
+# gate a prompt that a new filter excludes would live in the cache forever —
+# which is exactly what would happen to the sub-agent prompts now filtered out
+# at the claude/opencode listers.
 function _llm_cache_init() {
   type -P sqlite3 > /dev/null 2>&1 || return 1
   local dir
@@ -189,7 +211,15 @@ function _llm_cache_init() {
   [ -d "$dir" ] || command mkdir -p "$dir" 2> /dev/null
   sqlite3 "$_LLM_PROMPTS_CACHE_DB" \
     "CREATE TABLE IF NOT EXISTS prompts(type TEXT NOT NULL, ts TEXT NOT NULL DEFAULT '', prompt TEXT NOT NULL, UNIQUE(type, prompt));
-     CREATE INDEX IF NOT EXISTS prompts_type_ts ON prompts(type, ts DESC);" 2> /dev/null
+     CREATE INDEX IF NOT EXISTS prompts_type_ts ON prompts(type, ts DESC);" 2> /dev/null || return 1
+
+  local ver
+  ver=$(sqlite3 "$_LLM_PROMPTS_CACHE_DB" "PRAGMA user_version;" 2> /dev/null)
+  ver=${ver:-0}
+  if [ "$ver" -lt "$_LLM_PROMPTS_CACHE_VERSION" ]; then
+    sqlite3 "$_LLM_PROMPTS_CACHE_DB" \
+      "DELETE FROM prompts; PRAGMA user_version=$_LLM_PROMPTS_CACHE_VERSION;" 2> /dev/null
+  fi
 }
 
 # _llm_cache_count: distinct-prompt count for a given type (empty = aggregate, cross-type-deduped)

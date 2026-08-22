@@ -121,6 +121,12 @@ in the binary. Wrapper-layer parity lives here in copilot.profile.bash."
 # Note: in copilot v1.0.48 the `turns` table is frequently empty on disk
 # because the binary streams conversation state through other channels —
 # when there's nothing persisted, this emits nothing (no error).
+#
+# Sub-agent filtering: NOT possible here. `turns` carries only
+# `session_id`/`turn_index`, and `sessions` has no parent/agent column, so the
+# store exposes nothing that distinguishes a `--agent`-dispatched sub-agent
+# turn from a typed one (copilot v1.0.81 schema). Nothing is filtered rather
+# than guessing at message text.
 function _copilot_list_prompts_ts() {
   local db="$HOME/.copilot/session-store.db"
   [ -f "$db" ] || return 0
