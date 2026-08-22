@@ -85,6 +85,10 @@ second copy shows up.
   - [`workspace_close` / `workspace_close_all` — tearing down](#workspace_close--workspace_close_all--tearing-down)
   - [`workspace_temp_*` — one throwaway command, no JSON](#workspace_temp_--one-throwaway-command-no-json)
   - [Which one to use](#which-one-to-use)
+- [Reaching a session from a browser](#reaching-a-session-from-a-browser)
+  - [`ttyd` — a web front end on the tmux you already run](#ttyd--a-web-front-end-on-the-tmux-you-already-run)
+  - [`zellij` — a different multiplexer with the web server built in](#zellij--a-different-multiplexer-with-the-web-server-built-in)
+  - [zellij vs tmux, honestly](#zellij-vs-tmux-honestly)
 
 ---
 
@@ -1057,3 +1061,106 @@ workspace_temp_close                                         # kill every temp s
 | The short schema plus tmuxp's features                                 | the Node converter above                                                                            |
 | A single project you launch daily and nothing else                     | `dev_workspace` — the hardcoded function above is fine, do not build a config format for one caller |
 | One throwaway command that must outlive the shell, no name, no config  | `workspace_temp_create --force --detach '<cmd>'`                                                    |
+
+---
+
+## Reaching a session from a browser
+
+Sometimes the terminal you want is not the terminal you are sitting at — a phone, a
+locked-down work laptop, a tablet. Two ways to get a session onto `http://localhost:<port>`.
+Neither is installed by this repo; both are one package away.
+
+**Neither of these is a substitute for ssh.** A terminal on a port is a shell on a port, and
+a shell is total access to the account running it. Everything below assumes loopback plus an
+ssh tunnel unless you have deliberately set up TLS and auth.
+
+### `ttyd` — a web front end on the tmux you already run
+
+`ttyd` is a small C server that pipes a process to xterm.js in the browser. It has no opinion
+about multiplexers, so you point it at tmux and keep every keybinding, script, and workspace
+launcher in this document:
+
+```bash
+ttyd -p 12312 -W tmux new -A -s main
+```
+
+- `-W` grants write access — **without it the session is read-only**, which is the safer
+  default for showing someone a log.
+- `new -A -s main` attaches to `main` if it exists and creates it otherwise, so the browser
+  and your local terminal share one session rather than racing to build two.
+
+Tunnel rather than expose:
+
+```bash
+ssh -L 12312:localhost:12312 <host>   # then open http://localhost:12312
+```
+
+**`ttyd` ships no authentication by default.** Anything that can reach the port gets a shell
+as you. `-c user:pass` adds basic auth and `-S` enables TLS, but binding to loopback and
+tunnelling is the option with the fewest ways to get it wrong.
+
+Release caveat, checked 2026-08-22: the newest tagged release is **1.7.7, from 2024-03-30**,
+and that is what Homebrew ships — roughly two and a half years old. The repository itself is
+active (commits within the last fortnight, ~12k stars), they simply have not cut a tag. Old
+binary plus shell-over-HTTP is a combination worth weighing before exposing it anywhere.
+
+### `zellij` — a different multiplexer with the web server built in
+
+[zellij](https://zellij.dev) is a separate multiplexer, not a tmux add-on, and since
+**v0.43.0 (2025-08-05)** it carries its own web server. Off by default; started explicitly:
+
+```bash
+zellij web                    # serves http://127.0.0.1:8082
+zellij web --create-token     # hashed locally, shown ONCE, cannot be retrieved
+zellij web --status
+```
+
+The URL scheme is per-session — `http://127.0.0.1:8082/my-session` attaches to that session,
+creates it if it does not exist, or resurrects it if it exited. That makes a session
+bookmarkable, which is the part `ttyd` cannot do.
+
+It is markedly more careful than `ttyd` about the obvious risks: authentication is always
+required, HTTPS is mandatory on any non-loopback interface, session tokens live in
+JavaScript-inaccessible cookies, and read-only tokens exist for handing someone a view.
+Configuration keys are `web_server`, `web_server_ip`, `web_server_port`, `web_server_cert`,
+`web_server_key`. The client is a PWA and has a real mobile interface (touch scroll,
+on-screen keyboard, pane/tab pickers). For anyone who wants the capability absent from the
+binary rather than merely disabled, upstream publishes a separate `zellij-no-web` build.
+
+Still worth a reverse proxy on an untrusted network — upstream notes the server does no
+rate limiting of its own.
+
+### zellij vs tmux, honestly
+
+Dates below were read from the GitHub release APIs on 2026-08-22.
+
+| | tmux | zellij |
+| --- | --- | --- |
+| Age | project predates its 2015 GitHub mirror | repo created 2020-09-01 |
+| Latest | `3.7c`, 2026-08-17 | `v0.45.0`, 2026-08-20 |
+| Version | stable, long past 1.0 | **still 0.x after six years** |
+| Cadence | frequent point releases | 3-5 releases a year, irregular — 7 months between v0.43.1 and v0.44.0 |
+
+**Where zellij is ahead:** the web client; session resurrection built in (tmux needs the
+`tmux-resurrect` tpm plugin, which `advanced/tmux.config` does install); floating and stacked
+panes, which tmux has no equivalent for; a status bar that shows the available keys instead
+of requiring a cheat sheet; and a `tmux` keybinding mode, so `ctrl+b` chords keep working
+while retraining.
+
+**Where tmux is ahead, and why it matters here:**
+
+- **It is already on every box.** `_full-setup.sh` installs it through seven package managers
+  (brew, apt, pacman, dnf, pkg). On a remote host you do not control, tmux is what exists.
+- **Scripting.** Everything in this document is tmux's command vocabulary —
+  `bash-tmux-workspace.profile.bash` alone is ~750 lines of `has-session`, `new-session`,
+  `kill-session`, `list-sessions`, `switch-client`, `select-window`, `new-window`,
+  `display-message`. Zellij has `zellij action …` and layout files, but it is not a drop-in
+  vocabulary; every launcher here would be a rewrite rather than a rename.
+- Smaller plugin ecosystem, and no equivalent of tmux control mode (what iTerm and similar
+  drive programmatically).
+- Lighter: C, against Rust plus WASM plugins. Irrelevant on a laptop, possibly not on a Pi or
+  a small VPS — measure rather than assume.
+
+**Recommendation.** Do not migrate for the web view alone; add `ttyd` in front of the tmux
+that is already configured, and keep every workspace launcher intact. If zellij appeals on
+its own merits, install it alongside — the two coexist fine.
