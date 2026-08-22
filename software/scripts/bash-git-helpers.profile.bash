@@ -531,13 +531,13 @@ function git_create_worktree() {
 # everywhere: create says so and moves on, apply says so and gives up.
 ################################################################################
 
-# The line `git patch-clean` writes above a commit message so the message survives a
-# patch round trip. Every reader here matches on this one value instead of repeating the
-# literal. Only an OPENING fence is written — format-patch already ends the message with a
-# bare `---` line, which is what the readers stop on. The producing side is the
-# `patch-clean` alias in software/scripts/git.gitconfig — change the fence there and here
-# in the same edit. Styled as the repo's own `# --- Title ---` section marker so the fence
-# reads as a label in a patch anyone opens, rather than an anonymous row of hashes.
+# The label `git patch-clean` writes above a commit message, so a patch opened by eye
+# says where its message starts. It is readability only — the readers here bound the
+# message by the two lines format-patch writes anyway, `Subject:` and a bare `---`, and
+# merely skip this line. Every reader matches on this one value instead of repeating the
+# literal. The producing side is the `patch-clean` alias in software/scripts/git.gitconfig
+# — change the fence there and here in the same edit. Styled as the repo's own
+# `# --- Title ---` section marker.
 _GIT_PATCH_COMMIT_MSG_FENCE="# --- SY_GIT_PATCH_COMMIT_MSG_FENCE ---"
 
 # _git_patch_temp_file: echo a patch path inside a fresh throwaway folder
@@ -682,24 +682,37 @@ function _git_patch_subject() {
 }
 
 # _git_patch_message: the FULL commit message a cleaned patch carries
-# `git patch-clean` opens the message with `$_GIT_PATCH_COMMIT_MSG_FENCE`; format-patch's
-# own bare `---` line closes it, so no second fence is written. That is the whole message
-# — `_git_patch_subject` deliberately stops at the first blank line and returns only the
-# subject. Co-authored-by trailers are dropped: they belong to the machine that authored
-# the commit, and this one re-authors it.
+# The decoded subject from `_git_patch_subject`, then the body — everything between the
+# blank line that follows the subject and the bare `---` format-patch writes before the
+# diff. The fence in between is decoration for whoever opens the patch by eye, so it is
+# skipped rather than relied on. Co-authored-by trailers are dropped: they belong to the
+# machine that authored the commit, and this one re-authors it.
 function _git_patch_message() {
 	local patch_file="$1"
 	[ -f "$patch_file" ] || return 1
 
-	# awk rather than a sed range: the fence is data here, and awk takes it as a
-	# variable compared with ==, so it never has to be escaped into a regex. The
-	# terminator is `---` exactly — a diff's own `--- a/file` has a trailing path.
-	command awk -v fence_line="$_GIT_PATCH_COMMIT_MSG_FENCE" '
-    $0 == fence_line { inside = 1; next }
-    inside && $0 == "---" { exit }
-    inside { print }
-  ' "$patch_file" |
-		command grep -v -i "co-authored-by"
+	# The subject comes from _git_patch_subject rather than off the page: format-patch
+	# RFC-2047-encodes any subject holding a non-ASCII character (an em dash is enough),
+	# and folds a long one across lines, so the raw text here is routinely neither one
+	# line nor readable. That helper already decodes and unfolds both forms.
+	local subject
+	subject=$(_git_patch_subject "$patch_file")
+	[ -n "$subject" ] || return 1
+
+	# The body is everything from the blank line after the subject to the bare `---`
+	# format-patch writes before the diff. `---` is compared whole — a diff's own
+	# `--- a/file` has a trailing path. The fence is data, compared with ==, so it
+	# never has to be escaped into a regex.
+	{
+		printf '%s\n' "$subject"
+		command awk -v fence_line="$_GIT_PATCH_COMMIT_MSG_FENCE" '
+      /^Subject:/ { inside = 1; next }
+      inside && $0 == "---" { exit }
+      inside && $0 == fence_line { next }
+      body { print; next }
+      inside && $0 == "" { body = 1; print "" }
+    ' "$patch_file"
+	} | command grep -v -i "co-authored-by"
 }
 
 # _git_patch_copy_message: put a patch's commit message on the clipboard, ready to paste
