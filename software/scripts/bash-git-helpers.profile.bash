@@ -531,6 +531,14 @@ function git_create_worktree() {
 # everywhere: create says so and moves on, apply says so and gives up.
 ################################################################################
 
+# The line `git patch-clean` writes above and below a commit message so the message
+# survives a patch round trip. Every reader here matches on this one value instead of
+# repeating the literal. The producing side is the `patch-clean` alias in
+# software/scripts/git.gitconfig — change the fence there and here in the same edit.
+# Styled as the repo's own `# --- Title ---` section marker so the fence reads as a
+# label in a patch anyone opens, rather than an anonymous row of hashes.
+_GIT_PATCH_COMMIT_MSG_FENCE="# --- SY_GIT_PATCH_COMMIT_MSG_FENCE ---"
+
 # _git_patch_temp_file: echo a patch path inside a fresh throwaway folder
 function _git_patch_temp_file() {
 	# A throwaway mktemp folder gives uniqueness for free — no timestamp, no
@@ -645,7 +653,7 @@ function _git_patch_upload() {
 
 # _git_patch_subject: the commit subject a patch carries, cleaned or not
 # `git patch-clean` deliberately empties the `Subject: [PATCH]` header and moves the
-# real subject below a `##########` fence, which makes `git mailinfo` — and `git am` —
+# real subject below a `$_GIT_PATCH_COMMIT_MSG_FENCE` fence, which makes `git mailinfo` — and `git am` —
 # report no subject at all. Every patch this repo produces goes through that filter, so
 # reading the header alone silently commits every transferred patch as "applied patch".
 # Try the header first (uncleaned patches, RFC-2047 decoding), then the fence.
@@ -663,13 +671,61 @@ function _git_patch_subject() {
 
 	# Fenced form. format-patch folds a long subject across lines with a leading
 	# space (RFC 5322), so continuation lines are unfolded back onto one line.
-	command awk '
+	command awk -v fence_line="$_GIT_PATCH_COMMIT_MSG_FENCE" '
     /^Subject: \[PATCH/ { insub = 1; next }
-    insub && /^##########$/ { fence = 1; next }
+    insub && $0 == fence_line { fence = 1; next }
     fence && /^$/ { exit }
     fence { line = $0; sub(/^ /, "", line); out = (out == "" ? line : out " " line) }
     END { if (out != "") print out }
   ' "$patch_file"
+}
+
+# _git_patch_message: the FULL commit message a cleaned patch carries
+# `git patch-clean` fences subject + body between two `$_GIT_PATCH_COMMIT_MSG_FENCE`
+# lines, so the whole message is recoverable — `_git_patch_subject` deliberately stops at
+# the first blank line and returns only the subject. Co-authored-by trailers are dropped:
+# they belong to the machine that authored the commit, and this one re-authors it.
+function _git_patch_message() {
+	local patch_file="$1"
+	[ -f "$patch_file" ] || return 1
+
+	# awk rather than a sed range: the fence is data here, and awk takes it as a
+	# variable compared with ==, so it never has to be escaped into a regex.
+	command awk -v fence_line="$_GIT_PATCH_COMMIT_MSG_FENCE" '
+    $0 == fence_line { inside = !inside; next }
+    inside { print }
+  ' "$patch_file" |
+		command grep -v -i "co-authored-by"
+}
+
+# _git_patch_copy_message: put a patch's commit message on the clipboard, ready to paste
+# `copy --raw` is required — unwrap() joins wrapped-looking lines and would collapse a
+# multi-line commit body into one paragraph.
+function _git_patch_copy_message() {
+	local patch_file="$1"
+
+	local message
+	message=$(_git_patch_message "$patch_file")
+	if [ -z "$message" ]; then
+		echo ">>> patch carries no fenced commit message — clipboard left alone" >&2
+		return 1
+	fi
+
+	printf '%s\n' "$message" | copy --raw
+	echo ">>> commit message copied to clipboard:"
+	printf '%s\n' "$message"
+}
+
+# _git_patch_commit_applied: the post-apply half of `patch` — message to clipboard, then commit
+# `git add -u` on purpose: a patch only ever touches files it already knows about, and
+# -A would sweep in whatever else the tree was holding. The commit is left interactive so
+# the message can be pasted (and edited) rather than committed blind.
+function _git_patch_commit_applied() {
+	local patch_file="$1"
+
+	_git_patch_copy_message "$patch_file"
+	echo ">>> staging tracked changes and committing — paste the message in the editor"
+	git add -u && git commit
 }
 
 # _git_patch_apply_from_dropbox: apply the newest shared patch, then commit and archive it
@@ -707,7 +763,7 @@ _PATCH_FIND_EOF_
 	fi
 
 	# Decoded commit subject from the patch itself (handles both the RFC-2047 header
-	# and the `##########` fence patch-clean leaves behind), so the commit lands on
+	# and the `$_GIT_PATCH_COMMIT_MSG_FENCE` fence patch-clean leaves behind), so the commit lands on
 	# this machine under the message it was authored with.
 	local commit_msg
 	commit_msg=$(_git_patch_subject "$latest_patch")
@@ -855,6 +911,9 @@ function patch() {
     1. <patch_file>, when given       -> git_patch_apply <patch_file>
     2. clipboard reads like a diff    -> asks first, then applies it
     3. declined, empty, or not a diff -> git_patch_create (export the last commit)
+  After a successful apply it copies the patch's own commit message (minus any
+  Co-authored-by trailer) to the clipboard, then runs 'git add -u && git commit'
+  so the message can be pasted straight into the editor.
   Examples:
     patch                  offer to apply the clipboard diff, else export the last commit
     patch /tmp/fix.patch   apply an existing patch file
@@ -867,7 +926,10 @@ function patch() {
 	if [ -n "${1:-}" ]; then
 		git_patch_apply "$@"
 		status=$?
-		[ "$status" -eq 0 ] && _git_patch_outcome_line applied
+		if [ "$status" -eq 0 ]; then
+			_git_patch_commit_applied "$1"
+			_git_patch_outcome_line applied
+		fi
 		return "$status"
 	fi
 
@@ -878,7 +940,10 @@ function patch() {
 		if prompt_yes_no "Clipboard holds a patch that has not been applied here — apply it now?" Y; then
 			_git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
 			status=$?
-			[ "$status" -eq 0 ] && _git_patch_outcome_line applied
+			if [ "$status" -eq 0 ]; then
+				_git_patch_commit_applied "$_GIT_PATCH_CLIPBOARD_FILE"
+				_git_patch_outcome_line applied
+			fi
 			return "$status"
 		fi
 		echo ">>> leaving the clipboard patch alone — creating one from the last commit instead"
