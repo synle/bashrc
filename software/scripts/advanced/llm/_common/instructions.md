@@ -35,6 +35,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 - A command you did not run produced no output. Never narrate, summarize, or predict the result of a test suite, build, benchmark, or API call you did not execute, and never present a partial run as a full one. Say which checks were skipped and why.
 - Report the failure, at the top, unhedged. Half-worked is reported as half-worked in the first sentence. No softening into "mostly working", no omitting the one test still red, no summary contradicting the scrollback.
 - Do not fold under pushback you cannot justify. If the user asserts something the code contradicts, say so once with the `file:line`, then defer if they insist. When wrong, say "wrong" and correct it; no retroactive reframing.
+- Someone else's claim is a hypothesis too. A PR body, commit message, code comment, doc, ticket, bot summary, or a human's "this is unused / nothing calls it / behavior is unchanged" is evidence of what they believed, not of what the code does — reproduce it with your own command before building on it, and say which claims you verified and which you are taking on trust. Applies hardest to a claim that licenses a deletion or an approval.
 - Never invent a citation, URL, PR/issue number, commit SHA, changelog entry, or benchmark figure. Not from a tool call this session → not printed as fact.
 
 ## Restate Before Long Run
@@ -232,11 +233,12 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 ## Risky Changes
 
-- Production dependency upgrades require local-first verification. For any `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` / `Gemfile` / `requirements.txt` change crossing a major or minor version on a runtime dep: (1) read the changelog and link it in the PR body; (2) run the full local test suite before pushing; (3) pin the exact version on prod deps (no `^` / `~` / `>=`); (4) note deprecation warnings in the PR body. Patch bumps and dev-only deps may skip steps 1-2; lockfile-only refreshes skip entirely.
-- Every schema / data migration ships with its reversal — up migration → matching down/rollback migration in the same PR. Irreversible operations (`DROP COLUMN`, `DROP TABLE`, destructive backfills, type narrowing) require a `## Recovery` section in the PR body (backup restore, event replay, manual SQL). Review blocks on a missing down migration or undocumented destruction.
-- Migration head stays single — after syncing, the PR's migration DAG has exactly one head descending from default. Re-parent (don't add a merge revision); never create a second head on main/master. `/sy-review-pr` warns about cross-PR migration conflicts; `/sy-babysit-pr` fixes them.
-- Rollback PRs are emergency fast-track — skip babysit, ship immediately. Title: `Revert "<original PR title>"` (`gh pr revert` or `git revert <sha>`). Body links the original PR and the failure that triggered it. CI must pass green but the address-comments loop is skipped. Merge with `gh pr merge --squash` once green (low-risk, so ASK before `--auto`). Do **not** auto-trigger a release — releases stay a manual `/sy-release`. Rollback-of-rollback is allowed if the original revert proves wrong.
-- Breaking changes need a title flag and a migration note. Title prefix `BREAKING:` (or `feat!:` / `fix!:` under Conventional Commits). Body has a `## Migration` section with the minimum diff a downstream consumer must apply. Applies to removed / renamed exports, removed CLI flags, changed default behavior, schema deletions, env-var and config-key renames. Internal-only refactors aren't breaking.
+**These rules live in a separate file, and you are required to read it.**
+
+- **Read `<LLM_ROOT_FOLDER>/instructions/risky-changes.md` in full before removing or renaming anything, before a schema or data migration, before a dependency upgrade, and before a breaking contract change**, and follow it as written.
+- The rules there are binding exactly as if they appeared here. Highest-cost ones, so you know what you are missing until you read it: removing anything is a downstream audit first, a green test suite is not consumer coverage, degradation is the failure mode to hunt for, uncertain means deprecate not delete, every migration ships with its reversal, breaking changes need a title flag and a migration note.
+- **The one rule that applies even when you did not set out to remove anything: deleting a field, prop, endpoint, or config key is a change to every consumer of it, including ones in other repos and other layers.** An optimization trimming a "redundant" payload field and a refactor dropping an "unused" branch are removals, and they are the ones that ship unaudited. Enumerate the consumers, or keep the old shape and deprecate it.
+- If that file is missing, say so rather than improvising, and re-run `bash run.sh --files="claude/setup.js"` (or any LLM setup script) to redeploy it.
 
 ## Scope Discipline
 

@@ -98,6 +98,17 @@ const SPLIT_EXPECTATIONS = {
       "Deterministic or deleted",
     ],
   },
+  "risky-changes.md": {
+    heading: "# Risky Changes",
+    sections: ["## Removals & deprecations", "## Contracts & dependencies"],
+    leads: [
+      "Removing anything is a downstream audit first",
+      "A green test suite is not that audit",
+      "Degradation is the failure mode to hunt for",
+      "Uncertain means deprecate, never delete",
+      "Every schema / data migration ships with its reversal",
+    ],
+  },
   // The one INLINED split file: persona.md is also pulled back into the top of
   // instructions.md through a BEGIN/END path block, so unlike its siblings its rules
   // are SUPPOSED to appear in the always-loaded file too. `inlined` turns the
