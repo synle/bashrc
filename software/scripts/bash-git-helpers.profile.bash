@@ -531,12 +531,13 @@ function git_create_worktree() {
 # everywhere: create says so and moves on, apply says so and gives up.
 ################################################################################
 
-# The line `git patch-clean` writes above and below a commit message so the message
-# survives a patch round trip. Every reader here matches on this one value instead of
-# repeating the literal. The producing side is the `patch-clean` alias in
-# software/scripts/git.gitconfig — change the fence there and here in the same edit.
-# Styled as the repo's own `# --- Title ---` section marker so the fence reads as a
-# label in a patch anyone opens, rather than an anonymous row of hashes.
+# The line `git patch-clean` writes above a commit message so the message survives a
+# patch round trip. Every reader here matches on this one value instead of repeating the
+# literal. Only an OPENING fence is written — format-patch already ends the message with a
+# bare `---` line, which is what the readers stop on. The producing side is the
+# `patch-clean` alias in software/scripts/git.gitconfig — change the fence there and here
+# in the same edit. Styled as the repo's own `# --- Title ---` section marker so the fence
+# reads as a label in a patch anyone opens, rather than an anonymous row of hashes.
 _GIT_PATCH_COMMIT_MSG_FENCE="# --- SY_GIT_PATCH_COMMIT_MSG_FENCE ---"
 
 # _git_patch_temp_file: echo a patch path inside a fresh throwaway folder
@@ -681,18 +682,21 @@ function _git_patch_subject() {
 }
 
 # _git_patch_message: the FULL commit message a cleaned patch carries
-# `git patch-clean` fences subject + body between two `$_GIT_PATCH_COMMIT_MSG_FENCE`
-# lines, so the whole message is recoverable — `_git_patch_subject` deliberately stops at
-# the first blank line and returns only the subject. Co-authored-by trailers are dropped:
-# they belong to the machine that authored the commit, and this one re-authors it.
+# `git patch-clean` opens the message with `$_GIT_PATCH_COMMIT_MSG_FENCE`; format-patch's
+# own bare `---` line closes it, so no second fence is written. That is the whole message
+# — `_git_patch_subject` deliberately stops at the first blank line and returns only the
+# subject. Co-authored-by trailers are dropped: they belong to the machine that authored
+# the commit, and this one re-authors it.
 function _git_patch_message() {
 	local patch_file="$1"
 	[ -f "$patch_file" ] || return 1
 
 	# awk rather than a sed range: the fence is data here, and awk takes it as a
-	# variable compared with ==, so it never has to be escaped into a regex.
+	# variable compared with ==, so it never has to be escaped into a regex. The
+	# terminator is `---` exactly — a diff's own `--- a/file` has a trailing path.
 	command awk -v fence_line="$_GIT_PATCH_COMMIT_MSG_FENCE" '
-    $0 == fence_line { inside = !inside; next }
+    $0 == fence_line { inside = 1; next }
+    inside && $0 == "---" { exit }
     inside { print }
   ' "$patch_file" |
 		command grep -v -i "co-authored-by"
