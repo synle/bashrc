@@ -445,18 +445,18 @@ Pulse (2 moved, 2 steady, 1 new):
 
 ### 🌊 oauth-migration (3) — slots 1–2 · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
 
-| PR | Author | Status | Agent | Δ |
-| --- | --- | --- | --- | --- |
-| [github.com/acme/widget-store/pull/109](https://github.com/acme/widget-store/pull/109) · `alice/oauth-migration/token-retry` · **Retry token refresh on 401** | **@alice** | 🔴 CI FAILED — `unit-tests` · AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) · slot 1 · started 17:12 · running 22m · 💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention | Δ CI green→failing · +2 open threads |
-| [github.com/acme/web/pull/7](https://github.com/acme/web/pull/7) · `syle/oauth-migration/split-auth-middleware` · **WIP: Split auth middleware** | `@me` | 🔴 CI PASSED · CHANGES REQUESTED · MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) · slot 1 · stopped 17:01 · ran 19m — needs human · 💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention | ▫️ No change |
-| [github.com/acme/api/pull/51](https://github.com/acme/api/pull/51) · `bob/signup-flow` · **Add signup flow** | **@bob** | 🟡 BUILD IN PROGRESS (3 running) · AWAITING REVIEW | ⚪ NOT STARTED · slot 2, position 2 of 2 · behind github.com/acme/web/pull/7 · 💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention | 🆕 First ping-pong |
+| PR | Description | Status | Agent |
+| --- | --- | --- | --- |
+| [github.com/acme/widget-store/pull/109](https://github.com/acme/widget-store/pull/109) | **@alice** · `alice/oauth-migration/token-retry` · **Retry token refresh on 401** · auto-merge off | Δ 🔴 CI FAILED — `unit-tests` · AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) · slot 1 · started 17:12 · running 22m · 💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| [github.com/acme/web/pull/7](https://github.com/acme/web/pull/7) | `@me` · `syle/oauth-migration/split-auth-middleware` · **WIP: Split auth middleware** · auto-merge off | ▫️ 🔴 CI PASSED · CHANGES REQUESTED · MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) · slot 1 · stopped 17:01 · ran 19m — needs human · 💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| [github.com/acme/api/pull/51](https://github.com/acme/api/pull/51) | **@bob** · `bob/signup-flow` · **Add signup flow** · 🤖 auto-merge (squash) | 🆕 🟡 BUILD IN PROGRESS (3 running) · AWAITING REVIEW | ⚪ NOT STARTED · slot 2, position 2 of 2 · behind github.com/acme/web/pull/7 · 💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
 
 ### 🌊 Standalone (2) — acme/widget-store, acme/api
 
-| PR | Author | Status | Agent | Δ |
-| --- | --- | --- | --- | --- |
-| [github.com/acme/widget-store/pull/113](https://github.com/acme/widget-store/pull/113) · `syle/drop-dead-flag` · **Drop dead feature flag** | `@me` | 🟡 CI PASSED · AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) · slot 1 · ended 16:58 · ran 26m · next check 17:02 · 💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention | ▫️ No change |
-| [github.com/acme/api/pull/42](https://github.com/acme/api/pull/42) · `syle/bump-deps` · **Bump deps to latest** | `@me` | 🟢 CI PASSED · APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) · slot 1 · ended 17:05 · 48m total · 💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention | Δ 4 threads resolved · +1 approval |
+| PR | Description | Status | Agent |
+| --- | --- | --- | --- |
+| [github.com/acme/widget-store/pull/113](https://github.com/acme/widget-store/pull/113) | `@me` · `syle/drop-dead-flag` · **Drop dead feature flag** · auto-merge off | ▫️ 🟡 CI PASSED · AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) · slot 1 · ended 16:58 · ran 26m · next check 17:02 · 💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| [github.com/acme/api/pull/42](https://github.com/acme/api/pull/42) | `@me` · `syle/bump-deps` · **Bump deps to latest** · 🤖 auto-merge (squash) | Δ 🟢 CI PASSED · APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) · slot 1 · ended 17:05 · 48m total · 💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
 
 **Grouping — one feature set is one block, top to bottom.**
@@ -496,29 +496,32 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Group order and within-group order match the tables exactly, so the reader can drop from a sentence straight to its row. The `(<n> moved, <n> steady, <n> new)` tally is across the **whole** board, not per group — a one-glance answer to "did anything happen in the last 10 minutes?".
 
-**Columns — exactly five, in this order: `PR`, `Author`, `Status`, `Agent`, `Δ`.**
+**Columns — exactly four, in this order: `PR`, `Description`, `Status`, `Agent`.**
 
 **Every cell is ONE line. `<br>` is forbidden anywhere in this render.** The board used to pack four lines into the PR cell with `<br>`, and that is a bet on the renderer: the CLIs this board prints into render a markdown table as plain text, so the tag comes out as the literal characters `<br>` mid-sentence and the cell becomes unreadable. A cell holding several fields joins them with ` · ` instead — a separator that is just text and renders identically everywhere. Cells wrap on width by themselves; that is the renderer's job, not this spec's.
 
-- **PR** — three fields, one line, ` · `-separated, **each in a different markdown span so the theme gives each its own color**: `[<path>](<url>) · `<head branch>` · **<title>**`.
+**Fields inside a cell each get a different markdown span so the reader's theme colors them apart** — markdown link, inline code, bold, plain. Three distinct spans is the whole coloring mechanism: never emit ANSI, an HTML `<span>`, or a color name, all of which render as literal garbage in a table cell.
 
-  | Field       | Span                                | Typical color | Why                                                                                                        |
-  | ----------- | ----------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------- |
-  | Path        | markdown link, `[<path>](<url>)`    | blue          | Every theme colors a link; keeps it clickable while the visible text stays the full path                   |
-  | Head branch | inline code, `` `<headRefName>` ``  | grey / dim    | It is a token you retype into `git checkout` / `worktree_create` — code span is exactly that affordance    |
-  | Title       | bold, `**<title>**`                 | accent        | The field a human actually reads to identify the row, so it gets the strongest weight                      |
+- **PR** — the link, and **nothing else**: `[<path>](<url>)`, where `<path>` is the full `github.com/<owner>/<repo>/pull/<number>`. One field per cell is what keeps the column narrow enough to scan, and a link is the one thing in the row a reader clicks rather than reads. **Never elide the owner to `…/<repo>/pull/<n>`** — a path with the org replaced by an ellipsis is not clickable, not greppable, and not pasteable.
 
-  **The colors come from the reader's theme, never from an escape code.** Three distinct spans is the whole mechanism — never emit ANSI, HTML `<span>`, or a color name, all of which render as literal garbage in a table cell.
+- **Description** — everything that says _what this PR is_, one line, ` · `-separated, in this fixed order: `<author> · `<head branch>` · **<title>** · <auto-merge>`.
 
-  - **Path**: full `github.com/<owner>/<repo>/pull/<number>` as the link text. **Never elide the owner to `…/<repo>/pull/<n>`** — a path with the org replaced by an ellipsis is not clickable, not greppable, and not pasteable.
-  - **Head branch**: `headRefName` verbatim, never the base branch, never a slug of it. It comes from a per-PR `gh pr view <url> --json headRefName` (`gh search prs` cannot return it — see the field trap above). Unavailable → drop the field and its separator; never a placeholder.
-  - **Title**: the real title, normalized as every other render normalizes it (`WIP: ` prefix form, `[draft]` prepended when it applies). Never the branch name, never a paraphrase. Longer than ~60 chars → truncate with `…`. Where the title genuinely says nothing (`fix`, `update`, `wip`), append ` — <≤8-word TLDR>` written from the body.
+  | Field       | Span                               | Typical color | Notes                                                                                                                       |
+  | ----------- | ---------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+  | Author      | `` `@me` `` mine / `**@alice**` theirs | code vs bold  | The one field with **two** spans on purpose — the color flip is what makes "mine vs theirs" scannable (see Author, below)   |
+  | Head branch | inline code, `` `<headRefName>` ``     | grey / dim    | `headRefName` verbatim, never the base branch, never a slug. The token you retype into `git checkout` / `worktree_create`   |
+  | Title       | bold, `**<title>**`                    | accent        | Normalized as every other render normalizes it (`WIP: ` form, `[draft]` prepended). Over ~60 chars → truncate with `…`      |
+  | Auto-merge  | plain text                             | default       | `🤖 auto-merge (<method>)` when armed, `auto-merge off` when not — it decides whether a green row still needs a human       |
 
-  The group / feature line that used to ride in this cell is **gone**: the `###` heading directly above every table already names the feature set, its repos, and its slot range, so repeating it per row restated what was one line up. The per-row slot survives in the `Agent` cell, which is the only part of it that varies row to row.
+  Auto-merge is here rather than in `Status` because it is a property of the PR's configuration, not of its current health: an armed 🟡 needs nobody, the same row unarmed is waiting for someone to come back and click. Method comes from `autoMergeMethod` lowercased (`squash` / `merge` / `rebase`).
 
-- **Author** — the PR author's handle, and **nothing else**. It is its own column rather than a fragment inside the PR cell because "is this mine to fix or someone else's to nudge?" is the first triage question on a mixed board, and it is answered by scanning one narrow column instead of reading a dense cell.
+  Head branch comes from a per-PR `gh pr view <url> --json headRefName` — `gh search prs` cannot return it (see the field trap above). Unavailable → drop the field and its separator; never a placeholder. Where the title genuinely says nothing (`fix`, `update`, `wip`), append ` — <≤8-word TLDR>` written from the body.
 
-  **The handle is wrapped so the renderer colors mine differently from everyone else's** — two different markdown spans, two different theme colors, no ANSI escapes (an escape sequence inside a table cell renders as literal garbage in half the clients that read this board):
+  The group / feature line that used to ride in the PR cell is **gone**: the `###` heading directly above every table already names the feature set, its repos, and its slot range, so repeating it per row restated what was one line up. The per-row slot survives in the `Agent` cell, which is the only part of it that varies row to row.
+
+  **Author — the first field of the Description cell**, always shown, mixed-author list or not. It leads the cell because "is this mine to fix or someone else's to nudge?" is the first triage question on a mixed board.
+
+  **The handle is wrapped so the theme colors mine differently from everyone else's** — two different markdown spans, two different theme colors, no ANSI escapes (an escape sequence inside a table cell renders as literal garbage in half the clients that read this board):
 
   | Author           | Render        |
   | ---------------- | ------------- |
@@ -528,11 +531,23 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Always the real handle after the `@`; `@me` is written literally only for the user's own PRs, matching the existing `@me` convention in every other render. Author unresolvable → `❓` in the cell, never a blank and never a guess.
 
-- **Status** — the PR's own state, independent of any agent. **One line: the color emoji, then its component fragments joined with ` · `.** Never a comment dump, never a prose reason, never the word "GREEN" / "RED" / "YELLOW" spelled out — the emoji _is_ the roll-up and the fragments are the evidence. The per-thread counts live in the Agent cell, because acting on them is the agent's job; the change marker lives in the `Δ` cell, because that is now its own column.
+- **Status** — the PR's own state, independent of any agent. **One line: the change marker, the color emoji, then the component fragments joined with ` · `.** Never a comment dump, never a prose reason, never the word "GREEN" / "RED" / "YELLOW" spelled out — the emoji _is_ the roll-up and the fragments are the evidence. The per-thread counts live in the Agent cell, because acting on them is the agent's job.
 
   ```
-  <color emoji> <CI fragment>[ · <review fragment>][ · MERGE CONFLICT]
+  <change marker> <color emoji> <CI fragment>[ · <review fragment>][ · MERGE CONFLICT]
   ```
+
+  **The change marker leads the cell; it does not get a column.** It was briefly its own trailing `Δ` column, which rendered as a near-empty stripe repeating what the marker in front of the status already said — two glances for one bit. What moved in detail belongs to the pulse sentence above the table, which has room for a clause; the cell carries the one-character verdict.
+
+  | Marker | When                                                              |
+  | ------ | ----------------------------------------------------------------- |
+  | `Δ`    | Anything about this PR differs from its previous pulse — it moved |
+  | `▫️`   | Identical to the previous pulse — nothing moved                   |
+  | `🆕`   | First pulse for this PR — no prior snapshot to compare against    |
+
+  A "change" is any difference in the color emoji, any Status fragment, any Description field, **or any counter in the Agent cell** — a resolved thread, a new approval, one more green check all count. The marker sits in Status but diffs the whole row. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
+
+  **The feature grouping is excluded from the diff.** Clustering is derived from titles, branches, and bodies, so it re-resolves on every pulse and a re-labelled group is bookkeeping, not PR movement — same reason the clock is excluded. One exception: a PR whose **slot position actually advanced** (its lane finished the PR ahead of it and started this one) is `Δ`, and the pulse sentence says so.
 
   All applicable fragments print, in that fixed order — a PR that is conflicting _and_ has changes requested shows both, because the color already collapsed them into one signal and the fragments are there to say which.
 
@@ -569,7 +584,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Nothing else goes in this cell. No open-thread counts (Agent cell), no timestamps (Agent cell), no free-form reason clause.
 
-- **Agent** — what the dispatched job is doing. **One line: `<state token>[ (pass N · <HH:MM> left)] · [slot <N> · ]<clock> · <counters>`.** State, clock, and counters are one thought — "which state, since when, for how long, and how much is outstanding" — and they read worse split. The per-row `slot <N>` lives here because it is the only part of the old group line that varies row to row. No delta here; that is the `Δ` column.
+- **Agent** — what the dispatched job is doing. **One line: `<state token>[ (pass N · <HH:MM> left)] · [slot <N> · ]<clock> · <counters>`.** State, clock, and counters are one thought — "which state, since when, for how long, and how much is outstanding" — and they read worse split. The per-row `slot <N>` lives here because it is the only part of the old group line that varies row to row. No delta here; the marker leads the Status cell.
 
   **State token and clock.**
 
@@ -619,29 +634,11 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Counts come from the caller's ledger where the agent tracked them; standalone with no ledger, fill `💬` / `✔` from `reviewThreads` and print `⚠️ 0 need attention` (nothing has judged them). On a failed fetch, print `?` in the affected field rather than guessing `0`.
 
-- **Δ** — the change marker and what moved, one line, always present. Its own column rather than a fragment of another cell, because "did anything happen since the last pulse?" is answered by scanning one narrow column top to bottom.
-
-  | Marker | When                                                              |
-  | ------ | ----------------------------------------------------------------- |
-  | `Δ`    | Anything about this PR differs from its previous pulse — it moved |
-  | `▫️`   | Identical to the previous pulse — nothing moved                   |
-  | `🆕`   | First pulse for this PR — no prior snapshot to compare against    |
-
-  A "change" is any difference in the color emoji, any component line, **or any counter in the Agent cell's counters line** — a resolved thread, a new approval, one more green check all count. The marker lives in the Status column but diffs the whole row. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
-
-  **The group line is excluded from the diff.** Clustering is derived from titles, branches, and bodies, so it re-resolves on every pulse and a re-labelled group is bookkeeping, not PR movement — same reason the clock is excluded. One exception: a PR whose **slot position actually advanced** (its lane finished the PR ahead of it and started this one) is `Δ`, and the fragment is `Δ slot 2 position 2→now running`.
-
-  A "change" is any difference in the color emoji, any Status fragment, **or any counter in the Agent cell** — a resolved thread, a new approval, one more green check all count. The marker diffs the whole row. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
-
-  After the marker: on `Δ`, the fragments that actually moved, ` · `-separated, old→new where a value flipped and signed where a counter moved — `Δ CI green→failing · +2 open threads`, `Δ 4 threads resolved · +1 approval`. Cap at the three most significant and append ` · +N more` rather than letting the cell sprawl. When the PR moved but no agent touched it (someone else pushed, a reviewer commented), prefix the fragments `Δ (external)`. On `▫️` the cell is exactly `▫️ No change`; on `🆕` exactly `🆕 First ping-pong`. Never leave the cell empty — a silent cell is indistinguishable from a pulse that failed to diff.
-
-  **The feature grouping is excluded from the diff.** Clustering is derived from titles, branches, and bodies, so it re-resolves on every pulse and a re-labelled group is bookkeeping, not PR movement — same reason the clock is excluded. One exception: a PR whose **slot position actually advanced** (its lane finished the PR ahead of it and started this one) is `Δ`, and the fragment is `Δ slot 2 position 2→now running`.
-
 **Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: ledger state, pass count, **slot number when active and queue position when queued**, first dispatch time, last pass start / end, next check ETA, **watch state plus its blocker, probe count, and next-check time when watching**, and the open / resolved / need-attention thread counts) alongside the scope. Every clock field on the Agent line is read from that ledger — `/sy-list-prs` computes only the elapsed subtraction (`now − loop start`), never the timestamps themselves. The slot number is read from the ledger too and never invented; with no slot for a PR, the Agent cell drops its `slot <N> · ` fragment rather than guessing one. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED · no agent dispatched` plus counters derived straight from `reviewThreads` — the pulse still works as a read-only board, grouped by feature cluster alone.
 
-**The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, Status fragments, and counters. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` and its `Δ` cell reads `🆕 First ping-pong`.
+**The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, Status fragments, and counters. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row's Status cell leads with `🆕`.
 
-**Renderer contract — the board is emitted exactly as specified, or not at all.** Every pulse, from the first baseline to the closing one, is the **same** table: five columns in the fixed order `PR | Author | Status | Agent | Δ`, one line per cell, full `github.com/<owner>/<repo>/pull/<number>` paths. A caller under context pressure reliably drifts toward a "quick" board — abbreviated paths, three columns, a bespoke `Ping-pong 0 — baseline` header, columns invented on the spot — and every such variant destroys the one property the board exists for: two pulses ten minutes apart that can be compared without re-reading them. Before printing, check the render against this section: five columns in order, the PR cell carrying path + branch + title in three different spans, no `<br>` anywhere, no `…/` in a PR path, header block present, one table per feature set. A field you have no data for prints its documented empty form (`❓`, `?`, `⚪ NOT STARTED`) — never a dropped column and never a shortened row.
+**Renderer contract — the board is emitted exactly as specified, or not at all.** Every pulse, from the first baseline to the closing one, is the **same** table: four columns in the fixed order `PR | Description | Status | Agent`, one line per cell, full `github.com/<owner>/<repo>/pull/<number>` paths. A caller under context pressure reliably drifts toward a "quick" board — abbreviated paths, three columns, a bespoke `Ping-pong 0 — baseline` header, columns invented on the spot — and every such variant destroys the one property the board exists for: two pulses ten minutes apart that can be compared without re-reading them. Before printing, check the render against this section: four columns in order, the PR cell carrying nothing but the linked path, the Description cell carrying author + branch + title + auto-merge in their own spans, no `<br>` anywhere, no `…/` in a PR path, header block present, one table per feature set. A field you have no data for prints its documented empty form (`❓`, `?`, `⚪ NOT STARTED`) — never a dropped column and never a shortened row.
 
 **Never** decorate the PR path with extra prefixes or suffixes, never add or drop a column, and never split the board by readiness group — one table per **feature set**, ordered by Grouping above, is the format. Readiness lives in the Status column and in the group order; it never gets its own table.
 
@@ -659,8 +656,8 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 - **Format = `pingpong`, a cluster spans two slots** → it stays **one** group (the feature is the unit of work, not the job lane). The heading reads `slots <N>–<M>` and each row's group line carries its own slot.
 - **Format = `pingpong`, a PR's cluster changed between pulses** (a sibling PR appeared, or a body edit revealed a shared ticket) → re-group silently and say so once in that PR's pulse sentence. The row is not `Δ` for the regrouping alone — see the diff exclusion above.
 - **Format = `pingpong`, no prior snapshot** (standalone call, or the run's opening pulse) → every row is `🆕`, never `▫️`. `▫️` is a positive claim that nothing moved; only render it when you actually have a previous pulse to compare against.
-- **Format = `pingpong`, a PR dropped out of the set** (merged, closed, or no longer matches the scope) → keep it for one final pulse **in its own feature-set group** with its last known Status, `✅ COMPLETED` in the Agent cell, and a `Δ merged` / `Δ closed` line, then drop it. A row that silently vanishes reads as a lost job, and moving it to a "done" bucket breaks the one-feature-one-block rule.
-- **Format = `pingpong`, a status fetch failed** → the row renders `❓` as its color emoji and names the call that failed in place of the component lines (`STATUS FETCH FAILED — statusCheckRollup`). Never guess a color from partial data, and never drop the row: a missing row reads as "merged", which is the opposite of "we don't know".
+- **Format = `pingpong`, a PR dropped out of the set** (merged, closed, or no longer matches the scope) → keep it for one final pulse **in its own feature-set group** with its Status cell reading `Δ 🟢 MERGED` / `Δ ⚫ CLOSED` and `✅ COMPLETED` in the Agent cell, then drop it. A row that silently vanishes reads as a lost job, and moving it to a "done" bucket breaks the one-feature-one-block rule.
+- **Format = `pingpong`, a status fetch failed** → the row renders `❓` as its color emoji and names the call that failed in place of the fragments (`STATUS FETCH FAILED — statusCheckRollup`). Never guess a color from partial data, and never drop the row: a missing row reads as "merged", which is the opposite of "we don't know".
 - **Format = `pingpong`, the ledger has no clock for a state that normally carries one** (dispatcher lost the timestamp, or the job predates the ledger) → print the state token with no clock at all. Do not backfill `0m`, `--`, or the pulse's own timestamp; an absent clock is honest, an invented one sends someone chasing a job that never ran that long.
 - If a single PR's status fetch fails, include it under NEEDS ATTENTION with the reason `status fetch failed` rather than dropping it silently.
 - If `reviewDecision` is `null` (no reviews requested yet), treat as `NEED APPROVAL` (not READY).
