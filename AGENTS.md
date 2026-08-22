@@ -878,9 +878,9 @@ only once no machine can still be holding that folder.
 
 **The always-loaded block has a hard size budget.** `instructions.md` is deployed verbatim
 into `~/.claude/CLAUDE.md` and its three siblings, and Claude Code refuses to load a
-`CLAUDE.md` over **40k chars**. That is why the PR workflow, debugging, and testing rules
-live in `_common/instructions-{pr-workflow,debugging,testing}.md`, deployed to
-`~/_extra/ai_llm/instructions/{pr-workflow,debugging,testing}.md` and referenced from
+`CLAUDE.md` over **40k chars**. That is why the PR workflow, debugging, testing, and
+risky-change rules live in `_common/instructions-{pr-workflow,debugging,testing,risky-changes}.md`,
+deployed to `~/_extra/ai_llm/instructions/{pr-workflow,debugging,testing,risky-changes}.md` and referenced from
 `instructions.md` by a pointer.
 
 - **Reference split files as a backticked path, never as `@path`.** Per Claude Code's
