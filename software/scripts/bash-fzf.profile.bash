@@ -49,6 +49,97 @@ export FZF_DEFAULT_OPTS="
   --bind 'ctrl-\\:toggle-preview'
 "
 
+################################################################################
+# --- Case-sensitivity override (fzf_run + generated doubled-prefix variants) ---
+#
+# fzf fixes its match-case mode at startup — there is NO runtime action for it
+# (`--bind alt-c:toggle-case` is rejected: "unknown action", fzf 0.74.2), and
+# an unknown action in FZF_DEFAULT_OPTS would make EVERY picker exit with an
+# error. So the override happens at launch instead, through one wrapper.
+#
+# FZF_DEFAULT_OPTS is deliberately left alone. fzf parses it first and argv
+# second, and argv wins:
+#   FZF_DEFAULT_OPTS="-i" fzf +i --filter=ABC   # matches ABC only
+# so `fzf_run` appending a flag is enough to override the default for one call.
+#
+# Flag meanings (they are the reverse of what they look like):
+#   -i  case-INsensitive     +i  case-SENSITIVE     neither  smart-case
+# Smart-case (the default here) is already case-insensitive until the query
+# contains an uppercase char, so the override that earns its keep is `-i`.
+################################################################################
+
+# fzf_run: run fzf with the case mode requested by $FZF_CASE_MODE
+#
+# Every picker in this repo calls `fzf_run` rather than `fzf`, so a caller can
+# force a case mode for one invocation without touching FZF_DEFAULT_OPTS:
+#   FZF_CASE_MODE=insensitive fuzzy_cd
+# A leading `VAR=x` on a shell-function call is temporary in bash (verified:
+# the variable is restored afterwards), so nothing leaks into the session.
+#
+# The flag is appended AFTER "$@" because argv is last-wins — that makes the
+# env override beat any case flag a picker hardcodes.
+function fzf_run() {
+	if is_help_arg "${1:-}"; then
+		echo "fzf_run: run fzf with the case mode from \$FZF_CASE_MODE
+  Usage: fzf_run [<fzf args>...]                 # smart-case (default)
+         FZF_CASE_MODE=insensitive fzf_run ...   # force -i
+         FZF_CASE_MODE=sensitive   fzf_run ...   # force +i
+
+Every picker here routes through this, so the doubled-prefix variants
+(ifcd, ifuzzy_cd, ...) work without any picker knowing about case modes."
+		return 0
+	fi
+
+	local case_opt=""
+	case "${FZF_CASE_MODE:-}" in
+		insensitive) case_opt="-i" ;;
+		sensitive) case_opt="+i" ;;
+	esac
+
+	# Unquoted on purpose: case_opt is one bare token or empty, and an empty
+	# quoted "$case_opt" would hand fzf an empty argument it rejects.
+	command fzf "$@" $case_opt
+}
+
+# fzf_register_case_variants: define a case-insensitive twin for every picker
+#
+# Naming is an `i` PREFIX on the existing name — the same `i` as fzf's own
+# case-insensitive flag, so the mnemonic is the flag itself:
+#   fuzzy_cd -> ifuzzy_cd    fcd -> ifcd    fcat -> ifcat    glog -> iglog
+#
+# Generated dynamically from what is actually defined — there is no second
+# list of picker names to keep in sync. Sources:
+#   1. every `fuzzy_*` shell function
+#   2. every alias whose expansion starts with a `fuzzy_*` call (fcd, fcat,
+#      fcopy, fvim, fzed, fsubl, fcode, glog). Aliases cannot be called from a
+#      function body (alias expansion is off there), so the variant is built
+#      from the alias TARGET, not from the alias name.
+#
+# An existing command of the same name is never clobbered — the variant is
+# skipped and the name left to whoever already owns it.
+#
+# Ordering: this runs at the bottom of this partial, which profile-advanced.sh
+# sources AFTER every other partial that defines a picker. A future partial
+# sourced later must call `fzf_register_case_variants` itself; it is idempotent.
+function fzf_register_case_variants() {
+	local name target
+
+	# 1. fuzzy_* functions.
+	for name in $(declare -F | command awk '{print $3}' | command grep '^fuzzy_'); do
+		is_runnable_command "i${name}" && continue
+		eval "function i${name}() { FZF_CASE_MODE=insensitive ${name} \"\$@\"; }"
+	done
+
+	# 2. Aliases pointing at a fuzzy_* function.
+	local pairs
+	pairs=$(alias -p 2> /dev/null | command sed -n "s/^alias \\([A-Za-z0-9_]*\\)='\\(fuzzy_[^']*\\)'$/\\1 \\2/p")
+	while read -r name target; do
+		[ -n "$target" ] || continue
+		is_runnable_command "i${name}" && continue
+		eval "function i${name}() { FZF_CASE_MODE=insensitive ${target} \"\$@\"; }"
+	done <<< "$pairs"
+}
+
 # --- Aliases: Git (fzf) ---
 alias glog='fuzzy_git_show'
 alias fvim='fuzzy_edit vim'
@@ -419,7 +510,7 @@ export -f _fzf_preview_path
 # fzf picker for recently opened files — opens selected file with view_file or optional editor arg
 function fuzzy_recent_files() {
 	local VIEW_COMMAND="${1:-}"
-	local OUT=$(echo "$(_recent_files)" | fzf +m --prompt="recent files> " \
+	local OUT=$(echo "$(_recent_files)" | fzf_run +m --prompt="recent files> " \
 		--header="(Ctrl+Y) - recently opened files" \
 		--preview="bat --paging=never --style=plain --color=always {}" \
 		--preview-window=down:50%:wrap)
@@ -504,7 +595,7 @@ function add_bookmark_dir() {
 # Ctrl+B — fuzzy favorite command picker
 function fuzzy_favorite_command() {
 	local cmd
-	cmd=$(command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null | sort -u | fzf --prompt="bookmark> " \
+	cmd=$(command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null | sort -u | fzf_run --prompt="bookmark> " \
 		--header="(Ctrl+B) - bookmarked commands" \
 		--preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"; } | bat --paging=never --style=plain --color=always --language=bash' \
 		--preview-window=down:50%:wrap \
@@ -537,7 +628,7 @@ function fuzzy_cd() {
 	# --bind run in their own `$SHELL -c` subshells that never see these locals
 	local base_q
 	base_q=$(printf '%q' "$abs_dir")
-	local OUT=$(_fuzzy_cd_list "$dir" | awk -F'\t' '!seen[$2]++' | fzf +m \
+	local OUT=$(_fuzzy_cd_list "$dir" | awk -F'\t' '!seen[$2]++' | fzf_run +m \
 		--delimiter=$'\t' --with-nth=1,2 --nth=2 \
 		--prompt="cd> " \
 		--header="(Ctrl+P) - cd; ★ recent folders, plain = subfolders under ${abs_dir}" \
@@ -569,7 +660,7 @@ function fuzzy_edit() {
 	# --bind run in their own `$SHELL -c` subshells that never see these locals
 	local base_q
 	base_q=$(printf '%q' "$abs_dir")
-	local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="edit> " \
+	local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf_run --prompt="edit> " \
 		--header="(Ctrl+T) - edit files under ${abs_dir}" \
 		--preview="_fzf_preview_path $base_q {}" \
 		--preview-window=down:50%:wrap \
@@ -619,7 +710,7 @@ function fuzzy_edit() {
 # Ctrl+N — interactive git log browser with commit preview
 function fuzzy_git_show() {
 	git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always |
-		fzf --prompt="commits> " \
+		fzf_run --prompt="commits> " \
 			--header="(Ctrl+N) - git log; Enter shows full commit in pager, F5 reloads" \
 			--preview-window=down:50%:wrap \
 			--preview='hash=$(echo {} | grep -o "[a-f0-9]\{7\}" | head -1);
@@ -631,3 +722,10 @@ function fuzzy_git_show() {
 			--bind "ctrl-m:execute:(echo {} | grep -o '[a-f0-9]\{7\}' | head -1 | xargs -I % sh -c 'git show --color=always % | (bat --paging=always --style=plain 2>/dev/null || batcat --paging=always --style=plain 2>/dev/null || less -R)')" \
 			--bind "f5:reload(git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always)"
 }
+
+################################################################################
+# --- Register case-insensitive picker variants ---
+# Last statement in this partial on purpose: every picker function and alias
+# above must already exist for the generator to see it.
+################################################################################
+fzf_register_case_variants

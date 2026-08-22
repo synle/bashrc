@@ -186,7 +186,7 @@ function fuzzy_history() {
   # and is too expensive (bash -nc per line) for a hot keystroke. Filter out
   # HISTTIMEFORMAT timestamp lines (`#<epoch>`) so fzf shows only commands.
   local selected
-  selected=$(command grep -v '^#[0-9][0-9]*$' "$HOME/.bash_history" | sort -u | fzf \
+  selected=$(command grep -v '^#[0-9][0-9]*$' "$HOME/.bash_history" | sort -u | fzf_run \
     --no-sort --tac --layout=reverse --height=100% --query="${1:-}" \
     --prompt="history> " \
     --header="$header" \
