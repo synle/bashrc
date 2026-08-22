@@ -279,7 +279,7 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 | `OS_KEY+shift+d`     | Split horiz (top/bottom)    |        ✅        |        ✅         |   ✅    |
 | `OS_KEY+'`           | Split horiz (alt)           |        ✅        |        ✅         |   ✅    |
 | `OS_KEY+arrow`       | Navigate panes              |        ✅        |        ✅         |   ✅    |
-| `OS_KEY+shift+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+arrow) |   ✅    |
+| `OS_KEY+shift+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+alt+arrow) |   ✅    |
 | `OS_KEY+\`           | Toggle UI (tab bar)         |        ✅        |        ❌         |   ✅    |
 | `OS_KEY+shift+\`     | Toggle split zoom           |        ❌        |        ✅         |   ✅    |
 | `F11`                | Fullscreen                  |        ✅        |        ✅         |   ✅    |
@@ -334,6 +334,10 @@ working in any tmux, including one running a config this repo did not write.
 | `ctrl+b` then `x` | Close / kill the current pane (confirms first)                                 |
 | `ctrl+b` then `n` | Next window                                                                    |
 | `ctrl+b` then `p` | Previous window                                                                |
+| `ctrl+b` then `arrow` | Focus the split in that direction (`select-pane`)                          |
+| `ctrl+b` then `alt+arrow` | Resize the split by 5 — hold `ctrl+b`, tap repeatedly (built-in)     |
+| `ctrl+b` then `ctrl+arrow` | Resize the split by 1 (built-in)                                   |
+| `ctrl+b` then `'` | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)        |
 
 Copy mode is pinned to vi keys (`setw -g mode-keys vi`) so `g`/`G`/`/` behave as listed —
 without it tmux picks emacs keys whenever `$EDITOR` is not vim-like.
@@ -348,7 +352,7 @@ live in [`docs/tmux.md`](./tmux.md).
 
 | Gap                              | Reason                                                    |
 | -------------------------------- | --------------------------------------------------------- |
-| tmux `OS_KEY+shift+arrow` resize | Doesn't work reliably; uses `prefix+arrow` instead        |
+| tmux `OS_KEY+shift+arrow` resize | Doesn't work reliably; uses `prefix+alt+arrow` instead    |
 | tmux copy/paste                  | Uses its own copy mode; `OS_KEY+c/v` not mapped           |
 | tmux zoom                        | Not applicable; controlled by the outer terminal emulator |
 
