@@ -101,43 +101,34 @@ Every picker here routes through this, so the doubled-prefix variants
 	command fzf "$@" $case_opt
 }
 
-# fzf_register_case_variants: define a case-insensitive twin for every picker
+# fzf_register_case_variants: define the case-insensitive twin of every picker
 #
 # Naming is an `i` PREFIX on the existing name — the same `i` as fzf's own
 # case-insensitive flag, so the mnemonic is the flag itself:
 #   fuzzy_cd -> ifuzzy_cd    fcd -> ifcd    fcat -> ifcat    glog -> iglog
 #
-# Generated dynamically from what is actually defined — there is no second
-# list of picker names to keep in sync. Sources:
-#   1. every `fuzzy_*` shell function
-#   2. every alias whose expansion starts with a `fuzzy_*` call (fcd, fcat,
-#      fcopy, fvim, fzed, fsubl, fcode, glog). Aliases cannot be called from a
-#      function body (alias expansion is off there), so the variant is built
-#      from the alias TARGET, not from the alias name.
+# The generation itself is generic and lives in profile-core.sh
+# (`register_command_variants`); this function is the fzf-specific CALL, kept
+# as a named entry point so a partial sourced later can re-run it after adding
+# a picker. Both variant sources are covered: `fuzzy_*` shell functions, and
+# aliases whose target is a `fuzzy_*` call — aliases cannot be invoked from a
+# function body, so the alias TARGET is what the twin embeds.
 #
-# An existing command of the same name is never clobbered — the variant is
-# skipped and the name left to whoever already owns it.
-#
-# Ordering: this runs at the bottom of this partial, which profile-advanced.sh
-# sources AFTER every other partial that defines a picker. A future partial
-# sourced later must call `fzf_register_case_variants` itself; it is idempotent.
+# `command_variants` lists what came out. Existing names are never clobbered.
 function fzf_register_case_variants() {
-	local name target
+	if is_help_arg "${1:-}"; then
+		echo "fzf_register_case_variants: (re)generate the i-prefixed case-insensitive pickers
+  Usage: fzf_register_case_variants
+  Covers fuzzy_* functions and aliases expanding to them. Idempotent.
+  Run \`command_variants i\` to see what exists."
+		return 0
+	fi
 
-	# 1. fuzzy_* functions.
-	for name in $(declare -F | command awk '{print $3}' | command grep '^fuzzy_'); do
-		is_runnable_command "i${name}" && continue
-		eval "function i${name}() { FZF_CASE_MODE=insensitive ${name} \"\$@\"; }"
-	done
-
-	# 2. Aliases pointing at a fuzzy_* function.
-	local pairs
-	pairs=$(alias -p 2> /dev/null | command sed -n "s/^alias \\([A-Za-z0-9_]*\\)='\\(fuzzy_[^']*\\)'$/\\1 \\2/p")
-	while read -r name target; do
-		[ -n "$target" ] || continue
-		is_runnable_command "i${name}" && continue
-		eval "function i${name}() { FZF_CASE_MODE=insensitive ${target} \"\$@\"; }"
-	done <<< "$pairs"
+	register_command_variants \
+		--prefix=i \
+		--select-fn='^fuzzy_' \
+		--select-alias='^fuzzy_' \
+		--env='FZF_CASE_MODE=insensitive'
 }
 
 # --- Aliases: Git (fzf) ---

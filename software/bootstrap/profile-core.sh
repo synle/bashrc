@@ -207,6 +207,169 @@ function is_runnable_command() {
   return 1
 }
 
+# --- Command Variant Generation ---
+#
+# One engine for "define a decorated twin of every command in a family". A
+# variant is the SAME command under a new name, with an env assignment and/or
+# extra arguments bolted on — the shell spelling of the decorator pattern.
+#
+# Consumers today:
+#   fzf pickers — `register_command_variants --prefix=i --select-fn='^fuzzy_'
+#                  --select-alias='^fuzzy_' --env='FZF_CASE_MODE=insensitive'`
+#                 gives ifuzzy_cd / ifcd / ifcat / iglog (see bash-fzf.profile.bash).
+#
+# A decorator can only ADD. It cannot express a variant that REMOVES a flag,
+# which is why `ls_newest` / `ls_newest_last` (the second drops --reverse, and
+# eza has no counter-flag) is NOT a candidate and stays hand-written.
+
+# Registry of everything generated this session: `<variant>\t<expansion>` lines.
+# Generated names appear in no source file, so `command_variants` is the only
+# way to answer "where did ifcd come from?" — keep it populated.
+_COMMAND_VARIANTS=""
+
+# _register_command_variant: define ONE variant. Internal to register_command_variants.
+#
+# Args: <base-name> <invocation> <prefix> <suffix> <env-assignments> <extra-args> <dry-run>
+#   <base-name>   name the variant is derived FROM (function name or alias name)
+#   <invocation>  what the variant actually runs (a function name, or an alias
+#                 target such as `fuzzy_edit cat` — aliases cannot be called
+#                 from a function body, so the TARGET is what gets embedded)
+#
+# Extra args are appended AFTER "$@" because argv is last-wins for most CLIs,
+# so the decoration beats a flag the base command hardcoded.
+function _register_command_variant() {
+  local base="1"invocation="2" prefix="3"suffix="4" envs="5"extraargs="6" dry="$7"
+  local new="prefix{base}${suffix}"
+
+  # Never clobber an existing command — the i*/l* namespaces collide with real
+  # binaries (id, ip, ls) and with anything the user defined first.
+  is_runnable_command "$new" && return 0
+
+  local body="${envs:+$envs }${invocation} \"\$@\"${extra_args:+ $extra_args}"
+  if [ "$dry" = "1" ]; then
+    echo "${new} -> ${body}"
+    return 0
+  fi
+
+  eval "function ${new}() { ${body}; }" 2> /dev/null || return 1
+  _COMMAND_VARIANTS="${_COMMAND_VARIANTS}${new}	${body}
+"
+}
+
+# register_command_variants: generate decorated twins for a family of commands
+#
+# Selectors (at least one required) — plain regexes fed to `grep -E`:
+#   --select-fn=RE          shell functions whose NAME matches
+#   --select-alias=RE       aliases whose TARGET matches (e.g. '^fuzzy_')
+#   --select-alias-name=RE  aliases whose NAME matches (e.g. '^ls_')
+#
+# Naming (at least one required):
+#   --prefix=STR            ifuzzy_cd, ifcd
+#   --suffix=STR            ls_newest_verbose
+#
+# Decoration (both optional, at least one is the point):
+#   --env='K=V'             prepended assignment; repeatable. Temporary in bash
+#                           for a function call, so nothing leaks into the shell.
+#   --args='...'            appended after "$@"
+#
+#   --dry-run               print `<variant> -> <body>` instead of defining
+#
+# Idempotent: re-running skips names that already exist.
+function register_command_variants() {
+  if is_help_arg "${1:-}"; then
+    echo "register_command_variants: generate decorated twins for a family of commands
+  Usage: register_command_variants --prefix=i --select-fn='^fuzzy_' --env='FZF_CASE_MODE=insensitive'
+         register_command_variants --suffix=_v --select-alias-name='^ls_' --args='--long'
+  Selectors: --select-fn=RE --select-alias=RE (alias target) --select-alias-name=RE
+  Naming:    --prefix=STR --suffix=STR (at least one)
+  Decorate:  --env='K=V' (repeatable) --args='...'  |  --dry-run to preview
+  See \`command_variants\` for what was generated."
+    return 0
+  fi
+
+  local prefix="" suffix="" sel_fn="" sel_alias="" sel_alias_name=""
+  local envs="" extra_args="" dry=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+    --prefix=*) prefix="${1#*=}" ;;
+    --suffix=*) suffix="${1#*=}" ;;
+    --select-fn=*) sel_fn="${1#*=}" ;;
+    --select-alias=*) sel_alias="${1#*=}" ;;
+    --select-alias-name=*) sel_alias_name="${1#*=}" ;;
+    --env=*) envs="${envs:+$envs }${1#*=}" ;;
+    --args=*) extra_args="${1#*=}" ;;
+    --dry-run) dry=1 ;;
+    *)
+      echo "register_command_variants: unknown option: $1" >&2
+      return 1
+      ;;
+    esac
+    shift
+  done
+
+  if [ -z "prefix"]&&[-z"suffix" ]; then
+    echo "register_command_variants: --prefix or --suffix is required" >&2
+    return 1
+  fi
+  if [ -z "selfn"]&&[-z"sel_alias" ] && [ -z "$sel_alias_name" ]; then
+    echo "register_command_variants: a --select-* option is required" >&2
+    return 1
+  fi
+
+  local name target line
+  if [ -n "$sel_fn" ]; then
+    for name in $(declare -F | command awk '{print $3}' | command grep -E "$sel_fn"); do
+      _register_command_variant "name""name" "prefix""suffix" "envs""extra_args" "$dry"
+    done
+  fi
+
+  if [ -n "selalias"]||[-n"sel_alias_name" ]; then
+    # `alias -p` prints `alias name='body'` with embedded quotes escaped as
+    # '\''. Split on the FIRST '=' only (bodies contain them), strip the outer
+    # single quotes, then unescape.
+    local aliases
+    aliases=$(alias -p 2> /dev/null)
+    while IFS= read -r line; do
+      case "$line" in
+      "alias "*) ;;
+      *) continue ;;
+      esac
+      name="${line#alias }"
+      target="${name#*=}"
+      name="${name%%=*}"
+      target="${target#\'}"
+      target="${target%\'}"
+      target=(printf'%s'"target" | command sed "s/'\\\\''/'/g")
+      [ -n "name"]&&[-n"target" ] || continue
+      if [ -n "$sel_alias_name" ]; then
+        printf '%s' "name"|commandgrep-qE"sel_alias_name" || continue
+      fi
+      if [ -n "$sel_alias" ]; then
+        printf '%s' "target"|commandgrep-qE"sel_alias" || continue
+      fi
+      _register_command_variant "name""target" "prefix""suffix" "envs""extra_args" "$dry"
+    done <<< "$aliases"
+  fi
+}
+
+# command_variants: list every variant generated by register_command_variants
+#
+# Generated names live in no source file, so this is the discovery surface —
+# `command_variants | grep ifcd` answers "what does this run?".
+function command_variants() {
+  if is_help_arg "${1:-}"; then
+    echo "command_variants: list generated command variants as '<name>\t<expansion>'
+  Usage: command_variants [filter-regex]"
+    return 0
+  fi
+  local filter="${1:-}"
+  if [ -n "$filter" ]; then
+    printf '%s' "$_COMMAND_VARIANTS" | command grep -E "$filter"
+  else
+    printf '%s' "$_COMMAND_VARIANTS"
+  fi
+}
+
 # --- Path / Action Helpers ---
 
 # to_windows_path <unix_path> - Convert a unix path to a Windows-style mixed-slash path
