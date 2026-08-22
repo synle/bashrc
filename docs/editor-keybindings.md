@@ -265,11 +265,27 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 | ------------------ | --------------- | :--------------: | :--: | :-----: |
 | `OS_KEY+t`         | New tab         |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+1-9`       | Tab by index    |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+shift+[/]` | Prev / next tab |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+shift+[/]` | Prev / next tab |        ✅        |  ⚠️  |   ✅    |
+| `OS_KEY+tab`       | Next tab        |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+shift+tab` | Prev tab        |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+w`         | Close pane      |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+x`         | Close pane (alt)|        ❌        |  ✅  |   ❌    |
 | `OS_KEY+q`         | Close window    |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+n`         | New window      |        ✅        |  ✅  |   ✅    |
-| `F2`               | Rename tab      |        ✅        |  ✅  |   ✅    |
+| `F2`               | Rename tab      |        ✅        |  ⚠️  |   ✅    |
+| `OS_KEY+F2`        | Rename tab      |        ❌        |  ✅  |   ❌    |
+
+⚠️ Bare `F2` never reaches tmux under Ghostty, which binds it to its own
+`prompt_tab_title` (`ghostty-keys.common.jsonc`) and consumes it first. Use
+`OS_KEY+F2` inside tmux. Both are bound, so `F2` still works in terminals that leave
+the key alone. On macOS either chord needs *Keyboard → Use F1, F2, etc. keys as
+standard function keys* enabled, or an added `fn`.
+
+⚠️ `OS_KEY+shift+[/]` is bound in `advanced/tmux.config` but does **not** fire on
+macOS + Ghostty: `[` and `]` are the CSI and OSC escape-sequence introducers, so tmux
+forwards the raw `ESC {` / `ESC }` to the pane instead of matching the binding. The
+binding is kept for terminals where it does work; `OS_KEY+tab` / `OS_KEY+shift+tab` are
+the pair verified to fire everywhere and are the ones to reach for.
 
 ### Splits & Panes
 
