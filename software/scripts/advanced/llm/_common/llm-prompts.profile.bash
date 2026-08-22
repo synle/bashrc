@@ -409,10 +409,22 @@ function _llm_search_prompts() {
   # 20) bytes after whitespace trim are skipped here — junk like "push", "ok",
   # "y" pollutes the picker but is still kept in the cache for any raw
   # consumers.
+  #
+  # Aggregate mode only (`name` = "llm") appends an ` [<type>]` origin tag to
+  # each ROW SUMMARY, so a mixed list says which CLI a prompt came from at a
+  # glance. A single-CLI picker already knows its vendor, so the tag would be
+  # the same noise on every row and is suppressed. The tag lives on the fzf
+  # display field only — it is never part of the b64 body, so the clipboard
+  # copy stays byte-identical to the original prompt. The preview keeps
+  # showing the fuller `# prompted in <vendor> on <time>` header.
+  local show_origin=0
+  [ "$name" = "llm" ] && show_origin=1
+
   local fzf_input
-  fzf_input=$(_llm_cache_read_meta "$cache_type" | _LLM_PROMPTS_MIN_LEN="${_LLM_PROMPTS_MIN_LEN:-20}" node -e "
+  fzf_input=$(_llm_cache_read_meta "$cache_type" | _LLM_PROMPTS_MIN_LEN="${_LLM_PROMPTS_MIN_LEN:-20}" _LLM_PROMPTS_SHOW_ORIGIN="$show_origin" node -e "
     process.stdout.on('error', (e) => { if (e.code === 'EPIPE') process.exit(0); });
     const minLen = parseInt(process.env._LLM_PROMPTS_MIN_LEN || '20', 10);
+    const showOrigin = process.env._LLM_PROMPTS_SHOW_ORIGIN === '1';
     // Display names for the cache 'type' column. Unknown types fall through
     // to the raw value so a newly added CLI still renders something sane.
     const VENDOR_LABELS = {
@@ -462,7 +474,10 @@ function _llm_search_prompts() {
             const vendor = VENDOR_LABELS[type] || type || 'an unknown LLM CLI';
             const when = formatLocal(ts);
             const header = '# prompted in ' + vendor + (when ? ' on ' + when : '') + '\n\n';
-            const summary = text.replace(/[\\r\\n\\t]+/g, ' ').slice(0, 240);
+            // Origin tag is appended AFTER the truncation so it can never be
+            // sliced off on a long prompt.
+            const origin = showOrigin && type ? ' [' + type + ']' : '';
+            const summary = text.replace(/[\\r\\n\\t]+/g, ' ').slice(0, 240) + origin;
             const b64Header = Buffer.from(header, 'utf8').toString('base64');
             const b64Body = Buffer.from(text, 'utf8').toString('base64');
             process.stdout.write(String(idx).padStart(5, '0') + '\\t' + summary + '\\t' + b64Header + '\\t' + b64Body + '\\n');
@@ -532,7 +547,12 @@ helper.
 The preview pane prefixes each prompt with a provenance header:
   # prompted in <vendor> on <YYYY-MM-DD HH:MM:SS TZ, local time>
 For a prompt seen in more than one CLI the vendor shown is whichever one
-holds the newest copy. The header is preview-only — it is never copied."
+holds the newest copy. The header is preview-only — it is never copied.
+
+Each row is also tagged with its origin CLI (\` [opencode]\`, \` [claude]\`, ...)
+so a mixed list reads at a glance. The tag is display-only and, like the
+header, is never part of what Enter copies. Single-CLI pickers such as
+\`opencode_search_prompts\` omit it — every row there has the same origin."
     return 0
   fi
   _llm_search_prompts llm
