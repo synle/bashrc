@@ -298,7 +298,7 @@ Where the author goes, per format:
 | `table`    | A dedicated `Author` column, inserted after `Repo`                                                               |
 | `links`    | Nowhere — `links` is pure machine input and carries no author, heading, or summary line                          |
 | `clusters` | Cluster heading only — `### oauth-migration (3 — @me 2, @alice 1) — acme/api, acme/web`. **PR lines stay bare.** |
-| `pingpong` | Third line of the `PR` cell (under the path and the group line) — the author is always shown, mixed or not       |
+| `pingpong` | A dedicated `Author` column, second, right after `PR` — always shown, mixed-author or not, and color-coded mine vs theirs |
 
 **`short` URL lines are machine input — never decorate them.** `/sy-babysit-prs` consumes `/sy-list-prs short` line-by-line as full PR URLs. Adding a handle, prefix, or suffix to those lines breaks it. Group headings and the leading summary line are already skipped by that parser, so that's where mixed-author information belongs.
 
@@ -445,18 +445,18 @@ Pulse (2 moved, 2 steady, 1 new):
 
 ### 🌊 oauth-migration (3) — slots 1–2 · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
 
-| PR | Status | Agent |
-| --- | --- | --- |
-| github.com/acme/widget-store/pull/109<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
-| github.com/acme/web/pull/7<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/51<br>🌊 slot 2 · oauth-migration — new OAuth token refresh<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED — slot 2, position 2 of 2 — behind github.com/acme/web/pull/7<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
+| PR | Author | Status | Agent |
+| --- | --- | --- | --- |
+| github.com/acme/widget-store/pull/109<br>**Retry token refresh on 401**<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>Δ CI green→failing · +2 open threads | **@alice** | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| github.com/acme/web/pull/7<br>**WIP: Split auth middleware**<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>▫️ No change since last ping-pong | `@me` | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/51<br>**Add signup flow**<br>🌊 slot 2 · oauth-migration — new OAuth token refresh<br>🆕 First ping-pong — no prior snapshot | **@bob** | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED — slot 2, position 2 of 2 — behind github.com/acme/web/pull/7<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
 
 ### 🌊 Standalone (2) — acme/widget-store, acme/api
 
-| PR | Status | Agent |
-| --- | --- | --- |
-| github.com/acme/widget-store/pull/113<br>🌊 slot 1 · standalone<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) — ended 16:58 · ran 26m · next check 17:02<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/42<br>🌊 slot 1 · standalone<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
+| PR | Author | Status | Agent |
+| --- | --- | --- | --- |
+| github.com/acme/widget-store/pull/113<br>**Drop dead feature flag**<br>🌊 slot 1 · standalone<br>▫️ No change since last ping-pong | `@me` | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) — ended 16:58 · ran 26m · next check 17:02<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/42<br>**Bump deps to latest**<br>🌊 slot 1 · standalone<br>Δ 4 threads resolved · +1 approval | `@me` | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
 
 **Grouping — one feature set is one block, top to bottom.**
@@ -496,15 +496,15 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Group order and within-group order match the tables exactly, so the reader can drop from a sentence straight to its row. The `(<n> moved, <n> steady, <n> new)` tally is across the **whole** board, not per group — a one-glance answer to "did anything happen in the last 10 minutes?".
 
-**Columns — exactly three, in this order.** Cells are multi-line; use `<br>` for the line break so the markdown table survives rendering.
+**Columns — exactly four, in this order.** Cells are multi-line; use `<br>` for the line break so the markdown table survives rendering.
 
-- **PR** — **four lines.** Line 1 is the full clickable path, `github.com/<owner>/<repo>/pull/<number>` (scheme optional, nothing else dropped — see Render every PR / issue reference as a full clickable path).
+- **PR** — **four lines.** Line 1 is the full clickable path, `github.com/<owner>/<repo>/pull/<number>` (scheme optional, nothing else dropped — see Render every PR / issue reference as a full clickable path). **Never elide the owner to `…/<repo>/pull/<n>`** — a path with the org replaced by an ellipsis is not clickable, not greppable, and not pasteable, which is every reason the link is line 1.
 
-  **Line 2 — the group line, always present.** `🌊 slot <N> · <group label> — <≤8-word feature-set description>`. It repeats, per row, the heading the row already sits under, because a row copied into Slack or a ticket loses its heading and then nobody can tell which feature it belonged to. Same slot number the dispatcher assigned that PR — **per row, not per group**, so a cluster dealt across two lanes shows `slot 1` and `slot 2` on the rows that actually differ. Drop the `slot <N> · ` prefix when the ledger has no slot (standalone invocation, no dispatcher). On a `Standalone` row the label is the literal `standalone` and the description is omitted; on a `Slot <N>` group the label is the slot itself, so print `🌊 slot <N>` alone rather than repeating it twice.
+  **Line 2 — the PR title, always present.** The real title, bolded — `**Retry token refresh on 401**` — normalized the same way every other render normalizes it (`WIP: ` prefix form, `[draft]` prepended when it applies), never the branch name and never a paraphrase. It sits directly under the link because a bare `…/pull/1785` identifies nothing on its own: the whole reason a reader crosses to another column today is to find out which PR the row even is. Title too long for a cell → truncate at ~60 chars with `…`, never rewrite it. The ≤10-word plain-English TLDR is **not** this line; where the title genuinely says nothing (`fix`, `update`, `wip`), append ` — <TLDR>` to it rather than adding a fifth line.
 
-  **Line 3 — `@<author> — <TLDR>`:** a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Use the normalized `WIP: ` title and prepend `[draft]` when they apply.
+  **Line 3 — the group line, always present.** `🌊 slot <N> · <group label> — <≤8-word feature-set description>`. It repeats, per row, the heading the row already sits under, because a row copied into Slack or a ticket loses its heading and then nobody can tell which feature it belonged to. Same slot number the dispatcher assigned that PR — **per row, not per group**, so a cluster dealt across two lanes shows `slot 1` and `slot 2` on the rows that actually differ. Drop the `slot <N> · ` prefix when the ledger has no slot (standalone invocation, no dispatcher). On a `Standalone` row the label is the literal `standalone` and the description is omitted; on a `Slot <N>` group the label is the slot itself, so print `🌊 slot <N>` alone rather than repeating it twice.
 
-  **Line 4 — the delta, always present.** It sits directly under the TLDR because "what does this PR do" and "what happened to it since you last looked" are the same question one beat apart; the reader gets both without crossing columns. One of three forms, matching the Status change marker:
+  **Line 4 — the delta, always present.** It sits directly under the group line because "what does this PR do" and "what happened to it since you last looked" are the same question one beat apart; the reader gets both without crossing columns. One of three forms, matching the Status change marker:
 
   | Marker row | Line 4                                                |
   | ---------- | ----------------------------------------------------- |
@@ -513,6 +513,18 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
   | `🆕`       | `🆕 First ping-pong — no prior snapshot`              |
 
   Each changed signal is one `·`-separated fragment: old→new form where a value flipped, signed form where a counter moved — `Δ CI green→failing · +2 open threads`, `Δ 4 threads resolved · +1 approval · CI failing→green`. Cap at the three most significant fragments and append ` · +N more` rather than letting the cell sprawl. When the PR moved but no agent touched it (someone else pushed, a reviewer commented), prefix the fragments `Δ (external)`. Never leave line 4 blank — an unchanged row says so out loud, because a silent cell is indistinguishable from a pulse that failed to diff.
+
+- **Author** — one line, the PR author's handle, and **nothing else**. It is its own column rather than a fragment inside the PR cell because "is this mine to fix or someone else's to nudge?" is the first triage question on a mixed board, and it is answered by scanning one narrow column instead of reading four-line cells.
+
+  **The handle is wrapped so the renderer colors mine differently from everyone else's** — two different markdown spans, two different theme colors, no ANSI escapes (an escape sequence inside a table cell renders as literal garbage in half the clients that read this board):
+
+  | Author           | Render        |
+  | ---------------- | ------------- |
+  | Me (the user)    | `` `@me` ``   |
+  | Anyone else      | `**@alice**`  |
+  | A bot            | `**@dependabot[bot]**` |
+
+  Always the real handle after the `@`; `@me` is written literally only for the user's own PRs, matching the existing `@me` convention in every other render. Author unresolvable → `❓` in the cell, never a blank and never a guess.
 
 - **Status** — the PR's own state, independent of any agent. **One color emoji, then up to three plain-text component lines, in a fixed order.** Never a comment dump, never a prose reason, never the word "GREEN" / "RED" / "YELLOW" spelled out — the emoji _is_ the roll-up and the component lines are the evidence. The per-thread counts live in the Agent cell, because acting on them is the agent's job.
 
@@ -570,7 +582,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Nothing else goes in this cell. No open-thread counts (Agent cell), no timestamps (Agent cell), no free-form reason clause.
 
-- **Agent** — what the dispatched job is doing. **Two lines, not three:** line 1 is the state token plus its clock, line 2 is the counters line. The timing used to sit on its own line; it is folded into line 1 because "which state, since when, for how long" is one thought and reads worse split across two rows. No delta here — that lives under the TLDR in the PR cell.
+- **Agent** — what the dispatched job is doing. **Two lines, not three:** line 1 is the state token plus its clock, line 2 is the counters line. The timing used to sit on its own line; it is folded into line 1 because "which state, since when, for how long" is one thought and reads worse split across two rows. No delta here — that lives on line 4 of the PR cell.
 
   **Line 1 — `<state token>[ (pass N · <HH:MM> left)] — <clock>`.**
 
