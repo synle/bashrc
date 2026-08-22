@@ -142,10 +142,8 @@ quit-after-last-window-closed = true
 # Renamed key: was `background-blur-radius`. Still accepted as a compat
 # alias; `background-blur` takes the same radius in px.
 background-blur = 20
-keybind = global:cmd+grave_accent=toggle_quick_terminal
-quick-terminal-position = top
-quick-terminal-animation-duration = 0.1
-quick-terminal-screen = mouse
+# No quick terminal: cmd+grave_accent is deliberately left unbound so
+# macOS's own "cycle windows of this app" gesture keeps working.
 
 # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
 keybind = cmd+t=new_tab
