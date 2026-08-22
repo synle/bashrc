@@ -296,9 +296,26 @@ the pair verified to fire everywhere and are the ones to reach for.
 | `OS_KEY+'`           | Split horiz (alt)           |        ✅        |        ✅         |   ✅    |
 | `OS_KEY+arrow`       | Navigate panes              |        ✅        |        ✅         |   ✅    |
 | `OS_KEY+shift+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+alt+arrow) |   ✅    |
+| `OS_KEY+0`           | Break split into own window |        ❌        |        ✅         |   ❌    |
+| `OS_KEY+z`           | Toggle split zoom (alt)     |        ❌        |        ✅         |   ❌    |
 | `OS_KEY+\`           | Toggle UI (tab bar)         |        ✅        |        ❌         |   ✅    |
 | `OS_KEY+shift+\`     | Toggle split zoom           |        ❌        |        ✅         |   ✅    |
 | `F11`                | Fullscreen                  |        ✅        |        ✅         |   ✅    |
+
+tmux zoom is a binary toggle (`resize-pane -Z`) — the pane is either full-window or
+back in its layout slot. There are no zoom levels, so there is deliberately no
+zoom-in / zoom-out pair. `OS_KEY+z`, `OS_KEY+shift+\`, and `F11` all toggle the same
+state.
+
+tmux pane resize keeps tmux's stock `prefix+ctrl+arrow` at 1 cell for fine adjustment,
+but `prefix+alt+arrow` is doubled from tmux's stock 5 cells to **10** — 5 needed too
+many repeats to cross a wide pane. Both are repeatable: hold the prefix once, then tap
+arrows. Mouse border drag also works (`mouse on`).
+
+`OS_KEY+0` breaks the current split into a window of its own (stock `prefix+!`). It sits
+at the end of the `OS_KEY+1-9` row because `base-index 1` means there is no window 0, so
+the key is otherwise dead. The inverse has no binding — run `join-pane -s <window>` from
+the `prefix+:` prompt.
 
 ### Text & Search
 
