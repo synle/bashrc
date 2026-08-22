@@ -135,10 +135,9 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
   const fontSize = EDITOR_CONFIGS.fontSize;
   const bindings = await _getKeyBindings(isOsMac);
 
-  // macOS-only block: option-as-alt is required for readline word-jumps, the
-  // tabs-in-titlebar style matches modern Mac apps, and a cmd+grave quick
-  // terminal gives a Quake-style drop-down. Skipped on Linux where most of
-  // these settings either don't apply or use a different keybind.
+  // macOS-only block: option-as-alt is required for readline word-jumps and the
+  // tabs-in-titlebar style matches modern Mac apps. Skipped on Linux where most
+  // of these settings either don't apply or use a different keybind.
   // background-blur is macOS-only (no Linux compositor equivalent in Ghostty)
   // and pairs with the cross-platform background-opacity below.
   const macOnlyBlock = isOsMac
@@ -165,10 +164,8 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
         # Renamed key: was \`background-blur-radius\`. Still accepted as a compat
         # alias; \`background-blur\` takes the same radius in px.
         background-blur = 20
-        keybind = global:cmd+grave_accent=toggle_quick_terminal
-        quick-terminal-position = top
-        quick-terminal-animation-duration = 0.1
-        quick-terminal-screen = mouse
+        # No quick terminal: cmd+grave_accent is deliberately left unbound so
+        # macOS's own "cycle windows of this app" gesture keeps working.
       `
     : "";
 
