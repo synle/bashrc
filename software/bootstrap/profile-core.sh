@@ -227,6 +227,60 @@ function is_runnable_command() {
 # way to answer "where did ifcd come from?" — keep it populated.
 _COMMAND_VARIANTS=""
 
+# _alias_body: print the unquoted body of an alias, or nothing when it is not one
+#
+# `alias -p` prints `alias name='body'` with any embedded single quote written
+# as the four characters '\''. The escape sequence is built in a variable
+# rather than written inline: quoting it directly inside a substitution is
+# unreadable, and that line has been mangled once already.
+function _alias_body() {
+  local name="${1:-}" line body
+  [ -n "$name" ] || return 1
+  line=$(alias "$name" 2> /dev/null) || return 1
+  local _sq="'"
+  local _esc_sq="${_sq}\\${_sq}${_sq}"
+  body="${line#alias }"
+  body="${body#*=}"
+  body="${body#$_sq}"
+  body="${body%$_sq}"
+  body="${body//"$_esc_sq"/"$_sq"}"
+  printf '%s' "$body"
+}
+
+# _expand_leading_alias: resolve an alias chain at the START of a command string
+#
+# A generated variant is a FUNCTION, and bash performs no alias expansion
+# inside a function body — so `ls_newest` (an alias whose body starts with the
+# alias `ll`) would produce a variant that dies with "command not found".
+# Rewriting the leading word until it is a function, builtin, or binary is what
+# makes an alias-of-an-alias usable as a variant target.
+#
+# Only the FIRST word is expanded, which is exactly what bash itself does, and
+# the walk is capped so a self-referential alias cannot spin.
+function _expand_leading_alias() {
+  local cmd="${1:-}" head rest body hops=0
+  while [ "$hops" -lt 10 ]; do
+    head="${cmd%% *}"
+    [ -n "$head" ] || break
+    body=$(_alias_body "$head") || break
+    [ -n "$body" ] || break
+    if [ "$head" = "$cmd" ]; then
+      rest=""
+    else
+      rest=" ${cmd#* }"
+    fi
+    # A self-referencing alias (alias ls='ls -F') is where bash stops, too:
+    # the head was already substituted once by the caller, so leave it alone
+    # rather than splicing the body in a second time.
+    case "$body" in
+    "$head" | "$head "*) break ;;
+    esac
+    cmd="${body}${rest}"
+    hops=$((hops + 1))
+  done
+  printf '%s' "$cmd"
+}
+
 # _register_command_variant: define ONE variant. Internal to register_command_variants.
 #
 # Args: <base-name> <invocation> <prefix> <suffix> <env-assignments> <extra-args> <dry-run>
@@ -329,25 +383,18 @@ function register_command_variants() {
     # single quotes, then unescape.
     local aliases line name target
     aliases=$(alias -p 2> /dev/null)
-    # `alias -p` prints `alias name='body'` with any embedded single
-    # quote written as the four characters '\''. Split on the FIRST `=`
-    # (bodies contain more), strip the outer quotes, then unescape. The escape
-    # sequence is built in a variable rather than written inline: quoting it
-    # directly inside a substitution is unreadable and was where this function
-    # got mangled once already.
-    local _sq="'"
-    local _esc_sq="${_sq}\\${_sq}${_sq}"
     while IFS= read -r line; do
       case "$line" in
       "alias "*) ;;
       *) continue ;;
       esac
       name="${line#alias }"
-      target="${name#*=}"
       name="${name%%=*}"
-      target="${target#$_sq}"
-      target="${target%$_sq}"
-      target="${target//"$_esc_sq"/"$_sq"}"
+      target=$(_alias_body "$name")
+      # An alias body that itself starts with an alias (ls_newest -> ll -> ls)
+      # must be flattened: the variant is a function, and function bodies get
+      # no alias expansion.
+      target=$(_expand_leading_alias "$target")
       [ -n "$name" ] || continue
       [ -n "$target" ] || continue
       if [ -n "$sel_alias_name" ]; then
