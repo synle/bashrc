@@ -11,8 +11,9 @@
 # fuzzy_recent_files     — FZF picker for recently opened files
 # view_file              — Open a file with the default editor (zed)
 # fuzzy_favorite_command — FZF picker for bookmarked commands (Ctrl+B)
-# fuzzy_cd               — FZF cd picker: recent paths + folders (Ctrl+P)
+# fuzzy_cd               — FZF cd picker: recent paths + folders (Ctrl+P, fcd)
 # fuzzy_edit             — FZF file/dir picker, open with editor (Ctrl+T/Y)
+#                          aliases: fvim / fzed / fsubl / fcode / fcat / fcopy
 # fuzzy_git_show         — Interactive git log browser with preview (Ctrl+N)
 #
 # --- Bookmarks ---
@@ -52,6 +53,12 @@ export FZF_DEFAULT_OPTS="
 alias glog='fuzzy_git_show'
 alias fvim='fuzzy_edit vim'
 alias fcat='fuzzy_edit cat'
+# Short form of the Ctrl+P picker, so it is reachable without the chord.
+alias fcd='fuzzy_cd'
+# Pick a file, then push its CONTENTS onto the clipboard + clipboard history.
+# `copy` is a shell function (bash-clipboard.profile.bash), not a PATH binary —
+# fuzzy_edit resolves it because is_runnable_command accepts functions.
+alias fcopy='fuzzy_edit copy'
 # GUI editors resolve through the bash function wrappers in editor-launchers.js
 # (they are not necessarily PATH binaries), which is why fuzzy_edit gates on
 # is_runnable_command rather than `type -P`.
