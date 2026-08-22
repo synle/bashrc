@@ -86,7 +86,7 @@ describe("fzf case-mode wrapper", () => {
     // which turns case-sensitive on its own once the query has an uppercase
     // char. Asserted against real fzf --filter output, not the flag string.
     const filter = (mode, query) =>
-      runInProfile(`printf 'ABC\\nabc\\n' | modefzfrun--filter={query} | tr '\\n' ' '`);
+      runInProfile(`printf 'ABC\\nabc\\n' | ${mode} fzf_run --filter=${query} | tr '\\n' ' '`);
 
     expect(filter("", "ABC")).toBe("ABC");
     expect(filter("FZF_CASE_MODE=insensitive", "ABC")).toBe("ABC abc");

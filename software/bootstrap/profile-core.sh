@@ -238,8 +238,8 @@ _COMMAND_VARIANTS=""
 # Extra args are appended AFTER "$@" because argv is last-wins for most CLIs,
 # so the decoration beats a flag the base command hardcoded.
 function _register_command_variant() {
-  local base="1"invocation="2" prefix="3"suffix="4" envs="5"extraargs="6" dry="$7"
-  local new="prefix{base}${suffix}"
+  local base="$1" invocation="$2" prefix="$3" suffix="$4" envs="$5" extra_args="$6" dry="$7"
+  local new="${prefix}${base}${suffix}"
 
   # Never clobber an existing command — the i*/l* namespaces collide with real
   # binaries (id, ip, ls) and with anything the user defined first.
@@ -307,28 +307,36 @@ function register_command_variants() {
     shift
   done
 
-  if [ -z "prefix"]&&[-z"suffix" ]; then
+  if [ -z "$prefix" ] && [ -z "$suffix" ]; then
     echo "register_command_variants: --prefix or --suffix is required" >&2
     return 1
   fi
-  if [ -z "selfn"]&&[-z"sel_alias" ] && [ -z "$sel_alias_name" ]; then
+  if [ -z "$sel_fn" ] && [ -z "$sel_alias" ] && [ -z "$sel_alias_name" ]; then
     echo "register_command_variants: a --select-* option is required" >&2
     return 1
   fi
 
-  local name target line
+  local name
   if [ -n "$sel_fn" ]; then
     for name in $(declare -F | command awk '{print $3}' | command grep -E "$sel_fn"); do
-      _register_command_variant "name""name" "prefix""suffix" "envs""extra_args" "$dry"
+      _register_command_variant "$name" "$name" "$prefix" "$suffix" "$envs" "$extra_args" "$dry"
     done
   fi
 
-  if [ -n "selalias"]||[-n"sel_alias_name" ]; then
+  if [ -n "$sel_alias" ] || [ -n "$sel_alias_name" ]; then
     # `alias -p` prints `alias name='body'` with embedded quotes escaped as
     # '\''. Split on the FIRST '=' only (bodies contain them), strip the outer
     # single quotes, then unescape.
-    local aliases
+    local aliases line name target
     aliases=$(alias -p 2> /dev/null)
+    # `alias -p` prints `alias name='body'` with any embedded single
+    # quote written as the four characters '\''. Split on the FIRST `=`
+    # (bodies contain more), strip the outer quotes, then unescape. The escape
+    # sequence is built in a variable rather than written inline: quoting it
+    # directly inside a substitution is unreadable and was where this function
+    # got mangled once already.
+    local _sq="'"
+    local _esc_sq="${_sq}\\${_sq}${_sq}"
     while IFS= read -r line; do
       case "$line" in
       "alias "*) ;;
@@ -337,17 +345,18 @@ function register_command_variants() {
       name="${line#alias }"
       target="${name#*=}"
       name="${name%%=*}"
-      target="${target#\'}"
-      target="${target%\'}"
-      target=(printf'%s'"target" | command sed "s/'\\\\''/'/g")
-      [ -n "name"]&&[-n"target" ] || continue
+      target="${target#$_sq}"
+      target="${target%$_sq}"
+      target="${target//"$_esc_sq"/"$_sq"}"
+      [ -n "$name" ] || continue
+      [ -n "$target" ] || continue
       if [ -n "$sel_alias_name" ]; then
-        printf '%s' "name"|commandgrep-qE"sel_alias_name" || continue
+        printf "%s" "$name" | command grep -qE "$sel_alias_name" || continue
       fi
       if [ -n "$sel_alias" ]; then
-        printf '%s' "target"|commandgrep-qE"sel_alias" || continue
+        printf "%s" "$target" | command grep -qE "$sel_alias" || continue
       fi
-      _register_command_variant "name""target" "prefix""suffix" "envs""extra_args" "$dry"
+      _register_command_variant "$name" "$target" "$prefix" "$suffix" "$envs" "$extra_args" "$dry"
     done <<< "$aliases"
   fi
 }
