@@ -42,6 +42,70 @@ async function doWork() {
   await writeText(targetPath, content);
 
   await writeTmuxCopyShim();
+  await writeTmuxKeysShim();
+}
+
+/**
+ * Writes the `sy-tmux-keys` shim onto PATH — the searchable key palette.
+ *
+ * Stock `prefix+?` runs `list-keys -N`, which prints ONLY the bindings that
+ * carry a `-N` note. Every binding this repo adds is written without one, so
+ * roughly sixty custom chords are invisible in the built-in help — the reason
+ * they are impossible to remember. This lists every binding in both tables
+ * instead, formatted one per line and piped into a filter.
+ *
+ * fzf when it is on PATH, `less` otherwise: tmux runs a popup through `sh -c`
+ * with no profile, so the PATH here is whatever the SERVER inherited at start,
+ * and fzf cannot be assumed. `less` is POSIX-ish enough to be everywhere and
+ * still supports `/` search, so the palette degrades instead of failing.
+ *
+ * @returns {Promise<void>}
+ */
+async function writeTmuxKeysShim() {
+  const shimPath = path.join(BASE_HOMEDIR_LINUX, ".local", "bin", "sy-tmux-keys");
+
+  log(">> Updating tmux key palette shim", shimPath);
+
+  if (!IS_DRY_RUN) {
+    fs.mkdirSync(path.dirname(shimPath), { recursive: true });
+  }
+
+  await writeText(
+    shimPath,
+    code`
+      #!/usr/bin/env bash
+      # Searchable list of every tmux key binding, for the alt+p / prefix+? palette.
+      # Run through \`sh -c\` by tmux with no profile loaded - keep this self-contained.
+
+      # Render one table into "<key>\\t<command>" rows.
+      # list-keys prints "bind-key [-r] -T <table> <key> <command>"; drop everything
+      # through the table name so the key sorts first, and label the prefix rows so a
+      # chord reads the way it is typed.
+      function _sy_tmux_table() {
+        local table="\$1" label="\$2"
+        tmux list-keys -T "\$table" 2> /dev/null | sed -E "s/^bind-key +(-r )?-T \$table +//" | while IFS= read -r line; do
+          local key="\${line%% *}"
+          local cmd="\${line#* }"
+          printf '%s%-18s  %s\\n' "\$label" "\$key" "\$cmd"
+        done
+      }
+
+      {
+        _sy_tmux_table root ""
+        _sy_tmux_table prefix "C-b "
+      } | sort -u | {
+        if type -P fzf > /dev/null 2>&1; then
+          fzf --prompt='tmux keys> ' --header='type to filter - esc to close' --no-sort
+        else
+          less -R
+        fi
+      }
+    `,
+  );
+
+  if (!IS_DRY_RUN) {
+    fs.chmodSync(shimPath, 0o755);
+  }
 }
 
 /**
