@@ -114,6 +114,15 @@ jobs:
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
         run: |
           mkdir -p /tmp/ci-patches/prep-patch
+          # clean_artifacts wipes .build/, and dry-run only simulates the writes
+          # that would regenerate the tracked artifacts, so every tracked file
+          # under .build/ shows up worktree-deleted by the time we get here.
+          # Restore those from the index first so the patch carries content
+          # updates only — never deletions of generated artifacts. A staged
+          # deletion poisons downstream jobs: ci-apply-patches removes the file
+          # from disk while it stays in the index, and any spec reading tracked
+          # repo files dies with ENOENT (syHomeFolder).
+          git diff -z --name-only --diff-filter=D -- .build/ | xargs -0 -r git checkout --
           git add -A
           git diff --cached --binary > /tmp/ci-patches/prep-patch/prep-patch.patch
           echo "Prep patch size: $(wc -c < /tmp/ci-patches/prep-patch/prep-patch.patch) bytes"

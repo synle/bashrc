@@ -571,6 +571,12 @@ Flow** (`.github/workflows/build-main.yml` = prep → build-{ubuntu,rhel,arch,de
 
 - Publish amends HEAD and force-pushes, so the SHA on `main` changes after CI —
   `git pull --rebase` before pushing again.
+- **The prep patch carries content updates only, never `.build/` deletions.**
+  `clean_artifacts` wipes `.build/` and dry-run only simulates the writes that
+  would regenerate its tracked artifacts, so before `git add -A` the workflow
+  restores worktree-deleted tracked files under `.build/` from the index.
+  Without that, the patch deletes every one of them downstream while they stay
+  in the index — specs that read tracked repo files then die with ENOENT.
 - **Adding/removing a CLI tool: edit `software/metadata/ci-binaries.json`**, then
   `make format_ci_binaries`. Only non-GUI command-line binaries belong there.
   `check_binary_required` fails the build — reserve it for binaries present on _every_
