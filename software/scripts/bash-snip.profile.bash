@@ -21,16 +21,28 @@
 # filters a command whose name is already a shell function, and filtering it is a
 # deliberate `sn <cmd>` rather than a redefinition of `<cmd>` itself.
 #
-# The transparent per-command wrappers (`npm`, `docker`, `pytest`, … and their
-# `raw_<cmd>` escape hatches) live in bash-snip-command-wrappers.profile.bash,
-# which is safe precisely because every wrapper is guarded on `[ -t 1 ]`: it only
-# filters at an interactive TTY and passes the raw bytes through for every pipe,
-# `$(...)`, and redirect. `git`, `ls`, `grep` and friends are still never wrapped.
+# The transparent per-command wrappers (`npm`, `docker`, `pytest`, … routed
+# through snip) live in bash-snip-command-wrappers.profile.bash. Each is guarded
+# on `[ -t 1 ] && should_use_snip_cli` (defined below), so it only filters at an
+# interactive TTY, honors the BYPASS_SNIP_CLI_OVERRIDE escape hatch, and passes
+# the raw bytes through for every pipe, `$(...)`, and redirect. `git`, `ls`,
+# `grep` and friends are still never wrapped.
 ################################################################################
 
 # _snip_ready: succeed when the snip binary is installed
 function _snip_ready() {
   type -P snip &> /dev/null
+}
+
+# should_use_snip_cli: succeed when snip filtering should apply right now — snip
+# is installed AND the BYPASS_SNIP_CLI_OVERRIDE escape hatch is not truthy. The
+# single decision the transparent command wrappers share, so the logic lives in
+# one place instead of being repeated per wrapper. The TTY guard (`[ -t 1 ]`)
+# stays at the call site: it is about whether a human is looking at THIS command's
+# stdout, not a global snip decision. Bypass a single call with
+# `BYPASS_SNIP_CLI_OVERRIDE=1 <cmd> …`, or a whole shell by exporting it.
+function should_use_snip_cli() {
+  _snip_ready && ! is_truthy "${BYPASS_SNIP_CLI_OVERRIDE:-}"
 }
 
 # _snip_tee_folder: echo the folder snip tees full command output into

@@ -2,26 +2,31 @@
 ################################################################################
 # --- Snip transparent command wrappers ---
 #
-# For every snip-supported base command below, this defines two functions:
+# For every snip-supported base command below, this defines a wrapper that runs
+# the command through snip's output filter ONLY when both hold:
 #
-#   <cmd>       Runs the command through snip's output filter ONLY when stdout is
-#               a TTY and snip is installed; otherwise runs the raw binary. The
-#               `[ -t 1 ]` guard is load-bearing: snip rewrites output even when
-#               piped, so without it `<cmd> | jq`, `x=$(<cmd>)`, and `<cmd> > f`
-#               would all read filtered text. The guard keeps every pipeline,
-#               command-substitution, and redirect byte-exact — filtering only
-#               the interactive case a human is actually looking at.
+#   1. stdout is a TTY (`[ -t 1 ]`) — load-bearing: snip rewrites output even when
+#      piped, so without it `<cmd> | jq`, `x=$(<cmd>)`, and `<cmd> > f` would all
+#      read filtered text. The guard keeps every pipeline, command-substitution,
+#      and redirect byte-exact — filtering only what a human is looking at.
+#   2. should_use_snip_cli succeeds — snip installed AND BYPASS_SNIP_CLI_OVERRIDE
+#      not truthy. That shared helper lives in bash-snip.profile.bash so the
+#      snip-installed + bypass decision is defined once, not per wrapper.
 #
-#   raw_<cmd>   Always the unfiltered binary (`command <cmd>`), never snip. The
-#               escape hatch for when snip misfilters a command or you need the
-#               real bytes at an interactive prompt.
+# Otherwise the raw binary runs untouched.
+#
+# --- Bypassing snip for a single command ---
+# Prefix the call with the bypass flag; there is no separate `raw_<cmd>`:
+#
+#   BYPASS_SNIP_CLI_OVERRIDE=1 npm install     # runs the real npm, no snip
+#   export BYPASS_SNIP_CLI_OVERRIDE=1          # bypass for the rest of the shell
 #
 # The command list is the single source of truth — add a name to
-# `_SNIP_WRAP_COMMANDS` and both wrappers appear. Sourced AFTER
+# `_SNIP_WRAP_COMMANDS` and its wrapper appears. Sourced AFTER
 # bash-command-wrappers.profile.bash so the loop can see the repo's own wrappers
 # and skip them: `npm`, `yarn`, `pip` (smart wrappers) and `pytest` (alias) keep
-# their behavior — snip execs the binary and would drop it — so only their bare
-# name is skipped; they still get `raw_<cmd>`, and `sn -f npm …` forces snip once.
+# their behavior — snip execs the binary and would drop it — so those names are
+# left untouched entirely. Use `sn -f npm …` to force snip through them once.
 #
 # `git` is deliberately absent (never transparently wrapped — use `sn git …`), as
 # are coreutils (`ls`, `grep`, `find`, …). See docs/snip.md.
@@ -59,23 +64,20 @@ _SNIP_WRAP_COMMANDS=(
   gh jj gt yadm jira shopify ollama brew
 )
 
-# Define the wrappers dynamically. `raw_<cmd>` is always created; the bare `<cmd>`
-# wrapper is skipped when something already owns that name (a function or alias),
-# so the repo's own wrappers are never clobbered.
+# Define the wrappers dynamically. Skip any name already owned by a function or
+# alias so the repo's own wrappers (npm, yarn, pip, pytest, …) are never clobbered.
 for _cmd in "${_SNIP_WRAP_COMMANDS[@]}"; do
-  eval "function raw_${_cmd}() { command ${_cmd} \"\$@\"; }"
-
   case "$(type -t "$_cmd" 2> /dev/null)" in
   function | alias) continue ;;
   esac
 
   eval "function ${_cmd}() {
-		if [ -t 1 ] && type -P snip &> /dev/null; then
-			snip -- ${_cmd} \"\$@\"
-		else
-			command ${_cmd} \"\$@\"
-		fi
-	}"
+    if [ -t 1 ] && should_use_snip_cli; then
+      snip -- ${_cmd} \"\$@\"
+    else
+      command ${_cmd} \"\$@\"
+    fi
+  }"
 done
 unset _cmd
 
@@ -85,11 +87,12 @@ function snip_wrap_status() {
     echo "snip_wrap_status: list the snip command wrappers and their state
   Usage: snip_wrap_status
   For each command in \$_SNIP_WRAP_COMMANDS prints one of:
-    snip     bare <cmd> filters through snip at a TTY; raw_<cmd> bypasses it
-    skipped  another wrapper owns <cmd> (npm, yarn, pip, pytest, …) — only
-             raw_<cmd> was added; use 'sn -f <cmd>' to force snip once
-  Filtering never happens off a TTY (pipes, \$(...), redirects stay raw), and
-  never when snip is not installed."
+    snip     bare <cmd> filters through snip at a TTY; bypass a single call with
+             'BYPASS_SNIP_CLI_OVERRIDE=1 <cmd> …'
+    skipped  another wrapper owns <cmd> (npm, yarn, pip, pytest, …) — left alone;
+             use 'sn -f <cmd>' to force snip once
+  Filtering never happens off a TTY (pipes, \$(...), redirects stay raw), when
+  BYPASS_SNIP_CLI_OVERRIDE is truthy, or when snip is not installed."
     return 0
   fi
 
@@ -99,7 +102,7 @@ function snip_wrap_status() {
     if printf '%s' "$body" | grep -q 'snip --'; then
       state="snip"
     else
-      state="skipped (raw_${c} only)"
+      state="skipped (owned by another wrapper)"
     fi
     printf '  %-20s %s\n' "$c" "$state"
   done
