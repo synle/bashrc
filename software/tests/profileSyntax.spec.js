@@ -7,6 +7,14 @@ import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
+/**
+ * The single declaration of $SY_ROOT_FOLDER (software/bootstrap/common-env.sh). The
+ * generated profiles source partials that read it directly (bash-history's backup dir,
+ * bash-fzf's bookmark path) and run eager mkdir/cp against it at source time — sourcing
+ * the declaration first mirrors what a real shell startup does.
+ */
+const COMMON_ENV = path.join(ROOT_DIR, "software/bootstrap/common-env.sh");
+
 // fs.globSync landed in Node 22; this repo still supports Node 20, where it is
 // undefined and the whole suite fails to load. These two readdir helpers cover
 // every pattern this file needs without adding a `glob` dependency.
@@ -304,7 +312,7 @@ describe.skipIf(profileFiles.length === 0)("profile block-level syntax check", (
 describe.skipIf(profileFiles.length === 0)("profile bashrc source check", () => {
   /** @param {string} filePath @param {Record<string, string>} envOverrides */
   function assertNoSourceErrors(filePath, envOverrides = {}) {
-    const stderr = execSync(`bash -c 'source "${filePath}"' 2>&1 1>/dev/null || true`, {
+    const stderr = execSync(`bash -c '. "${COMMON_ENV}" > /dev/null 2>&1; source "${filePath}"' 2>&1 1>/dev/null || true`, {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env, ...envOverrides, HOME: process.env.HOME, PATH: process.env.PATH },
