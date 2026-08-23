@@ -151,11 +151,11 @@ function python() {
 function pip() {
   activate_py
   if [ -n "$VIRTUAL_ENV" ] && grep -q "^uv" "$VIRTUAL_ENV/pyvenv.cfg" 2> /dev/null && type -P uv &> /dev/null; then
-    command uv pip "$@"
+    _snip_run uv pip "$@"
   elif type -P pip3 &> /dev/null; then
-    command pip3 "$@"
+    _snip_run pip3 "$@"
   elif type -P pip &> /dev/null; then
-    command pip "$@"
+    _snip_run pip "$@"
   else
     echo "pip: not installed"
   fi
@@ -214,7 +214,7 @@ function _has_pkg_script() {
 # --no-update-notifier (skip the npm-self-update check, ~100-500ms).
 function npm() {
   if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
-    command npm run "$@"
+    _snip_run npm run "$@"
     return
   fi
   if [ "${1-}" = "install" ] || [ "${1-}" = "i" ]; then
@@ -225,19 +225,19 @@ function npm() {
       *) args+=("$flag") ;;
       esac
     done
-    command npm "${args[@]}"
+    _snip_run npm "${args[@]}"
     return
   fi
-  command npm "$@"
+  _snip_run npm "$@"
 }
 
 # wraps yarn so bare subcommand names run as `yarn run <name>`, falls back to npm
 function yarn() {
   if type -P yarn &> /dev/null && command yarn --version &> /dev/null; then
     if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
-      command yarn run "$@"
+      _snip_run yarn run "$@"
     else
-      command yarn "$@"
+      _snip_run yarn "$@"
     fi
   else
     npm "$@"
