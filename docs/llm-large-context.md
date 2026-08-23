@@ -382,6 +382,15 @@ use, and most are higher-leverage than provider choice.
 Cheapest savings — no API call, no model needed. For any text input
 ≥ a few thousand tokens, walk through:
 
+**Command output — filter it before it reaches the model:**
+
+`snip` collapses verbose CLI output at the source (`git log -20`:
+27,573 bytes → 1,555, a 95% cut with the commit list intact). This
+repo ships `sn` / `snip_coverage` / `snip_logs` as an opt-in shell
+integration — see [`docs/snip.md`](./snip.md). It is opt-in on purpose:
+snip rewrites output even when piped, so it must never shadow a
+command whose bytes something else parses.
+
 **Structural drops (do first):**
 
 - Remove generated / lock files from code diffs (`package-lock.json`,
