@@ -77,15 +77,30 @@ async function writeTmuxKeysShim() {
       # Searchable list of every tmux key binding, for the alt+p / prefix+? palette.
       # Run through \`sh -c\` by tmux with no profile loaded - keep this self-contained.
 
-      # Render one table into "<key>\\t<command>" rows.
+      # Resolve tmux by absolute path when it is not on the inherited PATH. A tmux
+      # popup runs with whatever PATH the SERVER started with, which on macOS often
+      # lacks /opt/homebrew/bin - and a bare \`tmux\` there prints nothing at all.
+      TMUX_BIN="\$(type -P tmux 2> /dev/null)"
+      for _candidate in /opt/homebrew/bin/tmux /usr/local/bin/tmux /usr/bin/tmux; do
+        [ -n "\$TMUX_BIN" ] && break
+        [ -x "\$_candidate" ] && TMUX_BIN="\$_candidate"
+      done
+      if [ -z "\$TMUX_BIN" ]; then
+        echo "sy-tmux-keys: tmux not found on PATH" >&2
+        exit 1
+      fi
+
+      # Render one table into "<key>  <command>" rows.
       # list-keys prints "bind-key [-r] -T <table> <key> <command>"; drop everything
       # through the table name so the key sorts first, and label the prefix rows so a
       # chord reads the way it is typed.
       function _sy_tmux_table() {
         local table="\$1" label="\$2"
-        tmux list-keys -T "\$table" 2> /dev/null | sed -E "s/^bind-key +(-r )?-T \$table +//" | while IFS= read -r line; do
+        "\$TMUX_BIN" list-keys -T "\$table" 2> /dev/null | sed -E "s/^bind-key +(-r )?-T \$table +//" | while IFS= read -r line; do
           local key="\${line%% *}"
           local cmd="\${line#* }"
+          # list-keys pads its own key column, so cmd arrives with leading blanks.
+          cmd="\${cmd#"\${cmd%%[![:space:]]*}"}"
           printf '%s%-18s  %s\\n' "\$label" "\$key" "\$cmd"
         done
       }
@@ -94,7 +109,11 @@ async function writeTmuxKeysShim() {
         _sy_tmux_table root ""
         _sy_tmux_table prefix "C-b "
       } | sort -u | {
-        if type -P fzf > /dev/null 2>&1; then
+        # Only reach for an interactive filter when there is a terminal to drive it.
+        # Without this a non-tty caller (a test, a pipe) hangs in fzf forever.
+        if [ ! -t 1 ]; then
+          command cat
+        elif type -P fzf > /dev/null 2>&1; then
           fzf --prompt='tmux keys> ' --header='type to filter - esc to close' --no-sort
         else
           less -R
