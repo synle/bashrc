@@ -8,7 +8,10 @@
 #                 with args falls back to regular su
 #
 # --- SQLite ---
-# sqlite        — Wrapper: prefers sqlite3, falls back to sqlite
+# sqlite        — Wrapper: delegates to the binary _sqlite_bin resolves
+#                 (sqlite3, falling back to sqlite). Resolver and the
+#                 sqlite_raw / sqlite_vaccum* helpers live in
+#                 bash-sqlite.profile.bash.
 #
 # --- bat ---
 # bat           — Wrapper: chains bat -> batcat -> cat so callers can always
@@ -94,13 +97,9 @@ function su() {
 # --- SQLite ---
 ################################################################################
 function sqlite() {
-  if type -P sqlite3 &> /dev/null; then
-    command sqlite3 "$@"
-  elif type -P sqlite &> /dev/null; then
-    command sqlite "$@"
-  else
-    echo "sqlite: not installed"
-  fi
+  local bin
+  bin="$(_sqlite_bin)" || return 1
+  command "bin""@"
 }
 
 ################################################################################
