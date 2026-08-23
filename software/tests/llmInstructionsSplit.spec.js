@@ -113,6 +113,17 @@ const SPLIT_EXPECTATIONS = {
       "Every schema / data migration ships with its reversal",
     ],
   },
+  "readability.md": {
+    heading: "# Readability & Design",
+    sections: ["## Naming & shape", "## Boundaries & visibility"],
+    leads: [
+      "Name the magic value",
+      "Flatten the nest",
+      "Enum over boolean parameter",
+      "Widening visibility is a design change",
+      "Encapsulate the low-level behind a clean API",
+    ],
+  },
   // The one INLINED split file: persona.md is also pulled back into the top of
   // instructions.md through a BEGIN/END path block, so unlike its siblings its rules
   // are SUPPOSED to appear in the always-loaded file too. `inlined` turns the

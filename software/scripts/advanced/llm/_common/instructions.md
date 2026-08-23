@@ -172,6 +172,10 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 - Imports and declarations at the top. Lazy only for circular deps or cold-start, with a comment.
 - Inline-document every method/function/class/exported symbol you touch in language-native style: one-line description, params, return + type, raised errors, side effects. Update on signature/behavior/contract change in the same edit. Undocumented public methods or stale doc next to modified code → review block. Trivial one-liners skip.
 
+## Readability & Design
+
+- **Read `<<LLM_ROOT_FOLDER>>/instructions/readability.md` before writing or reviewing code**, binding as if inline — naming literals, guard-clause control flow, minimal visibility, layered abstraction, enum params over booleans, intent-first comments.
+
 ## Logging & Errors
 
 - Parameterized logging only — pass values as args, not formatted strings.
