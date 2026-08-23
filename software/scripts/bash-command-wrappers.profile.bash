@@ -99,7 +99,7 @@ function su() {
 function sqlite() {
   local bin
   bin="$(_sqlite_bin)" || return 1
-  command "bin""@"
+  command "$bin" "$@"
 }
 
 ################################################################################
