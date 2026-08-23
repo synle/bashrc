@@ -2089,6 +2089,7 @@ _prompt_command_add "_bashrc_update_check_show"
 # BEGIN/END | Spec Autocomplete
 # SOURCE | software/scripts/bash-command-wrappers.profile.bash
 # SOURCE | software/scripts/docker-shares.profile.bash
+# SOURCE | software/scripts/bash-snip-command-wrappers.profile.bash
 
 ################################################################################
 # --- OS-specific Tweaks (registerPlatformTweaks) ---
