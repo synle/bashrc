@@ -233,10 +233,12 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 ## Risky Changes
 
-- **Read `<<LLM_ROOT_FOLDER>>/instructions/risky-changes.md` in full before removing or renaming anything, before a schema or data migration, a dependency upgrade, or a breaking contract change**, and follow it as written — binding as if inline.
-- Highest-cost rules in it: removing anything is a downstream audit first, a green test suite is not consumer coverage, degradation is the failure mode to hunt for, uncertain means deprecate not delete, every migration ships with its reversal, breaking changes need a title flag and a migration note.
-- **Applies even when you set out to remove nothing:** deleting a field, prop, endpoint, or config key is a change to every consumer of it, in other repos and layers too. An optimization trimming a "redundant" field and a refactor dropping an "unused" branch are removals — the ones that ship unaudited. Enumerate consumers, or keep the old shape and deprecate.
-- Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
+- **Removal is a downstream audit first, never a diff-local call.** Before deleting or renaming an API, endpoint, field, event, prop, config/env key, flag, export, or column, enumerate every consumer across the stack — services, frontend, jobs, scripts, infra, docs — searching the string, literal, and dynamic access (`obj["field"]`, allowlists, GraphQL, schema/fixture/template), not just the symbol; "find references" misses cross-service and dynamic callers. Applies even when you set out to remove nothing — an optimization trimming a "redundant" field is the removal that ships unaudited.
+- **A green test suite is not that audit.** Tests cover only the callers someone wrote a test for, in the repos they run in; a cross-service or runtime consumer is invisible. Hunt silent degradation, not crashes — a missing field throws nothing while a UI drops to read-only or a permission check reads `undefined` and denies.
+- **Uncertain means deprecate, never delete** — keep the old shape, add the new alongside, remove once the old path is provably dead (expand → migrate → contract). Ship the audit in the PR body: each consumer with a verdict (`updated in <link>` / `unaffected because <reason>` / `unreachable — deprecated instead`) and how absent-value behavior was verified.
+- **Every schema / data migration ships with its reversal** — up plus matching down in one PR; irreversible ops (`DROP`, destructive backfill, narrowing) need a `## Recovery` section. Keep one migration head descending from default; re-parent, never a second head.
+- **Breaking changes need a `BREAKING:` (or `feat!:` / `fix!:`) title flag and a `## Migration` note** with the minimum diff a consumer applies — removed/renamed exports and flags, changed defaults, schema deletions, env/config-key renames, not internal refactors. Runtime dependency major/minor bumps verify locally first: read and link the changelog, run the full suite before push, pin the exact version (no `^`/`~`/`>=`); patch and dev-only bumps skip that.
+- **Rollback PRs are emergency fast-track** — skip babysit, ship now: title `Revert "<original>"`, body links the original PR and the failure, CI green but no comment loop, squash-merge when green (ASK before `--auto`), never auto-release.
 
 ## Scope Discipline
 
