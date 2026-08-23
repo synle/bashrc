@@ -25,11 +25,11 @@
 #   export BYPASS_SNIP_CLI_OVERRIDE=1          # bypass for the rest of the shell
 #
 # The command list is the single source of truth — add a name to
-# `_SNIP_WRAP_COMMANDS` and its wrapper appears. Sourced AFTER
-# bash-command-wrappers.profile.bash so the loop can see the repo's own wrappers
-# and skip them: `npm`, `yarn`, `pip` (smart wrappers) and `pytest` (alias) keep
-# their behavior — snip execs the binary and would drop it — so those names are
-# left untouched entirely. Use `sn -f npm …` to force snip through them once.
+# `_SNIP_WRAP_COMMANDS` and its wrapper appears. `npm`, `yarn`, `pip` are NOT in
+# it: they have hand-rolled smart wrappers in bash-command-wrappers.profile.bash
+# that special-case their arguments, so those wrappers route their own final exec
+# through the shared _snip_run helper instead. The loop still skips any other name
+# already owned by a function or alias (e.g. the `pytest` alias) as a safety net.
 #
 # `git` is deliberately absent (never transparently wrapped — use `sn git …`), as
 # are coreutils (`ls`, `grep`, `find`, …). See docs/snip.md.
@@ -40,10 +40,10 @@
 # not a binary) and `gradlew` (a project-local script) are intentionally absent.
 _SNIP_WRAP_COMMANDS=(
   # --- JS / TS ---
-  npm npx pnpm yarn nx turbo tsc eslint oxlint biome prettier
+  npx pnpm nx turbo tsc eslint oxlint biome prettier
   jest vitest playwright next prisma trunk
   # --- Python ---
-  pip poetry uv pytest ruff mypy basedpyright ty
+  poetry uv pytest ruff mypy basedpyright ty
   # --- Rust ---
   cargo rustc
   # --- Go ---
@@ -80,8 +80,12 @@ function _snip_require_binary() {
   fi
 }
 
-# Define the wrappers dynamically. Skip any name already owned by a function or
-# alias so the repo's own wrappers (npm, yarn, pip, pytest, …) are never clobbered.
+# Define the wrappers dynamically. `npm`, `yarn`, `pip` are intentionally absent
+# from the list above — they have hand-rolled smart wrappers in
+# bash-command-wrappers.profile.bash that special-case their args and route the
+# final exec through _snip_run themselves. The skip below is a safety net for any
+# OTHER name already owned by a function or alias (e.g. the `pytest` alias), so a
+# future collision is never clobbered.
 for _cmd in "${_SNIP_WRAP_COMMANDS[@]}"; do
   case "$(type -t "$_cmd" 2> /dev/null)" in
   function | alias) continue ;;
@@ -89,11 +93,7 @@ for _cmd in "${_SNIP_WRAP_COMMANDS[@]}"; do
 
   eval "function ${_cmd}() {
     _snip_require_binary ${_cmd} || return 127
-    if [ -t 1 ] && should_use_snip_cli; then
-      snip -- ${_cmd} \"\$@\"
-    else
-      command ${_cmd} \"\$@\"
-    fi
+    _snip_run ${_cmd} \"\$@\"
   }"
 done
 unset _cmd

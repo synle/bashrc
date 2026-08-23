@@ -45,6 +45,21 @@ function should_use_snip_cli() {
   _snip_ready && ! is_truthy "${BYPASS_SNIP_CLI_OVERRIDE:-}"
 }
 
+# _snip_run <cmd> [args...]: the one dispatch point for every proxied command —
+# run it through snip's filter when should_use_snip_cli succeeds AND stdout is a
+# TTY, otherwise run the raw binary. Shared by the transparent wrappers
+# (bash-snip-command-wrappers.profile.bash) and the hand-rolled smart wrappers
+# (npm / yarn / pip in bash-command-wrappers.profile.bash, which special-case
+# their args first, then hand the final exec here) so all of them filter the same
+# way and none of them filter off a TTY (pipes, $(...), redirects stay byte-exact).
+function _snip_run() {
+  if [ -t 1 ] && should_use_snip_cli; then
+    snip -- "$@"
+  else
+    command "$@"
+  fi
+}
+
 # _snip_tee_folder: echo the folder snip tees full command output into
 function _snip_tee_folder() {
   if [ -n "${SNIP_TEE_DIR:-}" ]; then
