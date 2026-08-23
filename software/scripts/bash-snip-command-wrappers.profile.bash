@@ -2,8 +2,9 @@
 ################################################################################
 # --- Snip transparent command wrappers ---
 #
-# For every snip-supported base command below, this defines a wrapper that runs
-# the command through snip's output filter ONLY when both hold:
+# For every snip-supported base command below, this defines a wrapper that first
+# verifies the real binary exists (clear error if not), then runs the command
+# through snip's output filter ONLY when both hold:
 #
 #   1. stdout is a TTY (`[ -t 1 ]`) — load-bearing: snip rewrites output even when
 #      piped, so without it `<cmd> | jq`, `x=$(<cmd>)`, and `<cmd> > f` would all
@@ -13,7 +14,9 @@
 #      not truthy. That shared helper lives in bash-snip.profile.bash so the
 #      snip-installed + bypass decision is defined once, not per wrapper.
 #
-# Otherwise the raw binary runs untouched.
+# Otherwise the raw binary runs untouched. The binary-exists check
+# (_snip_require_binary) runs FIRST, before either path, so a tool that is not
+# installed reports itself plainly instead of as a snip passthrough oddity.
 #
 # --- Bypassing snip for a single command ---
 # Prefix the call with the bypass flag; there is no separate `raw_<cmd>`:
@@ -64,6 +67,19 @@ _SNIP_WRAP_COMMANDS=(
   gh jj gt yadm jira shopify ollama brew
 )
 
+# _snip_require_binary <cmd>: fail with a clear message when <cmd>'s real binary
+# is not on PATH. `type -P` forces a PATH lookup (skipping this very function), so
+# it answers "is the actual program installed" rather than "is there a wrapper".
+# This is the safety net that runs FIRST in every wrapper, before any snip/raw
+# dispatch — so a missing tool reports itself plainly instead of surfacing as a
+# confusing snip passthrough error or a bare "command not found".
+function _snip_require_binary() {
+  if ! type -P "$1" > /dev/null 2>&1; then
+    echo "$1: command not found — '$1' is not installed or not on your PATH" >&2
+    return 127
+  fi
+}
+
 # Define the wrappers dynamically. Skip any name already owned by a function or
 # alias so the repo's own wrappers (npm, yarn, pip, pytest, …) are never clobbered.
 for _cmd in "${_SNIP_WRAP_COMMANDS[@]}"; do
@@ -72,6 +88,7 @@ for _cmd in "${_SNIP_WRAP_COMMANDS[@]}"; do
   esac
 
   eval "function ${_cmd}() {
+    _snip_require_binary ${_cmd} || return 127
     if [ -t 1 ] && should_use_snip_cli; then
       snip -- ${_cmd} \"\$@\"
     else
