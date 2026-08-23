@@ -43,7 +43,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 756d9e0d6b790ecb2787ee1acef79361 | 9.0 KB
+# software/bootstrap/common-env.sh | 4f627f74f52ca84c1288d7dff6f07acf | 9.0 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -65,7 +65,7 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/
 #   bash   "$SY_ROOT_FOLDER/<thing>" - run.sh re-exports it into
 #          ~/.bash_syle_common, so interactive shells and profile partials see it
 #   node   SY_ROOT_FOLDER in software/index.js, read from this same env var
-#   docs   deployed LLM docs write the <SY_ROOT_FOLDER> / <LLM_ROOT_FOLDER>
+#   docs   deployed LLM docs write the <<SY_ROOT_FOLDER>> / <<LLM_ROOT_FOLDER>>
 #          placeholder, resolved to a real path by llm-common.js at deploy time
 # NOTE: `make nuke` must never rm -rf this folder wholesale - it holds authored
 # plan files that no re-run can regenerate. See the nuke target.

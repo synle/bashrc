@@ -19,6 +19,7 @@
  * list kept here — a second list is the drift this consolidation exists to prevent.
  */
 import { describe, it, expect, beforeEach } from "vitest";
+import { getIndexFunction } from "./setup.js";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -41,6 +42,9 @@ const SANDBOX_HOME = "/tmp/sandbox-home";
  * @type {string}
  */
 const SANDBOX_SY_HOME = `${SANDBOX_HOME}/sy`;
+
+/** @type {Function} The one placeholder resolver, loaded from index.js. */
+const resolvePlaceholders = getIndexFunction("resolvePlaceholders");
 
 /**
  * Claude Code's documented hard limit for a `CLAUDE.md`, in characters.
@@ -150,6 +154,12 @@ function loadLlmCommon() {
     readJson: () => ({}),
     readText: () => "",
     getSyHPOmenHomeIpAddress: () => null,
+    // The REAL resolver from index.js — never a stub, which would be a second
+    // implementation free to disagree with the one that actually deploys. The
+    // shared roots are pinned to the sandbox so these assertions never depend on
+    // the home layout of whoever ran them.
+    resolvePlaceholders: (content, tokenMap = {}) =>
+      resolvePlaceholders(content, { SY_ROOT_FOLDER: SANDBOX_SY_HOME, HOME: SANDBOX_HOME, ...tokenMap }),
   };
   vm.createContext(sandbox);
   vm.runInContext(source, sandbox);
@@ -205,7 +215,7 @@ describe("split file pointers", () => {
       // The SOURCE stays symbolic. A hardcoded `~/_extra/ai_llm/...` here would be a
       // second spelling of a folder common-env.sh already declares, and would be
       // outright wrong on a machine whose home layout differs.
-      expect(instructions, `placeholder pointer for ${target}`).toContain(`\`<LLM_ROOT_FOLDER>/instructions/${target}\``);
+      expect(instructions, `placeholder pointer for ${target}`).toContain(`\`<<LLM_ROOT_FOLDER>>/instructions/${target}\``);
       // The DEPLOYED bytes carry the resolved absolute path, because the agent reading
       // them has no shell to expand anything — an unexpanded variable in a `mkdir -p`
       // is a write at the filesystem root.
@@ -215,9 +225,9 @@ describe("split file pointers", () => {
       expect(instructions, `@-import of ${target}`).not.toMatch(new RegExp(`@[^\\s\`]*${target.replace(".", "\\.")}`));
     }
 
-    // Nothing may survive unresolved — a literal `<LLM_ROOT_FOLDER>` reaching an agent
+    // Nothing may survive unresolved — a literal `<<LLM_ROOT_FOLDER>>` reaching an agent
     // reads as a folder name and fails silently.
-    expect(deployed, "unresolved placeholder in the deployed instructions").not.toContain("<LLM_ROOT_FOLDER>");
+    expect(deployed, "unresolved placeholder in the deployed instructions").not.toContain("<<LLM_ROOT_FOLDER>>");
   });
 
   it("should keep a Source Control section that points at the PR workflow file", () => {
@@ -312,7 +322,7 @@ describe("plans folder references", () => {
   });
 
   it("should point plan artifacts at the consolidated folder", () => {
-    expect(instructions).toContain("<LLM_ROOT_FOLDER>/plans/");
+    expect(instructions).toContain("<<LLM_ROOT_FOLDER>>/plans/");
     expect(llm.resolveLLMDocPlaceholders(instructions)).toContain(`${llm.LLM_SHARED_ROOT_FOLDER}/plans/`);
   });
 
@@ -516,9 +526,15 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
   });
 
   it("should resolve every placeholder it uses to a real absolute folder", () => {
+    // The LLM-only token plus the shared ones a doc gets for free. `<<SY_ROOT_FOLDER>>`
+    // is resolved by COMMON_PLACEHOLDERS in index.js rather than declared here, so it
+    // is named explicitly — otherwise moving it to the shared registry would have
+    // silently dropped it out of this assertion.
+    const folderTokens = [...Object.keys(llm.LLM_DOC_PATH_PLACEHOLDERS), "<<SY_ROOT_FOLDER>>", "<<HOME>>"];
+
     for (const { label, text } of deployedSources) {
       const deployed = llm.resolveLLMDocPlaceholders(text);
-      for (const token of Object.keys(llm.LLM_DOC_PATH_PLACEHOLDERS)) {
+      for (const token of folderTokens) {
         expect(deployed, `${label} left ${token} unresolved`).not.toContain(token);
       }
     }
@@ -533,7 +549,7 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
 
   it("should resolve every PR-loop tuning placeholder to a positive number of seconds", () => {
     // These carry the babysit / review cadence, so an unresolved token ships the
-    // literal `<SY_PR_POLL_INTERVAL_SECONDS>` to an agent, which reads as prose and
+    // literal `<<SY_PR_POLL_INTERVAL_SECONDS>>` to an agent, which reads as prose and
     // silently loses the interval it was supposed to sleep.
     for (const { label, text } of deployedSources) {
       const deployed = llm.resolveLLMDocPlaceholders(text);
@@ -549,7 +565,7 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
   });
 
   it("should route every deployed doc through the one reader that resolves placeholders", () => {
-    // readText alone skips resolution, which ships `<LLM_ROOT_FOLDER>` verbatim to an
+    // readText alone skips resolution, which ships `<<LLM_ROOT_FOLDER>>` verbatim to an
     // agent — it reads as a literal folder name and fails silently. readLLMDocSource
     // is the only sanctioned reader for a doc that gets deployed.
     const readerFiles = [

@@ -1673,6 +1673,125 @@ function findPathList(srcDir, targetMatch, options = {}) {
   }
 }
 
+// --- Placeholder Resolution ---
+
+/**
+ * @type {RegExp} The one shape a placeholder name may take: SCREAMING_SNAKE_CASE,
+ * starting with a letter. Digits and underscores allowed after the first
+ * character, nothing lowercase, no hyphens, no dots. Enforced by
+ * {@link resolvePlaceholders} so one convention holds across every template.
+ */
+const PLACEHOLDER_NAME_PATTERN = /^[A-Z][A-Z0-9_]*$/;
+
+/**
+ * @type {RegExp} Matches one `<<SCREAMING_SNAKE>>` token in template content.
+ * The doubled brackets are the collision guard: a single `<NAME>` is ordinary
+ * prose in a doc and a redirection in a shell, whereas `<<NAME>>` appears
+ * nowhere by accident.
+ */
+const PLACEHOLDER_TOKEN_PATTERN = /<<([A-Z][A-Z0-9_]*)>>/g;
+
+/**
+ * The tokens every template gets for free, resolved on THIS machine.
+ *
+ * A repo source cannot hardcode `~/_extra/...`: that is a second spelling of a
+ * folder already declared once in `software/bootstrap/common-env.sh`, so it goes
+ * stale the day the root moves and is outright wrong on a machine whose home
+ * layout differs. It cannot carry `$SY_ROOT_FOLDER` either — a config file, a
+ * markdown doc, or a tmux binding has no shell expanding anything, and an
+ * unexpanded variable inside a path is a write at the filesystem root.
+ *
+ * The placeholder is the resolution: sources stay symbolic and reviewable, and
+ * {@link resolvePlaceholders} bakes the absolute path in at write time. Token
+ * names match the env var names exactly, so `<<<SY_ROOT_FOLDER>>>` in a template
+ * and `$SY_ROOT_FOLDER` in a script are visibly the same thing.
+ *
+ * Add a token here only when more than one consumer needs it; anything scoped
+ * to one area belongs in that area's own map, passed as the second argument —
+ * `<<<LLM_ROOT_FOLDER>>>` lives in `llm-common.js` for exactly that reason.
+ * @type {Object<string, string>}
+ */
+const COMMON_PLACEHOLDERS = {
+  SY_ROOT_FOLDER,
+  HOME: BASE_HOMEDIR_LINUX,
+};
+
+/**
+ * Substitutes `<<TOKEN>>` placeholders into template content — the ONE resolver
+ * for every "repo source carries a token, the written file carries a value"
+ * case in this repo.
+ *
+ * **The delimiter is doubled on purpose.** A single `<NAME>` is not a safe
+ * marker: it is ordinary prose in a markdown doc (`<repo>`, `<number>`,
+ * `<CLI>`), it is a redirection operator in shell, and it is a tag in anything
+ * XML-shaped. `<<NAME>>` occurs nowhere by accident, so the token can never
+ * collide with content that merely looks like one. `<<NAME>>` still reads as the
+ * `$NAME` env var it usually stands for.
+ *
+ * ONE destination still cannot take it: a bash source that must stay parseable.
+ * `<<` is the heredoc operator, so a token in a function name
+ * (`function __spec_complete_<<COMMAND>>()`) is a hard syntax error under
+ * `/bin/bash`, where the brace form parses fine. That is why
+ * `bash-autocomplete-complete-spec-skeleton.bash` keeps `{{TOKEN}}` and
+ * substitutes inline instead of calling here. Everything else — configs read
+ * only by their own tool, markdown docs, the PowerShell profile — takes `<<>>`.
+ *
+ * {@link COMMON_PLACEHOLDERS} is merged in first, so every caller gets
+ * `<<<SY_ROOT_FOLDER>>>` and `<<<HOME>>>` without declaring them. A caller's own
+ * entry of the same name wins.
+ *
+ * Keys may be written bare (`RESIZE_PANE_CELLS`) or fully delimited
+ * (`<<<RESIZE_PANE_CELLS>>>`) — both normalize to the same token, so a caller
+ * never has to repeat the brackets on every line of a map.
+ *
+ * **Token names are SCREAMING_SNAKE_CASE, always.** `<<<RESIZE_PANE_CELLS>>>`,
+ * never `<<resizePaneCells>>` or `<<Resize_Pane_Cells>>`. One casing keeps a
+ * token visibly a token, and matches the `$SCREAMING_SNAKE` env var it usually
+ * stands for. A name that breaks the convention is reported on stderr and
+ * skipped, so the typo shows up as an unresolved token in the output rather
+ * than a silent half-substitution.
+ *
+ * Substitution is map-driven, never pattern-driven: a well-formed token with no
+ * map entry is left exactly as written, so a doc may name a token it does not
+ * expect this caller to resolve without losing it.
+ *
+ * Resolution is a SINGLE pass over the original content, so the result never
+ * depends on map order and a substituted value containing `<<TOKEN>>` text can
+ * never inject a further substitution — which matters most where the value is a
+ * large blob, like the spec body pasted into the autocomplete template.
+ *
+ * The replacement runs through a function, so a value containing `$&`,
+ * `` $` ``, `$'`, or `$1` is inserted verbatim rather than being interpreted as
+ * a regex replacement pattern.
+ *
+ * @param {string} content - Template content with `<<TOKEN>>` placeholders intact.
+ * @param {Object<string, string|number>} [tokenMap={}] - Token name (bare or bracketed) → replacement value. Merged over {@link COMMON_PLACEHOLDERS}.
+ * @returns {string} The content with every known token replaced.
+ */
+function resolvePlaceholders(content, tokenMap = {}) {
+  if (!content) return content;
+
+  /** @type {Object<string, string>} Bare uppercase name → replacement, common tokens first so a caller's own entry wins. */
+  const resolvedMap = {};
+  for (const [name, value] of Object.entries({ ...COMMON_PLACEHOLDERS, ...tokenMap })) {
+    if (!name || value == null) continue;
+
+    const bareName = name.startsWith("<<") && name.endsWith(">>") ? name.slice(2, -2) : name;
+    if (!PLACEHOLDER_NAME_PATTERN.test(bareName)) {
+      log(`>> WARNING placeholder name is not SCREAMING_SNAKE_CASE, skipped: ${name}`);
+      continue;
+    }
+    resolvedMap[bareName] = String(value);
+  }
+
+  // Single pass over the ORIGINAL content: a value that happens to contain
+  // `<<TOKEN>>` text is never rescanned, so the result cannot depend on map
+  // order and a substituted blob can never inject a further substitution.
+  return content.replace(PLACEHOLDER_TOKEN_PATTERN, (token, bareName) =>
+    Object.prototype.hasOwnProperty.call(resolvedMap, bareName) ? resolvedMap[bareName] : token,
+  );
+}
+
 /**
  * Searches a directory for the first entry matching a regex pattern.
  * Delegates to findPathList and returns the first result.

@@ -131,7 +131,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 **These rules live in a separate file, and you are required to read it.**
 
-- **Read `<LLM_ROOT_FOLDER>/instructions/debugging.md` in full before your first fix attempt on anything broken**, and follow it as written. It picks up where the Validation Cadence ladder drops you; `/sy-debug` runs it as a phased loop. A bug you have already started guessing at is exactly the case it exists for.
+- **Read `<<LLM_ROOT_FOLDER>>/instructions/debugging.md` in full before your first fix attempt on anything broken**, and follow it as written. It picks up where the Validation Cadence ladder drops you; `/sy-debug` runs it as a phased loop. A bug you have already started guessing at is exactly the case it exists for.
 - The rules there are binding exactly as if they appeared here. Highest-cost ones, so you know what you are missing until you read it: no fix without a reproduction, one hypothesis per observation, read the **first** failure, fix the cause not the symptom, never round an unexplained remainder up to "fixed".
 - If that file is missing, say so rather than improvising a debugging loop, and re-run `bash run.sh --files="claude/setup.js"` (or any LLM setup script) to redeploy it.
 
@@ -139,7 +139,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 **These rules live in a separate file, and you are required to read it.**
 
-- **Read `<LLM_ROOT_FOLDER>/instructions/testing.md` in full before writing, reviewing, or trusting a test**, and follow it as written. Validation Cadence says when tests run; that file says whether they were worth running.
+- **Read `<<LLM_ROOT_FOLDER>>/instructions/testing.md` in full before writing, reviewing, or trusting a test**, and follow it as written. Validation Cadence says when tests run; that file says whether they were worth running.
 - The rules there are binding exactly as if they appeared here. Highest-cost ones, so you know what you are missing until you read it: test behavior not implementation, a test that passes before the fix is not a regression test, assert values not the absence of an explosion, don't mock what you don't own, no logic in tests, deterministic or deleted.
 - If that file is missing, say so rather than improvising a testing standard, and re-run `bash run.sh --files="claude/setup.js"` (or any LLM setup script) to redeploy it.
 
@@ -147,7 +147,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 **These rules live in a separate file, and you are required to read it.**
 
-Everything governing branches, commits, pull requests, worktrees, links, merging, and review is in `<LLM_ROOT_FOLDER>/instructions/pr-workflow.md` — roughly a hundred rules, kept out of this file so it stays small enough to load every session.
+Everything governing branches, commits, pull requests, worktrees, links, merging, and review is in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` — roughly a hundred rules, kept out of this file so it stays small enough to load every session.
 
 - **Read that file in full before your first branch, commit, push, PR, or review action of a session**, and follow it as written. It is not a reference to consult if something looks unclear; not having read it is not a reason to skip a rule in it.
 - The rules there are binding exactly as if they appeared here. "It wasn't in my instructions" is wrong — this pointer is the instruction.
@@ -156,7 +156,7 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 ## Plans & Wrap-Ups
 
-- Every plan artifact lives **flat in `<LLM_ROOT_FOLDER>/plans/`** — one folder, every repo, no subfolder of any kind, nothing in the repo tree. Never `mkdir` a per-repo, per-feature, date, or `scripts/` folder there: the repo name is in the filename, so one `ls` is the whole inventory and `ls widget-store-*` the per-repo one. Outside the repo means no `.gitignore` entry and no accidental commit. Harness scratch (a session `plan.md`, a todo list) stays where the harness puts it.
+- Every plan artifact lives **flat in `<<LLM_ROOT_FOLDER>>/plans/`** — one folder, every repo, no subfolder of any kind, nothing in the repo tree. Never `mkdir` a per-repo, per-feature, date, or `scripts/` folder there: the repo name is in the filename, so one `ls` is the whole inventory and `ls widget-store-*` the per-repo one. Outside the repo means no `.gitignore` entry and no accidental commit. Harness scratch (a session `plan.md`, a todo list) stays where the harness puts it.
 - The plan file is `<repo>-<feature>.md` — **the one `-` after the repo is the separator, so `<feature>` is snake_case**: `widget-store-fix_auth_retry.md`. Repos carry their own hyphens (`widget-store-ui-fix_auth_retry.md`), which is why the feature must not. `<repo>` comes from the remote, never the folder name (see Repo Identification); `<feature>` alone feeds the branch `<group-slug>`, kebab-cased there. No date, no `plan-` prefix — a date duplicates the mtime and goes stale on first revision.
 - A **fully revised** plan gets a `_v<N>` suffix and keeps the older file — `widget-store-fix_auth_retry_v2.md`. Unsuffixed is v1, never renamed; `<N>` is an integer, so no `_vfinal`, `_vnew`, `_final2`. Editing a plan still in flight is an edit — bump only for a rewrite that would otherwise destroy reasoning worth keeping.
 - **Every file a plan produces is a sidecar sharing its stem** — `<repo>-<feature>.<name>.<ext>`, `<name>` snake_case too. The diff is `<repo>-<feature>.diff`, an RFC `<repo>-<feature>.rfc.md`, a generated script, CSV, JSON, or SQL dump `widget-store-fix_auth_retry.migrate_local_db.sh`. A bare `migrate_local_db.sh` beside forty plans belongs to nobody — the stem **is** the linkage, so never write one to a standalone name, a `scripts/` folder, or `/tmp`. A sidecar dies with its plan.
@@ -235,7 +235,7 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 **These rules live in a separate file, and you are required to read it.**
 
-- **Read `<LLM_ROOT_FOLDER>/instructions/risky-changes.md` in full before removing or renaming anything, before a schema or data migration, before a dependency upgrade, and before a breaking contract change**, and follow it as written.
+- **Read `<<LLM_ROOT_FOLDER>>/instructions/risky-changes.md` in full before removing or renaming anything, before a schema or data migration, before a dependency upgrade, and before a breaking contract change**, and follow it as written.
 - The rules there are binding exactly as if they appeared here. Highest-cost ones, so you know what you are missing until you read it: removing anything is a downstream audit first, a green test suite is not consumer coverage, degradation is the failure mode to hunt for, uncertain means deprecate not delete, every migration ships with its reversal, breaking changes need a title flag and a migration note.
 - **The one rule that applies even when you did not set out to remove anything: deleting a field, prop, endpoint, or config key is a change to every consumer of it, including ones in other repos and other layers.** An optimization trimming a "redundant" payload field and a refactor dropping an "unused" branch are removals, and they are the ones that ship unaudited. Enumerate the consumers, or keep the old shape and deprecate it.
 - If that file is missing, say so rather than improvising, and re-run `bash run.sh --files="claude/setup.js"` (or any LLM setup script) to redeploy it.
@@ -253,4 +253,4 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 - Everything above is rules; the persona at the top of this file is the voice they ship in. Answer as it defines — terse, fragments, substance intact, never named out loud.
 - It sits first in context and so decays first: over a long session, after compaction, after a wall of tool output. This reminder is last so it is also the most recent. Slipped into normal prose? Rewrite the sentence.
-- Exemptions and the full rule set: `<LLM_ROOT_FOLDER>/instructions/persona.md`.
+- Exemptions and the full rule set: `<<LLM_ROOT_FOLDER>>/instructions/persona.md`.

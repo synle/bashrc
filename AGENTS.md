@@ -837,23 +837,24 @@ happily to the old path, and the surfaces disagree silently. The default belongs
 declaration in `common-env.sh`. Unset means `run.sh` never ran, and an obviously-broken path
 (or a `path.join` that throws) is the correct, visible outcome.
 
-**Deployed docs reference the folder through a `<LLM_ROOT_FOLDER>` placeholder, resolved at
+**Deployed docs reference the folder through a `<<LLM_ROOT_FOLDER>>` placeholder, resolved at
 deploy time.** A repo source cannot hardcode `~/_extra/ai_llm/...` — that is the same second
 spelling, and it is wrong outright on a machine whose home layout differs. It cannot carry
 `$LLM_ROOT_FOLDER` either: an agent reading `~/.claude/CLAUDE.md` has no shell expanding
 anything, and an unexpanded variable inside a `mkdir -p` is a write at the filesystem root.
-So the source writes `` `<LLM_ROOT_FOLDER>/plans/` `` and `resolveLLMDocPlaceholders()`
+So the source writes `` `<<LLM_ROOT_FOLDER>>/plans/` `` and `resolveLLMDocPlaceholders()`
 bakes in the absolute path on the way out. The token name matches the env var name exactly.
 
 - **Every deployed doc is read through `readLLMDocSource()`** — the always-loaded
   instructions, each split instruction file, every `/sy-*` skill body, and each CLI's own
   tweaks file. Never call `readText` directly on a doc that gets deployed: a source that
-  skips resolution ships `<LLM_ROOT_FOLDER>` verbatim to an agent, which reads as a literal
+  skips resolution ships `<<LLM_ROOT_FOLDER>>` verbatim to an agent, which reads as a literal
   folder name and fails silently.
 - **Repo-local docs keep the literal path instead** — this file, `docs/`, `llm.md`, and
   `.claude/skills/*/SKILL.md` are read straight from the checkout with nothing resolving
-  them, so a placeholder there would be a permanently-unexpanded token. `<SY_ROOT_FOLDER>`
-  is available in the same map for docs that mean the personal root rather than the LLM home.
+  them, so a placeholder there would be a permanently-unexpanded token. `<<SY_ROOT_FOLDER>>`
+  is resolved for every template by `COMMON_PLACEHOLDERS` in `software/index.js`, for docs
+  that mean the personal root rather than the LLM home.
 
 **Moving the folder again is two edits: this one line, plus a row in
 `LLM_LEGACY_FOLDERS`.** Nothing is moved automatically — the one-time migration that
