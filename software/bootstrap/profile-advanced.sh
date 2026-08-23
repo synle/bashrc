@@ -2061,6 +2061,7 @@ _prompt_command_add "_bashrc_update_check_show"
 # SOURCE | software/scripts/bash-history.profile.bash
 # SOURCE | software/scripts/bash-keys.profile.bash
 # SOURCE | software/scripts/bash-file-utils.profile.bash
+# SOURCE | software/scripts/bash-sqlite.profile.bash
 # SOURCE | software/scripts/bash-tmux-workspace.profile.bash
 # BEGIN/END | Fuzzy Filter Patterns
 # SOURCE | software/scripts/bash-fzf.profile.bash
