@@ -765,7 +765,6 @@ const LLM_SHARED_INSTRUCTION_FILES = {
   "pr-workflow.md": "software/scripts/advanced/llm/_common/instructions-pr-workflow.md",
   "debugging.md": "software/scripts/advanced/llm/_common/instructions-debugging.md",
   "testing.md": "software/scripts/advanced/llm/_common/instructions-testing.md",
-  "risky-changes.md": "software/scripts/advanced/llm/_common/instructions-risky-changes.md",
   "readability.md": "software/scripts/advanced/llm/_common/instructions-readability.md",
   // Unlike its siblings, this one is ALSO inlined back into the top of
   // instructions.md through a BEGIN/END path block, so the always-loaded copy and
