@@ -177,24 +177,64 @@ tee successful runs too.
 
 ## Installing the binary
 
-`snip` is not in [`software/metadata/ci-binaries.json`](../software/metadata/ci-binaries.json)
-and no script installs it, so the profile partial treats it as optional throughout. Install
-it yourself and everything here lights up:
+[`software/scripts/advanced/snip.sh`](../software/scripts/advanced/snip.sh) installs the
+binary through snip's own POSIX installer (`curl -fsSL .../install.sh | sh`) on macOS and
+Linux, gated on `has_persistent_binary` so it is a no-op once present. It lands in
+`/usr/local/bin` when writable, otherwise `$HOME/.local/bin`. Windows is skipped — the
+installer ships no Windows release. `snip` is in the `warn` list of
+[`software/metadata/ci-binaries.json`](../software/metadata/ci-binaries.json), never
+`required`, since it is an advanced-profile tool absent on limited-support OSes.
 
 ```bash
-snip --version   # currently v0.24.1, 132 filters
+bash run.sh --files="snip.sh"   # install / refresh the binary
+snip --version                  # currently v0.24.1, 132 filters
 ```
 
-The partial has no hard dependency on it — `_snip_ready` gates every path, `sn` degrades to
-a passthrough, and `snip_coverage` / `snip_logs` report plainly that snip is missing.
+The profile partial still has no hard dependency on it — `_snip_ready` gates every path,
+`sn` degrades to a passthrough, and `snip_coverage` / `snip_logs` report plainly that snip
+is missing, so a machine that skipped the installer (limited-support OS, install failure)
+keeps working.
+
+## Agent hooks
+
+The **binary** is installed by [`software/scripts/advanced/snip.sh`](../software/scripts/advanced/snip.sh).
+The **agent integration** is NOT done by running `snip init` — that command _overwrites_ the
+agent's config file (for Gemini it replaces the whole `~/.gemini/GEMINI.md`, wiping the
+repo-managed instructions). Instead the LLM setup owns it, merge-safe, gated on the agent
+CLI being installed:
+
+| Agent   | Integration                     | Location                     | Owned by                                                                                         |
+| ------- | ------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| Claude  | native `PreToolUse` (Bash) hook | `~/.claude/settings.json`    | [`claude/setup.js`](../software/scripts/advanced/llm/claude/setup.js) `_doClaudeSnipHookWork`    |
+| Copilot | native `preToolUse` hook        | `~/.copilot/hooks/snip.json` | [`copilot/setup.js`](../software/scripts/advanced/llm/copilot/setup.js) `_doCopilotSnipHookWork` |
+| Gemini  | prompt-injection block          | `~/.gemini/GEMINI.md`        | [`gemini/setup.js`](../software/scripts/advanced/llm/gemini/setup.js) `_doGeminiSnipWork`        |
+
+**Claude & Copilot** write native hooks (`snip hook` / `snip hook copilot`). Claude's merges
+into the shared `settings.json` under `hooks.PreToolUse` (matcher `Bash`), preserving every
+other setting and hook; Copilot's is a dedicated `snip.json` file. Both use snip's absolute
+path since the hook runs where `~/.local/bin` may not be on PATH, and both are fail-open.
+
+**Gemini** appends a managed `<!-- BEGIN synle/bashrc | snip integration -->` block to
+GEMINI.md via `replaceBlock`, preserving the engineering-principles block and any user
+content — never the wholesale overwrite `snip init --agent gemini` would do.
+
+**Known-good commands only.** No integration wraps arbitrary commands. The native hooks
+(Claude, Copilot) enforce this themselves — `snip hook` only rewrites snip's ~100 filtered
+commands; everything else, plus mixed commands and pipelines, passes through. Gemini's prompt
+injection can't rely on that, so the shared source
+[`_common/instructions-snip.md`](../software/scripts/advanced/llm/_common/instructions-snip.md)
+spells out an explicit allowlist (`git`, `go`, `docker`, `kubectl`, …) and tells the model to
+run everything else unprefixed. That file is the **single source** for the text form —
+referenced via `LLM_SNIP_INSTRUCTION_SOURCE` in `llm-common.js`, never duplicated per CLI.
+
+**First-run lag.** All three are gated on snip being installed. Since `snip.sh` sorts after
+the `llm/` setup in discovery order, on a first `--setup` the binary isn't present yet when
+the setup scripts run, so the hook/block lands on the next `bash run.sh`. Idempotent thereafter.
+
+**Not wired for other agents.** Cursor, Codex, and the rest are left to a human decision.
+OpenCode uses a separate plugin ([opencode-snip](https://github.com/VincentHardouin/opencode-snip)).
 
 ## What is deliberately not wired
-
-**No agent hook.** `snip init --agent copilot` (also `claude-code`, `cursor`, `codex`,
-`gemini`, and others) installs a `PreToolUse` hook that filters every command an agent
-runs. That is the highest-leverage integration snip offers and it is intentionally left to
-a human decision: installing an agent hook is installing a hook, which needs to clear the
-same bar as any other third-party integration. Nothing in this repo installs one.
 
 **No project-local filters yet.** See below.
 

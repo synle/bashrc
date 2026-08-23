@@ -48,6 +48,7 @@
     { "name": "aws", "version_cmd": "aws --version" },
     { "name": "az", "version_cmd": "az --version" },
     { "name": "gcloud", "version_cmd": "gcloud --version" },
-    { "name": "shellcheck", "version_cmd": "shellcheck --version" }
+    { "name": "shellcheck", "version_cmd": "shellcheck --version" },
+    { "name": "snip", "version_cmd": "snip --version" }
   ]
 }

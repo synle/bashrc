@@ -373,6 +373,7 @@ runs:
         check_binary_warn az "az --version"
         check_binary_warn gcloud "gcloud --version"
         check_binary_warn shellcheck "shellcheck --version"
+        check_binary_warn snip "snip --version"
         # END ci-binary-checks
         # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`.
         # `magick` (v7, Homebrew) stays required — mac install is reliable.

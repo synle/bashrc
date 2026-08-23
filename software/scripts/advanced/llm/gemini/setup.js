@@ -322,10 +322,61 @@ async function _doMcpWork(targetDir) {
 
   existing.mcpServers = merged;
   await backupConfigFile(targetPath);
-  await writeJson(targetPath, existing);
+  await writeText(targetPath, merged);
 }
 
-// --- Instructions (User-Level GEMINI.md) ---
+// --- Snip prompt injection (token filter) ---
+
+/**
+ * Appends a managed snip prompt-injection block to ~/.gemini/GEMINI.md.
+ *
+ * `snip init --agent gemini` produces this block, but it OVERWRITES the whole
+ * GEMINI.md — wiping the engineering-principles block written just above. So the
+ * repo owns it instead: the shared prompt-injection text (LLM_SNIP_INSTRUCTION_SOURCE
+ * in _common, the single source for every text-form CLI) is deployed here as its own
+ * keyed BEGIN/END block via replaceBlock, which preserves everything else in the file
+ * (including the engineering-principles block). Runs AFTER `_doGeminiInstructionsWork`
+ * so that block already exists when this one appends.
+ *
+ * Scoped to a known-good command allowlist (see the source file): the block tells the
+ * model to prefix only those commands with snip and run everything else unprefixed, so
+ * it never wraps arbitrary commands. This is Gemini's substitute for the native filter
+ * gate that claude/copilot get from `snip hook`.
+ *
+ * Skipped when snip is not installed — the binary is put on disk by
+ * `software/scripts/advanced/snip.sh`, which runs later in the same
+ * advanced-profile pass, so on a first `--setup` the block lands on the next run.
+ * Gating matters more here than for a native hook: this instructs the model to
+ * prefix commands with `snip`, which would fail if the binary were absent.
+ *
+ * @param {string} targetDir - Path to the ~/.gemini directory.
+ */
+async function _doGeminiSnipWork(targetDir) {
+  if (!(await isBinaryFound("snip"))) {
+    log(">> Gemini snip block: SKIPPED — snip not installed");
+    return;
+  }
+
+  const targetPath = path.join(targetDir, "GEMINI.md");
+
+  log(">> Gemini CLI snip block:", targetPath);
+
+  /** @type {string} The shared prompt-injection markdown, portable (`snip` on PATH). */
+  const sourceContent = await readText`${LLM_SNIP_INSTRUCTION_SOURCE}`;
+
+  /** @type {string} Existing GEMINI.md content (empty if file is missing). */
+  let existing = "";
+  try {
+    existing = fs.readFileSync(targetPath, "utf-8");
+  } catch (e) {}
+
+  // Upsert the snip block, preserving the engineering-principles block and any
+  // user content. insertMode "append" creates it at the end when absent.
+  const merged = replaceBlock(existing, LLM_SNIP_INSTRUCTION_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+
+  await backupConfigFile(targetPath);
+  await writeText(targetPath, merged);
+}
 
 /**
  * Deploys the shared engineering principles into ~/.gemini/GEMINI.md between
@@ -397,6 +448,7 @@ async function doWork() {
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
   await deploySharedLLMInstructions();
   await _doGeminiInstructionsWork(targetDir);
+  await _doGeminiSnipWork(targetDir);
   // Skills live once in $LLM_ROOT_FOLDER/skills and are symlinked into ~/.gemini/skills.
   await deploySharedLLMSkills();
 
