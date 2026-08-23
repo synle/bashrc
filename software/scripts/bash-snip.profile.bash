@@ -14,12 +14,18 @@
 # snip_coverage       — Report how much of your own history snip can filter
 # snip_logs           — List / print the full output snip saved on a failure
 #
-# --- Why this is opt-in and never a transparent wrapper ---
+# --- Why `sn` is opt-in, and where the transparent wrappers live ---
 # snip rewrites output even when stdout is a pipe: `snip run -- ls -la /usr/bin`
 # returns reordered columns with the permission and owner fields dropped. Any
-# script parsing that output would silently read the wrong thing, so `git`,
-# `ls`, `gh` and friends are deliberately left alone. Reach for `sn` when you
-# want the short form, and call the binary directly when you want the bytes.
+# script parsing that output would silently read the wrong thing — so `sn` never
+# filters a command whose name is already a shell function, and filtering it is a
+# deliberate `sn <cmd>` rather than a redefinition of `<cmd>` itself.
+#
+# The transparent per-command wrappers (`npm`, `docker`, `pytest`, … and their
+# `raw_<cmd>` escape hatches) live in bash-snip-command-wrappers.profile.bash,
+# which is safe precisely because every wrapper is guarded on `[ -t 1 ]`: it only
+# filters at an interactive TTY and passes the raw bytes through for every pipe,
+# `$(...)`, and redirect. `git`, `ls`, `grep` and friends are still never wrapped.
 ################################################################################
 
 # _snip_ready: succeed when the snip binary is installed
