@@ -407,6 +407,30 @@ async function getAcpAgentInputs() {
 const LLM_COPILOT_PROVIDER_ID = "github-copilot";
 
 /**
+ * Whether opencode's DEFAULT agent (`build`) gets a PINNED GitHub Copilot model.
+ *
+ * OFF on purpose. `build` is the agent opencode starts every session on, so a `model`
+ * there does not act as a default — it acts as an override the model picker cannot beat:
+ * the agent's own model wins on every turn, so a model chosen in the TUI is discarded the
+ * moment `build` runs. With the pin off, the `build` row resolves to `null` and no
+ * `agent.build` key is written at all, leaving opencode on whatever the user selected.
+ *
+ * Flip to `true` to hand opencode a fixed default again — `build` then pins
+ * `OPENCODE_PINNED_DEFAULT_MODEL`. Roles a user invokes deliberately (`plan`, `review`,
+ * `local`) keep their pins either way; only the always-on default is gated here.
+ * @type {boolean}
+ */
+const IS_OPENCODE_DEFAULT_MODEL_PINNED = false;
+
+/**
+ * The model `build` pins when `IS_OPENCODE_DEFAULT_MODEL_PINNED` is on — the GitHub
+ * Copilot default. Declared even while the pin is off so flipping the flag is a one-word
+ * edit and the intended model stays documented rather than deleted.
+ * @type {string}
+ */
+const OPENCODE_PINNED_DEFAULT_MODEL = `${LLM_COPILOT_PROVIDER_ID}/claude-opus-5`;
+
+/**
  * Local (Ollama) agent model tags in priority order — first tag that a reachable
  * Ollama host actually serves wins. Mirrors the agent-side coding tags in
  * opencode's `OLLAMA_MODEL_CONFIGS`; the `-base` FIM tags in `AUTOCOMPLETE_MODELS`
@@ -452,6 +476,10 @@ const LLM_LOCAL_AGENT_MODELS = [
  * `resolveOpencodeAgentConfig()` turns it into a concrete `model` and drops the agent
  * entirely when nothing local is reachable.
  *
+ * `build`'s opencode entry is additionally gated on `IS_OPENCODE_DEFAULT_MODEL_PINNED`,
+ * which is OFF: pinning a model on the agent opencode starts every session on overrides
+ * the TUI picker rather than seeding it. `null` there means "no pin", not "unsupported".
+ *
  * @type {Record<string, Record<string, object|null>>}
  */
 const AGENT_TO_MODEL_MAP = {
@@ -459,7 +487,10 @@ const AGENT_TO_MODEL_MAP = {
     claude: null,
     copilot: null,
     gemini: null,
-    opencode: { mode: "primary", model: `${LLM_COPILOT_PROVIDER_ID}/claude-opus-5` },
+    // Gated on IS_OPENCODE_DEFAULT_MODEL_PINNED — `null` (the documented "write nothing"
+    // value) when the pin is off, so opencode.json carries no `agent.build` and the model
+    // picked in the TUI stands instead of being overridden on every turn.
+    opencode: IS_OPENCODE_DEFAULT_MODEL_PINNED ? { mode: "primary", model: OPENCODE_PINNED_DEFAULT_MODEL } : null,
   },
   plan: {
     claude: null,
