@@ -7,6 +7,13 @@ import { execSync } from "child_process";
 // ---- load SPEC_COMMANDS and known tokens from autocomplete.common.js ----
 const commonSource = fs.readFileSync("software/metadata/autocomplete.common.js", "utf-8");
 
+/**
+ * The single declaration of $SY_ROOT_FOLDER (software/bootstrap/common-env.sh). Profile
+ * partials assume it was sourced first — sourcing it in every generated test script keeps
+ * that contract without a second literal here.
+ */
+const COMMON_ENV_PATH = path.resolve("software/bootstrap/common-env.sh");
+
 // extract SPEC_COMMANDS array by evaluating the file in a sandbox
 const vm = await import("vm");
 const sandbox = {};
@@ -219,6 +226,7 @@ function buildCompletionTestScript(specContent, compWords, compCword, setupCode 
     .join("3");
   return `#!/usr/bin/env bash
 set -uo pipefail
+source "${COMMON_ENV_PATH}"
 source "${process.cwd()}/software/scripts/bash-fzf.profile.bash"
 ${setupCode}
 ${funcBody}
@@ -779,7 +787,7 @@ describe("bash-fzf.profile.bash (direct)", () => {
 
   /** Runs a bash script that sources bash-fzf.profile.bash and returns stdout lines. */
   function runFzfHelper(script) {
-    const full = `#!/usr/bin/env bash\nsource "${fzfTemplatePath}"\n${script}`;
+    const full = `#!/usr/bin/env bash\nsource "${COMMON_ENV_PATH}"\nsource "${fzfTemplatePath}"\n${script}`;
     return execSync("bash", { input: full, encoding: "utf-8", cwd: tmpDir, timeout: 10000 })
       .trim()
       .split("\n")
