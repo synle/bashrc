@@ -68,6 +68,23 @@ const LLM_INSTRUCTIONS_MARKER = "synle/bashrc | software/scripts/advanced/llm/_c
  */
 const LLM_INSTRUCTIONS_LEGACY_MARKER = "managed-rules";
 
+/**
+ * Marker key for the managed snip prompt-injection block. Distinct from
+ * LLM_INSTRUCTIONS_MARKER so the two blocks upsert independently in the same file.
+ * @type {string}
+ */
+const LLM_SNIP_INSTRUCTION_MARKER = "synle/bashrc | snip integration";
+
+/**
+ * Repo source for the snip prompt-injection instruction — the SINGLE source shared by
+ * every text-form (prompt-injection) CLI integration. Consumed today by gemini/setup.js;
+ * any future prompt-injection CLI (opencode, cursor, …) references this same constant
+ * rather than duplicating the text. CLIs with a NATIVE snip hook (claude, copilot) do NOT
+ * use this — snip's own filter matching is their allowlist, so they need no instruction.
+ * @type {string}
+ */
+const LLM_SNIP_INSTRUCTION_SOURCE = "software/scripts/advanced/llm/_common/instructions-snip.md";
+
 // --- Shared MCP Server Registry ---
 
 /**
