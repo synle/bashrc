@@ -42,7 +42,7 @@ function _sqlite_auto_vacuum_label() {
 
 # sqlite_raw: run raw SQL against a SQLite database
 function sqlite_raw() {
-  if [ #-eq0]||ishelparg"{1:-}"; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "sqlite_raw: run raw SQL against a SQLite database
   Usage: sqlite_raw <path.db> '<raw sql>'
          <raw sql> | sqlite_raw <path.db>
@@ -70,19 +70,19 @@ function sqlite_raw() {
     sql="$(command cat)"
   fi
 
-  if [ -z "(printf'%s'"sql" | tr -d '[:space:]')" ]; then
+  if [ -z "$(printf '%s' "$sql" | tr -d '[:space:]')" ]; then
     echo "sqlite_raw: no SQL given — pass it as the second argument or pipe it on stdin" >&2
     return 1
   fi
 
   # Summary goes to stderr — stdout here is the query result and gets piped.
-  print_action_summary "db""bin" >&2
-  command "bin""db" "$sql"
+  print_action_summary "$db" "$bin" >&2
+  command "$bin" "$db" "$sql"
 }
 
 # sqlite_vaccum: VACUUM a SQLite database
 function sqlite_vaccum() {
-  if [ #-eq0]||ishelparg"{1:-}"; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "sqlite_vaccum: VACUUM a SQLite database (rebuild the file, reclaim free pages)
   Usage: sqlite_vaccum <path.db>
   Rewrites the whole file, so it needs free disk space of roughly the db size.
@@ -99,19 +99,19 @@ function sqlite_vaccum() {
     return 1
   fi
 
-  print_action_summary "db""bin"
+  print_action_summary "$db" "$bin"
 
   local before after
-  before="(wc-c<"db" | tr -d '[:space:]')"
-  command "bin""db" "VACUUM;" || return 1
-  after="(wc-c<"db" | tr -d '[:space:]')"
+  before="$(wc -c < "$db" | tr -d '[:space:]')"
+  command "$bin" "$db" "VACUUM;" || return 1
+  after="$(wc -c < "$db" | tr -d '[:space:]')"
   echo "  > VACUUM > $db > $before -> $after bytes"
 }
 alias sqlite_vacuum=sqlite_vaccum
 
 # sqlite_vaccum_auto: turn auto_vacuum FULL on for a SQLite database
 function sqlite_vaccum_auto() {
-  if [ #-eq0]||ishelparg"{1:-}"; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "sqlite_vaccum_auto: turn auto_vacuum FULL on for a SQLite database
   Usage: sqlite_vaccum_auto <path.db>
   Sets PRAGMA auto_vacuum = FULL then runs VACUUM — on an existing database the
@@ -130,17 +130,17 @@ function sqlite_vaccum_auto() {
     return 1
   fi
 
-  print_action_summary "db""bin"
+  print_action_summary "$db" "$bin"
 
   local before after
-  before="(command"bin" "$db" "PRAGMA auto_vacuum;" 2> /dev/null | tr -d '[:space:]')"
-  command "bin""db" "PRAGMA auto_vacuum = FULL; VACUUM;" || return 1
-  after="(command"bin" "$db" "PRAGMA auto_vacuum;" 2> /dev/null | tr -d '[:space:]')"
+  before="$(command "$bin" "$db" "PRAGMA auto_vacuum;" 2> /dev/null | tr -d '[:space:]')"
+  command "$bin" "$db" "PRAGMA auto_vacuum = FULL; VACUUM;" || return 1
+  after="$(command "$bin" "$db" "PRAGMA auto_vacuum;" 2> /dev/null | tr -d '[:space:]')"
 
-  echo "  > Auto-vacuum > $db > (sqliteautovacuumlabel"before") -> (sqliteautovacuumlabel"after")"
+  echo "  > Auto-vacuum > $db > $(_sqlite_auto_vacuum_label "$before") -> $(_sqlite_auto_vacuum_label "$after")"
 
   if [ "$after" != "1" ]; then
-    echo ">> Warning: auto_vacuum did not stick (still (sqliteautovacuumlabel"after")) — the VACUUM may not have completed." >&2
+    echo ">> Warning: auto_vacuum did not stick (still $(_sqlite_auto_vacuum_label "$after")) — the VACUUM may not have completed." >&2
     return 1
   fi
 }
