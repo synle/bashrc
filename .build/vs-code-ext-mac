@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AUTO-GENERATED - DO NOT EDIT [2026-08-22]
+# AUTO-GENERATED - DO NOT EDIT [2026-08-23]
 set -u
 deprecated_extensions=(
   "visualstudioexptteam.vscodeintellicode"

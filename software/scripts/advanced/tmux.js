@@ -1,4 +1,38 @@
 /** Installs tmux plugin manager (tpm) and writes tmux configuration. */
+
+/**
+ * @type {Object<string, string|number>} Tunable values substituted into
+ * `tmux.config` at write time. The config file carries `{{KEY}}` placeholders;
+ * every entry here replaces its matching token, so a number like the pane
+ * resize step is declared once here instead of repeated across eight `bind`
+ * lines. Keys are the bare token name without the braces.
+ */
+const TMUX_CONFIG = {
+  // Cells moved per prefix+alt-arrow / prefix+ctrl-arrow resize step. tmux's
+  // stock steps are 5 and 1, both too small to cross a wide pane without a
+  // long key repeat.
+  RESIZE_PANE_CELLS: 10,
+};
+
+/**
+ * Replaces every `{{KEY}}` placeholder in the raw tmux config with its value
+ * from {@link TMUX_CONFIG}.
+ *
+ * @param {string} content - Raw `tmux.config` text, placeholders intact.
+ * @returns {string} The config with every known placeholder substituted.
+ */
+function resolveTmuxConfigPlaceholders(content) {
+  for (const [token, value] of Object.entries(TMUX_CONFIG)) {
+    content = content.split(`{{${token}}}`).join(String(value));
+  }
+  return content;
+}
+
+/**
+ * Installs tpm and writes `~/.tmux.conf` plus the copy shim.
+ *
+ * @returns {Promise<void>}
+ */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".tmux.conf");
   const tpmPath = path.join(BASE_HOMEDIR_LINUX, ".tmux", "plugins", "tpm");
@@ -17,7 +51,7 @@ async function doWork() {
 
   // write tmux config
   log(">> Updating .tmux.conf", targetPath);
-  const content = await readText`software/scripts/advanced/tmux.config`;
+  const content = resolveTmuxConfigPlaceholders(await readText`software/scripts/advanced/tmux.config`);
   await writeText(targetPath, content);
 
   await writeTmuxCopyShim();

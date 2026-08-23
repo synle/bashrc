@@ -279,7 +279,8 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 `prompt_tab_title` (`ghostty-keys.common.jsonc`) and consumes it first. Use
 `OS_KEY+F2` inside tmux. Both are bound, so `F2` still works in terminals that leave
 the key alone. On macOS either chord needs *Keyboard → Use F1, F2, etc. keys as
-standard function keys* enabled, or an added `fn`.
+standard function keys* enabled, or an added `fn`. `ctrl+b` then `r` renames too and
+needs no function key at all — see the prefix-chord table below.
 
 ⚠️ `OS_KEY+shift+[/]` is bound in `advanced/tmux.config` but does **not** fire on
 macOS + Ghostty: `[` and `]` are the CSI and OSC escape-sequence introducers, so tmux
@@ -307,10 +308,12 @@ back in its layout slot. There are no zoom levels, so there is deliberately no
 zoom-in / zoom-out pair. `OS_KEY+z`, `OS_KEY+shift+\`, and `F11` all toggle the same
 state.
 
-tmux pane resize keeps tmux's stock `prefix+ctrl+arrow` at 1 cell for fine adjustment,
-but `prefix+alt+arrow` is doubled from tmux's stock 5 cells to **10** — 5 needed too
-many repeats to cross a wide pane. Both are repeatable: hold the prefix once, then tap
-arrows. Mouse border drag also works (`mouse on`).
+tmux pane resize overrides both stock steps — `prefix+alt+arrow` (stock 5 cells) and
+`prefix+ctrl+arrow` (stock 1 cell) both move the border by **10** cells, so either chord
+travels the same distance and neither needs a long key repeat to cross a wide pane. The
+step is declared once as `RESIZE_PANE_CELLS` in `advanced/tmux.js` and substituted into
+`advanced/tmux.config`. Both are repeatable: hold the prefix once, then tap arrows. Mouse
+border drag also works (`mouse on`).
 
 `OS_KEY+0` breaks the current split into a window of its own (stock `prefix+!`). It sits
 at the end of the `OS_KEY+1-9` row because `base-index 1` means there is no window 0, so
@@ -354,22 +357,26 @@ relocated them because `OS_KEY+arrow` is split navigation here.
 ### tmux Prefix Chords (`ctrl+b`)
 
 The `OS_KEY` tables above are the custom `alt+`-prefixed bindings from `advanced/tmux.config`.
-These are the stock **prefix chords** — press `ctrl+b`, release, then the key. They are tmux
-defaults (plus `c`, which we rebind only to inherit the current pane's path), so they keep
-working in any tmux, including one running a config this repo did not write.
+These are the stock **prefix chords** — press `ctrl+b`, release, then the key. Most are tmux
+defaults, so they keep working in any tmux, including one running a config this repo did not
+write. The exceptions are marked ⚠️ below: `c` inherits the current pane's path, `,` / `.`
+/ `n` / `r` are rebound away from their stock actions, and both resize steps are widened.
 
 | Chord             | Action                                                                         |
 | ----------------- | ------------------------------------------------------------------------------ |
 | `ctrl+b` then `[` | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit) |
-| `ctrl+b` then `,` | Rename the current window (tab)                                                |
-| `ctrl+b` then `c` | Create a new window (opens in the current pane's folder)                       |
+| `ctrl+b` then `,` | ⚠️ Previous window (stock: rename window — now `r`)                            |
+| `ctrl+b` then `.` | ⚠️ Next window (stock: move window — use the `prefix+:` prompt)                 |
+| `ctrl+b` then `r` | ⚠️ Rename the current window (stock: `refresh-client`)                          |
+| `ctrl+b` then `c` | ⚠️ Create a new window (opens in the current pane's folder)                    |
+| `ctrl+b` then `n` | ⚠️ Create a new window, alias of `c` (stock: next window — now `.`)            |
 | `ctrl+b` then `w` | Interactive window/session switcher (`choose-tree`)                            |
+| `ctrl+b` then `tab` | Same switcher as `w` — `tab` is unbound in stock tmux, so this is an addition |
 | `ctrl+b` then `x` | Close / kill the current pane (confirms first)                                 |
-| `ctrl+b` then `n` | Next window                                                                    |
 | `ctrl+b` then `p` | Previous window                                                                |
 | `ctrl+b` then `arrow` | Focus the split in that direction (`select-pane`)                          |
-| `ctrl+b` then `alt+arrow` | Resize the split by 5 — hold `ctrl+b`, tap repeatedly (built-in)     |
-| `ctrl+b` then `ctrl+arrow` | Resize the split by 1 (built-in)                                   |
+| `ctrl+b` then `alt+arrow` | ⚠️ Resize the split by 10 (stock 5) — hold `ctrl+b`, tap repeatedly  |
+| `ctrl+b` then `ctrl+arrow` | ⚠️ Resize the split by 10 (stock 1)                                |
 | `ctrl+b` then `y` | Copy the whole visible pane to the clipboard                                   |
 | `ctrl+b` then `'` | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)        |
 
@@ -393,7 +400,7 @@ function is not on PATH there — the shim sources the profile first. On a host 
 clipboard tool at all (headless, ssh), tmux's own OSC 52 sequence carries the selection to
 the outer terminal instead.
 
-These six chords cover most day-to-day tmux use and need no mouse. Prefer them over the
+These prefix chords cover most day-to-day tmux use and need no mouse. Prefer them over the
 `alt+` chords when a terminal emulator or remote host swallows `alt`.
 
 Workflow patterns built on top of these — scripted workspace sessions, detach/re-attach —
