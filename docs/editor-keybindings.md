@@ -261,25 +261,25 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 
 ### Tabs & Windows
 
-| Key                | Action          | Windows Terminal | tmux | Ghostty |
-| ------------------ | --------------- | :--------------: | :--: | :-----: |
-| `OS_KEY+t`         | New tab         |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+1-9`       | Tab by index    |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+shift+[/]` | Prev / next tab |        ✅        |  ⚠️  |   ✅    |
-| `OS_KEY+tab`       | Next tab        |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+shift+tab` | Prev tab        |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+w`         | Close pane      |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+x`         | Close pane (alt)|        ❌        |  ✅  |   ❌    |
-| `OS_KEY+q`         | Close window    |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+n`         | New window      |        ✅        |  ✅  |   ✅    |
-| `F2`               | Rename tab      |        ✅        |  ⚠️  |   ✅    |
-| `OS_KEY+F2`        | Rename tab      |        ❌        |  ✅  |   ❌    |
+| Key                | Action           | Windows Terminal | tmux | Ghostty |
+| ------------------ | ---------------- | :--------------: | :--: | :-----: |
+| `OS_KEY+t`         | New tab          |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+1-9`       | Tab by index     |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+shift+[/]` | Prev / next tab  |        ✅        |  ⚠️  |   ✅    |
+| `OS_KEY+tab`       | Next tab         |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+shift+tab` | Prev tab         |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+w`         | Close pane       |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+x`         | Close pane (alt) |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+q`         | Close window     |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+n`         | New window       |        ✅        |  ✅  |   ✅    |
+| `F2`               | Rename tab       |        ✅        |  ⚠️  |   ✅    |
+| `OS_KEY+F2`        | Rename tab       |        ❌        |  ✅  |   ❌    |
 
 ⚠️ Bare `F2` never reaches tmux under Ghostty, which binds it to its own
 `prompt_tab_title` (`ghostty-keys.common.jsonc`) and consumes it first. Use
 `OS_KEY+F2` inside tmux. Both are bound, so `F2` still works in terminals that leave
-the key alone. On macOS either chord needs *Keyboard → Use F1, F2, etc. keys as
-standard function keys* enabled, or an added `fn`. `ctrl+b` then `r` renames too and
+the key alone. On macOS either chord needs _Keyboard → Use F1, F2, etc. keys as
+standard function keys_ enabled, or an added `fn`. `ctrl+b` then `r` renames too and
 needs no function key at all — see the prefix-chord table below.
 
 ⚠️ `OS_KEY+shift+[/]` is bound in `advanced/tmux.config` but does **not** fire on
@@ -290,18 +290,18 @@ the pair verified to fire everywhere and are the ones to reach for.
 
 ### Splits & Panes
 
-| Key                  | Action                      | Windows Terminal |       tmux        | Ghostty |
-| -------------------- | --------------------------- | :--------------: | :---------------: | :-----: |
-| `OS_KEY+d`           | Split vertical (left/right) |        ✅        |        ✅         |   ✅    |
-| `OS_KEY+shift+d`     | Split horiz (top/bottom)    |        ✅        |        ✅         |   ✅    |
-| `OS_KEY+'`           | Split horiz (alt)           |        ✅        |        ✅         |   ✅    |
-| `OS_KEY+arrow`       | Navigate panes              |        ✅        |        ✅         |   ✅    |
+| Key                  | Action                      | Windows Terminal |         tmux          | Ghostty |
+| -------------------- | --------------------------- | :--------------: | :-------------------: | :-----: |
+| `OS_KEY+d`           | Split vertical (left/right) |        ✅        |          ✅           |   ✅    |
+| `OS_KEY+shift+d`     | Split horiz (top/bottom)    |        ✅        |          ✅           |   ✅    |
+| `OS_KEY+'`           | Split horiz (alt)           |        ✅        |          ✅           |   ✅    |
+| `OS_KEY+arrow`       | Navigate panes              |        ✅        |          ✅           |   ✅    |
 | `OS_KEY+shift+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+alt+arrow) |   ✅    |
-| `OS_KEY+0`           | Break split into own window |        ❌        |        ✅         |   ❌    |
-| `OS_KEY+z`           | Toggle split zoom (alt)     |        ❌        |        ✅         |   ❌    |
-| `OS_KEY+\`           | Toggle UI (tab bar)         |        ✅        |        ❌         |   ✅    |
-| `OS_KEY+shift+\`     | Toggle split zoom           |        ❌        |        ✅         |   ✅    |
-| `F11`                | Fullscreen                  |        ✅        |        ✅         |   ✅    |
+| `OS_KEY+0`           | Break split into own window |        ❌        |          ✅           |   ❌    |
+| `OS_KEY+z`           | Toggle split zoom (alt)     |        ❌        |          ✅           |   ❌    |
+| `OS_KEY+\`           | Toggle UI (tab bar)         |        ✅        |          ❌           |   ✅    |
+| `OS_KEY+shift+\`     | Toggle split zoom           |        ❌        |          ✅           |   ✅    |
+| `F11`                | Fullscreen                  |        ✅        |          ✅           |   ✅    |
 
 tmux zoom is a binary toggle (`resize-pane -Z`) — the pane is either full-window or
 back in its layout slot. There are no zoom levels, so there is deliberately no
@@ -362,37 +362,37 @@ defaults, so they keep working in any tmux, including one running a config this 
 write. The exceptions are marked ⚠️ below: `c` inherits the current pane's path, `,` / `.`
 / `n` / `r` are rebound away from their stock actions, and both resize steps are widened.
 
-| Chord             | Action                                                                         |
-| ----------------- | ------------------------------------------------------------------------------ |
-| `ctrl+b` then `[` | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit) |
-| `ctrl+b` then `,` | ⚠️ Previous window (stock: rename window — now `r`)                            |
-| `ctrl+b` then `.` | ⚠️ Next window (stock: move window — use the `prefix+:` prompt)                 |
-| `ctrl+b` then `r` | ⚠️ Rename the current window (stock: `refresh-client`)                          |
-| `ctrl+b` then `c` | ⚠️ Create a new window (opens in the current pane's folder)                    |
-| `ctrl+b` then `n` | ⚠️ Create a new window, alias of `c` (stock: next window — now `.`)            |
-| `ctrl+b` then `w` | Interactive window/session switcher (`choose-tree`)                            |
-| `ctrl+b` then `tab` | Same switcher as `w` — `tab` is unbound in stock tmux, so this is an addition |
-| `ctrl+b` then `x` | Close / kill the current pane (confirms first)                                 |
-| `ctrl+b` then `p` | Previous window                                                                |
-| `ctrl+b` then `arrow` | Focus the split in that direction (`select-pane`)                          |
-| `ctrl+b` then `alt+arrow` | ⚠️ Resize the split by 10 (stock 5) — hold `ctrl+b`, tap repeatedly  |
-| `ctrl+b` then `ctrl+arrow` | ⚠️ Resize the split by 10 (stock 1)                                |
-| `ctrl+b` then `y` | Copy the whole visible pane to the clipboard                                   |
-| `ctrl+b` then `'` | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)        |
+| Chord                      | Action                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| `ctrl+b` then `[`          | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit) |
+| `ctrl+b` then `,`          | ⚠️ Previous window (stock: rename window — now `r`)                            |
+| `ctrl+b` then `.`          | ⚠️ Next window (stock: move window — use the `prefix+:` prompt)                |
+| `ctrl+b` then `r`          | ⚠️ Rename the current window (stock: `refresh-client`)                         |
+| `ctrl+b` then `c`          | ⚠️ Create a new window (opens in the current pane's folder)                    |
+| `ctrl+b` then `n`          | ⚠️ Create a new window, alias of `c` (stock: next window — now `.`)            |
+| `ctrl+b` then `w`          | Interactive window/session switcher (`choose-tree`)                            |
+| `ctrl+b` then `tab`        | Same switcher as `w` — `tab` is unbound in stock tmux, so this is an addition  |
+| `ctrl+b` then `x`          | Close / kill the current pane (confirms first)                                 |
+| `ctrl+b` then `p`          | Previous window                                                                |
+| `ctrl+b` then `arrow`      | Focus the split in that direction (`select-pane`)                              |
+| `ctrl+b` then `alt+arrow`  | ⚠️ Resize the split by 10 (stock 5) — hold `ctrl+b`, tap repeatedly            |
+| `ctrl+b` then `ctrl+arrow` | ⚠️ Resize the split by 10 (stock 1)                                            |
+| `ctrl+b` then `y`          | Copy the whole visible pane to the clipboard                                   |
+| `ctrl+b` then `'`          | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)       |
 
 Copy mode is pinned to vi keys (`setw -g mode-keys vi`) so `g`/`G`/`/` behave as listed —
 without it tmux picks emacs keys whenever `$EDITOR` is not vim-like. `mode-keys vi` alone
 does **not** give vim's selection keys, though: stock tmux binds `space` to start a
-selection, `enter` to copy, and `v` to *rectangle-toggle*. These bindings restore the vim
+selection, `enter` to copy, and `v` to _rectangle-toggle_. These bindings restore the vim
 mapping inside copy mode:
 
-| Copy-mode key | Action                                            |
-| ------------- | ------------------------------------------------- |
-| `v`           | Start a selection (visual)                        |
-| `V`           | Select the whole line                             |
-| `ctrl+v`      | Toggle block (rectangle) selection                |
-| `y`           | Yank the selection to the clipboard and exit      |
-| `enter`       | Same as `y`                                       |
+| Copy-mode key | Action                                       |
+| ------------- | -------------------------------------------- |
+| `v`           | Start a selection (visual)                   |
+| `V`           | Select the whole line                        |
+| `ctrl+v`      | Toggle block (rectangle) selection           |
+| `y`           | Yank the selection to the clipboard and exit |
+| `enter`       | Same as `y`                                  |
 
 Yanking pipes through `~/.local/bin/sy-tmux-copy`, a shim written by `advanced/tmux.js`.
 tmux runs copy targets under `sh -c` with no shell profile, so the profile's `copy()`

@@ -561,10 +561,20 @@ async function doWork() {
     log(`>>> Registering complete-spec for ${command}`);
 
     const effectiveMaxDepth = entry.maxDepth || MAX_NESTED_DEPTH;
+    // NOT resolvePlaceholders: this template is the one destination where the
+    // shared `<TOKEN>` style cannot be used. `<` is a redirection operator, so
+    // `function __spec_complete_<COMMAND>()` is a hard bash syntax error and the
+    // skeleton would stop parsing under /bin/bash (caught by sourceIntegrity).
+    // Braces survive that, so this template keeps them. split/join rather than
+    // `.replace`, which would substitute only the first occurrence and would
+    // interpret `$&` / `$1` inside the spec body.
     const completerScript = template
-      .replace(/\{\{COMMAND\}\}/g, command)
-      .replace("{{SPEC_CONTENT}}", expandedSpec)
-      .replace(/\{\{MAX_NESTED_DEPTH\}\}/g, String(effectiveMaxDepth));
+      .split("{{COMMAND}}")
+      .join(command)
+      .split("{{SPEC_CONTENT}}")
+      .join(expandedSpec)
+      .split("{{MAX_NESTED_DEPTH}}")
+      .join(String(effectiveMaxDepth));
     parts.push(
       code`
         # BEGIN ${command} Spec Autocomplete

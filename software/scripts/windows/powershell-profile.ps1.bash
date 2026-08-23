@@ -345,7 +345,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 function _Register-SpecCompleter {
   param([string]$Command, [string[]]$SpecData, [int]$MaxDepthOverride = 0)
   if ($SpecData.Count -eq 0) { return }
-  $MaxNestedDepth = if ($env:BASHRC_AUTOCOMPLETE_MAX_DEPTH) { [int]$env:BASHRC_AUTOCOMPLETE_MAX_DEPTH - 1 } elseif ($MaxDepthOverride -gt 0) { $MaxDepthOverride - 1 } else { {{MAX_NESTED_DEPTH}} - 1 }  # 0-indexed, tunable via env var or per-command maxDepth
+  $MaxNestedDepth = if ($env:BASHRC_AUTOCOMPLETE_MAX_DEPTH) { [int]$env:BASHRC_AUTOCOMPLETE_MAX_DEPTH - 1 } elseif ($MaxDepthOverride -gt 0) { $MaxDepthOverride - 1 } else { <<MAX_NESTED_DEPTH>> - 1 }  # 0-indexed, tunable via env var or per-command maxDepth
   Register-ArgumentCompleter -CommandName $Command -Native -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $tokens = $commandAst.ToString() -split '\s+'

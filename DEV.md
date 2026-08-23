@@ -156,7 +156,10 @@ logic (see AGENTS.md §2, Golden rules).
 
 - **Templates:** `text`, `code` (dedented), `list`, `set`, `json`, `readText` (async; URL
   / absolute / repo-relative + SOURCE expansion), `readJson`, `readList`, `readSet`,
-  `requireUrl`.
+  `requireUrl`. **Placeholders:** `resolvePlaceholders(content, tokenMap)` — the one
+  `<<TOKEN>>` substituter (doubled brackets so a token can never collide with prose,
+  shell redirection, or a tag); names are SCREAMING_SNAKE_CASE, `COMMON_PLACEHOLDERS`
+  supplies `<<SY_ROOT_FOLDER>>` / `<<HOME>>` for free.
 - **Write:** `writeText`, `writeJson`, `writeJsonWithMerge`, `writeConfigToFile`,
   `writeBuildArtifact` (→ `.build/`), `safeWriteText` (shrink-ratio guard),
   `writeTextIfSignificantChange`, `appendText`, `replaceTextLineByLine`, `touchFile`,

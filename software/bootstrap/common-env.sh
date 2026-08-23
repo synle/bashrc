@@ -21,7 +21,7 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/
 #   bash   "$SY_ROOT_FOLDER/<thing>" - run.sh re-exports it into
 #          ~/.bash_syle_common, so interactive shells and profile partials see it
 #   node   SY_ROOT_FOLDER in software/index.js, read from this same env var
-#   docs   deployed LLM docs write the <SY_ROOT_FOLDER> / <LLM_ROOT_FOLDER>
+#   docs   deployed LLM docs write the <<SY_ROOT_FOLDER>> / <<LLM_ROOT_FOLDER>>
 #          placeholder, resolved to a real path by llm-common.js at deploy time
 # NOTE: `make nuke` must never rm -rf this folder wholesale - it holds authored
 # plan files that no re-run can regenerate. See the nuke target.

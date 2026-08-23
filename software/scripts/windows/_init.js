@@ -4,7 +4,7 @@ async function doWork() {
   // later scripts append blocks via registerWithPowershellProfile()
   log(">> Initializing PowerShell profile template:", POWERSHELL_SYLE_PATH);
   const psTemplate = await readText`software/scripts/windows/powershell-profile.ps1.bash`;
-  writeText(POWERSHELL_SYLE_PATH, psTemplate.replace(/\{\{MAX_NESTED_DEPTH\}\}/g, String(MAX_NESTED_DEPTH)));
+  writeText(POWERSHELL_SYLE_PATH, resolvePlaceholders(psTemplate, { MAX_NESTED_DEPTH }));
 
   let targetPath = "/mnt/d";
 

@@ -571,8 +571,14 @@ const LLM_SHARED_ROOT_FOLDER = process.env.LLM_ROOT_FOLDER;
 // --- Deployed-doc path placeholders ---
 
 /**
- * The tokens a deployed LLM doc writes instead of a machine-specific folder, and
- * the real path each resolves to on THIS machine.
+ * The LLM-only token a deployed doc writes instead of a machine-specific folder.
+ *
+ * `<<SY_ROOT_FOLDER>>` and `<<HOME>>` are NOT here — they are shared tokens declared
+ * once in `COMMON_PLACEHOLDERS` in `software/index.js` and merged in by
+ * `resolvePlaceholders`, because tmux configs and shell templates need the same
+ * answer. `<<LLM_ROOT_FOLDER>>` stays local: nothing outside this folder writes
+ * into the LLM home, so hoisting it would put a token in the shared registry
+ * that only one consumer can ever use.
  *
  * Repo sources cannot hardcode `~/_extra/ai_llm/...`: that is a second spelling of
  * a folder already declared in `software/bootstrap/common-env.sh`, so it goes stale
@@ -585,13 +591,12 @@ const LLM_SHARED_ROOT_FOLDER = process.env.LLM_ROOT_FOLDER;
  * {@link resolveLLMDocPlaceholders} bakes the absolute path in at deploy time, so
  * what lands on disk is a path the reader can use verbatim.
  *
- * Token name matches the env var name exactly, so `<LLM_ROOT_FOLDER>` in a doc and
+ * Token name matches the env var name exactly, so `<<LLM_ROOT_FOLDER>>` in a doc and
  * `$LLM_ROOT_FOLDER` in a script are visibly the same thing.
  * @type {Record<string, string>}
  */
 const LLM_DOC_PATH_PLACEHOLDERS = {
-  "<LLM_ROOT_FOLDER>": LLM_SHARED_ROOT_FOLDER,
-  "<SY_ROOT_FOLDER>": SY_ROOT_FOLDER,
+  "<<LLM_ROOT_FOLDER>>": LLM_SHARED_ROOT_FOLDER,
 };
 
 /**
@@ -613,32 +618,30 @@ const LLM_DOC_PATH_PLACEHOLDERS = {
  */
 const LLM_DOC_TUNING_PLACEHOLDERS = {
   /** How long one babysit / review run keeps working before it stops on its own. */
-  "<SY_PR_RUN_BUDGET_SECONDS>": "21600",
+  "<<SY_PR_RUN_BUDGET_SECONDS>>": "21600",
   /** How often a quiet PR is re-probed read-only for a state change. */
-  "<SY_PR_POLL_INTERVAL_SECONDS>": "60",
+  "<<SY_PR_POLL_INTERVAL_SECONDS>>": "60",
   /** How long a full pass is forced even when nothing in the digest moved. */
-  "<SY_PR_KEEPALIVE_INTERVAL_SECONDS>": "1500",
+  "<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>": "1500",
   /** How long to wait between retries of an unreachable GitHub / model call. */
-  "<SY_PR_RETRY_INTERVAL_SECONDS>": "15",
+  "<<SY_PR_RETRY_INTERVAL_SECONDS>>": "15",
   /** How many consecutive unreachable retries end the run. */
-  "<SY_PR_RETRY_MAX_FAILURES>": "5",
+  "<<SY_PR_RETRY_MAX_FAILURES>>": "5",
 };
 
 /**
  * Replaces every {@link LLM_DOC_PATH_PLACEHOLDERS} and
  * {@link LLM_DOC_TUNING_PLACEHOLDERS} token with its resolved value.
  *
- * Plain split/join rather than a regex so a token never has to be escaped and a
- * stray `<` elsewhere in the prose can never be captured.
+ * Delegates to `resolvePlaceholders` in `software/index.js` — the one
+ * substitution engine for the whole repo — which also merges in the shared
+ * `<<SY_ROOT_FOLDER>>` / `<<HOME>>` tokens, so a doc gets those for free without
+ * this file re-declaring them. Only the LLM-specific tokens are passed here.
  * @param {string} text Raw doc content read from a repo source.
  * @returns {string} The same content with every placeholder resolved.
  */
 function resolveLLMDocPlaceholders(text) {
-  let resolved = text;
-  for (const [token, value] of Object.entries({ ...LLM_DOC_PATH_PLACEHOLDERS, ...LLM_DOC_TUNING_PLACEHOLDERS })) {
-    resolved = resolved.split(token).join(value);
-  }
-  return resolved;
+  return resolvePlaceholders(text, { ...LLM_DOC_PATH_PLACEHOLDERS, ...LLM_DOC_TUNING_PLACEHOLDERS });
 }
 
 /**
@@ -648,7 +651,7 @@ function resolveLLMDocPlaceholders(text) {
  *
  * Every one of them goes through here rather than calling `readText` directly, so
  * placeholder resolution can never be forgotten on a new deploy path. A doc that
- * skipped it would ship `<LLM_ROOT_FOLDER>` verbatim to an agent, which reads as a
+ * skipped it would ship `<<LLM_ROOT_FOLDER>>` verbatim to an agent, which reads as a
  * literal folder name and fails silently.
  * @param {string} sourcePath Repo-relative path to the markdown source.
  * @returns {Promise<string>} Deploy-ready content with paths resolved.

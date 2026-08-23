@@ -211,9 +211,12 @@ const templateContent =
  */
 function buildCompletionTestScript(specContent, compWords, compCword, setupCode = "") {
   const funcBody = templateContent
-    .replace(/\{\{COMMAND\}\}/g, "testcmd")
-    .replace("{{SPEC_CONTENT}}", specContent)
-    .replace("{{MAX_NESTED_DEPTH}}", "3");
+    .split("{{COMMAND}}")
+    .join("testcmd")
+    .split("{{SPEC_CONTENT}}")
+    .join(specContent)
+    .split("{{MAX_NESTED_DEPTH}}")
+    .join("3");
   return `#!/usr/bin/env bash
 set -uo pipefail
 source "${process.cwd()}/software/scripts/bash-fzf.profile.bash"
@@ -709,9 +712,12 @@ describe("dynamic token expansion (bash integration)", () => {
       const allTokens = [...VALID_TOKENS].join(",");
       const spec = `|${allTokens}`;
       const funcBody = templateContent
-        .replace(/\{\{COMMAND\}\}/g, "syntaxtest")
-        .replace("{{SPEC_CONTENT}}", spec)
-        .replace("{{MAX_NESTED_DEPTH}}", "3");
+        .split("{{COMMAND}}")
+        .join("syntaxtest")
+        .split("{{SPEC_CONTENT}}")
+        .join(spec)
+        .split("{{MAX_NESTED_DEPTH}}")
+        .join("3");
       // bash -n checks syntax without executing
       execSync("bash -n", { input: funcBody, encoding: "utf-8", timeout: 5000 });
     });

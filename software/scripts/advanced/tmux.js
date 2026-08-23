@@ -2,10 +2,11 @@
 
 /**
  * @type {Object<string, string|number>} Tunable values substituted into
- * `tmux.config` at write time. The config file carries `{{KEY}}` placeholders;
+ * `tmux.config` at write time. The config file carries `<NAME>` placeholders;
  * every entry here replaces its matching token, so a number like the pane
  * resize step is declared once here instead of repeated across eight `bind`
- * lines. Keys are the bare token name without the braces.
+ * lines. Keys are bare token names — `resolvePlaceholders` adds the brackets,
+ * and merges in the shared `<<SY_ROOT_FOLDER>>` / `<<HOME>>` tokens for free.
  */
 const TMUX_CONFIG = {
   // Cells moved per prefix+alt-arrow / prefix+ctrl-arrow resize step. tmux's
@@ -13,20 +14,6 @@ const TMUX_CONFIG = {
   // long key repeat.
   RESIZE_PANE_CELLS: 10,
 };
-
-/**
- * Replaces every `{{KEY}}` placeholder in the raw tmux config with its value
- * from {@link TMUX_CONFIG}.
- *
- * @param {string} content - Raw `tmux.config` text, placeholders intact.
- * @returns {string} The config with every known placeholder substituted.
- */
-function resolveTmuxConfigPlaceholders(content) {
-  for (const [token, value] of Object.entries(TMUX_CONFIG)) {
-    content = content.split(`{{${token}}}`).join(String(value));
-  }
-  return content;
-}
 
 /**
  * Installs tpm and writes `~/.tmux.conf` plus the copy shim.
@@ -51,7 +38,7 @@ async function doWork() {
 
   // write tmux config
   log(">> Updating .tmux.conf", targetPath);
-  const content = resolveTmuxConfigPlaceholders(await readText`software/scripts/advanced/tmux.config`);
+  const content = resolvePlaceholders(await readText`software/scripts/advanced/tmux.config`, TMUX_CONFIG);
   await writeText(targetPath, content);
 
   await writeTmuxCopyShim();
