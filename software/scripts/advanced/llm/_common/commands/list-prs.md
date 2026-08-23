@@ -291,13 +291,13 @@ Before rendering, resolve your own handle once (`gh api user --jq .login`) and c
 
 Where the author goes, per format:
 
-| Format     | Placement                                                                                                        |
-| ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| `short`    | Group heading only — `## NEEDS ATTENTION (2 — @me 1, @alice 1)`. **URL lines stay bare.**                        |
-| `long`     | In the description line, right after the repo: `#123 [owner/repo] @alice — <title> — <status>`                   |
-| `table`    | A dedicated `Author` column, inserted after `Repo`                                                               |
-| `links`    | Nowhere — `links` is pure machine input and carries no author, heading, or summary line                          |
-| `clusters` | Cluster heading only — `### oauth-migration (3 — @me 2, @alice 1) — acme/api, acme/web`. **PR lines stay bare.** |
+| Format     | Placement                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `short`    | Group heading only — `## NEEDS ATTENTION (2 — @me 1, @alice 1)`. **URL lines stay bare.**                                 |
+| `long`     | In the description line, right after the repo: `#123 [owner/repo] @alice — <title> — <status>`                            |
+| `table`    | A dedicated `Author` column, inserted after `Repo`                                                                        |
+| `links`    | Nowhere — `links` is pure machine input and carries no author, heading, or summary line                                   |
+| `clusters` | Cluster heading only — `### oauth-migration (3 — @me 2, @alice 1) — acme/api, acme/web`. **PR lines stay bare.**          |
 | `pingpong` | A dedicated `Author` column, second, right after `PR` — always shown, mixed-author or not, and color-coded mine vs theirs |
 
 **`short` URL lines are machine input — never decorate them.** `/sy-babysit-prs` consumes `/sy-list-prs short` line-by-line as full PR URLs. Adding a handle, prefix, or suffix to those lines breaks it. Group headings and the leading summary line are already skipped by that parser, so that's where mixed-author information belongs.
@@ -498,20 +498,20 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 **Columns — exactly four, in this order: `PR`, `Description`, `Status`, `Agent`.**
 
-**Every cell is ONE line. `<br>` is forbidden anywhere in this render.** The board used to pack four lines into the PR cell with `<br>`, and that is a bet on the renderer: the CLIs this board prints into render a markdown table as plain text, so the tag comes out as the literal characters `<br>` mid-sentence and the cell becomes unreadable. A cell holding several fields joins them with ` · ` instead — a separator that is just text and renders identically everywhere. Cells wrap on width by themselves; that is the renderer's job, not this spec's.
+**Every cell is ONE line. `<br>` is forbidden anywhere in this render.** The board used to pack four lines into the PR cell with `<br>`, and that is a bet on the renderer: the CLIs this board prints into render a markdown table as plain text, so the tag comes out as the literal characters `<br>` mid-sentence and the cell becomes unreadable. A cell holding several fields joins them with `·` instead — a separator that is just text and renders identically everywhere. Cells wrap on width by themselves; that is the renderer's job, not this spec's.
 
 **Fields inside a cell each get a different markdown span so the reader's theme colors them apart** — markdown link, inline code, bold, plain. Three distinct spans is the whole coloring mechanism: never emit ANSI, an HTML `<span>`, or a color name, all of which render as literal garbage in a table cell.
 
 - **PR** — the link, and **nothing else**: `[<path>](<url>)`, where `<path>` is the full `github.com/<owner>/<repo>/pull/<number>`. One field per cell is what keeps the column narrow enough to scan, and a link is the one thing in the row a reader clicks rather than reads. **Never elide the owner to `…/<repo>/pull/<n>`** — a path with the org replaced by an ellipsis is not clickable, not greppable, and not pasteable.
 
-- **Description** — everything that says _what this PR is_, one line, ` · `-separated, in this fixed order: `<author> · `<head branch>` · **<title>** · <auto-merge>`.
+- **Description** — everything that says _what this PR is_, one line, `·`-separated, in this fixed order: `<author> · `<head branch>` · **<title>** · <auto-merge>`.
 
-  | Field       | Span                               | Typical color | Notes                                                                                                                       |
-  | ----------- | ---------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-  | Author      | `` `@me` `` mine / `**@alice**` theirs | code vs bold  | The one field with **two** spans on purpose — the color flip is what makes "mine vs theirs" scannable (see Author, below)   |
-  | Head branch | inline code, `` `<headRefName>` ``     | grey / dim    | `headRefName` verbatim, never the base branch, never a slug. The token you retype into `git checkout` / `worktree_create`   |
-  | Title       | bold, `**<title>**`                    | accent        | Normalized as every other render normalizes it (`WIP: ` form, `[draft]` prepended). Over ~60 chars → truncate with `…`      |
-  | Auto-merge  | plain text                             | default       | `🤖 auto-merge (<method>)` when armed, `auto-merge off` when not — it decides whether a green row still needs a human       |
+  | Field       | Span                                   | Typical color | Notes                                                                                                                     |
+  | ----------- | -------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------- |
+  | Author      | `` `@me` `` mine / `**@alice**` theirs | code vs bold  | The one field with **two** spans on purpose — the color flip is what makes "mine vs theirs" scannable (see Author, below) |
+  | Head branch | inline code, `` `<headRefName>` ``     | grey / dim    | `headRefName` verbatim, never the base branch, never a slug. The token you retype into `git checkout` / `worktree_create` |
+  | Title       | bold, `**<title>**`                    | accent        | Normalized as every other render normalizes it (`WIP: ` form, `[draft]` prepended). Over ~60 chars → truncate with `…`    |
+  | Auto-merge  | plain text                             | default       | `🤖 auto-merge (<method>)` when armed, `auto-merge off` when not — it decides whether a green row still needs a human     |
 
   Auto-merge is here rather than in `Status` because it is a property of the PR's configuration, not of its current health: an armed 🟡 needs nobody, the same row unarmed is waiting for someone to come back and click. Method comes from `autoMergeMethod` lowercased (`squash` / `merge` / `rebase`).
 
@@ -523,15 +523,15 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **The handle is wrapped so the theme colors mine differently from everyone else's** — two different markdown spans, two different theme colors, no ANSI escapes (an escape sequence inside a table cell renders as literal garbage in half the clients that read this board):
 
-  | Author           | Render        |
-  | ---------------- | ------------- |
-  | Me (the user)    | `` `@me` ``   |
-  | Anyone else      | `**@alice**`  |
-  | A bot            | `**@dependabot[bot]**` |
+  | Author        | Render                 |
+  | ------------- | ---------------------- |
+  | Me (the user) | `` `@me` ``            |
+  | Anyone else   | `**@alice**`           |
+  | A bot         | `**@dependabot[bot]**` |
 
   Always the real handle after the `@`; `@me` is written literally only for the user's own PRs, matching the existing `@me` convention in every other render. Author unresolvable → `❓` in the cell, never a blank and never a guess.
 
-- **Status** — the PR's own state, independent of any agent. **One line: the change marker, the color emoji, then the component fragments joined with ` · `.** Never a comment dump, never a prose reason, never the word "GREEN" / "RED" / "YELLOW" spelled out — the emoji _is_ the roll-up and the fragments are the evidence. The per-thread counts live in the Agent cell, because acting on them is the agent's job.
+- **Status** — the PR's own state, independent of any agent. **One line: the change marker, the color emoji, then the component fragments joined with `·`.** Never a comment dump, never a prose reason, never the word "GREEN" / "RED" / "YELLOW" spelled out — the emoji _is_ the roll-up and the fragments are the evidence. The per-thread counts live in the Agent cell, because acting on them is the agent's job.
 
   ```
   <change marker> <color emoji> <CI fragment>[ · <review fragment>][ · MERGE CONFLICT]
@@ -564,7 +564,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **Fragment 1 — CI, always printed.** Exactly one of:
 
-  | Fragment                              | When                                                                                                    |
+  | Fragment                          | When                                                                                                    |
   | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
   | `CI PASSED`                       | Every required check succeeded (neutral / skipped count as ok)                                          |
   | `CI FAILED — <check>`             | Any required check failed. Name the first failing check                                                 |
@@ -572,7 +572,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **Fragment 2 — review, printed whenever the review state is known.** Exactly one of:
 
-  | Fragment                | When                                                                 |
+  | Fragment            | When                                                                 |
   | ------------------- | -------------------------------------------------------------------- |
   | `APPROVED`          | `reviewDecision == "APPROVED"`                                       |
   | `CHANGES REQUESTED` | `reviewDecision == "CHANGES_REQUESTED"`                              |
@@ -588,18 +588,18 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **State token and clock.**
 
-  | Token                   | When                                                            | Clock                                                                 |
-  | ----------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------- |
-  | `⚪ NOT STARTED`        | Enrolled, first pass not yet run                                | `queued, position 2 of 5` (no clock; nothing started)                 |
-  | `🔄 IN PROGRESS`        | Job actively working this pass                                  | `started 17:12 · running 22m`                                         |
-  | `⏸️ WAITING`            | Pass done, polling until something moves                        | `ended 16:58 · ran 19m · next check 17:02`                            |
-  | `🔍 WATCHING`           | **Not terminal** — no worker held, dispatcher polling cheaply   | `blocked on Owner Approval · probe 4 · next check 17:02`              |
-  | `✅ COMPLETED`          | Job finished all passes, or the PR merged                       | `ended 17:05 · 48m total`                                             |
-  | `⏭️ SKIPPED`            | **Terminal** — skipped, and the run budget is spent             | `17:02 — draft, budget spent`                                         |
-  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, run budget still open     | `17:02 — draft · next check 17:02`                                    |
-  | `🙋 NEEDS_USER`         | **Not terminal on GitHub** — this run paused it for the operator | `needs you — split request · asked 16:40 · revalidated current`       |
-  | `⚠️ ESCALATED`          | Job stopped and needs human judgment                            | `stopped 17:01 · ran 19m — needs human`                               |
-  | `❌ FAILED`             | Job errored out                                                 | `failed 16:44 · ran 4m — worktree conflict`                           |
+  | Token                   | When                                                             | Clock                                                           |
+  | ----------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
+  | `⚪ NOT STARTED`        | Enrolled, first pass not yet run                                 | `queued, position 2 of 5` (no clock; nothing started)           |
+  | `🔄 IN PROGRESS`        | Job actively working this pass                                   | `started 17:12 · running 22m`                                   |
+  | `⏸️ WAITING`            | Pass done, polling until something moves                         | `ended 16:58 · ran 19m · next check 17:02`                      |
+  | `🔍 WATCHING`           | **Not terminal** — no worker held, dispatcher polling cheaply    | `blocked on Owner Approval · probe 4 · next check 17:02`        |
+  | `✅ COMPLETED`          | Job finished all passes, or the PR merged                        | `ended 17:05 · 48m total`                                       |
+  | `⏭️ SKIPPED`            | **Terminal** — skipped, and the run budget is spent              | `17:02 — draft, budget spent`                                   |
+  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, run budget still open      | `17:02 — draft · next check 17:02`                              |
+  | `🙋 NEEDS_USER`         | **Not terminal on GitHub** — this run paused it for the operator | `needs you — split request · asked 16:40 · revalidated current` |
+  | `⚠️ ESCALATED`          | Job stopped and needs human judgment                             | `stopped 17:01 · ran 19m — needs human`                         |
+  | `❌ FAILED`             | Job errored out                                                  | `failed 16:44 · ran 4m — worktree conflict`                     |
 
   **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip while the run budget is still open is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-check ETA. Only when the budget is spent does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal _and_ loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
 
@@ -620,7 +620,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **The clock is excluded from the change-marker diff.** Elapsed time moves on every pulse by definition, so counting it as a change would render `Δ` on every running row forever and destroy the marker's only job. Diff the state token, the pass number, the Status cell, and the counters line — never `running <N>m`, never a recomputed `next check <HH:MM>`, never the remaining-budget figure. A row whose only difference is the clock ticking is `▫️`.
 
-  **Counters — the tail of the same line.** Always printed, always all three fields, always this order, appended after the clock with the same ` · ` separator:
+  **Counters — the tail of the same line.** Always printed, always all three fields, always this order, appended after the clock with the same `·` separator:
 
   `💬 <n> open · ✔ <n> resolved · ⚠️ <n> need attention`
 

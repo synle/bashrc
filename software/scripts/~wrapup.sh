@@ -15,17 +15,17 @@ echo '
 # folder-scanning deploy loop. clean_junk_macosx_files no-ops off mac and on a missing
 # folder, so no is_os_mac guard is needed here.
 for junk_folder in \
-	"$HOME/.claude" \
-	"$HOME/.copilot" \
-	"$HOME/.gemini" \
-	"$HOME/.config/opencode" \
-	"$HOME/.agents" \
-	"${LLM_ROOT_FOLDER}"; do
-	clean_junk_macosx_files "$junk_folder"
+  "$HOME/.claude" \
+  "$HOME/.copilot" \
+  "$HOME/.gemini" \
+  "$HOME/.config/opencode" \
+  "$HOME/.agents" \
+  "${LLM_ROOT_FOLDER}"; do
+  clean_junk_macosx_files "$junk_folder"
 done
 
 # dump fullsetup log in CI for debugging package install errors
 if ((IS_CI)) && [ -f "$BASHRC_TEMP_DIR/fullsetup.log" ]; then
-	echo ">> fullsetup.log ($BASHRC_TEMP_DIR/fullsetup.log)"
-	cat "$BASHRC_TEMP_DIR/fullsetup.log"
+  echo ">> fullsetup.log ($BASHRC_TEMP_DIR/fullsetup.log)"
+  cat "$BASHRC_TEMP_DIR/fullsetup.log"
 fi

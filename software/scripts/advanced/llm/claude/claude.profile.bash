@@ -364,13 +364,13 @@ function _claude_list_prompts_ts() {
   # `<summary>`, `<status>`, `<output-file>`, `<result>`, `<usage>`,
   # `<host>`, `<worktree>`). Low-frequency tags like `<svg>` / `<stem>` are
   # real user pastes and are KEPT.
-#
-# Sub-agent prompts are EXCLUDED via `.isSidechain != true`. Claude Code marks
-# every record belonging to a Task-tool sub-agent conversation with
-# `isSidechain: true`; those "user" turns are the prompt the PARENT agent
-# generated for its child, never text a human typed, so they are noise in a
-# prompt picker. Records predating the field have no `isSidechain` key at all,
-# and `!= true` keeps those (null != true).
+  #
+  # Sub-agent prompts are EXCLUDED via `.isSidechain != true`. Claude Code marks
+  # every record belonging to a Task-tool sub-agent conversation with
+  # `isSidechain: true`; those "user" turns are the prompt the PARENT agent
+  # generated for its child, never text a human typed, so they are noise in a
+  # prompt picker. Records predating the field have no `isSidechain` key at all,
+  # and `!= true` keeps those (null != true).
   command find "$dir" -name '*.jsonl' -type f -print0 2> /dev/null \
     | command xargs -0 command cat 2> /dev/null \
     | jq -c 'select(.type=="user" and (.isSidechain != true) and (.message.content|type=="string") and ((.message.content | test("^<(command-(name|message|args)|local-command-(caveat|stdout)|task-(notification|id)|tool-use-id|summary|status|output-file|result|usage|host|worktree)[> ]")) | not)) | {ts: .timestamp, c: .message.content}' 2> /dev/null \
