@@ -195,44 +195,27 @@ The profile partial still has no hard dependency on it — `_snip_ready` gates e
 is missing, so a machine that skipped the installer (limited-support OS, install failure)
 keeps working.
 
-## Agent hooks
+## No agent integration — removed on purpose
 
-The **binary** is installed by [`software/scripts/advanced/snip.sh`](../software/scripts/advanced/snip.sh).
-The **agent integration** is NOT done by running `snip init` — that command _overwrites_ the
-agent's config file (for Gemini it replaces the whole `~/.gemini/GEMINI.md`, wiping the
-repo-managed instructions). Instead the LLM setup owns it, merge-safe, gated on the agent
-CLI being installed:
+snip is a **human-only** tool here. There is no Claude/Copilot/Gemini hook and no
+opencode plugin, and there must not be one. Every attempt to auto-route an agent's shell
+commands through snip was reverted because snip's agent hooks / the `opencode-snip`
+plugin rewrite the command by prepending `snip`, which breaks two things fundamentally:
 
-| Agent   | Integration                     | Location                     | Owned by                                                                                         |
-| ------- | ------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------ |
-| Claude  | native `PreToolUse` (Bash) hook | `~/.claude/settings.json`    | [`claude/setup.js`](../software/scripts/advanced/llm/claude/setup.js) `_doClaudeSnipHookWork`    |
-| Copilot | native `preToolUse` hook        | `~/.copilot/hooks/snip.json` | [`copilot/setup.js`](../software/scripts/advanced/llm/copilot/setup.js) `_doCopilotSnipHookWork` |
-| Gemini  | prompt-injection block          | `~/.gemini/GEMINI.md`        | [`gemini/setup.js`](../software/scripts/advanced/llm/gemini/setup.js) `_doGeminiSnipWork`        |
+- **Compound commands** — a `for … do … done` loop or a multi-command one-liner comes
+  out as `snip for …; snip do …; snip done`, which is invalid bash (`snip: for cannot be
+proxied`, `syntax error near unexpected token 'do'`).
+- **Machine-readable output** — a `gh pr list --json …` (or any `--json` / `--jq`) result
+  the agent needs to parse is filtered by snip and arrives corrupted.
 
-**Claude & Copilot** write native hooks (`snip hook` / `snip hook copilot`). Claude's merges
-into the shared `settings.json` under `hooks.PreToolUse` (matcher `Bash`), preserving every
-other setting and hook; Copilot's is a dedicated `snip.json` file. Both use snip's absolute
-path since the hook runs where `~/.local/bin` may not be on PATH, and both are fail-open.
+The agent runs every command through snip with no TTY guard and no compound-command
+detection, so there is no safe subset. `snip init --agent …`, the `~/.copilot/hooks/snip.json`
+hook, the `~/.claude/settings.json` `PreToolUse` entry, the `~/.gemini/GEMINI.md` block, and
+the `opencode-snip` plugin are all intentionally **not** installed. Leave it that way.
 
-**Gemini** appends a managed `<!-- BEGIN synle/bashrc | snip integration -->` block to
-GEMINI.md via `replaceBlock`, preserving the engineering-principles block and any user
-content — never the wholesale overwrite `snip init --agent gemini` would do.
-
-**Known-good commands only.** No integration wraps arbitrary commands. The native hooks
-(Claude, Copilot) enforce this themselves — `snip hook` only rewrites snip's ~100 filtered
-commands; everything else, plus mixed commands and pipelines, passes through. Gemini's prompt
-injection can't rely on that, so the shared source
-[`_common/instructions-snip.md`](../software/scripts/advanced/llm/_common/instructions-snip.md)
-spells out an explicit allowlist (`git`, `go`, `docker`, `kubectl`, …) and tells the model to
-run everything else unprefixed. That file is the **single source** for the text form —
-referenced via `LLM_SNIP_INSTRUCTION_SOURCE` in `llm-common.js`, never duplicated per CLI.
-
-**First-run lag.** All three are gated on snip being installed. Since `snip.sh` sorts after
-the `llm/` setup in discovery order, on a first `--setup` the binary isn't present yet when
-the setup scripts run, so the hook/block lands on the next `bash run.sh`. Idempotent thereafter.
-
-**Not wired for other agents.** Cursor, Codex, and the rest are left to a human decision.
-OpenCode uses a separate plugin ([opencode-snip](https://github.com/VincentHardouin/opencode-snip)).
+The token-saving benefit is kept for the human path instead, where it is safe: the
+TTY-guarded interactive shell wrappers (see `bash-snip-command-wrappers.profile.bash`) and
+the explicit `sn <cmd>` helper.
 
 ## What is deliberately not wired
 

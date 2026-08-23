@@ -590,63 +590,6 @@ async function _doCopilotTweaksWork(targetDir) {
   log(">> Copilot harness tweaks:", targetPath);
 }
 
-// --- Snip hook (token-filter PreToolUse) ---
-
-/**
- * Writes the snip PreToolUse hook into `~/.copilot/hooks/snip.json`.
- *
- * This is what `snip init --agent copilot` produces, generated here instead so the
- * repo owns it: a native Copilot hook that routes every supported shell command
- * through snip's output filter (https://github.com/edouard-claude/snip), cutting
- * agent token usage. The hook is fail-open — if snip is missing or errors, the
- * command runs unfiltered — so a stale file is harmless.
- *
- * No random-command risk: `snip hook copilot` only rewrites commands snip has a
- * filter for (its ~100 known commands); everything else — plus mixed commands,
- * pipelines with uninspected tails, and command substitutions — passes through
- * untouched. So the "known-good list" constraint is enforced by snip itself here,
- * unlike the Gemini prompt-injection which has to spell the list out.
- *
- * The bash field uses snip's ABSOLUTE path (matching `snip init`'s own output),
- * because the hook runs in Copilot's environment where `~/.local/bin` may not be
- * on PATH. Skipped entirely when snip is not installed — the snip binary is put
- * on disk by `software/scripts/advanced/snip.sh`, which runs later in the same
- * advanced-profile pass, so on a first `--setup` the hook lands on the next run.
- *
- * Its own dedicated file (`snip.json`), so we own it outright and write it whole
- * rather than merging — nothing else in this repo touches `~/.copilot/hooks/`.
- *
- * @param {string} targetDir - Path to the `~/.copilot` directory.
- * @returns {Promise<void>}
- */
-async function _doCopilotSnipHookWork(targetDir) {
-  /** @type {string} Absolute path to the snip binary, empty when not installed. */
-  const snipPath = (await execBash("type -P snip 2>/dev/null")).trim();
-  if (!snipPath) {
-    log(">> Copilot snip hook: SKIPPED — snip not installed");
-    return;
-  }
-
-  /** @type {string} Folder Copilot reads PreToolUse hook definitions from. */
-  const hooksDir = path.join(targetDir, "hooks");
-  /** @type {string} Dedicated snip hook file. */
-  const targetPath = path.join(hooksDir, "snip.json");
-
-  await mkdir(hooksDir);
-
-  /** @type {object} The hook definition, mirroring `snip init --agent copilot`. */
-  const hook = {
-    hooks: {
-      preToolUse: [{ bash: `"${snipPath}" hook copilot`, type: "command" }],
-    },
-    version: 1,
-  };
-
-  await writeJson(targetPath, hook);
-
-  log(">> Copilot snip hook:", targetPath);
-}
-
 /**
  * Orchestrates GitHub Copilot CLI user-level setup: settings defaults +
  * shared engineering-principles instructions block + `/sy-*` skills. Skips
@@ -677,7 +620,6 @@ async function doWork() {
   await deploySharedLLMInstructions();
   await _doCopilotInstructionsWork(targetDir);
   await _doCopilotTweaksWork(targetDir);
-  await _doCopilotSnipHookWork(targetDir);
   // Skills live once in $LLM_ROOT_FOLDER/skills and are symlinked into ~/.copilot/skills
   // by the shared deploy — Copilot reads no other skill path.
   await deploySharedLLMSkills();
