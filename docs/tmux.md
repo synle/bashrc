@@ -622,11 +622,11 @@ with `focus: true`:
 
 Resolution order, first hit wins:
 
-| Source                             | Meaning                                       |
-| ---------------------------------- | --------------------------------------------- |
-| `focus: true` on a window          | that window (tmuxp's spelling; first one wins) |
-| `active_window: <n>` at the top    | the nth window, **1-based**                    |
-| nothing                            | the first window                               |
+| Source                          | Meaning                                        |
+| ------------------------------- | ---------------------------------------------- |
+| `focus: true` on a window       | that window (tmuxp's spelling; first one wins) |
+| `active_window: <n>` at the top | the nth window, **1-based**                    |
+| nothing                         | the first window                               |
 
 - **Out of range or not a number falls back to the first window**, never an error — a bad
   index must not fail an otherwise-good session.
@@ -637,6 +637,7 @@ Resolution order, first hit wins:
   implement — reach for real `tmuxp` when panes matter.
 
 ### `workspace_tmuxp` — parse tmuxp's schema with no tmuxp
+
 If the config is already in tmuxp's shape but you do not want the Python runtime on that
 machine, parse it directly. This is a sibling of `workspace`, not a replacement — `workspace`
 reads the short schema, `workspace_tmuxp` reads `session_name` / `window_name` /
@@ -1134,12 +1135,12 @@ rate limiting of its own.
 
 Dates below were read from the GitHub release APIs on 2026-08-22.
 
-| | tmux | zellij |
-| --- | --- | --- |
-| Age | project predates its 2015 GitHub mirror | repo created 2020-09-01 |
-| Latest | `3.7c`, 2026-08-17 | `v0.45.0`, 2026-08-20 |
-| Version | stable, long past 1.0 | **still 0.x after six years** |
-| Cadence | frequent point releases | 3-5 releases a year, irregular — 7 months between v0.43.1 and v0.44.0 |
+|         | tmux                                    | zellij                                                                |
+| ------- | --------------------------------------- | --------------------------------------------------------------------- |
+| Age     | project predates its 2015 GitHub mirror | repo created 2020-09-01                                               |
+| Latest  | `3.7c`, 2026-08-17                      | `v0.45.0`, 2026-08-20                                                 |
+| Version | stable, long past 1.0                   | **still 0.x after six years**                                         |
+| Cadence | frequent point releases                 | 3-5 releases a year, irregular — 7 months between v0.43.1 and v0.44.0 |
 
 **Where zellij is ahead:** the web client; session resurrection built in (tmux needs the
 `tmux-resurrect` tpm plugin, which `advanced/tmux.config` does install); floating and stacked

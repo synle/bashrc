@@ -75,9 +75,7 @@ describe("fzf case-mode wrapper", () => {
     // A generated name must never eat a command that already exists — `if`,
     // `id`, and a user's own helper all live in the same `i*` space.
     // Pre-defining the target name proves the skip.
-    const out = runInProfile(
-      'function ifcd() { echo PRESERVED; }; fzf_register_case_variants; ifcd',
-    );
+    const out = runInProfile("function ifcd() { echo PRESERVED; }; fzf_register_case_variants; ifcd");
     expect(out).toBe("PRESERVED");
   });
 
@@ -85,8 +83,7 @@ describe("fzf case-mode wrapper", () => {
     // -i is case-INsensitive and +i is case-SENSITIVE; unset means smart-case,
     // which turns case-sensitive on its own once the query has an uppercase
     // char. Asserted against real fzf --filter output, not the flag string.
-    const filter = (mode, query) =>
-      runInProfile(`printf 'ABC\\nabc\\n' | ${mode} fzf_run --filter=${query} | tr '\\n' ' '`);
+    const filter = (mode, query) => runInProfile(`printf 'ABC\\nabc\\n' | ${mode} fzf_run --filter=${query} | tr '\\n' ' '`);
 
     expect(filter("", "ABC")).toBe("ABC");
     expect(filter("FZF_CASE_MODE=insensitive", "ABC")).toBe("ABC abc");
@@ -94,9 +91,9 @@ describe("fzf case-mode wrapper", () => {
   });
 
   it.skipIf(!HAS_FZF)("leaves FZF_CASE_MODE unset in the calling shell", () => {
-    expect(
-      runInProfile('FZF_CASE_MODE=insensitive fzf_run --filter=x < /dev/null > /dev/null; echo "[${FZF_CASE_MODE:-unset}]"'),
-    ).toBe("[unset]");
+    expect(runInProfile('FZF_CASE_MODE=insensitive fzf_run --filter=x < /dev/null > /dev/null; echo "[${FZF_CASE_MODE:-unset}]"')).toBe(
+      "[unset]",
+    );
   });
 
   it("routes every picker through fzf_run rather than bare fzf", () => {

@@ -177,7 +177,8 @@ describe("worktree_clean", () => {
     }
   });
 
-  it("rejects unknown flags", () => {    const folder = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-clean-args-"));
+  it("rejects unknown flags", () => {
+    const folder = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-clean-args-"));
     try {
       const result = runCli(folder, ["--nope"]);
       expect(result.status).not.toBe(0);
