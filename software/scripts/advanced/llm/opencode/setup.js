@@ -176,10 +176,9 @@ const OLLAMA_DEFAULT_CONFIG = { limit: LIMIT_MEDIUM };
  * Builds the opencode config object dynamically from an array of providers.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providersArray - Simplified input schemas.
  * @param {Record<string, any>} [mcpServersOpencodeShape={}] - Map of MCP server name → opencode-native config (already translated from the standard shape via `translateMcpServersForOpencode`). Pass `{}` (or omit) when the shared registry is empty so opencode falls back to whatever the user has under `mcp` in `opencode.json`.
- * @param {boolean} [hasSnip=false] - Whether the `snip` binary is installed. When true, the `opencode-snip@latest` plugin is added; when false it is omitted so a missing binary can't break every command.
  * @returns {object} The full opencode.json content.
  */
-function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}, hasSnip = false) {
+function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   const providers = {};
 
   for (const item of providersArray) {
@@ -308,21 +307,14 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}, hasS
       batch_tool: true,
     },
     // Others tried and dropped as buggy or silent no-ops: supermemory,
-    // subagent-statusline, notify, worktree. snip was dropped once too (Aug 2026,
-    // reverted in c87415b) but is being retried pinned to @latest — the plugin
-    // (VincentHardouin/opencode-snip) uses the tool.execute.before hook to prefix
-    // supported commands with snip, and unsupported ones pass through unchanged.
-    // Gated on the snip binary being present (hasSnip): without it, prefixing every
-    // command with a missing `snip` would break the whole session. snip itself is
-    // installed by software/scripts/advanced/snip.sh, which runs later in the same
-    // advanced pass, so on a first --setup the plugin lands on the next run.
+    // subagent-statusline, notify, worktree, snip. snip (VincentHardouin/opencode-snip)
+    // was added twice and reverted twice — its tool.execute.before hook prepends `snip`
+    // to the agent's command, which mangles compound commands (for/do/done → invalid
+    // bash) and corrupts machine-readable output (a `--json` result the agent parses is
+    // filtered). Do not re-add; snip's interactive shell wrappers cover the human path.
     plugin: [
       // Re-prompts a session that went idle mid-task instead of leaving it parked.
       "opencode-auto-continue",
-      // Filters noisy shell output before it reaches the model, via snip
-      // (https://github.com/edouard-claude/snip). Pinned to @latest deliberately —
-      // the unpinned build reverted in Aug 2026 was a no-op when first tried.
-      ...(hasSnip ? ["opencode-snip@latest"] : []),
     ],
     provider: providers,
   };
@@ -824,7 +816,7 @@ async function doWork() {
   // self-corrects on the second run.
   await deploySharedLLMInstructions();
 
-  await writeJson(targetPath, _buildOpencodeConfig(providerInputs, mcpServersOpencodeShape, await isBinaryFound("snip")));
+  await writeJson(targetPath, _buildOpencodeConfig(providerInputs, mcpServersOpencodeShape));
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();

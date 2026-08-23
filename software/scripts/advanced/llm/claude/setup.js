@@ -219,77 +219,6 @@ async function _doMcpWork(targetDir) {
   await writeJson(targetPath, existing);
 }
 
-// --- Snip hook (token-filter PreToolUse) ---
-
-/**
- * Merges the snip PreToolUse hook into `~/.claude/settings.json`.
- *
- * This is what `snip init --agent claude-code` produces, generated here instead so the
- * repo owns it: a native Claude Code hook matching the `Bash` tool that routes every
- * supported shell command through snip's output filter
- * (https://github.com/edouard-claude/snip), cutting agent token usage.
- *
- * No random-command risk: `snip hook` only rewrites commands snip has a filter for (its
- * ~100 known commands); everything else passes through untouched. So the "known-good
- * list" constraint is enforced by snip itself here, exactly like the Copilot hook and
- * unlike the Gemini prompt-injection which has to spell the list out.
- *
- * Unlike Copilot's dedicated `hooks/snip.json`, Claude's hook lives INSIDE the shared
- * `settings.json`, so this merges: it drops any prior snip entry (a stale path from an
- * earlier run) and re-adds the current one, preserving every other `PreToolUse` group,
- * other hook events, and all non-hook settings. Runs AFTER `_doSettingsWork` /
- * `_doMcpWork` so it reads the settings they already wrote.
- *
- * The command uses snip's ABSOLUTE path (matching `snip init`'s output), since the hook
- * runs where `~/.local/bin` may not be on PATH. Skipped when snip is not installed — the
- * binary is put on disk by `software/scripts/advanced/snip.sh`, which runs later in the
- * same advanced-profile pass, so on a first `--setup` the hook lands on the next run.
- *
- * @param {string} targetDir - Path to the `~/.claude` directory.
- * @returns {Promise<void>}
- */
-async function _doClaudeSnipHookWork(targetDir) {
-  /** @type {string} Absolute path to the snip binary, empty when not installed. */
-  const snipPath = (await execBash("type -P snip 2>/dev/null")).trim();
-  if (!snipPath) {
-    log(">> Claude Code snip hook: SKIPPED — snip not installed");
-    return;
-  }
-
-  const targetPath = path.join(targetDir, "settings.json");
-
-  log(">> Claude Code snip hook:", targetPath);
-
-  /** @type {object} Existing settings — empty object on missing / invalid file. */
-  let existing = {};
-  try {
-    existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
-  } catch (e) {}
-
-  /** @type {Record<string, any>} */
-  const hooks = existing.hooks && typeof existing.hooks === "object" ? existing.hooks : {};
-  /** @type {any[]} Existing PreToolUse matcher groups. */
-  const preToolUse = Array.isArray(hooks.PreToolUse) ? hooks.PreToolUse : [];
-
-  // Drop any prior snip entry so a re-run converges (e.g. after the binary moved
-  // paths), leaving every non-snip group untouched.
-  const preserved = preToolUse.filter((group) => {
-    const inner = Array.isArray(group?.hooks) ? group.hooks : [];
-    return !inner.some((h) => typeof h?.command === "string" && h.command.includes("snip hook"));
-  });
-
-  preserved.push({
-    matcher: "Bash",
-    hooks: [{ type: "command", command: `${snipPath} hook` }],
-  });
-
-  hooks.PreToolUse = preserved;
-  existing.hooks = hooks;
-
-  await backupConfigFile(targetPath);
-  await writeJson(targetPath, existing);
-}
-
 // --- Instructions (User-Level CLAUDE.md) ---
 
 /**
@@ -341,7 +270,6 @@ async function doWork() {
 
   await _doSettingsWork(targetDir);
   await _doMcpWork(targetDir);
-  await _doClaudeSnipHookWork(targetDir);
   await _doKeysWork(targetDir);
   // Skills are written once to $LLM_ROOT_FOLDER/skills and symlinked into
   // ~/.claude/skills — no CLI-local copy of a command body exists anymore.
