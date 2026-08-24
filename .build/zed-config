@@ -113,7 +113,8 @@
     "xml": true,
     "ini": true,
     "log": true,
-    "basher": true
+    "basher": true,
+    "oxc": true
   },
   "icon_theme": "Material Icon Theme",
   "prettier": {
@@ -121,27 +122,70 @@
   },
   "languages": {
     "JavaScript": {
-      "formatter": "prettier"
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        },
+        {
+          "code_action": "source.fixAll.oxc"
+        }
+      ]
     },
     "TypeScript": {
-      "formatter": "prettier"
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        },
+        {
+          "code_action": "source.fixAll.oxc"
+        }
+      ]
     },
     "TSX": {
-      "formatter": "prettier"
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        },
+        {
+          "code_action": "source.fixAll.oxc"
+        }
+      ]
     },
     "JSON": {
-      "formatter": "prettier"
-    },
-    "JSONC": {
-      "formatter": "prettier"
+      "formatter": {
+        "language_server": {
+          "name": "oxfmt"
+        }
+      }
     },
     "HTML": {
-      "formatter": "prettier"
+      "formatter": {
+        "language_server": {
+          "name": "oxfmt"
+        }
+      }
     },
     "CSS": {
-      "formatter": "prettier"
+      "formatter": {
+        "language_server": {
+          "name": "oxfmt"
+        }
+      }
     },
     "SCSS": {
+      "formatter": {
+        "language_server": {
+          "name": "oxfmt"
+        }
+      }
+    },
+    "JSONC": {
       "formatter": "prettier"
     },
     "Markdown": {
@@ -180,7 +224,17 @@
       "formatter": "language_server"
     },
     "XML": {
-      "formatter": "language_server"
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": [
+            "--stdin-filepath",
+            "{buffer_path}",
+            "--parser",
+            "html"
+          ]
+        }
+      }
     },
     "Make": {
       "formatter": "language_server"

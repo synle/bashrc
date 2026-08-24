@@ -4,6 +4,7 @@ set -u
 deprecated_extensions=(
   "visualstudioexptteam.vscodeintellicode"
   "visualstudioexptteam.intellicode-api-usage-examples"
+  "dbaeumer.vscode-eslint"
 )
 extensions=(
   "dracula-theme.theme-dracula"
@@ -11,7 +12,7 @@ extensions=(
   "oderwat.indent-rainbow"
   "aaron-bond.better-comments"
   "esbenp.prettier-vscode"
-  "dbaeumer.vscode-eslint"
+  "oxc.oxc-vscode"
   "streetsidesoftware.code-spell-checker"
   "wmaurer.change-case"
   "nicoespeon.abracadabra"
