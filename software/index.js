@@ -4126,9 +4126,10 @@ async function _readTextFromURL(url) {
       // Token goes through the environment, never the command line, so it cannot be read
       // out of the process list by another user on the machine.
       const authHeaderArg = authToken ? `-H "Authorization: Bearer $BASHRC_GH_API_TOKEN" ` : "";
-      result = await execBash(`curl -fsSL ${authHeaderArg}--max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`, {
-        ...(authToken ? { env: { ...process.env, BASHRC_GH_API_TOKEN: authToken } } : {}),
-      });
+      result = await execBash(
+        `curl -fsSL ${authHeaderArg}--max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`,
+        authToken ? { env: { ...process.env, BASHRC_GH_API_TOKEN: authToken } } : {},
+      );
     }
   } catch (err) {
     // Normalize the failure reason to one of: timeout | <node errno> | <error name>.
@@ -4848,7 +4849,7 @@ async function getSoftwareScriptFiles() {
 async function execBash(cmd, options) {
   const MAX_TIMEOUT = 30_000;
   const execOptions = {
-    ...(options || {}),
+    ...options,
     encoding: "utf8",
     maxBuffer: 50 * 1024 * 1024,
     timeout: Math.min(options?.timeout || MAX_TIMEOUT, MAX_TIMEOUT),
@@ -4869,7 +4870,7 @@ async function execBash(cmd, options) {
 function execBashSync(cmd, options) {
   const MAX_TIMEOUT = 30_000;
   return execSync(cmd, {
-    ...(options || {}),
+    ...options,
     encoding: "utf8",
     maxBuffer: 50 * 1024 * 1024,
     timeout: Math.min(options?.timeout || MAX_TIMEOUT, MAX_TIMEOUT),

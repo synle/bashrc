@@ -105,6 +105,10 @@ format_spec_cleanup:
 format_prettier:
 	npm run format
 
+# Lint JS with oxlint (correctness rules; see .oxlintrc.json for disabled-rule rationale)
+lint:
+	npx oxlint .
+
 ################################################################################
 # ---- Build ----
 ################################################################################
@@ -229,7 +233,7 @@ test: test_all
 # Format code + run all tests (automated by PostToolUse hook)
 # Always add new test suites here.
 # test_profile runs last as warning only — on failure, shows which profile blocks may have errors
-validate: format test_unit test_buildconfig build_webapp test_smoke_local test_dryrun ci_test_shellcheck
+validate: format lint test_unit test_buildconfig build_webapp test_smoke_local test_dryrun ci_test_shellcheck
 	make test_profile 2>&1 || echo "WARNING: test_profile failed — check profile blocks above for syntax errors"
 
 # Format + build webapp (used by CI workflow)

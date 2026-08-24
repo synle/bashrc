@@ -28,7 +28,8 @@ function loadVsCode(overrides = {}) {
     parseBoolean: (v) => String(v ?? "").toLowerCase() === "true" || Number.parseInt(v, 10) === 1,
     getRuntimeOption: (_key, parser) => (parser ? parser("") : ""),
     clone,
-    process: { env: { HOME: "/mock/home" } },
+    // llm-common.js (SOURCEd in) derives the LLM home from LLM_ROOT_FOLDER.
+    process: { env: { HOME: "/mock/home", LLM_ROOT_FOLDER: "/mock/home/sy/ai_llm" } },
     fs: { existsSync: () => false },
     path: { join: (...args) => args.join("/"), resolve: (p) => p },
     findPath: () => null,
@@ -36,9 +37,7 @@ function loadVsCode(overrides = {}) {
     getWindowAppDataRoamingUserPath: () => null,
     getOsxApplicationSupportCodeUserPath: () => "/mock/home/Library/Application Support",
     BASE_HOMEDIR_LINUX: "/mock/home",
-    // llm-common.js (SOURCEd in) derives the LLM home from these two.
     SY_ROOT_FOLDER: "/mock/home/sy",
-    process: { env: { LLM_ROOT_FOLDER: "/mock/home/sy/ai_llm" } },
     EDITOR_CONFIGS: {
       fontFamily: "FiraCode",
       fontFamilyDefaultFallback: "monospace",

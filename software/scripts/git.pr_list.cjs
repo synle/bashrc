@@ -823,7 +823,7 @@ function queryPr(pr) {
  * @returns {Promise<{rows: Row[], unreadable: number}>}
  */
 async function enrich(hits) {
-  const rows = new Array(hits.length);
+  const rows = Array.from({ length: hits.length });
   let unreadable = 0;
   let nextIndex = 0;
   let completed = 0;

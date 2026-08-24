@@ -105,6 +105,7 @@ make format_ci_binaries    # regenerate the ci-binary-checks block
 make build_all             # configs, hosts, webapp, postbuild
 make build_installer       # .build/install-bashrc.sh self-extracting installer
 make test_unit             # vitest, vitest.config.js
+make lint                  # oxlint correctness pass (.oxlintrc.json)
 make test_coverage         # + istanbul; thresholds live in vitest.config.js
 make test_profile          # bash -n / profile invariants
 make test_buildconfig      # inline-snapshot shape (…_update to refresh)

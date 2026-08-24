@@ -211,7 +211,7 @@ function _getZedSettings(
 
     // --- Terminal ---
     terminal: {
-      ...(baseConfig.terminal || {}),
+      ...baseConfig.terminal,
       max_scroll_history_lines: EDITOR_CONFIGS.terminalScrollback,
     },
 
@@ -229,8 +229,8 @@ function _getZedSettings(
     // --- Agent: preserve dock / tool_permissions from baseConfig and optionally add the
     // discovered default_model (only set when local Ollama responded).
     agent: {
-      ...(baseConfig.agent || {}),
-      ...(defaultModel ? { default_model: defaultModel } : {}),
+      ...baseConfig.agent,
+      ...(defaultModel && { default_model: defaultModel }),
     },
   };
 
