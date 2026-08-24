@@ -217,7 +217,14 @@
     "Dockerfile": { "formatter": "language_server" }, // dockerfile-language-server (no format) — pin keeps prettier away
     // Grammar-only extensions — no language server exists, pin is a deliberate no-op
     "TOML": { "formatter": "language_server" },
-    "XML": { "formatter": "language_server" },
+    // XML has no formatting language server, and neither oxfmt nor prettier has a native
+    // XML parser. Fall back to prettier's HTML parser via an external command (prettier is
+    // on PATH). {buffer_path} feeds the filename so prettier's --parser html overrides the
+    // (absent) inference. Mirrors the ~/.prettierrc.json *.xml→html override used for VS
+    // Code (prettier-config.js), so both editors format XML the same way.
+    "XML": {
+      "formatter": { "external": { "command": "prettier", "arguments": ["--stdin-filepath", "{buffer_path}", "--parser", "html"] } },
+    },
     "Make": { "formatter": "language_server" },
     "ini": { "formatter": "language_server" }, // lowercase — matches the ini extension's declared name
     "LOG": { "formatter": "language_server" },

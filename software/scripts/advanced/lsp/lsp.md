@@ -67,6 +67,14 @@ oxc binaries: `oxlint` + `oxfmt` are installed globally (`software/scripts/advan
 `vs-code.js` injects `oxc.path.oxlint` / `oxc.path.oxfmt` (resolved from `~/.local/bin`)
 into local `settings.json`; the Zed extension self-provisions the binaries.
 
+XML: neither oxfmt nor prettier has a native XML parser, so XML falls back to prettier's
+**HTML** parser. VS Code pins `[xml]` → `esbenp.prettier-vscode` and the parser choice comes
+from a global `~/.prettierrc.json` (`*.xml` → `parser: html`) written by
+`software/scripts/advanced/prettier-config.js` — a project-level prettier config still wins,
+so it is a true fallback. Zed reaches the same html parser via an `external`
+`prettier --parser html` command in `zed-config.jsonc` (no config file needed). Sublime is
+not wired for XML.
+
 Repo source files:
 
 - VS Code: `software/scripts/advanced/vs-code-config.jsonc` (`editor.formatOnSave`, `editor.defaultFormatter`, `[lang]` overrides → `oxc.oxc-vscode` for the oxc types, `esbenp.prettier-vscode` for JSONC/MD/YAML/GraphQL/Vue, native LSP for Python/Rust/Go/Java; `codeActionsOnSave["source.fixAll.oxc"]`).
