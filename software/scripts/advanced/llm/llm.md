@@ -163,6 +163,39 @@ DOCX, XLSX, PPTX, images, audio, HTML, CSV, JSON, ZIP**, and more.
   `bash run.sh --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"`
   (or `bash run.sh --preset=llm`).
 
+### Using the Playwright MCP server
+
+Microsoft's [`@playwright/mcp`](https://github.com/microsoft/playwright-mcp)
+ships in the shared registry and deploys to all four CLIs. It gives the agent
+**browser automation** over STDIO — navigate, click, type, fill forms,
+screenshot, and capture accessibility snapshots — handy for debugging the repo's
+own `webapp/` or any web task.
+
+- **Runtime**: launched as `npx -y @playwright/mcp@latest --headless --isolated`.
+  `node`/`npx` are installed cross-OS by the repo; the **first** call fetches the
+  package, and the **first browser launch** downloads Chromium into
+  ms-playwright's cache (`~/Library/Caches/ms-playwright` on mac,
+  `~/.cache/ms-playwright` on linux). If a run reports a missing browser, run
+  `npx playwright install chromium` once.
+- **Flags baked in**: `--headless` (works on WSL/Linux/servers with no display)
+  and `--isolated` (in-memory profile — never reuses personal browser sessions).
+  To run headed or persist a profile, edit the registry entry, not the deployed
+  file (this name is registry-managed, so a hand edit to the deployed config is
+  overwritten on the next setup run).
+- **How to invoke** — ask the agent in plain language:
+  - `"Open http://localhost:5173 and give me the accessibility snapshot"`
+  - `"Click the Sign in button and screenshot the result"`
+  - `"Fill the contact form and submit it, then report any console errors"`
+- **Not a security boundary** (upstream's words). `--isolated` keeps it off
+  personal sessions; `--allow-unrestricted-file-access` is deliberately NOT set,
+  so file access stays within the workspace roots.
+- **Verify it's wired up** (per CLI, after a setup run):
+  - Claude / Gemini → `mcpServers.playwright` in `~/.claude/settings.json` /
+    `~/.gemini/settings.json`
+  - Copilot → `mcpServers.playwright` in `~/.copilot/mcp-config.json`
+  - OpenCode → `mcp.playwright` in `~/.config/opencode/opencode.json`
+    (translated `{ type: "local", command: ["npx", …], enabled: true }` shape)
+
 ### Shell dispatchers (`sy-*` and `<cli>_skill_*` from the terminal)
 
 Every `_common/commands/<name>.md` slash command also has matching bash

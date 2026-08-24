@@ -49,6 +49,18 @@
     "markitdown": {
       "command": "uvx",
       "args": ["markitdown-mcp"]
+    },
+    // Microsoft Playwright — browser automation over STDIO: navigate, click,
+    // fill forms, screenshot, and capture accessibility snapshots. Useful for
+    // debugging the repo's own webapp/ and any web work. `npx` (Node installed
+    // cross-OS by this repo) fetches the package on first run. `--headless`
+    // keeps it working on WSL/Linux/servers with no display; `--isolated` uses
+    // an in-memory profile so it never touches personal browser sessions. The
+    // first browser launch downloads Chromium into ms-playwright's cache; if a
+    // run reports a missing browser, run `npx playwright install chromium`.
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless", "--isolated"]
     }
     // Example (commented; uncomment + edit to enable everywhere):
     // "context7": {
