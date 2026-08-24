@@ -284,6 +284,7 @@ describe("build config shape - objects", () => {
         "[typescript]",
         "[typescriptreact]",
         "[vue]",
+        "[xml]",
         "[yaml]",
         "breadcrumbs.enabled",
         "chat.agent.enabled",
