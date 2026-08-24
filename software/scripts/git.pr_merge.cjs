@@ -22,6 +22,19 @@ function info(message) {
 }
 
 /**
+ * Render a URL as an OSC 8 terminal hyperlink so it is clickable, but only when stderr is
+ * a TTY. Piped/redirected output stays the bare URL so captured logs remain greppable.
+ * Byte-equivalent to format_hyperlink() in common-functions.bash — duplicated because this
+ * script deploys as a standalone executable. See AGENTS.md (Terminal links).
+ * @param {string} url
+ * @returns {string}
+ */
+function formatLink(url) {
+  if (!process.stderr.isTTY) return url;
+  return `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`;
+}
+
+/**
  * Run gh and return stdout, or an empty string on failure.
  * @param {string[]} args
  * @returns {string}
@@ -250,7 +263,7 @@ async function main() {
     }
     const pullRequest = inspectPullRequest(reference);
     if (!pullRequest) {
-      info(`Could not validate open pull request: ${reference.url}`);
+      info(`Could not validate open pull request: ${formatLink(reference.url)}`);
       continue;
     }
     valid.push(pullRequest);
@@ -266,7 +279,7 @@ async function main() {
   for (const pullRequest of valid) {
     const label = pullRequest.wip ? "WIP" : "READY";
     const comments = pullRequest.unresolved ? ` · ${pullRequest.unresolved} unresolved comment(s)` : ``;
-    info(`  ${label} · ${pullRequest.createdAt.slice(0, 10)} · ${pullRequest.url}${comments}`);
+    info(`  ${label} · ${pullRequest.createdAt.slice(0, 10)} · ${formatLink(pullRequest.url)}${comments}`);
   }
 
   info("");

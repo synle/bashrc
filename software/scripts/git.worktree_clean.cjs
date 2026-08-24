@@ -68,6 +68,21 @@ function paint(text, code, enabled) {
 }
 
 /**
+ * Turn any URL inside a display string into an OSC 8 terminal hyperlink so it is
+ * clickable, but only when color/TTY human output is enabled. Piped output (enabled =
+ * false) is returned untouched so logs stay greppable. Byte-equivalent to
+ * format_hyperlink() in common-functions.bash — duplicated because this script deploys as
+ * a standalone executable. See AGENTS.md (Terminal links).
+ * @param {string} text
+ * @param {boolean} enabled
+ * @returns {string}
+ */
+function linkify(text, enabled) {
+  if (!enabled) return text;
+  return text.replace(/https?:\/\/\S+/g, (url) => `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
+}
+
+/**
  * Parse command-line options.
  * @param {string[]} argv
  * @returns {{dryRun: boolean, noColor: boolean, force: boolean, help: boolean}}
@@ -452,7 +467,7 @@ function main() {
       }
 
       print(`   ├─ ${icon} ${paint(action, actionColor, color)} ${worktree.path}`);
-      print(`   │  ${paint(`BRANCH`, ANSI.dim, color)} ${branch} · ${decision.reason}`);
+      print(`   │  ${paint(`BRANCH`, ANSI.dim, color)} ${branch} · ${linkify(decision.reason, color)}`);
     }
   }
 
