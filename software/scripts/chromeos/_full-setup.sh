@@ -80,7 +80,6 @@ function _installBackgroundPackages() {
   echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
-    rm -f "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
   _BACKGROUND_INSTALL_PID=$!
 }
