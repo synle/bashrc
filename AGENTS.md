@@ -319,6 +319,17 @@ Profile registration is buffered: `registerProfileBlock` /
 - **`getGitHubRawUrl(path)` / `get_github_raw_url <path>`** for GitHub raw URLs; always
   `https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{path}` — `github.com/.../blob`
   has no CORS and `api.github.com/.../contents` returns JSON.
+- **Terminal links: emit clickable URLs as OSC 8 hyperlinks, TTY-gated.** Human-facing
+  terminal output that prints a URL wraps it so modern terminals (and tmux 3.4+ with the
+  `hyperlinks` terminal-feature, set in `tmux.config`) render it clickable. Shell uses
+  `format_hyperlink <url> [label]` (`common-functions.bash`); each standalone `git.*.cjs`
+  carries a byte-equivalent local `formatLink()` because they deploy as separate
+  executables and cannot source that file (duplication is forced by the deploy model, not
+  a choice). **Always gate on a TTY** (`[ -t 1 ]` / `process.std{out,err}.isTTY`): piped,
+  redirected, and machine-consumed output (`list_prs --links`, anything another tool
+  parses) stays the bare URL so it remains greppable. Agent chat/markdown is NOT terminal
+  output — never emit raw OSC 8 escapes there; render a full-path link as prose per the
+  PR-workflow rules. The escape is `ESC ]8;; <url> ST <label> ESC ]8;; ST`.
 - **Lowercase hex colors** — `#1e1e1e`, not `#1E1E1E`.
 - Async by default (`await execBash`, `await writeText`). Catch the narrowest error;
   never swallow silently in a diagnostic or rollback path. Two-space indent; `oxfmt`

@@ -504,6 +504,23 @@ function get_github_raw_url() {
   echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
+# format_hyperlink <url> [label] - Wrap a URL in an OSC 8 terminal hyperlink so it is
+# clickable in modern terminals (label defaults to the URL). ONLY emits the escape when
+# stdout is a TTY - piped/redirected output stays the bare URL so it remains greppable and
+# machine-parseable. This is the canonical way to print a clickable link from shell; the
+# standalone git.*.cjs tools carry a byte-equivalent formatLink() because they deploy as
+# separate executables and cannot source this file. See AGENTS.md (Terminal links).
+# Usage: echo "PR: $(format_hyperlink "https://github.com/o/r/pull/1")"
+function format_hyperlink() {
+  local url="$1"
+  local label="${2:-$1}"
+  if [ -t 1 ]; then
+    printf '\033]8;;%s\033\\%s\033]8;;\033\\' "$url" "$label"
+  else
+    printf '%s' "$label"
+  fi
+}
+
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
 # max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
 function is_path_stale() {
