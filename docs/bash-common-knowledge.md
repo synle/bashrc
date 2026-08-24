@@ -59,7 +59,7 @@ command >> file.log 2>&1   # POSIX equivalent
 
 ### Discarding Output with `/dev/null`
 
-`/dev/null` is a special file that discards anything written to it.
+`/dev/null` discards anything written to it.
 
 ```bash
 # Discard stdout only (stderr still visible for debugging)
@@ -73,7 +73,7 @@ command &> /dev/null
 command > /dev/null 2>&1
 ```
 
-**This repo's convention:** Use `> /dev/null` (not `&> /dev/null`) for standalone install commands so that stderr remains visible for debugging. Use `&> /dev/null` inside conditionals and checks (`type -P`, `command`, `grep`) where you only care about the exit code.
+**This repo's convention:** `> /dev/null` for standalone installs (stderr stays visible); `&> /dev/null` inside conditionals/checks (`type -P`, `command`, `grep`) where only the exit code matters.
 
 ```bash
 # Install: keep stderr visible
@@ -99,7 +99,7 @@ brew install pkg &>> $BASHRC_TEMP_DIR/fullsetup.log      # DANGEROUS inside here
 brew install pkg < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log   # SAFE
 ```
 
-This pattern appears across all `_full-setup.sh` scripts:
+All `_full-setup.sh` scripts use this pattern:
 
 ```bash
 # mac/_full-setup.sh
@@ -113,8 +113,6 @@ sudo pacman -S --noconfirm --needed $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetu
 ```
 
 ### Combining Redirections
-
-You can combine stdin, stdout, and stderr redirections in a single command:
 
 ```bash
 # Detach stdin + log all output (both stdout and stderr) to a file
@@ -142,13 +140,13 @@ command 3>&1 1>&2 2>&3 3>&-
 
 ### Redirecting to stderr
 
-When writing shell functions that participate in pipelines, output diagnostic messages to stderr so they don't pollute stdout:
+Diagnostics go to stderr so pipelines stay clean:
 
 ```bash
 echo "Warning: something happened" >&2
 ```
 
-This repo's `log()` function in `index.js` uses `console.error` (fd 2) because the main pipeline is `node | bash` — stdout carries bash commands, so all human-readable messages must go to stderr.
+Repo's `log()` in `index.js` writes to fd 2 because the pipeline is `node | bash` — stdout carries bash commands.
 
 ---
 
@@ -194,7 +192,7 @@ wait $bg_pid
 
 ### `disown` vs Subshell Backgrounding
 
-`disown` removes a job from the shell's job table, but this repo avoids it in scripts. Instead, use subshell backgrounding:
+`disown` removes a job from the job table, but this repo avoids it — subshell backgrounding detaches cleanly:
 
 ```bash
 # Avoid in scripts:
@@ -223,8 +221,6 @@ bg %1
 # Kill a background job
 kill %1
 ```
-
-### Timeout Pattern (from this repo)
 
 A sophisticated timeout using nested subshells and background processes:
 

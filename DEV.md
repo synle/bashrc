@@ -4,43 +4,16 @@ Personal dotfiles and shell-environment bootstrapper. The setup engine is Node.j
 
 ## Quick Start
 
-Install dependencies:
-
 ```bash
-npm ci || npm install --no-fund --prefer-offline
+npm ci || npm install --no-fund --prefer-offline   # deps
+npm run dev                # webapp dev server
+make setup_local_full      # full profile setup
+npm test                   # unit tests
+npm run build              # build webapp
+make build_installer       # .build/install-bashrc.sh
 ```
 
-Run the webapp dev server:
-
-```bash
-npm run dev
-```
-
-Run the bootstrapper locally (full profile setup):
-
-```bash
-make setup_local_full
-```
-
-Run unit tests:
-
-```bash
-npm test
-```
-
-Build the webapp:
-
-```bash
-npm run build
-```
-
-Build the self-extracting single-file installer:
-
-```bash
-make build_installer   # -> .build/install-bashrc.sh
-```
-
-Output is a single bash script (~1 MB) containing `run.sh` + `software/{index.js,common.js,bootstrap,scripts,metadata}` as a base64'd gzipped tarball after a sentinel marker. At runtime it extracts to a per-PID tmp dir (override with `BASHRC_INSTALLER_DIR`; preserve with `BASHRC_INSTALLER_KEEP=1`) and `exec`s `bash run.sh "$@"` — every `run.sh` flag (`--setup`, `--files=`, `--preset=`, `--dryrun`, ...) is forwarded. CI mirrors it to the `binary-cache` rolling release on `synle/bashrc` as `bashrc-installer__install-bashrc.sh`, so end-users can install with one HTTP request:
+The installer is a single bash script (~1 MB): `run.sh` + `software/` as a base64'd gzipped tarball after a sentinel marker. Extracts to a per-PID tmp dir (`BASHRC_INSTALLER_DIR` overrides, `BASHRC_INSTALLER_KEEP=1` preserves), forwards every `run.sh` flag. CI mirrors it to the `binary-cache` release as `bashrc-installer__install-bashrc.sh`:
 
 ```bash
 curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash -s -- --setup
@@ -50,23 +23,23 @@ See `software/tools/build-installer.js`.
 
 ## Running a Subset
 
-`run.sh` accepts narrow targets (`--files=`) and broad preset bundles (`--preset=`). Both support case-insensitive substring matching — one match auto-resolves, multiple matches print copy-paste suggestions.
+`run.sh` takes narrow `--files=` and broad `--preset=`; both fuzzy-match case-insensitively (1 hit auto-resolves, more print suggestions).
 
 ```bash
-bash run.sh --files=git.js                         # one script (exact)
-bash run.sh --files=vim                            # fuzzy match (auto-resolves if unambiguous)
-bash run.sh --preset=lightweight                   # named preset from software/metadata/presets.jsonc
-bash run.sh --preset=terminal,prompt               # union of multiple presets
-bash run.sh @llm                                   # bare @-marker → strict preset lookup
-bash run.sh editors                                # bare arg → script-first, falls back to preset on miss
-bash run.sh --refresh="fzf.js,fonts.js"            # force-refresh specific scripts
-bash run.sh --dryrun --setup                       # preview a full setup, no writes
-bash run.sh --remove --files=fzf.js                # undoWork for one script
+bash run.sh --files=git.js              # one script
+bash run.sh --files=vim                 # fuzzy match
+bash run.sh --preset=lightweight        # named preset
+bash run.sh --preset=terminal,prompt    # union
+bash run.sh @llm                        # strict preset lookup
+bash run.sh editors                     # bare arg: script-first, preset fallback
+bash run.sh --refresh="fzf.js,fonts.js" # force-refresh specific scripts
+bash run.sh --dryrun --setup            # preview, no writes
+bash run.sh --remove --files=fzf.js     # undoWork for one script
 ```
 
-End-user composites: `lightweight` and `heavyweight` (kitchen-sink — symmetric counterpart to `lightweight`). Building blocks: `editors`, `emulators`, `apps`, `browsers`, `terminal`, `prompt`, `llm`. See `software/metadata/presets.jsonc` for the authoritative list and per-preset descriptions; the file is JSONC, so `//`, `/* */`, and trailing commas are allowed (stripped by `stripJsoncComments` in `software/index.js` before `JSON.parse`). Each entry declares a `files[]` list and/or a `presets[]` list pointing at other presets (composed recursively); `heavyweight` is the canonical example, defined as `{ "presets": ["editors", "emulators", "apps", "browsers", "terminal", "prompt", "llm"] }`. Cycles (a preset referencing itself, directly or transitively) are rejected at parse time by `expandPresetFiles` in `software/index.js` and guarded by `software/tests/presets.spec.js`.
+Presets live in `software/metadata/presets.jsonc` (JSONC). Each entry declares `files[]` and/or recursive `presets[]`; cycles rejected at parse time by `expandPresetFiles`, guarded by `software/tests/presets.spec.js`. Composites: `lightweight` / `heavyweight`. Building blocks: `editors`, `emulators`, `apps`, `browsers`, `terminal`, `prompt`, `llm`.
 
-CLI resolution priority: `--files=<x>` is strict (script only); `--preset=<x>` (and `--preset=@<x>`, which strips the `@`) is strict preset with case-insensitive substring fuzzy fallback; bare `<x>` tries scripts first and falls back to a preset lookup (`_resolveBareArgPresetFallback` in `software/index.js`); bare `@<x>` skips the script search and goes straight to preset resolution. On script-vs-preset name collision the script wins (e.g. `bash run.sh llm` partial-matches `llm-common.js`; use `@llm` to force the `llm` preset).
+Resolution priority: `--files=` strict script-only; `--preset=` strict with substring fallback; bare `<x>` script-first then preset (`_resolveBareArgPresetFallback`); bare `@<x>` preset only. Collision → script wins (`bash run.sh llm` hits `llm-common.js`; use `@llm`).
 
 ## Testing
 
@@ -116,7 +89,7 @@ The convention-linter specs (one rule each) are listed in AGENTS.md §11.
 
 ### Coverage
 
-The unit suite uses the istanbul provider via `@vitest/coverage-istanbul`. **Thresholds, included / excluded globs, and the rationale for the current floor all live in `vitest.config.js` — that file is the source of truth.** Don't duplicate the numbers in other docs; if a threshold changes, edit `vitest.config.js` and let downstream readers chase the link. There is no Rust / `cargo-llvm-cov` in this repo; if a future Rust sibling project lands, document its coverage config path next to the vitest entry instead of hardcoding a percentage.
+Istanbul provider via `@vitest/coverage-istanbul`. Thresholds, globs, and rationale live in `vitest.config.js` — the source of truth; don't duplicate numbers here.
 
 ## Make Targets
 
