@@ -271,9 +271,7 @@ function runCurl(opts) {
   }
 
   const runner = path.join(sandbox, "runner.sh");
-  const envLines = Object.entries({ BASHRC_CURL_HAR_FOLDER: harFolder, ...(opts.env ?? {}) }).map(
-    ([k, v]) => `export ${k}=${JSON.stringify(v)}`,
-  );
+  const envLines = Object.entries({ BASHRC_CURL_HAR_FOLDER: harFolder, ...opts.env }).map(([k, v]) => `export ${k}=${JSON.stringify(v)}`);
 
   fs.writeFileSync(
     runner,

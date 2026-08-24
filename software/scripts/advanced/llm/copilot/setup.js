@@ -378,7 +378,7 @@ async function _doCopilotSettingsWork(targetDir) {
   // `builtInAgents` is the one nested managed key, and a plain spread would let a
   // user object holding ONE subkey drop the other. Fill in per subkey instead, so
   // enabling `rubberDuck` by hand can't silently un-manage `rubberDuckAutoInvoke`.
-  merged.builtInAgents = { ...COPILOT_MANAGED_SETTINGS.builtInAgents, ...(existing.builtInAgents || {}) };
+  merged.builtInAgents = { ...COPILOT_MANAGED_SETTINGS.builtInAgents, ...existing.builtInAgents };
 
   // `allowedUrls` is additive, not defaulted: the spread above would drop every
   // managed host the moment the user approves a single URL of their own. Union

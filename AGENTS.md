@@ -499,11 +499,13 @@ golden rule 3). The names you reach for daily: `readText` / `code` / `json`,
 
 Full annotated list in **`DEV.md` → Make Targets**. The agent-relevant ones:
 `make format` (after touching BEGIN/END markers, the CI binary list, script indexes, or
-JSDoc), `make test_unit`, `make test_profile`, `make test_buildconfig`, `make test_dryrun`,
-`make new-script name= os= type=`, `make doctor`, and `make validate` — the pre-push gate
-(§14.1). The formatter is **oxfmt** (`npm run format`), not prettier, despite the
-`format_prettier` target name; shell formatting is `shfmt -w -i 2 -bn -sr`. The Makefile
-uses `.ONESHELL`; escape shell `$` as `$$`.
+JSDoc), `make lint` (oxlint; `.oxlintrc.json` disables `no-unused-vars`,
+`no-useless-escape`, `no-control-regex` — SOURCE-inlined libs and bash/ANSI-generating
+code make them noise), `make test_unit`, `make test_profile`, `make test_buildconfig`,
+`make test_dryrun`, `make new-script name= os= type=`, `make doctor`, and `make validate`
+— the pre-push gate (§14.1). The formatter is **oxfmt** (`npm run format`), not prettier,
+despite the `format_prettier` target name; shell formatting is `shfmt -w -i 2 -bn -sr`.
+The Makefile uses `.ONESHELL`; escape shell `$` as `$$`.
 
 ---
 
@@ -684,12 +686,12 @@ sources `_common/agents/<name>.md`.
 Everything LLM tooling owns outside a checkout lives under one root, created by
 `deploySharedLLMInstructions()` in `llm-common.js` (called by all four setups):
 
-| Path | Holds |
-| --- | --- |
+| Path                            | Holds                                                        |
+| ------------------------------- | ------------------------------------------------------------ |
 | `~/_extra/ai_llm/instructions/` | On-demand instruction files (`LLM_SHARED_INSTRUCTION_FILES`) |
-| `~/_extra/ai_llm/skills/` | ONE copy of every `/sy-*` skill (§13.1) |
-| `~/_extra/ai_llm/agents/` | ONE copy of every named agent (§13.2) |
-| `~/_extra/ai_llm/plans/` | Flat plan artifacts + sidecars |
+| `~/_extra/ai_llm/skills/`       | ONE copy of every `/sy-*` skill (§13.1)                      |
+| `~/_extra/ai_llm/agents/`       | ONE copy of every named agent (§13.2)                        |
+| `~/_extra/ai_llm/plans/`        | Flat plan artifacts + sidecars                               |
 
 - **Location decided in one place: `LLM_ROOT_FOLDER` in `software/bootstrap/common-env.sh`** —
   it alone reaches both surfaces (inlined into `run.sh`, re-exported into

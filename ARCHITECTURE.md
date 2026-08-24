@@ -8,19 +8,19 @@ Also ships a Vite + React webapp (`webapp/`, sources in `src/`) at https://synle
 
 ## Key Directories
 
-| Path | Purpose |
-| --- | --- |
-| `software/scripts/` | Per-tool installers + OS subdirs (`mac/`, `ubuntu/`, `redhat/`, `arch_linux/`, `windows/`, `wsl/`, `mingw64/`, `chromeos/`, `steamos/`, `android_termux/`) and `advanced/` subtrees. Filename prefix orders execution (`_init` first, `~cleanup`/`~wrapup` last). |
-| `software/bootstrap/` | Bash entry points sourced by `run.sh`: `common-env.sh` (OS detection, env vars), `common-functions.bash`, `profile-core.sh`, `profile-advanced.sh`, `setup.sh`. |
-| `software/metadata/` | Build-time config: autocomplete specs, host blocklists, `presets.jsonc`, `ci-binaries.json`, file associations, hostname/IP groups, canonical script list. |
-| `software/metadata/autocomplete-complete-spec/` | Tab-completion specs (42 files) shared by bash + PowerShell. |
-| `software/tools/` | Dev tooling: `build-include.js` (marker-inline builder), `build-installer.js`, `doctor.sh`, `new-script.sh`, formatters. |
-| `software/tests/` | Vitest unit + smoke specs for the engine. |
-| `webapp/`, `src/` | Vite + React demo site published to GitHub Pages. |
-| `tests/` | Vitest tests outside the engine. |
-| `.build/` | Generated artifacts committed back by CI (editor configs, host files). Per-OS `profile_bashrc_<os>.sh` not tracked in git — mirrored to the `binary-cache` release, copied into `dist/` by publish for same-origin Pages fetch. |
-| `docs/` | Topical knowledge bases (bash, git, CICD, Docker, K8s, OS notes). |
-| `assets/` | Binary blobs + fonts used by installers. |
+| Path                                            | Purpose                                                                                                                                                                                                                                                           |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `software/scripts/`                             | Per-tool installers + OS subdirs (`mac/`, `ubuntu/`, `redhat/`, `arch_linux/`, `windows/`, `wsl/`, `mingw64/`, `chromeos/`, `steamos/`, `android_termux/`) and `advanced/` subtrees. Filename prefix orders execution (`_init` first, `~cleanup`/`~wrapup` last). |
+| `software/bootstrap/`                           | Bash entry points sourced by `run.sh`: `common-env.sh` (OS detection, env vars), `common-functions.bash`, `profile-core.sh`, `profile-advanced.sh`, `setup.sh`.                                                                                                   |
+| `software/metadata/`                            | Build-time config: autocomplete specs, host blocklists, `presets.jsonc`, `ci-binaries.json`, file associations, hostname/IP groups, canonical script list.                                                                                                        |
+| `software/metadata/autocomplete-complete-spec/` | Tab-completion specs (42 files) shared by bash + PowerShell.                                                                                                                                                                                                      |
+| `software/tools/`                               | Dev tooling: `build-include.js` (marker-inline builder), `build-installer.js`, `doctor.sh`, `new-script.sh`, formatters.                                                                                                                                          |
+| `software/tests/`                               | Vitest unit + smoke specs for the engine.                                                                                                                                                                                                                         |
+| `webapp/`, `src/`                               | Vite + React demo site published to GitHub Pages.                                                                                                                                                                                                                 |
+| `tests/`                                        | Vitest tests outside the engine.                                                                                                                                                                                                                                  |
+| `.build/`                                       | Generated artifacts committed back by CI (editor configs, host files). Per-OS `profile_bashrc_<os>.sh` not tracked in git — mirrored to the `binary-cache` release, copied into `dist/` by publish for same-origin Pages fetch.                                   |
+| `docs/`                                         | Topical knowledge bases (bash, git, CICD, Docker, K8s, OS notes).                                                                                                                                                                                                 |
+| `assets/`                                       | Binary blobs + fonts used by installers.                                                                                                                                                                                                                          |
 
 ## Important Files
 
@@ -65,10 +65,10 @@ Scripts never write `~/.bash_syle` directly — they buffer via `registerWithBas
 
 Two distinct mechanisms:
 
-| Mechanism | When | Use case |
-| --- | --- | --- |
+| Mechanism                         | When                                     | Use case                                                                                                                                                  |
+| --------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `# BEGIN <path>` / `# END <path>` | Build time (`make format_build_include`) | Inline a partial into a generated/checked-in file (e.g. `common-env.sh` into `run.sh`). Edit the source file — block contents overwritten on next format. |
-| `# SOURCE <path>` | Runtime (`readText()`, every run) | Pull live shell into `~/.bash_syle` each run without full setup. Only the marker is committed; materialized block lives in generated profiles only. |
+| `# SOURCE <path>`                 | Runtime (`readText()`, every run)        | Pull live shell into `~/.bash_syle` each run without full setup. Only the marker is committed; materialized block lives in generated profiles only.       |
 
 Rule: shipped-at-build-time config → BEGIN/END; live shell refreshed each run → SOURCE.
 

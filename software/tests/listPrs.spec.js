@@ -188,7 +188,7 @@ function runCli(argv = [], prs = [], opts = {}) {
           FAKE_GH_PR_DIR: prFolder,
           FAKE_GH_CONCURRENCY_STATE: ghConcurrencyState,
           FAKE_GH_MAX_CONCURRENCY: ghMaxConcurrency,
-          ...(opts.env || {}),
+          ...opts.env,
         },
         stdio: ["ignore", "pipe", stderrFd],
       });

@@ -19,6 +19,7 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
   ```
 
   On mismatch: flag SHA + both identities side by side and ask. Default "no" repairs with `git commit --amend --reset-author --no-edit` (or `git rebase <base> --exec '...'` for a run); proceed unchanged only on explicit "yes". `--reset-author` preserves `Co-Authored-By:` trailers — keep intentional LLM ones.
+
 - **Sync** — `git merge origin/<default>`; never rebase or force-push a shared feature branch. Resolve default, don't assume `main`:
 
   ```bash
@@ -28,6 +29,7 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
   ```
 
   Exception: pushing to default itself always `git pull --rebase` then fast-forward push — never a merge commit on default from local work.
+
 - **Solo repos** — if `git log --format='%ae' -200 | sort -u` is only you plus known bots (`*[bot]@*`, the LLM noreply addresses), push straight to default; say so. An explicit "open a PR" overrides.
 
 ## PR bodies and payloads
@@ -59,7 +61,7 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
   - A later-wave PR is expected red until its dependency lands — say so in the body (`"CI stays red until <link> lands"`); never spend a fix loop on it.
   - Promotion: blocker merged → `git merge origin/<default>` → CI green → drop WIP prefix, in that order, only when the blocked-on section was the sole WIP reason and no `TODO —` remains.
   - Migrations phase expand → migrate → contract, and **wave 1 must be backward compatible** (adds only — nullable column, new table/index — leaving deployed code untouched). Wave 2 backfills/dual-writes; wave 3 drops the old thing once wave 2 is fully deployed. A rename is never one PR: add-new → dual-write → backfill → read-new → drop-old. If wave 1 can't be backward compatible, the waves are wrong — one atomic PR or redesign.
-- **An existing stack is damage to contain, not a pattern to follow.** Don't rewrite pushed history; sync it downhill and land bottom-up. Say out loud it's stacked and unintended. Sync the whole ancestor chain floor-first, immediate parent last: walk up to the floor (default, or a long-lived non-default release/integration line with no PR — then default is *not* merged in), merge the floor, then each ancestor root-most down, one `git merge` each with conflicts resolved between them. No octopus, no rebase, max 10 hops, stop on repeat. **Merges flow downhill only** — never push an ancestor, merge child→parent, or retarget an ancestor's PR to unblock a child. A green+approved stacked PR is still blocked on its parent landing — report the link, don't merge. Where `/sy-sync-pr-branch` exists, delegate the sync to it.
+- **An existing stack is damage to contain, not a pattern to follow.** Don't rewrite pushed history; sync it downhill and land bottom-up. Say out loud it's stacked and unintended. Sync the whole ancestor chain floor-first, immediate parent last: walk up to the floor (default, or a long-lived non-default release/integration line with no PR — then default is _not_ merged in), merge the floor, then each ancestor root-most down, one `git merge` each with conflicts resolved between them. No octopus, no rebase, max 10 hops, stop on repeat. **Merges flow downhill only** — never push an ancestor, merge child→parent, or retarget an ancestor's PR to unblock a child. A green+approved stacked PR is still blocked on its parent landing — report the link, don't merge. Where `/sy-sync-pr-branch` exists, delegate the sync to it.
 
 ## Worktrees and fan-out
 
@@ -87,7 +89,7 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
 
 ## Stuck PRs — retrigger a frozen pipeline
 
-- **Green Actions but a blocked merge is usually a missing check, not a failing one.** Approval, policy, lock, description, and custom-validation gates are check runs posted by org apps; a dropped webhook means the check is never *created* on the head SHA — not red, not pending, absent — so the branch rule never satisfies and `mergeStateStatus` stays `BLOCKED`. Nothing to `rerequest`; a check never created can't be re-run.
+- **Green Actions but a blocked merge is usually a missing check, not a failing one.** Approval, policy, lock, description, and custom-validation gates are check runs posted by org apps; a dropped webhook means the check is never _created_ on the head SHA — not red, not pending, absent — so the branch rule never satisfies and `mergeStateStatus` stays `BLOCKED`. Nothing to `rerequest`; a check never created can't be re-run.
 - **Diagnose before touching the branch** — diff required contexts against what posted on the head SHA. Missing = dropped webhook; posted-and-failed = an ordinary red build:
 
   ```bash
@@ -115,15 +117,16 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
 ## Links and references
 
 - **Never hand-build a PR/issue URL** — emit the `url`/`.html_url` field verbatim. Web path is singular `/pull/<n>`; `/pulls/<n>` is REST and 404s on github.com. Issues are `/issues/<n>` on both.
-- **A link is four independent facts — owner, repo, `pull` vs `issues`, number — each verified.** Well-formed ≠ correct. Never derive `<repo>` from a folder basename, product name, ticket text, or a sibling repo (`-ui`/`-api`/`-service`/`-web` are *different* repos with independent numbering) — resolve per Repo Identification. Never guess type; numbering is shared, so `<n>` is at most one of the two. One probe checks all four, and its output is what you print:
+- **A link is four independent facts — owner, repo, `pull` vs `issues`, number — each verified.** Well-formed ≠ correct. Never derive `<repo>` from a folder basename, product name, ticket text, or a sibling repo (`-ui`/`-api`/`-service`/`-web` are _different_ repos with independent numbering) — resolve per Repo Identification. Never guess type; numbering is shared, so `<n>` is at most one of the two. One probe checks all four, and its output is what you print:
 
   ```bash
   gh api "repos/<owner>/<repo>/issues/<n>" --jq '{url: .html_url, is_pr: (.pull_request != null), state, title}'
   ```
 
   `.pull_request` is the type discriminator, `.html_url` the canonical path. A `404` means a wrong segment — try the sibling repo, say which candidates you tried, never print an unresolved link. Re-probe any link from memory, a paste, an earlier turn, a ticket, or a commit message — someone else's link is a hypothesis.
+
 - **A bare `#<number>` is a rendering bug, not shorthand.** Clients and GitHub auto-link it relative to the repo in context — for an agent, the cwd, routinely an unrelated workspace repo. This applies to every word you emit, not just link lists: the common slip is a careful list of full URLs then "fixed in #1731". If a number sits next to `#`, write the full path instead, or name the PR with no number. Scan for `#`+digits before sending.
-- **Render every reference as a full clickable path** — `github.com/<owner>/<repo>/pull/<number>`; only scheme and `www.` may drop. One per line in lists, path first (trailing context like `— retry on token refresh` is fine). Shorthand is allowed only in prose written *into* GitHub itself.
+- **Render every reference as a full clickable path** — `github.com/<owner>/<repo>/pull/<number>`; only scheme and `www.` may drop. One per line in lists, path first (trailing context like `— retry on token refresh` is fine). Shorthand is allowed only in prose written _into_ GitHub itself.
 - **Show authors when a list isn't all yours** — request `author` in the `gh --json` fields. All yours → omit as noise. Even one different → label the author on every row and say who in the summary. Machine-parseable bare-URL output stays untouched; put the breakdown in surrounding prose.
 
 ## Reviewing and babysitting
@@ -131,7 +134,7 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
 - **Babysitting is opt-in; creating the PR ends the task.** Plan, implement, validate, push, open the PR, report the full link — then stop. Do not poll CI, sleep-and-recheck, start a pass loop, fix an unrequested build, or enable automerge outside the prose-only carve-out. An unrequested watch loop burns unbudgeted hours and acts on the branch while the user's away.
 - **Only an explicit instruction starts a watch loop** — `/sy-babysit-pr(s)`, `/sy-review-pr(s)`, or a plain ask that plainly means it ("keep an eye on it", "see it through", "watch CI until green", "babysit this"). "Fix the tests" or a follow-up after the PR exists is a fresh task, not a subscription. Unsure → finish, hand back the link, offer the loop in one sentence; never assume yes.
 - **Every review comment is net new** — fetch all review threads, issue comments, and reactions from every author (humans, bots, your own past reviews) first. Route each finding: covered → post nothing, react `+1`; covered-but-missing-a-case → reply in that thread with only the delta (`-F in_reply_to=<id>`, opening "Adding to the above") and 👍 the original; genuinely new → top-level comment. A prior 👎 means already-rejected — don't resurrect without a concrete new reason, stated. A reworded duplicate is still a duplicate.
-- **Verify load-bearing claims yourself.** "Unused", "no consumers", "behavior unchanged", "tests cover it", "CI is green", "I audited the callers" are hypotheses — grep the name (string *and* symbol), open the cited test and read its asserts, fetch the check run, read the call site. What you can't verify from here (another repo, a runtime consumer, manual QA) is asked for by name, never granted. Applies to bot summaries and your own earlier passes.
+- **Verify load-bearing claims yourself.** "Unused", "no consumers", "behavior unchanged", "tests cover it", "CI is green", "I audited the callers" are hypotheses — grep the name (string _and_ symbol), open the cited test and read its asserts, fetch the check run, read the call site. What you can't verify from here (another repo, a runtime consumer, manual QA) is asked for by name, never granted. Applies to bot summaries and your own earlier passes.
 - **Act on feedback — author identity sets weight, never whether you act.** Every actionable human/bot finding gets a disposition on the pass that first reads it: fixed and replied, declined with a concrete reason, or escalated as a named stop-and-ask. No "surface to the user and move on", no waiting for separate authorization, no deferring the same comment pass after pass. Your own findings likewise land on the PR (comment, thread, or 👍); one that ends up only in the user's terminal is reported as dropped.
 - **Stop-and-ask is surfaced, never prompted** — it pauses that PR for you, not on GitHub. Record `needs_user` in the journal with the reason, the exact human message, the source (comment/review/thread/check id + its timestamp + the head SHA it was raised against), and the next step. Print that block, keep working the other PRs; never open an interactive prompt, block waiting, or express it on GitHub (no label, status, review, or comment for scheduler state). It's a narrow enumerated exit: restructuring the user's work (splitting, re-cutting branches, changing a base), a change to stated scope or public contract, a `needs-human` conflict/migration, or input you can't obtain. Size, tedium, opinion-shaped feedback, harsh tone, and code you didn't write don't qualify. End-of-run disposition counts sum to the number of open items.
 - **Revalidate a prior `needs_user`** against live state before displaying or scheduling it — a fresh session remembers nothing and the thing may have resolved hours ago. Re-fetch the source by id, re-read current reviews/threads/checks/head SHA/body and everything posted since the recorded timestamp. Classify: current, cleared, changed, conflicted (show both), or stale-unknown. Print the prior claim and verdict together, always with a `Next:` line. A cleared claim re-queues the PR and says which comment cleared it.

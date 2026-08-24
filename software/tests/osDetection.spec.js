@@ -105,7 +105,7 @@ function detectFlags(opts = {}) {
     "/mingw64": path.join(sandbox, "no-mingw64"),
     "/data/data/com.termux": path.join(sandbox, "no-termux"),
   };
-  const allPaths = { ...defaultPaths, ...(opts.paths ?? {}) };
+  const allPaths = { ...defaultPaths, ...opts.paths };
   // Sort keys longest-first to avoid shorter prefixes shadowing longer ones
   // (e.g. "/c/Windows" must be applied before any "/c/..." sibling).
   for (const from of Object.keys(allPaths).sort((a, b) => b.length - a.length)) {
