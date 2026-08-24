@@ -32,17 +32,15 @@ A comprehensive guide to Kubernetes — from core concepts to deploying full-sta
 
 ## What is Kubernetes?
 
-Kubernetes (K8s) is an open-source container orchestration platform. It automates deploying, scaling, and managing containerized applications.
+Kubernetes (K8s) is an open-source container orchestration platform: it automates deploying, scaling, and managing containerized applications.
 
 **Why use it?**
 
-- **Self-healing**: If a container crashes, K8s restarts it automatically.
-- **Scaling**: Scale from 1 to 1000 instances with a single command.
-- **Load balancing**: Distributes traffic across healthy instances.
-- **Rolling updates**: Deploy new versions with zero downtime.
+- **Self-healing**: Crashed containers restart automatically.
+- **Scaling**: 1 to 1000 instances with a single command.
+- **Load balancing**: Traffic distributed across healthy instances.
+- **Rolling updates**: New versions with zero downtime.
 - **Declarative config**: You describe the _desired state_, K8s makes it happen.
-
-**Analogy**: Think of K8s as a datacenter operating system. You tell it "I want 3 copies of my app running," and it figures out where to place them, keeps them alive, and routes traffic to them.
 
 ---
 
@@ -66,14 +64,14 @@ Cluster (the whole K8s environment)
     └── ...
 ```
 
-- **Container**: A packaged application (like a Docker image). Contains your code, runtime, and dependencies.
-- **Pod**: The smallest unit K8s manages. A thin wrapper around one or more containers that share networking and storage. Usually 1 container per pod.
-- **Node**: A machine (physical server or VM) that runs pods. Each node runs a `kubelet` agent that talks to the control plane.
+- **Container**: A packaged application (like a Docker image): code, runtime, dependencies.
+- **Pod**: Smallest unit K8s manages — one or more containers sharing networking and storage. Usually 1 container per pod.
+- **Node**: A machine (physical or VM) running pods; each runs a `kubelet` agent that talks to the control plane.
 - **Cluster**: A set of nodes managed by a control plane.
 
 ### Desired State vs Current State
 
-K8s is **declarative**. You write YAML files that say "I want 3 replicas of my app." K8s constantly compares the _desired state_ (your YAML) to the _current state_ (what's actually running) and reconciles any differences.
+K8s is **declarative**: your YAML states the desired state, and controllers continuously reconcile it against the current state.
 
 ```
 You write YAML: "I want 3 pods"
@@ -83,7 +81,7 @@ K8s action: starts 1 more pod
 
 ### Labels and Selectors
 
-Labels are key-value tags you attach to resources. Selectors filter resources by labels. This is how K8s resources find each other.
+Labels are key-value tags on resources; selectors filter by labels — this is how K8s resources find each other.
 
 ```yaml
 # A pod with labels
@@ -100,41 +98,6 @@ selector:
 ---
 
 ## Architecture
-
-```
-                    ┌─────────────────────────────────────┐
-                    │          CONTROL PLANE               │
-                    │                                      │
-                    │  ┌──────────────┐  ┌─────────────┐  │
-                    │  │  API Server  │  │    etcd      │  │
-                    │  │  (REST API)  │  │ (key-value   │  │
-                    │  └──────┬───────┘  │  database)   │  │
-                    │         │          └─────────────┘  │
-                    │  ┌──────┴───────┐  ┌─────────────┐  │
-                    │  │  Scheduler   │  │ Controller   │  │
-                    │  │ (places pods │  │  Manager     │  │
-                    │  │  on nodes)   │  │ (reconciles  │  │
-                    │  └──────────────┘  │  state)      │  │
-                    │                    └─────────────┘  │
-                    └────────────┬────────────────────────┘
-                                │
-                ┌───────────────┼───────────────┐
-                │               │               │
-         ┌──────┴──────┐ ┌─────┴──────┐ ┌──────┴──────┐
-         │   Node 1    │ │   Node 2   │ │   Node 3    │
-         │             │ │            │ │             │
-         │ ┌─────────┐ │ │ ┌────────┐ │ │ ┌─────────┐ │
-         │ │ kubelet  │ │ │ │kubelet │ │ │ │ kubelet  │ │
-         │ ├─────────┤ │ │ ├────────┤ │ │ ├─────────┤ │
-         │ │kube-proxy│ │ │ │kube-  │ │ │ │kube-proxy│ │
-         │ ├─────────┤ │ │ │proxy   │ │ │ ├─────────┤ │
-         │ │Container │ │ │ ├────────┤ │ │ │Container │ │
-         │ │Runtime   │ │ │ │Containe│ │ │ │Runtime   │ │
-         │ └─────────┘ │ │ │Runtime │ │ │ └─────────┘ │
-         │  [Pod] [Pod] │ │ └────────┘ │ │  [Pod]      │
-         └─────────────┘ │ [Pod] [Pod] │ └─────────────┘
-                         └────────────┘
-```
 
 **Control Plane components:**
 
@@ -157,11 +120,11 @@ selector:
 
 ## Key Resources
 
-These are the building blocks you define in YAML files.
+The building blocks you define in YAML files.
 
 ### Pod
 
-The smallest deployable unit.
+The smallest deployable unit — usually managed by a Deployment rather than created directly.
 
 ```yaml
 apiVersion: v1
@@ -178,11 +141,9 @@ spec:
         - containerPort: 3000
 ```
 
-You rarely create pods directly. Instead, you use a **Deployment** which manages pods for you.
-
 ### Deployment
 
-Manages a set of identical pods (replicas). Handles rolling updates and rollbacks.
+Manages a set of identical pods (replicas); handles rolling updates and rollbacks.
 
 ```yaml
 apiVersion: apps/v1
@@ -206,15 +167,15 @@ spec:
             - containerPort: 3000
 ```
 
-**Key fields explained:**
+Key fields:
 
 - `replicas`: How many pod copies to run.
 - `selector.matchLabels`: How the Deployment finds its pods (must match `template.metadata.labels`).
-- `template`: A pod blueprint. Every pod created by this Deployment follows this template.
+- `template`: Pod blueprint every created pod follows.
 
 ### Service
 
-Pods are ephemeral — they get new IP addresses when they restart. A **Service** gives pods a stable network identity (a fixed IP and DNS name).
+Pods are ephemeral (new IP on restart); a Service gives them a stable IP and DNS name.
 
 ```yaml
 apiVersion: v1
@@ -240,7 +201,7 @@ spec:
 
 ### Ingress
 
-Routes external HTTP/HTTPS traffic to Services inside the cluster. Think of it as a reverse proxy / router.
+Routes external HTTP/HTTPS traffic to Services — a cluster-level reverse proxy. Requires an **Ingress Controller** (e.g., nginx-ingress, traefik) installed in the cluster.
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -268,26 +229,13 @@ spec:
                   number: 80
 ```
 
-Requires an **Ingress Controller** (e.g., nginx-ingress, traefik) to be installed in the cluster.
-
 ### ConfigMap
 
-Stores non-sensitive configuration data as key-value pairs.
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: app-config
-data:
-  DATABASE_HOST: "postgres-service"
-  DATABASE_PORT: "5432"
-  LOG_LEVEL: "info"
-```
+Non-sensitive configuration as key-value pairs — see [Configuration and Secrets](#configuration-and-secrets) for examples.
 
 ### Secret
 
-Stores sensitive data (passwords, tokens, keys). Values are base64-encoded (not encrypted by default).
+Sensitive data (passwords, tokens, keys). Values are base64-encoded, not encrypted by default.
 
 ```yaml
 apiVersion: v1
@@ -300,7 +248,7 @@ data:
   API_KEY: bXlzZWNyZXRrZXk= # base64 of "mysecretkey"
 ```
 
-To create base64 values:
+Creating base64 values:
 
 ```bash
 echo -n "password123" | base64
@@ -309,7 +257,7 @@ echo -n "password123" | base64
 
 ### PersistentVolume (PV) and PersistentVolumeClaim (PVC)
 
-Provides storage that persists beyond pod lifetime.
+Storage that persists beyond pod lifetime.
 
 ```yaml
 # PersistentVolumeClaim - "I need 1Gi of storage"
@@ -328,8 +276,6 @@ spec:
 ---
 
 ## kubectl Cheat Sheet
-
-`kubectl` is the CLI tool for interacting with K8s.
 
 ### Cluster info
 
@@ -405,9 +351,8 @@ kubectl create namespace my-ns          # Create a namespace
 ### Option 1: Docker Desktop (easiest)
 
 1. Install Docker Desktop
-2. Open Settings > Kubernetes > Enable Kubernetes
-3. Click "Apply & Restart"
-4. Verify: `kubectl get nodes`
+2. Settings > Kubernetes > Enable Kubernetes > "Apply & Restart"
+3. Verify: `kubectl get nodes`
 
 ### Option 2: minikube
 
@@ -446,7 +391,7 @@ kind delete cluster --name my-cluster
 
 ## Full Example: Deploying a Node.js Backend + Frontend
 
-This section walks through a complete, production-style deployment step by step.
+A complete production-style deployment, step by step.
 
 ### What we're building
 
@@ -477,7 +422,7 @@ Internet
 
 ### Step 1: The Node.js Backend
 
-Create a simple Express API.
+A simple Express API.
 
 **File: `backend/package.json`**
 
@@ -538,7 +483,7 @@ EXPOSE 3000
 CMD ["node", "server.js"]
 ```
 
-**Build and test locally:**
+Build and test locally:
 
 ```bash
 cd backend
@@ -549,7 +494,7 @@ docker run -p 3000:3000 my-backend:1.0.0
 
 ### Step 2: The Node.js Frontend
 
-A simple React/Vite app that calls the backend API. After building, it's just static HTML/CSS/JS served by nginx.
+React/Vite app that calls the backend API; after build it's static files served by nginx.
 
 **File: `frontend/src/App.jsx`** (simplified)
 
@@ -577,9 +522,7 @@ function App() {
 export default App;
 ```
 
-**File: `frontend/nginx.conf`**
-
-This nginx config serves the static frontend files and is baked into the Docker image. Note: in K8s, the Ingress handles routing `/api` to the backend — nginx just serves static files.
+**File: `frontend/nginx.conf`** — serves static files only; in K8s the Ingress routes `/api` to the backend.
 
 ```nginx
 server {
@@ -619,7 +562,7 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-**Build and test locally:**
+Build and test locally:
 
 ```bash
 cd frontend
@@ -630,7 +573,7 @@ docker run -p 8080:80 my-frontend:1.0.0
 
 ### Step 3: Push Images to a Registry
 
-K8s needs to pull images from a registry. For local development with minikube, you can load images directly. For production, push to Docker Hub, GitHub Container Registry, or a private registry.
+K8s pulls images from a registry; with minikube you can load local images directly. Production: push to Docker Hub, GitHub Container Registry, or a private registry.
 
 ```bash
 # Option A: Docker Hub
@@ -874,8 +817,6 @@ minikube ip
 
 ### Step 6: Quick Access Without Ingress (port-forward)
 
-If you don't want to set up an Ingress controller, use port-forwarding for quick testing:
-
 ```bash
 # Forward backend
 kubectl port-forward -n my-app service/backend-service 3000:80 &
@@ -889,8 +830,6 @@ kubectl port-forward -n my-app service/frontend-service 8080:80 &
 ```
 
 ### Step 7: Deploying Updates
-
-When you update your code:
 
 ```bash
 # 1. Build new image with new tag
@@ -918,16 +857,11 @@ kubectl rollout undo deployment/backend -n my-app
 
 ## Full Example: Deploying a Python (Flask) Backend + Frontend
 
-This mirrors the Node.js example above but uses Python with Flask for the backend. The frontend is the same pattern — static assets served by nginx.
+Mirrors the Node.js example; frontend pattern is identical (static assets served by nginx).
 
 ### What we're building
 
-Same architecture as the Node.js example:
-
-```
-Internet ──▶ Ingress ──▶ /api/* ──▶ python-backend-service ──▶ Flask pods (x3)
-                     ──▶ /*    ──▶ python-frontend-service ──▶ nginx pods (x2)
-```
+Same architecture as the Node.js example: Ingress → `/api/*` → `python-backend-service` → Flask pods (x3); `/​*` → `python-frontend-service` → nginx pods (x2).
 
 ### Step 1: The Python Backend
 
@@ -938,8 +872,7 @@ flask==3.1.0
 gunicorn==23.0.0
 ```
 
-- `flask` is the web framework (like Express for Node.js).
-- `gunicorn` is a production WSGI server (Flask's built-in server is for development only — it can't handle real traffic).
+`flask` is the web framework; `gunicorn` is a production WSGI server (Flask's built-in server is development-only).
 
 **File: `python-backend/app.py`**
 
@@ -1000,11 +933,9 @@ EXPOSE 5000
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
 ```
 
-**Why gunicorn instead of `python app.py`?**
+Why gunicorn instead of `python app.py`: Flask's built-in server handles one request at a time; gunicorn spawns multiple concurrent worker processes (more critical in Python because of the GIL).
 
-Flask's built-in server handles one request at a time. Gunicorn spawns multiple worker processes, each handling requests concurrently. It's like the difference between running `node server.js` and using a process manager like PM2 — except in Python it's more critical because of the GIL (Global Interpreter Lock).
-
-**Build and test locally:**
+Build and test locally:
 
 ```bash
 cd python-backend
@@ -1015,9 +946,7 @@ docker run -p 5000:5000 my-python-backend:1.0.0
 
 ### Step 2: The Frontend
 
-The frontend is identical to the Node.js example — it's just static HTML/CSS/JS served by nginx. The only difference is the API responses come from Flask instead of Express.
-
-Use the same `frontend/Dockerfile` and `frontend/nginx.conf` from the Node.js section. The frontend doesn't care whether the backend is Node.js or Python — it just calls `/api/*` endpoints.
+Identical to the Node.js example — reuse the same `frontend/Dockerfile` and `frontend/nginx.conf`; the frontend just calls `/api/*` endpoints regardless of backend language.
 
 ### Step 3: Push Images
 
@@ -1114,69 +1043,7 @@ spec:
   type: ClusterIP
 ```
 
-**File: `k8s-python/frontend-deployment.yaml`**
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frontend
-  namespace: my-python-app
-  labels:
-    app: frontend
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-        - name: frontend
-          image: yourusername/my-frontend:1.0.0
-          ports:
-            - containerPort: 80
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "200m"
-              memory: "128Mi"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 15
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 3
-            periodSeconds: 5
-```
-
-**File: `k8s-python/frontend-service.yaml`**
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: python-frontend-service
-  namespace: my-python-app
-spec:
-  selector:
-    app: frontend
-  ports:
-    - port: 80
-      targetPort: 80
-      protocol: TCP
-  type: ClusterIP
-```
+**Frontend manifests:** `k8s-python/frontend-deployment.yaml` and `k8s-python/frontend-service.yaml` are identical to `k8s/frontend-deployment.yaml` / `k8s/frontend-service.yaml` except `namespace: my-python-app` and service names prefixed with `python-`.
 
 **File: `k8s-python/ingress.yaml`**
 
@@ -1242,14 +1109,7 @@ curl http://localhost:5000/api/health
 | **CPU tuning**        | Increase pod replicas (horizontal)                 | Increase `WEB_CONCURRENCY` (vertical) AND pod replicas       |
 | **Memory**            | V8 can be hungry, set `--max-old-space-size`       | Generally lighter per worker, but `workers * memory` adds up |
 
-**Important**: The K8s YAML is nearly identical for both. The only things that change are:
-
-- The Docker image name
-- The `containerPort` (3000 vs 5000)
-- The `targetPort` in the Service (3000 vs 5000)
-- Environment variables specific to the runtime
-
-Everything else — Deployments, Services, Ingress, health checks, scaling, ConfigMaps, Secrets — works exactly the same way regardless of language.
+The K8s YAML is nearly identical for both — only the image name, `containerPort`/`targetPort` (3000 vs 5000), and runtime-specific env vars change.
 
 ---
 
@@ -1257,7 +1117,7 @@ Everything else — Deployments, Services, Ingress, health checks, scaling, Conf
 
 ### How pods communicate
 
-Every pod gets its own IP address. Pods can reach each other directly by IP, but IPs change when pods restart. That's why you use Services.
+Every pod gets its own IP and pods can talk directly, but IPs change on restart — hence Services.
 
 ```
 Pod A (10.244.1.5) ──── wants to talk to ────▶ backend-service
@@ -1270,13 +1130,11 @@ Pod A (10.244.1.5) ──── wants to talk to ────▶ backend-service
 
 ### DNS in Kubernetes
 
-K8s has built-in DNS. Every Service gets a DNS name:
+Built-in DNS gives every Service a name:
 
 ```
 <service-name>.<namespace>.svc.cluster.local
 ```
-
-Examples:
 
 ```bash
 # From any pod in the "my-app" namespace:
@@ -1285,7 +1143,7 @@ curl http://backend-service.my-app       # With namespace
 curl http://backend-service.my-app.svc.cluster.local  # Full DNS name
 ```
 
-This is how your frontend (or any pod) talks to the backend — by service name, not IP.
+This is how pods talk to each other — by service name, not IP.
 
 ### Network flow summary
 
@@ -1444,7 +1302,7 @@ kubectl create secret generic tls-cert \
 
 ## Health Checks
 
-K8s uses probes to know if your app is healthy.
+Probes tell K8s whether your app is healthy.
 
 ### Three types of probes
 
@@ -1483,7 +1341,7 @@ livenessProbe:
 
 ### Why readiness probes matter
 
-Without a readiness probe, K8s sends traffic to pods the moment they start — even if your app hasn't finished initializing (connecting to database, loading config, warming caches). A readiness probe tells K8s "wait, I'm not ready yet."
+Without a readinessProbe, K8s sends traffic the moment a pod starts — before init finishes (DB connection, config load, cache warmup).
 
 ```yaml
 readinessProbe:
@@ -1508,7 +1366,7 @@ kubectl scale deployment backend --replicas=5 -n my-app
 
 ### Horizontal Pod Autoscaler (HPA)
 
-Automatically scales pods based on CPU/memory usage.
+Auto-scales pods by CPU/memory usage:
 
 ```yaml
 apiVersion: autoscaling/v2
@@ -1548,7 +1406,7 @@ kubectl get hpa -n my-app -w
 # backend-hpa  Deployment/backend   25%/70%   2         10        3
 ```
 
-**Important**: HPA requires the [metrics-server](https://github.com/kubernetes-sigs/metrics-server) to be installed in the cluster. minikube: `minikube addons enable metrics-server`.
+**Important**: HPA requires the [metrics-server](https://github.com/kubernetes-sigs/metrics-server); minikube: `minikube addons enable metrics-server`.
 
 ---
 
@@ -1556,7 +1414,7 @@ kubectl get hpa -n my-app -w
 
 ### How rolling updates work
 
-When you change a Deployment's image, K8s gradually replaces old pods with new ones:
+Changing a Deployment's image replaces old pods with new ones gradually:
 
 ```
 Time 0:  [old] [old] [old]           3 old pods running
@@ -1577,8 +1435,7 @@ spec:
       maxUnavailable: 0 # Never have fewer than desired replicas
 ```
 
-- `maxSurge: 1` + `maxUnavailable: 0` = safest. Always maintains full capacity.
-- `maxSurge: 0` + `maxUnavailable: 1` = no extra resources needed, but reduced capacity during update.
+`maxSurge: 1` + `maxUnavailable: 0` = always full capacity; `maxSurge: 0` + `maxUnavailable: 1` = no extra resources but reduced capacity during the update.
 
 ### Rollback commands
 
@@ -1597,7 +1454,7 @@ kubectl rollout undo deployment/backend --to-revision=2 -n my-app
 
 ## Namespaces
 
-Namespaces are virtual clusters within a physical cluster. They isolate resources.
+Virtual clusters within a physical cluster; they isolate resources.
 
 ```bash
 # Default namespaces
@@ -1619,11 +1476,7 @@ kubectl apply -f deployment.yaml -n staging
 kubectl config set-context --current --namespace=my-app
 ```
 
-### When to use namespaces
-
-- **By environment**: `development`, `staging`, `production`
-- **By team**: `team-frontend`, `team-backend`
-- **By app**: `my-app`, `monitoring`, `logging`
+Split by environment (`development`/`staging`/`production`), team, or app.
 
 ### Resource quotas per namespace
 
@@ -1648,15 +1501,13 @@ spec:
 
 Controls who can do what in the cluster.
 
-### Key concepts
-
-- **ServiceAccount**: Identity for pods (like a user account for applications)
-- **Role**: Defines permissions within a namespace
-- **ClusterRole**: Defines permissions cluster-wide
+- **ServiceAccount**: Identity for pods (a user account for applications)
+- **Role**: Permissions within a namespace
+- **ClusterRole**: Permissions cluster-wide
 - **RoleBinding**: Grants a Role to a user/ServiceAccount
 - **ClusterRoleBinding**: Grants a ClusterRole cluster-wide
 
-### Example: Read-only access for a monitoring service
+Example: read-only access for a monitoring service.
 
 ```yaml
 # Create a ServiceAccount
@@ -1697,11 +1548,7 @@ roleRef:
 
 ## Helm
 
-Helm is a package manager for K8s. Instead of managing many YAML files, you use **charts** (templated YAML bundles).
-
-### Why Helm?
-
-Without Helm, deploying to staging vs production means maintaining near-identical YAML files with slightly different values (different image tags, replica counts, resource limits). Helm lets you template these differences.
+Package manager for K8s: **charts** are templated YAML bundles, so staging vs production differ only by values (image tags, replica counts, resource limits).
 
 ### Basic usage
 
@@ -1839,11 +1686,7 @@ kubectl top pods -n my-app --sort-by=cpu
 
 ### Popular monitoring stack
 
-- **Prometheus**: Collects metrics from pods/nodes
-- **Grafana**: Visualizes metrics in dashboards
-- **Loki**: Log aggregation (like ELK but lighter)
-
-Quick install with Helm:
+**Prometheus** (metrics collection) + **Grafana** (dashboards) + **Loki** (log aggregation, lighter than ELK):
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -1856,15 +1699,7 @@ helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring
 
 ### 1. ImagePullBackOff
 
-```
-STATUS: ImagePullBackOff
-```
-
-**Cause**: K8s can't pull your Docker image.
-**Fix**:
-
-- Check image name and tag: `kubectl describe pod <name> -n my-app`
-- For private registries, create an image pull secret:
+K8s can't pull your image. Check name/tag with `kubectl describe pod <name> -n my-app`; for private registries, create a pull secret:
 
 ```bash
 kubectl create secret docker-registry regcred \
@@ -1884,12 +1719,7 @@ spec:
 
 ### 2. CrashLoopBackOff
 
-```
-STATUS: CrashLoopBackOff
-```
-
-**Cause**: Your container starts and immediately crashes. K8s keeps restarting it.
-**Fix**:
+Container starts and immediately crashes; K8s keeps restarting it.
 
 ```bash
 # Check logs to see why it crashed
@@ -1904,12 +1734,7 @@ kubectl logs <pod-name> --previous -n my-app  # Logs from the last crash
 
 ### 3. Pending pods
 
-```
-STATUS: Pending
-```
-
-**Cause**: K8s can't schedule the pod on any node.
-**Fix**:
+K8s can't schedule the pod on any node.
 
 ```bash
 kubectl describe pod <pod-name> -n my-app
@@ -1922,8 +1747,6 @@ kubectl describe pod <pod-name> -n my-app
 ```
 
 ### 4. Service not reachable
-
-**Checklist**:
 
 ```bash
 # 1. Are pods running?
@@ -1946,12 +1769,7 @@ wget -qO- http://backend-service/api/health
 
 ### 5. OOMKilled
 
-```
-STATUS: OOMKilled
-```
-
-**Cause**: Container exceeded its memory limit.
-**Fix**: Increase `resources.limits.memory` in your deployment, or fix the memory leak in your app.
+Container exceeded its memory limit — raise `resources.limits.memory` or fix the leak.
 
 ---
 

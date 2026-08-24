@@ -83,60 +83,22 @@ GitHub Actions with 5 parallel OS builds (Ubuntu, RHEL, Arch, Debian, macOS), au
 
 ### Option A — single-file installer (recommended)
 
-A self-extracting bash script that bundles `run.sh` + the entire `software/` tree as a base64 payload. **One HTTP request, zero `raw.githubusercontent.com` fetches at runtime** — works on locked-down networks, behind corporate proxies, and survives GitHub API rate limits. CI re-publishes it on every push to `main`.
+Self-extracting bash script bundling `run.sh` + `software/` as a base64 payload. One HTTP request, no runtime raw fetches — works behind proxies and rate limits. Re-published on every push to `main`.
 
-**Recommended — download then run (avoids stray `curl: (56)` pipe-close noise):**
-
-```bash
-# Full setup (installs dependencies + writes profile)
-tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --setup
-
-# Heavyweight preset (every building block — editors, emulators, apps, browsers, terminal, prompt, llm)
-tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --preset=heavyweight
-```
+Download once, then pass any `run.sh` flag:
 
 ```bash
-# Light Weight
-tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --preset=lightweight
+tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp"
+
+bash "$tmp" --setup                 # full setup (deps + profile)
+bash "$tmp" --preset=heavyweight    # everything
+bash "$tmp" --preset=lightweight    # minimal
+bash "$tmp"                         # profile refresh only
+bash "$tmp" --files=git.js          # one script
+bash "$tmp" --dryrun --setup        # preview, no writes
 ```
 
-```bash
-# Profile refresh only (no dependency install)
-tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp"
-```
-
-Every `run.sh` flag works — swap `--setup` for any of these:
-
-```bash
-# One specific script
-tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --files=git.js
-
-# Dry-run (preview without writing)
-tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --dryrun --setup
-```
-
-Or save the installer once and reuse it:
-
-```bash
-curl -fsSLO https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh
-bash bashrc-installer__install-bashrc.sh --setup
-bash bashrc-installer__install-bashrc.sh --files=git.js
-BASHRC_INSTALLER_KEEP=1 bash bashrc-installer__install-bashrc.sh --dryrun   # keep the extracted dir for inspection
-```
-
-**Also works (but emits a harmless `curl: (56)` after success — curl complaining about its closed pipe, not a real error):**
-
-```bash
-curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash -s -- --setup
-```
-
-The installer extracts to `$TMPDIR/synle-bashrc-installer-$$/` (override with `BASHRC_INSTALLER_DIR=...`), `exec`s `run.sh` against that copy, and cleans up on exit.
-
-Build it locally:
-
-```bash
-make build_installer   # writes .build/install-bashrc.sh (~1 MB)
-```
+Downloading first avoids a harmless `curl: (56)` pipe-close noise you'd get from piping straight into bash. Extracts to `$TMPDIR/synle-bashrc-installer-$$/` (override: `BASHRC_INSTALLER_DIR=...`; keep: `BASHRC_INSTALLER_KEEP=1`). Build locally with `make build_installer` → `.build/install-bashrc.sh` (~1 MB).
 
 ### Option B — stream from GitHub (legacy)
 
@@ -156,34 +118,26 @@ fi
 ## Usage
 
 ```bash
-make setup             # Full setup from local files (installs dependencies)
-make setup_local_profile # Refresh profile only (no dependency install)
-make setup_prod        # Bootstrap from GitHub
-make validate          # Format + run tests
-make build             # Build all artifacts
-make build_installer   # Build .build/install-bashrc.sh (self-extracting; ~1 MB)
-make test_all          # Run all test suites (skips coverage)
-make test_coverage     # Unit tests + istanbul coverage report (thresholds in vitest.config.js)
-make dry_run           # Unit tests + dry-run all scripts (no file writes)
-make clean             # Clean up
-make doctor            # Run diagnostics
+make setup               # Full setup from local files
+make setup_local_profile # Profile refresh only
+make setup_prod          # Bootstrap from GitHub
+make validate            # Format + tests — run before pushing
+make build_installer     # .build/install-bashrc.sh
+make test_all            # All test suites (skips coverage)
+make clean / make doctor # Clean up / diagnostics
 ```
 
 ### run.sh
 
 ```bash
-bash run.sh                          # Full run (auto-detects local repo or fetches from GitHub)
-bash run.sh --files="git.js"         # Run specific file(s)
-bash run.sh git.js vim-config.js     # Bare args as files
-bash run.sh --debug                  # Keep temp files, show retry commands
-bash run.sh --force-refresh          # Force reinstall (heavy items only if stale >2 weeks)
-bash run.sh --refresh="fzf.js,fonts.js" # Force refresh specific scripts
-bash run.sh --verbose                # Enable bash tracing (set -x)
-bash run.sh --preset=lightweight     # Run a named preset (expands to its file list); see software/metadata/presets.jsonc
-bash run.sh --preset=editor          # Partial-name match (case-insensitive); auto-resolves if exactly 1 hit
-bash run.sh --files=vim              # Same partial match for files; ambiguous matches print copy-paste suggestions
-bash run.sh --dryrun                 # Show what would change without writing
-bash run.sh --remove --files="fzf.js"  # Remove a script's config
+bash run.sh                             # Full run (local repo or fetches from GitHub)
+bash run.sh --files="git.js"            # Specific file(s); bare args work too
+bash run.sh --preset=lightweight        # Named preset; partial match auto-resolves if 1 hit
+bash run.sh --refresh="fzf.js,fonts.js" # Force-refresh specific scripts
+bash run.sh --force-refresh             # Reinstall heavy items only if stale >2 weeks
+bash run.sh --dryrun                    # Preview without writing
+bash run.sh --remove --files="fzf.js"   # Remove a script's config
+bash run.sh --debug --verbose           # Keep temp files, bash tracing
 ```
 
 ## Architecture

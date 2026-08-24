@@ -125,23 +125,11 @@ IS_CUSTOM_THEME_DISABLED=1 bash run.sh  # stock built-in themes instead of Sy Da
 Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
 `emulators`, `apps`, `terminal`, `prompt`, `llm`, `llm-prompts`, `browsers`.
 
-**CLI resolution.** `--files=<x>` is strict script — a typo fails loudly, on purpose.
-`--preset=<x>` is strict preset with case-insensitive substring fallback. Bare `<x>` is
-**script-first**, falling back to a preset on a miss (`_resolveBareArgPresetFallback`,
-driven by `BASHRC_BARE_ARGS`). Bare `@<x>` skips the script search. Script matching
-(`_resolveScriptFile`) has three tiers: exact path → case-insensitive basename sans
-extension → regex partial on basename. One hit auto-resolves; two or more print
-copy-pasteable suggestions; zero is a not-found error. Script always wins a collision —
-`bash run.sh llm` hits `llm-common.js`, not the `llm` preset; use `@llm` to force it.
+**CLI resolution.** `--files=<x>` strict script — typo fails loudly, on purpose. `--preset=<x>` strict preset with case-insensitive substring fallback. Bare `<x>` script-first, preset fallback (`_resolveBareArgPresetFallback`, driven by `BASHRC_BARE_ARGS`). Bare `@<x>` skips script search. Script matching (`_resolveScriptFile`): exact path → basename sans extension → regex partial. 1 hit auto-resolves; 2+ print suggestions; 0 errors. Script wins collisions — `bash run.sh llm` hits `llm-common.js`; use `@llm` to force the preset.
 
-**When sharing a command, offer both forms when both apply** — narrow
-`--files=bash-keys` and broad `--preset=terminal`.
+**When sharing a command, offer both forms when both apply** — narrow `--files=bash-keys` and broad `--preset=terminal`.
 
-**Where output lands.** `$BASHRC_TEMP_DIR` = `<temp root>/synle/bashrc/<YYYY_MM_DD_HH_MM>/`
-holds `run.sh` (the re-runnable emitted bash), `run.log`, `run_timing.json`,
-`bash_syle.<phase>` snapshots, `fullsetup.log`, `url_cache/` — read those when debugging.
-The temp root is `$BASHRC_TEMP_ROOT_DIR`; never hardcode `/tmp/...`, it falls back to
-`$HOME/tmp` on locked-down hosts (Termux).
+**Output lands in** `$BASHRC_TEMP_DIR` = `<temp root>/synle/bashrc/<YYYY_MM_DD_HH_MM>/`: `run.sh` (re-runnable emitted bash), `run.log`, `run_timing.json`, snapshots, `fullsetup.log`, `url_cache/`. Temp root `$BASHRC_TEMP_ROOT_DIR`; never hardcode `/tmp/...` (falls back to `$HOME/tmp` on locked-down hosts).
 
 ---
 
@@ -252,12 +240,11 @@ Profile registration is buffered: `registerProfileBlock` /
   `--folder`, `--exec`, `--any`; wildcards OK; pass an array). JS: `findPath` /
   `findPathList`. `find_existing` is deprecated.
 - **`npm_install_global <pkg> [binary]`** for npm globals — skip-if-installed, installs
-  under `$HOME/.local`, and on WSL mirrors to Windows via `cmd.exe`. Pass the binary name
+  under `$HOME/.local`, on WSL mirrors to Windows via `cmd.exe`. Pass the binary name
   when it differs (`npm_install_global @google/gemini-cli gemini`). **Never `rm` the
   launcher first to force a reinstall** — the freshness gate already treats a missing
-  `~/.local/bin/<binary>` as broken and reinstalls; the manual wipe only re-downloads the
-  package every run (that is what once left `claude` off PATH with the package tree fully
-  installed). Force with `--refresh` / `--force-refresh`.
+  `~/.local/bin/<binary>` as broken; the manual wipe just re-downloads every run. Force
+  with `--refresh` / `--force-refresh`.
 - **Prefer `curl -fsSL <url> | bash` installers over package managers** for CLI tools;
   fall back to `npm_install_global` only when no official installer exists. **Exception:
   the LLM CLIs (`claude`, `copilot`, `gemini`, `opencode`) use `npm_install_global`
@@ -316,18 +303,14 @@ Profile registration is buffered: `registerProfileBlock` /
   Skip this for files over ~150 lines.
 - **Never `console.log` / `console.error`** — use `log()` (stderr). `emitBash()` is the
   only stdout writer.
-- **Never `os.arch()` / `process.arch` to pick a download — use `getNativeArch()`.** It
-  is the JS mirror of bash `get_native_arch`: on macOS the kernel's `hw.optional.arm64`
-  wins over anything the process reports, because a Rosetta-translated node reports
-  `x64` on Apple Silicon and hands an arm64 Mac the Intel asset
-  (`Display.DJ_<ver>_x64.dmg` instead of `_aarch64.dmg`). **When every probe is
-  unreadable on a Mac, the answer is `arm64`** — an arm64 asset on a rare Intel holdout
-  fails loudly, the reverse installs a translated app silently. A version comparison
-  alone can never catch that (both builds ship the same
-  `CFBundleShortVersionString`), so `downloadAndInstallBinary` also runs
+- **Never `os.arch()` / `process.arch` to pick a download — use `getNativeArch()`.**
+  JS mirror of bash `get_native_arch`: on macOS the kernel's `hw.optional.arm64` wins
+  over what the process reports, because a Rosetta-translated node reports `x64` on
+  Apple Silicon and hands an arm64 Mac the Intel asset. When every probe is unreadable
+  on a Mac, the answer is `arm64` — an arm64 asset on an Intel holdout fails loudly,
+  the reverse installs translated silently. `downloadAndInstallBinary` also runs
   `isMacInstalledAppArchMismatched()` before honoring an "already installed" skip.
-  Decision table + `isMachOArchMismatch` (JS mirror of `binary_arch_mismatch`) are
-  unit-tested in `software/tests/nativeArchJs.spec.js`.
+  Decision table + `isMachOArchMismatch` tested in `software/tests/nativeArchJs.spec.js`.
 - **Never bare `fs.copyFileSync`** — its `FICLONE`/`copy_file_range` path fails `EPERM`
   on cross-device and SMB mounts. Wrap in try/catch falling back to
   `writeFileSync(dest, readFileSync(src))`, or use `safeCopyFile`.
@@ -369,15 +352,13 @@ Profile registration is buffered: `registerProfileBlock` /
   Not needed for `writeBuildArtifact` or `BASH_SYLE_PATH`.
 - **Theming goes through `shouldInstallCustomTheme()` and `getTheme()`** in
   `software/scripts/advanced/editor.common.js` — never a per-script `USE_CUSTOM_*` const.
-  `shouldInstallCustomTheme()` is `is_gui && !IS_CUSTOM_THEME_DISABLED`, read lazily so the
-  file stays importable where `getRuntimeOption` is undefined (the unit-test `vm` sandbox).
-  When it is false, a consumer must name a theme from `APP_TO_THEMES_MAP` via
-  `getTheme(app)` → `{ dark, light }`, which returns **only themes the app already ships**,
-  so the fallback never depends on an extension or package being installed. That map is the
-  single registry for those names — do not re-declare a fallback theme name in a script.
-  A one-element entry (vim) is normalized to the same value for both modes. Prebuilt
-  artifacts stay on the custom path regardless (`is_prebuilt_config || shouldInstall…`),
-  since they ship next to the generated color files that define those themes.
+  `shouldInstallCustomTheme()` = `is_gui && !IS_CUSTOM_THEME_DISABLED`, read lazily so the
+  file stays importable in the unit-test `vm` sandbox. When false, consumers name a theme
+  from `APP_TO_THEMES_MAP` via `getTheme(app)` → `{ dark, light }` — only themes the app
+  already ships, no extension dependency. That map is the single registry for theme names;
+  never re-declare a fallback in a script. One-element entries (vim) normalize to both
+  modes. Prebuilt artifacts stay on the custom path regardless
+  (`is_prebuilt_config || shouldInstall…`).
 
 ### 7.4 Misc
 
@@ -431,7 +412,7 @@ that both bash and node consume:
   these to `BASHRC_FORCE_IS_GUI*` env vars and `_detect_gui_flags` applies them **last,
   inside itself**. Do not "fix" this by exporting `is_gui` over the detected value —
   `$BASH_ENV` makes every non-interactive bash re-run `_detect_gui_flags`, recomputing the
-  override away. Only `0` / `1` honored. Re-run it by hand after changing `$DISPLAY` live.
+  override away. Only `0` / `1` honored; re-run by hand after changing `$DISPLAY` live.
 - Use `is_gui` to decide _whether_ to install a GUI app, and `is_gui_x11` /
   `is_gui_wayland` to pick _which_ server-specific tool (xclip vs wl-copy, wmctrl vs
   swaymsg). Never gate a GUI app on `is_gui_x11` alone — that skips Wayland desktops.
@@ -454,34 +435,31 @@ that both bash and node consume:
 - **Never `&>>` — bash 4.0+, a hard parse error on 3.2.** Write `>> "$log" 2>&1`. Bites
   hardest in `_full-setup.sh`, which a fresh Mac runs under `/bin/bash` 3.2 before
   Homebrew's bash exists. `&>` and `&> /dev/null` are fine — only appending `&>>` is bash 4.
-- **Never open a heredoc inside a `$( ... )` command substitution.** bash 3.2 does not
-  stop tracking quotes inside a nested heredoc body: it keeps scanning for the matching
-  `)` and counts every `'` in the body as shell quoting. One English possessive in a JS
-  comment — an odd apostrophe count — leaves the parser stuck inside a quote and corrupts
-  everything after it, surfacing as a syntax error hundreds of lines later. bash 4+ parses
-  it correctly, so the bug is invisible on modern bash and the reported line number is a
-  decoy. Read the body into a variable first, keeping the heredoc at top level:
+- **Never open a heredoc inside a `$( ... )` command substitution.** bash 3.2 keeps
+  scanning for the matching `)` and counts every `'` in the body as shell quoting — one
+  odd apostrophe corrupts everything after it, surfacing as a syntax error hundreds of
+  lines later (bash 4+ parses fine, so the reported line is a decoy). Read the body into
+  a variable first, keeping the heredoc at top level:
 
   ```bash
-  # WRONG — breaks bash 3.2 the moment the body has an odd number of apostrophes
+  # WRONG — breaks bash 3.2 when the body has an odd apostrophe count
   node -e "$(
     command cat << 'JS_EOF'
-  // every body line's leading '+' matters
+  // body line
   JS_EOF
   )"
 
-  # RIGHT — top-level heredoc, body is literal on every bash
+  # RIGHT — top-level heredoc, body literal on every bash
   local js
   IFS= read -r -d '' js << 'JS_EOF' || true
-  // every body line's leading '+' matters
+  // body line
   JS_EOF
   node -e "$js"
   ```
 
-  `read -d ''` returns non-zero at EOF, hence the `|| true`. `IFS=` keeps the body
-  byte-exact. The same rule covers `osascript -l JavaScript`, `python -c`, `sqlite3`,
-  and any other "script embedded in a heredoc" — if the heredoc feeds stdin rather than
-  an argument, pipe the variable in: `printf '%s\n' "$js" | osascript -l JavaScript`.
+  `read -d ''` returns non-zero at EOF, hence `|| true`; `IFS=` keeps the body
+  byte-exact. Same rule for any script-in-heredoc (`osascript`, `python -c`,
+  `sqlite3`) — if it feeds stdin, pipe the variable in.
 
 - **No GNU-only flags** — BSD `sed`/`find`/`stat` differ. Prefer node or POSIX forms.
 - **Guard every OS-specific path** with the matching `is_os_*` flag or an `exitIf*`
@@ -572,11 +550,10 @@ Flow** (`.github/workflows/build-main.yml` = prep → build-{ubuntu,rhel,arch,de
 - Publish amends HEAD and force-pushes, so the SHA on `main` changes after CI —
   `git pull --rebase` before pushing again.
 - **The prep patch carries content updates only, never `.build/` deletions.**
-  `clean_artifacts` wipes `.build/` and dry-run only simulates the writes that
-  would regenerate its tracked artifacts, so before `git add -A` the workflow
-  restores worktree-deleted tracked files under `.build/` from the index.
-  Without that, the patch deletes every one of them downstream while they stay
-  in the index — specs that read tracked repo files then die with ENOENT.
+  `clean_artifacts` wipes `.build/` and dry-run only simulates the writes, so before
+  `git add -A` the workflow restores worktree-deleted tracked files under `.build/` from
+  the index — otherwise the patch deletes them downstream and specs reading tracked repo
+  files die with ENOENT.
 - **Adding/removing a CLI tool: edit `software/metadata/ci-binaries.json`**, then
   `make format_ci_binaries`. Only non-GUI command-line binaries belong there.
   `check_binary_required` fails the build — reserve it for binaries present on _every_
@@ -617,318 +594,147 @@ ln -sfn ../../.claude/skills/<name>/SKILL.md .opencode/commands/<name>.md
 
 ### 13.0 Portability contract — a `SKILL.md` is tool-agnostic
 
-The same file is read by four different CLIs, so it is written to the open Agent
-Skills lowest common denominator: **YAML frontmatter carrying `name` and
-`description` only, then plain Markdown.** Anything a single vendor invented goes in
-an optional supporting file beside `SKILL.md`, never in the core file.
+One `SKILL.md` is read by four CLIs — write to the open Agent Skills lowest common denominator.
 
-- **Frontmatter is exactly two keys.** `name` (kebab-case, equal to the folder name)
-  and `description`. Never `model`, `agent`, `tools`, `permissions`, `allowed-tools`,
-  `context`, or `argument-hint` — each is one vendor's concept and is either ignored
-  or an outright parse failure elsewhere.
-- **`description` is the trigger, not documentation.** An agent reads it to decide
-  whether the skill applies at all, so it answers **what** and **when** in one
-  sentence-pair. `Git synchronization workflow.` is a miss; `Synchronize the current
-branch with its full ancestry using merge only. Use when updating a branch from its
-base, syncing stacked branches, or preparing a branch for review.` fires correctly.
-- **Never name the agent.** No "ask Claude to…", no "have Copilot review". Describe
-  the behavior and let whoever is running decide who does it — "inspect the branch
-  state before modifying the repository".
-- **No vendor tool syntax.** No `Task(...)`, `mcp__*`, `@github`, `functions.shell`,
-  a `delegate` tool, or a `claude --flag` invocation. Say what must happen — "use the
-  available shell and repository tools to inspect git state" — and let the harness
-  pick the call.
-- **Never instruct an agent to run a slash command.** `Run /sync` means four
-  different things across four CLIs: one resolves it, one resolves a _different_
-  command by that name, one treats it as literal text, one has no such command at
-  all — and the failure is silent in three of those. Name the operation instead
-  ("synchronize the current branch with its ancestry using the workflow below"), or
-  point at the workflow this file already defines. Handing off to another skill is
-  phrased by behavior — "run whatever pull-request workflow the environment
-  provides" — never by its `/name`. A `/name` is fine in the AGENTS.md skill table,
-  which is prose for a human choosing one.
-- **`$ARGUMENTS` degrades, it does not depend.** Where a skill takes an argument,
-  reference `$ARGUMENTS` once and immediately name the fallback — "if that
-  placeholder arrives unexpanded or empty, use the OS named in the request instead" —
-  so the skill still works on a loader that never interpolates it.
-- **Every skill carries the same four sections, in this order:** `## Purpose` (what
-  it does, one paragraph), `## Steps` (the numbered workflow), `## Safety` (a
-  `Never:` list of invariants, closing with the one condition that means stop and
-  ask), `## Verification` (what to confirm and report before declaring success).
-  Optional `## Rules`, `## Notes`, `## Artifacts`, and `## Reference: …` sections sit
-  wherever they read best, so long as the four required ones keep that relative
-  order. The uniformity is the point — an agent that loaded only half the file still
-  knows where the invariants live, and a skill missing `## Safety` is a skill whose
-  destructive steps are guarded by nothing but tone.
-- **State invariants bluntly; abstract only the mechanism.** `## Safety` says "never
-  rebase, never force-push, never discard uncommitted user changes, never silently
-  resolve a conflict by taking one side" — every agent understands those semantics,
-  and vagueness there is how a skill quietly stops protecting anything.
-  `## Verification` demands the command's real output ("quoted, not paraphrased"),
-  because a summarized result is how an unrun check becomes a reported pass.
-- **Split into `references/` and `scripts/` only when there is something to split.**
-  A supporting file beside `SKILL.md` is the right home for long reference material,
-  vendor-specific behavior, or an executable helper — but a ten-line table read once
-  is not that. Extract on genuine weight or a third reuse, not on principle (YAGNI).
+- **Frontmatter is exactly two keys:** `name` (kebab-case, equals folder name) and
+  `description`. No `model`, `agent`, `tools`, `permissions`, `allowed-tools`,
+  `context`, `argument-hint`. Vendor-specific behavior goes in a supporting file beside `SKILL.md`.
+- **`description` is the trigger** — what + when in one sentence-pair ("Synchronize …
+  Use when …"), not documentation.
+- **Never name an agent/CLI or vendor tool syntax** (`Task(...)`, `mcp__*`,
+  `claude --flag`). Say what must happen; the harness picks the call.
+- **Never instruct running a `/name`** — it resolves differently per CLI, silently. Name
+  the operation instead. Hand off by behavior ("run whatever pull-request workflow the
+  environment provides").
+- **`$ARGUMENTS` degrades, doesn't depend** — reference once, immediately name the fallback.
+- **Four required sections, in order:** `## Purpose`, `## Steps`, `## Safety` (a
+  `Never:` list closing with the stop-and-ask condition), `## Verification`. Optional
+  `## Rules` / `## Notes` / `## Artifacts` / `## Reference: …` may sit between them.
+  Missing `## Safety` = destructive steps guarded by nothing.
+- **Invariants bluntly stated; verification demands quoted command output**, never paraphrase.
+- **Split into `references/` / `scripts/` only on genuine weight or third reuse** (YAGNI).
 
 ### 13.1 The global `/sy-*` corpus — one registry, never a per-CLI list
 
-The repo-local skills above are separate from the **global** `/sy-*` command corpus
-this repo installs onto the machine (`/sy-review-pr`, `/sy-babysit-prs`, …). That
-corpus has exactly **two** files you ever touch:
+Repo-local skills are separate from the machine-wide `/sy-*` corpus. Exactly two files
+to touch: `_common/commands/<name>.md` (behavior) and `LLM_COMMAND_DEPLOY_MAP` /
+`LLM_COMMAND_RETIRED_NAMES` in `llm-common.js` (add/rename/retire). Every CLI's
+`setup.js` reads that map via `// SOURCE software/scripts/advanced/llm/llm-common.js`;
+keys are extension-less so one map serves file- and folder-based CLIs.
 
-| To do this                      | Edit exactly this                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------- |
-| Change what a command does      | `software/scripts/advanced/llm/_common/commands/<name>.md`                   |
-| Add / rename / retire a command | `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` |
+Deploy = one physical copy plus symlinks: `deploySharedLLMSkills()` writes
+`~/_extra/ai_llm/skills/<key>/SKILL.md` once, then links it into each folder in
+`LLM_SKILL_LINK_FOLDERS` (`~/.claude/skills/<key>`, `~/.copilot/skills/<key>`,
+`~/.config/opencode/skills/<key>` + commands mirror, `~/.gemini/skills/<key>`,
+`~/.agents/skills/<key>`, plus shell wrappers).
 
-That map is the **single registry** every CLI's `setup.js` reads via
-`// SOURCE software/scripts/advanced/llm/llm-common.js`. Keys are extension-less
-(`sy-list-prs`), which lets one map serve a file-based CLI and a folder-based one at
-once:
-
-Deploy is **one physical copy plus symlinks**, not a per-CLI write:
-`deploySharedLLMSkills()` writes `~/_extra/ai_llm/skills/<key>/SKILL.md` once, then
-per-skill symlinks it into each folder in `LLM_SKILL_LINK_FOLDERS`.
-
-| CLI        | Where the one shared skill is linked                                                                  |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| `claude`   | `~/.claude/skills/<key>` → `~/_extra/ai_llm/skills/<key>`                                             |
-| `copilot`  | `~/.copilot/skills/<key>` → same target (its only slot)                                               |
-| `opencode` | `~/.config/opencode/skills/<key>` + a `/…/commands/<key>.md` mirror                                   |
-| `gemini`   | `~/.gemini/skills/<key>` → same target                                                                |
-| any CLI    | `~/.agents/skills/<key>` → same target (interoperable path)                                           |
-| shell      | `sy-<name>` + `<cli>_skill_<name>` bash wrappers, auto-registered from `~/_extra/ai_llm/skills/sy-*/` |
-
-**Per-skill links, never a folder symlink.** Pointing `~/.copilot/skills` at the
-shared folder wholesale would hijack the destination — `copilot plugin install`,
-`gemini skills install`, and hand-authored skills would land inside the shared
-folder or be destroyed on the next deploy. The link pass reads the shared folder
-dynamically, skips any non-symlink it finds, and prunes only its own stale links.
-
-**Never add a second list.** Adding a command name to a per-CLI array, map, or `if` in
-`claude/setup.js`, `copilot/setup.js`, `gemini/setup.js`, `opencode/setup.js`, or a
-profile partial is exactly the drift this consolidation removed (the old
-`CLAUDE_COMMAND_DEPLOY_MAP` + `COPILOT_SKILL_DEPLOY_LIST` pair silently diverged). Same
-for the shared constants beside it: `LLM_COMMAND_SOURCE_FOLDER`, `LLM_SKILL_MARKER(S)`,
-and `readLLMCommandSource()` are read, never re-declared per CLI. A per-CLI file may only
-hold the **shape** difference (filename vs folder, frontmatter vs none) — never _which_
-commands exist. A new CLI SOURCEs `llm-common.js` and iterates the map.
-
-**The shell dispatchers have their own single registry — `_SY_LLM_SPECS`** in
-`_common/sy-commands.profile.bash`. It is the only place a CLI name appears in that
-file, and each record is `<cli>|<prompt-args>|<native-kind>|<native-args>` — the
-invocation shape lives in the data, so `_sy_exec_prompt` / `_sy_exec_named` name no
-CLI and need no `case`. `_SY_SUPPORTED_LLMS` and `_SY_DEFAULT_LLM` derive from it at
-source time. **Adding a CLI is one record and nothing else**; never a second array,
-never an arm in a dispatch function, never a name hardcoded into a wrapper — a test
-fails the build on any CLI name outside the registry block. Both wrapper families
-(`sy-<name>` and `<cli>_skill_<name>`) come out of one registration loop over
-`~/_extra/ai_llm/skills/sy-*/SKILL.md`, so no command name is ever written there either.
-
-**`inline` is a reserved wrapper name, and the one exec path.** `<cli>_skill_inline`
-(and its call-time twin `sy-inline`) take raw prompt text with no `SKILL.md` behind
-it — `opencode_skill_inline "<text>"` is exactly `opencode --prompt "<text>"`, the
-argv shape coming from that CLI's `<prompt-args>` record. Every `<cli>_skill_<name>`
-finishes by calling its own `<cli>_skill_inline`, so a prompt reaches a CLI through
-one function whether it came from a skill body or the command line. Never repeat a
-CLI's prompt flag at a call site (a profile alias, a tmux workspace, a script) — call
-`<cli>_skill_inline` so the flag stays in the registry. A deployed skill named
-`sy-inline` is skipped with a warning; letting it define `<cli>_skill_inline` would
-point that wrapper back at `_sy_run`, which execs through it — infinite recursion.
-
-**A `native` dispatch kind is a claim about a binary — verify it or leave it empty.**
-`slash` / `command` say the CLI resolves a skill by NAME; an unproven entry silently
-sends `/sy-foo` as literal prose and the skill never loads, with no error anywhere.
-Verified today: `copilot -p "/sy-<name>"` (fires `skill(...)`, v1.0.81) and
-`opencode run --command sy-<name>`. `claude` is `slash` on its own documented
-`--disable-slash-commands` / `--bare` text, not a live run. `gemini` is deliberately
-empty. An empty kind degrades to `inline`, which always works — so leaving it empty is
-the correct move when you cannot test, never a guess.
+- **Per-skill links, never a folder symlink** — a wholesale link hijacks the
+  destination and would destroy plugin/hand-authored skills on next deploy. The pass
+  skips non-symlinks and prunes only its own stale links.
+- **Never add a second list** — no command name in any per-CLI array/map/if/setup.js;
+  per-CLI files hold shape differences only (filename vs folder), never which commands
+  exist. Shared constants (`LLM_COMMAND_SOURCE_FOLDER`, `LLM_SKILL_MARKER(S)`,
+  `readLLMCommandSource()`) are read, never re-declared.
+- **Shell dispatchers have their own single registry: `_SY_LLM_SPECS`** in
+  `_common/sy-commands.profile.bash`, record `<cli>|<prompt-args>|<native-kind>|<native-args>`.
+  Adding a CLI = one record, nothing else; `_SY_SUPPORTED_LLMS` / `_SY_DEFAULT_LLM`
+  derive from it; a test fails the build on any CLI name outside the registry block.
+  Wrapper families (`sy-<name>`, `<cli>_skill_<name>`) come from one registration loop.
+- **`inline` is reserved and is the one exec path.** `<cli>_skill_inline "<text>"` is
+  exactly that CLI's prompt invocation; every `<cli>_skill_<name>` ends by calling it,
+  and call sites never repeat a prompt flag. A deployed `sy-inline` skill is skipped
+  with a warning (it would recurse).
+- **A `native` dispatch kind is a claim about a binary — verify or leave empty.**
+  Unproven entries send `/sy-name` as literal prose with no error. Verified today:
+  `copilot -p "/sy-<name>"` (v1.0.81), `opencode run --command sy-<name>`;
+  `claude` is `slash` on its own documented text, `gemini` deliberately empty. Empty
+  kind degrades to `inline`, which always works.
 
 ### 13.2 Named agents — a persona, never a workflow
 
-A **skill** is a workflow; an **agent** is the worker that runs it. The two are
-separate corpora on purpose, and the split is what keeps either one from becoming a
-second copy of the other. Registry: `LLM_AGENT_DEPLOY_MAP` in `llm-common.js`,
-sources in `_common/agents/<name>.md`.
+Skill = workflow; agent = worker. Registry `LLM_AGENT_DEPLOY_MAP` in `llm-common.js`,
+sources `_common/agents/<name>.md`.
 
-- **An agent source describes who the worker is, never what it does** — its lens,
-  what it owns, what it must never touch, how it reports. The steps, cadence,
-  safety list, and verification stay in the matching `SKILL.md`. An agent that also
-  carried the workflow would drift from it the first time either side is edited,
-  and nothing would fail loudly when it did.
-- **Agent sources obey the same portability contract as skills (§13.0)** — no
-  frontmatter, no CLI name, no tool name (`Task`, `Agent`, `@name`), no model. Each
-  opens with the same first-line `[Sy] <what this is>` marker the command sources
-  use, so one description derivation and one orphan-detection rule serve both.
-- **One physical agent, symlinked everywhere**, exactly like the skill corpus:
-  `<LLM_ROOT_FOLDER>/agents/<name>.md`, linked into each folder in
-  `LLM_AGENT_LINK_FOLDERS`. This was briefly rendered as a separate file per CLI,
-  on the belief that the frontmatter shapes were irreconcilable. They are not —
-  every one of these CLIs **ignores keys it does not recognize**, so the union
-  (`name` + `description` + `mode: subagent`) is a single file all three accept,
-  and the filename difference is absorbed by the link rather than the target
-  (Copilot's `<name>.agent.md` and everyone else's `<name>.md` point at the same
-  file). One copy makes a stale per-CLI artifact structurally impossible.
-- **Never drop a key from that union to "clean it up".** `name` is REQUIRED by
-  Claude Code — a file carrying only `description` is silently skipped — and
-  `mode: subagent` is what OpenCode needs to classify the agent as dispatchable.
-  Each removal breaks exactly one CLI, with no error anywhere.
-- **Per-agent links, never a folder symlink.** Pointing `~/.claude/agents` at the
-  shared folder hijacks the destination and destroys anything a plugin or the user
-  put there. Same tradeoff already made by the skills and instructions corpora. A
-  real file at a link destination is left alone unless it still carries our own
-  `[Sy] ` marker, which is the one case it is a leftover of ours to replace.
-- **Agent names ARE `sy-` prefixed**, exactly like commands. This was briefly the
-  opposite, on the theory that a prefix only pays off in a picker and that a
-  rendered label should be the shortest honest noun. Wrong in the one place the
-  name is actually read: a label beside a running worker is precisely where "mine
-  or a plugin's?" needs answering at a glance, and a bare `Pr-Reviewer` sitting
-  next to a vendor agent answers it for nobody. One prefix convention, both
-  corpora.
-- **A new CLI entry requires a live probe, not a doc.** A wrong folder or a wrong
-  frontmatter key fails **silently** on every one of these CLIs — the file is parsed
-  as ordinary documentation and the agent never appears. Both claude and copilot
-  enumerate every agent they resolved when handed one that does not exist, before
-  spending a model turn, which makes the check free:
-
-  ```bash
-  claude  --agent zz-nope -p x   # -> "not found. Available agents: ..."
-  copilot --agent zz-nope -p x   # -> "No such agent: zz-nope, available: ..."
-  opencode agent list            # -> "<name> (subagent)"
-  ```
-
-  Verified: claude 2.1.223 (`~/.claude/agents/<name>.md`, `name` key **required** —
-  a file with only `description` is ignored), copilot 1.0.81
+- **Agent source describes who the worker is, never what it does** — lens, ownership,
+  never-touch list, reporting style. Steps/cadence/safety stay in the matching `SKILL.md`.
+- Same portability contract as skills (§13.0); each opens with the `[Sy] <what this is>`
+  first-line marker.
+- **One physical file, symlinked everywhere** (`LLM_AGENT_LINK_FOLDERS`), carrying the
+  union frontmatter `name` + `description` + `mode: subagent`.
+- **Never drop a union key**: `name` is REQUIRED by Claude Code (silently skipped
+  otherwise), `mode: subagent` makes OpenCode classify it dispatchable. Each removal
+  breaks exactly one CLI, silently.
+- **Per-agent links, never a folder symlink** (same destination-hijack tradeoff as
+  skills). A real file at a link destination stays unless it carries our `[Sy] ` marker.
+- **Agent names ARE `sy-` prefixed** — a picker label beside a running worker is where
+  "mine or a plugin's?" gets answered.
+- **A new CLI entry requires a live probe** — wrong folder/key fails silently everywhere.
+  Probes enumerate available agents for free:
+  `claude --agent zz-nope -p x`, `copilot --agent zz-nope -p x`, `opencode agent list`.
+  Verified: claude 2.1.223 (`~/.claude/agents/<name>.md`), copilot 1.0.81
   (`~/.copilot/agents/<name>.agent.md`), opencode 1.18.18
-  (`~/.config/opencode/agent/<name>.md`, name from the FILENAME, no `name` key).
-  Gemini 0.55.1 has no agent surface and is deliberately absent. **OpenCode's
-  discovery lags a file write by several seconds** — a check run immediately after
-  deploy is a false negative, not a failure.
-
-- **Never name an agent inside a skill body.** Selecting a specialized worker is
-  phrased by behavior — "where the environment offers a worker specialized for
-  reviewing a pull request, dispatch to that one" — exactly like every other
-  handoff in §13.0. Renaming or deleting an agent adds the old name to
-  `LLM_AGENT_RETIRED_NAMES` in the same commit.
+  (`~/.config/opencode/agent/<name>.md`, name from FILENAME). Gemini has no agent
+  surface — absent deliberately. OpenCode discovery lags a write by seconds: an
+  immediate check is a false negative.
+- **Never name an agent inside a skill body** — select workers by behavior. Renames/
+  deletions add the old name to `LLM_AGENT_RETIRED_NAMES` in the same commit.
 
 ### 13.3 The shared LLM home folder — `~/_extra/ai_llm/`
 
-Everything the LLM tooling owns outside a repo checkout lives under one root, created and
-maintained by `deploySharedLLMInstructions()` in `llm-common.js`, which **all four**
-setup scripts call:
+Everything LLM tooling owns outside a checkout lives under one root, created by
+`deploySharedLLMInstructions()` in `llm-common.js` (called by all four setups):
 
-| Path                            | Holds                                                                      |
-| ------------------------------- | -------------------------------------------------------------------------- |
-| `~/_extra/ai_llm/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES`  |
-| `~/_extra/ai_llm/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)      |
-| `~/_extra/ai_llm/agents/`       | The ONE copy of every named agent, symlinked into every CLI (§13.2)        |
-| `~/_extra/ai_llm/plans/`        | Flat plan artifacts + sidecars (`<repo>-<feature>.md`, `.diff`, `.rfc.md`) |
+| Path | Holds |
+| --- | --- |
+| `~/_extra/ai_llm/instructions/` | On-demand instruction files (`LLM_SHARED_INSTRUCTION_FILES`) |
+| `~/_extra/ai_llm/skills/` | ONE copy of every `/sy-*` skill (§13.1) |
+| `~/_extra/ai_llm/agents/` | ONE copy of every named agent (§13.2) |
+| `~/_extra/ai_llm/plans/` | Flat plan artifacts + sidecars |
 
-**The location is decided in exactly one place — `LLM_ROOT_FOLDER` in
-`software/bootstrap/common-env.sh`.** It sits there rather than in `llm-common.js` because
-both surfaces need the same answer and only `common-env.sh` reaches both: it is inlined
-into `run.sh` (so node reads it as an env var) and re-exported into `~/.bash_syle_common`
-(so `sy-commands.profile.bash` resolves the same folder without a second literal). Adding
-a shared var to `common-env.sh` alone is **silently insufficient** — the hand-written
-export block in `run.sh` must list it too, or interactive shells never see it. All the
-folder LOGIC stays in `llm-common.js`; only the location lives in `common-env.sh`.
+- **Location decided in one place: `LLM_ROOT_FOLDER` in `software/bootstrap/common-env.sh`** —
+  it alone reaches both surfaces (inlined into `run.sh`, re-exported into
+  `~/.bash_syle_common`). Adding a shared var there is silently insufficient unless the
+  hand-written export block in `run.sh` lists it too.
+- **Consumers derive, never re-spell:** `${LLM_ROOT_FOLDER}` bash,
+  `process.env.LLM_ROOT_FOLDER` node — read directly, **no `:-` / `||` default** (a
+  default is a second declaration; unset means `run.sh` never ran and should fail visibly).
+- **Deployed docs use `<<LLM_ROOT_FOLDER>>` placeholders**, resolved at deploy time by
+  `resolveLLMDocPlaceholders()`; token name matches the env var exactly. Every deployed
+  doc goes through `readLLMDocSource()` — never bare `readText` on a doc that ships.
+  Repo-local docs (`AGENTS.md`, `docs/`, `llm.md`, `.claude/skills/*/SKILL.md`) keep
+  literal paths; `<<SY_ROOT_FOLDER>>` comes from `COMMON_PLACEHOLDERS`.
+- **Moving the folder = two edits:** the `LLM_ROOT_FOLDER` line plus a row in
+  `LLM_LEGACY_FOLDERS` (with its own `destination`). Nothing auto-moves:
+  `warnAboutLegacyLLMFolders()` prints a one-time warning naming the exact
+  `rsync … && rm -rf`; never throws; empty leftovers ignored. The symlink-ownership
+  helpers (`isSharedLLMArtifactTarget()`, `isUnderSharedLLMHome()`) match every root we
+  have ever used on a path boundary, so pre-move dangling links stay recognized as ours.
+- **The always-loaded block has a hard size budget:** Claude Code refuses `CLAUDE.md`
+  over 40k chars; keep `instructions.md` under 35k — split a section rather than trim rules.
+  PR-workflow/debugging/testing rules live in
+  `_common/instructions-{pr-workflow,debugging,testing}.md`.
+  - Reference split files as a backticked path, **never `@path`** (an `@`-import
+    re-inflates the budget; `llmInstructionsSplit.spec.js` fails on it).
+  - New split file = one `LLM_SHARED_INSTRUCTION_FILES` entry + a pointer in
+    `instructions.md`. Never a per-CLI edit.
+  - CLIs that can't read the shared folder get symlinks via
+    `LLM_SHARED_INSTRUCTION_LINK_FOLDERS` (renamed to that folder's `suffix`, e.g.
+    copilot's `.instructions.md` glob); non-symlink entries untouched. Claude/Gemini
+    absent deliberately (they'd always-load and blow the budget).
+  - `persona.md` is the one split file also inlined back into `instructions.md` (BEGIN
+    block filled by `make format_build_include`; `inlined: true` in
+    `SPLIT_EXPECTATIONS`). `instructions.md` closes with a short **Persona Check**
+    section — last thing read.
 
-Consumers derive rather than re-spell the folder, so `ai_llm` is never a second literal:
-`${LLM_ROOT_FOLDER}` in bash, and `process.env.LLM_ROOT_FOLDER` in node — read **directly,
-with no `:-` or `||` default**. A per-consumer default is a second declaration wearing a
-disguise: it looks defensive, but the day the real root moves every copy goes on resolving
-happily to the old path, and the surfaces disagree silently. The default belongs to the one
-declaration in `common-env.sh`. Unset means `run.sh` never ran, and an obviously-broken path
-(or a `path.join` that throws) is the correct, visible outcome.
-
-**Deployed docs reference the folder through a `<<LLM_ROOT_FOLDER>>` placeholder, resolved at
-deploy time.** A repo source cannot hardcode `~/_extra/ai_llm/...` — that is the same second
-spelling, and it is wrong outright on a machine whose home layout differs. It cannot carry
-`$LLM_ROOT_FOLDER` either: an agent reading `~/.claude/CLAUDE.md` has no shell expanding
-anything, and an unexpanded variable inside a `mkdir -p` is a write at the filesystem root.
-So the source writes `` `<<LLM_ROOT_FOLDER>>/plans/` `` and `resolveLLMDocPlaceholders()`
-bakes in the absolute path on the way out. The token name matches the env var name exactly.
-
-- **Every deployed doc is read through `readLLMDocSource()`** — the always-loaded
-  instructions, each split instruction file, every `/sy-*` skill body, and each CLI's own
-  tweaks file. Never call `readText` directly on a doc that gets deployed: a source that
-  skips resolution ships `<<LLM_ROOT_FOLDER>>` verbatim to an agent, which reads as a literal
-  folder name and fails silently.
-- **Repo-local docs keep the literal path instead** — this file, `docs/`, `llm.md`, and
-  `.claude/skills/*/SKILL.md` are read straight from the checkout with nothing resolving
-  them, so a placeholder there would be a permanently-unexpanded token. `<<SY_ROOT_FOLDER>>`
-  is resolved for every template by `COMMON_PLACEHOLDERS` in `software/index.js`, for docs
-  that mean the personal root rather than the LLM home.
-
-**Moving the folder again is two edits: this one line, plus a row in
-`LLM_LEGACY_FOLDERS`.** Nothing is moved automatically — the one-time migration that
-relocated `~/sy_llm_ai` and `~/sy_llm_ai_plans` has run everywhere and was deleted, since
-a folder-moving engine kept alive for folders that no longer exist is exactly the
-speculative weight YAGNI cuts. What replaced it is a **detector**:
-`warnAboutLegacyLLMFolders()` runs at the top of both deploy entry points, and for every
-row whose folder still exists **and still holds files** it prints a loud one-time warning
-naming the folder, its destination, and the exact `rsync … && rm -rf` to run. It never
-moves, copies, or deletes anything, and never throws — a stale folder must not fail an
-otherwise-fine deploy. An empty leftover is ignored as a false alarm. Each row carries its
-own `destination` because they differ: the legacy root maps to the shared root, but the
-standalone plans folder maps to `<root>/plans`.
-
-The same registry keeps the two symlink-**ownership** helpers legacy-aware —
-`isSharedLLMArtifactTarget()` and `isUnderSharedLLMHome()` answer "is this link ours?"
-against every root we have ever used, matching on a path boundary so `<home>/sy_llm_ai`
-does not swallow `<home>/sy_llm_ai_plans`. That is cleanup, not migration: a cleanup pass
-knowing only the current root leaves a pre-move link dangling forever, and the deploy pass
-then misreads that dangling link as user-authored and refuses to replace it. Retire a row
-only once no machine can still be holding that folder.
-
-**The always-loaded block has a hard size budget.** `instructions.md` is deployed verbatim
-into `~/.claude/CLAUDE.md` and its three siblings, and Claude Code refuses to load a
-`CLAUDE.md` over **40k chars**. That is why the PR workflow, debugging, and testing
-rules live in `_common/instructions-{pr-workflow,debugging,testing}.md`,
-deployed to `~/_extra/ai_llm/instructions/{pr-workflow,debugging,testing}.md` and referenced from
-`instructions.md` by a pointer. (The risky-change rules were folded back inline once condensed.)
-
-- **Reference split files as a backticked path, never as `@path`.** Per Claude Code's
-  memory docs, an `@path` import "is expanded and loaded into context at launch" — it would
-  re-inflate the budget the split exists to protect while still rendering correctly.
-  `software/tests/llmInstructionsSplit.spec.js` fails the build on a bare `@`-import.
-- **Adding a split file is one entry in `LLM_SHARED_INSTRUCTION_FILES` plus a pointer** in
-  `instructions.md`. Same "one registry, never a per-CLI list" rule as the command map —
-  never a per-CLI edit.
-- **A CLI that can't read the shared folder by path gets a symlink, never a copy.**
-  `LLM_SHARED_INSTRUCTION_LINK_FOLDERS` in `llm-common.js` is the only place naming those
-  folders; `deploySharedLLMInstructions()` links every shared file into each one, renaming
-  the link to that folder's `suffix` (copilot globs
-  `~/.copilot/instructions/**/*.instructions.md`, so `pr-workflow.md` alone is ignored —
-  the link is `pr-workflow.instructions.md` pointing at the clean shared name). Adding a
-  CLI is one entry here, not an edit to its `setup.js`. Non-symlink entries in a
-  destination folder are never touched, which is what keeps plugin-owned files
-  (`captain.instructions.md`) alive. Claude and Gemini are deliberately absent — their only
-  mechanisms always-load the file and re-inflate the 40k budget the split exists to protect.
-- Keep `instructions.md` under 35k chars (the spec's budget, 5k below the hard limit). When
-  it creeps up, split a section out rather than trimming rules away.
-- **`persona.md` is the one split file that is ALSO inlined back**, through a
-  `<!-- BEGIN software/scripts/advanced/llm/_common/instructions-persona.md -->` block at
-  the top of `instructions.md` (`make format_build_include` fills it). One source, two
-  destinations: claude and gemini read only the always-loaded block, while opencode loads
-  the standalone file as its own `instructions[]` document, where a persona is not ~1% of
-  one 36k blob. `instructions.md` also closes with a short **Persona Check** section — last
-  thing read, because the persona sits first in context and decays first. The split spec
-  knows this via `inlined: true` in `SPLIT_EXPECTATIONS`; every other split file must NOT
-  appear in the always-loaded file.
-
-Deploy + verify after any change to the corpus:
+After any corpus change, deploy + verify:
 
 ```bash
 bash run.sh --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"
 ```
 
-Run it twice. All surfaces must report the same count, and the second run must print no
-`Removed prior Sy skill` lines. Renaming or deleting a command **must** add the old name
-to `LLM_COMMAND_RETIRED_NAMES` in the same commit — the only thing that cleans up dev
-machines still holding the old file.
+Run twice: same count both runs, no `Removed prior Sy skill` lines on the second.
+Renaming/deleting a command adds the old name to `LLM_COMMAND_RETIRED_NAMES` in the
+same commit.
 
 ---
 
