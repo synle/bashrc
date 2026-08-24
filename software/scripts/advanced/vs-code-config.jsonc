@@ -115,6 +115,7 @@
   "[yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[graphql]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[vue]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[xml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" }, // prettier formats XML via its HTML parser — the *.xml→parser:html override lives in the global ~/.prettierrc.json written by prettier-config.js (a project-level .prettierrc still wins)
   "[python]": { "editor.defaultFormatter": "charliermarsh.ruff" }, // ruff (LSP) handles Python formatting
   "[rust]": { "editor.defaultFormatter": "rust-lang.rust-analyzer" }, // rust-analyzer shells out to rustfmt
   "[go]": { "editor.defaultFormatter": "golang.go" }, // gopls handles gofmt/goimports
