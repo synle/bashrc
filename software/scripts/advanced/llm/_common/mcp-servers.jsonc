@@ -46,9 +46,23 @@
     // separate persistent install is needed. Runs 100% locally over STDIO;
     // image OCR/description stays metadata-only unless an LLM client is wired
     // in, so nothing leaves the machine by default.
+    //
+    // `--with "mcp>=1.19,<2"` is a REQUIRED workaround, not a nicety: the
+    // latest published markitdown-mcp (0.0.1a4) pins `mcp~=1.8.0`, and that old
+    // MCP SDK CRASHES the whole server (exit 1) the moment a client sends the
+    // non-standard `server/discover` capability probe that GitHub Copilot CLI
+    // (and OpenCode) fire right after `initialize` — a pydantic ValidationError
+    // escapes the stdio read loop and the process dies mid-handshake, so the
+    // CLI reports "MCP server process exited before completing the MCP
+    // initialize handshake". mcp >= 1.19 answers the unknown request with a
+    // graceful JSON-RPC -32602 and keeps serving. The floor forces uv to pick a
+    // markitdown-mcp build whose pin allows a resilient SDK (currently 0.0.1a3
+    // + mcp 1.29); conversion quality is identical since both wrap the same
+    // `markitdown[all]` (<0.2.0) parsers. Drop the `--with` once markitdown-mcp
+    // ships a release that no longer pins `mcp~=1.8.0`.
     "markitdown": {
       "command": "uvx",
-      "args": ["markitdown-mcp"]
+      "args": ["--with", "mcp>=1.19,<2", "markitdown-mcp"]
     },
     // Microsoft Playwright — browser automation over STDIO: navigate, click,
     // fill forms, screenshot, and capture accessibility snapshots. Useful for
