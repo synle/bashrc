@@ -38,6 +38,18 @@
   //   - Remote servers must be reachable from every machine that runs setup —
   //     a corp-VPN-only endpoint will break setup on a laptop without VPN.
   "mcpServers": {
+    // Microsoft MarkItDown — converts PDF / DOCX / XLSX / PPTX / images /
+    // audio / html into Markdown for the agent. Exposes one tool,
+    // `convert_to_markdown(uri)`, taking a file:, http:, https:, or data: URI.
+    // Ships as `markitdown-mcp` on PyPI; `uvx` (installed by
+    // software/scripts/advanced/uv.sh) fetches + runs it on demand, so no
+    // separate persistent install is needed. Runs 100% locally over STDIO;
+    // image OCR/description stays metadata-only unless an LLM client is wired
+    // in, so nothing leaves the machine by default.
+    "markitdown": {
+      "command": "uvx",
+      "args": ["markitdown-mcp"]
+    }
     // Example (commented; uncomment + edit to enable everywhere):
     // "context7": {
     //   "command": "npx",

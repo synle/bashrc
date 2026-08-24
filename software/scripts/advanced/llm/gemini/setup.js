@@ -322,7 +322,7 @@ async function _doMcpWork(targetDir) {
 
   existing.mcpServers = merged;
   await backupConfigFile(targetPath);
-  await writeText(targetPath, merged);
+  await writeJson(targetPath, existing);
 }
 
 /**

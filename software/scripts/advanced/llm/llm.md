@@ -130,6 +130,39 @@ key and update this table in the same edit.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
+### Using the MarkItDown MCP server
+
+Microsoft's [`markitdown-mcp`](https://github.com/microsoft/markitdown) ships in
+the shared registry (`_common/mcp-servers.jsonc`) and deploys to all four CLIs.
+It converts binary / office documents into Markdown the agent can read: **PDF,
+DOCX, XLSX, PPTX, images, audio, HTML, CSV, JSON, ZIP**, and more.
+
+- **Runtime**: launched on demand as `uvx markitdown-mcp` (STDIO). `uv` is
+  installed cross-OS by `software/scripts/advanced/uv.sh`; the **first** call
+  downloads the package + its parsers (pdfminer, pandas, pillow, …) and caches
+  them under `~/.cache/uv` — later calls are instant. No separate install step.
+- **Tool exposed**: `convert_to_markdown(uri)`, where `uri` is a `file:`,
+  `http:`, `https:`, or `data:` URI.
+- **How to invoke** — just ask the agent in plain language; it picks the tool
+  and passes the path:
+  - `"Convert ~/Downloads/report.pdf to markdown"`
+  - `"Read the tables in ./budget.xlsx"`
+  - `"Summarize this deck: /abs/path/slides.pptx"`
+  - Relative paths work, but an absolute `file://` URI is the most reliable —
+    e.g. `file:///Users/me/Downloads/report.pdf`.
+- **Local-only by default**: images and PDFs are parsed locally; image content
+  yields EXIF/metadata only unless a vision LLM client is wired into MarkItDown
+  (not configured here), so nothing leaves the machine.
+- **Verify it's wired up** (per CLI, after a setup run):
+  - Claude / Gemini → `mcpServers.markitdown` in `~/.claude/settings.json` /
+    `~/.gemini/settings.json`
+  - Copilot → `mcpServers.markitdown` in `~/.copilot/mcp-config.json`
+  - OpenCode → `mcp.markitdown` in `~/.config/opencode/opencode.json`
+    (translated `{ type: "local", command: ["uvx", "markitdown-mcp"] }` shape)
+- **Redeploy after edits**:
+  `bash run.sh --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"`
+  (or `bash run.sh --preset=llm`).
+
 ### Shell dispatchers (`sy-*` and `<cli>_skill_*` from the terminal)
 
 Every `_common/commands/<name>.md` slash command also has matching bash
