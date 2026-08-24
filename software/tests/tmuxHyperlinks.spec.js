@@ -15,6 +15,12 @@
  *    when the `hyperlinks` terminal-feature is enabled (tmux 3.4+); without the line
  *    in tmux.config, tmux strips the OSC 8 and the terminal falls back to its own
  *    plain-text URL detection, which cannot be handed through tmux's mouse capture.
+ *
+ * 3. The terminal must let the click reach it. With tmux `mouse on`, every click is
+ *    forwarded to tmux, so Ghostty never detects or opens a link. Ghostty's
+ *    `mouse-shift-capture = false` (the default) lets Shift bypass tmux and hand the
+ *    event to Ghostty — Shift+hover highlights, Shift+Cmd+click opens. Setting it to
+ *    true forwards Shift+click to the app and silently breaks link clicking in tmux.
  */
 import { describe, it, expect } from "vitest";
 import fs from "fs";
@@ -24,6 +30,7 @@ import { fileURLToPath } from "url";
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const TMUX_CONFIG = path.join(ROOT_DIR, "software/scripts/advanced/tmux.config");
 const PR_LIST_CJS = path.join(ROOT_DIR, "software/scripts/git.pr_list.cjs");
+const GHOSTTY_JS = path.join(ROOT_DIR, "software/scripts/advanced/ghostty.js");
 
 /**
  * Read a file from the repo root.
@@ -68,5 +75,15 @@ describe("pr_list emits real OSC 8 hyperlinks", () => {
     const source = read(PR_LIST_CJS);
     // formatLink must short-circuit to the plain URL for non-TTY / --links output.
     expect(source).toMatch(/if\s*\(!color\)\s*return\s+url;/);
+  });
+});
+
+describe("Ghostty lets Shift bypass tmux so links stay clickable", () => {
+  it("keeps mouse-shift-capture = false so Shift+Cmd+click can open links in tmux", () => {
+    const source = read(GHOSTTY_JS);
+    // true would forward Shift+click to tmux and silently break link opening; the
+    // config must emit false (the Ghostty default).
+    expect(source).toMatch(/mouse-shift-capture\s*=\s*false/);
+    expect(source).not.toMatch(/mouse-shift-capture\s*=\s*true/);
   });
 });
