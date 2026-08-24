@@ -21,8 +21,13 @@ const TO_INSTALL_EXTENSIONS = list`
   aaron-bond.better-comments
 
   // formatting & linting
+  // oxc.oxc-vscode = oxlint (linter) + oxfmt (formatter), one extension. It owns
+  // JS/TS/JSX/TSX/JSON/HTML/CSS/SCSS/LESS format-on-save (see vs-code-config.jsonc);
+  // prettier keeps JSONC/MD/YAML/GraphQL/Vue. Replaces dbaeumer.vscode-eslint, which is
+  // now actively uninstalled (TO_UNINSTALL_EXTENSIONS) so eslint + oxlint don't
+  // double-lint the same file.
   esbenp.prettier-vscode
-  dbaeumer.vscode-eslint
+  oxc.oxc-vscode
   streetsidesoftware.code-spell-checker
 
   // refactor & utilities
@@ -43,8 +48,10 @@ const TO_INSTALL_EXTENSIONS = list`
 
   // LSP servers (paired with software/scripts/advanced/lsp/lsp-common.js;
   // binaries installed by software/scripts/advanced/lsp/install.sh — separate PR).
-  // redhat.vscode-yaml + dbaeumer.vscode-eslint are already declared above; do NOT
-  // re-add them here.
+  // redhat.vscode-yaml is already declared above; do NOT re-add it here.
+  // dbaeumer.vscode-eslint is intentionally NOT installed — oxlint (oxc.oxc-vscode,
+  // declared above) replaces it. lsp-common.js still carries an eslint entry for
+  // the Sublime LSP-eslint package, which is deliberately left untouched.
   ms-pyright.pyright
   rust-lang.rust-analyzer
   golang.go
@@ -67,6 +74,10 @@ const TO_INSTALL_EXTENSIONS = list`
 const TO_UNINSTALL_EXTENSIONS = list`
   visualstudioexptteam.vscodeintellicode
   visualstudioexptteam.intellicode-api-usage-examples
+
+  // eslint — superseded by oxlint (oxc.oxc-vscode). Uninstalled so it does not
+  // double-lint JS/TS alongside oxlint on machines that had it from a prior setup.
+  dbaeumer.vscode-eslint
 `;
 
 ////// Path Discovery //////
@@ -82,6 +93,33 @@ function _getVSCodeUserPaths() {
 }
 
 ////// Settings //////
+
+/**
+ * Resolves absolute paths to the globally-installed oxlint / oxfmt binaries for the oxc
+ * VS Code extension (oxc.oxc-vscode). The extension does NOT bundle the tools and, by
+ * default, only auto-detects them in a project's `node_modules` — there is no PATH
+ * fallback — so this repo's machine-wide install (npm_install_global under ~/.local/bin,
+ * via oxlint.sh / oxfmt.sh) is invisible to it unless `oxc.path.*` names the binary.
+ *
+ * Only emitted for local deploys — never the generic prebuilt artifact, which cannot
+ * carry a machine-specific path — and only for a binary that actually exists here. On
+ * WSL the same settings object is also written to the Windows-host settings.json, where
+ * the Linux path simply is not found and the extension falls back to node_modules
+ * detection; harmless.
+ * @returns {object} Partial settings, e.g. `{ "oxc.path.oxlint": "...", "oxc.path.oxfmt": "..." }`. Empty when neither binary is installed.
+ */
+function _getOxcToolPaths() {
+  const binDir = path.join(process.env.HOME || "", ".local/bin");
+  const out = {};
+  // Match by exact name with the default "any" type: npm_install_global drops a SYMLINK
+  // launcher in ~/.local/bin, and a Dirent for a symlink reports isFile() === false, so a
+  // `type: "file"` filter would silently miss it.
+  const oxlintPath = findPath(binDir, "oxlint");
+  const oxfmtPath = findPath(binDir, "oxfmt");
+  if (oxlintPath) out["oxc.path.oxlint"] = oxlintPath;
+  if (oxfmtPath) out["oxc.path.oxfmt"] = oxfmtPath;
+  return out;
+}
 
 /**
  * Derives the `terminal.integrated.commandsToSkipShell` list from the resolved keybindings.
@@ -134,6 +172,10 @@ function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_pre
   return {
     ...baseConfig,
     "editor.multiCursorModifier": multiCursorModifier,
+
+    // --- oxc tool paths: point the oxc extension at the global oxlint/oxfmt install
+    // (local deploys only; the extension has no PATH fallback). See _getOxcToolPaths. ---
+    ...(is_prebuilt_config ? {} : _getOxcToolPaths()),
 
     // --- Typography ---
     "editor.fontFamily": fontFamily,

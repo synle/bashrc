@@ -338,6 +338,7 @@ runs:
         check_binary_required yarn
         check_binary_required prettier
         check_binary_required oxfmt
+        check_binary_required oxlint
         check_binary_required bun
         check_binary_required deno
         check_binary_required uv

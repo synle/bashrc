@@ -12,6 +12,7 @@
     "yarn",
     "prettier",
     "oxfmt",
+    "oxlint",
     "bun",
     "deno",
     "uv",

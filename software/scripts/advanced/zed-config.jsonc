@@ -162,16 +162,25 @@
     // wires it into VS Code (mads-hartmann.bash-ide-vscode) and Sublime (LSP-bash).
     // This repo is majority bash, so that gap was the single largest one in the Zed setup.
     "basher": true, // Shell Script diagnostics via bash-language-server (+ shellcheck when on PATH)
+    // `oxc` is a LANGUAGE SERVER extension (like `basher`, not a grammar one): it provides
+    // the `oxlint` and `oxfmt` language servers and attaches to built-in languages
+    // (JavaScript/TypeScript/JSON/HTML/CSS/…), so it needs no grammar and is exempt from
+    // the "every entry needs a `languages` formatter pin" rule — the pins below point the
+    // relevant languages at it. The extension self-provisions the oxlint/oxfmt binaries
+    // into its own dir, so unlike VS Code it does not depend on the global install.
+    "oxc": true, // oxlint (lint) + oxfmt (format) for JS/TS/JSON/HTML/CSS/SCSS — see languages block
   },
   "icon_theme": "Material Icon Theme", // File icon theme for sidebar. Values: any installed icon theme name
 
   // --- Formatters (per-language) ---
-  // Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML — same set as VS Code's vs-code-config.jsonc.
-  // Every non-Prettier language MUST be pinned to `language_server` explicitly. Otherwise
-  // Zed's default `formatter: "auto"` + global `prettier.allowed: true` routes the file
-  // to prettier, which fails with UndefinedParserError on Rust/Python/Go (prettier doesn't
-  // support them). Symmetric: every Prettier-supported language gets `formatter: "prettier"`;
-  // every native-LSP language gets `formatter: "language_server"`.
+  // oxc (oxfmt) owns JS/TS/TSX/JSON/HTML/CSS/SCSS format-on-save via the `oxfmt` language
+  // server; oxlint fix-on-save is chained after the formatter for the JS/TS/TSX family
+  // (the only languages oxlint handles). Prettier keeps JSONC/Markdown/YAML — the same
+  // split as VS Code's vs-code-config.jsonc (oxfmt still mangles MD/YAML; JSONC stays on
+  // Prettier by request). Every non-oxc, non-Prettier language MUST be pinned to
+  // `language_server` explicitly. Otherwise Zed's default `formatter: "auto"` + global
+  // `prettier.allowed: true` routes the file to prettier, which fails with
+  // UndefinedParserError on Rust/Python/Go (prettier doesn't support them).
   //
   // Only languages that ship with Zed, or that `auto_install_extensions` above guarantees,
   // are listed. An entry for a language with no installed grammar makes Zed emit
@@ -182,19 +191,20 @@
   // the file to prettier. Same trick already used for Shell Script.
   "prettier": { "allowed": true }, // Permit Zed to run the prettier CLI on PATH. Values: { allowed: true|false, command?: string }
   "languages": {
-    // Prettier-handled
-    "JavaScript": { "formatter": "prettier" },
-    "TypeScript": { "formatter": "prettier" },
-    "TSX": { "formatter": "prettier" },
+    // oxc-handled (oxfmt formats; oxlint fix-on-save chained for the JS/TS/TSX family)
+    "JavaScript": { "formatter": [{ "language_server": { "name": "oxfmt" } }, { "code_action": "source.fixAll.oxc" }] },
+    "TypeScript": { "formatter": [{ "language_server": { "name": "oxfmt" } }, { "code_action": "source.fixAll.oxc" }] },
+    "TSX": { "formatter": [{ "language_server": { "name": "oxfmt" } }, { "code_action": "source.fixAll.oxc" }] },
     // No "JSX" entry: Zed has no such language. `.jsx` is claimed by the JavaScript
     // grammar itself (crates/grammars/src/javascript/config.toml declares
     // `path_suffixes = ["js", "jsx", "mjs", "cjs"]`), so the JavaScript pin above already
     // covers it and a "JSX" key only earns `No language with this name is installed.`
-    "JSON": { "formatter": "prettier" },
-    "JSONC": { "formatter": "prettier" },
-    "HTML": { "formatter": "prettier" },
-    "CSS": { "formatter": "prettier" },
-    "SCSS": { "formatter": "prettier" }, // via the scss extension — prettier parses scss natively
+    "JSON": { "formatter": { "language_server": { "name": "oxfmt" } } },
+    "HTML": { "formatter": { "language_server": { "name": "oxfmt" } } },
+    "CSS": { "formatter": { "language_server": { "name": "oxfmt" } } },
+    "SCSS": { "formatter": { "language_server": { "name": "oxfmt" } } }, // oxfmt formats scss natively
+    // Prettier-handled (oxfmt intentionally not used for these)
+    "JSONC": { "formatter": "prettier" }, // stays on Prettier (not oxc) by request
     "Markdown": { "formatter": "prettier" },
     "YAML": { "formatter": "prettier" },
     // Native LSP-handled — explicit pin prevents prettier fallback (UndefinedParserError)
