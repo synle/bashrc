@@ -92,22 +92,25 @@
 
   // --- Languages & Formatting ---
   "editor.formatOnSave": true, // Run the configured formatter on every save. Values: true, false
-  "editor.defaultFormatter": "esbenp.prettier-vscode", // Global default — Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue. Values: any extension id
+  "editor.defaultFormatter": "esbenp.prettier-vscode", // Global default — Prettier owns the types oxc doesn't (JSONC/MD/YAML/GraphQL/Vue). Values: any extension id
   // Per-language overrides — must be EXPLICIT for every file type where multiple
-  // formatters compete (built-in language features vs Prettier vs LSP). Without an
+  // formatters compete (built-in language features vs Prettier vs oxc vs LSP). Without an
   // explicit `[lang]` entry, VS Code shows the "Configure Default Formatter" picker on
-  // first format attempt OR silently fails to format. Pin every prettier-supported type
-  // to Prettier; pin Python/Rust/Go/Java to their native LSP formatter.
-  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[javascriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[scss]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-  "[less]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  // first format attempt OR silently fails to format.
+  // oxc (oxfmt) owns JS/TS/JSX/TSX/JSON/HTML/CSS/SCSS/LESS — same set the curl()/oxfmt
+  // CLI path uses in profile-advanced.sh. Prettier keeps JSONC/MD/YAML/GraphQL/Vue
+  // (oxfmt still mangles MD/YAML; JSONC/XML intentionally stay on Prettier).
+  // Python/Rust/Go/Java pin to their native LSP formatter.
+  "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[html]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[css]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[scss]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[less]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" }, // stays on Prettier (not oxc) by request
   "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[graphql]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
@@ -117,7 +120,8 @@
   "[go]": { "editor.defaultFormatter": "golang.go" }, // gopls handles gofmt/goimports
   "[java]": { "editor.defaultFormatter": "redhat.java" }, // jdtls (Eclipse formatter)
   "editor.codeActionsOnSave": {
-    "source.fixAll": true, // Auto-fix all fixable lint errors on save. Values: true, false, "explicit", "always", "never"
+    "source.fixAll": true, // Auto-fix all fixable lint errors on save (includes oxlint's source.fixAll.oxc). Values: true, false, "explicit", "always", "never"
+    "source.fixAll.oxc": "always", // Apply oxlint autofixes on save. Values: "always", "explicit", "never"
     "source.organizeImports": true, // Auto-sort and remove unused imports on save. Values: true, false, "explicit", "always", "never"
   },
   "javascript.updateImportsOnFileMove.enabled": "always", // Auto-update JS import paths when files are moved. Values: "prompt", "always", "never"
