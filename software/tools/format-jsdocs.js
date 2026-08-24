@@ -35,7 +35,14 @@ generateDts({
       (_, n, m) => `/** @type {typeof import("${m}")} */\nconst ${n} = /** @type {any} */ (null);`,
     );
     src = src.replace(/^const (\w+) = require\("[^"]+"\)\.\w+\(\);?$/gm, (_, n) => `const ${n} = "";`);
-    src = src.replace(/require\("[^"]+"\)/g, "({})");
+    // Strip the CommonJS compat shim and every remaining require() call. Any
+    // reference to module.exports or a bare require() (even dynamic, e.g.
+    // `return require(tmpFile)`) makes tsc treat the whole file as a CommonJS
+    // module, scoping every helper function to the module - the generated
+    // .d.ts then emits nothing usable and IDEs lose JSDoc, completions, and
+    // references for all helpers.
+    src = src.replace(/if \(typeof module\b[^{]*\{\s*module\.exports = \{[^}]*\};?\s*\}\n?/m, "");
+    src = src.replace(/\brequire\([^)]*\)/g, "({})");
     return src;
   },
 });
