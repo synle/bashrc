@@ -243,9 +243,13 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # focused. Requires shell integration (enabled above) to know where a command
     # starts/ends. Default is \`never\`; added in 1.3.0.
     notify-on-command-finish = unfocused
-    # Hold shift to capture mouse events and send to terminal app (e.g. vim,
-    # tmux). Without this, Ghostty consumes shift+click for its own selection.
-    mouse-shift-capture = true
+    # Keep the Ghostty default (false) so Shift bypasses a mouse-grabbing app.
+    # This is what makes OSC 8 links clickable inside tmux: with tmux 'mouse on',
+    # every plain click is forwarded to tmux, so Ghostty never detects or opens a
+    # link. Holding Shift sends the event to Ghostty instead — Shift+hover
+    # highlights the link and Shift+Cmd+click opens it. Set to true only if you need
+    # Shift+click delivered to the terminal app rather than to link/selection.
+    mouse-shift-capture = false
     copy-on-select = false
     confirm-close-surface = false
     window-padding-x = 6
