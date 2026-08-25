@@ -137,6 +137,10 @@ build_host_mappings:
 	[ "$$CI" = "true" ] && exit 0
 	bash run.sh --files="software/metadata/hosts-blocked-ads.config.js"
 
+# Backup XFCE configuration (keyboard shortcuts, theming, panel) to docs/linux/
+backup_xcfe:
+	bash software/tools/backup-xfce.sh
+
 # Backup XFCE configuration (if applicable)
 build_backup_xfce:
 	if [ -d "$$HOME/.config/xfce4" ]; then
