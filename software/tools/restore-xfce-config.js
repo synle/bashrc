@@ -52,7 +52,9 @@ function tryRun(cmd, args) {
 
 /** Exits with a skip message when a precondition fails (always exit 0). */
 function skip(message) {
-  console.error(`restore-xfce: ${message} - skipping`);
+  console.error(
+    `restore-xfce: not supported - ${message} (this tool only applies to Ubuntu-family OSes running an XFCE session)`
+  );
   process.exit(0);
 }
 
@@ -68,7 +70,7 @@ function guardOs() {
     // unreadable os-release -> treated as non-ubuntu below
   }
   if (!`${id} ${idLike}`.includes("ubuntu") && !`${id} ${idLike}`.includes("debian")) {
-    skip(`not an Ubuntu-family OS (${id})`);
+    skip(`detected OS '${id}'`);
   }
 }
 
@@ -76,7 +78,7 @@ function guardOs() {
 function guardXfceSession() {
   const desktop = process.env.XDG_CURRENT_DESKTOP || "";
   if (desktop !== "XFCE" && !tryRun("pgrep", ["-x", "xfce4-session"])) {
-    skip("no running XFCE session detected");
+    skip(`no running XFCE session detected (XDG_CURRENT_DESKTOP='${desktop}')`);
   }
 }
 
