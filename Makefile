@@ -141,6 +141,10 @@ build_host_mappings:
 backup_xcfe:
 	bash software/tools/backup-xfce.sh
 
+# Restore XFCE config from .build/tar-xcfe-config.tar.gz (dry-run unless ARGS=--apply)
+restore_xcfe:
+	node software/tools/restore-xfce-config.js $(RESTORE_ARGS)
+
 # Build webapp for production
 build_webapp:
 	$(_BUILD_ENV) && npm run build
