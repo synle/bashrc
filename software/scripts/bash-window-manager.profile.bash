@@ -19,42 +19,42 @@
 ################################################################################
 
 function maximize_and_focus_window() {
-  local app_name="$1"
-  # Optional 2nd arg: macOS System Events process name. Defaults to app_name.
-  # Pass explicitly when bundle display name != executable name (e.g. VS Code:
-  # bundle "Visual Studio Code" / process "Code").
-  local process_name="${2:-$app_name}"
-  [[ -z "$app_name" ]] && return 0
+	local app_name="$1"
+	# Optional 2nd arg: macOS System Events process name. Defaults to app_name.
+	# Pass explicitly when bundle display name != executable name (e.g. VS Code:
+	# bundle "Visual Studio Code" / process "Code").
+	local process_name="${2:-$app_name}"
+	[[ -z "$app_name" ]] && return 0
 
-  if ((is_os_mac)); then
-    _mac_activate_and_tile "$app_name" "$process_name" 2> /dev/null
-  elif ((is_os_wsl)); then
-    _wsl_activate_and_maximize "$app_name" 2> /dev/null
-  elif ((is_gui_wayland)); then
-    _wayland_activate_and_maximize "$app_name" 2> /dev/null
-  elif ((is_gui_x11)); then
-    _x11_activate_and_maximize "$app_name" 2> /dev/null
-  fi
-  # Best-effort: never signal failure to the caller. An app that is not running,
-  # does not expose window-1, or a missing wmctrl/powershell.exe should not trip
-  # `set -e` or leave a non-zero $? in the user's shell.
-  return 0
+	if ((is_os_mac)); then
+		_mac_activate_and_tile "$app_name" "$process_name" 2>/dev/null
+	elif ((is_os_wsl)); then
+		_wsl_activate_and_maximize "$app_name" 2>/dev/null
+	elif ((is_gui_wayland)); then
+		_wayland_activate_and_maximize "$app_name" 2>/dev/null
+	elif ((is_gui_x11)); then
+		_x11_activate_and_maximize "$app_name" 2>/dev/null
+	fi
+	# Best-effort: never signal failure to the caller. An app that is not running,
+	# does not expose window-1, or a missing wmctrl/powershell.exe should not trip
+	# `set -e` or leave a non-zero $? in the user's shell.
+	return 0
 }
 
 # X11 implementation: prefer wmctrl, fall back to xdotool. Both match by window
 # title substring. Silent noop if neither tool is installed.
 function _x11_activate_and_maximize() {
-  local app_name="$1"
-  if type -P wmctrl &> /dev/null; then
-    wmctrl -a "$app_name" 2> /dev/null || return 0
-    wmctrl -r :ACTIVE: -b add,maximized_vert,maximized_horz 2> /dev/null
-  elif type -P xdotool &> /dev/null; then
-    local wid
-    wid=$(xdotool search --name "$app_name" 2> /dev/null | head -1)
-    [[ -z "$wid" ]] && return 0
-    xdotool windowactivate "$wid" 2> /dev/null
-    xdotool key --window "$wid" super+Up 2> /dev/null
-  fi
+	local app_name="$1"
+	if type -P wmctrl &>/dev/null; then
+		wmctrl -a "$app_name" 2>/dev/null || return 0
+		wmctrl -r :ACTIVE: -b add,maximized_vert,maximized_horz 2>/dev/null
+	elif type -P xdotool &>/dev/null; then
+		local wid
+		wid=$(xdotool search --name "$app_name" 2>/dev/null | head -1)
+		[[ -z "$wid" ]] && return 0
+		xdotool windowactivate "$wid" 2>/dev/null
+		xdotool key --window "$wid" super+Up 2>/dev/null
+	fi
 }
 
 # Wayland implementation: no universal window-control protocol. Best effort:
@@ -62,14 +62,14 @@ function _x11_activate_and_maximize() {
 # - XWayland apps    — wmctrl still works for X11 apps in Wayland sessions
 # - KDE/GNOME native — noop (requires shell extensions / DBus plumbing per-app)
 function _wayland_activate_and_maximize() {
-  local app_name="$1"
-  if type -P swaymsg &> /dev/null; then
-    swaymsg "[title=\"$app_name\"] focus" 2> /dev/null
-    swaymsg "[title=\"$app_name\"] fullscreen enable" 2> /dev/null
-  elif type -P wmctrl &> /dev/null; then
-    wmctrl -a "$app_name" 2> /dev/null || return 0
-    wmctrl -r :ACTIVE: -b add,maximized_vert,maximized_horz 2> /dev/null
-  fi
+	local app_name="$1"
+	if type -P swaymsg &>/dev/null; then
+		swaymsg "[title=\"$app_name\"] focus" 2>/dev/null
+		swaymsg "[title=\"$app_name\"] fullscreen enable" 2>/dev/null
+	elif type -P wmctrl &>/dev/null; then
+		wmctrl -a "$app_name" 2>/dev/null || return 0
+		wmctrl -r :ACTIVE: -b add,maximized_vert,maximized_horz 2>/dev/null
+	fi
 }
 
 # WSL implementation: drive the Windows side via powershell.exe. Matches a
@@ -77,9 +77,9 @@ function _wayland_activate_and_maximize() {
 # + SetForegroundWindow via a tiny P/Invoke type. Silent noop if powershell.exe
 # is missing or no matching window is found.
 function _wsl_activate_and_maximize() {
-  local app_name="$1"
-  type -P powershell.exe &> /dev/null || return 0
-  powershell.exe -NoProfile -Command "
+	local app_name="$1"
+	type -P powershell.exe &>/dev/null || return 0
+	powershell.exe -NoProfile -Command "
     Add-Type -Name Win32 -Namespace BashrcWin -MemberDefinition '
       [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd);
       [DllImport(\"user32.dll\")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -88,26 +88,27 @@ function _wsl_activate_and_maximize() {
       [BashrcWin.Win32]::ShowWindow(\$_.MainWindowHandle, 3) | Out-Null;
       [BashrcWin.Win32]::SetForegroundWindow(\$_.MainWindowHandle) | Out-Null;
     }
-  " 2> /dev/null
+  " 2>/dev/null
 }
 
 # macOS implementation: resolve the visible frame of the display under the mouse
 # cursor, set window 1 of $app_name to that rect, and tile extra windows in a
-# 300x200 grid from the top-left so they are easy to reach.
+# grid sized to a third of that frame (floored at 400x300) from the top-left so
+# they are easy to reach.
 function _mac_activate_and_tile() {
-  local app_name="$1"
-  # System Events uses the *process* (executable) name, not the bundle display
-  # name. Fall back to app_name when the caller does not provide one. e.g. VS
-  # Code: bundle "Visual Studio Code" / process "Code".
-  local process_name="${2:-$app_name}"
-  [[ -z "$app_name" ]] && return 0
+	local app_name="$1"
+	# System Events uses the *process* (executable) name, not the bundle display
+	# name. Fall back to app_name when the caller does not provide one. e.g. VS
+	# Code: bundle "Visual Studio Code" / process "Code".
+	local process_name="${2:-$app_name}"
+	[[ -z "$app_name" ]] && return 0
 
-  # Resolve visible frame (AppleScript coords: top-left origin) of the display containing the mouse cursor
-  # The JXA body is read into a variable rather than heredoc'd straight into
-  # `$( ... )` — bash 3.2 keeps tracking quotes through a nested heredoc body, so
-  # an odd apostrophe count in the JS would break the parse of the whole profile.
-  local _disp _jxa _mx _my _mw _mh
-  IFS= read -r -d '' _jxa << 'JXA' || true
+	# Resolve visible frame (AppleScript coords: top-left origin) of the display containing the mouse cursor
+	# The JXA body is read into a variable rather than heredoc'd straight into
+	# `$( ... )` — bash 3.2 keeps tracking quotes through a nested heredoc body, so
+	# an odd apostrophe count in the JS would break the parse of the whole profile.
+	local _disp _jxa _mx _my _mw _mh
+	IFS= read -r -d '' _jxa <<'JXA' || true
 ObjC.import('AppKit');
 const m = $.NSEvent.mouseLocation;
 const ss = $.NSScreen.screens;
@@ -124,18 +125,35 @@ const vf = t.visibleFrame;
 const ph = ss.objectAtIndex(0).frame.size.height;
 [Math.round(vf.origin.x), Math.round(ph - (vf.origin.y + vf.size.height)), Math.round(vf.size.width), Math.round(vf.size.height)].join(' ');
 JXA
-  _disp=$(printf '%s\n' "$_jxa" | osascript -l JavaScript 2> /dev/null)
-  read -r _mx _my _mw _mh <<< "$_disp"
-  # Fallback to primary desktop bounds if JXA failed
-  if [[ -z "$_mw" || -z "$_mh" ]]; then
-    _mx=0
-    _my=0
-    read -r _mw _mh <<< "$(osascript -e 'tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop' -e 'return (sw as string) & " " & (sh as string)' 2> /dev/null)"
-  fi
-  # `activate` is non-blocking — Electron apps (VS Code) take a beat to spawn their
-  # first window, so we poll up to ~10s for window 1 of the process to exist before
-  # tiling. Without this, a cold `code .` no-ops because window 1 does not exist yet.
-  osascript << APPLESCRIPT 2> /dev/null
+	_disp=$(printf '%s\n' "$_jxa" | osascript -l JavaScript 2>/dev/null)
+	read -r _mx _my _mw _mh <<<"$_disp"
+	# Fallback to primary desktop bounds if JXA failed
+	if [[ -z "$_mw" || -z "$_mh" ]]; then
+		_mx=0
+		_my=0
+		read -r _mw _mh <<<"$(osascript -e 'tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop' -e 'return (sw as string) & " " & (sh as string)' 2>/dev/null)"
+	fi
+	# Tile size: a third of the visible frame, floored at 400x300 so tiles stay
+	# readable/clickable on small displays. Falls back to the 400x300 floor when
+	# the screen size could not be resolved.
+	local _tile_w _tile_h
+	if [[ -n "$_mw" && -n "$_mh" ]]; then
+		_tile_w=$((_mw / 3))
+		_tile_h=$((_mh / 3))
+		if ((_tile_w < 400)); then
+			_tile_w=400
+		fi
+		if ((_tile_h < 300)); then
+			_tile_h=300
+		fi
+	else
+		_tile_w=400
+		_tile_h=300
+	fi
+	# `activate` is non-blocking — Electron apps (VS Code) take a beat to spawn their
+	# first window, so we poll up to ~10s for window 1 of the process to exist before
+	# tiling. Without this, a cold `code .` no-ops because window 1 does not exist yet.
+	osascript <<APPLESCRIPT 2>/dev/null
 tell application "$app_name" to activate
 tell application "System Events"
   set deadline to (current date) + 10
@@ -154,8 +172,8 @@ tell application "System Events" to tell process "$process_name"
   set size of window 1 to {$_mw, $_mh}
   set windowCount to count of windows
   if windowCount > 1 then
-    set tileW to 300
-    set tileH to 200
+    set tileW to ${_tile_w}
+    set tileH to ${_tile_h}
     set tileCols to $_mw div tileW
     repeat with i from 2 to windowCount
       set tileCol to ((i - 2) mod tileCols)
