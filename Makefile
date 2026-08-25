@@ -113,8 +113,8 @@ lint:
 # ---- Build ----
 ################################################################################
 
-# Build all default steps (prebuild-hosts, build-configs, host-mappings, backup-xfce)
-build: build_prebuild_hosts build_configs build_host_mappings build_backup_xfce
+# Build all default steps (prebuild-hosts, build-configs, host-mappings)
+build: build_prebuild_hosts build_configs build_host_mappings
 
 # All default steps + webapp + postbuild
 build_all: build build_webapp build_postbuild
@@ -137,16 +137,9 @@ build_host_mappings:
 	[ "$$CI" = "true" ] && exit 0
 	bash run.sh --files="software/metadata/hosts-blocked-ads.config.js"
 
-# Backup XFCE configuration (keyboard shortcuts, theming, panel) to docs/linux/
+# Backup XFCE configuration (keyboard shortcuts, theming, panel) to .build/
 backup_xcfe:
 	bash software/tools/backup-xfce.sh
-
-# Backup XFCE configuration (if applicable)
-build_backup_xfce:
-	if [ -d "$$HOME/.config/xfce4" ]; then
-	  mkdir -p ./linux
-	  tar -czf ./linux/xfce-config.tar.gz -C "$$HOME/.config" xfce4
-	fi
 
 # Build webapp for production
 build_webapp:

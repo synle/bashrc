@@ -13,7 +13,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OUT_FILE="$REPO_ROOT/docs/linux/xfce-config.tar.gz"
+OUT_FILE="$REPO_ROOT/.build/linux_xfce_backup/xfce-config.tar.gz"
 XFCE_CONFIG_DIR="$HOME/.config/xfce4"
 
 if [ ! -d "$XFCE_CONFIG_DIR" ]; then
