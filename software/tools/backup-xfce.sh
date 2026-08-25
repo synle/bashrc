@@ -19,7 +19,7 @@ OUT_FILE="$REPO_ROOT/.build/tar-xcfe-config.tar.gz"
 XFCE_CONFIG_DIR="$HOME/.config/xfce4"
 
 function skip() {
-	echo "backup-xfce: $1 - skipping" >&2
+	echo "backup-xfce: not supported - $1 (this tool only applies to Ubuntu-family OSes running an XFCE session)" >&2
 	exit 0
 }
 
@@ -35,14 +35,14 @@ if [ -r /etc/os-release ]; then
 fi
 case "$_os_id $_os_id_like" in
 *ubuntu* | *debian*) ;;
-*) skip "not an Ubuntu-family OS ($_os_id)" ;;
+*) skip "detected OS '$_os_id'" ;;
 esac
 
 # Guard: an actual XFCE session is the current display. XDG_CURRENT_DESKTOP is
 # authoritative when set; fall back to a live xfce4-session process (covers
 # shells that don't inherit the desktop env var).
 if [ "${XDG_CURRENT_DESKTOP:-}" != "XFCE" ] && ! pgrep -x xfce4-session >/dev/null 2>&1; then
-	skip "no running XFCE session detected"
+	skip "no running XFCE session detected (XDG_CURRENT_DESKTOP='${XDG_CURRENT_DESKTOP:-}')"
 fi
 
 # Guard: config dir and xfconf tooling must exist.
