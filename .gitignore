@@ -13,6 +13,9 @@ dist
 # CI prep can never regenerate them after clean_artifacts wipes .build/, and
 # their staged deletions used to leak into the prep patch.
 /.build/file-association-mac*.sh
+# Pre-restore snapshots written by software/tools/restore-xfce-config.js before
+# it applies changes - local-only undo points, never committed.
+/.build/tar-xcfe-config.pre-restore-*.tar.gz
 software/types/
 
 # Editor / IDE

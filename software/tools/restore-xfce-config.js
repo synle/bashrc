@@ -8,13 +8,19 @@
  * (panel launchers, desktop icons, helpers.rc) are copied file-by-file, only
  * when their content differs.
  *
- * Dry-run by default — prints what would change. Pass --apply to write.
+ * Flow:
+ *   1. list every differing key / file with its backup value vs live value
+ *   2. if nothing differs, exit without prompting
+ *   3. ask y/N confirmation (bypassed by --yes)
+ *   4. snapshot the live config to a pre-restore tarball before writing anything
+ *   5. apply the changes key-by-key
  *
  * Usage:
- *   node software/tools/restore-xfce-config.js            # dry-run
- *   node software/tools/restore-xfce-config.js --apply    # apply changes
+ *   node software/tools/restore-xfce-config.js            # diff + confirm
+ *   node software/tools/restore-xfce-config.js --yes      # skip confirmation
  */
 
+const readline = require("readline");
 const { execFileSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
@@ -22,9 +28,12 @@ const path = require("path");
 
 const REPO_ROOT = path.join(__dirname, "..", "..");
 const TARBALL = path.join(REPO_ROOT, ".build", "tar-xcfe-config.tar.gz");
-const APPLY = process.argv.includes("--apply");
+const YES = process.argv.includes("--yes");
 
-let applied = 0;
+/** @type {{kind: 'property', channel: string, propPath: string, leaf: object, live: string[] | null}[]} */
+const propertyActions = [];
+/** @type {{kind: 'file', src: string, dest: string}[]} */
+const fileActions = [];
 let skipped = 0;
 
 /**
@@ -111,7 +120,7 @@ function parseXfconfXml(xmlText) {
         // xfconf writes arrays as <value type="string" value="x"/> or text nodes
         const raw =
           valueAttr !== undefined
-            ? ((valueAttr.match(/value="([^"]*)"/) || ["", ""])[1])
+            ? (valueAttr.match(/value="([^"]*)"/) || ["", ""])[1]
             : valueText;
         top.arrayValues.push(decodeXmlEntities(raw));
       }
@@ -182,12 +191,12 @@ function valuesEqual(a, b) {
 }
 
 /**
- * Applies one leaf property when its live value differs from the backup.
+ * Plans one leaf property when its live value differs from the backup.
  * @param {string} channel
  * @param {string} propPath
  * @param {{type: string, value?: string, values?: string[]}} leaf
  */
-function upsertProperty(channel, propPath, leaf) {
+function planProperty(channel, propPath, leaf) {
   const live = getLiveValue(channel, propPath);
   const wanted =
     leaf.type === "array"
@@ -197,35 +206,19 @@ function upsertProperty(channel, propPath, leaf) {
     live !== null &&
     live.length === wanted.length &&
     live.every((v, i) => valuesEqual(normalizeValue(v), wanted[i]));
-  if (same) {
+  if (!same) {
+    propertyActions.push({ kind: "property", channel, propPath, leaf, live });
+  } else {
     skipped++;
-    return;
   }
-
-  const action = live === null ? "CREATE" : "UPDATE";
-  console.log(`  ${action} /${channel}/${propPath} -> ${JSON.stringify(wanted)}`);
-  applied++;
-  if (!APPLY) {
-    return;
-  }
-  if (live !== null) {
-    // reset existing property so shape changes (scalar <-> array) work
-    execFileSync("xfconf-query", ["-c", channel, "-p", propPath, "-R", "-r"]);
-  }
-  const args = ["-c", channel, "-p", propPath, "-n"];
-  const values = leaf.type === "array" ? leaf.values : [leaf.value];
-  for (const value of values) {
-    args.push("-t", leaf.type, "-s", value);
-  }
-  execFileSync("xfconf-query", args);
 }
 
 /**
- * Copies one file when the destination is missing or has different content.
+ * Plans one file copy when the destination is missing or has different content.
  * @param {string} src
  * @param {string} dest
  */
-function upsertFile(src, dest) {
+function planFile(src, dest) {
   const srcContent = fs.readFileSync(src);
   let destContent = null;
   try {
@@ -237,18 +230,82 @@ function upsertFile(src, dest) {
     skipped++;
     return;
   }
-  const action = destContent ? "UPDATE" : "CREATE";
-  console.log(`  ${action} file ${dest}`);
-  applied++;
-  if (!APPLY) {
-    return;
-  }
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.copyFileSync(src, dest);
+  fileActions.push({ kind: "file", src, dest });
 }
 
-/** Main entry: guards, extract, diff, upsert. */
-function main() {
+/** Prints every planned change with its backup value vs live value. */
+function printPlan() {
+  for (const action of propertyActions) {
+    const wanted =
+      action.leaf.type === "array"
+        ? action.leaf.values.map(normalizeValue)
+        : [normalizeValue(action.leaf.value)];
+    const current =
+      action.live === null ? "(missing)" : JSON.stringify(action.live.map(normalizeValue));
+    console.log(`  ${action.live === null ? "CREATE" : "UPDATE"} /${action.channel}/${action.propPath}`);
+    console.log(`    backup: ${JSON.stringify(wanted)}`);
+    console.log(`    live:   ${current}`);
+  }
+  for (const action of fileActions) {
+    const srcContent = fs.readFileSync(action.src);
+    let destNote = "(missing on live)";
+    try {
+      destNote = `${fs.statSync(action.dest).size} bytes`;
+    } catch (err) {
+      // missing destination
+    }
+    console.log(`  ${destNote.startsWith("(") ? "CREATE" : "UPDATE"} file ${action.dest}`);
+    console.log(`    backup: ${srcContent.length} bytes`);
+    console.log(`    live:   ${destNote}`);
+  }
+}
+
+/**
+ * Asks the user to confirm applying the plan; resolves false on anything but y.
+ * @returns {Promise<boolean>}
+ */
+function confirmApply() {
+  if (YES) {
+    return Promise.resolve(true);
+  }
+  const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
+  return new Promise((resolve) => {
+    rl.question("Apply these changes? [y/N] ", (answer) => {
+      rl.close();
+      resolve(/^y(es)?$/i.test(answer.trim()));
+    });
+  });
+}
+
+/** Snapshots the live config so the restore itself can be undone. */
+function snapshotLiveConfig() {
+  const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+  const snapshotFile = path.join(REPO_ROOT, ".build", `tar-xcfe-config.pre-restore-${stamp}.tar.gz`);
+  execFileSync("tar", ["-czf", snapshotFile, "-C", path.join(os.homedir(), ".config"), "xfce4"]);
+  console.log(`restore-xfce: pre-restore snapshot written to ${snapshotFile}`);
+  return snapshotFile;
+}
+
+/**
+ * Executes one planned property change.
+ * @param {{channel: string, propPath: string, leaf: object, live: string[] | null}} action
+ */
+function applyProperty(action) {
+  const { channel, propPath, leaf, live } = action;
+  if (live !== null) {
+    // reset existing property so shape changes (scalar <-> array) work
+    execFileSync("xfconf-query", ["-c", channel, "-p", `/${propPath}`, "-R", "-r"]);
+  }
+  const args = ["-c", channel, "-p", `/${propPath}`, "-n"];
+  const values = leaf.type === "array" ? leaf.values : [leaf.value];
+  for (const value of values) {
+    args.push("-t", leaf.type, "-s", value);
+  }
+  execFileSync("xfconf-query", args);
+}
+
+/** Main entry: guards, extract, diff, confirm, snapshot, apply. */
+async function main() {
   guardOs();
   guardXfceSession();
   if (!fs.existsSync(TARBALL)) {
@@ -261,28 +318,22 @@ function main() {
   const staging = fs.mkdtempSync(path.join(os.tmpdir(), "xfce-restore-"));
   try {
     execFileSync("tar", ["-xzf", TARBALL, "-C", staging]);
-
     const extractedRoot = path.join(staging, "xfce4");
-    console.log(
-      `restore-xfce: comparing ${TARBALL} against live config (${APPLY ? "APPLY" : "dry-run"})`
-    );
 
-    // 1. xfconf channels: key-by-key upsert from the XML property trees.
+    // 1. plan: xfconf channels, key-by-key.
     const xmlDir = path.join(extractedRoot, "xfconf", "xfce-perchannel-xml");
     for (const file of fs.readdirSync(xmlDir).sort()) {
       if (!file.endsWith(".xml")) {
         continue;
       }
       const channel = file.replace(/\.xml$/, "");
-      console.log(`channel ${channel}:`);
       const leaves = parseXfconfXml(fs.readFileSync(path.join(xmlDir, file), "utf8"));
       for (const propPath of Object.keys(leaves).sort()) {
-        upsertProperty(channel, propPath, leaves[propPath]);
+        planProperty(channel, propPath, leaves[propPath]);
       }
     }
 
-    // 2. plain config files: copy only when content differs.
-    console.log("plain files:");
+    // 2. plan: plain config files, copied only when content differs.
     /**
      * @param {string} dir
      * @param {string} relBase
@@ -302,14 +353,41 @@ function main() {
         if (entry.name.startsWith("xfconf-")) {
           continue; // our flat dump artifacts, not real config
         }
-        upsertFile(src, path.join(os.homedir(), ".config", "xfce4", rel));
+        planFile(src, path.join(os.homedir(), ".config", "xfce4", rel));
       }
     }
     walkPlainFiles(extractedRoot, "");
 
+    // 3. report; nothing to do -> no prompt.
+    const total = propertyActions.length + fileActions.length;
+    if (total === 0) {
+      console.log(`restore-xfce: already in sync - ${skipped} keys/files match, nothing to do`);
+      return;
+    }
+
     console.log(
-      `restore-xfce: done - ${applied} to apply, ${skipped} already matching${APPLY ? "" : " (dry-run, nothing written)"}`
+      `restore-xfce: comparing ${TARBALL} against live config - ${total} difference(s), ${skipped} already matching:\n`
     );
+    printPlan();
+
+    // 4. confirm.
+    if (!(await confirmApply())) {
+      console.log("restore-xfce: aborted - nothing written");
+      return;
+    }
+
+    // 5. snapshot the live config first so this restore is reversible.
+    snapshotLiveConfig();
+
+    // 6. apply.
+    for (const action of propertyActions) {
+      applyProperty(action);
+    }
+    for (const action of fileActions) {
+      fs.mkdirSync(path.dirname(action.dest), { recursive: true });
+      fs.copyFileSync(action.src, action.dest);
+    }
+    console.log(`restore-xfce: applied ${total} change(s)`);
   } finally {
     fs.rmSync(staging, { recursive: true, force: true });
   }
