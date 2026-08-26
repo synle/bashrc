@@ -64,6 +64,44 @@ describe("set_terminal_title", () => {
     expect(result.stdout).toBe("");
   });
 
+  it.skipIf(!HAS_TMUX)("caps the title at 40 chars, marking the cut with a single ellipsis", () => {
+    // The truncation runs before any route, so the tmux self-rename path exposes
+    // exactly what would reach a terminal tab. A 60-char title must land as 39
+    // chars plus the ellipsis = 40 chars total.
+    const socketDir = spawnSync("mktemp", ["-d"], { encoding: "utf-8" }).stdout.trim();
+    const session = "stt_cap_spec";
+    const env = { ...process.env, TMUX_TMPDIR: socketDir };
+
+    /**
+     * Runs a shell snippet against the private tmux server.
+     * @param {string} snippet - Bash to execute.
+     * @returns {{status: number, stdout: string, stderr: string}} Captured result.
+     */
+    const sh = (snippet) => spawnSync("bash", ["-c", snippet], { env, encoding: "utf-8" });
+
+    try {
+      sh(`tmux -f /dev/null new-session -d -s ${session} -n TARGET -x 80 -y 24`);
+      sh(`tmux set-option -g automatic-rename off`);
+      const targetId = sh(
+        `tmux list-windows -t ${session} -F '#{window_id} #{window_name}' | awk '$2=="TARGET"{print $1}'`,
+      ).stdout.trim();
+
+      const longTitle = "x".repeat(60);
+      sh(
+        `tmux send-keys -t ${targetId} ` +
+          `"export TMUX_TMPDIR='${socketDir}'; bash '${PAYLOAD}' '${longTitle}'; tmux wait-for -S ${session}_done" Enter`,
+      );
+      sh(`tmux wait-for ${session}_done`);
+
+      const target = sh(`tmux display-message -p -t ${targetId} '#{window_name}'`).stdout.trim();
+      expect([...target]).toHaveLength(40);
+      expect(target).toBe("x".repeat(39) + "…");
+    } finally {
+      sh(`tmux kill-server`);
+      spawnSync("rm", ["-rf", socketDir]);
+    }
+  });
+
   it.skipIf(!HAS_TMUX)("renames only its own tmux window, never a sibling", () => {
     // A private tmux server the test fully owns, so it never sees, touches, or
     // is influenced by a real session — critical on a dev box already running
