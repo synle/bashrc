@@ -35,7 +35,16 @@ if [ "$#" -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]
   exit 1
 fi
 
+# Be conservative about how long a title we push to the terminal: a tab strip has
+# little room, so cap it and mark truncation with a single ellipsis char. The
+# scrollback echo (echo_and_set_terminal_title) is unaffected - only what reaches
+# the tab/window title here is trimmed.
+MAX_TITLE_LENGTH=40
+
 title="$*"
+if [ "${#title}" -gt "$MAX_TITLE_LENGTH" ]; then
+  title="${title:0:$((MAX_TITLE_LENGTH - 1))}…"
+fi
 
 # Route 1: inside a tmux pane - rename our own window.
 if command -v tmux > /dev/null 2>&1; then
