@@ -1241,6 +1241,7 @@ const LLM_COMMAND_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/command
 const LLM_COMMAND_DEPLOY_MAP = {
   "sy-babysit-pr": "babysit-pr",
   "sy-babysit-prs": "babysit-prs",
+  "sy-clean-instructions": "clean-instructions",
   "sy-close-stale-prs": "close-stale-prs",
   "sy-create-pr": "create-pr",
   "sy-debug": "debug",
@@ -1262,8 +1263,8 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-slack-prs": "slack-prs",
   "sy-squash-unpushed": "squash-unpushed",
   "sy-standup": "standup",
-  "sy-sync-and-groom-repo": "sync-and-groom-repo",
-  "sy-sync-and-groom-repos": "sync-and-groom-repos",
+  "sy-sync-and-clean-repo": "sync-and-clean-repo",
+  "sy-sync-and-clean-repos": "sync-and-clean-repos",
   "sy-sync-pr-branch": "sync-pr-branch",
   "sy-test-gap": "test-gap",
   "sy-triage-ci": "triage-ci",
@@ -1347,6 +1348,11 @@ const LLM_COMMAND_RETIRED_NAMES = [
   "sy-release-main", // collapsed into sy-release (2026-05-13)
   "sy-release-master", // collapsed into sy-release (2026-05-13)
   "sy-release-beta", // collapsed into sy-release (2026-05-13)
+  // 2026-08-26: renamed the repo-cleanup commands from `groom` to `clean` —
+  // `groom` was hard to recall next to the plainer verb. Retire the old sy-
+  // names so dev machines holding them unlink on the next deploy.
+  "sy-sync-and-groom-repo", // renamed to sy-sync-and-clean-repo (2026-08-26)
+  "sy-sync-and-groom-repos", // renamed to sy-sync-and-clean-repos (2026-08-26)
 ];
 
 /**

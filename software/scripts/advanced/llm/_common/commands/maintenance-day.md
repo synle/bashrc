@@ -1,4 +1,4 @@
-[Sy] Periodic repo maintenance: close stale PRs, then sync and groom every git repo under the current folder.
+[Sy] Periodic repo maintenance: close stale PRs, then sync and clean up every git repo under the current folder.
 
 Argument: $ARGUMENTS (optional — passed straight through to `/sy-close-stale-prs` in Phase 1. Typically a staleness threshold in days, e.g. `90`, or a scope like `acme/widget-store`. Defaults to that skill's own defaults: `@me`, 60 days.)
 
@@ -45,11 +45,11 @@ Run `/sy-close-stale-prs $ARGUMENTS` and let it own the whole loop — candidate
 - If the user answers `s` or `q` mid-loop, that ends Phase 1 only — continue to Phase 2.
 - Capture the closed / skipped tally for the summary.
 
-### Phase 2 — Repo grooming
+### Phase 2 — Repo cleanup
 
-Run `/sy-sync-and-groom-repos` from `$ROOT`. That skill fans out `/sy-sync-and-groom-repo` across every repo it discovers (fetch + prune, drop `[gone]` branches, prune worktree records, fast-forward the default, merge the default into every other local branch, resolve conflicts, push where an upstream exists).
+Run `/sy-sync-and-clean-repos` from `$ROOT`. That skill fans out `/sy-sync-and-clean-repo` across every repo it discovers (fetch + prune, drop `[gone]` branches, prune worktree records, fast-forward the default, merge the default into every other local branch, resolve conflicts, push where an upstream exists).
 
-- **Do not** run `git fetch` / `git merge` / `git branch -D` yourself here. Grooming is human-in-the-loop on conflicts and stays sequential inside that skill.
+- **Do not** run `git fetch` / `git merge` / `git branch -D` yourself here. Cleanup is human-in-the-loop on conflicts and stays sequential inside that skill.
 - A repo that fails (diverged default, unresolvable conflict, detached HEAD) is reported and skipped — it does not abort the remaining repos.
 - Return to `$ROOT` when done: `cd "$ROOT"`.
 
@@ -64,8 +64,8 @@ Print one **Maintenance Summary** block:
 
 ## Rules
 
-- **Phases run in order, and Phase 2 runs even if Phase 1 was aborted.** Closing PRs is opt-in and interruptible; grooming local checkouts is independent of it.
-- **Delegate, never re-implement.** Every destructive action belongs to `/sy-close-stale-prs` or `/sy-sync-and-groom-repo`. This command's only job is sequencing and the consolidated report.
+- **Phases run in order, and Phase 2 runs even if Phase 1 was aborted.** Closing PRs is opt-in and interruptible; cleaning up local checkouts is independent of it.
+- **Delegate, never re-implement.** Every destructive action belongs to `/sy-close-stale-prs` or `/sy-sync-and-clean-repo`. This command's only job is sequencing and the consolidated report.
 - **No branch deletion on the remote.** Phase 1 leaves branches so `gh pr reopen <n>` stays a one-liner; Phase 2 only deletes _local_ branches whose upstream is already `[gone]`.
-- **Never force-push, never rebase a shared branch, never `git gc --aggressive`** — all inherited from the grooming skill; do not add them here.
-- **One `$ROOT` per invocation.** To groom a different tree, `cd` there and rerun rather than passing multiple roots.
+- **Never force-push, never rebase a shared branch, never `git gc --aggressive`** — all inherited from the cleanup skill; do not add them here.
+- **One `$ROOT` per invocation.** To clean up a different tree, `cd` there and rerun rather than passing multiple roots.
