@@ -26,7 +26,12 @@
 //   ───────────────────────────  ──────────────────────────  ────────────────────────
 //   chat:newline                input_newline               shift+enter, ctrl+enter
 //   chat:undo                   input_undo                  OS_KEY+z
-//   chat:clearInput             input_clear                 OS_KEY+l
+//   chat:clearInput             input_clear                 escape*
+//   (*escape = single press; opencode has no double-tap, see input_clear note)
+//   chat:clearScreen†           session_compact             ctrl+l, OS_KEY+l
+//   (†Claude/Copilot l-chords clear the chat transcript; opencode has no
+//    clear-transcript command, so ctrl+l / super+l route to session_compact —
+//    the closest "reset the chat so far" that keeps continuity.)
 //   chat:externalEditor         editor_open                 ctrl+g, ctrl+x
 //   chat:imagePaste             input_paste                 ctrl+v
 //   (readline HOME, ctrl+a null) input_line_home            ctrl+a, home
@@ -125,9 +130,36 @@
     // End of the entire input buffer. Bound to ctrl+end and super+end since
     // bare END now belongs to input_line_end above.
     "input_buffer_end": "ctrl+end,super+end",
-    // Clear current input. Claude binds super+l (cmd+l mac, super+l linux).
-    // We also layer ctrl+l (bash readline convention).
-    "input_clear": "super+l,ctrl+l",
+    // Clear current input — escape ONLY.
+    //
+    // Neither ctrl+l nor super+l is here — both go to session_compact below.
+    // Rationale: on Claude/Copilot the l-chords (ctrl+l / cmd+l) visually clear
+    // the chat transcript. opencode has NO clear-transcript command (only
+    // "Clear input field" and "Clear editor context"), so the nearest "reset
+    // the chat so far" that keeps continuity is session_compact — it summarizes
+    // + compacts the conversation, freeing the window while preserving condensed
+    // context. Both l-chords route there; input_clear keeps only escape.
+    //
+    // escape mirrors Claude/Copilot muscle memory: in those CLIs a double-tap of
+    // escape wipes the input field. opencode has NO double-tap / key-sequence
+    // mechanism (the only sequence is the leader key), so exact double-escape
+    // parity is impossible — escape is bound as a SINGLE press instead. opencode
+    // context-scopes chords, so this coexists with the upstream default
+    // session_interrupt="escape" (kept intact, not overridden here): escape
+    // clears the input when idle, and still interrupts a streaming response —
+    // exactly how opencode already ships two commands on escape
+    // (session_interrupt + prompt.autocomplete.hide). TRADEOFF: a single escape
+    // is more aggressive than Claude's double-tap, so an accidental escape
+    // clears the field; input_undo (super+z / ctrl+-) recovers it.
+    "input_clear": "escape",
+    // Compact the session — summarize + condense the conversation so far,
+    // freeing the context window without dropping continuity. Both ctrl+l and
+    // super+l are layered on for Claude/Copilot muscle memory (where the l-chords
+    // clear the chat transcript); opencode has no clear-transcript command, so
+    // compaction is the closest "reset the chat so far" analog. <leader>c
+    // (opencode's upstream default, typed ctrl+o c after our leader move) is kept
+    // explicitly so the binding this file writes doesn't drop it.
+    "session_compact": "ctrl+l,super+l,<leader>c",
     // Undo last typed input. Claude binds super+z (cmd+z mac, super+z linux);
     // ctrl+- is opencode's legacy chord retained for muscle memory.
     "input_undo": "super+z,ctrl+-",
