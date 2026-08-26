@@ -47,6 +47,11 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 - **Probe paths, never pre-judge them.** A file outside the repository or workspace is still a valid target. Do not refuse preemptively or ask the user to move it into the workspace first — attempt access with the available tools and trust the actual result.
 - **Report only real failures.** Claim an access or permission limitation only when the tool actually failed with one, quoting the error verbatim; when a path is blocked, say so and continue the rest of the task.
 
+## Task Execution
+
+- **Do the obvious prerequisites without asking.** When the request plainly implies routine, reversible steps, run them and keep going — `git status` / `git diff` before a commit, `git add` on the paths you changed, activating an existing `.venv` before Python, checking a folder exists before writing into it, running the tests before committing. "Then commit and push" is permission to commit and push, not a cue to ask whether you may first run `git status`.
+- **Pick a sensible default over a confirmation prompt.** Supply the unspecified non-critical detail yourself — a concise commit message read from the diff, the obvious target folder, the file already named — and continue. Ask only when the missing piece changes the result or needs the user's judgment: which of two branches, a public-contract change, or anything the Destructive Commands / Secret Handling rules already gate. Not "never ask" — ask on decisions that matter, never on routine mechanics.
+
 ## Restate Before Long Run
 
 - Restate the task in your own words before any multi-file, multi-step, or long autonomous run: goal, what you'll change, what "done" looks like. Skip only for single-file, single-concern, unambiguous edits.
@@ -58,9 +63,10 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 ## Terminal Title Status
 
-- Keep the terminal title synchronized with task state. At each major milestone run `printf '\033]0;<state> — <short milestone>\007'`; never per command or trivial step.
+- Keep the terminal title synchronized with task state. At each major milestone run `printf '\033]0;<title>\007'`; never per command or trivial step. Titles stay short enough for a terminal tab.
 - States: 🔨 Working, 🧪 Testing, 🔍 Debugging, 👀 Reviewing, ⏸️ Waiting — <reason>, ❌ Blocked — <reason>, ✅ Complete.
-- Major milestones: starting significant implementation, moving implementation→testing, starting debugging, starting review/refactoring, completing a significant feature, becoming blocked or waiting for user input. Titles stay short enough for a terminal tab.
+- `<title>` = optional context prefix + `<state> — <milestone>`. Prefix it with the wave/PR the run is on so a glance at the tab says which slice of a fan-out is live: `wave <W>/<N> · <state> <milestone>` inside a wave, `pr #<n> · <state> <milestone>` babysitting or reviewing one PR, `pr <i>/<M> · <state> <milestone>` walking a batch. No wave or PR context → drop the prefix, use the bare `<state> — <milestone>`.
+- Major milestones: starting significant implementation, moving implementation→testing, starting debugging, starting review/refactoring, completing a significant feature, crossing a wave/PR boundary in a fan-out, becoming blocked or waiting for user input.
 
 ## Context Hygiene & Handoff
 
