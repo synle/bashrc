@@ -63,7 +63,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 ## Terminal Title Status
 
-- Keep the terminal title synchronized with task state. At each major milestone run `printf '\033]0;<title>\007'`; never per command or trivial step. Titles stay short enough for a terminal tab.
+- Keep the terminal title synchronized with task state. At each major milestone run `set_terminal_title '<title>'` (on PATH); never per command or trivial step. It routes around a captured tool shell — a raw `printf '\033]0;<title>\007'` is a silent no-op under a TUI harness whose tool stdout is a pipe with no tty. Titles stay short enough for a terminal tab.
 - States: 🔨 Working, 🧪 Testing, 🔍 Debugging, 👀 Reviewing, ⏸️ Waiting — <reason>, ❌ Blocked — <reason>, ✅ Complete.
 - `<title>` = optional context prefix + `<state> — <milestone>`. Prefix it with the wave/PR the run is on so a glance at the tab says which slice of a fan-out is live: `wave <W>/<N> · <state> <milestone>` inside a wave, `pr #<n> · <state> <milestone>` babysitting or reviewing one PR, `pr <i>/<M> · <state> <milestone>` walking a batch. No wave or PR context → drop the prefix, use the bare `<state> — <milestone>`.
 - Major milestones: starting significant implementation, moving implementation→testing, starting debugging, starting review/refactoring, completing a significant feature, crossing a wave/PR boundary in a fan-out, becoming blocked or waiting for user input.
