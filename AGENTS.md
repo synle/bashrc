@@ -81,7 +81,7 @@ software/bootstrap/           common-env.sh, common-functions.bash, profile-core
 software/scripts/             _init.js (pinned first), _full-setup.sh (setup mode only),
                               *.profile.bash partials, <os>/ folders, advanced/,
                               ~cleanup.js + ~wrapup.sh (always last)
-software/metadata/            presets.jsonc, ci-binaries.json, hosts/*.config,
+software/metadata/            presets.jsonc, ci-binaries.json, hosts-*.config,
                               autocomplete specs, script-list, ip-address
 software/tools/               build-include.js, build-installer.js,
                               generate-ci-binary-list.js, format-*.js, doctor.sh,
@@ -95,7 +95,7 @@ docs/                         long-form topic docs (incl. editor-keybindings.md)
 Single-source files worth memorizing: `metadata/presets.jsonc` (`--preset=` bundles, read
 by `run.sh` into `PRESETS_JSON`), `metadata/ci-binaries.json` (CI binary verification,
 `required` + `warn`), `metadata/autocomplete.common.js` (`DYNAMIC_TOKENS`,
-`expandSpecMacros`), `metadata/script-list.js` / `.config` (canonical sorted script list),
+`expandSpecMacros`), `metadata/script-list.config` (canonical sorted script list),
 `bootstrap/common-env.sh` (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`; inlined into `run.sh`
 via BEGIN/END), `tools/build-include.js` (BEGIN/END engine + `{{map.key}}`),
 `tools/generate-ci-binary-list.js` (the `ci-binary-checks` block in `action.yml`),
@@ -379,7 +379,7 @@ Profile registration is buffered: `registerProfileBlock` /
 - `EDITOR_CONFIGS` in `software/index.js` is the single source for ignored folders and
   binary file extensions.
 - Makefile uses `.ONESHELL`; escape shell `$` as `$$`. A target's helper script matches
-  its name (`format_shell` → `software/tools/format-shell.sh`).
+  its name (`format_jsdocs` → `software/tools/format-jsdocs.js`).
 - `install.sh` is the single source for GitHub Codespaces setup; codespace aliases live
   in `.devcontainer/codespaces-profile.sh`. `devcontainer.json` extensions are generated
   by `vs-code-ext.js` — don't hand-edit.
