@@ -56,6 +56,12 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 - Report what you skipped, at the end, with a reason: blocked, out of scope, not reproducible, deferred. Anything left broken or half-migrated is called out.
 - When the restatement and the request disagree, stop and ask. Real forks only — two readings implying different files, blast radius, or irreversible steps. An ambiguity a five-second code look resolves is a lookup.
 
+## Terminal Title Status
+
+- Keep the terminal title synchronized with task state. At each major milestone run `printf '\033]0;<state> — <short milestone>\007'`; never per command or trivial step.
+- States: 🔨 Working, 🧪 Testing, 🔍 Debugging, 👀 Reviewing, ⏸️ Waiting — <reason>, ❌ Blocked — <reason>, ✅ Complete.
+- Major milestones: starting significant implementation, moving implementation→testing, starting debugging, starting review/refactoring, completing a significant feature, becoming blocked or waiting for user input. Titles stay short enough for a terminal tab.
+
 ## Context Hygiene & Handoff
 
 - Read narrow, then widen. Locate first (grep, symbol search, a file listing), then read the enclosing function, class, or section — not the whole file on the chance it matters. Reading a 5k-line file to change one function spends the budget the rest of the task needs and buries relevant lines among thousands of irrelevant ones. Widen deliberately when the narrow read left a real question; say what you widened for.
