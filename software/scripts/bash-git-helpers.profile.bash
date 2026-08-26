@@ -929,7 +929,9 @@ function _git_patch_outcome_line() {
 function patch() {
   if is_help_arg "${1:-}"; then
     echo "patch: apply a patch when one is at hand, otherwise cut a new one
-  Usage: patch [patch_file]
+  Usage: patch [-y] [patch_file]
+  Options:
+    -y, --yes  assume yes to the clipboard apply prompt (skip it, apply)
   Resolution order:
     1. <patch_file>, when given       -> git_patch_apply <patch_file>
     2. clipboard reads like a diff    -> asks first, then applies it
@@ -939,10 +941,21 @@ function patch() {
   so the message can be pasted straight into the editor.
   Examples:
     patch                  offer to apply the clipboard diff, else export the last commit
+    patch -y               apply the clipboard diff without asking, else export the last commit
     patch /tmp/fix.patch   apply an existing patch file
   Shadows /usr/bin/patch — reach the binary with 'command patch'."
     return 1
   fi
+
+  # -y / --yes assumes yes to the clipboard apply prompt below; consume it so it
+  # is never mistaken for a patch_file.
+  local assume_yes=0
+  case "${1:-}" in
+  -y | --yes)
+    assume_yes=1
+    shift
+    ;;
+  esac
 
   local status
 
@@ -960,7 +973,7 @@ function patch() {
   # want to send, not something to land here. Declining falls through to cutting
   # a fresh patch, same as an empty clipboard.
   if _git_patch_clipboard_file; then
-    if prompt_yes_no "Clipboard holds a patch that has not been applied here — apply it now?" Y; then
+    if ((assume_yes)) || prompt_yes_no "Clipboard holds a patch that has not been applied here — apply it now?" Y; then
       _git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
       status=$?
       if [ "$status" -eq 0 ]; then
@@ -976,7 +989,11 @@ function patch() {
 
   git_patch_create
   status=$?
-  [ "$status" -eq 0 ] && _git_patch_outcome_line copied
+  if [ "$status" -eq 0 ]; then
+    _git_patch_outcome_line copied
+    echo ">>> staging tracked changes and committing — paste the message in the editor"
+    git add -u && git commit
+  fi
   return "$status"
 }
 
