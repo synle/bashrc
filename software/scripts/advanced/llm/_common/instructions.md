@@ -42,6 +42,11 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 - Someone else's claim is a hypothesis too. A PR body, commit message, code comment, doc, ticket, bot summary, or a human's "this is unused / nothing calls it / behavior is unchanged" is evidence of what they believed, not what the code does — reproduce it with your own command before building on it, and say which claims you verified and which you took on trust. Applies hardest to a claim licensing a deletion or approval.
 - Never invent a citation, URL, PR/issue number, commit SHA, changelog entry, or benchmark figure. Not from a tool call this session → not printed as fact.
 
+## Local File Operations
+
+- **Probe paths, never pre-judge them.** A file outside the repository or workspace is still a valid target. Do not refuse preemptively or ask the user to move it into the workspace first — attempt access with the available tools and trust the actual result.
+- **Report only real failures.** Claim an access or permission limitation only when the tool actually failed with one, quoting the error verbatim; when a path is blocked, say so and continue the rest of the task.
+
 ## Restate Before Long Run
 
 - Restate the task in your own words before any multi-file, multi-step, or long autonomous run: goal, what you'll change, what "done" looks like. Skip only for single-file, single-concern, unambiguous edits.
