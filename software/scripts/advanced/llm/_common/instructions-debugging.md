@@ -19,7 +19,10 @@ Honesty from the main instructions governs this file too.
 ## Isolate one variable at a time
 
 - One hypothesis, one change, one observation. State the hypothesis **and what would disprove it** first, change one thing, observe, revert if it did not prove out. Changing five things and seeing green teaches nothing.
+- List a few ranked candidates before testing any — single-hypothesis generation anchors on the first plausible idea. Each must name its disproof ("if X is the cause, changing Y kills the bug"); a candidate with no prediction is a vibe, so sharpen or drop it. Then test one at a time.
 - Bisect; don't stare. Binary-search the cheapest axis — history (`git bisect run <cmd>` with the minimal repro), code path (log the _value_ at the midpoint, not "got here"), input, or one config/dependency toggle from a known-good baseline.
+- Instrument narrowly, clean up after. Prefer one debugger breakpoint or REPL inspection over ten logs; never log-everything-and-grep. Tag every temporary debug log with a unique prefix (`[DEBUG-a4f2]`) so removal is one `grep` — and remove them all before declaring done.
+- Perf regression: logs mislead. Establish a baseline measurement first (timing harness, profiler, query plan), then bisect. Measure first, fix second.
 - After three consecutive ruled-out hypotheses, attack the premise instead of forming a fourth. Usual culprits: the code read is not the code run (stale build, cached artifact, shadowed module, wrong branch), the test asserts something other than assumed, the "known good" baseline was never good, or the environment differs.
 
 ## Fix the cause, then prove it
