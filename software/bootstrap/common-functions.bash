@@ -497,6 +497,28 @@ function clean_junk_macosx_files() {
   echo ">> clean_junk_macosx_files >> $target >> Removed ${removed:-0} file(s)"
 }
 
+# clean_ds_store <path> - Recursively deletes .DS_Store files under a single folder.
+# No-op on non-macOS and on missing path. Does not follow symlinks out of the tree.
+# Usage:
+#   clean_ds_store "$HOME/.claude"
+function clean_ds_store() {
+  local target="$1"
+  if ! ((is_os_mac)); then
+    echo ">> clean_ds_store >> $target >> Skipped (not mac)"
+    return 0
+  fi
+  if [ -z "$target" ] || [ ! -d "$target" ]; then
+    echo ">> clean_ds_store >> $target >> Skipped (not found)"
+    return 0
+  fi
+  local removed=0
+  removed=$(find "$target" -name .git -type d -prune -o -name .DS_Store -type f -print 2> /dev/null | wc -l | tr -d ' ')
+  if [ "${removed:-0}" -gt 0 ]; then
+    find "$target" -name .git -type d -prune -o -name .DS_Store -type f -exec rm -f {} + 2> /dev/null
+  fi
+  echo ">> clean_ds_store >> $target >> Removed ${removed:-0} file(s)"
+}
+
 # get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
 # Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
 # Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
