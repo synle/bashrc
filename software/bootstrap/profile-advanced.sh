@@ -1175,11 +1175,9 @@ if type -P eza &> /dev/null; then
   # rather than written out so a new ls_* alias picks up its reversed twin for
   # free. --reverse is appended after "$@", and applying it twice does NOT
   # cancel, which is exactly why the base must stay unreversed.
-  # `command_variants ls_` shows what came out.
-  register_command_variants \
-    --suffix=_first \
-    --select-alias-name='^ls_[a-z]*$' \
-    --args='--reverse'
+  # `command_variants ls_` shows what came out. The generator call moved to
+  # bash-dynamic-aliases.profile.bash (sourced last, cached) — the ls_* aliases
+  # just need to exist by then, which they do.
 fi
 
 # --- find (fd wrapper) ---
@@ -2091,6 +2089,12 @@ _prompt_command_add "_bashrc_update_check_show"
 # SOURCE | software/scripts/bash-command-wrappers.profile.bash
 # SOURCE | software/scripts/docker-shares.profile.bash
 # SOURCE | software/scripts/bash-snip-command-wrappers.profile.bash
+
+# Sourced LAST on purpose: every alias, fuzzy_* picker, and snip base command
+# above must already exist before the dynamic-alias generators iterate them.
+# Generates the ls_*_first / i-prefixed / snip command families once and caches
+# them to ~/.bash_syle_cache; later shells source the cache instead of forking.
+# SOURCE | software/scripts/bash-dynamic-aliases.profile.bash
 
 ################################################################################
 # --- OS-specific Tweaks (registerPlatformTweaks) ---
