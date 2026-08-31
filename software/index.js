@@ -2568,6 +2568,78 @@ function isForceRefreshStale(targetPath) {
   return false;
 }
 
+// --- Last-Run Timestamp Cache ---
+// JS mirror of the cache_lastrun_* helpers in software/bootstrap/profile-core.sh.
+// Shared "run this at most once per <interval>" gate: the last-run epoch is
+// stored as the file CONTENTS in one flat, reboot-wiped file per gate, named to
+// a single convention shared with bash:
+//   /tmp/cache-lastrun-<name>.timestamp
+// Keep the path convention and semantics in sync with the bash trio.
+
+/**
+ * Resolves the base directory for last-run timestamp files. Mirrors the bash
+ * cache_lastrun_path() precedence: an explicit BASHRC_CACHE_LASTRUN_DIR override
+ * wins, then /tmp when writable (reboot-wiped, the desired default), then
+ * BASHRC_TEMP_ROOT_DIR, then the OS temp dir.
+ * @returns {string} The resolved base directory
+ */
+function _cacheLastrunBaseDir() {
+  const override = process.env.BASHRC_CACHE_LASTRUN_DIR;
+  if (override) return override;
+  try {
+    fs.accessSync("/tmp", fs.constants.W_OK);
+    return "/tmp";
+  } catch {}
+  return BASHRC_TEMP_ROOT_DIR || os.tmpdir();
+}
+
+/**
+ * Canonical path of the last-run timestamp file for a named gate:
+ * `<base>/cache-lastrun-<name>.timestamp`. The one path convention shared with
+ * the bash cache_lastrun_* helpers.
+ * @param {string} name - Gate name (kebab-case, e.g. "bashrc-update-check")
+ * @returns {string} The absolute timestamp-file path
+ */
+function cacheLastrunPath(name) {
+  return path.join(_cacheLastrunBaseDir(), `cache-lastrun-${name}.timestamp`);
+}
+
+/**
+ * Returns true when a named "run at most once per interval" gate is due: it has
+ * never run, or its recorded last-run epoch is at least maxAgeSeconds old. Empty
+ * or non-numeric contents count as never-run so a corrupted file can't wedge the
+ * gate.
+ * @param {string} name - Gate name
+ * @param {number} maxAgeSeconds - Minimum seconds between runs
+ * @returns {boolean} True when the gated task should run now
+ */
+function isCacheLastrunDue(name, maxAgeSeconds) {
+  let last;
+  try {
+    last = parseInt(fs.readFileSync(cacheLastrunPath(name), "utf8").trim(), 10);
+  } catch {
+    return true;
+  }
+  if (!Number.isFinite(last)) return true;
+  return Math.floor(Date.now() / 1000) - last >= maxAgeSeconds;
+}
+
+/**
+ * Records now (epoch seconds) as the last run of a named gate, creating the base
+ * directory when needed. Best-effort: a write failure never throws.
+ * @param {string} name - Gate name
+ * @returns {void}
+ */
+function markCacheLastrun(name) {
+  const file = cacheLastrunPath(name);
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+  } catch {}
+  try {
+    fs.writeFileSync(file, String(Math.floor(Date.now() / 1000)));
+  } catch {}
+}
+
 // --- Platform-Specific Path Utilities ---
 /**
  * Detects and returns the Windows user home directory under WSL.

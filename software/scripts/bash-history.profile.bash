@@ -105,28 +105,16 @@ JS_EOF
 }
 
 # _maybe_history_cleanup: gates history_cleanup to at most once per 6 hours.
-# Last-run epoch stored in $HISTORY_CLEANUP_GATE — a flat path directly under
-# /tmp (no subdirs to mkdir; /tmp always exists). Wiped on reboot, desirable —
-# first shell after boot triggers a fresh clean. Concurrent shells crossing
-# the gate at the same moment may both run cleanup; benign because the
+# Throttled through the shared last-run cache (cache_lastrun_* in
+# profile-core.sh) -> /tmp/cache-lastrun-history-cleanup.timestamp, reboot-wiped
+# so the first shell after boot triggers a fresh clean. Concurrent shells
+# crossing the gate at the same moment may both run cleanup; benign because the
 # canonicalize pipeline is deterministic and the writes converge.
-HISTORY_CLEANUP_GATE="/tmp/synle_bashrc_history_cleanup_last"
 HISTORY_CLEANUP_INTERVAL_SECONDS=21600 # 6h → 4 runs/day
 function _maybe_history_cleanup() {
-  local now last
-  now=$(command date +%s)
-  if [ -f "$HISTORY_CLEANUP_GATE" ]; then
-    last=$(command cat "$HISTORY_CLEANUP_GATE" 2> /dev/null)
-    # Defensive: reject empty / non-numeric / corrupted gate content. Without
-    # this, $((now - "garbage")) raises a bash arithmetic error and the gate
-    # wedges. Treat anything that isn't pure digits as "never ran".
-    [[ "$last" =~ ^[0-9]+$ ]] || last=0
-    if [ $((now - last)) -lt $HISTORY_CLEANUP_INTERVAL_SECONDS ]; then
-      return 0
-    fi
-  fi
+  cache_lastrun_due history-cleanup "$HISTORY_CLEANUP_INTERVAL_SECONDS" || return 0
   history_cleanup
-  echo "$now" > "$HISTORY_CLEANUP_GATE"
+  cache_lastrun_mark history-cleanup
 }
 
 # backs up ~/.bash_history daily (rotated, keeps HISTORY_BACKUP_MAX copies).
