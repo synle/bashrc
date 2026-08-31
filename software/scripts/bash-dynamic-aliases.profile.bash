@@ -2,23 +2,24 @@
 ################################################################################
 # --- Dynamic alias / command-variant cache ---
 #
-# Three generators build decorated command families at shell start, each by
-# iterating over the live shell's aliases/functions and forking grep/type per
-# entry — together ~0.5s of every shell start:
+# Three generators build decorated command families, each by iterating over the
+# live shell's aliases/functions and forking grep/type per entry — together
+# ~0.5s if run on every shell start:
 #
 #   1. ls_*_first  — reversed twins of the eza ls_* listing aliases
 #   2. i-prefixed  — case-insensitive twins of every fuzzy_* picker
 #   3. snip        — transparent wrappers for snip-supported build commands
 #
-# Their output is deterministic for a given profile, so run them ONCE, cache the
-# resulting function definitions + the _COMMAND_VARIANTS registry to
-# $_BASH_SYLE_DYNAMIC_CACHE. The ~/.bashrc entry point sources that cache itself
-# (safe_source, last item) on every later shell — plain function defs, zero forks
-# — so this partial only rebuilds the file when it is stale, never sources it.
+# Their output is deterministic for a given profile, so run them ONCE at deploy
+# time and cache the resulting function definitions + the _COMMAND_VARIANTS
+# registry to $_BASH_SYLE_DYNAMIC_CACHE. The ~/.bashrc entry point sources that
+# cache (safe_source, last item) on every later shell — plain function defs, zero
+# forks — so this partial does NO work on a normal shell start.
 #
-# Invalidation is by mtime: a run.sh deploy rewrites ~/.bash_syle, so whenever
-# it is newer than the cache the generators re-run and the cache is rebuilt.
-# Delete the cache by hand (or `rm ~/.bash_syle_cache`) to force a rebuild.
+# The build runs only when run.sh sets BASHRC_BUILD_DYNAMIC_CACHE=1 around its
+# final `. ~/.bash_syle` (see the gate at the bottom of this file). A run.sh
+# deploy always rebuilds the cache that way; delete it by hand (or
+# `rm ~/.bash_syle_cache`) and re-run run.sh to force a rebuild.
 #
 # This partial is sourced LAST (after every alias, fuzzy_* picker, and snip
 # base command exists) — see the SOURCE order in profile-advanced.sh.
@@ -89,10 +90,14 @@ function _dump_dynamic_aliases_cache() {
   } > "$_BASH_SYLE_DYNAMIC_CACHE" 2> /dev/null
 }
 
-# Rebuild the cache when it is missing or older than the profile; the entry point
-# in ~/.bashrc sources the cache itself (safe_source, last item), so we only
-# regenerate here and never re-source. `-nt` is a bash 3.2 test operator.
-if [ ! -r "$_BASH_SYLE_DYNAMIC_CACHE" ] || [ "$HOME/.bash_syle" -nt "$_BASH_SYLE_DYNAMIC_CACHE" ]; then
+# The cache is built once at deploy time, never on an interactive shell start.
+# run.sh sets BASHRC_BUILD_DYNAMIC_CACHE=1 around its final `. ~/.bash_syle` — the
+# one point where the profile is fully written and every generator input (ls_*
+# aliases, fuzzy_* pickers, snip base commands) exists — so this partial builds
+# and dumps the cache there. On a normal shell start the flag is unset, so this
+# partial only defines the generators and does no work; the ~/.bashrc entry point
+# just safe_sources the ready cache file.
+if ((${BASHRC_BUILD_DYNAMIC_CACHE:-0})); then
   _build_dynamic_aliases
   _dump_dynamic_aliases_cache
 fi

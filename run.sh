@@ -785,7 +785,13 @@ $LINE_BREAK_HASH
 # Validate first so a syntax error does not poison the parent shell.
 ################################################################################
 if [ -f "$BASH_SYLE_PATH" ] && bash -n "$BASH_SYLE_PATH" 2> /dev/null; then
+  # Build the dynamic-alias cache from the freshly written, fully-loaded profile.
+  # This is the ONE point where ~/.bash_syle is final (node's last flush has run)
+  # and every generator input exists, so the partial builds the cache here and
+  # nowhere else — see software/scripts/bash-dynamic-aliases.profile.bash.
+  export BASHRC_BUILD_DYNAMIC_CACHE=1
   . "$BASH_SYLE_PATH"
+  unset BASHRC_BUILD_DYNAMIC_CACHE
 fi
 
 exit
