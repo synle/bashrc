@@ -13,9 +13,7 @@
  */
 
 /** @type {Array<{source: string, command: string}>} Standalone CLI payloads to install. */
-const TERMINAL_TITLE_PAYLOADS = [
-  { source: `software/scripts/set_terminal_title.cli.bash`, command: `set_terminal_title` },
-];
+const TERMINAL_TITLE_PAYLOADS = [{ source: `software/scripts/set_terminal_title.cli.bash`, command: `set_terminal_title` }];
 
 /**
  * Resolve an installed command path.

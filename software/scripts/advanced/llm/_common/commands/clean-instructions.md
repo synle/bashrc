@@ -13,7 +13,7 @@ Argument: $ARGUMENTS (optional — a path or glob to the file(s) to clean. Defau
 
 - **Trim restatement, never a rule.** A rule is a distinct instruction that changes behavior; restatement is a second sentence saying what the first already said. Cut the second, keep the first. When the budget still overflows after every no-op is gone, **split a section behind a pointer** — never delete a live rule to fit.
 - **Preserve named-rule names verbatim.** Rules are referenced by name across the corpus; renaming one silently breaks every cross-reference. Rewrite a rule's prose freely, keep its name.
-- **Meaning has one home.** The defect is duplicate *knowledge* (one fact in two files), not duplicate *text* (two rules that would change for different reasons). Dedupe the former on sight; leave the latter.
+- **Meaning has one home.** The defect is duplicate _knowledge_ (one fact in two files), not duplicate _text_ (two rules that would change for different reasons). Dedupe the former on sight; leave the latter.
 - **The environment is a source of truth.** A line restating what `--help`, a config file, a lockfile, or the directory layout already says is a stale cache — cut it and point at the source. Cache only what the agent cannot find by looking: the unwritten convention, the reason behind a choice, the gotcha.
 - **Never invent a rule while cleaning.** Consolidation moves and compresses existing rules; it does not author new ones. A new rule is a separate, announced change.
 
@@ -25,7 +25,7 @@ List the files in scope and each one's char count against its ceiling (the alway
 
 ### 2. Hunt no-ops, sentence by sentence
 
-Apply the **no-op test**: does this line change behavior versus what the model already does by default? A line the model obeys anyway pays load to say nothing — delete the whole sentence, not a few words from it. The test is model-relative: two readers disagreeing about a no-op disagree about the default, and settle it by *running* the document, not debating it.
+Apply the **no-op test**: does this line change behavior versus what the model already does by default? A line the model obeys anyway pays load to say nothing — delete the whole sentence, not a few words from it. The test is model-relative: two readers disagreeing about a no-op disagree about the default, and settle it by _running_ the document, not debating it.
 
 - **Restatement tail:** a justification or example that repeats the rule's own point. Cut it.
 - **Weak leading word:** "be thorough" when the agent is already thorough-ish is a no-op — the fix is a stronger word ("relentless"), not more sentences.
@@ -45,7 +45,7 @@ A **leading word** is a compact concept already in the model's pretraining (`tig
 
 ### 6. Progressive disclosure for what remains
 
-If the always-loaded file is still over budget after no-ops are gone, push **on-demand reference** (consulted only on some branches) into a companion file reached by a **pointer** — a backticked path, never an `@`-import that re-inflates the budget. Inline what *every* branch needs; disclose what only *some* reach. The pointer's wording is what triggers reaching it: front-load the leading word, one trigger per branch.
+If the always-loaded file is still over budget after no-ops are gone, push **on-demand reference** (consulted only on some branches) into a companion file reached by a **pointer** — a backticked path, never an `@`-import that re-inflates the budget. Inline what _every_ branch needs; disclose what only _some_ reach. The pointer's wording is what triggers reaching it: front-load the leading word, one trigger per branch.
 
 ### 7. Verify
 

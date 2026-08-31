@@ -18,12 +18,12 @@ Every function has inline help — run it with no args or `--help`.
 
 ## Prerequisites
 
-| Tool     | Needed by                          | Install / configure                                              |
-| -------- | ---------------------------------- | --------------------------------------------------------------- |
-| `gh`     | `gh_runner_setup`, gist fetches    | Already installed by this repo; then `gh auth login`.           |
-| `git`    | `gh_run_script` repo clones        | Already installed by this repo.                                 |
-| `curl`   | runner download, raw-URL fetches   | Present on macOS/Linux by default.                              |
-| `rclone` | `gdrive_vault_push`                 | Install, then `rclone config` (remote type: `drive`).          |
+| Tool     | Needed by                        | Install / configure                                   |
+| -------- | -------------------------------- | ----------------------------------------------------- |
+| `gh`     | `gh_runner_setup`, gist fetches  | Already installed by this repo; then `gh auth login`. |
+| `git`    | `gh_run_script` repo clones      | Already installed by this repo.                       |
+| `curl`   | runner download, raw-URL fetches | Present on macOS/Linux by default.                    |
+| `rclone` | `gdrive_vault_push`              | Install, then `rclone config` (remote type: `drive`). |
 
 The runner registration needs **admin** on the target repo or org (that is what
 lets GitHub mint a registration token).
@@ -59,11 +59,11 @@ gh_runner_setup --org acme
 RUNNER_NAME=mac-studio  RUNNER_LABELS=gpu,macos  gh_runner_setup acme/widget-store
 ```
 
-| Env            | Default            | Meaning                                  |
-| -------------- | ------------------ | ---------------------------------------- |
-| `RUNNER_NAME`  | this hostname      | Name shown in GitHub's runner list.      |
-| `RUNNER_LABELS`| _(none)_           | Extra labels appended to `self-hosted`.  |
-| `RUNNER_DIR`   | `$HOME/actions-runner` | Where the runner is installed.       |
+| Env             | Default                | Meaning                                 |
+| --------------- | ---------------------- | --------------------------------------- |
+| `RUNNER_NAME`   | this hostname          | Name shown in GitHub's runner list.     |
+| `RUNNER_LABELS` | _(none)_               | Extra labels appended to `self-hosted`. |
+| `RUNNER_DIR`    | `$HOME/actions-runner` | Where the runner is installed.          |
 
 ### Run it
 
@@ -85,7 +85,7 @@ Target the runner from any workflow in the repo/org you registered against:
 ```yaml
 jobs:
   build:
-    runs-on: [self-hosted, macos]   # match the labels you set
+    runs-on: [self-hosted, macos] # match the labels you set
 ```
 
 ### Remove it
@@ -122,12 +122,12 @@ gh_run_script ~/scratch/build.sh
 
 Source detection:
 
-| Source shape                         | Fetch                        | Default run (no command given)      |
-| ------------------------------------ | ---------------------------- | ----------------------------------- |
-| `owner/repo` or a `github.com` URL   | `git clone --depth 1`        | `./run.sh` if present, else error   |
-| `gist.github.com/...`                | `gh gist clone`              | `./run.sh` if present, else error   |
-| a raw URL / `*.sh`/`*.py`/`*.js` URL | `curl` the single file       | `bash <file>`                       |
-| an existing local file              | none                         | `bash <file>`                       |
+| Source shape                         | Fetch                  | Default run (no command given)    |
+| ------------------------------------ | ---------------------- | --------------------------------- |
+| `owner/repo` or a `github.com` URL   | `git clone --depth 1`  | `./run.sh` if present, else error |
+| `gist.github.com/...`                | `gh gist clone`        | `./run.sh` if present, else error |
+| a raw URL / `*.sh`/`*.py`/`*.js` URL | `curl` the single file | `bash <file>`                     |
+| an existing local file               | none                   | `bash <file>`                     |
 
 Pass a trailing command to run something specific; it executes with the
 workspace as the working directory.
@@ -155,10 +155,10 @@ gdrive_vault_push ~/report.pdf
 gdrive_vault_push ./build.tar.gz releases   # into the "releases" subfolder
 ```
 
-| Env                   | Default  | Meaning                             |
-| --------------------- | -------- | ----------------------------------- |
-| `GDRIVE_VAULT_REMOTE` | `gdrive` | rclone remote name.                 |
-| `GDRIVE_VAULT_FOLDER` | `vault`  | Base folder inside the remote.      |
+| Env                   | Default  | Meaning                        |
+| --------------------- | -------- | ------------------------------ |
+| `GDRIVE_VAULT_REMOTE` | `gdrive` | rclone remote name.            |
+| `GDRIVE_VAULT_FOLDER` | `vault`  | Base folder inside the remote. |
 
 ### Chain them
 

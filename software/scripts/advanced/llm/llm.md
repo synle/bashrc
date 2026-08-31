@@ -140,14 +140,14 @@ DOCX, XLSX, PPTX, images, audio, HTML, CSV, JSON, ZIP**, and more.
 - **Runtime**: launched on demand as
   `uvx --with "mcp>=1.19,<2" markitdown-mcp` (STDIO). `uv` is installed cross-OS
   by `software/scripts/advanced/uv.sh`; the **first** call downloads the package
-  + its parsers (pdfminer, pandas, pillow, …) and caches them under `~/.cache/uv`
-  — later calls are instant. No separate install step. The `--with "mcp>=1.19,<2"`
-  floor is a required workaround: the published `markitdown-mcp` (0.0.1a4) pins
-  `mcp~=1.8.0`, and that old MCP SDK crashes the server (exit 1) on the
-  `server/discover` probe that Copilot / OpenCode send during the handshake —
-  surfacing as *"MCP server process exited before completing the MCP initialize
-  handshake"*. A newer SDK answers that probe gracefully; drop the flag once
-  markitdown-mcp stops pinning `mcp~=1.8.0`.
+  - its parsers (pdfminer, pandas, pillow, …) and caches them under `~/.cache/uv`
+    — later calls are instant. No separate install step. The `--with "mcp>=1.19,<2"`
+    floor is a required workaround: the published `markitdown-mcp` (0.0.1a4) pins
+    `mcp~=1.8.0`, and that old MCP SDK crashes the server (exit 1) on the
+    `server/discover` probe that Copilot / OpenCode send during the handshake —
+    surfacing as _"MCP server process exited before completing the MCP initialize
+    handshake"_. A newer SDK answers that probe gracefully; drop the flag once
+    markitdown-mcp stops pinning `mcp~=1.8.0`.
 - **Tool exposed**: `convert_to_markdown(uri)`, where `uri` is a `file:`,
   `http:`, `https:`, or `data:` URI.
 - **How to invoke** — just ask the agent in plain language; it picks the tool
