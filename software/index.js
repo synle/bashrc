@@ -407,6 +407,8 @@ const SY_ROOT_FOLDER = process.env.SY_ROOT_FOLDER;
 const BASH_SYLE_PATH = getRuntimeOption("BASH_SYLE_PATH");
 /** @type {string} Path to the ~/.bash_syle_common shared config file */
 const BASH_SYLE_COMMON_PATH = getRuntimeOption("BASH_SYLE_COMMON_PATH");
+/** @type {string} Path to the ~/.bash_syle_cache dynamic-alias cache file (sourced last from the entry point) */
+const BASH_SYLE_CACHE_PATH = getRuntimeOption("BASH_SYLE_CACHE_PATH");
 /** @type {string} Path to the ~/.powershell_syle working copy of the PowerShell profile */
 const POWERSHELL_SYLE_PATH = path.join(BASE_HOMEDIR_LINUX, ".powershell_syle");
 

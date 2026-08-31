@@ -43,13 +43,14 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 4f627f74f52ca84c1288d7dff6f07acf | 9.0 KB
+# software/bootstrap/common-env.sh | 67a5def8aaec6d3e6ffcc4e83a1f62e8 | 9.0 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
 export REPO_BRANCH_NAME="main"
 export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"
+export BASH_SYLE_CACHE_PATH="$HOME/.bash_syle_cache"
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/blob/HEAD" # https://github.com/synle/bashrc/blob/HEAD
 # Personal root - one visible folder under $HOME owning everything this setup
 # creates for the user rather than for a tool. `_extra` is the folder that
