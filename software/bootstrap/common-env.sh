@@ -6,6 +6,7 @@ export REPO_PATH_IDENTIFIER="synle/bashrc"
 export REPO_BRANCH_NAME="main"
 export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"
+export BASH_SYLE_CACHE_PATH="$HOME/.bash_syle_cache"
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/blob/HEAD" # https://github.com/synle/bashrc/blob/HEAD
 # Personal root - one visible folder under $HOME owning everything this setup
 # creates for the user rather than for a tool. `_extra` is the folder that

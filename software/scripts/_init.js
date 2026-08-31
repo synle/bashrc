@@ -72,7 +72,7 @@ ${LINE_BREAK_HASH}
   const bashProfilePath = path.join(BASE_HOMEDIR_LINUX, ".bash_profile");
   const bashrcPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
 
-  const entryPointSourceFiles = [BASH_SYLE_COMMON_PATH, ...coreBashProfileFiles];
+  const entryPointSourceFiles = [BASH_SYLE_COMMON_PATH, ...coreBashProfileFiles, BASH_SYLE_CACHE_PATH];
   const entryPointContent = trimSpacesOnBothEnd(`
     # define safe_source for non-login shells that skip .bash_profile
     function safe_source() { if ! bash -n "$1" 2>/dev/null; then echo "[Warning] source $1 failed (syntax error)" >&2; return 1; fi; . "$1"; }
