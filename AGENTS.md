@@ -587,15 +587,15 @@ Load these instead of improvising the workflow. Each is
 OpenCode, and Copilot CLI; `.opencode/commands/<name>.md` symlinks make them `/name`
 slash commands.
 
-| Skill              | Use when                                                                                      |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| `/add-package`     | Adding a CLI tool / package across platforms                                                  |
-| `/remove-package`  | Dropping a tool                                                                               |
-| `/add-os`          | Onboarding a new distro / platform                                                            |
-| `/remove-os`       | Dropping OS support                                                                           |
-| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it                 |
-| `/check`           | Verifying session changes survived a merge/rebase/hook                                        |
-| `/plan-and-commit` | Multi-file change worth recording — writes `~/_extra/ai_llm/plans/bashrc-<feature>.{md,diff}` |
+| Skill                | Use when                                                                                      |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| `/add-package`       | Adding a CLI tool / package across platforms                                                  |
+| `/remove-package`    | Dropping a tool                                                                               |
+| `/add-os`            | Onboarding a new distro / platform                                                            |
+| `/remove-os`         | Dropping OS support                                                                           |
+| `/run`               | Resolving a script name to its `bash run.sh --files=…` command and running it                 |
+| `/check`             | Verifying session changes survived a merge/rebase/hook                                        |
+| `/plan-and-commit`   | Multi-file change worth recording — writes `~/_extra/ai_llm/plans/bashrc-<feature>.{md,diff}` |
 | `/trim-instructions` | Consolidating instruction docs, purging dead rules, shrinking always-loaded context           |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is

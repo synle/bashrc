@@ -82,9 +82,7 @@ describe("set_terminal_title", () => {
     try {
       sh(`tmux -f /dev/null new-session -d -s ${session} -n TARGET -x 80 -y 24`);
       sh(`tmux set-option -g automatic-rename off`);
-      const targetId = sh(
-        `tmux list-windows -t ${session} -F '#{window_id} #{window_name}' | awk '$2=="TARGET"{print $1}'`,
-      ).stdout.trim();
+      const targetId = sh(`tmux list-windows -t ${session} -F '#{window_id} #{window_name}' | awk '$2=="TARGET"{print $1}'`).stdout.trim();
 
       const longTitle = "x".repeat(60);
       sh(

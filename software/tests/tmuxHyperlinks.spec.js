@@ -56,9 +56,7 @@ describe("tmux OSC 8 hyperlink passthrough", () => {
     const config = read(TMUX_CONFIG);
     // A bare `set -g terminal-features` would replace the list and drop extkeys; the
     // feature must be appended with `-as`.
-    const hyperlinkLines = config
-      .split("\n")
-      .filter((line) => line.includes(":hyperlinks"));
+    const hyperlinkLines = config.split("\n").filter((line) => line.includes(":hyperlinks"));
     expect(hyperlinkLines.length).toBeGreaterThan(0);
     for (const line of hyperlinkLines) {
       expect(line).toMatch(/set\s+-as\s+terminal-features/);
@@ -104,21 +102,17 @@ describe("shared shell hyperlink helper (format_hyperlink)", () => {
 
   it("returns the bare URL (no escape) when stdout is not a TTY", () => {
     // execFileSync gives the child a pipe for stdout, so `[ -t 1 ]` is false.
-    const out = execFileSync(
-      "bash",
-      ["-c", `source "${COMMON_FUNCTIONS}"; format_hyperlink "https://example.com/pr/1"`],
-      { encoding: "utf8" },
-    );
+    const out = execFileSync("bash", ["-c", `source "${COMMON_FUNCTIONS}"; format_hyperlink "https://example.com/pr/1"`], {
+      encoding: "utf8",
+    });
     expect(out).toBe("https://example.com/pr/1");
     expect(out).not.toContain("\x1b]8;;");
   });
 
   it("uses the label as the visible text but keeps piped output as the bare label", () => {
-    const out = execFileSync(
-      "bash",
-      ["-c", `source "${COMMON_FUNCTIONS}"; format_hyperlink "https://example.com/pr/1" "PR 1"`],
-      { encoding: "utf8" },
-    );
+    const out = execFileSync("bash", ["-c", `source "${COMMON_FUNCTIONS}"; format_hyperlink "https://example.com/pr/1" "PR 1"`], {
+      encoding: "utf8",
+    });
     expect(out).toBe("PR 1");
   });
 });

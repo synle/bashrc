@@ -52,9 +52,7 @@ function tryRun(cmd, args) {
 
 /** Exits with a skip message when a precondition fails (always exit 0). */
 function skip(message) {
-  console.error(
-    `restore-xfce: not supported - ${message} (this tool only applies to Ubuntu-family OSes running an XFCE session)`
-  );
+  console.error(`restore-xfce: not supported - ${message} (this tool only applies to Ubuntu-family OSes running an XFCE session)`);
   process.exit(0);
 }
 
@@ -104,8 +102,7 @@ function parseXfconfXml(xmlText) {
   const leaves = {};
   // each frame: { path, arrayValues } - arrayValues set only for array props
   const stack = [];
-  const tokenRegex =
-    /<property\b([^>]*?)(\/?)>|<\/property>|<value\b([^>]*?)\/>|<value\b[^>]*>([\s\S]*?)<\/value>/g;
+  const tokenRegex = /<property\b([^>]*?)(\/?)>|<\/property>|<value\b([^>]*?)\/>|<value\b[^>]*>([\s\S]*?)<\/value>/g;
   let match;
   while ((match = tokenRegex.exec(xmlText)) !== null) {
     const [fullTag, attrText, selfClosing, valueAttr, valueText] = match;
@@ -120,10 +117,7 @@ function parseXfconfXml(xmlText) {
       const top = stack[stack.length - 1];
       if (top && top.arrayValues) {
         // xfconf writes arrays as <value type="string" value="x"/> or text nodes
-        const raw =
-          valueAttr !== undefined
-            ? (valueAttr.match(/value="([^"]*)"/) || ["", ""])[1]
-            : valueText;
+        const raw = valueAttr !== undefined ? (valueAttr.match(/value="([^"]*)"/) || ["", ""])[1] : valueText;
         top.arrayValues.push(decodeXmlEntities(raw));
       }
       continue;
@@ -162,12 +156,14 @@ function getLiveValue(channel, propPath) {
   if (out === null) {
     return null;
   }
-  return out
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    // array properties print a "Value is an array with N items:" banner first
-    .filter((line) => !/^Value is an array with \d+ items:$/.test(line));
+  return (
+    out
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      // array properties print a "Value is an array with N items:" banner first
+      .filter((line) => !/^Value is an array with \d+ items:$/.test(line))
+  );
 }
 
 /** Normalizes a stored value for comparison (xfconf prints booleans uppercase). */
@@ -200,14 +196,8 @@ function valuesEqual(a, b) {
  */
 function planProperty(channel, propPath, leaf) {
   const live = getLiveValue(channel, propPath);
-  const wanted =
-    leaf.type === "array"
-      ? leaf.values.map(normalizeValue)
-      : [normalizeValue(leaf.value)];
-  const same =
-    live !== null &&
-    live.length === wanted.length &&
-    live.every((v, i) => valuesEqual(normalizeValue(v), wanted[i]));
+  const wanted = leaf.type === "array" ? leaf.values.map(normalizeValue) : [normalizeValue(leaf.value)];
+  const same = live !== null && live.length === wanted.length && live.every((v, i) => valuesEqual(normalizeValue(v), wanted[i]));
   if (!same) {
     propertyActions.push({ kind: "property", channel, propPath, leaf, live });
   } else {
@@ -238,12 +228,8 @@ function planFile(src, dest) {
 /** Prints every planned change with its backup value vs live value. */
 function printPlan() {
   for (const action of propertyActions) {
-    const wanted =
-      action.leaf.type === "array"
-        ? action.leaf.values.map(normalizeValue)
-        : [normalizeValue(action.leaf.value)];
-    const current =
-      action.live === null ? "(missing)" : JSON.stringify(action.live.map(normalizeValue));
+    const wanted = action.leaf.type === "array" ? action.leaf.values.map(normalizeValue) : [normalizeValue(action.leaf.value)];
+    const current = action.live === null ? "(missing)" : JSON.stringify(action.live.map(normalizeValue));
     console.log(`  ${action.live === null ? "CREATE" : "UPDATE"} /${action.channel}/${action.propPath}`);
     console.log(`    backup: ${JSON.stringify(wanted)}`);
     console.log(`    live:   ${current}`);
@@ -341,9 +327,7 @@ async function main() {
      * @param {string} relBase
      */
     function walkPlainFiles(dir, relBase) {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
-        a.name.localeCompare(b.name)
-      )) {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
         const src = path.join(dir, entry.name);
         const rel = relBase ? `${relBase}/${entry.name}` : entry.name;
         if (entry.isDirectory()) {
@@ -367,9 +351,7 @@ async function main() {
       return;
     }
 
-    console.log(
-      `restore-xfce: comparing ${TARBALL} against live config - ${total} difference(s), ${skipped} already matching:\n`
-    );
+    console.log(`restore-xfce: comparing ${TARBALL} against live config - ${total} difference(s), ${skipped} already matching:\n`);
     printPlan();
 
     // 4. confirm.
