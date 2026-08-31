@@ -2019,17 +2019,14 @@ function _bashrc_update_check() {
   fi
   [ -z "$repo_dir" ] && return
 
-  # throttle: at most once per day
+  # throttle: at most once per day, via the shared last-run cache
+  # (cache_lastrun_* in profile-core.sh) ->
+  # /tmp/cache-lastrun-bashrc-update-check.timestamp
+  cache_lastrun_due bashrc-update-check 86400 || return
+  cache_lastrun_mark bashrc-update-check
+
   local _tmpdir="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}"
   command mkdir -p "$_tmpdir" 2> /dev/null || true
-  local stamp_file="$_tmpdir/.bashrc_update_check_stamp"
-  if [ -f "$stamp_file" ]; then
-    local stamp_age
-    stamp_age=$(($(date +%s) - $(stat -c '%Y' "$stamp_file" 2> /dev/null || stat -f '%m' "$stamp_file" 2> /dev/null || echo 0)))
-    [ "$stamp_age" -lt 86400 ] && return
-  fi
-  touch "$stamp_file"
-
   local msg_file="$_tmpdir/.bashrc_update_check_msg"
 
   # fetch and compare (suppress all output from git)

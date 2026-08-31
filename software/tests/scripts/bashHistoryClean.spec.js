@@ -33,6 +33,8 @@ const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const HISTORY_FILE = path.join(ROOT_DIR, "software/scripts/bash-history.profile.bash");
 /** Absolute path to profile-advanced.sh — source of _canonicalize_command. */
 const PROFILE_ADVANCED = path.join(ROOT_DIR, "software/bootstrap/profile-advanced.sh");
+/** Absolute path to profile-core.sh — source of the cache_lastrun_* helpers. */
+const PROFILE_CORE = path.join(ROOT_DIR, "software/bootstrap/profile-core.sh");
 
 /** @type {string} */
 let sandbox = "";
@@ -299,10 +301,11 @@ describe("history_cleanup — pipeline", () => {
 });
 
 /**
- * Source bash-history.profile.bash with overridden HISTORY_CLEANUP_GATE and a
- * stubbed `history_cleanup` (replaced by a sentinel echo), then invoke
- * _maybe_history_cleanup. Returns whether the sentinel fired and the final
- * gate-file contents. Used to assert the 6h interval gate behavior.
+ * Source bash-history.profile.bash with the shared last-run cache redirected to
+ * the sandbox (BASHRC_CACHE_LASTRUN_DIR) and a stubbed `history_cleanup`
+ * (replaced by a sentinel echo), then invoke _maybe_history_cleanup. Returns
+ * whether the sentinel fired and the final gate-file contents. Used to assert
+ * the 6h interval gate behavior.
  *
  * @param {object} opts
  * @param {number|null} opts.gateAgeSeconds - if not null, pre-create the gate
@@ -312,7 +315,9 @@ describe("history_cleanup — pipeline", () => {
  * @returns {{ ran: boolean, gateBefore: string|null, gateAfter: string|null }}
  */
 function runMaybeCleanup(opts) {
-  const gate = path.join(sandbox, "history_cleanup_last");
+  // The gate path is derived by cache_lastrun_path(): <dir>/cache-lastrun-<name>.timestamp.
+  // Point <dir> at the sandbox so this test never touches the real /tmp gate.
+  const gate = path.join(sandbox, "cache-lastrun-history-cleanup.timestamp");
   const sentinel = path.join(sandbox, "ran_marker");
   let gateBefore = null;
   if (opts.gateContent !== undefined) {
@@ -324,16 +329,23 @@ function runMaybeCleanup(opts) {
     gateBefore = String(past);
   }
 
-  // Extract ONLY _maybe_history_cleanup. Sourcing the whole file would invoke
-  // its bottom-of-file `_maybe_history_cleanup` + `_backup_history` calls
-  // against the real /tmp/synle/bashrc/ gate AND replace our history_cleanup
-  // stub with the real one (which depends on _canonicalize_command, absent here).
+  // Extract ONLY _maybe_history_cleanup plus the shared cache_lastrun_* helpers
+  // it now delegates to. Sourcing the whole file would invoke its
+  // bottom-of-file `_maybe_history_cleanup` + `_backup_history` calls against
+  // the real gate AND replace our history_cleanup stub with the real one (which
+  // depends on _canonicalize_command, absent here).
   const maybeCleanup = extractBashFunction(HISTORY_FILE, "_maybe_history_cleanup");
+  const cachePath = extractBashFunction(PROFILE_CORE, "cache_lastrun_path");
+  const cacheDue = extractBashFunction(PROFILE_CORE, "cache_lastrun_due");
+  const cacheMark = extractBashFunction(PROFILE_CORE, "cache_lastrun_mark");
 
   const script = `
 set +e
-HISTORY_CLEANUP_GATE='${gate}'
+export BASHRC_CACHE_LASTRUN_DIR='${sandbox}'
 HISTORY_CLEANUP_INTERVAL_SECONDS=21600
+${cachePath}
+${cacheDue}
+${cacheMark}
 # Sentinel stub — touches the marker file when _maybe_history_cleanup lets the
 # call through the gate.
 function history_cleanup() { command touch '${sentinel}'; }
@@ -374,17 +386,16 @@ describe("_maybe_history_cleanup — 6h interval gate", () => {
     expect(ran).toBe(true);
   });
 
-  it("runs when gate file has garbage (arithmetic treats non-numeric as 0)", () => {
-    // Bash $((now - last)) with last="garbage" treats it as 0 — so now-0=now,
-    // which is >> 21600, so cleanup runs. Defensive: corrupted gate doesn't
-    // wedge cleanup permanently.
+  it("runs when gate file has garbage (non-numeric treated as never-run)", () => {
+    // cache_lastrun_due rejects empty / non-numeric content and returns "due",
+    // so cleanup runs. Defensive: a corrupted gate can never wedge cleanup.
     const { ran } = runMaybeCleanup({ gateContent: "not a number" });
     expect(ran).toBe(true);
   });
 
   it("runs at exactly the boundary (gate age = interval)", () => {
-    // $((now - last)) < 21600 is the skip condition. At exactly 21600, it's
-    // NOT less than, so cleanup runs.
+    // cache_lastrun_due uses `age >= interval` as the "due" condition, so at
+    // exactly 21600 it is due and cleanup runs.
     const { ran } = runMaybeCleanup({ gateAgeSeconds: 21600 });
     expect(ran).toBe(true);
   });

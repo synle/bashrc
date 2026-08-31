@@ -130,6 +130,55 @@ function is_help_arg() {
   esac
 }
 
+# --- Last-Run Timestamp Cache ---
+# Single source of truth for every "run this at most once per <interval>" gate
+# (history cleanup, the update notifier, ...). Records the last-run epoch as the
+# file CONTENTS — portable, sidestepping the BSD-vs-GNU `stat -c/-f` split — in
+# one flat, reboot-wiped file per gate, named to a single convention:
+#   /tmp/cache-lastrun-<name>.timestamp
+# Reboot-wipe is deliberate: the first shell after boot re-runs each gated task.
+# Base-dir precedence: $BASHRC_CACHE_LASTRUN_DIR (test override) -> /tmp when
+# writable -> $BASHRC_TEMP_ROOT_DIR -> $HOME/tmp (locked-down hosts, matching
+# run.sh's temp-root fallback). Mirror of the same trio in software/index.js;
+# keep the path convention and semantics in sync.
+
+# cache_lastrun_path <name> - print the canonical timestamp-file path for <name>.
+function cache_lastrun_path() {
+  local base="${BASHRC_CACHE_LASTRUN_DIR:-}"
+  if [ -z "$base" ]; then
+    if [ -w /tmp ]; then
+      base="/tmp"
+    else
+      base="${BASHRC_TEMP_ROOT_DIR:-$HOME/tmp}"
+    fi
+  fi
+  echo "$base/cache-lastrun-$1.timestamp"
+}
+
+# cache_lastrun_due <name> <max_age_seconds> - return 0 (true) when <name> has
+# never run or last ran >= max_age_seconds ago; 1 otherwise. Empty / non-numeric
+# / corrupted content is treated as "never ran" so a bad file can never wedge the
+# gate on a bash arithmetic error.
+function cache_lastrun_due() {
+  local f last now
+  f=$(cache_lastrun_path "$1")
+  [ -f "$f" ] || return 0
+  last=$(command cat "$f" 2> /dev/null)
+  case "$last" in
+  '' | *[!0-9]*) return 0 ;;
+  esac
+  now=$(command date +%s)
+  [ $((now - last)) -ge "$2" ]
+}
+
+# cache_lastrun_mark <name> - record now as <name>'s last run.
+function cache_lastrun_mark() {
+  local f
+  f=$(cache_lastrun_path "$1")
+  command mkdir -p "$(dirname "$f")" 2> /dev/null || true
+  command date +%s > "$f" 2> /dev/null || true
+}
+
 # --- CPU Arch Helpers (Apple Silicon / Rosetta 2) ---
 
 # get_native_arch - Prints the machine's real CPU architecture (arm64, x86_64, aarch64, ...).
