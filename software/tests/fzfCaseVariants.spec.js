@@ -8,13 +8,20 @@ import { fileURLToPath } from "url";
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 // Sourced in the same order profile-advanced.sh sources them: every partial
-// that defines a picker must load BEFORE bash-fzf.profile.bash, whose last
-// statement runs the variant generator.
+// that defines a picker must load before the variant generator runs. The
+// generator call used to be bash-fzf's last statement; it now lives in
+// bash-dynamic-aliases.profile.bash (sourced last, cached). That cache partial
+// writes to the real ~/.bash_syle_cache, so tests must NOT source it — instead
+// runInProfile calls fzf_register_case_variants directly (see GENERATOR_CALL).
 const PARTIALS = [
   "software/bootstrap/profile-core.sh",
   "software/scripts/bash-history.profile.bash",
   "software/scripts/bash-fzf.profile.bash",
 ];
+
+// The generator, invoked explicitly after the partials load — the same call the
+// cache partial makes, minus the caching so each test stays hermetic.
+const GENERATOR_CALL = "fzf_register_case_variants > /dev/null 2>&1";
 
 const HAS_FZF = (() => {
   try {
@@ -32,7 +39,7 @@ const HAS_FZF = (() => {
  */
 function runInProfile(script) {
   const preamble = PARTIALS.map((p) => `source "${path.join(ROOT_DIR, p)}" > /dev/null 2>&1`).join("\n");
-  return execFileSync("bash", ["-c", `${preamble}\n${script}`], {
+  return execFileSync("bash", ["-c", `${preamble}\n${GENERATOR_CALL}\n${script}`], {
     encoding: "utf8",
     env: { ...process.env, FZF_DEFAULT_OPTS: "" },
   }).trim();
