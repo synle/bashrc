@@ -716,7 +716,9 @@ function fuzzy_git_show() {
 
 ################################################################################
 # --- Register case-insensitive picker variants ---
-# Last statement in this partial on purpose: every picker function and alias
-# above must already exist for the generator to see it.
+# The generator call moved to bash-dynamic-aliases.profile.bash, which sources
+# last and caches the result. Every picker function and alias above must already
+# exist for the generator to see it — the cache partial sources after this one,
+# so that ordering still holds.
 ################################################################################
-fzf_register_case_variants
+: # no-op — variants generated + cached by bash-dynamic-aliases.profile.bash

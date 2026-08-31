@@ -80,23 +80,33 @@ function _snip_require_binary() {
   fi
 }
 
-# Define the wrappers dynamically. `npm`, `yarn`, `pip` are intentionally absent
-# from the list above — they have hand-rolled smart wrappers in
+# _register_snip_wrappers: define the transparent wrappers for every command in
+# _SNIP_WRAP_COMMANDS. `npm`, `yarn`, `pip` are intentionally absent from the
+# list above — they have hand-rolled smart wrappers in
 # bash-command-wrappers.profile.bash that special-case their args and route the
 # final exec through _snip_run themselves. The skip below is a safety net for any
 # OTHER name already owned by a function or alias (e.g. the `pytest` alias), so a
 # future collision is never clobbered.
-for _cmd in "${_SNIP_WRAP_COMMANDS[@]}"; do
-  case "$(type -t "$_cmd" 2> /dev/null)" in
-  function | alias) continue ;;
-  esac
+#
+# Not called here: the dynamic-alias cache partial (sourced last) invokes it once
+# behind a `type -P snip` guard and caches the generated wrappers. The names it
+# actually defines are recorded in _SNIP_WRAPPED_NAMES so the cache dump can find
+# them (they are not tracked in _COMMAND_VARIANTS).
+function _register_snip_wrappers() {
+  _SNIP_WRAPPED_NAMES=""
+  local _cmd
+  for _cmd in "${_SNIP_WRAP_COMMANDS[@]}"; do
+    case "$(type -t "$_cmd" 2> /dev/null)" in
+    function | alias) continue ;;
+    esac
 
-  eval "function ${_cmd}() {
-    _snip_require_binary ${_cmd} || return 127
-    _snip_run ${_cmd} \"\$@\"
-  }"
-done
-unset _cmd
+    eval "function ${_cmd}() {
+      _snip_require_binary ${_cmd} || return 127
+      _snip_run ${_cmd} \"\$@\"
+    }"
+    _SNIP_WRAPPED_NAMES="${_SNIP_WRAPPED_NAMES}${_cmd} "
+  done
+}
 
 # snip_wrap_status: show which snip command wrappers are active vs skipped
 function snip_wrap_status() {
