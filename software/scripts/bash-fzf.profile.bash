@@ -486,6 +486,10 @@ export -f _fzf_resolve_path
 # preview pane renderer for paths emitted by _fuzzy_list_all — folders list,
 # files render through bat. Must be exported for the same `$SHELL -c` reason as
 # _fzf_info_line.
+#
+# File previews are prefixed with a `# modified on <local time>` provenance
+# header (mirrors the `# prompted in ... on ...` header the LLM prompt picker
+# renders) so fcat / fvim / fzed / etc. show a file's mtime above its contents.
 function _fzf_preview_path() {
   local target
   target=$(_fzf_resolve_path "${1:-.}" "${2:-}")
@@ -493,6 +497,16 @@ function _fzf_preview_path() {
   if [ -d "$target" ]; then
     command ls -Cp --color=always "$target" 2> /dev/null
   else
+    # mtime epoch: BSD `stat -f %m` (macOS) then GNU `stat -c %Y` (Linux).
+    # Format the epoch as local `YYYY-MM-DD HH:MM:SS TZ`: BSD `date -r`, then
+    # GNU `date -d @<epoch>`. Any probe failing drops the header silently
+    # rather than printing a broken line above the file body.
+    local mtime when
+    mtime=$(stat -f %m "$target" 2> /dev/null || stat -c %Y "$target" 2> /dev/null)
+    if [ -n "$mtime" ]; then
+      when=$(date -r "$mtime" +'%Y-%m-%d %H:%M:%S %Z' 2> /dev/null || date -d "@$mtime" +'%Y-%m-%d %H:%M:%S %Z' 2> /dev/null)
+      [ -n "$when" ] && echo "# modified on $when"
+    fi
     bat --paging=never --style=plain --color=always "$target"
   fi
 }
@@ -642,6 +656,16 @@ function fuzzy_cd() {
 }
 
 # Ctrl+T (vim) / Ctrl+Y (default editor) — fzf editor picker for files and directories
+#
+# On a selection, three shell globals are set so the choice can be reused after
+# the picker returns (they persist because fuzzy_edit runs in the caller's shell):
+#   _FUZZY_EDIT_SELECTED_FOLDER   — the containing folder (dirname of a file, or
+#                                   the folder itself when a folder is picked)
+#   _FUZZY_EDIT_SELECTED_FILE     — full path to the picked file ("" for a folder)
+#   _FUZZY_EDIT_SELECTED_CONTENT  — the file's contents ("" for a folder)
+# Left as plain globals, NOT exported: the content of a large file could blow
+# past the env-size limit (E2BIG) for any child process. Any function or command
+# run later in the SAME shell still sees them.
 function fuzzy_edit() {
   local VIEW_COMMAND="$1"
   local dir="${2:-.}"
@@ -681,9 +705,15 @@ function fuzzy_edit() {
   # Folder selections: just print PWD + cd. File selections: also print the editor line
   # (mirrors what we're about to invoke). print_action_summary handles the format.
   if [ "$IS_DIR" = true ]; then
+    _FUZZY_EDIT_SELECTED_FOLDER="$FULL_PATH"
+    _FUZZY_EDIT_SELECTED_FILE=""
+    _FUZZY_EDIT_SELECTED_CONTENT=""
     print_action_summary "$FULL_PATH"
     cd "$FULL_PATH"
   else
+    _FUZZY_EDIT_SELECTED_FOLDER=$(command dirname "$FULL_PATH")
+    _FUZZY_EDIT_SELECTED_FILE="$FULL_PATH"
+    _FUZZY_EDIT_SELECTED_CONTENT=$(command cat "$FULL_PATH" 2> /dev/null)
     # `type -P` only resolves PATH binaries, so it missed every GUI editor
     # wrapper that editor-launchers.js defines as a bash function (zed, code,
     # subl, smerge). `fuzzy_edit zed` therefore fell through to view_file (i.e.
