@@ -163,6 +163,7 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 - A **fully revised** plan gets a `_v<N>` suffix (integer) and keeps the older file; unsuffixed is v1, never renamed. Editing a plan in flight is an edit — bump only for a rewrite that would otherwise destroy reasoning worth keeping.
 - Every file a plan produces is a sidecar sharing its stem — `<repo>-<feature>.<name>.<ext>`, `<name>` snake_case (`.diff`, `.rfc.md`, `.migrate_local_db.sh`). The stem **is** the linkage, so never write one to a standalone name, a `scripts/` folder, or `/tmp`. A sidecar dies with its plan.
 - Every plan opens with a `## TLDR` — two or three plain sentences, above every other section, stating what changes and why to someone with zero context.
+- Directly under the TLDR, a short `## Impact` block — a few lines, no more: the benefit (what improves and for whom), the level of effort (rough size — files, PRs, waves), and the cost of not doing it. It is the "why bother" a reader skims before the detail, never a second plan.
 - Ship a `## Wrap-Up` with every implemented feature (ad-hoc work → create the file after the fact with TLDR + Wrap-Up only): every file touched (path → one-line change), what was added / removed / renamed, deviations and why, the validation command and result, follow-ups or gaps. Skip only for trivial edits — typo, version bump, one-line config flip.
 
 ## Code Hygiene
