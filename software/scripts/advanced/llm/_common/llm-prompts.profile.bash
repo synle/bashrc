@@ -12,6 +12,7 @@
 #   gemini_list_prompts    / gemini_search_prompts      (defined in gemini.profile.bash)
 #   opencode_list_prompts  / opencode_search_prompts    (defined in opencode.profile.bash)
 #   llm_list_prompts       / llm_search_prompts         (aggregate, defined HERE)
+#   llm_search_plans                                    (plan-file picker, defined HERE)
 #
 # Internal contract:
 #   _<cli>_list_prompts_ts — emit `<ISO-8601 ts>\t<content>` NUL-delimited
@@ -556,4 +557,29 @@ header, is never part of what Enter copies. Single-CLI pickers such as
     return 0
   fi
   _llm_search_prompts llm
+}
+
+################################################################################
+# --- Plan artifacts ---
+################################################################################
+
+# llm_search_plans: fzf-pick a plan file from the shared LLM plans folder, open in vim
+#
+# Thin wrapper over `fuzzy_edit vim` scoped to $LLM_ROOT_FOLDER/plans — the flat
+# folder every Sy plan artifact (and its sidecars) lands in. The picker fuzzy-
+# finds a plan and Enter opens it in vim; the preview shows each file's contents
+# with its `# modified on <time>` header (see _fzf_preview_path). $LLM_ROOT_FOLDER
+# is exported by common-env.sh, so it is read directly with no fallback literal.
+function llm_search_plans() {
+  if is_help_arg "${1:-}"; then
+    echo "llm_search_plans: fzf-pick a plan file from \$LLM_ROOT_FOLDER/plans and open it in vim
+  Usage: llm_search_plans"
+    return 0
+  fi
+  local plans_dir="${LLM_ROOT_FOLDER}/plans"
+  if [ ! -d "$plans_dir" ]; then
+    echo "llm_search_plans: no plans folder at $plans_dir" >&2
+    return 1
+  fi
+  fuzzy_edit vim "$plans_dir"
 }
