@@ -126,6 +126,11 @@ _SY_DEFAULT_SKILL_MODE="inline"
 #                      `opencode run --help`. Its prompt-args are `--prompt`
 #                      (documented in `opencode --help` as "prompt to use"),
 #                      which seeds the TUI, NOT `run`, which is headless.
+#   pi        (empty)  `pi -p "<text>"` is the non-interactive print mode
+#                      (`pi --help`). Skills register as `/skill:<name>` commands
+#                      but that resolution is documented for the interactive
+#                      editor only, not `-p`, so no native surface is claimed —
+#                      it degrades to inline, which always works.
 #
 # Adding a CLI is ONE record here and nothing else. Order matters only in that
 # the first record is the default CLI (see _SY_DEFAULT_LLM below).
@@ -134,6 +139,7 @@ _SY_LLM_SPECS=(
   "copilot|-p|slash|"
   "gemini|-p||"
   "opencode|--prompt|command|run --command"
+  "pi|-p||"
 )
 
 # Directory where the deployed prompt bodies live. Single canonical location

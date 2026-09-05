@@ -55,7 +55,7 @@
     "files": ["advanced/starship.sh", "advanced/starship-config.js", "zoxide.js"],
   },
   "llm": {
-    "description": "Building block: AI CLI clients — install + configure Claude Code, GitHub Copilot, Google Gemini, and OpenCode (settings, keybindings, shared instructions, slash commands). Claude is the base — all four CLIs read the same `_common/instructions.md`, and OpenCode symlinks Claude's `/sy-*` commands.",
+    "description": "Building block: AI CLI clients — install + configure Claude Code, GitHub Copilot, Google Gemini, OpenCode, and Pi (settings, keybindings, shared instructions, slash commands). Claude is the base — all CLIs read the same `_common/instructions.md`, OpenCode symlinks Claude's `/sy-*` commands, and Pi reads the shared skills from `~/.agents/skills`.",
     "files": [
       "advanced/llm/ollama.sh",
       "advanced/llm/claude/install.sh",
@@ -66,6 +66,8 @@
       "advanced/llm/gemini/setup.js",
       "advanced/llm/opencode/install.sh",
       "advanced/llm/opencode/setup.js",
+      "advanced/llm/pi/install.sh",
+      "advanced/llm/pi/setup.js",
     ],
   },
   "llm-prompts": {
@@ -75,6 +77,7 @@
       "advanced/llm/copilot/setup.js",
       "advanced/llm/gemini/setup.js",
       "advanced/llm/opencode/setup.js",
+      "advanced/llm/pi/setup.js",
     ],
   },
 
