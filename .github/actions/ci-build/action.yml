@@ -349,7 +349,6 @@ runs:
         check_binary_required ansible "ansible --version"
         check_binary_required btop "btop --version"
         check_binary_required starship
-        check_binary_required ffmpeg "ffmpeg -version"
         check_binary_warn pwsh "pwsh --version"
         check_binary_warn ollama "ollama --version"
         check_binary_warn psql "psql --version"
@@ -375,6 +374,7 @@ runs:
         check_binary_warn gcloud "gcloud --version"
         check_binary_warn shellcheck "shellcheck --version"
         check_binary_warn snip "snip --version"
+        check_binary_warn ffmpeg "ffmpeg -version"
         # END ci-binary-checks
         # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`.
         # `magick` (v7, Homebrew) stays required — mac install is reliable.

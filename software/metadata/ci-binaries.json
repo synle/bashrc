@@ -22,8 +22,7 @@
     { "name": "http", "version_cmd": "http --version" },
     { "name": "ansible", "version_cmd": "ansible --version" },
     { "name": "btop", "version_cmd": "btop --version" },
-    "starship",
-    { "name": "ffmpeg", "version_cmd": "ffmpeg -version" }
+    "starship"
   ],
   "warn": [
     { "name": "pwsh", "version_cmd": "pwsh --version" },
@@ -50,6 +49,7 @@
     { "name": "az", "version_cmd": "az --version" },
     { "name": "gcloud", "version_cmd": "gcloud --version" },
     { "name": "shellcheck", "version_cmd": "shellcheck --version" },
-    { "name": "snip", "version_cmd": "snip --version" }
+    { "name": "snip", "version_cmd": "snip --version" },
+    { "name": "ffmpeg", "version_cmd": "ffmpeg -version" }
   ]
 }
