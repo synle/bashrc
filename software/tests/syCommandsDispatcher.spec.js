@@ -25,7 +25,7 @@ beforeEach(() => {
   sandbox = fs.mkdtempSync("/tmp/sycommands-test-");
   fs.mkdirSync(path.join(sandbox, "home/sy/ai_llm/skills"), { recursive: true });
   fs.mkdirSync(path.join(sandbox, "bin"), { recursive: true });
-  for (const cli of ["claude", "copilot", "gemini", "opencode"]) {
+  for (const cli of ["claude", "copilot", "gemini", "opencode", "pi"]) {
     const stubPath = path.join(sandbox, "bin", cli);
     fs.writeFileSync(stubPath, `#!/usr/bin/env bash\nprintf '${cli}'\nfor a in "$@"; do printf ' [%s]' "$a"; done\nprintf '\\n'\n`);
     fs.chmodSync(stubPath, 0o755);
@@ -184,15 +184,16 @@ describe("sy-commands dispatcher", () => {
 
 describe("sy-commands CLI registry", () => {
   it("derives _SY_SUPPORTED_LLMS from the single _SY_LLM_SPECS registry", () => {
-    expect(runBash("echo ${_SY_SUPPORTED_LLMS[*]}")).toBe("claude copilot gemini opencode");
+    expect(runBash("echo ${_SY_SUPPORTED_LLMS[*]}")).toBe("claude copilot gemini opencode pi");
   });
 
   it("declares a native dispatch kind only for CLIs that expose one", () => {
     expect(runBash("_sy_native_kind claude")).toBe("slash");
     expect(runBash("_sy_native_kind copilot")).toBe("slash");
     expect(runBash("_sy_native_kind opencode")).toBe("command");
-    // gemini has no verified native surface — empty means "degrade to inline".
+    // gemini and pi have no verified native surface — empty means "degrade to inline".
     expect(runBash("_sy_native_kind gemini")).toBe("");
+    expect(runBash("_sy_native_kind pi")).toBe("");
   });
 
   it("returns non-zero for a CLI that is not in the registry", () => {
@@ -223,7 +224,7 @@ describe("sy-commands pinned <cli>_skill_<name> wrappers", () => {
   it("registers one wrapper per CLI for every deployed skill", () => {
     writeCommand("foo", "body");
     const fns = runBash("compgen -A function | grep _skill_foo").split(/\s+/).filter(Boolean);
-    expect(fns.sort()).toEqual(["claude_skill_foo", "copilot_skill_foo", "gemini_skill_foo", "opencode_skill_foo"]);
+    expect(fns.sort()).toEqual(["claude_skill_foo", "copilot_skill_foo", "gemini_skill_foo", "opencode_skill_foo", "pi_skill_foo"]);
   });
 
   it("flattens hyphens in the skill name to underscores", () => {
@@ -326,6 +327,7 @@ describe("sy-commands raw-prompt inline wrappers", () => {
       "copilot_skill_inline",
       "gemini_skill_inline",
       "opencode_skill_inline",
+      "pi_skill_inline",
       "sy-inline",
     ]);
   });
