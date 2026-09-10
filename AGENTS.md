@@ -119,21 +119,8 @@ bash run.sh --preset=editors,terminal   # presets union their file lists
 bash run.sh --dryrun --setup            # no writes; .sh scripts skipped entirely
 bash run.sh --remove --files="fzf.js"   # call undoWork() instead of doWork()
 bash run.sh --debug --verbose           # keep temp files / bash tracing (set -x)
-bash run.sh --use-bun                    # use Bun (not Node) as the JS bootstrap engine
-bash run.sh --use-node                   # force Node (overrides --use-bun / USE_BUN_FOR_BOOTSTRAP)
-USE_BUN_FOR_BOOTSTRAP=1 bash run.sh      # same as --use-bun via env var
 IS_CUSTOM_THEME_DISABLED=1 bash run.sh  # stock built-in themes instead of Sy Dark/Sy Light
 ```
-
-Bun is opt-in and swaps only the JS ENGINE that runs `software/index.js` and the emitted
-JS heredocs (`install_bootstrap_bun` in `run.sh` mirrors the standalone-node fallback,
-downloading a standalone build to `$BASHRC_TEMP_ROOT_DIR/bun` when bun isn't on PATH).
-Node is still bootstrapped alongside it because `npm_install_global` runs package installs
-through npm. `_resolve_bootstrap_runtime` picks the engine and exports
-`BASHRC_BOOTSTRAP_RUNTIME` / `BASHRC_BOOTSTRAP_RUNTIME_CMD` (`bun run -` reads stdin; a bare
-`bun` prints help). In `index.js`, `RUNTIME_STDIN_CMD` / `RUNTIME_EVAL_CMD` shape every
-emitted `node`/`bun` invocation off `process.execPath`, so bundled and `.su.js` heredocs run
-under whichever engine is live.
 
 Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
 `emulators`, `apps`, `terminal`, `prompt`, `llm`, `llm-prompts`, `browsers`.
@@ -257,12 +244,7 @@ Profile registration is buffered: `registerProfileBlock` /
   when it differs (`npm_install_global @google/gemini-cli gemini`). **Never `rm` the
   launcher first to force a reinstall** — the freshness gate already treats a missing
   `~/.local/bin/<binary>` as broken; the manual wipe just re-downloads every run. Force
-  with `--refresh` / `--force-refresh`. Under `--use-bun` (`BASHRC_BOOTSTRAP_RUNTIME=bun`)
-  the current-system install routes through `_bun_global_install_and_link` — `bun add -g`
-  into Bun's own global store (`~/.bun`), then symlinks every declared launcher into
-  `~/.local/bin` and the package tree into `~/.local/lib/node_modules/<pkg>`, so PATH and
-  the freshness gate are byte-identical to npm's `--prefix`; Bun installs natively so the
-  Rosetta `find_native_node` dance is skipped, and the WSL Windows mirror stays on npm.
+  with `--refresh` / `--force-refresh`.
 - **Prefer `curl -fsSL <url> | bash` installers over package managers** for CLI tools;
   fall back to `npm_install_global` only when no official installer exists. **Exception:
   the LLM CLIs (`claude`, `copilot`, `gemini`, `opencode`) use `npm_install_global`

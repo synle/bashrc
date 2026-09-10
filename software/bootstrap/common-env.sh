@@ -144,11 +144,7 @@ function _detect_gui_flags() {
 
 # checks if a value is truthy (1, true, y, yes — case-insensitive)
 function is_truthy() {
-  # is_help_arg lives in common-functions.bash, which run.sh and ~/.bash_syle_common
-  # do not source — guard the call so is_truthy stays self-contained (a bare call
-  # otherwise prints "is_help_arg: command not found" on every run.sh invocation and
-  # in interactive shells, where is_truthy is declared but is_help_arg is not).
-  if type -t is_help_arg > /dev/null 2>&1 && is_help_arg "${1:-}"; then
+  if is_help_arg "${1:-}"; then
     echo "
       is_truthy: check if a value is truthy (1, true, y, yes — case-insensitive)
         is_truthy 1           returns 0 (success)
