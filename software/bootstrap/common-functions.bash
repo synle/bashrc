@@ -211,71 +211,8 @@ function _ensure_npm_binary() {
 function _npm_global_declares_bin() {
   local pkg_json="$1/package.json"
   [ -f "$pkg_json" ] || return 1
-  # Run the check under whichever JS engine is present. Under --use-bun there may be no
-  # node on PATH at all (run.sh skips the Node download when Bun is the runtime), so fall
-  # back to bun — require/process.argv/process.exit behave identically in both.
-  local _decl='const b = require(process.argv[1]).bin; process.exit(b && (typeof b === "string" || Object.keys(b).length > 0) ? 0 : 1)'
-  if type -P node > /dev/null 2>&1; then
-    node -e "$_decl" "$pkg_json" 2> /dev/null
-  elif type -P bun > /dev/null 2>&1; then
-    bun -e "$_decl" "$pkg_json" 2> /dev/null
-  else
-    return 0
-  fi
-}
-
-# _bun_global_install_and_link <pkg> <bin> - Global-install <pkg> with Bun and mirror the
-# result into $HOME/.local so the rest of the repo sees the exact layout `npm install -g
-# --prefix $HOME/.local` produces. Bun keeps its own global store (default ~/.bun, or
-# $BUN_INSTALL) and links launchers into `bun pm bin -g`; we add symlinks on top:
-#   - every launcher the package declares  -> $HOME/.local/bin/<launcher>   (PATH)
-#   - the installed package tree           -> $HOME/.local/lib/node_modules/<pkg>
-# The lib symlink is what keeps _npm_install_global's freshness gate working for
-# renamed-launcher packages (typescript -> tsc) and no-bin packages
-# (vscode-markdown-languageserver), exactly as the npm node_modules marker does.
-# Used only when BASHRC_BOOTSTRAP_RUNTIME=bun. Returns bun's exit status.
-function _bun_global_install_and_link() {
-  local pkg="$1"
-  local bin="$2"
-
-  bun add -g "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || return 1
-
-  # bun pm bin -g needs a populated global store, which the install above guarantees.
-  local _bun_bin_dir _bun_install_dir _pkg_name _bun_store
-  _bun_bin_dir=$(bun pm bin -g 2> /dev/null) || return 1
-  [ -n "$_bun_bin_dir" ] || return 1
-  _bun_install_dir=$(dirname "$_bun_bin_dir")
-  # Strip a trailing @version but keep the leading @ of a scoped package
-  # (@vue/language-server@latest -> @vue/language-server).
-  _pkg_name="${pkg%@*}"
-  _bun_store="$_bun_install_dir/install/global/node_modules/$_pkg_name"
-
-  safe_mkdir "$HOME/.local/bin"
-
-  # Link every launcher this package declares (npm --prefix links them all). A string
-  # `bin` field names the launcher after the package's unscoped name; an object field
-  # lists each launcher key explicitly.
-  local _names _name
-  _names=$(bun -e 'const p = require(process.argv[1] + "/package.json"); let n = []; if (typeof p.bin === "string") { n = [p.name.split("/").pop()]; } else if (p.bin) { n = Object.keys(p.bin); } n.forEach(x => console.log(x))' "$_bun_store" 2> /dev/null)
-  if [ -n "$_names" ]; then
-    while IFS= read -r _name; do
-      [ -n "$_name" ] || continue
-      [ -e "$_bun_bin_dir/$_name" ] && ln -sf "$_bun_bin_dir/$_name" "$HOME/.local/bin/$_name"
-    done <<< "$_names"
-  fi
-  # Safety net: guarantee the caller's primary bin resolves even if the package.json bin
-  # map named it unexpectedly.
-  if [ ! -e "$HOME/.local/bin/$bin" ] && [ -e "$_bun_bin_dir/$bin" ]; then
-    ln -sf "$_bun_bin_dir/$bin" "$HOME/.local/bin/$bin"
-  fi
-
-  # Mirror the package tree so the freshness-gate node_modules marker resolves under Bun.
-  if [ -d "$_bun_store" ]; then
-    local _lib_dest="$HOME/.local/lib/node_modules/$_pkg_name"
-    safe_mkdir "$(dirname "$_lib_dest")"
-    ln -sfn "$_bun_store" "$_lib_dest"
-  fi
-  return 0
+  type -P node > /dev/null 2>&1 || return 0
+  node -e 'const b = require(process.argv[1]).bin; process.exit(b && (typeof b === "string" || Object.keys(b).length > 0) ? 0 : 1)' "$pkg_json" 2> /dev/null
 }
 
 # npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
@@ -293,14 +230,9 @@ function _bun_global_install_and_link() {
 # package that declares one, still forces the reinstall.
 # Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
 # via cmd.exe. Logs status (Skipped/Success/Error) for each target.
-# Under --use-bun (BASHRC_BOOTSTRAP_RUNTIME=bun) the current-system install is performed by
-# Bun via _bun_global_install_and_link, which installs natively and symlinks the launchers
-# and package tree into $HOME/.local so PATH and the freshness gate are unchanged; the npm
-# node path (find_native_node/run_native) and the WSL Windows mirror stay on npm.
-# On macOS the npm install runs through a natively built node (find_native_node) and
-# run_native, and a binary whose CPU arch does not match the machine is always reinstalled —
-# otherwise a run started under Rosetta 2 installs Intel builds of bun-compiled CLIs
-# (opencode, claude). Bun installs natively and needs no such dance.
+# On macOS the install runs through a natively built node (find_native_node) and run_native,
+# and a binary whose CPU arch does not match the machine is always reinstalled — otherwise a
+# run started under Rosetta 2 installs Intel builds of bun-compiled CLIs (opencode, claude).
 # When IS_FORCE_REFRESH=1 (and target is stale on the unix side, or unconditionally on Windows),
 # re-runs `npm install -g <pkg>` which re-fetches the npm "latest" dist-tag so callers like
 # gemini / opencode / yarn / clasp pick up upstream releases.
@@ -384,45 +316,24 @@ function _npm_install_global() {
     echo "  >> Reinstalling $bin: $_resolved is not built for $(get_native_arch)"
   fi
 
-  # Under --use-bun the JS bootstrap engine is Bun, and Bun installs global packages
-  # natively (no Rosetta/optional-dep arch dance) — route the install through it and
-  # mirror the result into $HOME/.local. Node may not even be on PATH in this mode.
-  local _use_bun=0
-  if [ "${BASHRC_BOOTSTRAP_RUNTIME:-node}" = "bun" ] && type -P bun > /dev/null 2>&1; then
-    _use_bun=1
-  fi
-
-  # Resolve a natively built node for the npm install itself — `arch -<native>` cannot
-  # help here because an x86_64-only node stays x86_64 under any arch preference.
-  # Not needed on the Bun path.
+  # Resolve a natively built node for the install itself — `arch -<native>` cannot help
+  # here because an x86_64-only node stays x86_64 under any arch preference.
   local _native_node _native_node_dir=""
-  ((_use_bun)) || { _native_node=$(find_native_node) && _native_node_dir=$(dirname "$_native_node"); }
-
-  local _pm_label="npm"
-  ((_use_bun)) && _pm_label="bun"
+  _native_node=$(find_native_node) && _native_node_dir=$(dirname "$_native_node")
 
   if ! is_truthy "$always_latest" && [ -n "$_resolved" ] && ! ((_arch_mismatch)) && ! is_force_refresh_stale "$_resolved"; then
-    echo ">> $pkg >> Installing with $_pm_label global >> Skipped ($_resolved)"
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
     local _action="Installing"
     [ -n "$_resolved" ] && _action="Refreshing"
-    if ((_use_bun)); then
-      echo -n ">> $pkg >> ${_action} with bun global >> "
-      if _bun_global_install_and_link "$pkg" "$bin"; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
+    echo -n ">> $pkg >> ${_action} with npm global >> "
+    if (
+      [ -n "$_native_node_dir" ] && export PATH="$_native_node_dir:$PATH"
+      run_native npm install -g --prefix "$HOME/.local" "$pkg"
+    ) < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
     else
-      echo -n ">> $pkg >> ${_action} with npm global >> "
-      if (
-        [ -n "$_native_node_dir" ] && export PATH="$_native_node_dir:$PATH"
-        run_native npm install -g --prefix "$HOME/.local" "$pkg"
-      ) < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
+      echo "Error"
     fi
   fi
 
