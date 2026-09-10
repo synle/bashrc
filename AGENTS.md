@@ -119,8 +119,21 @@ bash run.sh --preset=editors,terminal   # presets union their file lists
 bash run.sh --dryrun --setup            # no writes; .sh scripts skipped entirely
 bash run.sh --remove --files="fzf.js"   # call undoWork() instead of doWork()
 bash run.sh --debug --verbose           # keep temp files / bash tracing (set -x)
+bash run.sh --use-bun                    # use Bun (not Node) as the JS bootstrap engine
+bash run.sh --use-node                   # force Node (overrides --use-bun / USE_BUN_FOR_BOOTSTRAP)
+USE_BUN_FOR_BOOTSTRAP=1 bash run.sh      # same as --use-bun via env var
 IS_CUSTOM_THEME_DISABLED=1 bash run.sh  # stock built-in themes instead of Sy Dark/Sy Light
 ```
+
+Bun is opt-in and swaps only the JS ENGINE that runs `software/index.js` and the emitted
+JS heredocs (`install_bootstrap_bun` in `run.sh` mirrors the standalone-node fallback,
+downloading a standalone build to `$BASHRC_TEMP_ROOT_DIR/bun` when bun isn't on PATH).
+Node is still bootstrapped alongside it because `npm_install_global` runs package installs
+through npm. `_resolve_bootstrap_runtime` picks the engine and exports
+`BASHRC_BOOTSTRAP_RUNTIME` / `BASHRC_BOOTSTRAP_RUNTIME_CMD` (`bun run -` reads stdin; a bare
+`bun` prints help). In `index.js`, `RUNTIME_STDIN_CMD` / `RUNTIME_EVAL_CMD` shape every
+emitted `node`/`bun` invocation off `process.execPath`, so bundled and `.su.js` heredocs run
+under whichever engine is live.
 
 Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
 `emulators`, `apps`, `terminal`, `prompt`, `llm`, `llm-prompts`, `browsers`.
