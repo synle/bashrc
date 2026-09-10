@@ -77,6 +77,25 @@ const getRuntimeOption = (optionKey, parseFunc = parseString) => {
   return parseFunc(process.env[optionKey] || "");
 };
 
+// --- JS Bootstrap Runtime (Node or Bun) ---
+
+/**
+ * @type {boolean} True when this process runs under Bun instead of Node. Bun sets
+ * process.versions.bun. Only the JS bootstrap engine differs — package installs
+ * still go through node/npm — so this is used purely to shape emitted invocations.
+ */
+const IS_BUN_RUNTIME = !!(process.versions && process.versions.bun);
+/** @type {string} Absolute path to the running JS runtime binary (node or bun); works under sudo even when the binary isn't on root's PATH. */
+const RUNTIME_BIN = process.execPath;
+/**
+ * @type {string} Command prefix that executes a script fed on stdin (heredoc) under
+ * the current runtime. Bun needs `run -` to read stdin (a bare `bun` prints help);
+ * node reads stdin directly.
+ */
+const RUNTIME_STDIN_CMD = IS_BUN_RUNTIME ? `${RUNTIME_BIN} run -` : RUNTIME_BIN;
+/** @type {string} Command prefix that evaluates an inline script string; both `node -e` and `bun -e` are supported. */
+const RUNTIME_EVAL_CMD = `${RUNTIME_BIN} -e`;
+
 // --- Arg Parsing (from BASHRC_RAW_ARGS) ---
 
 /**
@@ -5413,12 +5432,13 @@ async function _emitBundledJsScripts(entries, allRepoFiles, totalFiles) {
   // Use sudo runner when any entry in the bundle is a .su.js script (skip sudo in dry run)
   const hasSudo = !IS_DRY_RUN && validEntries.some((e) => e.file.includes(".su.js"));
   const heredocDelimiter = ["_BASHRC", "INLINE", "EOF_"].join("_");
-  const nodeBin = process.execPath; // absolute path to the running node binary, works with sudo even when node isn't on root's PATH
-  let runner = `${nodeBin}`;
+  // RUNTIME_STDIN_CMD is the runtime binary (node) or `<bun> run -` (bun), so the
+  // bundled scripts run under whichever engine is executing this bootstrap.
+  let runner = RUNTIME_STDIN_CMD;
   if (hasSudo) {
-    runner = `sudo -E ${nodeBin}`;
+    runner = `sudo -E ${RUNTIME_STDIN_CMD}`;
     const suScripts = validEntries.filter((e) => e.file.includes(".su.js")).map((e) => e.file);
-    log(`[sudo] _emitBundledJsScripts: sudo -E ${nodeBin} for ${suScripts.join(", ")}`);
+    log(`[sudo] _emitBundledJsScripts: sudo -E ${RUNTIME_STDIN_CMD} for ${suScripts.join(", ")}`);
   }
   const tempFileCommand = `${runner} <<'${heredocDelimiter}'`;
   emitBash(tempFileCommand);
@@ -5509,7 +5529,7 @@ async function _emitBundledShScripts(entries, allRepoFiles, totalFiles) {
     emitBash(scriptContent);
     emitBash(`_sh_bench_dur_ms=$(( ($(date +%s) - _sh_bench_start) * 1000 ))`);
     emitBash(
-      `_SH_BENCH_FILE=${JSON.stringify(e.resolvedFile)} _SH_BENCH_DUR="$_sh_bench_dur_ms" node -e "var f=require('fs'),p=process.env.BASHRC_TEMP_DIR+'/run_timing.json',d;try{d=JSON.parse(f.readFileSync(p,'utf8'))}catch(e){d={}}var s=d.scripts||{};s[process.env._SH_BENCH_FILE]={duration_ms:Number(process.env._SH_BENCH_DUR),status:'success'};d.scripts=s;f.writeFileSync(p,JSON.stringify(d))"`,
+      `_SH_BENCH_FILE=${JSON.stringify(e.resolvedFile)} _SH_BENCH_DUR="$_sh_bench_dur_ms" ${RUNTIME_EVAL_CMD} "var f=require('fs'),p=process.env.BASHRC_TEMP_DIR+'/run_timing.json',d;try{d=JSON.parse(f.readFileSync(p,'utf8'))}catch(e){d={}}var s=d.scripts||{};s[process.env._SH_BENCH_FILE]={duration_ms:Number(process.env._SH_BENCH_DUR),status:'success'};d.scripts=s;f.writeFileSync(p,JSON.stringify(d))"`,
     );
     emitBash(heredocDelimiter);
   }
@@ -5715,7 +5735,7 @@ function printScriptProcessingResults(results) {
   // emit a post-run bash command to print consolidated results with per-script timing
   if (BASHRC_TEMP_DIR) {
     const timingPath = path.join(BASHRC_TEMP_DIR, "run_timing.json").replace(/'/g, "'\\''");
-    emitBash(`TIMING_FILE="${timingPath}" node <<'_BASHRC_PRINT_RESULTS_EOF'
+    emitBash(`TIMING_FILE="${timingPath}" ${RUNTIME_STDIN_CMD} <<'_BASHRC_PRINT_RESULTS_EOF'
 const fs = require("fs");
 const data = JSON.parse(fs.readFileSync(process.env.TIMING_FILE, "utf8"));
 const results = data.results || [];

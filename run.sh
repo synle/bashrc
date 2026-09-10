@@ -26,8 +26,11 @@
 #   bash run.sh -V                                 # Shorthand for --verbose
 #   bash run.sh --dryrun                           # Show what would change without writing files
 #   bash run.sh --remove --files="fzf.js"          # Remove a script's config (runs undoWork)
+#   USE_BUN_FOR_BOOTSTRAP=1 bash run.sh             # Use Bun instead of Node as the JS bootstrap engine
+#   bash run.sh --use-bun                           # Same as above via CLI flag
+#   bash run.sh --use-node                          # Force Node (overrides --use-bun / USE_BUN_FOR_BOOTSTRAP)
 #
-# Single dash also works: -files=..., -force-refresh, -f, -preset=..., -debug, -D, -verbose, -V, -dryrun, -remove
+# Single dash also works: -files=..., -force-refresh, -f, -preset=..., -debug, -D, -verbose, -V, -dryrun, -remove, -use-bun, -use-node
 ################################################################################
 
 ################################################################################
@@ -43,7 +46,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 67a5def8aaec6d3e6ffcc4e83a1f62e8 | 9.0 KB
+# software/bootstrap/common-env.sh | 4fb16c5ce5e5bffefef5b42b8bab746d | 9.3 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -188,7 +191,11 @@ function _detect_gui_flags() {
 
 # checks if a value is truthy (1, true, y, yes — case-insensitive)
 function is_truthy() {
-  if is_help_arg "${1:-}"; then
+  # is_help_arg lives in common-functions.bash, which run.sh and ~/.bash_syle_common
+  # do not source — guard the call so is_truthy stays self-contained (a bare call
+  # otherwise prints "is_help_arg: command not found" on every run.sh invocation and
+  # in interactive shells, where is_truthy is declared but is_help_arg is not).
+  if type -t is_help_arg > /dev/null 2>&1 && is_help_arg "${1:-}"; then
     echo "
       is_truthy: check if a value is truthy (1, true, y, yes — case-insensitive)
         is_truthy 1           returns 0 (success)
@@ -215,6 +222,16 @@ export REPO_USER_EMAIL="$(git config --global user.email 2> /dev/null)"
 ################################################################################
 export NODE_JS_VERSION="24"
 export FNM_DIR="$HOME/.local/share/fnm"
+
+# --- Optional Bun bootstrap runtime ---
+# When truthy, Bun replaces Node as the JS engine that runs software/index.js and
+# every emitted JS heredoc. Only the bootstrap ENGINE changes — package installs
+# (npm_install_global) still go through node/npm, so Node is always bootstrapped
+# too. Bun is used from PATH when present, otherwise a standalone build is
+# downloaded to $BASHRC_TEMP_ROOT_DIR/bun (mirroring the standalone-node fallback).
+# Toggle with this env var (USE_BUN_FOR_BOOTSTRAP=1 bash run.sh) or the --use-bun
+# CLI flag, both normalized to 0/1 in the pre-scan block below.
+export USE_BUN_FOR_BOOTSTRAP="${USE_BUN_FOR_BOOTSTRAP:-0}"
 
 ################################################################################
 # --- Native CPU Arch (Apple Silicon / Rosetta 2) ---
@@ -574,6 +591,113 @@ function install_bootstrap_node() {
 }
 
 ################################################################################
+# --- Bootstrap Bun (optional JS engine) ---
+################################################################################
+
+# install_bootstrap_bun - Ensure bun is available to run software/index.js when
+# USE_BUN_FOR_BOOTSTRAP is on. Uses bun from PATH first, otherwise downloads a
+# standalone build to $BASHRC_TEMP_ROOT_DIR/bun (mirrors install_bootstrap_node).
+# Every failure path warns and returns without error so _resolve_bootstrap_runtime
+# can silently fall back to Node — the flag is best-effort, never fatal.
+# The GitHub release zip is used directly rather than the official bun.sh/install
+# script because that installer edits the user's shell rc files, which a throwaway
+# bootstrap runtime must not do.
+function install_bootstrap_bun() {
+  local bun_tmp="$BASHRC_TEMP_ROOT_DIR/bun"
+  export PATH="$PATH:$bun_tmp/bin"
+
+  # Use existing bun if already available
+  if type -P bun > /dev/null 2>&1; then
+    echo ">> Using bun from PATH ($(bun --version 2> /dev/null))"
+    return
+  fi
+
+  if ! type -P unzip > /dev/null 2>&1; then
+    echo "[Warn] unzip not found — cannot download standalone Bun, falling back to Node."
+    return
+  fi
+
+  echo ">> Downloading standalone Bun"
+  rm -rf "$bun_tmp"
+  mkdir -p "$bun_tmp/bin"
+
+  local os arch
+  os=$(uname -s | tr '[:upper:]' '[:lower:]')
+  arch=$(uname -m)
+
+  # Same Rosetta 2 guard as the node path: `uname -m` reports x86_64 for any
+  # translated process, so consult the kernel's hw.optional.arm64 on macOS.
+  if [ "$os" = "darwin" ] && [ "$(sysctl -n hw.optional.arm64 2> /dev/null)" = "1" ]; then
+    arch="arm64"
+  fi
+
+  case "$os" in
+  darwin | linux) ;;
+  *)
+    echo "[Warn] Unsupported OS for standalone Bun ($os), falling back to Node."
+    return
+    ;;
+  esac
+
+  # Bun release assets name arches as x64 / aarch64.
+  case "$arch" in
+  x86_64 | x64) arch="x64" ;;
+  aarch64 | arm64) arch="aarch64" ;;
+  *)
+    echo "[Warn] Unsupported arch for standalone Bun ($arch), falling back to Node."
+    return
+    ;;
+  esac
+
+  local bun_target="bun-${os}-${arch}"
+  local zip_path="$bun_tmp/${bun_target}.zip"
+  curl -fsSL "https://github.com/oven-sh/bun/releases/latest/download/${bun_target}.zip" -o "$zip_path" 2> /dev/null || true
+  if [ ! -s "$zip_path" ]; then
+    echo "[Warn] Failed to download standalone Bun, falling back to Node."
+    return
+  fi
+
+  # The archive extracts to $bun_tmp/<bun_target>/bun; flatten it into bin/.
+  unzip -oq "$zip_path" -d "$bun_tmp" 2> /dev/null || true
+  if [ -x "$bun_tmp/$bun_target/bun" ]; then
+    mv -f "$bun_tmp/$bun_target/bun" "$bun_tmp/bin/bun"
+    chmod +x "$bun_tmp/bin/bun"
+  fi
+  rm -rf "$zip_path" "$bun_tmp/$bun_target"
+
+  if [ ! -x "$bun_tmp/bin/bun" ]; then
+    echo "[Warn] Failed to unpack standalone Bun, falling back to Node."
+    return
+  fi
+
+  echo ">> Using standalone bun $("$bun_tmp/bin/bun" --version 2> /dev/null) from $bun_tmp"
+
+  # Make bun available to sudo (secure_path ignores user PATH), matching node.
+  if [ -d /usr/local/bin ]; then
+    sudo ln -sf "$bun_tmp/bin/bun" "/usr/local/bin/bun" 2> /dev/null \
+      || ln -sf "$bun_tmp/bin/bun" "/usr/local/bin/bun" 2> /dev/null \
+      || true
+  fi
+}
+
+# _resolve_bootstrap_runtime - Decide which JS engine runs software/index.js and
+# the emitted JS heredocs, exporting both the runtime name and the command used
+# to execute a script fed on stdin. Bun needs `bun run -` to run stdin (a bare
+# `bun` prints help); node runs stdin directly. Falls back to node whenever bun
+# is unavailable so the flag can never strand a run.
+function _resolve_bootstrap_runtime() {
+  if ((USE_BUN_FOR_BOOTSTRAP)) && type -P bun > /dev/null 2>&1; then
+    BASHRC_BOOTSTRAP_RUNTIME="bun"
+    BASHRC_BOOTSTRAP_RUNTIME_CMD="bun run -"
+  else
+    BASHRC_BOOTSTRAP_RUNTIME="node"
+    BASHRC_BOOTSTRAP_RUNTIME_CMD="node"
+  fi
+  export BASHRC_BOOTSTRAP_RUNTIME BASHRC_BOOTSTRAP_RUNTIME_CMD
+  echo ">> Bootstrap runtime: $BASHRC_BOOTSTRAP_RUNTIME"
+}
+
+################################################################################
 # --- Run Files ---
 ################################################################################
 
@@ -595,7 +719,7 @@ function run_files() {
     cat software/index.js
   else
     curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js?raw=1"
-  fi | node | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.sh") | bash 2>&1 | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.log") 2>&1
+  fi | $BASHRC_BOOTSTRAP_RUNTIME_CMD | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.sh") | bash 2>&1 | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.log") 2>&1
 }
 
 ################################################################################
@@ -671,11 +795,23 @@ for arg in "$@"; do
   case "$arg" in
   --verbose | -verbose | -V) set -x ;;
   --no-color | -no-color) export NO_COLOR=1 ;;
+  --use-bun | -use-bun) export USE_BUN_FOR_BOOTSTRAP=1 ;;
+  --use-node | -use-node) _force_node_bootstrap=1 ;;
   --is_gui=* | -is_gui=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI=1 || export BASHRC_FORCE_IS_GUI=0 ;;
   --is_gui_x11=* | -is_gui_x11=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI_X11=1 || export BASHRC_FORCE_IS_GUI_X11=0 ;;
   --is_gui_wayland=* | -is_gui_wayland=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI_WAYLAND=1 || export BASHRC_FORCE_IS_GUI_WAYLAND=0 ;;
   esac
 done
+
+# Normalize USE_BUN_FOR_BOOTSTRAP (env var may be true/yes/1) to exactly 0/1.
+# --use-node is the explicit inverse and always wins over --use-bun / the env var,
+# so a run can be pinned back to Node regardless of how Bun was requested.
+if [ -n "${_force_node_bootstrap:-}" ]; then
+  export USE_BUN_FOR_BOOTSTRAP=0
+else
+  is_truthy "$USE_BUN_FOR_BOOTSTRAP" && export USE_BUN_FOR_BOOTSTRAP=1 || export USE_BUN_FOR_BOOTSTRAP=0
+fi
+unset _force_node_bootstrap
 
 # Re-detect so the override applies to this shell too (node inherits from here).
 _detect_gui_flags
@@ -732,7 +868,18 @@ _run_start_time=$(date '+%Y-%m-%d %H:%M:%S')
 mkdir -p "$BASHRC_TEMP_DIR"
 echo "{\"start\":\"$_run_start_time\"}" > "$BASHRC_TEMP_DIR/run_timing.json"
 
-install_bootstrap_node
+# Bring up the requested JS bootstrap engine. Bun goes first so
+# _resolve_bootstrap_runtime can detect it; when Bun wins we skip the standalone
+# Node *download* entirely (that download also prompts for sudo to relink
+# /usr/local/bin). Node from PATH is still used if present, and --setup runs get
+# their Node from the fnm install _full-setup performs.
+if ((USE_BUN_FOR_BOOTSTRAP)); then
+  install_bootstrap_bun
+fi
+_resolve_bootstrap_runtime
+if [ "$BASHRC_BOOTSTRAP_RUNTIME" = "node" ]; then
+  install_bootstrap_node
+fi
 
 # Clear npm's cache and logs before any script runs. A corrupted/partial cache entry
 # (common after an interrupted install) makes every later `npm install -g` fail with
@@ -749,10 +896,10 @@ if type -P npm > /dev/null 2>&1; then
   unset _npm_cache_folder
 fi
 
-if type -P node > /dev/null 2>&1; then
+if type -P "$BASHRC_BOOTSTRAP_RUNTIME" > /dev/null 2>&1; then
   run_files
 else
-  echo "[Skip] Node is not installed — skipping main script."
+  echo "[Skip] $BASHRC_BOOTSTRAP_RUNTIME is not installed — skipping main script."
 fi
 
 _run_end_epoch=$(date +%s)
@@ -760,8 +907,10 @@ _run_end_time=$(date '+%Y-%m-%d %H:%M:%S')
 _run_duration=$((_run_end_epoch - _run_start_epoch))
 
 #benchmark - merge end/duration into existing timing file (preserves scripts data from JS)
-if type -P node &> /dev/null; then
-  node -e "var f=require('fs'),p='$BASHRC_TEMP_DIR/run_timing.json',d={};try{d=JSON.parse(f.readFileSync(p,'utf8'))}catch(e){}d.start='$_run_start_time';d.end='$_run_end_time';d.duration_seconds=$_run_duration;f.writeFileSync(p,JSON.stringify(d))"
+# Both node and bun accept `-e "<code>"` with require('fs'), so reuse whichever
+# engine the bootstrap ran under (bun-only hosts have no node for this step).
+if type -P "$BASHRC_BOOTSTRAP_RUNTIME" &> /dev/null; then
+  "$BASHRC_BOOTSTRAP_RUNTIME" -e "var f=require('fs'),p='$BASHRC_TEMP_DIR/run_timing.json',d={};try{d=JSON.parse(f.readFileSync(p,'utf8'))}catch(e){}d.start='$_run_start_time';d.end='$_run_end_time';d.duration_seconds=$_run_duration;f.writeFileSync(p,JSON.stringify(d))"
 else
   echo "{\"start\":\"$_run_start_time\",\"end\":\"$_run_end_time\",\"duration_seconds\":$_run_duration}" > "$BASHRC_TEMP_DIR/run_timing.json"
 fi
