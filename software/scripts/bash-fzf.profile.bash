@@ -607,8 +607,13 @@ function fuzzy_favorite_command() {
     --bind 'f5:reload(command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null | sort -u)')
 
   if [ -n "$cmd" ]; then
-    echo "### Command Selected from Bookmarks ###"
-    echo "$cmd"
+    # Echo the selected command in blue, then its `type` resolution in subtle
+    # grey, before running it — so an aliased bookmark like ssh_tde_backend
+    # shows the real command it expands to (e.g. `command kubectl in exec ...`).
+    local _cmd_word
+    _cmd_word=$(echo "$cmd" | awk '{print $1}')
+    printf '\033[0;34m%s\033[0m\n' "$cmd"
+    printf '\033[90m%s\033[0m\n' "$(type "$_cmd_word" 2>&1)"
     eval "$cmd"
     history -s "$cmd"
   fi
