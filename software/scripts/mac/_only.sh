@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # SOURCE software/bootstrap/common-functions.bash
 
+# macOS system tweaks. Source: https://macos-defaults.com
 echo '>> Setting macOS Defaults'
 
 ################################################################################
 # --- Screenshots ---
 ################################################################################
 defaults write com.apple.screencapture location ~/Desktop/_screenshots
+defaults write com.apple.screencapture disable-shadow -bool true  # Removes the drop shadow from screenshot images
+defaults write com.apple.screencapture show-thumbnail -bool false # Skips the floating thumbnail after a screenshot
 
 ################################################################################
 # --- VS Code Symlink ---
@@ -35,6 +38,12 @@ defaults write com.apple.finder AnimateWindowZoom -bool false   # Disables the z
 defaults write NSGlobalDomain com.apple.springing.delay -float 0           # When dragging a file over a folder, it opens instantly instead of waiting 0.5s
 defaults write com.apple.finder _FXShowPosixPathInTitle -bool true         # Shows the full Unix path (e.g. /Users/you/Documents) in the Finder title bar
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false # Stops the "are you sure you want to change the extension?" popup when renaming files
+defaults write com.apple.finder ShowPathbar -bool true                     # Shows the path bar at the bottom of Finder windows
+defaults write NSGlobalDomain AppleShowAllExtensions -bool true            # Shows file extensions everywhere
+defaults write com.apple.finder _FXSortFoldersFirst -bool true             # Keeps folders on top when sorting
+defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"        # Defaults new folders to list view
+defaults write NSGlobalDomain NSToolbarTitleViewRolloverDelay -float 0     # No delay when hovering the toolbar title
+defaults write com.apple.finder _FXEnableColumnAutoSizing -bool true       # Auto-resizes columns to fit content
 
 ################################################################################
 # --- Dock & Mission Control ---
@@ -43,10 +52,11 @@ echo '>> Applying Dock & Mission Control tweaks'
 defaults write com.apple.dock launchanim -bool false                     # Removes the bouncing icon animation when opening an app from the Dock
 defaults write com.apple.dock expose-animation-duration -float 0.1       # Speeds up the Mission Control fly-in/fly-out transition (default 0.5s)
 defaults write com.apple.dock autohide-delay -float 0                    # Dock appears immediately on hover instead of waiting (default 0.5s delay)
-defaults write com.apple.dock autohide-time-modifier -float 0.1          # Dock slide-in/out animation takes 0.1s instead of default 0.7s
-defaults write com.apple.dock mineffect -string scale                    # Changes minimize effect from Genie (heavy GPU warp animation) to Scale (lightweight fade)
+defaults write com.apple.dock autohide-time-modifier -float 0            # Dock slide-in/out has no animation (instant)
+defaults write com.apple.dock mineffect -string suck                     # Minimize effect sucks the window into its Dock icon
 defaults write com.apple.dock minimize-to-application -bool true         # Minimizes windows into their app icon instead of separate Dock section (less animation travel)
 defaults write com.apple.dock show-recents -bool false                   # Disables show suggested and recent apps in dock
+defaults write com.apple.dock scroll-to-open -bool true                  # Scroll up on a Dock icon to expose all its open windows
 defaults write com.apple.dock autohide -bool true                        # Auto-hides the Dock to free screen space and reduce compositing when not in use
 defaults write com.apple.dock workspaces-swoosh-animation-off -bool true # Instant workspace/Spaces switching instead of the slide animation
 defaults write com.apple.dock workspaces-edge-delay -float 0             # Removes the delay before switching Spaces when dragging a window to screen edge (default 0.75s)
@@ -91,6 +101,7 @@ _defaults_write_protected com.apple.universalaccess reduceMotion -bool true     
 # --- Safari & Web ---
 ################################################################################
 _defaults_write_protected com.apple.Safari WebKitInitialTimedLayoutDelay -float 0.1 # Reduces Safari's initial page render delay (default 0.25s) for faster first paint
+_defaults_write_protected com.apple.Safari ShowFullURLInSmartSearchField -bool true # Shows the full website URL in Safari's smart search field
 
 ################################################################################
 # --- System & Finder Behaviors ---
@@ -152,6 +163,10 @@ defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true # S
 defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true     # Print dialogs open in full expanded view showing all options by default
 defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true    # Same as above for newer macOS versions that use a separate preference key
 defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true  # Stops the "use this disk for Time Machine?" popup when plugging in external drives
+defaults write com.apple.appleseed.FeedbackAssistant Autogather -bool false  # Feedback Assistant won't auto-gather system files for reports
+defaults write com.apple.menuextra.clock FlashDateSeparators -bool true      # Flashes the colons in the menu bar clock every second
+defaults write com.apple.ActivityMonitor UpdatePeriod -int 3                 # Activity Monitor refreshes every 3 seconds
+defaults write com.apple.Terminal FocusFollowsMouse -bool true               # Focus follows the mouse cursor to any Terminal window
 defaults write com.apple.ImageCapture disableHotPlug -bool true              # Stops Photos/Image Capture from auto-opening when plugging in a device (iPhone, camera, SD card)
 ulimit -n 65536                                                              # Raises the max open file descriptors from 256 to 65536 (prevents Electron apps from running out of fds)
 
@@ -174,7 +189,7 @@ defaults write com.microsoft.autoupdate2 SendAllTelemetryEnabled -bool false    
 # --- Restart Affected Services ---
 ################################################################################
 echo '>> Restarting affected services'
-for app in "Dock" "Finder" "Mail" "Safari" "SystemUIServer"; do
+for app in "Dock" "Finder" "Mail" "Safari" "SystemUIServer" "Terminal" "Activity Monitor"; do
   killall "$app" > /dev/null 2>&1
 done
 echo '>> macOS tweaks applied'
