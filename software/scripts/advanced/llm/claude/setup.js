@@ -149,6 +149,12 @@ const CLAUDE_MANAGED_SETTINGS = {
   viewMode: "verbose",
   // enable extended thinking by default for better quality. tradeoff: more tokens, slightly slower. risk: low
   alwaysThinkingEnabled: true,
+  // drop commit/PR attribution trailers and the claude.ai session link. tradeoff: work not attributed to Claude. risk: none
+  attribution: {
+    commit: "",
+    pr: "",
+    sessionUrl: false,
+  },
 };
 
 /**
