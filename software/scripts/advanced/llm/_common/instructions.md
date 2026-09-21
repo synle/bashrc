@@ -212,14 +212,9 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 - Treat empty values (`0`, empty string/collection, `false`) as valid, not absent. Test for absence explicitly; never use truthy gates to mean "is set".
 - Bound numerics on both sides — clamp to `[MIN, MAX]`. One-sided clamps leak negatives/overflows.
 
-## Concurrency & Resources
+## Review & Runtime Guardrails
 
-- One try/catch per batch iteration; outer-only discards earlier successes.
-- Chunk unbounded list params — query and packet-size limits bite.
-- Emit heartbeats from long-running jobs or the scheduler kills and retries.
-- Register teardown for async resources — timers, intervals, abort controllers, handles, sessions, pools.
-- No long synchronous retry chains in request handlers — one attempt, queue the rest.
-- Hoist loop-invariant work — permission lookups, regex compiles, deadline math.
+- **Read `<<LLM_ROOT_FOLDER>>/instructions/review-guardrails.md` before writing or reviewing multi-path, retry, selector, control-plane, pseudonym/redaction, operational-runbook, persistent-test, streaming, or async request/RPC changes**, and follow it as written.
 
 ## Measure Before Optimizing
 

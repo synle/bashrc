@@ -113,11 +113,26 @@ const SPLIT_EXPECTATIONS = {
       "Encapsulate the low-level behind a clean API",
     ],
   },
+  "review-guardrails.md": {
+    heading: "# Review & Runtime Guardrails",
+    sections: ["## Review-Derived Guardrails", "## Concurrency & Resources"],
+    leads: [
+      "One behavior, every path",
+      "Retry taxonomy is public behavior",
+      "Selectors prove uniqueness",
+      "Control planes preserve identity",
+      "Cryptographic pseudonyms fail closed",
+      "Operational docs are executable interfaces",
+      "Persistent tests clean what they create",
+      "Enforce byte, item, page, token, and time limits",
+      "Async request/RPC paths never call blocking",
+    ],
+  },
   // The one INLINED split file: persona.md is also pulled back into the top of
   // instructions.md through a BEGIN/END path block, so unlike its siblings its rules
   // are SUPPOSED to appear in the always-loaded file too. `inlined` turns the
   // not-duplicated assertion off for exactly this file rather than weakening it for
-  // all three. Why both copies: claude and gemini read only the always-loaded block,
+  // all siblings. Why both copies: claude and gemini read only the always-loaded block,
   // while opencode loads the standalone file as its own rules document — and position
   // matters for a persona, the smallest and oldest thing in a long context.
   "persona.md": {
