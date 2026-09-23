@@ -136,7 +136,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
   const bindings = await _getKeyBindings(isOsMac);
 
   // macOS-only block: option-as-alt is required for readline word-jumps and the
-  // tabs-in-titlebar style matches modern Mac apps. Skipped on Linux where most
+  // native titlebar style matches modern Mac apps. Skipped on Linux where most
   // of these settings either don't apply or use a different keybind.
   // background-blur is macOS-only (no Linux compositor equivalent in Ghostty)
   // and pairs with the cross-platform background-opacity below.
@@ -155,7 +155,13 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
         keybind = alt+arrow_right=csi:1;3C
         keybind = alt+arrow_up=csi:1;3A
         keybind = alt+arrow_down=csi:1;3B
-        macos-titlebar-style = tabs
+        # TODO: remove me — macOS 27 Golden Gate broke the Ghostty stable 1.3.1 tab
+        # bar with \`macos-titlebar-style = tabs\`: new tabs stacked half-cut in the
+        # top-right corner (see https://github.com/ghostty-org/ghostty/discussions/14244).
+        # \`native\` works around it. Revert to \`tabs\` (and delete this block) once
+        # the real fix ships in a stable release — upstream tracking issue:
+        # https://github.com/ghostty-org/ghostty/issues/13070.
+        macos-titlebar-style = native
         # Renamed key: \`macos-non-native-fullscreen = visible-menu\` is the
         # pre-1.2 spelling. Still accepted as a compat alias, but \`fullscreen\`
         # is the current cross-platform key.
