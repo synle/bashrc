@@ -51,6 +51,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 - **Do the obvious prerequisites without asking.** When the request plainly implies routine, reversible steps, run them and keep going — `git status` / `git diff` before a commit, `git add` on the paths you changed, activating an existing `.venv` before Python, checking a folder exists before writing into it, running the tests before committing. "Then commit and push" is permission to commit and push, not a cue to ask whether you may first run `git status`.
 - **Pick a sensible default over a confirmation prompt.** Supply the unspecified non-critical detail yourself — a concise commit message read from the diff, the obvious target folder, the file already named — and continue. Ask only when the missing piece changes the result or needs the user's judgment: which of two branches, a public-contract change, or anything the Destructive Commands / Secret Handling rules already gate.
+- **Define done before non-trivial work.** Use observable proof: bug → reproducer passes; refactor → behavior matches before/after; feature → named user-visible result plus its check. "Works" is not a completion test.
 
 ## Restate Before Long Run
 
@@ -170,7 +171,7 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 - Fix root causes, not symptoms. Three identical defensive blocks → extract or fix the invariant. (For the hunt, see Debugging Discipline.)
 - Keep comments, titles, and docstrings in sync in the same edit.
-- Delete leftovers in the refactor PR — unused imports, mocks, props, dead helpers. Audit tests too.
+- Delete leftovers your edit creates — unused imports, mocks, props, dead helpers. Report pre-existing dead code; do not remove it. Audit tests too.
 - Never edit generated output — edit the generator and re-run it. Identify one before typing: a header saying so (`DO NOT EDIT`, `@generated`, `AUTO-GENERATED`), a lockfile, a snapshot, a build or vendor folder, or anything a documented command rebuilds. An edit there is erased by the next build, and reviews as real work until it vanishes. On conflicts, take either side and regenerate: a hand-merged lockfile is valid to git and wrong to the tool. When the generator itself is wrong, fix it and regenerate; when you can't find it, say so rather than patch the artifact.
 - Imports and declarations at the top. Lazy only for circular deps or cold-start, with a comment.
 - Inline-document every method/function/class/exported symbol you touch in language-native style: one-line description, params, return + type, raised errors, side effects. Update on signature/behavior/contract change in the same edit. Undocumented public methods or stale doc next to modified code → review block. Trivial one-liners skip.
@@ -250,7 +251,7 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 - Rule of three: one copy is code, two coincidence, three pattern. Extract on third when variation is known; skip no-op wrappers always.
 - Dedupe knowledge on second copy (version, command list, schema, platform flag). Duplicate text that changes for different reasons may stay; tests, fixtures, and parallel slices prefer duplication over wrong coupling.
 - A deliberate shortcut with a real ceiling (`O(n²)`, global lock, naive heuristic) names that ceiling and the concrete trigger or upgrade path in a short code comment; otherwise "later" silently becomes permanent.
-- Change only task lines. No drive-by formatting, lint fixes, renames, or import reorder; separate commit or note omission.
+- Change only task lines and match surrounding style even when you prefer another. No drive-by formatting, lint fixes, renames, or import reorder; separate commit or note omission.
 
 ## Persona Check — last thing read
 
