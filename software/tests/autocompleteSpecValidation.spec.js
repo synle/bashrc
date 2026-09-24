@@ -1027,6 +1027,24 @@ describe("bash-fzf.profile.bash (direct)", () => {
       expect(cdTmpCount).toBe(1);
       expect(results).toContain("cd /var");
     });
+
+    it("should truncate long type output and frame it with colored separators", () => {
+      const results = runFzfHelper(`
+        LINE_BREAK_EQUAL="====="
+        function fzf_run() { echo "favorite_test_command"; }
+        function favorite_test_command() { :; }
+        function type() { printf '%*s' 600 '' | tr ' ' x; }
+        fuzzy_favorite_command
+      `);
+      const typeOutput = results[2].replace(/\u001b\[[0-9;]*m/g, "");
+
+      expect(results).toHaveLength(4);
+      expect(results[0]).toBe("\u001b[0;34mfavorite_test_command\u001b[0m");
+      expect(results[1]).toBe("\u001b[0;36m=====\u001b[0m");
+      expect(typeOutput).toBe("x".repeat(500));
+      expect(results[2]).toBe(`\u001b[90m${typeOutput}\u001b[0m`);
+      expect(results[3]).toBe("\u001b[0;36m=====\u001b[0m");
+    });
   });
 
   describe("fzf history timestamp filtering", () => {
