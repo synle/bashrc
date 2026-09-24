@@ -79,6 +79,7 @@ const OLLAMA_MODEL_CONFIGS = {
   // Coding / agent models.
   "qwen2.5-coder:14b": { limit: LIMIT_MEDIUM },
   "qwen3-coder:30b": { limit: LIMIT_MEDIUM },
+  "qwen3-coder:30b-a3b": { limit: LIMIT_LARGE },
   "qwen3-coder:30b-a3b-q4_K_M": { limit: LIMIT_LARGE },
   "qwen3.6:latest": { limit: LIMIT_LARGE },
   "qwen3.6:27b-q4_K_M": { limit: LIMIT_LARGE },
@@ -180,24 +181,36 @@ const OLLAMA_DEFAULT_CONFIG = { limit: LIMIT_MEDIUM };
  */
 function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   const providers = {};
+  const opencodeProviders = providersArray.map((item) => ({
+    ...item,
+    id: item.id.replace(/^ollama-/, "ol-"),
+  }));
 
-  for (const item of providersArray) {
+  for (const item of opencodeProviders) {
     // Enrich each model with limit from the known config map. `capabilities.tools`
     // is asserted for EVERY Ollama model, including tags with no entry in the map:
     // the OpenAI-compatible endpoint advertises no capability metadata, so opencode
     // assumes no tool support and offers the model as chat-only — an agent that can
     // read nothing and run nothing. Ollama itself rejects a tool call a model cannot
     // make, so over-claiming fails loudly at call time instead of silently at pick time.
+    const providerAddress = item.baseURL.replace(/^https?:\/\//, "").replace(/\/v1\/?$/, "");
     const modelsObject = Object.fromEntries(
       item.models.map((m) => {
         let cfg = OLLAMA_MODEL_CONFIGS[m.name] || OLLAMA_DEFAULT_CONFIG;
-        return [m.name, { limit: cfg.limit, capabilities: { tools: true } }];
+        return [
+          m.name,
+          {
+            name: `${m.name} / ${providerAddress}`,
+            limit: cfg.limit,
+            capabilities: { tools: true },
+          },
+        ];
       }),
     );
 
     providers[item.id] = {
       npm: "@ai-sdk/openai-compatible",
-      name: item.name,
+      name: item.id,
       options: {
         baseURL: item.baseURL,
         ...PROVIDER_STREAM_TIMEOUTS,
@@ -324,7 +337,7 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   // folder name so opencode reads its own row and nothing else. The `local` agent
   // resolves against the Ollama providers discovered above and is dropped when no host
   // serves any of its models, so the key is only written when something resolved.
-  const agents = resolveOpencodeAgentConfig(providersArray);
+  const agents = resolveOpencodeAgentConfig(opencodeProviders);
   if (Object.keys(agents).length > 0) {
     out.agent = agents;
   }
