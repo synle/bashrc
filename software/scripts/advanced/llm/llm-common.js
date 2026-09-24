@@ -1262,6 +1262,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-release": "release",
   "sy-review-pr": "review-pr",
   "sy-review-prs": "review-prs",
+  "sy-rfc": "rfc",
   "sy-slack-prs": "slack-prs",
   "sy-squash-unpushed": "squash-unpushed",
   "sy-standup": "standup",
