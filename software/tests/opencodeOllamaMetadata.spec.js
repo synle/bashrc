@@ -20,9 +20,7 @@ describe("OpenCode Ollama metadata", () => {
     ]);
 
     expect(config.provider["ol-sy-omen45l"].name).toBe("ol-sy-omen45l");
-    expect(config.provider["ol-sy-omen45l"].models["qwen3-coder:30b-a3b"].name).toBe(
-      "qwen3-coder:30b-a3b / 192.168.1.45:11434",
-    );
+    expect(config.provider["ol-sy-omen45l"].models["qwen3-coder:30b-a3b"].name).toBe("qwen3-coder:30b-a3b / 192.168.1.45:11434");
     expect(config.agent.local.model).toBe("ol-sy-omen45l/qwen3-coder:30b-a3b");
     expect(config.provider["ollama-sy-omen45l"]).toBeUndefined();
   });
