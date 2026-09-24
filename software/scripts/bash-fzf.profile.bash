@@ -600,6 +600,9 @@ function add_bookmark_dir() {
 # Ctrl+B — fuzzy favorite command picker
 function fuzzy_favorite_command() {
   local cmd
+  local _MAX_TYPE_OUTPUT_CHARS=500
+  local _cmd_type_output
+  local _cmd_word
   cmd=$(command cat "$BOOKMARK_SYLE_PATH" 2> /dev/null | sort -u | fzf_run --prompt="bookmark> " \
     --header="(Ctrl+B) - bookmarked commands" \
     --preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"; } | bat --paging=never --style=plain --color=always --language=bash' \
@@ -607,13 +610,18 @@ function fuzzy_favorite_command() {
     --bind 'f5:reload(command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null | sort -u)')
 
   if [ -n "$cmd" ]; then
-    # Echo the selected command in blue, then its `type` resolution in subtle
-    # grey, before running it — so an aliased bookmark like ssh_tde_backend
+    # Echo the selected command in blue, then frame its capped `type` resolution
+    # in cyan before running it — so an aliased bookmark like ssh_tde_backend
     # shows the real command it expands to (e.g. `command kubectl in exec ...`).
-    local _cmd_word
     _cmd_word=$(echo "$cmd" | awk '{print $1}')
+    _cmd_type_output=$(type "$_cmd_word" 2>&1 || true)
+    if [ "${#_cmd_type_output}" -gt "$_MAX_TYPE_OUTPUT_CHARS" ]; then
+      _cmd_type_output="${_cmd_type_output:0:$_MAX_TYPE_OUTPUT_CHARS}"
+    fi
     printf '\033[0;34m%s\033[0m\n' "$cmd"
-    printf '\033[90m%s\033[0m\n' "$(type "$_cmd_word" 2>&1)"
+    printf '\033[0;36m%s\033[0m\n' "$LINE_BREAK_EQUAL"
+    printf '\033[90m%s\033[0m\n' "$_cmd_type_output"
+    printf '\033[0;36m%s\033[0m\n' "$LINE_BREAK_EQUAL"
     eval "$cmd"
     history -s "$cmd"
   fi
