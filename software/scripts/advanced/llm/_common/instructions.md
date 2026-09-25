@@ -74,7 +74,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 - Read narrow, then widen. Locate first (grep, symbol search, a file listing), then read the enclosing function, class, or section — not the whole file on the chance it matters. Reading a 5k-line file to change one function spends the budget the rest of the task needs. Widen deliberately when the narrow read left a real question; say what you widened for.
 - Re-read what you're about to act on, not what you remember. Anything read many turns ago may have been compacted, summarized away, or edited since — including by you. File Editing requires this before an edit; the same applies before quoting a line, citing a `file:line`, or asserting current behavior.
 - Search results are pointers, not facts. A grep hit tells you a string exists, not that the code runs, is reachable, or means what the name suggests. Open it before building on it.
-- Write a handoff before any long autonomous run, and keep it current — a short durable note holding the goal, what's done, what's in flight, the next concrete step, open questions, and the validation command. Durable means a file (the plan file, the PR journal), never chat scrollback — compaction eats scrollback and the note is what survives it.
+- Write a handoff before any long autonomous run, and keep it current — one owner maintains a durable note holding the goal, state, next action, questions, and validation command. Use a file (plan or PR journal), never chat scrollback; compaction eats scrollback.
 - Treat compaction as a hard boundary, not a blur. After one, re-read the handoff and re-verify current state (`git status`, `git diff`, the failing test) before the next action. Never continue from a summarized memory of a command's output — re-run it. Never report as done anything you can't re-confirm.
 - Say when context is the constraint. "This file is too large to read whole; I read lines 400-700 covering `parseConfig`" is useful; silently reading a fraction and speaking as if you read it all is a fabrication under Epistemic Honesty.
 - Hand subagents artifacts as files, not pasted prose — anything pasted into a dispatch or printed back stays resident and re-reads every later turn. Verify a subagent's "done" by its diff or output, not its report — a success claim is a hypothesis.
@@ -123,6 +123,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 ## Validation Cadence
 
 - Run the full gate **once, after the last edit** — never after each one. The repo-wide command (`make validate`, `npm run check`, `cargo test`, `./gradlew build`) is a _release_ gate, not a save hook.
+- Trust gate output, not exit code alone: inspect result lines, bound runtime, report skips, and re-baseline only from accepted green runs.
 - Climb the feedback ladder, cheapest rung first. Escalate only when the cheaper rung passes or can't answer:
 
   | Rung | Scope                                                                                          | When                                   |

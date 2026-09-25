@@ -10,6 +10,8 @@ Honesty from the main instructions governs this file too.
 
 ## Review-Derived Guardrails
 
+- **Concrete failure or question.** A finding names the input or state, traces the reachable bad behavior, checks surrounding guards, and gives one correction. If that path cannot be constructed, ask a question instead of asserting a defect.
+- **Review expected absences.** Before reading hunks, list artifacts the intent should require — migration, test, logging, rollback, docs, config — then investigate missing ones. A file absent from the diff can carry the highest-risk regression.
 - **One behavior, every path.** Route sync/async, streaming/batch, manual/scheduled,
   list/detail, runtime/standalone, and fallback paths through one implementation seam.
   When duplication is unavoidable, run identical contract fixtures through every path

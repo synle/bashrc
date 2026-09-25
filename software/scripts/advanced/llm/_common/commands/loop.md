@@ -14,6 +14,7 @@ Do **not** use this for: a single edit (just make it), design work with no verif
 
 - **A loop without a machine-checkable exit is not a loop, it is an infinite one.** Before iteration 1, name the exact command or enumeration that decides "done" and run it once to capture the starting number. If no such check exists, building it is the first iteration — or the loop does not start.
 - **The durable file is the state; the conversation is not.** Everything needed to resume — goal, done list, remaining list, the check command, the current iteration number — lives in a file on disk and is rewritten at the end of every iteration. Context gets compacted, sessions die, and a loop whose memory is the scrollback silently restarts or silently stops. Re-read that file at the top of each iteration rather than trusting recall.
+- **One writer owns shared state.** The orchestrator alone rewrites the durable file. Parallel workers use separate ledgers or assigned artifacts and report back; two stale writers can silently erase each other's progress.
 - **One task per iteration, verified before the next begins.** Batching five tasks to "save time" converts one failing iteration into five suspects, exactly as in a bug hunt. An iteration that ends red is reverted or fixed inside that same iteration — never carried forward.
 - **The remaining list only shrinks.** Work discovered mid-run is recorded as a follow-up, not adopted. A loop that grows its own scope has no exit condition, and it is the single most common way this pattern burns an afternoon.
 - **Every iteration must move the number.** Two consecutive iterations with no measurable progress is a stall — stop and report, never a third attempt at the same wall.
@@ -40,10 +41,12 @@ The durable file lives flat in `<<LLM_ROOT_FOLDER>>/plans/` as `<repo>-<feature>
 Each iteration is the same five steps, in order, and nothing else:
 
 1. **Re-read the durable file.** Confirm the iteration number, the remaining list, and the check command from disk — not from memory.
+   If more than one candidate state file exists and none was explicitly selected, stop; never choose by modification time or silently resume another task.
 2. **Take exactly one item** off the top of the remaining list. Say which, in one line, before editing.
 3. **Do it,** touching only the files that item needs. Scope Discipline still applies inside a loop: no drive-by reformatting, no adjacent fixes, no refactor you noticed on the way past.
 4. **Verify at the cheapest rung that can fail** — syntax check, then the one test covering the change, then the check command if it is fast. Escalate to the full check command at least every fifth iteration and always on the last one. If the iteration ends red, fix it or revert it now; never advance with a known failure.
 5. **Rewrite the durable file** — move the item to the done list with its result, record the new number, increment the iteration counter, add any discovered work under follow-ups.
+   Completed-item and iteration counts must never decrease. A decrease means stale state overwrote newer progress; stop, inspect the diff, and recover before continuing.
 
 Stop the loop the moment any of these is true, and say which one:
 

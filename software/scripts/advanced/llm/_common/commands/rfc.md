@@ -59,41 +59,55 @@ Approvers: <names, roles, or TBD>
 Target decision date: <YYYY-MM-DD or TBD>
 
 ## Overview
+
 <One or two paragraphs stating intent without deep background or design detail.>
 
 ## Background
+
 <Enough verified context for a newcomer; link rather than repeat prior material.>
 
 ## Problem
+
 <Solution-neutral engineering problem and why it matters.>
 
 ## Goals
+
 <Outcomes this RFC commits to.>
 
 ## Non-Goals
+
 <Adjacent work explicitly excluded.>
 
 ## Proposal
+
 <Top-down design, beginning with a diagram when useful.>
 
 ## User Experience
+
 <Externally observable behavior and compatibility; omit when none.>
 
 ## Risks And Mitigations
+
 <Technical, operational, security, privacy, cost, and delivery risks that apply.>
 
 ## Rollout And Rollback
+
 <Phases, compatibility window, stop signals, and recovery path.>
 
 ## Validation
+
 <Observable evidence that proves the proposal works.>
 
 ## Open Questions
+
 <Only decisions still blocking approval or implementation.>
 
 ## Appendix
+
 ### Alternatives Considered
+
 ### Abandoned Ideas
+
 ### Decision And Review Log
 ```
 
