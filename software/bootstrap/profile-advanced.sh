@@ -1266,7 +1266,7 @@ alias s="ssh"
 ################################################################################
 # --- Utility Functions ---
 ################################################################################
-# Truncate each input line at its last literal target, preserving the target.
+# Keep matching input lines truncated at their last literal target.
 function _truncate_at() {
   local mode="$1"
   local target="$2"
@@ -1292,7 +1292,7 @@ function _truncate_at() {
       }
 
       if (last_match == 0) {
-        print
+        next
       } else if (mode == "after") {
         print substr($0, 1, last_match + target_length - 1)
       } else {
@@ -1304,12 +1304,12 @@ function _truncate_at() {
 
 # truncate_after <target>
 # Keeps each input line from its start through the last literal target occurrence.
-# Empty targets and lines without the target pass through unchanged.
+# Empty targets pass through unchanged; lines without the target are omitted.
 function truncate_after() {
   if is_help_arg "${1:-}"; then
-    echo "truncate_after: keep each input line through its last literal target
+    echo "truncate_after: keep each matching input line through its last literal target
   Usage: command | truncate_after <target>
-  Keeps the target itself. Empty targets and unmatched lines pass through unchanged.
+  Keeps the target itself. Empty targets pass through; unmatched lines are omitted.
   Example:
     echo 'alpha/target/omega' | truncate_after '/target'  # alpha/target"
     return 0
@@ -1320,12 +1320,12 @@ alias truncate=truncate_after
 
 # truncate_before <target>
 # Keeps each input line from its last literal target occurrence through its end.
-# Empty targets and lines without the target pass through unchanged.
+# Empty targets pass through unchanged; lines without the target are omitted.
 function truncate_before() {
   if is_help_arg "${1:-}"; then
-    echo "truncate_before: keep each input line from its last literal target
+    echo "truncate_before: keep each matching input line from its last literal target
   Usage: command | truncate_before <target>
-  Keeps the target itself. Empty targets and unmatched lines pass through unchanged.
+  Keeps the target itself. Empty targets pass through; unmatched lines are omitted.
   Example:
     echo 'alpha/target/omega' | truncate_before '/target'  # /target/omega"
     return 0

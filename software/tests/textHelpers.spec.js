@@ -43,7 +43,7 @@ const coreSource = fs.readFileSync(PROFILE_CORE, "utf8");
 const advancedSource = fs.readFileSync(PROFILE_ADVANCED, "utf8");
 const helperSource = [
   extractSimpleFunction(coreSource, "is_help_arg"),
-  extractSection(advancedSource, "# Truncate each input line", "function pwd2()"),
+  extractSection(advancedSource, "function _truncate_at()", "function pwd2()"),
   extractSimpleFunction(advancedSource, "tldr"),
 ].join("\n");
 
@@ -79,8 +79,20 @@ describe("profile text helpers", () => {
   });
 
   it("truncate aliases truncate_after", () => {
-    expect(runShell(String.raw`shopt -s expand_aliases
-printf '%s\n' 'alpha/target/omega' | truncate '/target'`)).toBe("alpha/target\n");
+    expect(
+      runShell(String.raw`shopt -s expand_aliases
+printf '%s\n' 'alpha/target/omega' | truncate '/target'`),
+    ).toBe("alpha/target\n");
+  });
+
+  it("truncate drops lines without the target", () => {
+    expect(
+      runShell(String.raw`shopt -s expand_aliases
+printf '%s\n' \
+  'tde-tool-backend-worker ltx1 tde-tool-backend.stg extra' \
+  'tde-tool-backend lva2 tde-tool-backend.prod extra' |
+  truncate 'stg'`),
+    ).toBe("tde-tool-backend-worker ltx1 tde-tool-backend.stg\n");
   });
 
   it("truncate_before keeps from the last literal target", () => {
