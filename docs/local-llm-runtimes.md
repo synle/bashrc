@@ -207,21 +207,21 @@ enough of a 32 GB RTX 5090 for KV cache and the 1.9 GB autocomplete model; its
 32 GB `q8_0` quant does not. The exact q4_K_M tag is bootstrapped instead of
 `latest` so a registry retag cannot silently change the quantization.
 
-| Role                     | Tag                            | Size     | Why                                                                                                                          |
-| ------------------------ | ------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Coding default**       | `glm-4.7-flash:q4_K_M`          | 19 GB    | 30B-A3B MoE tuned for agentic coding; exact Q4 tag leaves runtime headroom on the 32 GB card.                                |
-| **Coding daily driver**  | `qwen3.6:35b-a3b-mtp-q4_K_M`   | 23 GB    | MoE, 3B active → dense-35B smarts at ~3B speed, plus MTP decode heads. Best coding-per-VRAM that this box can actually pull. |
-| Coding, no MTP           | `qwen3.6:35b-a3b-q4_K_M`       | 24 GB    | Same model without the MTP heads. Fall back here if MTP misbehaves.                                                          |
-| Coding, portable tag     | `qwen3-coder:30b-a3b-q4_K_M`   | 19 GB    | Same MoE trick, dedicated coder line. Use when the identical tag must also work on a smaller box.                            |
-| Reasoning / long docs    | `qwen3.6:27b-q4_K_M`           | 17 GB    | Dense 27B. Slower per token than the MoE, stronger on single-shot reasoning. 256K context.                                   |
-| Reasoning, max quality   | `qwen3.6:27b-mxfp8`            | 31 GB    | Near-BF16. Weights-only fit — keep context ≤8K or it spills. Batch, not interactive.                                         |
-| **Vision / OCR**         | `gemma4:26b`                   | 19 GB    | 26B-A4B multimodal MoE for receipt text, document parsing, image tagging, and scene descriptions.                           |
-| Speed-first chat         | `gemma4:12b-it-q4_K_M`         | 7.6 GB   | Leaves ~24 GB free — the one to co-load beside a big coder.                                                                  |
-| Inline autocomplete      | `qwen2.5-coder:3b-base`        | 1.9 GB   | FIM tokens. Latency-bound, not quality-bound; do not upsize.                                                                 |
-| **Skip**                 | any `-nvfp4`                   | —        | 412, macOS-gated. See above.                                                                                                 |
-| **Skip**                 | `qwen3-coder:480b-a35b-q4_K_M` | 290 GB   | 9x the card.                                                                                                                 |
-| **Skip**                 | `nemotron3:33b-q4_K_M`         | 28 GB    | Dense 33B — fits weights, starves KV cache, loses to the 35B MoE anyway.                                                     |
-| **Skip**                 | anything `-bf16`               | 52-72 GB | 2x+ the card.                                                                                                                |
+| Role                     | Tag                            | Size     | Why                                                                                                                          | Pull                                              |
+| ------------------------ | ------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| **Coding default**       | `glm-4.7-flash:q4_K_M`          | 19 GB    | 30B-A3B MoE tuned for agentic coding; exact Q4 tag leaves runtime headroom on the 32 GB card.                                | `ollama pull glm-4.7-flash:q4_K_M`                |
+| **Coding daily driver**  | `qwen3.6:35b-a3b-mtp-q4_K_M`   | 23 GB    | MoE, 3B active → dense-35B smarts at ~3B speed, plus MTP decode heads. Best coding-per-VRAM that this box can actually pull. | `ollama pull qwen3.6:35b-a3b-mtp-q4_K_M`          |
+| Coding, no MTP           | `qwen3.6:35b-a3b-q4_K_M`       | 24 GB    | Same model without the MTP heads. Fall back here if MTP misbehaves.                                                          | `ollama pull qwen3.6:35b-a3b-q4_K_M`              |
+| Coding, portable tag     | `qwen3-coder:30b-a3b-q4_K_M`   | 19 GB    | Same MoE trick, dedicated coder line. Use when the identical tag must also work on a smaller box.                            | `ollama pull qwen3-coder:30b-a3b-q4_K_M`          |
+| Reasoning / long docs    | `qwen3.6:27b-q4_K_M`           | 17 GB    | Dense 27B. Slower per token than the MoE, stronger on single-shot reasoning. 256K context.                                   | `ollama pull qwen3.6:27b-q4_K_M`                  |
+| Reasoning, max quality   | `qwen3.6:27b-mxfp8`            | 31 GB    | Near-BF16. Weights-only fit — keep context ≤8K or it spills. Batch, not interactive.                                         | `ollama pull qwen3.6:27b-mxfp8`                   |
+| **Vision / OCR**         | `gemma4:26b`                   | 19 GB    | 26B-A4B multimodal MoE for receipt text, document parsing, image tagging, and scene descriptions.                           | `ollama pull gemma4:26b`                          |
+| Speed-first chat         | `gemma4:12b-it-q4_K_M`         | 7.6 GB   | Leaves ~24 GB free — the one to co-load beside a big coder.                                                                  | `ollama pull gemma4:12b-it-q4_K_M`                |
+| Inline autocomplete      | `qwen2.5-coder:3b-base`        | 1.9 GB   | FIM tokens. Latency-bound, not quality-bound; do not upsize.                                                                 | `ollama pull qwen2.5-coder:3b-base`               |
+| **Skip**                 | any `-nvfp4`                   | —        | 412, macOS-gated. See above.                                                                                                 | N/A — do not pull                                 |
+| **Skip**                 | `qwen3-coder:480b-a35b-q4_K_M` | 290 GB   | 9x the card.                                                                                                                 | N/A — do not pull                                 |
+| **Skip**                 | `nemotron3:33b-q4_K_M`         | 28 GB    | Dense 33B — fits weights, starves KV cache, loses to the 35B MoE anyway.                                                     | N/A — do not pull                                 |
+| **Skip**                 | anything `-bf16`               | 52-72 GB | 2x+ the card.                                                                                                                | N/A — do not pull                                 |
 
 ### Current state of sy-omen45l
 
