@@ -1266,6 +1266,217 @@ alias s="ssh"
 ################################################################################
 # --- Utility Functions ---
 ################################################################################
+# Truncate each input line at its last literal target, preserving the target.
+function _truncate_at() {
+  local mode="$1"
+  local target="$2"
+  if [[ -z "$target" ]]; then
+    command cat
+    return 0
+  fi
+
+  TRUNCATE_MODE="$mode" TRUNCATE_TARGET="$target" command awk '
+    BEGIN {
+      mode = ENVIRON["TRUNCATE_MODE"]
+      target = ENVIRON["TRUNCATE_TARGET"]
+      target_length = length(target)
+    }
+    {
+      last_match = 0
+      offset = 1
+      while (offset <= length($0)) {
+        match_position = index(substr($0, offset), target)
+        if (match_position == 0) break
+        last_match = offset + match_position - 1
+        offset = last_match + 1
+      }
+
+      if (last_match == 0) {
+        print
+      } else if (mode == "after") {
+        print substr($0, 1, last_match + target_length - 1)
+      } else {
+        print substr($0, last_match)
+      }
+    }
+  '
+}
+
+# truncate_after <target>
+# Keeps each input line from its start through the last literal target occurrence.
+# Empty targets and lines without the target pass through unchanged.
+function truncate_after() {
+  if is_help_arg "${1:-}"; then
+    echo "truncate_after: keep each input line through its last literal target
+  Usage: command | truncate_after <target>
+  Keeps the target itself. Empty targets and unmatched lines pass through unchanged.
+  Example:
+    echo 'alpha/target/omega' | truncate_after '/target'  # alpha/target"
+    return 0
+  fi
+  _truncate_at "after" "${1:-}"
+}
+alias truncate=truncate_after
+
+# truncate_before <target>
+# Keeps each input line from its last literal target occurrence through its end.
+# Empty targets and lines without the target pass through unchanged.
+function truncate_before() {
+  if is_help_arg "${1:-}"; then
+    echo "truncate_before: keep each input line from its last literal target
+  Usage: command | truncate_before <target>
+  Keeps the target itself. Empty targets and unmatched lines pass through unchanged.
+  Example:
+    echo 'alpha/target/omega' | truncate_before '/target'  # /target/omega"
+    return 0
+  fi
+  _truncate_at "before" "${1:-}"
+}
+
+# trim
+# Removes leading and trailing spaces or tabs from every input line.
+function trim() {
+  if is_help_arg "${1:-}"; then
+    echo "trim: remove leading and trailing spaces or tabs from each input line
+  Usage: command | trim
+  Preserves whitespace inside each line.
+  Example:
+    echo '  hello world  ' | trim  # hello world"
+    return 0
+  fi
+  command sed 's/^[[:blank:]]*//; s/[[:blank:]]*$//'
+}
+
+# Return success when a value is a positive 1-based column number.
+function _is_valid_column_number() {
+  case "${1:-}" in
+  "" | *[!0-9]*) return 1 ;;
+  *[1-9]*) return 0 ;;
+  *) return 1 ;;
+  esac
+}
+
+# get_column [column]
+# Prints one 1-based, whitespace-delimited column from every input line.
+function get_column() {
+  if is_help_arg "${1:-}"; then
+    echo "get_column: print a whitespace-delimited column from each input line
+  Usage: command | get_column [column]
+  Column defaults to 1 and must be a positive integer.
+  Consecutive spaces or tabs count as one delimiter.
+  Example:
+    echo 'alpha beta gamma' | get_column 2  # beta"
+    return 0
+  fi
+
+  local column="${1:-1}"
+  if ! _is_valid_column_number "$column"; then
+    echo "get_column: column must be a positive integer" >&2
+    return 2
+  fi
+
+  COLUMN_NUMBER="$column" command awk '
+    BEGIN { column = ENVIRON["COLUMN_NUMBER"] }
+    { print $column }
+  '
+}
+
+# get_columns <column> [column...]
+# Prints selected 1-based, whitespace-delimited columns from every input line.
+function get_columns() {
+  if is_help_arg "${1:-}"; then
+    echo "get_columns: print selected whitespace-delimited columns from each input line
+  Usage: command | get_columns <column> [column...]
+  Each column must be a positive integer. Output columns are separated by one space.
+  No columns passes input through unchanged.
+  Example:
+    echo 'alpha beta gamma delta' | get_columns 1 2 4  # alpha beta delta"
+    return 0
+  fi
+  if [[ $# -eq 0 ]]; then
+    command cat
+    return 0
+  fi
+
+  local column
+  local columns=""
+  for column in "$@"; do
+    if ! _is_valid_column_number "$column"; then
+      echo "get_columns: every column must be a positive integer" >&2
+      return 2
+    fi
+    if [[ -n "$columns" ]]; then
+      columns="$columns,$column"
+    else
+      columns="$column"
+    fi
+  done
+
+  COLUMN_NUMBERS="$columns" command awk '
+    BEGIN { column_count = split(ENVIRON["COLUMN_NUMBERS"], columns, ",") }
+    {
+      output = ""
+      for (selection_index = 1; selection_index <= column_count; selection_index++) {
+        if (selection_index > 1) output = output OFS
+        output = output $(columns[selection_index])
+      }
+      print output
+    }
+  '
+}
+
+# get_column_by <delimiter> [column]
+# Prints one 1-based column separated by a literal custom delimiter.
+function get_column_by() {
+  if is_help_arg "${1:-}"; then
+    echo "get_column_by: print a custom-delimited column from each input line
+  Usage: command | get_column_by <delimiter> [column]
+  Delimiter is literal text; column defaults to 1 and must be a positive integer.
+  An empty delimiter passes input through unchanged.
+  Example:
+    echo 'alpha::beta::gamma' | get_column_by '::' 2  # beta"
+    return 0
+  fi
+
+  local delimiter="${1:-}"
+  local column="${2:-1}"
+  if [[ -z "$delimiter" ]]; then
+    command cat
+    return 0
+  fi
+  if ! _is_valid_column_number "$column"; then
+    echo "get_column_by: column must be a positive integer" >&2
+    return 2
+  fi
+
+  COLUMN_DELIMITER="$delimiter" COLUMN_NUMBER="$column" command awk '
+    BEGIN {
+      delimiter = ENVIRON["COLUMN_DELIMITER"]
+      column = ENVIRON["COLUMN_NUMBER"] + 0
+      delimiter_length = length(delimiter)
+    }
+    {
+      field_start = 1
+      for (field = 1; field < column; field++) {
+        delimiter_position = index(substr($0, field_start), delimiter)
+        if (delimiter_position == 0) {
+          print ""
+          next
+        }
+        field_start += delimiter_position + delimiter_length - 1
+      }
+
+      remaining = substr($0, field_start)
+      delimiter_position = index(remaining, delimiter)
+      if (delimiter_position == 0) {
+        print remaining
+      } else {
+        print substr(remaining, 1, delimiter_position - 1)
+      }
+    }
+  '
+}
+
 function pwd2() {
   if is_help_arg "${1:-}"; then
     echo "pwd2: show current directory action summary
