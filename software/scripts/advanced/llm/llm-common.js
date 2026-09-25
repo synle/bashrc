@@ -442,6 +442,7 @@ const OPENCODE_PINNED_DEFAULT_MODEL = `${LLM_COPILOT_PROVIDER_ID}/claude-opus-5`
  * @type {string[]}
  */
 const LLM_LOCAL_AGENT_MODELS = [
+  "glm-4.7-flash:q4_K_M",
   "qwen3-coder:30b-a3b",
   "qwen3.6:35b-a3b-mtp-q4_K_M",
   "qwen3.6:35b-a3b-q4_K_M",

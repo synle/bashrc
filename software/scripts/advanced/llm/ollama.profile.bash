@@ -69,8 +69,9 @@ export SY_OMEN45L_OLLAMA_PORT="11434"
 # override in ~/.bash_custom_tweaks, or `SY_OMEN45L_OLLAMA_DEFAULT_MODEL=x claude_local`)
 # wins over the repo default rather than being clobbered by it.
 #
-# Default rationale: use the dedicated qwen3 coder model while keeping its 3B-active
-# MoE shape suitable for co-loading with the autocomplete model.
+# Default rationale: GLM-4.7-Flash q4_K_M uses 19 GB for its 30B-A3B MoE weights,
+# leaving a 32 GB RTX 5090 enough headroom for KV cache and the autocomplete model.
+# The q8_0 tag uses 32 GB for weights alone, so it does not fit this workload.
 #
 # NOT `-nvfp4`, despite Blackwell having native FP4 tensor cores: Ollama's registry gates
 # every `-nvfp4` tag to macOS and answers a pull from this box with

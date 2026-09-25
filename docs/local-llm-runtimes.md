@@ -201,14 +201,21 @@ and any doc or config claiming otherwise is wrong.
 
 All tags below were confirmed pullable by the daemon.
 
+`glm-4.7-flash:q4_K_M` became the repo default on 2026-09-24. Ollama's model
+registry lists it as a 19 GB, 198K-context 30B-A3B MoE model. That size leaves
+enough of a 32 GB RTX 5090 for KV cache and the 1.9 GB autocomplete model; its
+32 GB `q8_0` quant does not. The exact q4_K_M tag is bootstrapped instead of
+`latest` so a registry retag cannot silently change the quantization.
+
 | Role                     | Tag                            | Size     | Why                                                                                                                          |
 | ------------------------ | ------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Coding default**       | `glm-4.7-flash:q4_K_M`          | 19 GB    | 30B-A3B MoE tuned for agentic coding; exact Q4 tag leaves runtime headroom on the 32 GB card.                                |
 | **Coding daily driver**  | `qwen3.6:35b-a3b-mtp-q4_K_M`   | 23 GB    | MoE, 3B active → dense-35B smarts at ~3B speed, plus MTP decode heads. Best coding-per-VRAM that this box can actually pull. |
 | Coding, no MTP           | `qwen3.6:35b-a3b-q4_K_M`       | 24 GB    | Same model without the MTP heads. Fall back here if MTP misbehaves.                                                          |
 | Coding, portable tag     | `qwen3-coder:30b-a3b-q4_K_M`   | 19 GB    | Same MoE trick, dedicated coder line. Use when the identical tag must also work on a smaller box.                            |
 | Reasoning / long docs    | `qwen3.6:27b-q4_K_M`           | 17 GB    | Dense 27B. Slower per token than the MoE, stronger on single-shot reasoning. 256K context.                                   |
 | Reasoning, max quality   | `qwen3.6:27b-mxfp8`            | 31 GB    | Near-BF16. Weights-only fit — keep context ≤8K or it spills. Batch, not interactive.                                         |
-| General / vision / tools | `gemma4:26b`                   | 18 GB    | 26B-A4B MoE, `tools` + `thinking`. Already resident. Keep for general work.                                                  |
+| **Vision / OCR**         | `gemma4:26b`                   | 19 GB    | 26B-A4B multimodal MoE for receipt text, document parsing, image tagging, and scene descriptions.                           |
 | Speed-first chat         | `gemma4:12b-it-q4_K_M`         | 7.6 GB   | Leaves ~24 GB free — the one to co-load beside a big coder.                                                                  |
 | Inline autocomplete      | `qwen2.5-coder:3b-base`        | 1.9 GB   | FIM tokens. Latency-bound, not quality-bound; do not upsize.                                                                 |
 | **Skip**                 | any `-nvfp4`                   | —        | 412, macOS-gated. See above.                                                                                                 |
@@ -240,9 +247,15 @@ Applied:
 ```bash
 # on the Omen (or via the daemon's /api/pull from anywhere on the LAN)
 ollama pull qwen2.5-coder:3b-base       # fixes the autocomplete FIM drift
-ollama pull gemma4:12b-it-q4_K_M        # co-loaded second slot
-ollama pull qwen3.6:35b-a3b-mtp-q4_K_M  # new default
+ollama pull gemma4:26b                   # vision, receipt OCR, and image tagging
+ollama pull glm-4.7-flash:q4_K_M         # current coding default
 ```
+
+For receipt OCR, send the image before the prompt and ask for literal structured
+fields before any interpretation. For tagging or captions, ask for a concise list
+of visible objects, attributes, and scene context. Gemma 4's upstream guidance
+recommends high visual-token budgets for small text and lower budgets for tagging;
+the 26B model swaps with GLM on this 32 GB card rather than co-residing with it.
 
 `software/scripts/advanced/llm/ollama.profile.bash` now carries the default, and
 it is the **single source of truth** — `ollama_warmup` and

@@ -77,6 +77,7 @@ const OLLAMA_MODEL_CONFIGS = {
   "qwen2.5-coder:7b-base": { limit: LIMIT_SMALL },
 
   // Coding / agent models.
+  "glm-4.7-flash:q4_K_M": { limit: LIMIT_LARGE },
   "qwen2.5-coder:14b": { limit: LIMIT_MEDIUM },
   "qwen3-coder:30b": { limit: LIMIT_MEDIUM },
   "qwen3-coder:30b-a3b": { limit: LIMIT_LARGE },
