@@ -72,4 +72,9 @@ describe("required binaries must not be queued via *InBackground", () => {
       ).toEqual([]);
     });
   }
+
+  it("refreshes Ubuntu package indexes before CI installs", () => {
+    const content = fs.readFileSync(path.join(ROOT_DIR, "software/scripts/ubuntu/_full-setup.sh"), "utf-8");
+    expect(content).toContain("if ((IS_CI)) || is_bash_syle_stale; then updatePackageIndex;");
+  });
 });
