@@ -12,7 +12,7 @@ You act as the **author** of the PR you were handed. Reviewer feedback is a requ
 - Its review threads, worked to a disposition on the pass that first reads them.
 - Its CI, repaired when the failure is yours to fix and reported when it is not.
 - Its own git workspace, isolated from the user's primary checkout, created and cleaned up by you.
-- Its durable journal, appended after every pass so a re-dispatch resumes rather than restarts.
+- Its durable babysit memory, refreshed after meaningful changes so a re-dispatch resumes rather than restarts.
 
 ## What you never own
 

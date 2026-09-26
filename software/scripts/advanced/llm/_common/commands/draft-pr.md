@@ -33,7 +33,7 @@
 7. Push the branch if needed: `git push -u origin <branch>`
 8. Create the PR (regular, NOT draft) with the file-backed body: `gh pr create --base "$DEF" --title "WIP: DO NOT MERGE — [<repo>] ..." --body-file /tmp/pr-body.md`. **`--base` is always passed explicitly and is always the default branch** — never another feature branch or another open PR's head. Never use `--body` or interpolate body contents into this command.
 9. Return the PR URL.
-   9a. **Create the durable PR journal.** Resolve the head branch from the created PR, call `worktree_create --path-only <head-branch>`, and use that exact canonical path to create or append the sibling file `pr<number>-<sanitized-branch>.md` under `$HOME/.worktrees/<owner>/<repo>/`. Record the PR URL, branch, WIP request summary, body-file result, and creation timestamp. This journal persists across runs; it is not the temporary body file.
+   9a. **Seed owned-PR memory.** Under `<<LLM_ROOT_FOLDER>>/pr_babysits/`, find an existing `<repo>_<number>_*.md`; otherwise create `<repo>_<number>_<slug>.md`, lowercasing repo/title components and collapsing runs outside `[a-z0-9]` to `_`. Record a short TLDR, PR URL, branch/head SHA, WIP creation result/time, current status, and empty `## Progress`, `## Open Items`, `## State`, and `## Final Snapshot` sections. This file persists across runs and becomes `/sy-babysit-pr`'s canonical memory; never create a worktree-adjacent journal.
 10. Ask the user: "Do you want me to babysit this PR until CI passes? (yes/no)"
 
 - If yes: run `/sy-babysit-pr` with the new PR URL.

@@ -273,9 +273,11 @@ describe("shared instruction registry", () => {
     expect(Object.keys(SPLIT_EXPECTATIONS).sort()).toEqual(Object.keys(llm.LLM_SHARED_INSTRUCTION_FILES).sort());
   });
 
-  it("should place instructions and plans under one shared root", () => {
+  it("should place instructions, plans, and PR memory under one shared root", () => {
     expect(llm.LLM_SHARED_INSTRUCTIONS_FOLDER.startsWith(llm.LLM_SHARED_ROOT_FOLDER)).toBe(true);
     expect(llm.LLM_SHARED_PLANS_FOLDER.startsWith(llm.LLM_SHARED_ROOT_FOLDER)).toBe(true);
+    expect(llm.LLM_SHARED_PR_REVIEWS_FOLDER).toBe(path.join(llm.LLM_SHARED_ROOT_FOLDER, "pr_reviews"));
+    expect(llm.LLM_SHARED_PR_BABYSITS_FOLDER).toBe(path.join(llm.LLM_SHARED_ROOT_FOLDER, "pr_babysits"));
   });
 
   it("should keep the legacy plans folder distinct from the new one", () => {

@@ -705,6 +705,8 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
 | `~/_extra/ai_llm/skills/`       | ONE copy of every `/sy-*` skill (§13.1)                      |
 | `~/_extra/ai_llm/agents/`       | ONE copy of every named agent (§13.2)                        |
 | `~/_extra/ai_llm/plans/`        | Flat plan artifacts + sidecars                               |
+| `~/_extra/ai_llm/pr_reviews/`   | Durable context for reviews of other people's PRs            |
+| `~/_extra/ai_llm/pr_babysits/`  | Durable context for maintaining owned PRs                    |
 
 - **Location decided in one place: `LLM_ROOT_FOLDER` in `software/bootstrap/common-env.sh`** —
   it alone reaches both surfaces (inlined into `run.sh`, re-exported into

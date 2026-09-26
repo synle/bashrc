@@ -714,6 +714,18 @@ const LLM_SHARED_INSTRUCTIONS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "instru
 const LLM_SHARED_PLANS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "plans");
 
 /**
+ * Durable context for reviews of pull requests authored by other people.
+ * @type {string}
+ */
+const LLM_SHARED_PR_REVIEWS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "pr_reviews");
+
+/**
+ * Durable context for maintaining pull requests owned by the current user.
+ * @type {string}
+ */
+const LLM_SHARED_PR_BABYSITS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "pr_babysits");
+
+/**
  * Pre-move LLM home, when the whole tree sat directly in the home directory rather
  * than under the personal root. Named because it is not only a migration source:
  * the link-ownership check consults it so a link written before the move is still
@@ -950,6 +962,8 @@ async function deploySharedLLMInstructions() {
 
   fs.mkdirSync(LLM_SHARED_INSTRUCTIONS_FOLDER, { recursive: true });
   fs.mkdirSync(LLM_SHARED_PLANS_FOLDER, { recursive: true });
+  fs.mkdirSync(LLM_SHARED_PR_REVIEWS_FOLDER, { recursive: true });
+  fs.mkdirSync(LLM_SHARED_PR_BABYSITS_FOLDER, { recursive: true });
 
   pruneStaleSharedLLMInstructions();
 
