@@ -395,6 +395,24 @@ Profile registration is buffered: `registerProfileBlock` /
   a repo's own rules file can't be wrong about its remote; `assets/` / §3 is inventory,
   not example.
 
+### 7.4.1 Hardware flags (battery / GPU)
+
+`software/bootstrap/common-env.sh` is the one detector for hardware facts; `run.sh`
+bakes the results into `~/.bash_syle_common` (hardware does not change per session,
+and the probes spawn `powershell.exe` / `nvidia-smi`), and `index.js` exposes them as
+globals read through `getRuntimeOption` (so `--system_gpu_vram_mib=8192` rehearses a
+smaller card).
+
+| Flag                  | Meaning                                                                         |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `is_system_laptop`    | A battery was found (macOS pmset, Linux sysfs, Windows CIM)                     |
+| `is_system_desktop`   | No battery — inverse of `is_system_laptop`                                      |
+| `is_system_gpu`       | NVIDIA (`nvidia-smi`, incl. WSL2), AMD (amdgpu sysfs), or Apple Silicon found   |
+| `system_gpu_vram_mib` | Largest GPU's VRAM in MiB (Apple Silicon: 2/3 of RAM); `0` = none or unreadable |
+
+Consumer today: `ollama-models.js` picks a tier from `OLLAMA_MODELS_BY_VRAM` by
+`system_gpu_vram_mib`.
+
 ### 7.5 GUI / display detection
 
 **One detector, three flags, no wrapper function.** `_detect_gui_flags()` in

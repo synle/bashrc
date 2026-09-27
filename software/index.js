@@ -1150,6 +1150,36 @@ global.is_gui = is_gui;
 global.is_gui_x11 = is_gui_x11;
 global.is_gui_wayland = is_gui_wayland;
 
+// --- Hardware Detection (battery / GPU) ---
+/**
+ * Hardware flags, the JS half of the single detection source in
+ * software/bootstrap/common-env.sh. run.sh probes once and bakes the values into
+ * ~/.bash_syle_common, so bash (`((is_system_gpu))`) and node read the same verdict.
+ *
+ * Flag                | Meaning
+ * --------------------|-----------------------------------------------------------
+ * is_system_laptop    | A battery was found (macOS pmset, Linux sysfs, Windows CIM).
+ * is_system_desktop   | No battery found — inverse of is_system_laptop.
+ * is_system_gpu       | An NVIDIA, AMD, or Apple Silicon GPU was found.
+ * system_gpu_vram_mib | Largest GPU's VRAM in MiB (Apple Silicon: 2/3 of unified
+ *                     | memory). 0 when no GPU, or when VRAM is unreadable.
+ *
+ * Read through getRuntimeOption, so `bash run.sh --system_gpu_vram_mib=8192`
+ * rehearses a smaller card.
+ */
+/** @type {boolean} A battery was detected (laptop / handheld) */
+const is_system_laptop = getRuntimeOption("is_system_laptop", parseBoolean);
+/** @type {boolean} No battery was detected (desktop / server) */
+const is_system_desktop = getRuntimeOption("is_system_desktop", parseBoolean);
+/** @type {boolean} A usable GPU (NVIDIA, AMD, or Apple Silicon) was detected */
+const is_system_gpu = getRuntimeOption("is_system_gpu", parseBoolean);
+/** @type {number} Largest GPU's VRAM in MiB; 0 when absent or unreadable. Clamped to [0, 1 TiB]. */
+const system_gpu_vram_mib = getRuntimeOption("system_gpu_vram_mib", (v) => parseInteger(v, 0, 1048576));
+global.is_system_laptop = is_system_laptop;
+global.is_system_desktop = is_system_desktop;
+global.is_system_gpu = is_system_gpu;
+global.system_gpu_vram_mib = system_gpu_vram_mib;
+
 // --- CPU Arch Detection ---
 /**
  * Maps a Node `process.arch` value onto the arch spelling used by `uname -m`

@@ -43,7 +43,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 7465f1e93b55a48807f79f9e9bba5d63 | 9.0 KB
+# software/bootstrap/common-env.sh | 459fb3bd84a091ea5af4ad7037d58fea | 11.3 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -126,6 +126,48 @@ else
   export is_system_laptop=0
   export is_system_desktop=1
 fi
+
+# Detect a GPU and its VRAM to set is_system_gpu (0/1) and system_gpu_vram_mib.
+# Used to size local LLM pulls (software/scripts/advanced/llm/ollama-models.js picks
+# a model tier from system_gpu_vram_mib). Hardware does not change per session, so
+# run.sh bakes both values into ~/.bash_syle_common instead of re-probing per shell.
+#
+# Probes (largest VRAM wins across all of them):
+#   1. NVIDIA: nvidia-smi --query-gpu=memory.total (MiB, one line per GPU). Found on
+#      PATH, or at /usr/lib/wsl/lib/nvidia-smi inside WSL2 where the Windows driver
+#      projects it. Capped with `timeout 5` when available — a wedged driver can hang.
+#   2. AMD (Linux amdgpu): /sys/class/drm/card*/device/mem_info_vram_total (bytes).
+#   3. Apple Silicon: unified memory, counting only 2/3 of hw.memsize — the GPU can't
+#      claim all of it and the OS + apps need the rest. Intel Macs report no GPU.
+# GPU present but VRAM unreadable → system_gpu_vram_mib=0 (consumers treat it as the
+# smallest tier). No probe hits → is_system_gpu=0.
+export is_system_gpu=0
+export system_gpu_vram_mib=0
+_gpu_nvsmi=$(type -P nvidia-smi 2> /dev/null)
+[ -z "$_gpu_nvsmi" ] && [ -x /usr/lib/wsl/lib/nvidia-smi ] && _gpu_nvsmi=/usr/lib/wsl/lib/nvidia-smi
+if [ -n "$_gpu_nvsmi" ]; then
+  is_system_gpu=1
+  _gpu_timeout=""
+  type -P timeout > /dev/null 2>&1 && _gpu_timeout="timeout 5"
+  for _gpu_mib in $($_gpu_timeout "$_gpu_nvsmi" --query-gpu=memory.total --format=csv,noheader,nounits 2> /dev/null | tr -dc '0-9\n'); do
+    [ "$_gpu_mib" -gt "$system_gpu_vram_mib" ] && system_gpu_vram_mib=$_gpu_mib
+  done
+fi
+for _gpu_file in /sys/class/drm/card*/device/mem_info_vram_total; do
+  [ -r "$_gpu_file" ] || continue
+  is_system_gpu=1
+  _gpu_bytes=$(tr -dc '0-9' < "$_gpu_file" 2> /dev/null)
+  [ -n "$_gpu_bytes" ] || continue
+  _gpu_mib=$((_gpu_bytes / 1024 / 1024))
+  [ "$_gpu_mib" -gt "$system_gpu_vram_mib" ] && system_gpu_vram_mib=$_gpu_mib
+done
+if [ "$(sysctl -n hw.optional.arm64 2> /dev/null)" = "1" ]; then
+  is_system_gpu=1
+  _gpu_bytes=$(sysctl -n hw.memsize 2> /dev/null | tr -dc '0-9')
+  [ -n "$_gpu_bytes" ] && _gpu_mib=$((_gpu_bytes / 1024 / 1024 * 2 / 3)) \
+    && [ "$_gpu_mib" -gt "$system_gpu_vram_mib" ] && system_gpu_vram_mib=$_gpu_mib
+fi
+unset _gpu_nvsmi _gpu_timeout _gpu_mib _gpu_file _gpu_bytes
 
 # --- Display / GUI Detection ---
 # _detect_gui_flags - Single source of truth for "does this host have a display?".
@@ -633,6 +675,14 @@ $os_flags
 _detect_gui_flags
 
 export SY_OMEN45L_IP="$(get_home_ip_address "sy-omen45l")"
+
+# Hardware flags from common-env.sh — baked (not re-probed per shell) because the
+# battery / GPU probes spawn subprocesses (powershell.exe, nvidia-smi) and the
+# hardware does not change between sessions.
+export is_system_laptop='$is_system_laptop'
+export is_system_desktop='$is_system_desktop'
+export is_system_gpu='$is_system_gpu'
+export system_gpu_vram_mib='$system_gpu_vram_mib'
 
 export REPO_PATH_IDENTIFIER='$REPO_PATH_IDENTIFIER'
 export REPO_BRANCH_NAME='$REPO_BRANCH_NAME'

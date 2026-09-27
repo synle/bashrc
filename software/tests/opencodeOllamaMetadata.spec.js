@@ -1,8 +1,6 @@
 /** Verifies OpenCode's generated Ollama provider and model picker metadata. */
 
 import { beforeAll, describe, expect, it } from "vitest";
-import fs from "fs";
-import path from "path";
 import { getIndexFunction, loadScriptHelpers } from "./setup.js";
 
 beforeAll(() => {
@@ -10,10 +8,29 @@ beforeAll(() => {
 });
 
 describe("OpenCode Ollama metadata", () => {
-  it("bootstraps the Gemma 4 vision model", () => {
-    const content = fs.readFileSync(path.resolve("software/scripts/advanced/llm/ollama.sh"), "utf-8");
-    expect(content).toContain('_vision_model="gemma4:26b"');
-    expect(content).toContain('for _model in "$_agent_model" "$_vision_model" "$_autocomplete_model"; do');
+  it("pulls GLM-4.7-Flash, Gemma 4 26B, and the 3B FIM model on a 24 GB card", () => {
+    const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
+    expect(getOllamaModelsForVram(24576)).toEqual(["glm-4.7-flash:q4_K_M", "gemma4:26b", "qwen2.5-coder:3b-base"]);
+  });
+
+  it("pulls the medium tier on a 16 GB card", () => {
+    const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
+    expect(getOllamaModelsForVram(16376)).toEqual(["qwen2.5-coder:14b", "gemma3:12b", "qwen2.5-coder:3b-base"]);
+  });
+
+  it("pulls the small tier on an 8 GB card", () => {
+    const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
+    expect(getOllamaModelsForVram(8192)).toEqual(["qwen2.5-coder:7b", "gemma3:4b", "qwen2.5-coder:1.5b-base"]);
+  });
+
+  it("falls back to the tiny tier when VRAM is unknown", () => {
+    const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
+    expect(getOllamaModelsForVram(0)).toEqual(["qwen2.5-coder:3b", "gemma3:4b", "qwen2.5-coder:1.5b-base"]);
+  });
+
+  it("falls back to the tiny tier on a 6 GB card", () => {
+    const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
+    expect(getOllamaModelsForVram(6144)).toEqual(["qwen2.5-coder:3b", "gemma3:4b", "qwen2.5-coder:1.5b-base"]);
   });
 
   it("prefers GLM-4.7-Flash q4_K_M for the local coding agent", () => {
@@ -23,7 +40,7 @@ describe("OpenCode Ollama metadata", () => {
         id: "ollama-local",
         name: "Ollama - 127.0.0.1:11434",
         baseURL: "http://127.0.0.1:11434/v1",
-        models: [{ name: "qwen3-coder:30b-a3b" }, { name: "glm-4.7-flash:q4_K_M" }],
+        models: [{ name: "qwen3-coder:30b-a3b-q4_K_M" }, { name: "glm-4.7-flash:q4_K_M" }],
       },
     ]);
 
@@ -41,13 +58,13 @@ describe("OpenCode Ollama metadata", () => {
         id: "ollama-sy-omen45l",
         name: "Sy-omen45l - 192.168.1.45:11434",
         baseURL: "http://192.168.1.45:11434/v1",
-        models: [{ name: "qwen3-coder:30b-a3b" }],
+        models: [{ name: "qwen2.5-coder:14b" }],
       },
     ]);
 
     expect(config.provider["ol-sy-omen45l"].name).toBe("ol-sy-omen45l");
-    expect(config.provider["ol-sy-omen45l"].models["qwen3-coder:30b-a3b"].name).toBe("qwen3-coder:30b-a3b / 192.168.1.45:11434");
-    expect(config.agent.local.model).toBe("ol-sy-omen45l/qwen3-coder:30b-a3b");
+    expect(config.provider["ol-sy-omen45l"].models["qwen2.5-coder:14b"].name).toBe("qwen2.5-coder:14b / 192.168.1.45:11434");
+    expect(config.agent.local.model).toBe("ol-sy-omen45l/qwen2.5-coder:14b");
     expect(config.provider["ollama-sy-omen45l"]).toBeUndefined();
   });
 });

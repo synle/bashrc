@@ -2,7 +2,7 @@
 
 Single source of truth for the four LLM CLIs we provision (Claude Code, GitHub
 Copilot CLI, Google Gemini CLI, OpenCode). Ollama model names live in
-[`ollama.sh`](ollama.sh). Keep this file in sync with the linked code any time
+`OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js). Keep this file in sync with the linked code any time
 a CLI surface, managed setting, or model is added, renamed, or dropped. If this
 file and the code disagree, the code wins — but file an edit so the next reader
 doesn't have to chase references.
@@ -578,9 +578,13 @@ there — its skills stay model-invoked only.
 
 ## Part 3 — Ollama models
 
-Model inventory, VRAM tiers, auto-pull policy, and the add-a-model checklist live
-inline in [`ollama.sh`](ollama.sh) — the model lists there are the single source of
-truth. This section covers only how the discoverers pick a host.
+The model inventory is `OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js) —
+the single source of truth. Each VRAM tier lists one `{ tag, role }` per role (agent,
+vision, autocomplete); `AUTOCOMPLETE_MODELS` and `LLM_LOCAL_AGENT_MODELS` are derived
+from it. [`ollama.sh`](ollama.sh) installs the binary (native Linux only);
+[`ollama-models.js`](ollama-models.js) pulls the tier matching `system_gpu_vram_mib`
+(detected in `software/bootstrap/common-env.sh`) through the daemon's HTTP API, in the
+background. This section covers only how the discoverers pick a host.
 
 ### Host priority
 
@@ -615,13 +619,10 @@ added via the Manage Models... UI) pass through untouched.
 
 ### Adding a new model
 
-1. Pull it on at least one host: `ollama pull <name>`.
-2. If it's a recognized chat model that needs a non-default context/output limit
-   (the default is `LIMIT_MEDIUM`, 32k/4k), add it to `OLLAMA_MODEL_CONFIGS` in
-   [`opencode/setup.js`](opencode/setup.js).
-3. If it's a FIM autocomplete candidate (must be a `-base` variant carrying FIM
-   tokens), add it to `AUTOCOMPLETE_MODELS` in [`llm-common.js`](llm-common.js)
-   AND to the `is_system_desktop` tier ladder in [`ollama.sh`](ollama.sh).
-4. Add a row to the table above with size, desktop-only flag, and code reference.
-5. `bash run.sh --files=opencode/setup.js` (or `--files=zed.js`) to redeploy the
-   matching config.
+1. Confirm the tag is upstream (200 = exists):
+   `curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' https://registry.ollama.ai/v2/library/<name>/manifests/<tag>`.
+2. Put it in the right tier of `OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js),
+   replacing that tier's model for the same role. Autocomplete models must be `-base`
+   (FIM tokens exist only in base checkpoints).
+3. `bash run.sh --files=ollama-models.js` to pull it, then
+   `bash run.sh --files=opencode/setup.js` (or `--files=zed.js`) to redeploy the config.

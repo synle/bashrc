@@ -26,71 +26,8 @@
 
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
-// --- Limit buckets ---
-
-/**
- * Large context/output limit — for Ollama models whose train context is 262144
- * (verified per model via `/api/show` → `*.context_length`, and per load via
- * `/api/ps` → `context_length`; ollama 0.32 hands out the train context when the
- * Modelfile sets no `num_ctx`). Pinned at half of that: `limit.context` is what
- * opencode uses to decide when to compact, so under-claiming causes needless
- * compaction cycles, while the full 262144 of KV cache is more VRAM than the box
- * has to spare. Re-measure before raising.
- * @type {{ context: number, output: number }}
- */
-const LIMIT_LARGE = { context: 131072, output: 8192 };
-
-/**
- * Medium context/output limit — default for most local code models.
- * @type {{ context: number, output: number }}
- */
-const LIMIT_MEDIUM = { context: 32768, output: 4096 };
-
-/**
- * Small context/output limit for small local models.
- * @type {{ context: number, output: number }}
- */
-const LIMIT_SMALL = { context: 16384, output: 4096 };
-
-// --- Known Ollama model configs ---
-/**
- * Per-model configs for known Ollama models. Keyed by full model tag exactly as returned
- * by `/api/tags`. A tag not listed here falls through to `OLLAMA_DEFAULT_CONFIG`, so this
- * map only needs entries whose limits differ from that default.
- *
- * Keys MUST be tags the daemon can actually pull — verify against the DAEMON, not the
- * website. `ollama.com/library` lists `-nvfp4` tags that the registry then refuses with
- * `412: this model requires macOS`, so a website listing is not proof:
- *   curl -fsS "http://<host>:11434/api/pull" -d '{"model":"<tag>"}'
- * A typo'd or unpullable key is silently inert (it just never matches), which is why a
- * bogus entry can sit here indefinitely looking like configuration.
- *
- * The `-base` autocomplete tags mirror `AUTOCOMPLETE_MODELS` in `llm-common.js`; the
- * chat/instruct tags are the agent-side models. See docs/local-llm-runtimes.md for which
- * of these are the current sy-omen45l picks.
- * @type {Record<string, { limit: { context: number, output: number } }>}
- */
-const OLLAMA_MODEL_CONFIGS = {
-  // Editor autocomplete (FIM `-base` checkpoints — keep in sync with AUTOCOMPLETE_MODELS).
-  "qwen2.5-coder:1.5b-base": { limit: LIMIT_SMALL },
-  "qwen2.5-coder:3b-base": { limit: LIMIT_SMALL },
-  "qwen2.5-coder:7b-base": { limit: LIMIT_SMALL },
-
-  // Coding / agent models.
-  "glm-4.7-flash:q4_K_M": { limit: LIMIT_LARGE },
-  "qwen2.5-coder:14b": { limit: LIMIT_MEDIUM },
-  "qwen3-coder:30b": { limit: LIMIT_MEDIUM },
-  "qwen3-coder:30b-a3b": { limit: LIMIT_LARGE },
-  "qwen3-coder:30b-a3b-q4_K_M": { limit: LIMIT_LARGE },
-  "qwen3.6:latest": { limit: LIMIT_LARGE },
-  "qwen3.6:27b-q4_K_M": { limit: LIMIT_LARGE },
-  "qwen3.6:35b-a3b-q4_K_M": { limit: LIMIT_LARGE },
-  "qwen3.6:35b-a3b-mtp-q4_K_M": { limit: LIMIT_LARGE },
-
-  // General / vision.
-  "gemma4:12b-it-q4_K_M": { limit: LIMIT_LARGE },
-  "gemma4:26b": { limit: LIMIT_LARGE },
-};
+// Ollama limit buckets (LIMIT_*), OLLAMA_MODEL_CONFIGS, and OLLAMA_DEFAULT_CONFIG come
+// from the model inventory in llm-common.js (SOURCEd above).
 
 /**
  * Per-model configs for known GitHub Copilot models. Keyed by model ID.
@@ -167,12 +104,6 @@ function _buildOpencodeWatcherIgnore() {
   const folders = [...EDITOR_CONFIGS.ignoredFolders, ...OPENCODE_EXTRA_IGNORED_FOLDERS];
   return [...new Set(folders)].sort().map((folder) => `**/${folder}/**`);
 }
-
-/**
- * Default config for any Ollama model not listed in `OLLAMA_MODEL_CONFIGS`.
- * @type {{ limit: { context: number, output: number } }}
- */
-const OLLAMA_DEFAULT_CONFIG = { limit: LIMIT_MEDIUM };
 
 /**
  * Builds the opencode config object dynamically from an array of providers.

@@ -161,6 +161,182 @@ function translateMcpServersForOpencode(servers) {
  */
 const OLLAMA_PORT = 11434;
 
+// --- Ollama Model Inventory (single source of truth) ---
+//
+// EVERY Ollama model tag this repo knows about is named once, in OLLAMA_MODELS_BY_VRAM
+// below: each tier picks one model per role. The per-consumer lists are DERIVED —
+// never hand-maintain a second list:
+//   AUTOCOMPLETE_MODELS      Zed edit_predictions (tiers smallest → largest)
+//   LLM_LOCAL_AGENT_MODELS   opencode `local` agent (tiers largest → smallest)
+//   OLLAMA_MODEL_CONFIGS     opencode context/output limits (LLM_OLLAMA_MODEL_LIMITS)
+//   getOllamaModelsForVram   what ollama-models.js pulls for a given VRAM size
+// A model pulled by hand that is not in a tier still works: opencode and Zed discover
+// it from /api/tags, it just gets OLLAMA_DEFAULT_CONFIG and no `local` agent slot.
+//
+// Roles:
+//   agent        instruct checkpoints (no `-base`): chat templates + tool calls for
+//                opencode, the Zed agent panel, and VS Code Copilot Chat (BYOK).
+//   vision       multimodal (OCR, document reading, image tagging).
+//   autocomplete `-base` only: the FIM tokens (<|fim_prefix|> / <|fim_suffix|> /
+//                <|fim_middle|>) exist only in base checkpoints; `-instruct` replies
+//                chat-style and drifts past the cursor. Zed only — VS Code has no
+//                inline-completion API for custom endpoints.
+//
+// Upstream tags only — every row must exist on the public registry. Verify with
+// (200 = exists, 404 = not upstream):
+//   curl -s -o /dev/null -w '%{http_code}' \
+//     -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' \
+//     https://registry.ollama.ai/v2/library/<name>/manifests/<tag>
+// A listing is not proof of pullability: the registry refuses `-nvfp4` tags off macOS
+// with `412: this model requires macOS`.
+//
+// Wipe every pulled model by hand (frees the multi-GB blobs):
+//   ollama list | awk 'NR > 1 { print $1 }' | xargs -n 1 ollama rm
+//   ollama rm qwen2.5-coder:3b                       # one model
+// WSL (`ollama` is aliased to the Windows host ollama.exe by ollama.profile.bash):
+//   ollama.exe list | tr -d '\r' | awk 'NR > 1 { print $1 }' | xargs -n 1 ollama.exe rm
+
+/**
+ * Large context/output limit — for Ollama models whose train context is 262144
+ * (verified per model via `/api/show` → `*.context_length`, and per load via
+ * `/api/ps` → `context_length`; ollama 0.32 hands out the train context when the
+ * Modelfile sets no `num_ctx`). Pinned at half of that: `limit.context` is what
+ * opencode uses to decide when to compact, so under-claiming causes needless
+ * compaction cycles, while the full 262144 of KV cache is more VRAM than the box
+ * has to spare. Re-measure before raising.
+ * @type {{ context: number, output: number }}
+ */
+const LIMIT_LARGE = { context: 131072, output: 8192 };
+
+/**
+ * Medium context/output limit — default for most local code models.
+ * @type {{ context: number, output: number }}
+ */
+const LIMIT_MEDIUM = { context: 32768, output: 4096 };
+
+/**
+ * Small context/output limit for small local models.
+ * @type {{ context: number, output: number }}
+ */
+const LIMIT_SMALL = { context: 16384, output: 4096 };
+
+/**
+ * VRAM tiers, largest first — the model inventory. Each tier's `models` holds exactly
+ * one `{ tag, role }` per role (agent, vision, autocomplete); the first tier whose `minVramMib` the host meets is what ollama-models.js
+ * pulls. Cards report a bit under their marketing size (24 GB → 24576, 12 GB → 12288,
+ * 8 GB → 8192 MiB), so each cut sits below. `tiny` has no floor: it is also the
+ * conservative fallback when VRAM is unreadable (system_gpu_vram_mib = 0).
+ *
+ * Inline sizes are download size (sum of registry manifest layers); resident VRAM
+ * runs higher once the KV cache for the context window is allocated.
+ *
+ * large: GLM-4.7-Flash q4_K_M (30B-A3B MoE) and Gemma 4 26B are ~19 GB each, so they
+ * cannot co-reside in 32 GB — Ollama swaps them by workload.
+ *
+ * @type {Array<{ id: string, minVramMib: number, description: string, models: Array<{ tag: string, role: "agent"|"vision"|"autocomplete" }> }>}
+ */
+const OLLAMA_MODELS_BY_VRAM = [
+  {
+    id: "large",
+    minVramMib: 24000,
+    description: "24 GB+ (RTX 3090 / 4090 / 5090)",
+    models: [
+      { tag: "glm-4.7-flash:q4_K_M", role: "agent" }, // 30B MoE (3B active), ~19.0 GB
+      { tag: "gemma4:26b", role: "vision" }, // 26B, ~18.6 GB
+      { tag: "qwen2.5-coder:3b-base", role: "autocomplete" }, // 3B, ~1.9 GB
+    ],
+  },
+  {
+    id: "medium",
+    minVramMib: 12000,
+    description: "12-16 GB (RTX 3060 12 GB / 4070 / 4080)",
+    models: [
+      { tag: "qwen2.5-coder:14b", role: "agent" }, // 14B, ~9.0 GB
+      { tag: "gemma3:12b", role: "vision" }, // 12B, ~8.1 GB
+      { tag: "qwen2.5-coder:3b-base", role: "autocomplete" }, // 3B, ~1.9 GB
+    ],
+  },
+  {
+    id: "small",
+    minVramMib: 7000,
+    description: "8-11 GB (RTX 3070 / 4060 / 4070 Laptop)",
+    models: [
+      { tag: "qwen2.5-coder:7b", role: "agent" }, // 7B, ~4.7 GB
+      { tag: "gemma3:4b", role: "vision" }, // 4B, ~3.3 GB
+      { tag: "qwen2.5-coder:1.5b-base", role: "autocomplete" }, // 1.5B, ~1.0 GB
+    ],
+  },
+  {
+    id: "tiny",
+    minVramMib: 0,
+    description: "<= 6 GB, or VRAM unknown",
+    models: [
+      { tag: "qwen2.5-coder:3b", role: "agent" }, // 3B, ~1.9 GB
+      { tag: "gemma3:4b", role: "vision" }, // 4B, ~3.3 GB
+      { tag: "qwen2.5-coder:1.5b-base", role: "autocomplete" }, // 1.5B, ~1.0 GB
+    ],
+  },
+];
+
+/**
+ * opencode context/output limits for tier models whose limit differs from
+ * `OLLAMA_DEFAULT_CONFIG` (LIMIT_MEDIUM). Every key must be a tag in a tier.
+ * @type {Record<string, { context: number, output: number }>}
+ */
+const LLM_OLLAMA_MODEL_LIMITS = {
+  "glm-4.7-flash:q4_K_M": LIMIT_LARGE,
+  "gemma4:26b": LIMIT_LARGE,
+  "qwen2.5-coder:3b": LIMIT_SMALL,
+  "qwen2.5-coder:3b-base": LIMIT_SMALL,
+  "qwen2.5-coder:1.5b-base": LIMIT_SMALL,
+};
+
+/**
+ * Default config for any Ollama model not listed in `OLLAMA_MODEL_CONFIGS`.
+ * @type {{ limit: { context: number, output: number } }}
+ */
+const OLLAMA_DEFAULT_CONFIG = { limit: LIMIT_MEDIUM };
+
+/**
+ * Per-model opencode configs, derived from `LLM_OLLAMA_MODEL_LIMITS`. Keyed by full tag
+ * exactly as `/api/tags` returns it; unlisted tags fall through to `OLLAMA_DEFAULT_CONFIG`.
+ * @type {Record<string, { limit: { context: number, output: number } }>}
+ */
+const OLLAMA_MODEL_CONFIGS = Object.fromEntries(
+  Object.entries(LLM_OLLAMA_MODEL_LIMITS).map(([tag, limit]) => [tag, { limit }]),
+);
+
+/**
+ * Lists one role's tags across the tiers, de-duplicated, in the given tier order.
+ * @param {"agent"|"vision"|"autocomplete"} role - Which role to collect.
+ * @param {"largestFirst"|"smallestFirst"} order - Tier walk direction.
+ * @returns {string[]} Unique tags.
+ */
+function _getOllamaTierModels(role, order) {
+  const tiers = order === "smallestFirst" ? [...OLLAMA_MODELS_BY_VRAM].reverse() : OLLAMA_MODELS_BY_VRAM;
+  const tags = tiers.flatMap((t) => t.models.filter((m) => m.role === role).map((m) => m.tag));
+  return [...new Set(tags)];
+}
+
+/**
+ * Resolves the VRAM tier for a host.
+ * @param {number} vramMib - Largest GPU's VRAM in MiB (0 = unknown).
+ * @returns {{ id: string, minVramMib: number, description: string }} The first tier the host meets; `tiny` when none.
+ */
+function getOllamaVramTier(vramMib) {
+  const safeVram = Number.isFinite(vramMib) && vramMib > 0 ? vramMib : 0;
+  return OLLAMA_MODELS_BY_VRAM.find((t) => safeVram >= t.minVramMib) || OLLAMA_MODELS_BY_VRAM.at(-1);
+}
+
+/**
+ * Lists the model tags to auto-pull for a host's VRAM.
+ * @param {number} vramMib - Largest GPU's VRAM in MiB (0 = unknown → tiny tier).
+ * @returns {string[]} The resolved tier's model tags, in `models` order.
+ */
+function getOllamaModelsForVram(vramMib) {
+  return getOllamaVramTier(vramMib).models.map((m) => m.tag);
+}
+
 /**
  * Fetches the installed model names from an Ollama host's `/api/tags` endpoint.
  * Mirrors zed.js's `_fetchZedOllamaModels`. Returns an empty array on fetch failure,
@@ -264,9 +440,11 @@ async function getOllamaProviderInputs() {
  * still gets useful completions; a desktop with the 7B variant only reaches it after the
  * 1.5B and 3B aren't present (intentional — keeps the lighter model on the hot path).
  *
+ * Derived from the tiers' `autocomplete` models, smallest tier first.
+ *
  * @type {string[]}
  */
-const AUTOCOMPLETE_MODELS = ["qwen2.5-coder:1.5b-base", "qwen2.5-coder:3b-base", "qwen2.5-coder:7b-base"];
+const AUTOCOMPLETE_MODELS = _getOllamaTierModels("autocomplete", "smallestFirst");
 
 /**
  * Picks the best Ollama host + model for editor inline autocomplete (Zed's
@@ -432,26 +610,16 @@ const OPENCODE_PINNED_DEFAULT_MODEL = `${LLM_COPILOT_PROVIDER_ID}/claude-opus-5`
 
 /**
  * Local (Ollama) agent model tags in priority order — first tag that a reachable
- * Ollama host actually serves wins. Mirrors the agent-side coding tags in
- * opencode's `OLLAMA_MODEL_CONFIGS`; the `-base` FIM tags in `AUTOCOMPLETE_MODELS`
- * are deliberately absent (they are completion checkpoints, not chat agents).
+ * Ollama host actually serves wins. Derived from the tiers' `agent` models, largest
+ * tier first (best model wins); the `-base` FIM tags are deliberately
+ * absent (they are completion checkpoints, not chat agents).
  *
  * Never hardcode one tag: a laptop with no local daemon and a workstation with a
  * 35B MoE must both resolve without an edit here, and an unresolvable list means
  * the `local` agent is simply omitted rather than pointed at a dead model.
  * @type {string[]}
  */
-const LLM_LOCAL_AGENT_MODELS = [
-  "glm-4.7-flash:q4_K_M",
-  "qwen3-coder:30b-a3b",
-  "qwen3.6:35b-a3b-mtp-q4_K_M",
-  "qwen3.6:35b-a3b-q4_K_M",
-  "qwen3.6:27b-q4_K_M",
-  "qwen3-coder:30b-a3b-q4_K_M",
-  "qwen3.6:latest",
-  "qwen3-coder:30b",
-  "qwen2.5-coder:14b",
-];
+const LLM_LOCAL_AGENT_MODELS = _getOllamaTierModels("agent", "largestFirst");
 
 /**
  * The single registry mapping a TASK ROLE to the model each LLM CLI should run it on.
