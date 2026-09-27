@@ -42,27 +42,27 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/ci-setup
 
-      - name: Install shfmt
-        run: sudo apt-get install -y shfmt
+      # Pinned shfmt release binary (deterministic formatting across runner image updates), cached across runs.
+      - name: Restore shfmt cache
+        id: shfmt-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/shfmt
+          key: shfmt-${{ runner.os }}-v3.8.0
 
-      - name: Install Chrome for Puppeteer smoke tests
-        env:
-          PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
+      - name: Install shfmt
+        if: steps.shfmt-cache.outputs.cache-hit != 'true'
         run: |
-          rm -rf /home/runner/.cache/puppeteer
-          node node_modules/.bin/browsers install chrome@147.0.7727.57 --path /home/runner/.cache/puppeteer
-          CHROME_PATH=$(find /home/runner/.cache/puppeteer/chrome -name "chrome" -type f 2>/dev/null | head -1)
-          if [ -n "$CHROME_PATH" ]; then
-            echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
-            echo "Chrome installed at: $CHROME_PATH"
-          else
-            echo "WARN: Chrome binary not found via browsers install, trying apt..."
-            sudo apt-get update -qq && sudo apt-get install -y -qq wget
-            wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-            sudo apt-get install -y -qq /tmp/chrome.deb 2>/dev/null || sudo dpkg -i /tmp/chrome.deb
-            sudo apt-get install -y -qq -f 2>/dev/null || true
-            echo "PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable" >> "$GITHUB_ENV"
-            echo "Chrome installed via apt at: /usr/bin/google-chrome-stable"
+          mkdir -p ~/.local/bin
+          curl -fsSL -o ~/.local/bin/shfmt https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64
+          chmod +x ~/.local/bin/shfmt
+
+      - name: Add shfmt to PATH
+        run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/shfmt" --version
+
+      - uses: ./.github/actions/ci-install-chrome
           fi
 
       # Compute the installer version string ONCE and reuse everywhere downstream:
@@ -633,24 +633,7 @@ jobs:
           ref: ${{ github.ref }}
       - uses: ./.github/actions/ci-setup
 
-      - name: Install Chrome for Puppeteer smoke tests
-        env:
-          PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
-        run: |
-          rm -rf /home/runner/.cache/puppeteer
-          node node_modules/.bin/browsers install chrome@147.0.7727.57 --path /home/runner/.cache/puppeteer
-          CHROME_PATH=$(find /home/runner/.cache/puppeteer/chrome -name "chrome" -type f 2>/dev/null | head -1)
-          if [ -n "$CHROME_PATH" ]; then
-            echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
-            echo "Chrome installed at: $CHROME_PATH"
-          else
-            echo "WARN: Chrome binary not found via browsers install, trying apt..."
-            sudo apt-get update -qq && sudo apt-get install -y -qq wget
-            wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-            sudo apt-get install -y -qq /tmp/chrome.deb 2>/dev/null || sudo dpkg -i /tmp/chrome.deb
-            sudo apt-get install -y -qq -f 2>/dev/null || true
-            echo "PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable" >> "$GITHUB_ENV"
-            echo "Chrome installed via apt at: /usr/bin/google-chrome-stable"
+      - uses: ./.github/actions/ci-install-chrome
           fi
 
       # Apply patches from prep+publish when running after a full build (push only; manual modes skip patches)
