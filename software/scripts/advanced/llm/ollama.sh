@@ -7,7 +7,7 @@
 # WSL / Windows host: `Ollama.Ollama` in windows/_winget-install.sh.
 #
 # Model pulls live in ollama-models.js; the model inventory lives in
-# OLLAMA_MODELS_BY_VRAM in llm-common.js.
+# llm-models.jsonc (OLLAMA_MODELS_BY_VRAM in llm-common.js).
 
 # Skip in CI — install requires sudo + systemd, and a daemon binary on a throwaway
 # runner has no value (no GPU, no follow-on inference).

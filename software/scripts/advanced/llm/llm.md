@@ -2,7 +2,7 @@
 
 Single source of truth for the four LLM CLIs we provision (Claude Code, GitHub
 Copilot CLI, Google Gemini CLI, OpenCode). Ollama model names live in
-`OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js). Keep this file in sync with the linked code any time
+[`llm-models.jsonc`](llm-models.jsonc). Keep this file in sync with the linked code any time
 a CLI surface, managed setting, or model is added, renamed, or dropped. If this
 file and the code disagree, the code wins — but file an edit so the next reader
 doesn't have to chase references.
@@ -578,7 +578,7 @@ there — its skills stay model-invoked only.
 
 ## Part 3 — Ollama models
 
-The model inventory is `OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js) —
+The model inventory is [`llm-models.jsonc`](llm-models.jsonc), inlined as `OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js) —
 the single source of truth. Each VRAM tier lists one `{ tag, role }` per role (agent,
 vision, autocomplete); `AUTOCOMPLETE_MODELS` and `LLM_LOCAL_AGENT_MODELS` are derived
 from it. [`ollama.sh`](ollama.sh) installs the binary (native Linux only);
@@ -621,7 +621,7 @@ added via the Manage Models... UI) pass through untouched.
 
 1. Confirm the tag is upstream (200 = exists):
    `curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' https://registry.ollama.ai/v2/library/<name>/manifests/<tag>`.
-2. Put it in the right tier of `OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js),
+2. Put it in the right tier of [`llm-models.jsonc`](llm-models.jsonc),
    replacing that tier's model for the same role. Autocomplete models must be `-base`
    (FIM tokens exist only in base checkpoints).
 3. `bash run.sh --files=ollama-models.js` to pull it, then

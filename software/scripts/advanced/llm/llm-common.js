@@ -196,62 +196,18 @@ const OLLAMA_PORT = 11434;
 //   ollama.exe list | tr -d '\r' | awk 'NR > 1 { print $1 }' | xargs -n 1 ollama.exe rm
 
 /**
- * VRAM tiers, largest first — the model inventory. Each tier's `models` holds exactly
- * one `{ tag, role }` per role (agent, vision, autocomplete); the first tier whose `minVramMib` the host meets is what ollama-models.js
- * pulls. Cards report a bit under their marketing size (24 GB → 24576, 12 GB → 12288,
- * 8 GB → 8192 MiB), so each cut sits below. `tiny` has no floor: it is also the
- * conservative fallback when VRAM is unreadable (system_gpu_vram_mib = 0).
- *
- * Inline sizes are download size (sum of registry manifest layers); resident VRAM
- * runs higher once the KV cache for the context window is allocated.
- *
- * large: GLM-4.7-Flash q4_K_M (30B-A3B MoE) and Gemma 4 26B are ~19 GB each, so they
- * cannot co-reside in 32 GB — Ollama swaps them by workload.
- *
+ * VRAM tiers, largest first — the Ollama model inventory, loaded from
+ * `llm-models.jsonc` (see that file for tier and size notes). The SOURCE marker
+ * inlines the array; `.flat()` unwraps it, and yields `[]` if the marker is left
+ * unexpanded, which the guard below turns into a loud failure.
  * @type {Array<{ id: string, minVramMib: number, description: string, models: Array<{ tag: string, role: "agent"|"vision"|"autocomplete" }> }>}
  */
 const OLLAMA_MODELS_BY_VRAM = [
-  {
-    id: "large",
-    minVramMib: 24000,
-    description: "24 GB+ (RTX 3090 / 4090 / 5090)",
-    models: [
-      { tag: "glm-4.7-flash:q4_K_M", role: "agent" }, // 30B MoE (3B active), ~19.0 GB
-      { tag: "gemma4:26b", role: "vision" }, // 26B, ~18.6 GB
-      { tag: "qwen2.5-coder:3b-base", role: "autocomplete" }, // 3B, ~1.9 GB
-    ],
-  },
-  {
-    id: "medium",
-    minVramMib: 12000,
-    description: "12-16 GB (RTX 3060 12 GB / 4070 / 4080)",
-    models: [
-      { tag: "qwen2.5-coder:14b", role: "agent" }, // 14B, ~9.0 GB
-      { tag: "gemma3:12b", role: "vision" }, // 12B, ~8.1 GB
-      { tag: "qwen2.5-coder:3b-base", role: "autocomplete" }, // 3B, ~1.9 GB
-    ],
-  },
-  {
-    id: "small",
-    minVramMib: 7000,
-    description: "8-11 GB (RTX 3070 / 4060 / 4070 Laptop)",
-    models: [
-      { tag: "qwen2.5-coder:7b", role: "agent" }, // 7B, ~4.7 GB
-      { tag: "gemma3:4b", role: "vision" }, // 4B, ~3.3 GB
-      { tag: "qwen2.5-coder:1.5b-base", role: "autocomplete" }, // 1.5B, ~1.0 GB
-    ],
-  },
-  {
-    id: "tiny",
-    minVramMib: 0,
-    description: "<= 6 GB, or VRAM unknown",
-    models: [
-      { tag: "qwen2.5-coder:3b", role: "agent" }, // 3B, ~1.9 GB
-      { tag: "gemma3:4b", role: "vision" }, // 4B, ~3.3 GB
-      { tag: "qwen2.5-coder:1.5b-base", role: "autocomplete" }, // 1.5B, ~1.0 GB
-    ],
-  },
-];
+// SOURCE software/scripts/advanced/llm/llm-models.jsonc
+].flat();
+if (OLLAMA_MODELS_BY_VRAM.length === 0) {
+  throw new Error("OLLAMA_MODELS_BY_VRAM is empty: llm-models.jsonc was not inlined by its SOURCE marker");
+}
 
 /**
  * Lists one role's tags across the tiers, de-duplicated, in the given tier order.

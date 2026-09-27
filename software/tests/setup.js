@@ -251,6 +251,21 @@ export function getSandboxProcess() {
 }
 
 /**
+ * Inlines `// SOURCE <path>` markers recursively (a SOURCEd file may SOURCE another,
+ * e.g. llm-common.js -> llm-models.jsonc), mirroring index.js's runtime expansion.
+ * @param {string} source - Script text.
+ * @param {Set<string>} [seen] - Paths already on the expansion stack (cycle guard).
+ * @returns {string} Text with every reachable marker replaced by file content.
+ */
+function expandSourceMarkers(source, seen = new Set()) {
+  return source.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
+    if (seen.has(srcFile)) return "";
+    const next = new Set(seen).add(srcFile);
+    return expandSourceMarkers(fs.readFileSync(path.resolve(srcFile), "utf-8"), next);
+  });
+}
+
+/**
  * Run a script file's doWork() in the sandbox context.
  * Loads the script source, expands SOURCE markers, executes it to define doWork(), then calls it.
  * @param {string} scriptPath - Relative path from repo root (e.g. "software/scripts/fzf.js")
@@ -259,9 +274,7 @@ export function getSandboxProcess() {
 export async function runScript(scriptPath) {
   let scriptSource = fs.readFileSync(path.resolve(scriptPath), "utf-8");
   // Expand SOURCE markers by inlining the referenced file content
-  scriptSource = scriptSource.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
-    return fs.readFileSync(path.resolve(srcFile), "utf-8");
-  });
+  scriptSource = expandSourceMarkers(scriptSource);
   const varScript = scriptSource.replace(/^(const|let) /gm, "var ");
   vm.runInNewContext(varScript, sandbox, { filename: scriptPath });
   await sandbox.doWork();
@@ -282,9 +295,7 @@ export async function runScript(scriptPath) {
  */
 export function loadScriptHelpers(scriptPath) {
   let scriptSource = fs.readFileSync(path.resolve(scriptPath), "utf-8");
-  scriptSource = scriptSource.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
-    return fs.readFileSync(path.resolve(srcFile), "utf-8");
-  });
+  scriptSource = expandSourceMarkers(scriptSource);
   const varScript = scriptSource.replace(/^(const|let) /gm, "var ");
   vm.runInNewContext(varScript, sandbox, { filename: scriptPath });
 }

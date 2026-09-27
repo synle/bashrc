@@ -1,0 +1,55 @@
+// Ollama model inventory — the single source of truth for every model tag this repo
+// pulls. Inlined into llm-common.js (OLLAMA_MODELS_BY_VRAM) by a SOURCE marker, so it
+// must stay a valid JS array literal as well as JSONC: quoted keys, no expressions.
+//
+// Tiers run largest first; the first tier whose minVramMib the host meets wins.
+// Cards report a bit under marketing size (24 GB -> 24576, 12 GB -> 12288,
+// 8 GB -> 8192 MiB), so each cut sits below. "tiny" has no floor: it is also the
+// fallback when VRAM is unreadable (system_gpu_vram_mib = 0).
+// Each tier lists exactly one { tag, role } per role: agent, vision, autocomplete.
+// Autocomplete tags must be `-base` (FIM tokens exist only in base checkpoints).
+// Sizes are download size (sum of registry manifest layers); resident VRAM runs
+// higher once the KV cache is allocated. large: GLM-4.7-Flash and Gemma 4 26B are
+// ~19 GB each and cannot co-reside in 32 GB, so Ollama swaps them by workload.
+[
+  {
+    "id": "large",
+    "minVramMib": 24000,
+    "description": "24 GB+ (RTX 3090 / 4090 / 5090)",
+    "models": [
+      { "tag": "glm-4.7-flash:q4_K_M", "role": "agent" }, // 30B MoE (3B active), ~19.0 GB | ollama.com/library/glm-4.7-flash:q4_K_M
+      { "tag": "gemma4:26b", "role": "vision" }, // 26B, ~18.6 GB | ollama.com/library/gemma4:26b
+      { "tag": "qwen2.5-coder:3b-base", "role": "autocomplete" }, // 3B, ~1.9 GB | ollama.com/library/qwen2.5-coder:3b-base
+    ],
+  },
+  {
+    "id": "medium",
+    "minVramMib": 12000,
+    "description": "12-16 GB (RTX 3060 12 GB / 4070 / 4080)",
+    "models": [
+      { "tag": "qwen2.5-coder:14b", "role": "agent" }, // 14B, ~9.0 GB | ollama.com/library/qwen2.5-coder:14b
+      { "tag": "gemma3:12b", "role": "vision" }, // 12B, ~8.1 GB | ollama.com/library/gemma3:12b
+      { "tag": "qwen2.5-coder:3b-base", "role": "autocomplete" }, // 3B, ~1.9 GB | ollama.com/library/qwen2.5-coder:3b-base
+    ],
+  },
+  {
+    "id": "small",
+    "minVramMib": 7000,
+    "description": "8-11 GB (RTX 3070 / 4060 / 4070 Laptop)",
+    "models": [
+      { "tag": "qwen2.5-coder:7b", "role": "agent" }, // 7B, ~4.7 GB | ollama.com/library/qwen2.5-coder:7b
+      { "tag": "gemma3:4b", "role": "vision" }, // 4B, ~3.3 GB | ollama.com/library/gemma3:4b
+      { "tag": "qwen2.5-coder:1.5b-base", "role": "autocomplete" }, // 1.5B, ~1.0 GB | ollama.com/library/qwen2.5-coder:1.5b-base
+    ],
+  },
+  {
+    "id": "tiny",
+    "minVramMib": 0,
+    "description": "<= 6 GB, or VRAM unknown",
+    "models": [
+      { "tag": "qwen2.5-coder:3b", "role": "agent" }, // 3B, ~1.9 GB | ollama.com/library/qwen2.5-coder:3b
+      { "tag": "gemma3:4b", "role": "vision" }, // 4B, ~3.3 GB | ollama.com/library/gemma3:4b
+      { "tag": "qwen2.5-coder:1.5b-base", "role": "autocomplete" }, // 1.5B, ~1.0 GB | ollama.com/library/qwen2.5-coder:1.5b-base
+    ],
+  },
+]
