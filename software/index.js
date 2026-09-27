@@ -2319,16 +2319,25 @@ async function replaceTextLineByLine(filePath, replacements, makeAdditionalBacku
 
 /**
  * Reads an existing JSON file, shallow-merges new properties into it, and writes it back.
- * If the file doesn't exist or is invalid, starts with an empty object.
+ * If the file doesn't exist or is empty, starts with an empty object.
  * @param {string} filePath - The JSON file path to read and write
  * @param {object} json - The JSON object whose properties will be merged into the existing file
- * @returns {void}
+ * @returns {Promise<void>}
+ * @throws {Error} When the existing file has content that fails to parse; the file is left untouched
  */
 async function writeJsonWithMerge(filePath, json) {
   let oldJson = {};
-  try {
-    oldJson = await readJson`${filePath}`;
-  } catch (e) {}
+  const existingContent = await readText`${filePath}`;
+  if (existingContent) {
+    // Parse directly (not via readJson, which returns {} on error) so an
+    // unparseable file aborts the merge instead of being overwritten.
+    try {
+      oldJson = parseJsonWithComments(existingContent);
+    } catch (e) {
+      log("ERROR writeJsonWithMerge: refusing to overwrite unparseable JSON", filePath, e.message);
+      throw e;
+    }
+  }
   await writeJson(filePath, Object.assign(oldJson, json));
 }
 
@@ -2772,12 +2781,19 @@ async function installMacDmg(dmgPath) {
   }
   const mountPoint = (await execBash("mktemp -d")).trim();
   await execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
-  const apps = fs.readdirSync(mountPoint).filter((f) => f.endsWith(".app"));
-  for (const appName of apps) {
-    await execBash(`rm -rf "/Applications/${appName}"`);
+  let apps = [];
+  try {
+    apps = fs.readdirSync(mountPoint).filter((f) => f.endsWith(".app"));
+    for (const appName of apps) {
+      // Copy to a staging sibling first so a failed copy never leaves /Applications without the app.
+      const stagingPath = `/Applications/.${appName}.installing`;
+      await execBash(`rm -rf "${stagingPath}"`);
+      await execBash(`cp -Rf "${mountPoint}/${appName}" "${stagingPath}"`);
+      await execBash(`rm -rf "/Applications/${appName}" && mv "${stagingPath}" "/Applications/${appName}"`);
+    }
+  } finally {
+    await execBash(`hdiutil detach "${mountPoint}" -quiet`);
   }
-  await execBash(`cp -Rf "${mountPoint}"/*.app /Applications/`);
-  await execBash(`hdiutil detach "${mountPoint}" -quiet`);
   for (const appName of apps) {
     const appPath = `/Applications/${appName}`;
     if (fs.existsSync(appPath)) {
@@ -3995,20 +4011,18 @@ async function readText(strings, ...values) {
 }
 
 /**
- * Reads text content from a local file, falling back to cat via execBash.
+ * Reads text content from a local file.
  * @param {string} filePath - The file path to read
- * @returns {Promise<string>} The trimmed file contents, or an empty string on error
+ * @returns {Promise<string>} The trimmed file contents, or an empty string when missing or unreadable (logged as a warning)
  */
 async function _readTextFromFile(filePath) {
   let result = "";
   if (pathExists(filePath)) {
     try {
-      try {
-        result = fs.readFileSync(filePath, { encoding: "utf8", flag: "r" });
-      } catch (err) {
-        result = await execBash(`cat ${filePath}`);
-      }
-    } catch (_) {}
+      result = fs.readFileSync(filePath, { encoding: "utf8", flag: "r" });
+    } catch (err) {
+      log("WARN _readTextFromFile: failed to read", filePath, err.message);
+    }
   }
   return result.trim();
 }

@@ -107,9 +107,9 @@ Downloading first avoids a harmless `curl: (56)` pipe-close noise you'd get from
 ```bash
 if [ "$(echo "${SKIP_SETUP:-}" | tr -d '[:space:]')" = "true" ] || [ "$(echo "${SKIP_SETUP:-}" | tr -d '[:space:]')" = "1" ]; then
   echo ">> SKIP_SETUP is set, skipping dependency setup"
-  curl -fsSL https://github.com/synle/bashrc/blob/HEAD/run.sh?raw=1 | bash
+  curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/run.sh | bash
 else
-  curl -fsSL https://github.com/synle/bashrc/blob/HEAD/run.sh?raw=1 | bash -s -- --setup
+  curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/run.sh | bash -s -- --setup
 fi
 ```
 

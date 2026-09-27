@@ -74,7 +74,7 @@ Full directory + file map lives in `ARCHITECTURE.md` (Key Directories / Importan
 ```
 run.sh                        entry: OS detect, bootstrap node, stream bash
 Makefile                      every dev/CI verb (.ONESHELL, GNU Make 4+)
-software/index.js             engine + global helper API (~5k lines)
+software/index.js             engine + global helper API (~6k lines)
 software/common.js            marker/block primitives; inlined into index.js
 software/bootstrap/           common-env.sh, common-functions.bash, profile-core.sh,
                               profile-advanced.sh, setup.sh (remote one-liner)
@@ -313,7 +313,7 @@ Profile registration is buffered: `registerProfileBlock` /
   Decision table + `isMachOArchMismatch` tested in `software/tests/nativeArchJs.spec.js`.
 - **Never bare `fs.copyFileSync`** — its `FICLONE`/`copy_file_range` path fails `EPERM`
   on cross-device and SMB mounts. Wrap in try/catch falling back to
-  `writeFileSync(dest, readFileSync(src))`, or use `safeCopyFile`.
+  `writeFileSync(dest, readFileSync(src))`, or use `copyFile`.
 - **No `node:` prefix on built-in imports** — `require("fs")`, not `require("node:fs")`;
   the prefix breaks on older/Volta-pinned Node.
 - **`getGitHubRawUrl(path)` / `get_github_raw_url <path>`** for GitHub raw URLs; always
@@ -597,7 +597,6 @@ slash commands.
 | `/check`                | Verifying session changes survived a merge/rebase/hook                                        |
 | `/plan-and-commit`      | Multi-file change worth recording — writes `~/_extra/ai_llm/plans/bashrc-<feature>.{md,diff}` |
 | `/refresh-llm-guidance` | Distilling upstream agent guidance into this repo's context and local skills                  |
-| `/trim-instructions`    | Consolidating instruction docs, purging dead rules, shrinking always-loaded context           |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
 invisible to every loader. Folder name is kebab-case and must equal the frontmatter

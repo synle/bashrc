@@ -29,7 +29,7 @@ _BUILD_ENV = source software/bootstrap/common-env.sh
 
 # Install dependencies and prepare workspace
 init:
-	npm ci || npm install
+	if [ "$${IS_CI:-0}" = "1" ] || [ -n "$${GITHUB_ACTIONS:-}" ]; then npm ci; else npm ci || npm install; fi
 	mkdir -p .build
 
 # Alias for setup_local_full
@@ -212,12 +212,13 @@ test_buildconfig_update:
 # Run dry-run setup test (JS scripts only, no file writes or installs)
 DRYRUN_MAX_ERRORS ?= 3
 test_dryrun:
-	bash run.sh --dryrun --setup 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tee /tmp/bashrc_dryrun_test.log
+	dryrun_log=$$(mktemp -t bashrc_dryrun_test.XXXXXX)
+	bash run.sh --dryrun --setup 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tee "$$dryrun_log"
 	echo ">> Checking dry run results for errors..."
-	error_count=$$(command grep -ci 'error' /tmp/bashrc_dryrun_test.log || true)
+	error_count=$$(command grep -ci 'error' "$$dryrun_log" || true)
 	if [ "$$error_count" -gt $(DRYRUN_MAX_ERRORS) ]; then \
 	  echo "FAIL: dry run had $$error_count error lines (threshold: $(DRYRUN_MAX_ERRORS))"; \
-	  command grep -i 'error' /tmp/bashrc_dryrun_test.log; \
+	  command grep -i 'error' "$$dryrun_log"; \
 	  exit 1; \
 	fi
 	echo ">> Dry run test passed"
@@ -233,9 +234,9 @@ test: test_all
 
 # Format code + run all tests (automated by PostToolUse hook)
 # Always add new test suites here.
-# test_profile runs last as warning only — on failure, shows which profile blocks may have errors
+# test_profile runs last and gates — on failure, the output above shows which profile blocks have errors
 validate: format lint test_unit test_buildconfig build_webapp test_smoke_local test_dryrun ci_test_shellcheck
-	make test_profile 2>&1 || echo "WARNING: test_profile failed — check profile blocks above for syntax errors"
+	make test_profile 2>&1 || { echo "FAIL: test_profile failed — check profile blocks above for syntax errors"; exit 1; }
 
 # Format + build webapp (used by CI workflow)
 prep: format build_webapp

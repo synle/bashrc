@@ -101,6 +101,15 @@ describe("writeJsonWithMerge", () => {
     const result = JSON.parse(fileSystem[filePath]);
     expect(result.key).toBe("value");
   });
+
+  it("should throw and leave the file untouched when existing JSON is unparseable", async () => {
+    const filePath = "/mock/home/broken.json";
+    const original = '{"keep": true, broken';
+    mockFsExistence[filePath] = true;
+    fileSystem[filePath] = original;
+    await expect(writeJsonWithMerge(filePath, { key: "value" })).rejects.toThrow();
+    expect(fileSystem[filePath]).toBe(original);
+  });
 });
 
 describe("replaceTextLineByLine", () => {
