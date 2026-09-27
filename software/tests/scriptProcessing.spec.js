@@ -15,6 +15,8 @@ const downloadAsset = getIndexFunction("downloadAsset");
 const downloadAssets = getIndexFunction("downloadAssets");
 const isBinaryFound = getIndexFunction("isBinaryFound");
 const backupConfigFile = getIndexFunction("backupConfigFile");
+const dedupeConfigBackups = getIndexFunction("dedupeConfigBackups");
+const _backedUpConfigFiles = getIndexConstant("_backedUpConfigFiles");
 const backupProfileSnapshot = getIndexFunction("backupProfileSnapshot");
 const _readRunTiming = getIndexFunction("_readRunTiming");
 const backupProfileFilesToTempDir = getIndexFunction("backupProfileFilesToTempDir");
@@ -199,6 +201,7 @@ describe("backupConfigFile", () => {
   beforeEach(() => {
     Object.keys(mockFsExistence).forEach((k) => delete mockFsExistence[k]);
     Object.keys(fileSystem).forEach((k) => delete fileSystem[k]);
+    _backedUpConfigFiles.clear();
   });
 
   it("should return early if file does not exist", async () => {
@@ -240,29 +243,72 @@ describe("backupConfigFile", () => {
     expect(fileSystem["/mock/config.txt.bak_latest"]).toBeUndefined();
   });
 
-  it("should retrospectively remove a stale latest identical to original", async () => {
+  it("should register the file for the end-of-run dedupe sweep", async () => {
     mockFsExistence["/mock/config.txt"] = true;
     mockFsExistence["/mock/config.txt.bak_original"] = true;
-    mockFsExistence["/mock/config.txt.bak_latest"] = true;
-    fileSystem["/mock/config.txt"] = "same content";
-    fileSystem["/mock/config.txt.bak_original"] = "same content";
-    fileSystem["/mock/config.txt.bak_latest"] = "same content";
+    fileSystem["/mock/config.txt"] = "current content";
+    fileSystem["/mock/config.txt.bak_original"] = "original content";
     await backupConfigFile("/mock/config.txt");
-    expect(fileSystem["/mock/config.txt.bak_latest"]).toBeUndefined();
-    expect(fileSystem["/mock/config.txt.bak_original"]).toBe("same content");
+    expect(_backedUpConfigFiles.has("/mock/config.txt")).toBe(true);
+  });
+});
+
+describe("dedupeConfigBackups", () => {
+  beforeEach(() => {
+    Object.keys(mockFsExistence).forEach((k) => delete mockFsExistence[k]);
+    Object.keys(fileSystem).forEach((k) => delete fileSystem[k]);
+    _backedUpConfigFiles.clear();
   });
 
-  it("should keep a latest that differs from original even when the file reverts", async () => {
-    // original="A", a real distinct prior state latest="B", file reverted to "A".
-    // The latest holds a meaningful earlier version, so it must survive.
-    mockFsExistence["/mock/config.txt"] = true;
-    mockFsExistence["/mock/config.txt.bak_original"] = true;
-    mockFsExistence["/mock/config.txt.bak_latest"] = true;
-    fileSystem["/mock/config.txt"] = "A";
-    fileSystem["/mock/config.txt.bak_original"] = "A";
-    fileSystem["/mock/config.txt.bak_latest"] = "B";
-    await backupConfigFile("/mock/config.txt");
-    expect(fileSystem["/mock/config.txt.bak_latest"]).toBe("B");
+  /** Seed a live/original/latest trio in the mock fs and register it for the sweep. */
+  function seed(base, { live, original, latest }) {
+    mockFsExistence[base] = true;
+    fileSystem[base] = live;
+    if (original !== undefined) {
+      mockFsExistence[`${base}.bak_original`] = true;
+      fileSystem[`${base}.bak_original`] = original;
+    }
+    if (latest !== undefined) {
+      mockFsExistence[`${base}.bak_latest`] = true;
+      fileSystem[`${base}.bak_latest`] = latest;
+    }
+    _backedUpConfigFiles.add(base);
+  }
+
+  it("removes a .bak_latest identical to the live file", async () => {
+    seed("/mock/home/f", { live: "live", original: "pristine", latest: "live" });
+    await dedupeConfigBackups();
+    expect(fileSystem["/mock/home/f.bak_latest"]).toBeUndefined();
+    expect(fileSystem["/mock/home/f.bak_original"]).toBe("pristine");
+  });
+
+  it("removes a .bak_latest identical to the original", async () => {
+    seed("/mock/home/f", { live: "live", original: "pristine", latest: "pristine" });
+    await dedupeConfigBackups();
+    expect(fileSystem["/mock/home/f.bak_latest"]).toBeUndefined();
+    expect(fileSystem["/mock/home/f.bak_original"]).toBe("pristine");
+  });
+
+  it("keeps a .bak_latest that differs from both live and original", async () => {
+    seed("/mock/home/f", { live: "v2", original: "pristine", latest: "v1" });
+    await dedupeConfigBackups();
+    expect(fileSystem["/mock/home/f.bak_latest"]).toBe("v1");
+  });
+
+  it("only touches files backed up this run", async () => {
+    // Redundant on disk but never registered — the sweep must leave it alone.
+    mockFsExistence["/mock/home/f"] = true;
+    mockFsExistence["/mock/home/f.bak_latest"] = true;
+    fileSystem["/mock/home/f"] = "live";
+    fileSystem["/mock/home/f.bak_latest"] = "live";
+    await dedupeConfigBackups();
+    expect(fileSystem["/mock/home/f.bak_latest"]).toBe("live");
+  });
+
+  it("clears the tracking set after sweeping", async () => {
+    seed("/mock/home/f", { live: "live", original: "pristine", latest: "v1" });
+    await dedupeConfigBackups();
+    expect(_backedUpConfigFiles.size).toBe(0);
   });
 });
 

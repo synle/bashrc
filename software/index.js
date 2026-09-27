@@ -2069,15 +2069,23 @@ async function backupText(filePath, text) {
 }
 
 /**
+ * @type {Set<string>} Live config paths backed up this run, swept once at the end
+ * of the run by `dedupeConfigBackups()`. A Set so repeated backups of the same file
+ * (many scripts touch the same config) are deduped to one sweep.
+ */
+const _backedUpConfigFiles = new Set();
+
+/**
  * Creates two inline backups before overwriting a config file:
  * - `<file>.bak_original` — first-ever snapshot (never overwritten once created).
  * - `<file>.bak_latest`   — previous content before each new write.
  * Call this before modifying a config file so the user can diff or restore.
  *
- * A `.bak_latest` is only written when the file differs from `.bak_original`, and
- * any existing `.bak_latest` that is byte-identical to `.bak_original` is dropped
- * retrospectively — the original already preserves that content, so the duplicate
- * is dead weight. The original is always kept; only the redundant latest is removed.
+ * A `.bak_latest` is only written when the file differs from `.bak_original`. The
+ * file is registered for the end-of-run `dedupeConfigBackups()` sweep, which drops a
+ * `.bak_latest` that ends up byte-identical to the live file (a no-op run) or to the
+ * `.bak_original` (pristine). That sweep runs post-write because this function runs
+ * *before* the caller overwrites the file, so it cannot yet know the final content.
  * @param {string} filePath - The config file to back up.
  * @returns {void}
  */
@@ -2100,24 +2108,50 @@ async function backupConfigFile(filePath) {
     log("<<< Backup Created (latest)", latestPath);
   }
 
-  // Retrospective dedupe: drop a `.bak_latest` byte-identical to `.bak_original`.
-  // Earlier runs (before this dedupe existed) or a file reverted to its original
-  // state can leave a `.bak_latest` that only duplicates the original snapshot.
-  // Keep the original, never the redundant latest. The else branch above wrote
-  // latest = current (which differs from original), so this only fires in the skip
-  // branch on a stale duplicate.
-  if (pathExists(latestPath) && (await md5Hash(latestPath)) === originalHash) {
+  // Defer dedupe to the end-of-run sweep: this runs before the caller's write, so
+  // whether `.bak_latest` ends up redundant with the live file is not yet known.
+  _backedUpConfigFiles.add(filePath);
+}
+
+/**
+ * End-of-run sweep that drops a redundant `<file>.bak_latest`. For every config file
+ * backed up this run (`_backedUpConfigFiles`), the latest is removed when it is
+ * byte-identical to EITHER the live file (the run wrote nothing new, so the snapshot
+ * just mirrors the current config) OR the `.bak_original` (pristine — the original
+ * already preserves that content). The `.bak_original` is always kept, so a restore
+ * to the pre-setup state stays possible; only the dead-weight latest goes.
+ *
+ * Runs from the IIFE `finally`, after all `doWork()` writes complete — that timing is
+ * what makes the "== live" comparison meaningful, since `backupConfigFile()` copies
+ * the live file into `.bak_latest` before the write and so always matches at that
+ * point. Clears the tracking set so a re-entrant run starts clean.
+ * @returns {Promise<void>}
+ */
+async function dedupeConfigBackups() {
+  for (const filePath of _backedUpConfigFiles) {
+    const latestPath = filePath + ".bak_latest";
+    if (!pathExists(latestPath)) continue;
+
+    const latestHash = await md5Hash(latestPath);
+    const liveHash = pathExists(filePath) ? await md5Hash(filePath) : null;
+    const originalPath = filePath + ".bak_original";
+    const originalHash = pathExists(originalPath) ? await md5Hash(originalPath) : null;
+
+    if (latestHash !== liveHash && latestHash !== originalHash) continue;
+
+    const reason = latestHash === liveHash ? "identical to live file" : "identical to original";
     if (IS_DRY_RUN) {
-      log("<<<< [DryRun] Would remove duplicate", latestPath);
+      log(`<<<< [DryRun] Would remove redundant .bak_latest (${reason})`, latestPath);
     } else {
       try {
         fs.unlinkSync(latestPath);
-        log("<<< Backup Deduped (removed latest identical to original)", latestPath);
+        log(`<<< Backup Deduped (removed .bak_latest ${reason})`, latestPath);
       } catch (err) {
         log("<<< Backup Dedupe skipped (could not remove)", latestPath, String(err));
       }
     }
   }
+  _backedUpConfigFiles.clear();
 }
 
 /**
@@ -6130,5 +6164,6 @@ function printRunInfo() {
   } finally {
     await flushProfileBlocks();
     await backupProfileSnapshot("bash_syle.4-after-flush");
+    await dedupeConfigBackups();
   }
 })();
