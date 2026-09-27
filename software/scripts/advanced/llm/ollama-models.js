@@ -26,7 +26,7 @@ const OLLAMA_MODELS_MAC_HOSTNAME_MARKER = ".local";
 const OLLAMA_MODEL_TAG_PATTERN = /^[A-Za-z0-9._/-]+(:[A-Za-z0-9._-]+)?$/;
 
 /**
- * Default agent model for sy-omen45l (a 32 GB card): the first `agent` model of the
+ * Default agent model for the default Ollama server: the first `agent` model of the
  * largest tier in OLLAMA_MODELS_BY_VRAM.
  * @returns {string} Model tag.
  * @throws {Error} When the largest tier has no agent model.
@@ -98,7 +98,7 @@ function _buildOllamaBackgroundPullCommand(tags, logPath) {
 }
 
 /**
- * Registers the SY_OMEN45L_OLLAMA_DEFAULT_MODEL profile block (every host), then
+ * Registers the OLLAMA_DEFAULT_MODEL profile block (every host), then
  * resolves this host's VRAM tier from `system_gpu_vram_mib` and starts background
  * pulls for every tier model the daemon does not already have. Side effect: spawns
  * detached curl processes and appends to `$BASHRC_TEMP_DIR/ollama-pull.log`.
@@ -107,10 +107,10 @@ function _buildOllamaBackgroundPullCommand(tags, logPath) {
  */
 async function doWork() {
   // Registered before the pull gates: every host needs the default (claude_local on a
-  // laptop still targets sy-omen45l), not only hosts that pull models themselves.
+  // laptop still targets the default server), not only hosts that pull models themselves.
   registerWithBashSyleProfile(
     "ollama default model",
-    `export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="\${SY_OMEN45L_OLLAMA_DEFAULT_MODEL:-${_getOllamaDefaultAgentModel()}}"`,
+    `export OLLAMA_DEFAULT_MODEL="\${OLLAMA_DEFAULT_MODEL:-${_getOllamaDefaultAgentModel()}}"`,
   );
 
   _exitIfOllamaModelPullUnsupported();

@@ -1029,7 +1029,7 @@ let HOME_HOST_NAMES = [];
  * Returns the IP as a string, or `null` if the hostname is not found or the file cannot be read.
  * Generic, reusable across every script that needs to resolve a home-network host (zed.js,
  * llm/llm-common.js, etc.). Never throws — returns `null` on any I/O or parse failure.
- * @param {string} hostname - The hostname to look up (e.g. "sy-omen45l").
+ * @param {string} hostname - The hostname to look up (e.g. "my-desktop").
  * @returns {Promise<string|null>} The IP address associated with the hostname, or `null` if not found.
  */
 async function getHomeIpAddress(hostname) {
@@ -1051,21 +1051,75 @@ async function getHomeIpAddress(hostname) {
 }
 
 /**
- * Returns the home-network IP address for the `sy-omen45l` workstation by looking it
- * up via `getHomeIpAddress("sy-omen45l")`. Thin wrapper kept here (rather than in any
- * single LLM/editor script) so the lookup is reusable across zed.js, llm-common.js,
- * and any future caller that needs the Omen45L address without re-typing the hostname.
- *
- * The address itself is never hardcoded in code — it is declared once in
- * `software/metadata/ip-address.config` and read from there. Callers must handle the
- * `null` case (hostname absent, or the config unreadable) rather than substituting a
- * literal address of their own.
- *
- * @returns {Promise<string|null>} The resolved IP as declared in
- *   `software/metadata/ip-address.config`, or `null` when the hostname is not listed.
+ * Lists every host in `software/metadata/ip-address.config` carrying a tag (a bare
+ * `|`-separated token such as `OLLAMA_REMOTE`), in file order. Hosts are addressed by
+ * tag, never by machine name, so code carries no hostname. Never throws — returns
+ * `[]` on any I/O failure.
+ * @param {string} tag - Exact tag token (e.g. "OLLAMA_REMOTE").
+ * @returns {Promise<Array<{ip: string, hostname: string, tags: string[]}>>} Matching hosts;
+ *   `hostname` is the first non-tag token on the line.
  */
-async function getSyHPOmenHomeIpAddress() {
-  return getHomeIpAddress("sy-omen45l");
+async function getHomeHostsByTag(tag) {
+  try {
+    const content = await readText`software/metadata/ip-address.config`;
+    const hosts = [];
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.indexOf("=") === 0) continue;
+      const [ip, ...rest] = trimmed
+        .split(/[\:,|]/gim)
+        .map((s) => s.trim())
+        .filter((s) => s);
+      if (!ip || !rest.includes(tag)) continue;
+      const tags = rest.filter((t) => HOME_HOST_TAG_PATTERN.test(t));
+      const hostname = rest.find((t) => !HOME_HOST_TAG_PATTERN.test(t)) || ip;
+      hosts.push({ ip, hostname, tags });
+    }
+    return hosts;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * A tag token in ip-address.config: all-caps with underscores (`NO_SSH`,
+ * `WINDOWS_REMOTE`, `OLLAMA_REMOTE`). Hostnames are lowercase, so they never match.
+ * @type {RegExp}
+ */
+const HOME_HOST_TAG_PATTERN = /^[A-Z][A-Z0-9_]*$/;
+
+/**
+ * Loopback Ollama host — always the last entry of `getOllamaHosts()`, and the default
+ * when ip-address.config tags no remote server.
+ * @type {{ip: string, hostname: string, tags: string[]}}
+ */
+const OLLAMA_LOCAL_HOST = { ip: "127.0.0.1", hostname: "local", tags: [] };
+
+/**
+ * Every Ollama host this machine may use, default first: remote servers from
+ * ip-address.config, then `127.0.0.1`. A remote is a host tagged `OLLAMA_REMOTE` (a host
+ * tagged only `OLLAMA_DEFAULT_SERVER` counts too). The default is the host tagged
+ * `OLLAMA_DEFAULT_SERVER` (at most one — the first wins, with a warning, if several are
+ * tagged), else the first `OLLAMA_REMOTE` in file order, else `127.0.0.1`. Hosts are
+ * chosen by tag, never by hostname.
+ * @returns {Promise<Array<{ip: string, hostname: string, tags: string[], isDefault: boolean, isLocal: boolean}>>}
+ *   Default at index 0, `127.0.0.1` always last (and first when it is the only host).
+ */
+async function getOllamaHosts() {
+  const remotes = await getHomeHostsByTag("OLLAMA_REMOTE");
+  const defaults = await getHomeHostsByTag("OLLAMA_DEFAULT_SERVER");
+  if (defaults.length > 1) {
+    log(`>> WARN ip-address.config: ${defaults.length} hosts tagged OLLAMA_DEFAULT_SERVER; using ${defaults[0].ip}`);
+  }
+  const all = [...remotes];
+  for (const d of defaults) if (!all.some((h) => h.ip === d.ip)) all.push(d);
+  const defaultIp = (defaults[0] || all[0] || OLLAMA_LOCAL_HOST).ip;
+  const ordered = [
+    ...all.filter((h) => h.ip === defaultIp),
+    ...all.filter((h) => h.ip !== defaultIp),
+    OLLAMA_LOCAL_HOST,
+  ];
+  return ordered.map((h) => ({ ...h, isDefault: h.ip === defaultIp, isLocal: h === OLLAMA_LOCAL_HOST }));
 }
 
 // --- OS Flags ---

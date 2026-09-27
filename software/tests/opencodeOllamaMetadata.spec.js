@@ -52,16 +52,16 @@ describe("OpenCode Ollama metadata", () => {
     const buildOpencodeConfig = getIndexFunction("_buildOpencodeConfig");
     const config = buildOpencodeConfig([
       {
-        id: "ollama-sy-omen45l",
-        name: "Sy-omen45l - 192.168.1.45:11434",
+        id: "ollama-my-desktop",
+        name: "My-desktop - 192.168.1.45:11434",
         baseURL: "http://192.168.1.45:11434/v1",
         models: [{ name: "qwen2.5-coder:14b" }],
       },
     ]);
 
-    expect(config.provider["ol-sy-omen45l"].name).toBe("ol-sy-omen45l");
-    expect(config.provider["ol-sy-omen45l"].models["qwen2.5-coder:14b"].name).toBe("qwen2.5-coder:14b / 192.168.1.45:11434");
-    expect(config.agent.local.model).toBe("ol-sy-omen45l/qwen2.5-coder:14b");
-    expect(config.provider["ollama-sy-omen45l"]).toBeUndefined();
+    expect(config.provider["ol-my-desktop"].name).toBe("ol-my-desktop");
+    expect(config.provider["ol-my-desktop"].models["qwen2.5-coder:14b"].name).toBe("qwen2.5-coder:14b / 192.168.1.45:11434");
+    expect(config.agent.local.model).toBe("ol-my-desktop/qwen2.5-coder:14b");
+    expect(config.provider["ollama-my-desktop"]).toBeUndefined();
   });
 });

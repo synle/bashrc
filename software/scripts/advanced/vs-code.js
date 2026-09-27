@@ -228,7 +228,7 @@ function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_pre
     // single string and Copilot Chat migrates it once into globalState with a hardcoded
     // `name: "Ollama"`, which clobbers any prior name and silently drops the second host.
     // Managing `chatLanguageModels.json` lets us register BOTH `ollama-local` and
-    // `ollama-sy-omen45l` at once, matching opencode + Zed naming.
+    // `ollama-<hostname>` at once, matching opencode + Zed naming.
   };
 }
 
@@ -344,7 +344,7 @@ async function _updateDevcontainerExtensions() {
  *
  * Translation rules:
  *   - Reuse the provider ids from `getOllamaProviderInputs()` verbatim as `name`
- *     (`ollama-local` for 127.0.0.1, `ollama-sy-omen45l` for the workstation) so VS Code,
+ *     (`ollama-local` for 127.0.0.1, `ollama-<hostname>` for each OLLAMA_REMOTE host) so VS Code,
  *     opencode, and Zed all label the same backend with the same string.
  *   - `vendor` is hardcoded to `"ollama"` — Copilot Chat's BYOK provider registry keys
  *     Ollama-compatible servers under this exact string.
@@ -374,7 +374,7 @@ function _buildChatLanguageModels(providers, existing = []) {
 
   /** @type {Array<object>} Freshly-derived ollama entries from discovery. */
   const ollamaEntries = providers.map((p) => ({
-    name: p.id, // ollama-local / ollama-sy-omen45l — matches opencode + Zed naming convention.
+    name: p.id, // ollama-local / ollama-<hostname> — matches opencode + Zed naming convention.
     vendor: "ollama",
     url: p.baseURL.replace(/\/v1$/, ""), // Strip OpenAI-compat suffix — Copilot Chat wants native root.
   }));

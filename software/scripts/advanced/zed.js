@@ -20,14 +20,17 @@ const ZED_LIGHT_THEME_FILE = "Sy Light.json";
 // so the build artifacts uploaded to binary-cache stay generic across machines.
 
 /**
- * Friendly hostname used as the key under `language_models.openai_compatible` for the
- * remote Ollama provider. Per the Zed crate `language_models/src/language_models.rs`
+ * Builds the key under `language_models.openai_compatible` for one remote Ollama provider.
+ * Per the Zed crate `language_models/src/language_models.rs`
  * (register_openai_compatible_providers L193-L220), the provider_id used by
  * `agent.default_model.provider` is literally this JSON key — so it's stable as long as
- * the key isn't renamed.
- * @type {string}
+ * the hostname in ip-address.config isn't renamed.
+ * @param {{id: string}} provider - From getOllamaProviderInputs() (`id` = `ollama-<hostname>`).
+ * @returns {string} e.g. `Ollama (my-desktop)`.
  */
-const ZED_OLLAMA_REMOTE_KEY = "Ollama (sy-omen45l)";
+function _getZedOllamaRemoteKey(provider) {
+  return `Ollama (${provider.id.replace(/^ollama-/, "")})`;
+}
 
 /**
  * Zed's built-in ACP registry id for Claude Agent. Zed bundles its own
@@ -89,8 +92,8 @@ function _buildZedAgentServersBlock(agents) {
  *   - Loopback provider (baseURL containing 127.0.0.1) becomes `language_models.ollama`
  *     with `auto_discover: true` — Zed's native Ollama provider enumerates models itself,
  *     so we don't pass `available_models` for the local host (saves a re-enumeration).
- *   - Remote providers become a `language_models.openai_compatible[ZED_OLLAMA_REMOTE_KEY]`
- *     entry; `openai_compatible` does NOT auto-discover, so we list `available_models`
+ *   - Every remote provider becomes a `language_models.openai_compatible[<key>]` entry
+ *     (key from `_getZedOllamaRemoteKey`); `openai_compatible` does NOT auto-discover, so we list `available_models`
  *     explicitly from the discovered model names. The remote URL needs the `/v1` suffix
  *     (Ollama exposes both `/api/*` native and `/v1/*` OpenAI-compatible — the
  *     openai_compatible provider needs the latter).
@@ -110,7 +113,7 @@ function _buildZedLanguageModelsBlock(providers) {
   let defaultModel = null;
 
   const localProvider = providers.find((p) => p.baseURL.includes("127.0.0.1"));
-  const remoteProvider = providers.find((p) => !p.baseURL.includes("127.0.0.1"));
+  const remoteProviders = providers.filter((p) => !p.baseURL.includes("127.0.0.1") && p.models.length > 0);
 
   if (localProvider) {
     // baseURL from llm-common.js includes the `/v1` OpenAI-compat suffix; Zed's native
@@ -123,23 +126,26 @@ function _buildZedLanguageModelsBlock(providers) {
     }
   }
 
-  if (remoteProvider && remoteProvider.models.length > 0) {
-    languageModels.openai_compatible = {
-      [ZED_OLLAMA_REMOTE_KEY]: {
-        api_url: remoteProvider.baseURL, // baseURL already ends in /v1 — exactly what openai_compatible wants.
-        available_models: remoteProvider.models.map(({ name }) => ({
-          name,
-          display_name: name,
-          max_tokens: 32768,
-          capabilities: { tools: true, images: false, parallel_tool_calls: false, prompt_cache_key: false },
-        })),
-      },
-    };
-    // Fall back to the remote provider for default_model when no local provider responded.
-    // The provider id used by `agent.default_model.provider` is the literal JSON key
-    // (per upstream crate registration) — stable across Zed versions.
+  if (remoteProviders.length > 0) {
+    languageModels.openai_compatible = Object.fromEntries(
+      remoteProviders.map((p) => [
+        _getZedOllamaRemoteKey(p),
+        {
+          api_url: p.baseURL, // baseURL already ends in /v1 — exactly what openai_compatible wants.
+          available_models: p.models.map(({ name }) => ({
+            name,
+            display_name: name,
+            max_tokens: 32768,
+            capabilities: { tools: true, images: false, parallel_tool_calls: false, prompt_cache_key: false },
+          })),
+        },
+      ]),
+    );
+    // Fall back to the first remote provider (the default Ollama server — providers
+    // arrive default-first) when no local provider responded.
     if (!defaultModel) {
-      defaultModel = { provider: ZED_OLLAMA_REMOTE_KEY, model: remoteProvider.models[0].name };
+      const [first] = remoteProviders;
+      defaultModel = { provider: _getZedOllamaRemoteKey(first), model: first.models[0].name };
     }
   }
 
@@ -395,7 +401,7 @@ async function doWork() {
 
     // Pick host+model for Zed's inline edit prediction (autocomplete ghost text). Reuses the
     // shared discovery in llm-common.js but with INVERSE host priority vs the agent panel:
-    // 127.0.0.1 is preferred over sy-omen45l because inline completion fires per keystroke
+    // 127.0.0.1 is preferred over the remote servers because inline completion fires per keystroke
     // and localhost latency beats LAN. See `getAutocompleteProvider` JSDoc for the full rationale.
     // When no host+model match (null return), we leave `edit_predictions` unset so the
     // catch-all `disabled_globs` fallback from zed-config.jsonc survives — inline AI stays

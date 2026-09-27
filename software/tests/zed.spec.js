@@ -3,15 +3,13 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import vm from "vm";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction, expandSourceMarkers } from "./setup.js";
 
 const clone = getIndexFunction("clone");
 
 // ---- Load zed.js (with every SOURCE marker — editor.common.js + llm-common.js — inlined) ----
 const zedRaw = fs.readFileSync("software/scripts/advanced/zed.js", "utf-8");
-const zedSource = zedRaw.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
-  return fs.readFileSync(path.resolve(srcFile), "utf-8");
-});
+const zedSource = expandSourceMarkers(zedRaw);
 
 /**
  * Evaluates zed.js with mocked globals so its internal helpers are reachable.
@@ -65,7 +63,10 @@ function loadZed(overrides = {}) {
     // sourced module's top-level evaluation doesn't try to hit the real filesystem.
     // 192.0.2.45 is RFC 5737 TEST-NET-1 (documentation range) — the real address is declared
     // only in software/metadata/ip-address.config, never in code or tests.
-    getSyHPOmenHomeIpAddress: async () => "192.0.2.45",
+    getOllamaHosts: async () => [
+      { ip: "192.0.2.45", hostname: "my-desktop", tags: ["OLLAMA_REMOTE"], isDefault: true, isLocal: false },
+      { ip: "127.0.0.1", hostname: "local", tags: [], isDefault: false, isLocal: true },
+    ],
     getHomeIpAddress: async () => null,
     ...overrides,
   };
@@ -190,7 +191,7 @@ describe("_getZedKeymap > terminal-context mirroring", () => {
 /**
  * Helper: builds a getOllamaProviderInputs-shaped provider entry for tests.
  * @param {string} host - The host portion (e.g. "127.0.0.1", or "192.0.2.45" standing in
- *   for the sy-omen45l workstation whose real address lives in
+ *   for the OLLAMA_REMOTE host whose real address lives in
  *   `software/metadata/ip-address.config`).
  * @param {string[]} modelNames - Model names to embed.
  * @returns {{id: string, name: string, baseURL: string, models: Array<{name: string}>}}
@@ -198,8 +199,8 @@ describe("_getZedKeymap > terminal-context mirroring", () => {
 function makeProvider(host, modelNames) {
   const isLocal = host === "127.0.0.1";
   return {
-    id: isLocal ? "ollama-local" : "ollama-sy-omen45l",
-    name: isLocal ? `Local - ${host}:11434` : `Sy-omen45l - ${host}:11434`,
+    id: isLocal ? "ollama-local" : "ollama-my-desktop",
+    name: isLocal ? `Local - ${host}:11434` : `My-desktop - ${host}:11434`,
     baseURL: `http://${host}:11434/v1`,
     models: modelNames.map((name) => ({ name })),
   };
@@ -226,12 +227,12 @@ describe("_buildZedLanguageModelsBlock > local provider", () => {
 });
 
 describe("_buildZedLanguageModelsBlock > remote provider", () => {
-  it("registers openai_compatible keyed by `Ollama (sy-omen45l)` when a remote provider is present", () => {
+  it("registers openai_compatible keyed by `Ollama (my-desktop)` when a remote provider is present", () => {
     const zed = loadZed();
     const result = zed._buildZedLanguageModelsBlock([makeProvider("192.0.2.45", ["qwen3.6:latest", "qwen2.5-coder:14b"])]);
     expect(result.languageModels.openai_compatible).toBeDefined();
-    expect(Object.keys(result.languageModels.openai_compatible)).toEqual(["Ollama (sy-omen45l)"]);
-    const remote = result.languageModels.openai_compatible["Ollama (sy-omen45l)"];
+    expect(Object.keys(result.languageModels.openai_compatible)).toEqual(["Ollama (my-desktop)"]);
+    const remote = result.languageModels.openai_compatible["Ollama (my-desktop)"];
     expect(remote.api_url).toBe("http://192.0.2.45:11434/v1");
     expect(remote.available_models).toHaveLength(2);
     expect(remote.available_models[0]).toEqual({
@@ -253,12 +254,12 @@ describe("_buildZedLanguageModelsBlock > default_model selection", () => {
     expect(result.defaultModel).toEqual({ provider: "ollama", model: "qwen2.5-coder:3b" });
   });
 
-  it("falls back to the remote `Ollama (sy-omen45l)` provider for default_model when only remote is reachable", () => {
+  it("falls back to the remote `Ollama (my-desktop)` provider for default_model when only remote is reachable", () => {
     // Upstream Zed crate (language_models/src/language_models.rs L193-L220) registers
     // openai_compatible providers under provider_id = JSON key, so the key is stable.
     const zed = loadZed();
     const result = zed._buildZedLanguageModelsBlock([makeProvider("192.0.2.45", ["qwen3.6:latest"])]);
-    expect(result.defaultModel).toEqual({ provider: "Ollama (sy-omen45l)", model: "qwen3.6:latest" });
+    expect(result.defaultModel).toEqual({ provider: "Ollama (my-desktop)", model: "qwen3.6:latest" });
   });
 
   it("returns null defaultModel + empty languageModels when no providers reachable", () => {

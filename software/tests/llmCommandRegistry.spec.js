@@ -9,6 +9,7 @@
  * and every source file is registered.
  */
 import { describe, it, expect } from "vitest";
+import { expandSourceMarkers } from "./setup.js";
 import fs from "fs";
 import path from "path";
 import vm from "vm";
@@ -27,7 +28,7 @@ const LLM_COMMON_PATH = path.join(ROOT, "software/scripts/advanced/llm/llm-commo
  * @returns {Record<string, any>} The populated sandbox.
  */
 function loadLlmCommon() {
-  const source = fs.readFileSync(LLM_COMMON_PATH, "utf-8").replace(/^(const|let) /gm, "var ");
+  const source = expandSourceMarkers(fs.readFileSync(LLM_COMMON_PATH, "utf-8")).replace(/^(const|let) /gm, "var ");
   /** @type {Record<string, any>} */
   const sandbox = {
     path,
@@ -41,7 +42,7 @@ function loadLlmCommon() {
     is_os_mac: 0,
     readJson: () => ({}),
     readText: () => "",
-    getSyHPOmenHomeIpAddress: () => null,
+    getOllamaHosts: async () => [{ ip: "127.0.0.1", hostname: "local", tags: [], isDefault: true, isLocal: true }],
   };
   vm.createContext(sandbox);
   vm.runInContext(source, sandbox);

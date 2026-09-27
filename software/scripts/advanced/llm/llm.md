@@ -592,8 +592,8 @@ Two different discoverers, two different priorities — by design.
 
 | Discoverer                  | Used by                                                                               | Host priority              | Rationale                                                                                                                                                                                                                                          |
 | --------------------------- | ------------------------------------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getOllamaProviderInputs()` | opencode providers, Zed agent panel, VS Code Copilot Chat (`chatLanguageModels.json`) | **sy-omen45l → 127.0.0.1** | Agent / chat traffic is user-initiated and infrequent. Prefer the beefier remote box so the big models actually get to serve. VS Code registers EVERY reachable host (not just the first); opencode and Zed do the same for their provider panels. |
-| `getAutocompleteProvider()` | Zed `edit_predictions`                                                                | **127.0.0.1 → sy-omen45l** | Inline autocomplete fires on every keystroke. Localhost (~sub-ms) beats LAN (~5-20ms+) and dodges network round-trips on the typing hot path.                                                                                                      |
+| `getOllamaProviderInputs()` | opencode providers, Zed agent panel, VS Code Copilot Chat (`chatLanguageModels.json`) | **remotes → 127.0.0.1**    | Agent / chat traffic is user-initiated and infrequent. Prefer the beefier remote box so the big models actually get to serve. VS Code registers EVERY reachable host (not just the first); opencode and Zed do the same for their provider panels. |
+| `getAutocompleteProvider()` | Zed `edit_predictions`                                                                | **127.0.0.1 → remotes**    | Inline autocomplete fires on every keystroke. Localhost (~sub-ms) beats LAN (~5-20ms+) and dodges network round-trips on the typing hot path.                                                                                                      |
 
 When a host doesn't have a matching model, the discoverer falls through to the next
 host. When no host has any matching model, the caller omits the relevant config block
@@ -602,12 +602,18 @@ hammering a dead endpoint on every keystroke. For Zed that means
 `zed-config.jsonc`'s `edit_predictions.disabled_globs: ["**/*"]` survives and inline
 predictions stay fully off — deliberately not Zed's cloud Zeta.
 
-`sy-omen45l` resolves via `getSyHPOmenHomeIpAddress()` in
-[`software/index.js`](../../../index.js), which reads the address from
-[`ip-address.config`](../../../metadata/ip-address.config) — the single source of truth
-for every home-network address. No LAN IP is hardcoded in any script. When that lookup
-returns nothing (hostname removed, or the config unreadable), the remote host is simply
-dropped from the probe list and only `127.0.0.1` is tried.
+Hosts come from [`ip-address.config`](../../../metadata/ip-address.config) by tag,
+never by machine name: every host tagged `OLLAMA_REMOTE` is a server, and the one
+tagged `OLLAMA_DEFAULT_SERVER` (at most one) leads — else the first `OLLAMA_REMOTE`.
+`getOllamaHosts()` in [`software/index.js`](../../../index.js) returns that list with
+`127.0.0.1` appended; `getReachableOllamaHosts()` in [`llm-common.js`](llm-common.js)
+keeps only hosts whose `/api/tags` lists at least one model, so an unreachable or
+empty host (remote or local) is never registered. `run.sh` bakes the same pick into
+`OLLAMA_DEFAULT_SERVER_IP` for the shell helpers. Example line:
+
+```
+192.168.1.45: my-desktop | WINDOWS_REMOTE | OLLAMA_REMOTE | OLLAMA_DEFAULT_SERVER
+```
 
 VS Code Copilot Chat reads `~/Library/Application Support/Code/User/chatLanguageModels.json`
 on macOS (Linux equivalent: `~/.config/Code/User/chatLanguageModels.json`). The file's

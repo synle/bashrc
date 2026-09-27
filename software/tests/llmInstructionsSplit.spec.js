@@ -19,7 +19,7 @@
  * list kept here — a second list is the drift this consolidation exists to prevent.
  */
 import { describe, it, expect, beforeEach } from "vitest";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction, expandSourceMarkers } from "./setup.js";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -149,7 +149,7 @@ const SPLIT_EXPECTATIONS = {
  * @returns {Record<string, any>} The populated sandbox.
  */
 function loadLlmCommon() {
-  const source = fs.readFileSync(LLM_COMMON_PATH, "utf-8").replace(/^(const|let) /gm, "var ");
+  const source = expandSourceMarkers(fs.readFileSync(LLM_COMMON_PATH, "utf-8")).replace(/^(const|let) /gm, "var ");
   /** @type {Record<string, any>} */
   const sandbox = {
     path,
@@ -168,7 +168,7 @@ function loadLlmCommon() {
     is_os_mac: 0,
     readJson: () => ({}),
     readText: () => "",
-    getSyHPOmenHomeIpAddress: () => null,
+    getOllamaHosts: async () => [{ ip: "127.0.0.1", hostname: "local", tags: [], isDefault: true, isLocal: true }],
     // The REAL resolver from index.js — never a stub, which would be a second
     // implementation free to disagree with the one that actually deploys. The
     // shared roots are pinned to the sandbox so these assertions never depend on

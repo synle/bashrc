@@ -261,21 +261,39 @@ async function _fetchOllamaModelNames(host) {
 }
 
 /**
+ * The one reachability rule for Ollama hosts: probes `/api/tags` on every host from
+ * `getOllamaHosts()` (index.js — tagged `OLLAMA_REMOTE` servers, default first, then
+ * `127.0.0.1`) and keeps only hosts that answer with at least one model. A host that is
+ * unreachable, or reachable with no models, is skipped and never registered anywhere.
+ * Probes are bounded by the `readJson` fetch timeout, so a dead host cannot stall setup.
+ * @returns {Promise<Array<{ip: string, hostname: string, isDefault: boolean, isLocal: boolean, models: string[]}>>}
+ *   Reachable hosts in `getOllamaHosts()` order; `[]` when none serve a model.
+ */
+async function getReachableOllamaHosts() {
+  const reachable = [];
+  for (const host of await getOllamaHosts()) {
+    const models = await _fetchOllamaModelNames(host.ip);
+    if (models.length === 0) {
+      log(`>> ollama: skipping ${host.hostname} (${host.ip}) — unreachable or no models`);
+      continue;
+    }
+    reachable.push({ ...host, models });
+  }
+  return reachable;
+}
+
+/**
  * Discovers reachable Ollama providers and the models they expose, returning input objects
  * shaped for downstream config builders (e.g. opencode's `_buildOpencodeConfig`).
  *
- * Probes the known hosts in priority order: the sy-omen45l workstation first, then the
- * local loopback `127.0.0.1`. Each host that responds with at least one model becomes one
- * provider entry. Hosts that fail to respond (offline, unreachable, no models) are dropped
- * entirely — the caller never has to worry about pruning an empty `ollama-local` from its
- * provider map.
+ * One provider entry per host from `getReachableOllamaHosts()`: the remote servers
+ * tagged `OLLAMA_REMOTE` in `software/metadata/ip-address.config` (default server
+ * first), then `127.0.0.1` — each only when it answers `/api/tags` with at least one
+ * model. Unreachable or empty hosts never become a provider.
  *
- * The sy-omen45l address is NOT hardcoded here: it is resolved at runtime by
- * `getSyHPOmenHomeIpAddress()` (index.js), which reads
- * `software/metadata/ip-address.config` — the single source of truth for every
- * home-network address. When that lookup yields nothing (config unreadable or the
- * hostname was removed), the remote candidate is skipped and only localhost is probed;
- * an unresolvable hostname is treated exactly like an unreachable one.
+ * No hostname or address is hardcoded: hosts are selected by tag, and a config with no
+ * `OLLAMA_REMOTE` host means only localhost is probed. Provider ids and labels come
+ * from the hostname written in the config (`ollama-local` for the loopback host).
  *
  * Models are NOT hardcoded either: every reachable host contributes whatever `/api/tags` reports.
  *
@@ -283,48 +301,15 @@ async function _fetchOllamaModelNames(host) {
  *   Empty array if no host is reachable.
  */
 async function getOllamaProviderInputs() {
-  // sy-omen45l's address lives in software/metadata/ip-address.config and is resolved
-  // through index.js so every script shares one lookup. No literal IP belongs in this file.
-  const omenIp = await getSyHPOmenHomeIpAddress();
-  const localIp = "127.0.0.1";
-
-  /** @type {Array<{id: string, host: string, displayName: string}>} */
-  const candidates = [];
-
-  // Remote first (see JSDoc for why), and only when the config actually resolved it.
-  if (omenIp) {
-    candidates.push({
-      id: "ollama-sy-omen45l",
-      host: omenIp,
-      displayName: `Sy-omen45l - ${omenIp}:${OLLAMA_PORT}`,
-    });
-  } else {
-    log(">> ollama: skipping sy-omen45l — no address in software/metadata/ip-address.config");
+  const providers = (await getReachableOllamaHosts()).map(({ ip, hostname, models }) => ({
+    id: `ollama-${hostname}`,
+    name: `${hostname.charAt(0).toUpperCase()}${hostname.slice(1)} - ${ip}:${OLLAMA_PORT}`,
+    baseURL: `http://${ip}:${OLLAMA_PORT}/v1`,
+    models: models.map((name) => ({ name })),
+  }));
+  for (const p of providers) {
+    log(`>> ollama: discovered ${p.models.length} model(s) on ${p.id}: ${p.models.map((m) => m.name).join(", ")}`);
   }
-
-  candidates.push({
-    id: "ollama-local",
-    host: localIp,
-    displayName: `Local - ${localIp}:${OLLAMA_PORT}`,
-  });
-
-  /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
-  const providers = [];
-  for (const { id, host, displayName } of candidates) {
-    const modelNames = await _fetchOllamaModelNames(host);
-    if (modelNames.length === 0) {
-      log(`>> ollama: dropping provider ${id} (${host}) — no reachable models`);
-      continue;
-    }
-    log(`>> ollama: discovered ${modelNames.length} model(s) on ${id} (${host}): ${modelNames.join(", ")}`);
-    providers.push({
-      id,
-      name: displayName,
-      baseURL: `http://${host}:${OLLAMA_PORT}/v1`,
-      models: modelNames.map((name) => ({ name })),
-    });
-  }
-
   return providers;
 }
 
@@ -355,7 +340,7 @@ const AUTOCOMPLETE_MODELS = _getOllamaTierModels("autocomplete", "smallestFirst"
  * for custom endpoints (Copilot Chat handles only chat-side BYOK via chatLanguageModels.json).
  *
  * Priority is the INVERSE of `getOllamaProviderInputs`: `127.0.0.1` is probed FIRST and
- * `sy-omen45l` only as a LAN fallback. Reason: autocomplete fires per keystroke; localhost
+ * the `OLLAMA_REMOTE` servers (default first) only as LAN fallbacks. Reason: autocomplete fires per keystroke; localhost
  * round-trip (~sub-ms) beats LAN (~5-20ms+ on residential WiFi), and a dead remote host
  * shouldn't add network round-trips to every typing event. Agent/chat traffic (the
  * `getOllamaProviderInputs` use case) is happy to prefer the beefier remote box because
@@ -373,33 +358,25 @@ const AUTOCOMPLETE_MODELS = _getOllamaTierModels("autocomplete", "smallestFirst"
  * falling through to Zed's cloud Zeta; vanilla VSCode has no inline completion at all.
  *
  * Network reachability is bounded by `_URL_FETCH_TIMEOUT_MS` (3s) in `_readTextFromURL`
- * via the existing `AbortSignal.timeout` in `readJson`, so a totally-offline omen45l can't
- * stall setup.
+ * via the existing `AbortSignal.timeout` in `readJson`, so an offline remote server
+ * can't stall setup.
  *
- * As in `getOllamaProviderInputs`, sy-omen45l's address comes from
- * `software/metadata/ip-address.config` via `getSyHPOmenHomeIpAddress()` and is simply
- * omitted from the probe list when that lookup yields nothing.
+ * Same reachable-host list as `getOllamaProviderInputs` (`getReachableOllamaHosts()`),
+ * with the loopback entry moved to the front.
  *
  * @param {string[]} [preferred=AUTOCOMPLETE_MODELS] - Acceptable model tags in priority order.
  * @returns {Promise<{host: string, port: number, model: string}|null>} Picked host+model or null.
  */
 async function getAutocompleteProvider(preferred = AUTOCOMPLETE_MODELS) {
-  const omenIp = await getSyHPOmenHomeIpAddress();
-  // Localhost FIRST, sy-omen45l SECOND. Reverse of getOllamaProviderInputs (see JSDoc).
-  // The remote entry is appended only when ip-address.config resolved an address.
-  /** @type {string[]} */
-  const hosts = ["127.0.0.1"];
-  if (omenIp) hosts.push(omenIp);
-
-  for (const host of hosts) {
-    const tags = await _fetchOllamaModelNames(host);
-    if (tags.length === 0) continue; // Host unreachable OR has no models — try the next one.
-    const match = preferred.find((m) => tags.includes(m));
+  // Localhost FIRST, remote servers after. Reverse of getOllamaProviderInputs (see JSDoc).
+  const reachable = await getReachableOllamaHosts();
+  for (const { ip, models } of [...reachable.filter((h) => h.isLocal), ...reachable.filter((h) => !h.isLocal)]) {
+    const match = preferred.find((m) => models.includes(m));
     if (match) {
-      log(`>> autocomplete: picked ${match} on ${host}`);
-      return { host, port: OLLAMA_PORT, model: match };
+      log(`>> autocomplete: picked ${match} on ${ip}`);
+      return { host: ip, port: OLLAMA_PORT, model: match };
     }
-    log(`>> autocomplete: ${host} reachable but no preferred model present (saw: ${tags.join(", ")})`);
+    log(`>> autocomplete: ${ip} reachable but no preferred model present (saw: ${models.join(", ")})`);
   }
   return null;
 }

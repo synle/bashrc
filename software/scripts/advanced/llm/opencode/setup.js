@@ -714,8 +714,9 @@ async function _doOpencodeInstructionsWork() {
  * (`~/.local/share/opencode/auth.json` -> `~/.auth-opencode.json`) so provider logins
  * survive the uninstall/reinstall in `install.sh`.
  *
- * Provider discovery: `getOllamaProviderInputs()` (in llm-common.js) probes the sy-omen45l
- * workstation and `127.0.0.1` on port `OLLAMA_PORT` (`/api/tags`) and returns ONLY hosts
+ * Provider discovery: `getOllamaProviderInputs()` (in llm-common.js) probes every
+ * `OLLAMA_REMOTE` host from ip-address.config and `127.0.0.1` on port `OLLAMA_PORT`
+ * (`/api/tags`) and returns ONLY hosts
  * that responded with at least one model. No hardcoded model list — every reachable host
  * contributes whatever it advertises. When zero hosts respond, the Ollama provider entries
  * are omitted (github-copilot is still written either way).

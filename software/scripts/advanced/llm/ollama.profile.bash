@@ -51,21 +51,21 @@ fi
 # picked up there too.
 export SY_OLLAMA_MANAGED_ENV_VARS="OLLAMA_FLASH_ATTENTION OLLAMA_KV_CACHE_TYPE OLLAMA_LOAD_TIMEOUT OLLAMA_NUM_PARALLEL OLLAMA_CONTEXT_LENGTH OLLAMA_KEEP_ALIVE OLLAMA_MAX_LOADED_MODELS"
 
-# sy-omen45l connection details. The IP is looked up at profile-load time from
-# software/metadata/ip-address.config (via get_home_ip_address) — the single source of
-# truth for home-network addresses — so no address is hardcoded in any profile partial.
-# Resolves to an empty string when the hostname is not listed there; consumers fall back
-# to 127.0.0.1 in that case.
-export SY_OMEN45L_OLLAMA_PORT="11434"
+# Default Ollama server connection details. OLLAMA_DEFAULT_SERVER_IP is baked by run.sh
+# (get_ollama_default_server_ip) from software/metadata/ip-address.config, selected by
+# tag — OLLAMA_DEFAULT_SERVER, else the first reachable OLLAMA_REMOTE, else 127.0.0.1 —
+# never by hostname, so no machine name or address is hardcoded in any profile partial.
+# Empty when no host serves a model; consumers fall back to 127.0.0.1 in that case.
+export OLLAMA_DEFAULT_SERVER_PORT="11434"
 
-# SY_OMEN45L_OLLAMA_DEFAULT_MODEL is the SINGLE default model for ollama_warmup,
+# OLLAMA_DEFAULT_MODEL is the SINGLE default model for ollama_warmup,
 # claude.profile.bash's claude_local, and the opencode/Zed/VS Code provider wiring;
 # consumers read it at call time and must NOT re-declare a `:-<model>` literal.
 # It is NOT set here: ollama-models.js derives it from llm-models.jsonc (the largest
-# VRAM tier's first `agent` model — sy-omen45l is a 32 GB card) and registers it as
+# VRAM tier's first `agent` model — the default server is expected to be a big card) and registers it as
 # the "ollama default model" block right after this partial. The `${VAR:-...}` form
 # there lets an earlier export (~/.bash_custom_tweaks, or
-# `SY_OMEN45L_OLLAMA_DEFAULT_MODEL=x claude_local`) win over the repo default.
+# `OLLAMA_DEFAULT_MODEL=x claude_local`) win over the repo default.
 
 # WSL: no Linux ollama is installed (ollama.sh skips it); the daemon and CLI live on
 # the Windows host (winget Ollama.Ollama). Alias so `ollama list` / `ollama rm` work
@@ -77,11 +77,11 @@ export SY_OMEN45L_OLLAMA_PORT="11434"
 # _ollama_url: normalize a bare host / host:port / full URL into a full Ollama base URL
 #
 # Internal helper shared by every function below so host handling is declared once.
-# An empty argument resolves to $SY_OMEN45L_IP:$SY_OMEN45L_OLLAMA_PORT, falling back
+# An empty argument resolves to $OLLAMA_DEFAULT_SERVER_IP:$OLLAMA_DEFAULT_SERVER_PORT, falling back
 # to 127.0.0.1:11434 when ip-address.config produced nothing.
 function _ollama_url() {
-	local env_ip="${SY_OMEN45L_IP:-127.0.0.1}"
-	local env_port="${SY_OMEN45L_OLLAMA_PORT:-11434}"
+	local env_ip="${OLLAMA_DEFAULT_SERVER_IP:-127.0.0.1}"
+	local env_port="${OLLAMA_DEFAULT_SERVER_PORT:-11434}"
 	local host="${1:-${env_ip}:${env_port}}"
 
 	# Keep an explicit scheme, add the default port when the caller omitted one,
@@ -105,7 +105,7 @@ function _ollama_url() {
 # Used by the daemon-lifecycle helpers (ps / unload / warmup / doctor), which act on
 # the machine you are sitting at rather than on the remote workstation.
 function _ollama_local_url() {
-	local env_port="${SY_OMEN45L_OLLAMA_PORT:-11434}"
+	local env_port="${OLLAMA_DEFAULT_SERVER_PORT:-11434}"
 	_ollama_url "${1:-127.0.0.1:${env_port}}"
 }
 
@@ -179,7 +179,7 @@ function _ollama_model_context_length() {
 
 # list_ollama_models: list the models an Ollama endpoint exposes via its /api/tags route
 #
-# Host defaults to $SY_OMEN45L_IP:$SY_OMEN45L_OLLAMA_PORT (see above; falls back to
+# Host defaults to $OLLAMA_DEFAULT_SERVER_IP:$OLLAMA_DEFAULT_SERVER_PORT (see above; falls back to
 # 127.0.0.1:11434 when the config lookup found nothing). Accepts hostnames with or
 # without a scheme and/or port and normalizes them into a full URL.
 function list_ollama_models() {
@@ -187,8 +187,8 @@ function list_ollama_models() {
 		echo "list_ollama_models: list models exposed by an Ollama endpoint
   Usage: list_ollama_models [host[:port]]
 
-Host defaults to \$SY_OMEN45L_IP:\$SY_OMEN45L_OLLAMA_PORT, falling back to
-127.0.0.1:11434. \$SY_OMEN45L_IP is resolved from
+Host defaults to \$OLLAMA_DEFAULT_SERVER_IP:\$OLLAMA_DEFAULT_SERVER_PORT, falling back to
+127.0.0.1:11434. \$OLLAMA_DEFAULT_SERVER_IP is resolved from
 software/metadata/ip-address.config — edit that file to change the address.
 
 Accepts a bare host (http:// and the default port are added), a host:port pair,
@@ -290,7 +290,7 @@ function ollama_warmup() {
 		echo "ollama_warmup: preload a model into an Ollama daemon
   Usage: ollama_warmup [model] [host[:port]]
 
-Model defaults to \$SY_OMEN45L_OLLAMA_DEFAULT_MODEL, host to 127.0.0.1:11434.
+Model defaults to \$OLLAMA_DEFAULT_MODEL, host to 127.0.0.1:11434.
 Sends a chat request with an empty message list, which loads the weights and
 returns without generating. Run it before starting an agent session so the
 first turn is not sitting on a multi-GB load."
@@ -299,7 +299,7 @@ first turn is not sitting on a multi-GB load."
 
 	# No `:-<model>` literal here on purpose — the "ollama default model" block is the
 	# single source of truth for the default tag.
-	local model="${1:-$SY_OMEN45L_OLLAMA_DEFAULT_MODEL}"
+	local model="${1:-$OLLAMA_DEFAULT_MODEL}"
 	local host
 	host="$(_ollama_local_url "${2:-}")"
 
@@ -404,7 +404,7 @@ either way with ollama_doctor."
 			launchctl setenv "$var" "$value"
 		done
 		if ((want_lan)); then
-			launchctl setenv OLLAMA_HOST "0.0.0.0:${SY_OMEN45L_OLLAMA_PORT:-11434}"
+			launchctl setenv OLLAMA_HOST "0.0.0.0:${OLLAMA_DEFAULT_SERVER_PORT:-11434}"
 		fi
 		echo ">> launchd session env updated. Run 'ollama_restart' for it to take effect."
 		return 0
@@ -432,7 +432,7 @@ Environment=\"$var=$value\""
 	done
 	if ((want_lan)); then
 		desired="$desired
-Environment=\"OLLAMA_HOST=0.0.0.0:${SY_OMEN45L_OLLAMA_PORT:-11434}\""
+Environment=\"OLLAMA_HOST=0.0.0.0:${OLLAMA_DEFAULT_SERVER_PORT:-11434}\""
 	fi
 
 	if [ -f "$target" ] && [ "$(command cat "$target" 2>/dev/null)" = "$desired" ]; then

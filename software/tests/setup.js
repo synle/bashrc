@@ -257,7 +257,7 @@ export function getSandboxProcess() {
  * @param {Set<string>} [seen] - Paths already on the expansion stack (cycle guard).
  * @returns {string} Text with every reachable marker replaced by file content.
  */
-function expandSourceMarkers(source, seen = new Set()) {
+export function expandSourceMarkers(source, seen = new Set()) {
   return source.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
     if (seen.has(srcFile)) return "";
     const next = new Set(seen).add(srcFile);

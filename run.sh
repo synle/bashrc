@@ -329,6 +329,39 @@ get_home_ip_address() {
     '
 }
 
+# get_ollama_default_server_ip - Print the IP of the default Ollama server. Hosts are
+# selected by tag in ip-address.config, never by hostname, in this order: the host
+# tagged OLLAMA_DEFAULT_SERVER, the other OLLAMA_REMOTE hosts (file order), then
+# 127.0.0.1. The first one whose /api/tags lists at least one model wins; unreachable
+# or model-less hosts are skipped (2s probe each). Prints nothing when none qualify.
+# Mirrors getOllamaHosts() + getReachableOllamaHosts() in index.js / llm-common.js.
+function get_ollama_default_server_ip() {
+  local url="https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/refs/heads/main/software/metadata/ip-address.config"
+  local ip
+  for ip in $(curl -s "$url" | awk -F'[:,|]' '
+        /^[[:space:]]*([=#]|$)/ { next }
+        {
+            ip = $1;
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", ip);
+            is_default = 0; is_remote = 0;
+            for (i = 2; i <= NF; i++) {
+                token = $i;
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", token);
+                if (token == "OLLAMA_DEFAULT_SERVER") is_default = 1;
+                if (token == "OLLAMA_REMOTE") is_remote = 1;
+            }
+            if (is_default && tagged == "") tagged = ip;
+            else if (is_default || is_remote) others = others " " ip;
+        }
+        END { print tagged others " 127.0.0.1" }
+    '); do
+    if curl -fsS --max-time 2 "http://$ip:11434/api/tags" 2> /dev/null | grep -q '"name"'; then
+      echo "$ip"
+      return 0
+    fi
+  done
+}
+
 ################################################################################
 # --- Temp Root (single source of truth for all scratch paths) ---
 # Prefer /tmp when writable so mac + Linux keep today's /tmp/synle/bashrc layout.
@@ -674,7 +707,7 @@ $os_flags
 # is_os_* exports above because is_gui consults is_os_mac / is_os_windows.
 _detect_gui_flags
 
-export SY_OMEN45L_IP="$(get_home_ip_address "sy-omen45l")"
+export OLLAMA_DEFAULT_SERVER_IP="$(get_ollama_default_server_ip)"
 
 # Hardware flags from common-env.sh — baked (not re-probed per shell) because the
 # battery / GPU probes spawn subprocesses (powershell.exe, nvidia-smi) and the

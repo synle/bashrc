@@ -89,7 +89,7 @@
 
   // --- AI ---
   // Agent panel ON: zed.js auto-registers `language_models.ollama` (local 127.0.0.1
-  // with auto_discover) and `language_models.openai_compatible["Ollama (sy-omen45l)"]`
+  // with auto_discover) and `language_models.openai_compatible["Ollama (<hostname>)"]`
   // (remote, models enumerated from /api/tags) when those hosts are reachable, then
   // pins `agent.default_model` to the best provider. Inline edit predictions are wired
   // to Ollama too — zed.js overwrites the `edit_predictions` key near the top of this

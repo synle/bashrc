@@ -141,18 +141,18 @@ pluggable: detect which backend is up by probing both `/api/tags` and
 `/v1/models`, then format accordingly. That keeps `opencode.json` writes
 correct regardless of which engine you happen to be running.
 
-## sy-omen45l — RTX 5090 (32 GB), verified picks
+## RTX 5090 (32 GB) default server — verified notes
 
 > Everything in this section was verified on **2026-08-04** two ways: tag existence
 > and on-disk size from <https://ollama.com/library>, and **pullability + residency
-> against the live daemon** at `$SY_OMEN45L_IP:11434` (`/api/tags`, `/api/pull`).
+> against the live daemon** at `$OLLAMA_DEFAULT_SERVER_IP:11434` (`/api/tags`, `/api/pull`).
 >
 > **Verify against the daemon, not the website.** A tag being listed on
 > ollama.com/library does _not_ mean the registry will serve it to this box — see
 > the NVFP4 trap below. The real check is a pull attempt:
 >
 > ```bash
-> curl -fsS "http://$SY_OMEN45L_IP:11434/api/pull" -d '{"model":"<tag>"}' | head -2
+> curl -fsS "http://$OLLAMA_DEFAULT_SERVER_IP:11434/api/pull" -d '{"model":"<tag>"}' | head -2
 > ```
 >
 > A first line of `{"status":"pulling manifest"}` means good; an `{"error":...}`
@@ -164,7 +164,7 @@ Blackwell (SM 120, the 5090's die) has native FP4 tensor cores, so `-nvfp4` tags
 _look_ like the obvious right answer on this card. They are not usable:
 
 ```
-$ curl -fsS "http://$SY_OMEN45L_IP:11434/api/pull" -d '{"model":"qwen3.6:35b-a3b-coding-nvfp4"}'
+$ curl -fsS "http://$OLLAMA_DEFAULT_SERVER_IP:11434/api/pull" -d '{"model":"qwen3.6:35b-a3b-coding-nvfp4"}'
 {"status":"pulling manifest"}
 {"error":"pull model manifest: 412: this model requires macOS"}
 ```

@@ -44,8 +44,8 @@
     "192.168.1.45",
     {
       "NO_SSH": false,
-      "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
       "IS_FIRST_IP_IN_GROUP": true
     }
   ],

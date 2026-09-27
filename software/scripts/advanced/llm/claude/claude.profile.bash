@@ -35,7 +35,7 @@ function _claude_endpoint_speaks_anthropic() {
 # tag it warns "<tag> is not a model this version of Claude Code recognizes, so
 # auto-compact will keep this session within 200k tokens (the context window it assumes)"
 # and then runs auto-compact against that invented 200k. That number is wrong in both
-# directions: the default qwen3.6 tag on sy-omen45l serves 262144, so a quarter of the
+# directions: the default qwen3.6 tag on the default server serves 262144, so a quarter of the
 # window is thrown away, and a daemon pinned to OLLAMA_CONTEXT_LENGTH=16384 gets requests
 # an order of magnitude past what it can hold, which the server truncates mid-turn.
 #
@@ -123,9 +123,9 @@ function _claude_scrub_anthropic_credentials() {
 
 # claude_with_ip_address: run `claude` against a self-hosted Anthropic-compatible endpoint
 #
-# Host and model both default to the sy-omen45l workstation values exported by
-# ollama.profile.bash ($SY_OMEN45L_IP / $SY_OMEN45L_OLLAMA_PORT /
-# $SY_OMEN45L_OLLAMA_DEFAULT_MODEL). $SY_OMEN45L_IP is resolved at profile-load
+# Host and model both default to the default Ollama server values exported by
+# ollama.profile.bash ($OLLAMA_DEFAULT_SERVER_IP / $OLLAMA_DEFAULT_SERVER_PORT /
+# $OLLAMA_DEFAULT_MODEL). $OLLAMA_DEFAULT_SERVER_IP is resolved at profile-load
 # time from software/metadata/ip-address.config, so no address is hardcoded here.
 # Falls back to 127.0.0.1 when that lookup produced nothing.
 # Supports an `ls` subcommand that lists a host's Ollama models via list_ollama_models.
@@ -135,8 +135,8 @@ function claude_with_ip_address() {
   Usage: claude_with_ip_address [host[:port]] [model]
          claude_with_ip_address ls [host[:port]]
 
-Host defaults to \$SY_OMEN45L_IP:\$SY_OMEN45L_OLLAMA_PORT (falling back to
-127.0.0.1:11434); model defaults to \$SY_OMEN45L_OLLAMA_DEFAULT_MODEL. Those
+Host defaults to \$OLLAMA_DEFAULT_SERVER_IP:\$OLLAMA_DEFAULT_SERVER_PORT (falling back to
+127.0.0.1:11434); model defaults to \$OLLAMA_DEFAULT_MODEL. Those
 vars are exported by ollama.profile.bash, which resolves the IP from
 software/metadata/ip-address.config — edit that file to change the address.
 
@@ -167,7 +167,7 @@ Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
   # No `:-<model>` literal here on purpose. The default comes from llm-models.jsonc via
   # the "ollama default model" profile block (ollama-models.js); duplicating a fallback
   # tag is how this surface drifts away from opencode/Zed/VS Code.
-  local default_model="$SY_OMEN45L_OLLAMA_DEFAULT_MODEL"
+  local default_model="$OLLAMA_DEFAULT_MODEL"
 
   # Handle 'ls' or list command
   if [[ "$1" == "ls" ]]; then
@@ -307,9 +307,9 @@ function claude() {
   "${_cl_cmd[@]}" "$@"
 }
 
-# `cl` runs claude against the sy-omen45l Ollama box. Both the host and the model come
-# from claude_with_ip_address's own defaults ($SY_OMEN45L_IP / $SY_OMEN45L_OLLAMA_PORT /
-# $SY_OMEN45L_OLLAMA_DEFAULT_MODEL, exported by ollama.profile.bash) so the address stays
+# `cl` runs claude against the default Ollama server. Both the host and the model come
+# from claude_with_ip_address's own defaults ($OLLAMA_DEFAULT_SERVER_IP / $OLLAMA_DEFAULT_SERVER_PORT /
+# $OLLAMA_DEFAULT_MODEL, exported by ollama.profile.bash) so the address stays
 # declared only in software/metadata/ip-address.config.
 alias cl='claude_with_ip_address'
 

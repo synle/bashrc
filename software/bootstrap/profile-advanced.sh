@@ -1241,7 +1241,7 @@ alias amend="git amend"
 
 # --- Ollama Performance ---
 # Sourced ahead of the per-CLI partials below: it is the single place that defines
-# SY_OMEN45L_OLLAMA_PORT / SY_OMEN45L_OLLAMA_DEFAULT_MODEL, and those partials read
+# OLLAMA_DEFAULT_SERVER_PORT / OLLAMA_DEFAULT_MODEL, and those partials read
 # both without re-declaring a fallback literal.
 # SOURCE | software/scripts/advanced/llm/ollama.profile.bash
 # BEGIN/END | ollama default model

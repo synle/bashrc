@@ -1,16 +1,23 @@
 /** Tests for the shared MCP server registry helpers in llm-common.js. */
 import { describe, it, expect } from "vitest";
+import { expandSourceMarkers } from "./setup.js";
 import fs from "fs";
 import path from "path";
 import vm from "vm";
 
 const ROOT = path.resolve(".");
-const LLM_COMMON_SOURCE = fs.readFileSync(path.join(ROOT, "software/scripts/advanced/llm/llm-common.js"), "utf-8");
+/**
+ * llm-common.js with its `// SOURCE` markers inlined (it SOURCEs llm-models.jsonc for
+ * OLLAMA_MODELS_BY_VRAM), mirroring the runtime expansion.
+ * @type {string}
+ */
+const LLM_COMMON_SOURCE = expandSourceMarkers(fs
+  .readFileSync(path.join(ROOT, "software/scripts/advanced/llm/llm-common.js"), "utf-8"));
 
 /**
  * Builds a vm sandbox seeded with the globals `llm-common.js` references
  * (`is_os_mac`, `path`, `log`, plus stubs for `readJson` and
- * `getSyHPOmenHomeIpAddress`). The `readJson` stub returns whatever the test
+ * `getOllamaHosts`). The `readJson` stub returns whatever the test
  * passes in for `software/scripts/advanced/llm/_common/mcp-servers.jsonc`, and
  * whatever `opts.tagsByHost` declares for an Ollama `/api/tags` URL.
  *
@@ -22,16 +29,16 @@ const LLM_COMMON_SOURCE = fs.readFileSync(path.join(ROOT, "software/scripts/adva
  * lives only in `software/metadata/ip-address.config`.
  *
  * @param {{ mcpServers?: Record<string, any> } | null} registryPayload - What `readJson` returns for the registry path.
- * @param {{ omenIp?: string | null, tagsByHost?: Record<string, string[]> }} [opts] - Discovery stubs.
- * @param {string|null} [opts.omenIp] - What `getSyHPOmenHomeIpAddress()` resolves to (`null` = not in config).
+ * @param {{ remoteIps?: string[], tagsByHost?: Record<string, string[]> }} [opts] - Discovery stubs.
+ * @param {string[]} [opts.remoteIps] - OLLAMA_REMOTE host IPs, default first (`[]` = none tagged).
  * @param {Record<string, string[]>} [opts.tagsByHost] - Model names each host's `/api/tags` reports.
  * @returns {Record<string, any>} The populated sandbox.
  */
 function loadLlmCommon(registryPayload, opts = {}) {
   /** @type {string} Source with `const`/`let` rewritten so declarations become sandbox properties. */
   const source = LLM_COMMON_SOURCE.replace(/^(const|let) /gm, "var ");
-  /** @type {string|null} Resolved sy-omen45l address, or null when the config has no entry. */
-  const omenIp = opts.omenIp === undefined ? "192.0.2.45" : opts.omenIp;
+  /** @type {string[]} Tagged remote Ollama server IPs, default first. */
+  const remoteIps = opts.remoteIps === undefined ? ["192.0.2.45"] : opts.remoteIps;
   /** @type {Record<string, string[]>} Per-host `/api/tags` model names. */
   const tagsByHost = opts.tagsByHost || {};
   /** @type {string[]} Every host actually probed, in probe order — asserted by the discovery tests. */
@@ -61,7 +68,11 @@ function loadLlmCommon(registryPayload, opts = {}) {
       }
       return {};
     },
-    getSyHPOmenHomeIpAddress: async () => omenIp,
+    // Mirrors index.js getOllamaHosts(): tagged remotes (default first), then 127.0.0.1.
+    getOllamaHosts: async () => [
+      ...remoteIps.map((ip, i) => ({ ip, hostname: `my-desktop-${i + 1}`, tags: ["OLLAMA_REMOTE"], isDefault: i === 0, isLocal: false })),
+      { ip: "127.0.0.1", hostname: "local", tags: [], isDefault: remoteIps.length === 0, isLocal: true },
+    ],
   };
   vm.runInNewContext(source, sandbox);
   return sandbox;
@@ -151,66 +162,86 @@ describe("translateMcpServersForOpencode", () => {
   });
 });
 
-// ---- Ollama host discovery: no LAN address is hardcoded in llm-common.js ----
+// ---- Ollama host discovery: hosts come from ip-address.config tags ----
 //
-// Both discoverers resolve sy-omen45l through `getSyHPOmenHomeIpAddress()`, which reads
-// `software/metadata/ip-address.config`. When that lookup returns null the remote host
-// must be dropped from the probe list entirely — probing a literal fallback address (or,
-// worse, `http://null:11434`) is exactly what these tests exist to prevent.
+// getOllamaHosts() (index.js) lists OLLAMA_REMOTE hosts (default first) plus 127.0.0.1.
+// getReachableOllamaHosts() keeps only hosts whose /api/tags lists a model, so an
+// unreachable or empty host — remote or local — is never registered.
 
-describe("getOllamaProviderInputs > sy-omen45l address resolution", () => {
-  it("probes the config-resolved remote host first, then localhost", async () => {
+describe("getOllamaProviderInputs > tagged host discovery", () => {
+  it("registers every reachable remote host (default first), then localhost", async () => {
     const sandbox = loadLlmCommon(null, {
-      omenIp: "192.0.2.45",
-      tagsByHost: { "192.0.2.45": ["qwen3.6:latest"], "127.0.0.1": ["qwen2.5-coder:3b"] },
+      remoteIps: ["192.0.2.45", "192.0.2.46"],
+      tagsByHost: {
+        "192.0.2.45": ["glm-4.7-flash:q4_K_M"],
+        "192.0.2.46": ["qwen2.5-coder:14b"],
+        "127.0.0.1": ["qwen2.5-coder:3b"],
+      },
     });
     const providers = await sandbox.getOllamaProviderInputs();
-    expect(sandbox.probedHosts).toEqual(["192.0.2.45", "127.0.0.1"]);
-    expect(providers.map((p) => p.id)).toEqual(["ollama-sy-omen45l", "ollama-local"]);
+    expect(sandbox.probedHosts).toEqual(["192.0.2.45", "192.0.2.46", "127.0.0.1"]);
+    expect(providers.map((p) => p.id)).toEqual(["ollama-my-desktop-1", "ollama-my-desktop-2", "ollama-local"]);
     expect(providers[0].baseURL).toBe("http://192.0.2.45:11434/v1");
   });
 
-  it("skips the remote host entirely when ip-address.config has no sy-omen45l entry", async () => {
+  it("skips a tagged remote host that serves no models", async () => {
     const sandbox = loadLlmCommon(null, {
-      omenIp: null,
+      remoteIps: ["192.0.2.45"],
       tagsByHost: { "127.0.0.1": ["qwen2.5-coder:3b"] },
     });
+    const providers = await sandbox.getOllamaProviderInputs();
+    expect(providers.map((p) => p.id)).toEqual(["ollama-local"]);
+  });
+
+  it("skips localhost when it serves no models", async () => {
+    const sandbox = loadLlmCommon(null, {
+      remoteIps: ["192.0.2.45"],
+      tagsByHost: { "192.0.2.45": ["glm-4.7-flash:q4_K_M"] },
+    });
+    const providers = await sandbox.getOllamaProviderInputs();
+    expect(providers.map((p) => p.id)).toEqual(["ollama-my-desktop-1"]);
+  });
+
+  it("probes localhost only when no host is tagged OLLAMA_REMOTE", async () => {
+    const sandbox = loadLlmCommon(null, { remoteIps: [], tagsByHost: { "127.0.0.1": ["qwen2.5-coder:3b"] } });
     const providers = await sandbox.getOllamaProviderInputs();
     expect(sandbox.probedHosts).toEqual(["127.0.0.1"]);
     expect(providers.map((p) => p.id)).toEqual(["ollama-local"]);
   });
 
-  it("never probes a `null` host when the lookup misses", async () => {
-    const sandbox = loadLlmCommon(null, { omenIp: null, tagsByHost: {} });
-    await sandbox.getOllamaProviderInputs();
-    expect(sandbox.probedHosts).not.toContain("null");
-    expect(sandbox.probedHosts.every((h) => h && h !== "undefined")).toBe(true);
+  it("returns no providers when nothing is reachable", async () => {
+    const sandbox = loadLlmCommon(null, { remoteIps: ["192.0.2.45"], tagsByHost: {} });
+    expect(await sandbox.getOllamaProviderInputs()).toEqual([]);
   });
 });
 
-describe("getAutocompleteProvider > sy-omen45l address resolution", () => {
-  it("probes localhost first and the config-resolved remote host second", async () => {
+describe("getAutocompleteProvider > tagged host discovery", () => {
+  it("prefers localhost when it has a preferred model", async () => {
     const sandbox = loadLlmCommon(null, {
-      omenIp: "192.0.2.45",
+      remoteIps: ["192.0.2.45"],
+      tagsByHost: { "192.0.2.45": ["qwen2.5-coder:3b-base"], "127.0.0.1": ["qwen2.5-coder:1.5b-base"] },
+    });
+    expect(await sandbox.getAutocompleteProvider()).toEqual({
+      host: "127.0.0.1",
+      port: 11434,
+      model: "qwen2.5-coder:1.5b-base",
+    });
+  });
+
+  it("falls back to a remote host when localhost serves nothing", async () => {
+    const sandbox = loadLlmCommon(null, {
+      remoteIps: ["192.0.2.45"],
       tagsByHost: { "192.0.2.45": ["qwen2.5-coder:1.5b-base"] },
     });
-    const picked = await sandbox.getAutocompleteProvider();
-    expect(sandbox.probedHosts).toEqual(["127.0.0.1", "192.0.2.45"]);
-    expect(picked).toEqual({ host: "192.0.2.45", port: 11434, model: "qwen2.5-coder:1.5b-base" });
-  });
-
-  it("probes localhost only when ip-address.config has no sy-omen45l entry", async () => {
-    const sandbox = loadLlmCommon(null, {
-      omenIp: null,
-      tagsByHost: { "127.0.0.1": ["qwen2.5-coder:1.5b-base"] },
+    expect(await sandbox.getAutocompleteProvider()).toEqual({
+      host: "192.0.2.45",
+      port: 11434,
+      model: "qwen2.5-coder:1.5b-base",
     });
-    const picked = await sandbox.getAutocompleteProvider();
-    expect(sandbox.probedHosts).toEqual(["127.0.0.1"]);
-    expect(picked).toEqual({ host: "127.0.0.1", port: 11434, model: "qwen2.5-coder:1.5b-base" });
   });
 
-  it("returns null when the lookup misses and localhost has no preferred model", async () => {
-    const sandbox = loadLlmCommon(null, { omenIp: null, tagsByHost: {} });
+  it("returns null when no reachable host has a preferred model", async () => {
+    const sandbox = loadLlmCommon(null, { remoteIps: [], tagsByHost: {} });
     expect(await sandbox.getAutocompleteProvider()).toBeNull();
     expect(sandbox.probedHosts).toEqual(["127.0.0.1"]);
   });

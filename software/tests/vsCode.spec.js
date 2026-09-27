@@ -3,15 +3,13 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import vm from "vm";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction, expandSourceMarkers } from "./setup.js";
 
 const clone = getIndexFunction("clone");
 
 // ---- Load vs-code.js (with SOURCE marker for editor.common.js inlined) ----
 const vsCodeRaw = fs.readFileSync("software/scripts/advanced/vs-code.js", "utf-8");
-const vsCodeSource = vsCodeRaw.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
-  return fs.readFileSync(path.resolve(srcFile), "utf-8");
-});
+const vsCodeSource = expandSourceMarkers(vsCodeRaw);
 
 /**
  * Evaluates vs-code.js with mocked globals so its internal helpers are reachable.
@@ -245,14 +243,14 @@ describe("_getSettings -> editor.multiCursorModifier (per-OS)", () => {
  * Helper: builds a getOllamaProviderInputs-shaped provider entry for tests. Mirrors the
  * helper in `zed.spec.js` so both test files use the same shape.
  * @param {string} host - The host portion (e.g. "127.0.0.1", or "192.0.2.45" standing in
- *   for the sy-omen45l workstation whose real address lives in
+ *   for the OLLAMA_REMOTE host whose real address lives in
  *   `software/metadata/ip-address.config`).
  * @returns {{id: string, baseURL: string}} Minimal shape `_buildChatLanguageModels` reads.
  */
 function makeProvider(host) {
   const isLocal = host === "127.0.0.1";
   return {
-    id: isLocal ? "ollama-local" : "ollama-sy-omen45l",
+    id: isLocal ? "ollama-local" : "ollama-my-desktop",
     baseURL: `http://${host}:11434/v1`,
   };
 }
@@ -261,7 +259,7 @@ describe("_buildChatLanguageModels", () => {
   it("uses the provider id as the entry name (matches opencode + Zed naming)", () => {
     const vs = loadVsCode();
     const result = vs._buildChatLanguageModels([makeProvider("127.0.0.1"), makeProvider("192.0.2.45")]);
-    expect(result.map((e) => e.name)).toEqual(["ollama-local", "ollama-sy-omen45l"]);
+    expect(result.map((e) => e.name)).toEqual(["ollama-local", "ollama-my-desktop"]);
   });
 
   it("strips the /v1 suffix from baseURL so Copilot Chat hits the native /api root", () => {
