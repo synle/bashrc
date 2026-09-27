@@ -95,8 +95,10 @@
     "shadow": "#00000066", // {{dark.black_alpha40}}
     "shadow_width": "6",
 
+    // Block caret border — a color, not a width. Fully transparent keeps the border invisible.
+    "block_caret_border": "#00000000",
+
     // Padding
-    "block_caret_border": "0",
     "line_padding_top": "1",
     "line_padding_bottom": "1",
 

@@ -77,6 +77,83 @@ function expectMarkersBound(file) {
 
 // ---- Sublime Text ----
 
+/**
+ * Sublime's `.sublime-color-scheme` globals are typed, and the loader enforces it: a color slot
+ * holding a bare number fails with "Unable to parse color value N" at scheme-load time. Every other
+ * check in this file is happy to accept one — a color global has no `var()` to resolve and is not a
+ * rule foreground, so nothing else ever looks at its shape.
+ *
+ * Keys absent from these sets are left unclassified on purpose. Sublime adds globals over time and an
+ * unlisted key is not a defect; add one here when this repo starts shipping it.
+ */
+const SUBLIME_COLOR_GLOBALS = new Set([
+  "accent",
+  "active_guide",
+  "background",
+  "block_caret",
+  "block_caret_border",
+  "block_caret_underline",
+  "brackets_foreground",
+  "bracket_contents_foreground",
+  "caret",
+  "find_highlight",
+  "find_highlight_foreground",
+  "fold_marker",
+  "foreground",
+  "guide",
+  "gutter",
+  "gutter_foreground",
+  "gutter_foreground_highlight",
+  "highlight",
+  "inactive_selection",
+  "inactive_selection_border",
+  "inactive_selection_foreground",
+  "invisibles",
+  "line_diff_added",
+  "line_diff_deleted",
+  "line_diff_modified",
+  "line_highlight",
+  "minimap_border",
+  "misspelling",
+  "rulers",
+  "scroll_highlight",
+  "scroll_selected_highlight",
+  "selection",
+  "selection_border",
+  "selection_foreground",
+  "shadow",
+  "stack_guide",
+  "tags_foreground",
+]);
+
+const SUBLIME_NUMBER_GLOBALS = new Set([
+  "block_caret_corner_radius",
+  "line_diff_width",
+  "line_padding_bottom",
+  "line_padding_top",
+  "selection_border_width",
+  "shadow_width",
+]);
+
+/** Nesting cap for `var()` chains, so a self-referential variable cannot spin here. */
+const MAX_VAR_DEPTH = 8;
+
+/**
+ * Whether `value` is a form Sublime's color parser accepts: hex (3/4/6/8 digit), one of the
+ * `rgb`/`rgba`/`hsl`/`hsla`/`hwb`/`color` functional notations, a CSS color name, or a `var()`
+ * that resolves to one of those. A bare number is deliberately not accepted.
+ */
+function isSublimeColor(value, vars, depth = 0) {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  const ref = trimmed.match(/^var\((\w+)\)$/);
+  if (ref) return depth < MAX_VAR_DEPTH && isSublimeColor(vars[ref[1]], vars, depth + 1);
+  if (/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(trimmed)) return true;
+  if (/^(?:rgba?|hsla?|hwb|color)\(/.test(trimmed)) return true;
+  // A CSS color name is alphabetic; the shape that fails to parse is a bare number.
+  return /^[a-z]+$/i.test(trimmed);
+}
+
 describe("sublime text theme", () => {
   for (const theme of ["dark", "light"]) {
     describe(theme, () => {
@@ -91,6 +168,22 @@ describe("sublime text theme", () => {
       };
 
       it("should keep every marker bound to COLOR_MAP", () => expectMarkersBound(file));
+
+      it("should give every typed global a value of its declared type", () => {
+        const wrongColor = [];
+        for (const [key, value] of Object.entries(globals)) {
+          if (SUBLIME_COLOR_GLOBALS.has(key) && !isSublimeColor(value, vars)) {
+            wrongColor.push(`globals.${key} = ${JSON.stringify(value)} is not a color`);
+          }
+        }
+        const wrongNumber = [];
+        for (const [key, value] of Object.entries(globals)) {
+          if (SUBLIME_NUMBER_GLOBALS.has(key) && !/^-?[0-9]+(\.[0-9]+)?$/.test(String(value))) {
+            wrongNumber.push(`globals.${key} = ${JSON.stringify(value)} is not a number`);
+          }
+        }
+        expect([...wrongColor, ...wrongNumber]).toEqual([]);
+      });
 
       it("should resolve every var() reference in globals and rules", () => {
         const unresolved = [];
