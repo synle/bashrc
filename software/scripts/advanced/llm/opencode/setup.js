@@ -26,9 +26,6 @@
 
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
-// Ollama limit buckets (LIMIT_*), OLLAMA_MODEL_CONFIGS, and OLLAMA_DEFAULT_CONFIG come
-// from the model inventory in llm-common.js (SOURCEd above).
-
 /**
  * Per-model configs for known GitHub Copilot models. Keyed by model ID.
  *
@@ -119,8 +116,9 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   }));
 
   for (const item of opencodeProviders) {
-    // Enrich each model with limit from the known config map. `capabilities.tools`
-    // is asserted for EVERY Ollama model, including tags with no entry in the map:
+    // No per-model `limit`: opencode falls back to its own defaults, and Ollama serves
+    // each model at its trained context. `capabilities.tools` is asserted for EVERY
+    // Ollama model:
     // the OpenAI-compatible endpoint advertises no capability metadata, so opencode
     // assumes no tool support and offers the model as chat-only — an agent that can
     // read nothing and run nothing. Ollama itself rejects a tool call a model cannot
@@ -128,12 +126,10 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     const providerAddress = item.baseURL.replace(/^https?:\/\//, "").replace(/\/v1\/?$/, "");
     const modelsObject = Object.fromEntries(
       item.models.map((m) => {
-        let cfg = OLLAMA_MODEL_CONFIGS[m.name] || OLLAMA_DEFAULT_CONFIG;
         return [
           m.name,
           {
             name: `${m.name} / ${providerAddress}`,
-            limit: cfg.limit,
             capabilities: { tools: true },
           },
         ];

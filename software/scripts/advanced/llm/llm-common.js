@@ -168,10 +168,9 @@ const OLLAMA_PORT = 11434;
 // never hand-maintain a second list:
 //   AUTOCOMPLETE_MODELS      Zed edit_predictions (tiers smallest → largest)
 //   LLM_LOCAL_AGENT_MODELS   opencode `local` agent (tiers largest → smallest)
-//   OLLAMA_MODEL_CONFIGS     opencode context/output limits (LLM_OLLAMA_MODEL_LIMITS)
 //   getOllamaModelsForVram   what ollama-models.js pulls for a given VRAM size
 // A model pulled by hand that is not in a tier still works: opencode and Zed discover
-// it from /api/tags, it just gets OLLAMA_DEFAULT_CONFIG and no `local` agent slot.
+// it from /api/tags, it just gets no `local` agent slot.
 //
 // Roles:
 //   agent        instruct checkpoints (no `-base`): chat templates + tool calls for
@@ -195,30 +194,6 @@ const OLLAMA_PORT = 11434;
 //   ollama rm qwen2.5-coder:3b                       # one model
 // WSL (`ollama` is aliased to the Windows host ollama.exe by ollama.profile.bash):
 //   ollama.exe list | tr -d '\r' | awk 'NR > 1 { print $1 }' | xargs -n 1 ollama.exe rm
-
-/**
- * Large context/output limit — for Ollama models whose train context is 262144
- * (verified per model via `/api/show` → `*.context_length`, and per load via
- * `/api/ps` → `context_length`; ollama 0.32 hands out the train context when the
- * Modelfile sets no `num_ctx`). Pinned at half of that: `limit.context` is what
- * opencode uses to decide when to compact, so under-claiming causes needless
- * compaction cycles, while the full 262144 of KV cache is more VRAM than the box
- * has to spare. Re-measure before raising.
- * @type {{ context: number, output: number }}
- */
-const LIMIT_LARGE = { context: 131072, output: 8192 };
-
-/**
- * Medium context/output limit — default for most local code models.
- * @type {{ context: number, output: number }}
- */
-const LIMIT_MEDIUM = { context: 32768, output: 4096 };
-
-/**
- * Small context/output limit for small local models.
- * @type {{ context: number, output: number }}
- */
-const LIMIT_SMALL = { context: 16384, output: 4096 };
 
 /**
  * VRAM tiers, largest first — the model inventory. Each tier's `models` holds exactly
@@ -277,34 +252,6 @@ const OLLAMA_MODELS_BY_VRAM = [
     ],
   },
 ];
-
-/**
- * opencode context/output limits for tier models whose limit differs from
- * `OLLAMA_DEFAULT_CONFIG` (LIMIT_MEDIUM). Every key must be a tag in a tier.
- * @type {Record<string, { context: number, output: number }>}
- */
-const LLM_OLLAMA_MODEL_LIMITS = {
-  "glm-4.7-flash:q4_K_M": LIMIT_LARGE,
-  "gemma4:26b": LIMIT_LARGE,
-  "qwen2.5-coder:3b": LIMIT_SMALL,
-  "qwen2.5-coder:3b-base": LIMIT_SMALL,
-  "qwen2.5-coder:1.5b-base": LIMIT_SMALL,
-};
-
-/**
- * Default config for any Ollama model not listed in `OLLAMA_MODEL_CONFIGS`.
- * @type {{ limit: { context: number, output: number } }}
- */
-const OLLAMA_DEFAULT_CONFIG = { limit: LIMIT_MEDIUM };
-
-/**
- * Per-model opencode configs, derived from `LLM_OLLAMA_MODEL_LIMITS`. Keyed by full tag
- * exactly as `/api/tags` returns it; unlisted tags fall through to `OLLAMA_DEFAULT_CONFIG`.
- * @type {Record<string, { limit: { context: number, output: number } }>}
- */
-const OLLAMA_MODEL_CONFIGS = Object.fromEntries(
-  Object.entries(LLM_OLLAMA_MODEL_LIMITS).map(([tag, limit]) => [tag, { limit }]),
-);
 
 /**
  * Lists one role's tags across the tiers, de-duplicated, in the given tier order.

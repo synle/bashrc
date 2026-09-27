@@ -45,10 +45,7 @@ describe("OpenCode Ollama metadata", () => {
     ]);
 
     expect(config.agent.local.model).toBe("ol-local/glm-4.7-flash:q4_K_M");
-    expect(config.provider["ol-local"].models["glm-4.7-flash:q4_K_M"].limit).toEqual({
-      context: 131072,
-      output: 8192,
-    });
+    expect(config.provider["ol-local"].models["glm-4.7-flash:q4_K_M"]).not.toHaveProperty("limit");
   });
 
   it("shows the short host name, model, and Ollama address without duplicate labels", () => {
