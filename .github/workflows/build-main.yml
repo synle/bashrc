@@ -330,6 +330,7 @@ jobs:
       binary-check-warned-list: ${{ steps.ci-build.outputs.binary-check-warned-list }}
       download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
       download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
+      job-status: ${{ steps.job-status.outputs.status }}
     steps:
       - name: Install dependencies
         run: pacman -Sy --noconfirm git curl sudo make unzip
@@ -343,6 +344,12 @@ jobs:
         id: ci-build
         with:
           artifact-name: build-arch
+      # continue-on-error hides this job's failure from `needs.<job>.result`; export the
+      # real status so the publish summary can flag it.
+      - name: Record job status
+        id: job-status
+        if: always()
+        run: echo "status=${{ job.status }}" >> "$GITHUB_OUTPUT"
 
   build-debian:
     needs: [prep]
@@ -366,6 +373,7 @@ jobs:
       binary-check-warned-list: ${{ steps.ci-build.outputs.binary-check-warned-list }}
       download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
       download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
+      job-status: ${{ steps.job-status.outputs.status }}
     steps:
       - name: Install dependencies
         run: apt-get update -y && apt-get install -y git curl sudo make
@@ -379,6 +387,12 @@ jobs:
         id: ci-build
         with:
           artifact-name: build-debian
+      # continue-on-error hides this job's failure from `needs.<job>.result`; export the
+      # real status so the publish summary can flag it.
+      - name: Record job status
+        id: job-status
+        if: always()
+        run: echo "status=${{ job.status }}" >> "$GITHUB_OUTPUT"
 
   build-mac:
     needs: [prep]
@@ -415,6 +429,43 @@ jobs:
         id: ci-build
         with:
           artifact-name: build-mac
+
+  # ---- Report allowed-to-fail distro builds ----
+  # build-arch / build-debian are continue-on-error, so their failures never fail the run
+  # (and may not show in needs.<job>.result). Runs unconditionally so the warning lands
+  # even when publish/test are skipped.
+  report-allowed-failures:
+    needs: [build-arch, build-debian]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Flag allowed-to-fail build failures
+        if: always()
+        env:
+          # job-status is empty when the job died before its last step (timeout, cancel);
+          # fall back to needs.<job>.result then.
+          ARCH_STATUS: ${{ needs.build-arch.outputs.job-status || needs.build-arch.result }}
+          DEBIAN_STATUS: ${{ needs.build-debian.outputs.job-status || needs.build-debian.result }}
+        run: |
+          flagged=""
+          for pair in "Arch Linux:build-arch:$ARCH_STATUS" "Debian:build-debian:$DEBIAN_STATUS"; do
+            label="${pair%%:*}"; rest="${pair#*:}"; job="${rest%%:*}"; status="${rest#*:}"
+            if [ -n "$status" ] && [ "$status" != "success" ] && [ "$status" != "skipped" ]; then
+              echo "::warning title=${label} build ${status}::${job} ended '${status}' but is continue-on-error, so the run still passes. Check the ${job} job log."
+              flagged="${flagged}| ${label} | \`${job}\` | ${status} |"$'\n'
+            fi
+          done
+          if [ -n "$flagged" ]; then
+            {
+              echo "## :warning: Allowed-to-fail builds that failed"
+              echo ""
+              echo "| OS | Job | Status |"
+              echo "|---|---|---|"
+              printf '%s' "$flagged"
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   # ---- Phase 3: Merge build artifacts, apply prep patch, single commit, and deploy ----
   publish:

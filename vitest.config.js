@@ -5,13 +5,17 @@
  * `software/index.js` inside `software/tests/setup.js` before feeding it to
  * `vm.runInNewContext` (vitest's normal Vite-transform hook never sees that
  * source), and share `globalThis.__VITEST_COVERAGE__` between the host process
- * and the vm sandbox so counters land in a single map. The two CommonJS tools
- * (`build-include.js`, `generate-ci-binary-list.js`) are loaded by their specs
- * via default ESM imports so Vite's transform pipeline picks them up too.
+ * and the vm sandbox so counters land in a single map. The CommonJS tools
+ * (`build-include.js`, `generate-ci-binary-list.js`, `build-installer.js`,
+ * `check-dryrun-results.js`) are loaded by their specs via default ESM imports
+ * so Vite's transform pipeline picks them up too. `llm-common.js` is NOT listed:
+ * its specs evaluate it in their own vm sandbox, which istanbul cannot see
+ * without the hand-instrumentation `index.js` gets.
  *
- * Thresholds are pinned at 60% lines / branches / statements / functions —
- * a one-off override of the ≥80% default coverage gate, legitimate because
- * the testable surface is narrowed to three modules with deep test suites.
+ * Thresholds are a ratchet pinned just under measured coverage (66 lines /
+ * 62 branches / 66 statements / 74 functions) — a one-off override of the
+ * ≥80% default coverage gate, legitimate because the testable surface is
+ * narrowed to five modules with deep test suites. Raise, never lower.
  */
 
 import { defineConfig } from "vitest/config";
@@ -66,7 +70,13 @@ export default defineConfig({
       // Explicit source globs per the "Coverage and artifact scope = source +
       // metrics only" principle: never `**/*`,
       // never the workspace root.
-      include: ["software/index.js", "software/tools/build-include.js", "software/tools/generate-ci-binary-list.js"],
+      include: [
+        "software/index.js",
+        "software/tools/build-include.js",
+        "software/tools/generate-ci-binary-list.js",
+        "software/tools/build-installer.js",
+        "software/tools/check-dryrun-results.js",
+      ],
       // Defense-in-depth: keep the secret/binary exclusion list pinned in case
       // a future include glob accidentally widens scope.
       exclude: [
@@ -83,16 +93,15 @@ export default defineConfig({
       ],
       reporter: ["text", "text-summary", "json-summary", "html"],
       reportsDirectory: "coverage",
-      // Floor for the testable surface above. Measured against current main
-      // after wiring build-include.js + generate-ci-binary-list.js into istanbul
-      // (default-import instead of `require()`) and adding tests for previously
-      // uncovered helpers in index.js. Raised from 42/52 to 60/60 across lines
-      // + branches (≥80% aspirational, 60% one-off override).
+      // Ratchet floor for the testable surface above, floored from the measured
+      // 2026-09-27 run (lines 66.53, statements 66.33, branches 62.99, functions
+      // 74.78) after adding build-installer.js + check-dryrun-results.js. Raise
+      // when coverage rises; never lower to make a run pass.
       thresholds: {
-        lines: 60,
-        statements: 60,
-        branches: 60,
-        functions: 60,
+        lines: 66,
+        statements: 66,
+        branches: 62,
+        functions: 74,
       },
     },
   },
