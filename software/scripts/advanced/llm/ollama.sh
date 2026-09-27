@@ -42,14 +42,22 @@ OLLAMA_MODELS_MEDIUM_VRAM=(
 	"qwen2.5-coder:3b-base" # autocomplete (FIM, ~2 GB)
 )
 OLLAMA_MEDIUM_VRAM_MIN_MIB=12000
-# SMALL_VRAM: <= 8 GB laptops, and the conservative fallback when VRAM is unknown.
+# SMALL_VRAM: 8-11 GB laptops (RTX 3070 / 4060 / 4070 Laptop).
 OLLAMA_MODELS_SMALL_VRAM=(
 	"qwen2.5-coder:7b"        # agent / coding (~4.7 GB)
 	"gemma3:4b"               # vision (~3.3 GB)
 	"qwen2.5-coder:1.5b-base" # autocomplete (FIM, ~1 GB)
 )
+OLLAMA_SMALL_VRAM_MIN_MIB=7000
+# TINY_VRAM: <= 6 GB (RTX 3050 / 2060, older laptops), and the conservative
+# fallback when VRAM is unknown. Every model fits well under 6 GB on its own.
+OLLAMA_MODELS_TINY_VRAM=(
+	"qwen2.5-coder:3b"        # agent / coding (~1.9 GB)
+	"gemma3:4b"               # vision (~3.3 GB)
+	"qwen2.5-coder:1.5b-base" # autocomplete (FIM, ~1 GB)
+)
 # Default pull set; the VRAM gate below upgrades it when a bigger card is found.
-OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_SMALL_VRAM[@]}")
+OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_TINY_VRAM[@]}")
 
 # Skip in CI — install requires sudo + systemd, and pulling a daemon binary into a
 # throwaway runner has no value (no GPU, no follow-on inference).
@@ -69,7 +77,7 @@ fi
 # inside WSL2 through /usr/lib/wsl/lib); AMD via amdgpu sysfs; macOS Apple Silicon
 # via unified memory, counting only 2/3 of RAM since the GPU cannot claim it all
 # and the OS + apps need the rest. Intel Macs have no usable GPU → skip. No GPU → skip.
-# GPU present but VRAM unreadable → 0, which keeps the small VRAM default.
+# GPU present but VRAM unreadable → 0, which keeps the tiny VRAM default.
 _has_gpu=0
 _vram_mib=0
 if type -P nvidia-smi >/dev/null 2>&1; then
@@ -106,8 +114,11 @@ if [ "$_vram_mib" -ge "$OLLAMA_LARGE_VRAM_MIN_MIB" ]; then
 elif [ "$_vram_mib" -ge "$OLLAMA_MEDIUM_VRAM_MIN_MIB" ]; then
 	echo ">> ollama: ${_vram_mib} MiB VRAM → medium VRAM models"
 	OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_MEDIUM_VRAM[@]}")
+elif [ "$_vram_mib" -ge "$OLLAMA_SMALL_VRAM_MIN_MIB" ]; then
+	echo ">> ollama: ${_vram_mib} MiB VRAM → small VRAM models"
+	OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_SMALL_VRAM[@]}")
 else
-	echo ">> ollama: ${_vram_mib} MiB VRAM (0 = unknown) → small VRAM models"
+	echo ">> ollama: ${_vram_mib} MiB VRAM (0 = unknown) → tiny VRAM models"
 fi
 
 # Install the binary — native Linux only. macOS installs it via Homebrew
@@ -181,6 +192,7 @@ echo ">> Progress: tail -f \"$_pull_log\""
 (
 	for _model in "${_models_missing[@]}"; do
 		(
+			# CLI equivalent: ollama pull "$_model"
 			if curl -fsS -X POST "$OLLAMA_API_URL/api/pull" -d "{\"model\":\"${_model}\",\"stream\":false}" >/dev/null; then
 				echo "$(date '+%H:%M:%S') done: ${_model}"
 			else
@@ -192,22 +204,3 @@ echo ">> Progress: tail -f \"$_pull_log\""
 	echo "$(date '+%H:%M:%S') all ollama pulls finished"
 ) </dev/null >>"$_pull_log" 2>&1 &
 
-# --- Legacy model pull (CLI) — replaced by the HTTP API block above ---
-# # Pull the selected bucket. Skip if `ollama` isn't on PATH yet (install above may
-# # have set up only the systemd unit; on macOS brew may still be installing it). Skip models already pulled to avoid
-# # re-downloading multi-GB blobs. `ollama pull` spawns the server itself if needed.
-# # Zed's `edit_predictions` targets the autocomplete model on localhost; VS Code has
-# # no native inline-completion API for custom endpoints.
-# if type -P ollama > /dev/null 2>&1; then
-#   for _model in "${OLLAMA_MODELS_TO_PULL[@]}"; do
-#     # `ollama list` prints `NAME ID SIZE MODIFIED` rows; match exact tags so one
-#     # quant or size never suppresses another model in the same family.
-#     if ollama list 2> /dev/null | grep -q "^${_model}[[:space:]]"; then
-#       echo ">> Skipped ollama model pull: ${_model} already present"
-#       continue
-#     fi
-#
-#     echo ">> Pulling ${_model}"
-#     ollama pull "$_model" > /dev/null
-#   done
-# fi
