@@ -29,70 +29,12 @@ Two main inference engines:
 
 ## Recommended Models
 
-### For Coding (Claude Code Local Use)
-
-| Model               | Size  | Best For                                              |
-| ------------------- | ----- | ----------------------------------------------------- |
-| `qwen2.5-coder:32b` | ~19GB | Best coding model - generation, completion, debugging |
-| `qwen2.5-coder:14b` | ~9GB  | Good coding quality with lower memory footprint       |
-| `deepseek-r1:32b`   | ~19GB | Strong reasoning, fits in 24GB VRAM                   |
-| `deepseek-r1:14b`   | ~9GB  | Good quality with comfortable memory headroom         |
-
-### By Hardware
-
-| Hardware                             | Recommended Model                        | VRAM / Memory Usage |
-| ------------------------------------ | ---------------------------------------- | ------------------- |
-| RTX 5090 / 3090 (24GB VRAM)          | `qwen2.5-coder:32b` or `deepseek-r1:32b` | ~19GB               |
-| RTX 4060 / 3070 Ti Laptop (8GB VRAM) | `qwen2.5-coder:7b` or `deepseek-r1:7b`   | ~5GB                |
-| MacBook Pro M1/M2/M3 (32GB)          | `qwen2.5-coder:14b` or `deepseek-r1:14b` | ~9GB                |
-| MacBook Pro M1/M2/M3 (16GB)          | `qwen2.5-coder:7b`                       | ~5GB                |
-
-### vLLM-Specific Models (AWQ Quantization for NVIDIA GPUs)
-
-AWQ models run faster on NVIDIA hardware than the GGUF models Ollama uses.
-
-| Hardware           | Model                                 | VRAM Usage | Estimated Speed |
-| ------------------ | ------------------------------------- | ---------- | --------------- |
-| RTX 5090           | `Qwen/Qwen2.5-Coder-32B-Instruct-AWQ` | ~19GB      | 80-100+ tok/s   |
-| RTX 5090           | `Qwen/Qwen2.5-Coder-14B-Instruct-AWQ` | ~10GB      | 150-180+ tok/s  |
-| RTX 3090           | `Qwen/Qwen2.5-Coder-32B-Instruct-AWQ` | ~19GB      | 45-55 tok/s     |
-| RTX 4060 / 3070 Ti | `Qwen/Qwen2.5-Coder-7B-Instruct-AWQ`  | ~5GB       | 40-60 tok/s     |
-
-### Model Comparison for Coding Tasks
-
-#### Qwen2.5-Coder
-
-Purpose-built for code. Trained on a large corpus of source code across many languages. Excels at code generation, completion, refactoring, and debugging. Available in 7B, 14B, and 32B sizes. The best choice for pure coding tasks where you need accurate, idiomatic code output with minimal hand-holding.
-
-- Strengths: code generation accuracy, multi-language support, inline completion, understanding project context
-- Weaknesses: weaker at step-by-step reasoning or explaining complex logic compared to reasoning models
-
-#### DeepSeek-R1
-
-A reasoning-focused model that uses chain-of-thought to work through problems. Not code-specific, but its strong reasoning ability makes it effective for debugging, architectural decisions, and multi-step coding tasks where understanding "why" matters more than raw code output.
-
-- Strengths: logical reasoning, debugging complex issues, explaining code, planning multi-step changes
-- Weaknesses: slower due to chain-of-thought overhead, sometimes over-explains when you just need code
-
-#### GLM-4 (ChatGLM)
-
-A general-purpose bilingual (English/Chinese) model from Zhipu AI. Capable at coding but not specialized for it. Best suited as a general assistant that can also write code, rather than a dedicated coding model. Available via Ollama as `glm4`.
-
-- Strengths: general-purpose versatility, strong bilingual support, good at conversational tasks alongside code
-- Weaknesses: less accurate on complex code generation compared to Qwen2.5-Coder, fewer size variants optimized for coding
-
-#### Which to Choose
-
-| Use Case                              | Recommended Model                                  |
-| ------------------------------------- | -------------------------------------------------- |
-| Code generation and completion        | Qwen2.5-Coder                                      |
-| Debugging and reasoning through logic | DeepSeek-R1                                        |
-| General assistant that also codes     | GLM-4                                              |
-| Limited VRAM (8GB)                    | Qwen2.5-Coder 7B (best code quality per parameter) |
-
-For Claude Code local use, **Qwen2.5-Coder is the default recommendation** — it produces the most accurate code at every size tier. Use DeepSeek-R1 when you need the model to reason through a problem rather than just generate code.
-
----
+> **Model picks live in one place:**
+> [`software/scripts/advanced/llm/llm-models.jsonc`](../software/scripts/advanced/llm/llm-models.jsonc)
+> — the Ollama inventory, one `{ tag, role }` set per VRAM tier (agent, vision,
+> autocomplete), with size and an ollama.com link per model. `ollama-models.js`
+> pulls the tier matching the host's VRAM. Local models move fast, so this doc
+> deliberately carries no model tables; read the tiers there.
 
 ## Windows Installation
 
@@ -112,7 +54,7 @@ For Claude Code local use, **Qwen2.5-Coder is the default recommendation** — i
 
 ```bash
 # pull and run a model
-ollama run qwen2.5-coder:32b
+ollama run <model>  # model tags: software/scripts/advanced/llm/llm-models.jsonc
 ```
 
 #### Option B: Install Inside WSL
@@ -125,7 +67,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama serve
 
 # in another terminal, pull and run a model
-ollama run qwen2.5-coder:32b
+ollama run <model>  # model tags: software/scripts/advanced/llm/llm-models.jsonc
 ```
 
 ### vLLM (via WSL)
@@ -336,7 +278,7 @@ brew install ollama
 ollama serve
 
 # in another terminal, pull and run a model
-ollama run qwen2.5-coder:14b
+ollama run <model>  # model tags: software/scripts/advanced/llm/llm-models.jsonc
 ```
 
 Alternatively, download the `.dmg` from <https://ollama.com/download/mac> and install it as a regular app. The app runs the server automatically in the menu bar.
@@ -474,7 +416,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama serve
 
 # in another terminal, pull and run a model
-ollama run qwen2.5-coder:32b
+ollama run <model>  # model tags: software/scripts/advanced/llm/llm-models.jsonc
 ```
 
 Download page: <https://ollama.com/download/linux>
@@ -572,7 +514,7 @@ docker run -d \
     ollama/ollama
 
 # pull and run a model
-docker exec -it ollama ollama run qwen2.5-coder:32b
+docker exec -it ollama ollama run <model>  # model tags: software/scripts/advanced/llm/llm-models.jsonc
 ```
 
 With NVIDIA GPU (Linux only):
@@ -747,7 +689,7 @@ inline `--help`.
 ### Ollama quick start
 
 1. Start Ollama: `ollama serve` (or use the desktop app)
-2. Pull a model: `ollama pull qwen2.5-coder:32b`
+2. Pull a model: `ollama pull <model>` (see `software/scripts/advanced/llm/llm-models.jsonc` for model tags)
 3. Verify: `ollama_doctor`
 
 ### vLLM quick start

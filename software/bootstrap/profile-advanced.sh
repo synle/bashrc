@@ -1244,6 +1244,7 @@ alias amend="git amend"
 # SY_OMEN45L_OLLAMA_PORT / SY_OMEN45L_OLLAMA_DEFAULT_MODEL, and those partials read
 # both without re-declaring a fallback literal.
 # SOURCE | software/scripts/advanced/llm/ollama.profile.bash
+# BEGIN/END | ollama default model
 
 # --- Aliases: Claude ---
 # SOURCE | software/scripts/advanced/llm/claude/claude.profile.bash

@@ -58,28 +58,14 @@ export SY_OLLAMA_MANAGED_ENV_VARS="OLLAMA_FLASH_ATTENTION OLLAMA_KV_CACHE_TYPE O
 # to 127.0.0.1 in that case.
 export SY_OMEN45L_OLLAMA_PORT="11434"
 
-# SY_OMEN45L_OLLAMA_DEFAULT_MODEL is the SINGLE source of truth for the default model.
-# Every consumer — ollama_warmup below, claude.profile.bash's claude_local, and the
-# opencode/Zed/VS Code provider wiring — reads this variable and must NOT re-declare a
-# `:-<model>` literal fallback. A second literal is exactly how these surfaces silently
-# drift apart. This partial is sourced ahead of the per-CLI partials in
-# profile-advanced.sh so the value is always set by the time any of them run.
-#
-# The `${VAR:-...}` form means an export placed earlier in the environment (a per-machine
-# override in ~/.bash_custom_tweaks, or `SY_OMEN45L_OLLAMA_DEFAULT_MODEL=x claude_local`)
-# wins over the repo default rather than being clobbered by it.
-#
-# Default rationale: GLM-4.7-Flash q4_K_M uses 19 GB for its 30B-A3B MoE weights,
-# leaving a 32 GB RTX 5090 enough headroom for KV cache and the autocomplete model.
-# The q8_0 tag uses 32 GB for weights alone, so it does not fit this workload.
-#
-# NOT `-nvfp4`, despite Blackwell having native FP4 tensor cores: Ollama's registry gates
-# every `-nvfp4` tag to macOS and answers a pull from this box with
-# `412: this model requires macOS`. The tag being listed on ollama.com/library does not
-# mean it is pullable here. Re-verify any replacement tag against the DAEMON, not the
-# website — the website lists tags the registry will still refuse:
-#   curl -fsS "http://$SY_OMEN45L_IP:$SY_OMEN45L_OLLAMA_PORT/api/pull" -d '{"model":"<tag>"}'
-export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="${SY_OMEN45L_OLLAMA_DEFAULT_MODEL:-qwen3-coder:30b-a3b}"
+# SY_OMEN45L_OLLAMA_DEFAULT_MODEL is the SINGLE default model for ollama_warmup,
+# claude.profile.bash's claude_local, and the opencode/Zed/VS Code provider wiring;
+# consumers read it at call time and must NOT re-declare a `:-<model>` literal.
+# It is NOT set here: ollama-models.js derives it from llm-models.jsonc (the largest
+# VRAM tier's first `agent` model — sy-omen45l is a 32 GB card) and registers it as
+# the "ollama default model" block right after this partial. The `${VAR:-...}` form
+# there lets an earlier export (~/.bash_custom_tweaks, or
+# `SY_OMEN45L_OLLAMA_DEFAULT_MODEL=x claude_local`) win over the repo default.
 
 # WSL: no Linux ollama is installed (ollama.sh skips it); the daemon and CLI live on
 # the Windows host (winget Ollama.Ollama). Alias so `ollama list` / `ollama rm` work
@@ -311,7 +297,7 @@ first turn is not sitting on a multi-GB load."
 		return 0
 	fi
 
-	# No `:-<model>` literal here on purpose — this partial's own export above is the
+	# No `:-<model>` literal here on purpose — the "ollama default model" block is the
 	# single source of truth for the default tag.
 	local model="${1:-$SY_OMEN45L_OLLAMA_DEFAULT_MODEL}"
 	local host
@@ -521,7 +507,7 @@ Common causes of a mid-answer stall, in the order worth checking:
 	local probe_model
 	probe_model="$(list_ollama_models "$host" 2>/dev/null | command head -n 1)"
 	if [ -z "$probe_model" ]; then
-		echo "[warn] no models installed — pull one, e.g. 'ollama pull qwen2.5-coder:7b'"
+		echo "[warn] no models installed — pull one, e.g. 'ollama pull qwen2.5-coder:7b' (tiers: software/scripts/advanced/llm/llm-models.jsonc)"
 		return 0
 	fi
 

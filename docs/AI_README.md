@@ -45,122 +45,20 @@ export OLLAMA_HOST="http://$(cat /etc/resolv.conf | grep nameserver | awk '{prin
 curl $OLLAMA_HOST/api/version
 ```
 
-### Model Recommendations by Machine
+### Models
 
-#### Desktop with RTX 5090 (32GB VRAM)
-
-A 5090 has 32GB VRAM and can run large models entirely on the GPU for fast inference.
-
-> The table below is historical. For current, tag-verified picks for `sy-omen45l`
-> — including the Blackwell-specific `-nvfp4` guidance — see
-> [local-llm-runtimes.md § sy-omen45l](./local-llm-runtimes.md#sy-omen45l--rtx-5090-32-gb-verified-picks).
-
-| Model               | Size  | VRAM Usage    | Notes                                                        |
-| ------------------- | ----- | ------------- | ------------------------------------------------------------ |
-| `deepseek-r1:70b`   | ~40GB | Spills to RAM | Best quality, slower due to partial CPU offload              |
-| `deepseek-r1:32b`   | ~19GB | ~19GB         | **Recommended** - fits in VRAM, great quality, fast          |
-| `qwen2.5-coder:32b` | ~19GB | ~19GB         | **Best for coding** - code generation, completion, debugging |
-| `qwen3.5:9b`        | ~5GB  | ~5GB          | Very fast, good for quick tasks                              |
-
-```bash
-# recommended for 5090 desktop
-ollama run deepseek-r1:32b
-
-# if you want max quality and can tolerate slower speed
-ollama run deepseek-r1:70b
-```
-
-The 32b model fits entirely in VRAM and runs at full GPU speed. The 70b model exceeds 32GB VRAM so it partially offloads to system RAM, which slows inference but still gives the best output quality.
-
-#### MacBook Pro M1 with 32GB Unified Memory
-
-M-series chips share memory between CPU and GPU. With 32GB, you have room for mid-size models but not the largest ones.
-
-| Model               | Size   | Memory Usage | Notes                                                        |
-| ------------------- | ------ | ------------ | ------------------------------------------------------------ |
-| `deepseek-r1:32b`   | ~19GB  | ~19GB        | Fits but leaves little room for other apps                   |
-| `deepseek-r1:14b`   | ~9GB   | ~9GB         | **Recommended** - good quality, comfortable memory headroom  |
-| `qwen2.5-coder:14b` | ~9GB   | ~9GB         | **Best for coding** - code generation, completion, debugging |
-| `qwen3.5:9b`        | ~5GB   | ~5GB         | Lightweight, fast, good for quick tasks                      |
-| `llama3.1:8b`       | ~4.7GB | ~4.7GB       | Lightest, snappy responses                                   |
-
-```bash
-# recommended for M1 32GB
-ollama run deepseek-r1:14b
-
-# if you close other apps and want better quality
-ollama run deepseek-r1:32b
-```
-
-The 14b model leaves ~13GB free for macOS and other apps. The 32b model works but can cause memory pressure if you have browsers or IDEs open alongside it. Avoid 70b on this machine - it will swap heavily and be unusable.
-
-### Vision Models (Image Recognition / Classification)
-
-These multimodal models can analyze images — describe contents, read text (OCR), classify objects, and answer questions about pictures.
-
-Using `llava` as the primary recommendation. It's built on LLaMA with a visual encoder and handles general image understanding, OCR, and classification well.
-
-Other alternatives:
-
-- `minicpm-v` - lightweight vision model, good for OCR and document reading
-- `llama3.2-vision` - Meta's multimodal model, strong general image understanding
-
-#### Desktop with RTX 5090 (32GB VRAM)
-
-| Model                 | Size  | VRAM Usage | Notes                                                    |
-| --------------------- | ----- | ---------- | -------------------------------------------------------- |
-| `llava:34b`           | ~20GB | ~20GB      | **Recommended** - best image understanding, fits in VRAM |
-| `llama3.2-vision:11b` | ~7GB  | ~7GB       | Good quality, fast                                       |
-| `minicpm-v`           | ~5GB  | ~5GB       | Lightweight, good for OCR and documents                  |
-
-#### MacBook Pro M1 with 32GB Unified Memory
-
-| Model                 | Size | Memory Usage | Notes                                                           |
-| --------------------- | ---- | ------------ | --------------------------------------------------------------- |
-| `llava:13b`           | ~8GB | ~8GB         | **Recommended** - good quality with comfortable memory headroom |
-| `llama3.2-vision:11b` | ~7GB | ~7GB         | Strong alternative, similar footprint                           |
-| `minicpm-v`           | ~5GB | ~5GB         | Lightweight, good for OCR and documents                         |
-
-#### Usage
-
-```bash
-# download vision model
-ollama pull llava:13b
-
-# interactive chat - describe an image
-ollama run llava:13b "Describe this image: /path/to/image.jpg"
-```
-
-#### API Usage with Images (curl)
-
-Pass images as base64-encoded strings in the API:
-
-```bash
-# encode an image to base64
-BASE64_IMG=$(base64 -i /path/to/image.jpg)
-
-# ask the model to describe the image
-curl http://127.0.0.1:11434/api/generate -d "{
-  \"model\": \"llava:13b\",
-  \"prompt\": \"What is in this image? Describe it in detail.\",
-  \"images\": [\"$BASE64_IMG\"],
-  \"stream\": false
-}"
-
-# classify / read text from a screenshot
-curl http://127.0.0.1:11434/api/generate -d "{
-  \"model\": \"llava:13b\",
-  \"prompt\": \"Read all the text in this image.\",
-  \"images\": [\"$BASE64_IMG\"],
-  \"stream\": false
-}"
-```
+> **Model picks live in one place:**
+> [`software/scripts/advanced/llm/llm-models.jsonc`](../software/scripts/advanced/llm/llm-models.jsonc)
+> — the Ollama inventory, one `{ tag, role }` set per VRAM tier (agent, vision,
+> autocomplete), with size and an ollama.com link per model. `ollama-models.js`
+> pulls the tier matching the host's VRAM. Local models move fast, so this doc
+> deliberately carries no model tables; read the tiers there.
 
 ### Download and Run Models
 
 ```bash
 # download and start an interactive chat
-ollama run deepseek-r1:32b
+ollama run <model>  # model tags: software/scripts/advanced/llm/llm-models.jsonc
 
 # manage models
 ollama list
@@ -182,8 +80,9 @@ curl http://127.0.0.1:11434/api/tags
 #### Generate a Completion
 
 ```bash
+# model tags: software/scripts/advanced/llm/llm-models.jsonc
 curl http://127.0.0.1:11434/api/generate -d '{
-  "model": "deepseek-r1:32b",
+  "model": "<model>",
   "prompt": "Explain what a Makefile is in 2 sentences.",
   "stream": false
 }'
@@ -192,8 +91,9 @@ curl http://127.0.0.1:11434/api/generate -d '{
 #### Chat (multi-turn conversation)
 
 ```bash
+# model tags: software/scripts/advanced/llm/llm-models.jsonc
 curl http://127.0.0.1:11434/api/chat -d '{
-  "model": "deepseek-r1:32b",
+  "model": "<model>",
   "messages": [
     { "role": "system", "content": "You are a helpful assistant." },
     { "role": "user", "content": "What is the difference between TCP and UDP?" }
@@ -206,8 +106,9 @@ curl http://127.0.0.1:11434/api/chat -d '{
 
 ```bash
 # stream: true (default) prints tokens as they are generated
+# model tags: software/scripts/advanced/llm/llm-models.jsonc
 curl http://127.0.0.1:11434/api/generate -d '{
-  "model": "deepseek-r1:32b",
+  "model": "<model>",
   "prompt": "Write a bash function that retries a command 3 times."
 }'
 ```
@@ -219,7 +120,7 @@ Claude Code can use Ollama-hosted models as a local tool via its MCP (Model Cont
 ### Setup
 
 1. Make sure Ollama is running (`ollama serve` or the desktop app)
-2. Pull a model: `ollama pull deepseek-r1:32b`
+2. Pull a model: `ollama pull <model>` (see `software/scripts/advanced/llm/llm-models.jsonc` for model tags)
 3. Verify it's accessible: `curl http://127.0.0.1:11434/api/tags`
 
 ### macOS Setup
@@ -231,7 +132,7 @@ Ollama and Claude Code both run natively. No extra networking needed.
 ollama serve
 
 # 2. pull the model
-ollama pull deepseek-r1:32b
+ollama pull <model>  # model tags: software/scripts/advanced/llm/llm-models.jsonc
 
 # 3. test the connection
 curl http://127.0.0.1:11434/api/tags
@@ -285,7 +186,7 @@ const ollama = new Ollama({ host: "http://127.0.0.1:11434" });
 // basic chat
 async function chat(prompt) {
   const response = await ollama.chat({
-    model: "deepseek-r1:32b",
+    model: "<model>", // model tags: software/scripts/advanced/llm/llm-models.jsonc
     messages: [{ role: "user", content: prompt }],
   });
   console.log(response.message.content);
@@ -294,7 +195,7 @@ async function chat(prompt) {
 // streaming chat
 async function chatStream(prompt) {
   const response = await ollama.chat({
-    model: "deepseek-r1:32b",
+    model: "<model>", // model tags: software/scripts/advanced/llm/llm-models.jsonc
     messages: [{ role: "user", content: prompt }],
     stream: true,
   });
@@ -335,14 +236,14 @@ import base64
 
 # basic chat
 response = ollama.chat(
-    model="deepseek-r1:32b",
+    model="<model>",  # model tags: software/scripts/advanced/llm/llm-models.jsonc
     messages=[{"role": "user", "content": "Write a function that reverses a linked list."}],
 )
 print(response["message"]["content"])
 
 # streaming chat
 stream = ollama.chat(
-    model="deepseek-r1:32b",
+    model="<model>",  # model tags: software/scripts/advanced/llm/llm-models.jsonc
     messages=[{"role": "user", "content": "Explain recursion simply."}],
     stream=True,
 )

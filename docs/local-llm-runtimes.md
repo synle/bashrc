@@ -28,7 +28,7 @@ Switch to:
 | **vLLM**      | High-throughput batched serving engine, Python           | CUDA (ROCm beta)                | Hugging Face safetensors (also AWQ/GPTQ/FP8) |
 
 Ollama is not a competitor to llama.cpp — it _is_ llama.cpp with a registry
-(`ollama pull qwen3:7b`), a REST API, model lifecycle management, and a
+(`ollama pull qwen3:7b`, an illustrative tag — ours live in `software/scripts/advanced/llm/llm-models.jsonc`), a REST API, model lifecycle management, and a
 single-binary install. Anything llama-server can do, Ollama can do; the only
 things you give up are direct flag access and the ability to load arbitrary
 GGUF files without the registry abstraction.
@@ -146,8 +146,6 @@ correct regardless of which engine you happen to be running.
 > Everything in this section was verified on **2026-08-04** two ways: tag existence
 > and on-disk size from <https://ollama.com/library>, and **pullability + residency
 > against the live daemon** at `$SY_OMEN45L_IP:11434` (`/api/tags`, `/api/pull`).
-> Every other model section below this one is older and contains pattern-guessed
-> tags — trust this section first.
 >
 > **Verify against the daemon, not the website.** A tag being listed on
 > ollama.com/library does _not_ mean the registry will serve it to this box — see
@@ -199,171 +197,14 @@ and any doc or config claiming otherwise is wrong.
 
 ### Picks
 
-All tags below were confirmed pullable by the daemon.
+> **Model picks live in one place:**
+> [`software/scripts/advanced/llm/llm-models.jsonc`](../software/scripts/advanced/llm/llm-models.jsonc)
+> — the Ollama inventory, one `{ tag, role }` set per VRAM tier (agent, vision,
+> autocomplete), with size and an ollama.com link per model. `ollama-models.js`
+> pulls the tier matching the host's VRAM. Local models move fast, so this doc
+> deliberately carries no model tables; read the tiers there.
 
-`glm-4.7-flash:q4_K_M` became the repo default on 2026-09-24. Ollama's model
-registry lists it as a 19 GB, 198K-context 30B-A3B MoE model. That size leaves
-enough of a 32 GB RTX 5090 for KV cache and the 1.9 GB autocomplete model; its
-32 GB `q8_0` quant does not. The exact q4_K_M tag is bootstrapped instead of
-`latest` so a registry retag cannot silently change the quantization.
-
-| Role                    | Tag                            | Size     | Why                                                                                                                          | Pull                                     |
-| ----------------------- | ------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| **Coding default**      | `glm-4.7-flash:q4_K_M`         | 19 GB    | 30B-A3B MoE tuned for agentic coding; exact Q4 tag leaves runtime headroom on the 32 GB card.                                | `ollama pull glm-4.7-flash:q4_K_M`       |
-| **Coding daily driver** | `qwen3.6:35b-a3b-mtp-q4_K_M`   | 23 GB    | MoE, 3B active → dense-35B smarts at ~3B speed, plus MTP decode heads. Best coding-per-VRAM that this box can actually pull. | `ollama pull qwen3.6:35b-a3b-mtp-q4_K_M` |
-| Coding, no MTP          | `qwen3.6:35b-a3b-q4_K_M`       | 24 GB    | Same model without the MTP heads. Fall back here if MTP misbehaves.                                                          | `ollama pull qwen3.6:35b-a3b-q4_K_M`     |
-| Coding, portable tag    | `qwen3-coder:30b-a3b-q4_K_M`   | 19 GB    | Same MoE trick, dedicated coder line. Use when the identical tag must also work on a smaller box.                            | `ollama pull qwen3-coder:30b-a3b-q4_K_M` |
-| Reasoning / long docs   | `qwen3.6:27b-q4_K_M`           | 17 GB    | Dense 27B. Slower per token than the MoE, stronger on single-shot reasoning. 256K context.                                   | `ollama pull qwen3.6:27b-q4_K_M`         |
-| Reasoning, max quality  | `qwen3.6:27b-mxfp8`            | 31 GB    | Near-BF16. Weights-only fit — keep context ≤8K or it spills. Batch, not interactive.                                         | `ollama pull qwen3.6:27b-mxfp8`          |
-| **Vision / OCR**        | `gemma4:26b`                   | 19 GB    | 26B-A4B multimodal MoE for receipt text, document parsing, image tagging, and scene descriptions.                            | `ollama pull gemma4:26b`                 |
-| Speed-first chat        | `gemma4:12b-it-q4_K_M`         | 7.6 GB   | Leaves ~24 GB free — the one to co-load beside a big coder.                                                                  | `ollama pull gemma4:12b-it-q4_K_M`       |
-| Inline autocomplete     | `qwen2.5-coder:3b-base`        | 1.9 GB   | FIM tokens. Latency-bound, not quality-bound; do not upsize.                                                                 | `ollama pull qwen2.5-coder:3b-base`      |
-| **Skip**                | any `-nvfp4`                   | —        | 412, macOS-gated. See above.                                                                                                 | N/A — do not pull                        |
-| **Skip**                | `qwen3-coder:480b-a35b-q4_K_M` | 290 GB   | 9x the card.                                                                                                                 | N/A — do not pull                        |
-| **Skip**                | `nemotron3:33b-q4_K_M`         | 28 GB    | Dense 33B — fits weights, starves KV cache, loses to the 35B MoE anyway.                                                     | N/A — do not pull                        |
-| **Skip**                | anything `-bf16`               | 52-72 GB | 2x+ the card.                                                                                                                | N/A — do not pull                        |
-
-### Current state of sy-omen45l
-
-Resident before this pass:
-
-| Installed                            | Size   | Verdict                                                                                                         |
-| ------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------- |
-| `gemma4:26b` (= `26b-a4b-it-q4_K_M`) | 18 GB  | Fine general model, **wrong default for a 32 GB card**.                                                         |
-| `qwen2.5-coder:3b`                   | 1.9 GB | Wrong tag — the non-`-base` checkpoint has no FIM tokens, so Zed `edit_predictions` found nothing on this host. |
-
-`gemma4:26b` is not a bad model — 26B-A4B MoE, 4B active, `tools` + `thinking`.
-The problems were fit, not quality:
-
-1. **Left ~12 GB of the card idle.** 18 GB of weights on a 32 GB card is a
-   4090-sized choice. `qwen3.6:35b-a3b-mtp-q4_K_M` (23 GB) is strictly more model
-   in the same power envelope.
-2. **General-purpose model used as the coding default.** It backed
-   `SY_OMEN45L_OLLAMA_DEFAULT_MODEL`, which feeds opencode, Zed, VS Code Copilot
-   Chat and `claude_local` — all coding surfaces.
-
-Applied:
-
-```bash
-# on the Omen (or via the daemon's /api/pull from anywhere on the LAN)
-ollama pull qwen2.5-coder:3b-base       # fixes the autocomplete FIM drift
-ollama pull gemma4:26b                   # vision, receipt OCR, and image tagging
-ollama pull glm-4.7-flash:q4_K_M         # current coding default
-```
-
-For receipt OCR, send the image before the prompt and ask for literal structured
-fields before any interpretation. For tagging or captions, ask for a concise list
-of visible objects, attributes, and scene context. Gemma 4's upstream guidance
-recommends high visual-token budgets for small text and lower budgets for tagging;
-the 26B model swaps with GLM on this 32 GB card rather than co-residing with it.
-
-`software/scripts/advanced/llm/ollama.profile.bash` now carries the default, and
-it is the **single source of truth** — `ollama_warmup` and
-`claude/claude.profile.bash` read `$SY_OMEN45L_OLLAMA_DEFAULT_MODEL` with no
-`:-<tag>` literal of their own, and `profile-advanced.sh` sources
-`ollama.profile.bash` ahead of the per-CLI partials so the value is always set.
-Override per machine by exporting the variable before the profile loads:
-
-```bash
-# ~/.bash_custom_tweaks
-export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="qwen3.6:27b-q4_K_M"
-```
-
-The model-limit map in `opencode/setup.js` is a _separate_ concern — it is a
-lookup table of per-tag context/output limits, not a default. It needs an entry
-only when a tag's limits differ from `OLLAMA_DEFAULT_CONFIG`; unknown tags fall
-through harmlessly, which is why a bogus key (`gemma4:2arm`, which is not a real
-tag) sat there inert for a long time looking like configuration.
-
-## Best coding models per hardware
-
-> **Stale.** Written against Jan-2025 / mid-2026 knowledge; several tags below were
-> pattern-guessed and never verified. For the 5090 use the verified section above.
-> The per-card sizing reasoning here is still sound; the specific tags are not.
-
-Recommendations are anchored to the **Qwen2.5-Coder** family (7B / 14B / 32B
-Instruct), which held the top open-weights coding benchmark slot as of early 2025. Cross-check current LiveCodeBench / EvalPlus / Aider leaderboards before
-committing — the open-source coding race moves fast and a newer family may have
-displaced it by the time you read this.
-
-VRAM estimates assume `Q4_K_M` unless noted; add ~30% for KV cache at 8k
-context and another ~10-20% headroom. Quantization quality ranking for code:
-`Q4_K_M < Q5_K_M < Q6_K < Q8_0 < FP16`. Q4_K_M is the standard sweet spot;
-jump to Q5_K_M when you can afford ~20% more VRAM.
-
-### RTX 5090 (32 GB)
-
-- **Daily driver**: `Qwen2.5-Coder-32B-Instruct` at `Q5_K_M` (~22 GB) — `ollama pull qwen2.5-coder:32b-instruct-q5_K_M`.
-  Comfortably fits 16k context with KV cache. This is essentially the largest
-  open coder model that runs at full quality on a single consumer GPU.
-- **Speed-first**: `Qwen2.5-Coder-14B-Instruct` at `Q8_0` (~16 GB) — `ollama pull qwen2.5-coder:14b-instruct-q8_0`.
-  Near-32B quality on many tasks, ~2x throughput. Good when you want
-  responsive multi-turn editing.
-- **Skip**: 70B Q4 (~40 GB) — overflows VRAM, partial offload kills the
-  reason you bought a 5090.
-
-### RTX 3090 (24 GB)
-
-- **Daily driver**: `Qwen2.5-Coder-32B-Instruct` at `Q4_K_M` (~19 GB) — `ollama pull qwen2.5-coder:32b`.
-  With 8k context. The 3090 is the canonical "32B coder at home" card.
-- **Bigger context**: drop to `Qwen2.5-Coder-14B-Instruct` at `Q5_K_M`
-  (~10 GB) — `ollama pull qwen2.5-coder:14b-instruct-q5_K_M`. You can run 32k+
-  context comfortably.
-- **Stretch**: 32B `Q5_K_M` (~22 GB) — `ollama pull qwen2.5-coder:32b-instruct-q5_K_M`.
-  Fits but only with short context (4k or less) — usually not worth it.
-
-### RTX 3070 Ti Laptop (8 GB)
-
-- **Daily driver**: `Qwen2.5-Coder-7B-Instruct` at `Q4_K_M` (~4.5 GB) — `ollama pull qwen2.5-coder:7b`.
-  Leaves room for 8k-16k context. Fast enough for inline completion-style
-  use.
-- **Stretch**: 14B `Q4_K_M` (~9 GB) — `ollama pull qwen2.5-coder:14b`.
-  Requires partial CPU offload — runs but drops to 10-15 tok/s on a laptop.
-  Probably not worth the wait for interactive use.
-- **Alternative**: `DeepSeek-Coder-V2-Lite-Instruct` (16B MoE, 2.4B active)
-  at `Q4_K_M` (~10 GB) — `ollama pull deepseek-coder-v2:16b`. The MoE
-  structure means active params are tiny so inference is fast even partially
-  offloaded. Sometimes a better real-world fit on a constrained laptop than
-  dense 7B.
-- **Note**: laptop GPUs thermal-throttle hard. Size the model for **sustained**
-  performance, not peak — a 7B that runs cool wins over a 14B that downclocks
-  after 60 seconds.
-
-### MacBook Pro M1 Pro 32 GB
-
-Apple unified memory means GPU-accessible RAM is ~21 GB by default (75% of
-total). Override with `sudo sysctl iogpu.wired_limit_mb=24576` to push to
-24 GB if you need it.
-
-- **Daily driver**: `Qwen2.5-Coder-14B-Instruct` at `Q5_K_M` (~10 GB) — `ollama pull qwen2.5-coder:14b-instruct-q5_K_M`.
-  The sweet spot on M1 Pro — fast enough to feel responsive, smart enough for
-  real coding tasks.
-- **Stretch**: `Qwen2.5-Coder-32B-Instruct` at `Q4_K_M` (~19 GB) — `ollama pull qwen2.5-coder:32b`.
-  Fits, but M1 Pro's ~200 GB/s memory bandwidth is roughly a quarter of a
-  3090's, so expect 8-15 tok/s. Usable for batch tasks, sluggish for
-  interactive.
-- **Speed-first**: `Qwen2.5-Coder-7B-Instruct` at `Q8_0` (~8 GB) — `ollama pull qwen2.5-coder:7b-instruct-q8_0`.
-  Fast and roomy, leaves the system actually usable for the rest of your work.
-- **Skip**: 70B at any quant — bandwidth-starved, you will be miserable.
-
-### Quick reference table — Jan 2025 picks vs current 2026 picks
-
-The "Jan 2025" column is what I anchored to above. The "2026" column comes
-from a more recent agent reply and reflects what was current as of mid-2026 at
-the time this doc was written. Cross-reference both, prefer the newer one
-unless you find an even more recent leaderboard:
-
-Each model cell shows the human-readable name followed by the `ollama pull`
-tag in backticks. Tags marked with `?` are pattern-guessed from Ollama's
-naming conventions and were not in my training data — verify on
-<https://ollama.com/library> before pulling.
-
-| Hardware                  | Role                  | 2026 pick                                 | Jan 2025 pick                                                  | Setup tip                                             |
-| ------------------------- | --------------------- | ----------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------- |
-| RTX 5090 (32 GB)          | Daily driver / coding | Qwen 3.6 35B-A3B (MoE) — `qwen3.6:latest` | Qwen2.5-Coder-32B Q5_K_M — `qwen2.5-coder:32b-instruct-q5_K_M` | MoE means 35B VRAM, ~3B-speed inference (>100 tok/s)  |
-| RTX 3090 (24 GB)          | Logic / reasoning     | Qwen 3.5 27B — `qwen3.5:27b` ?            | Qwen2.5-Coder-32B Q4_K_M — `qwen2.5-coder:32b`                 | Use EXL2 format + ExLlamaV2 server for max speed      |
-| RTX 3070 Ti Laptop (8 GB) | Quick edits / travel  | Nemotron 3 Nano — `nemotron3:nano` ?      | Qwen2.5-Coder-7B Q4_K_M — `qwen2.5-coder:7b`                   | Stick to 4-bit or 3-bit quants                        |
-| M1 Pro 32 GB MBP          | Research / long docs  | DeepSeek R1 (32B) — `deepseek-r1:32b`     | Qwen2.5-Coder-14B Q5_K_M — `qwen2.5-coder:14b-instruct-q5_K_M` | Use **MLX framework** (not just Ollama) for ~2x speed |
+### Background
 
 #### What "MoE" / "35B-A3B" means
 
@@ -410,40 +251,6 @@ The "stay on Ollama" advice in this doc has two real exceptions worth knowing:
 Both are still **single-user, single-request** runtimes — neither replaces vLLM
 for concurrent batched serving. They are local-dev speed boosts, not
 production tooling.
-
-#### Pulling the picks via Ollama
-
-```bash
-# 2026 picks
-ollama pull qwen3.6:latest         # 35B-A3B MoE (5090 daily driver) — confirmed
-ollama pull qwen3.5:27b            # Qwen 3.5 27B dense (3090) — verify tag
-ollama pull nemotron3:nano         # Nemotron 3 Nano (laptop) — verify tag
-ollama pull deepseek-r1:32b        # DeepSeek R1 32B (Mac fallback if not using MLX)
-
-# Jan 2025 picks (Qwen2.5-Coder family — defaults are Q4_K_M)
-ollama pull qwen2.5-coder:32b      # 32B Q4_K_M
-ollama pull qwen2.5-coder:14b      # 14B Q4_K_M
-ollama pull qwen2.5-coder:7b       # 7B Q4_K_M
-
-# Specific quant overrides (any size, any quant — pattern: <size>-instruct-q<N>_K_M):
-ollama pull qwen2.5-coder:32b-instruct-q5_K_M
-ollama pull qwen2.5-coder:14b-instruct-q5_K_M
-ollama pull qwen2.5-coder:7b-instruct-q8_0
-```
-
-For Mac users on MLX instead:
-
-```bash
-uv pip install mlx-lm
-mlx_lm.server --model mlx-community/DeepSeek-R1-Distill-Qwen-32B-4bit \
-              --port 11434
-```
-
-The opencode `_fetchOpencodeOllamaModels()` call will pick the Ollama-served
-models up automatically on the next run. For ExLlamaV2 / MLX-LM servers the
-chat endpoint works as-is, but the model-discovery probe currently assumes
-Ollama's `/api/tags` shape — switch it to `/v1/models` (OpenAI-compatible)
-if you fully migrate.
 
 ## What to actually do
 
