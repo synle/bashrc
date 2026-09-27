@@ -402,6 +402,16 @@ nuke:
 	# snapshot worth keeping for a restore.
 	# ~/_extra is deliberately NOT nuked: it is the personal root (SY_ROOT_FOLDER),
 	# and ai_llm/plans holds authored plan files no re-run can regenerate.
+	# Wipe every pulled Ollama model (the multi-GB blobs) via the recipe documented in
+	# llm-common.js; ollama.exe covers WSL, where models live on the Windows host.
+	# The binary itself stays. No daemon / no binary → nothing to remove.
+	for _ollama in ollama ollama.exe; do
+	  type -P "$$_ollama" > /dev/null || continue
+	  "$$_ollama" list 2> /dev/null | tr -d '\r' | awk 'NR > 1 { print $$1 }' | while IFS= read -r _model; do
+	    echo ">> Removing Ollama model: $$_model"
+	    "$$_ollama" rm "$$_model" > /dev/null || echo ">> Failed to remove Ollama model: $$_model"
+	  done
+	done
 	$(MAKE) clean
 	rm -rf \
 	  ./node_modules \

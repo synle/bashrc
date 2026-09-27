@@ -15,7 +15,12 @@ describe("OpenCode Ollama metadata", () => {
 
   it("pulls the medium tier on a 16 GB card", () => {
     const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
-    expect(getOllamaModelsForVram(16376)).toEqual(["qwen2.5-coder:14b", "gemma3:12b", "qwen2.5-coder:3b-base"]);
+    expect(getOllamaModelsForVram(16376)).toEqual(["gpt-oss:20b", "gemma4:12b", "qwen2.5-coder:3b-base"]);
+  });
+
+  it("drops a 12 GB card to the small tier", () => {
+    const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
+    expect(getOllamaModelsForVram(12288)).toEqual(["qwen2.5-coder:7b", "gemma3:4b", "qwen2.5-coder:1.5b-base"]);
   });
 
   it("pulls the small tier on an 8 GB card", () => {
@@ -55,13 +60,13 @@ describe("OpenCode Ollama metadata", () => {
         id: "ollama-my-desktop",
         name: "My-desktop - 192.168.1.45:11434",
         baseURL: "http://192.168.1.45:11434/v1",
-        models: [{ name: "qwen2.5-coder:14b" }],
+        models: [{ name: "gpt-oss:20b" }],
       },
     ]);
 
     expect(config.provider["ol-my-desktop"].name).toBe("ol-my-desktop");
-    expect(config.provider["ol-my-desktop"].models["qwen2.5-coder:14b"].name).toBe("qwen2.5-coder:14b / 192.168.1.45:11434");
-    expect(config.agent.local.model).toBe("ol-my-desktop/qwen2.5-coder:14b");
+    expect(config.provider["ol-my-desktop"].models["gpt-oss:20b"].name).toBe("gpt-oss:20b / 192.168.1.45:11434");
+    expect(config.agent.local.model).toBe("ol-my-desktop/gpt-oss:20b");
     expect(config.provider["ollama-my-desktop"]).toBeUndefined();
   });
 });
