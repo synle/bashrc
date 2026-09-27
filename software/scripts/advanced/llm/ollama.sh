@@ -13,22 +13,32 @@
 # the discovery side, this is the install side. Use the FIM-capable `-base`
 # checkpoint; `-instruct` produces chatty replies and is wrong for inline completion.
 #
-# DESKTOP_GPU: 24 GB+ cards (RTX 3090 / 4090 / 5090). Agent and vision are ~19 GB
-# each and cannot co-reside in 32 GB, so Ollama swaps them by workload.
-OLLAMA_MODELS_DESKTOP_GPU=(
-  "glm-4.7-flash:q4_K_M"  # agent / coding
-  "gemma4:26b"            # vision / OCR / image tagging
+# Tiers are named by the VRAM they target. Thresholds are MiB; cards report a bit
+# under the marketing size (24 GB → 24576, 12 GB → 12288), so the cut sits below.
+#
+# LARGE_VRAM: 24 GB+ (RTX 3090 / 4090 / 5090). Agent and vision are ~19 GB each and
+# cannot co-reside in 32 GB, so Ollama swaps them by workload.
+OLLAMA_MODELS_LARGE_VRAM=(
+  "glm-4.7-flash:q4_K_M"  # agent / coding (~19 GB)
+  "gemma4:26b"            # vision / OCR / image tagging (~19 GB)
   "qwen2.5-coder:3b-base" # autocomplete (FIM)
 )
-# LAPTOP_GPU: <= 8 GB VRAM, and the conservative fallback when VRAM is unknown.
-# Every model fits well under 8 GB on its own.
-OLLAMA_MODELS_LAPTOP_GPU=(
+OLLAMA_LARGE_VRAM_MIN_MIB=24000
+# MEDIUM_VRAM: 12-16 GB (RTX 3060 12 GB, 4070, 4080). Each model fits alone.
+OLLAMA_MODELS_MEDIUM_VRAM=(
+  "qwen2.5-coder:14b"     # agent / coding (~9 GB)
+  "gemma3:12b"            # vision (~8 GB)
+  "qwen2.5-coder:3b-base" # autocomplete (FIM, ~2 GB)
+)
+OLLAMA_MEDIUM_VRAM_MIN_MIB=12000
+# SMALL_VRAM: <= 8 GB laptops, and the conservative fallback when VRAM is unknown.
+OLLAMA_MODELS_SMALL_VRAM=(
   "qwen2.5-coder:7b"        # agent / coding (~4.7 GB)
   "gemma3:4b"               # vision (~3.3 GB)
   "qwen2.5-coder:1.5b-base" # autocomplete (FIM, ~1 GB)
 )
-# Minimum VRAM (MiB) to select the desktop bucket. A 3090 reports 24576.
-OLLAMA_DESKTOP_GPU_MIN_VRAM_MIB=24000
+# Default pull set; the VRAM gate below upgrades it when a bigger card is found.
+OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_SMALL_VRAM[@]}")
 
 # Skip in CI — install requires sudo + systemd, and pulling a daemon binary into a
 # throwaway runner has no value (no GPU, no follow-on inference).
@@ -59,7 +69,7 @@ fi
 # --- GPU / VRAM gate ---
 # Detect total VRAM (MiB) of the largest GPU. NVIDIA via nvidia-smi (also works
 # inside WSL2 through /usr/lib/wsl/lib); AMD via amdgpu sysfs. No GPU → skip.
-# GPU present but VRAM unreadable → 0, which falls back to the laptop bucket.
+# GPU present but VRAM unreadable → 0, which keeps the small VRAM default.
 _has_gpu=0
 _vram_mib=0
 if type -P nvidia-smi > /dev/null 2>&1; then
@@ -85,12 +95,14 @@ if ((!_has_gpu)); then
   exit 0
 fi
 
-if [ "$_vram_mib" -ge "$OLLAMA_DESKTOP_GPU_MIN_VRAM_MIB" ]; then
-  echo ">> ollama: ${_vram_mib} MiB VRAM → desktop GPU models"
-  OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_DESKTOP_GPU[@]}")
+if [ "$_vram_mib" -ge "$OLLAMA_LARGE_VRAM_MIN_MIB" ]; then
+  echo ">> ollama: ${_vram_mib} MiB VRAM → large VRAM models"
+  OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_LARGE_VRAM[@]}")
+elif [ "$_vram_mib" -ge "$OLLAMA_MEDIUM_VRAM_MIN_MIB" ]; then
+  echo ">> ollama: ${_vram_mib} MiB VRAM → medium VRAM models"
+  OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_MEDIUM_VRAM[@]}")
 else
-  echo ">> ollama: ${_vram_mib} MiB VRAM (0 = unknown) → laptop GPU models"
-  OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_LAPTOP_GPU[@]}")
+  echo ">> ollama: ${_vram_mib} MiB VRAM (0 = unknown) → small VRAM models"
 fi
 
 # Force refresh: remove the persistent binary if stale so the installer can re-run.
