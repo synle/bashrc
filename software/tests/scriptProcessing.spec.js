@@ -239,6 +239,31 @@ describe("backupConfigFile", () => {
     await backupConfigFile("/mock/config.txt");
     expect(fileSystem["/mock/config.txt.bak_latest"]).toBeUndefined();
   });
+
+  it("should retrospectively remove a stale latest identical to original", async () => {
+    mockFsExistence["/mock/config.txt"] = true;
+    mockFsExistence["/mock/config.txt.bak_original"] = true;
+    mockFsExistence["/mock/config.txt.bak_latest"] = true;
+    fileSystem["/mock/config.txt"] = "same content";
+    fileSystem["/mock/config.txt.bak_original"] = "same content";
+    fileSystem["/mock/config.txt.bak_latest"] = "same content";
+    await backupConfigFile("/mock/config.txt");
+    expect(fileSystem["/mock/config.txt.bak_latest"]).toBeUndefined();
+    expect(fileSystem["/mock/config.txt.bak_original"]).toBe("same content");
+  });
+
+  it("should keep a latest that differs from original even when the file reverts", async () => {
+    // original="A", a real distinct prior state latest="B", file reverted to "A".
+    // The latest holds a meaningful earlier version, so it must survive.
+    mockFsExistence["/mock/config.txt"] = true;
+    mockFsExistence["/mock/config.txt.bak_original"] = true;
+    mockFsExistence["/mock/config.txt.bak_latest"] = true;
+    fileSystem["/mock/config.txt"] = "A";
+    fileSystem["/mock/config.txt.bak_original"] = "A";
+    fileSystem["/mock/config.txt.bak_latest"] = "B";
+    await backupConfigFile("/mock/config.txt");
+    expect(fileSystem["/mock/config.txt.bak_latest"]).toBe("B");
+  });
 });
 
 describe("backupProfileSnapshot", () => {

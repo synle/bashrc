@@ -649,6 +649,13 @@ function backup_config_file() {
   else
     cp "$target" "$latest" && echo "<<< Backup Created (latest) $latest"
   fi
+
+  # Retrospective dedupe: a .bak_latest byte-identical to .bak_original is a wasted
+  # copy — drop it, keep the original. A missing cmp errors non-zero, so an uncertain
+  # comparison keeps the latest rather than deleting it.
+  if [ -f "$latest" ] && command cmp -s "$latest" "$original" 2> /dev/null; then
+    rm -f "$latest" && echo "<<< Backup Deduped (removed latest identical to original) $latest"
+  fi
 }
 
 # ensure_binary_alias <canonical_name> - On distros where the package manager installs

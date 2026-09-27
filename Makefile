@@ -389,7 +389,17 @@ nuke:
 	  ~/.syle* \
 	  ~/.fzf \
 	  ~/.fzf.bash \
-	  ~/.powershell_syle
+	  ~/.powershell_syle \
+	  ~/.bashrc.bak* \
+	  ~/.bash_history_backups* \
+	  ~/.bash_history.tmp.*
+	# ~/.bash_syle_* above also sweeps the legacy pre-_extra locations
+	# ~/.bash_syle_paths.* and ~/.bash_syle_recent_files.* left by the one-time
+	# migration to $SY_ROOT_FOLDER. The live copies live under ~/_extra and are spared.
+	# Config-backup pairs (<file>.bak_original / .bak_latest for .gitconfig, .vimrc,
+	# .inputrc, …) are left in place: backupConfigFile() already drops a redundant
+	# .bak_latest on each run, and the .bak_original is the pristine pre-setup
+	# snapshot worth keeping for a restore.
 	# ~/_extra is deliberately NOT nuked: it is the personal root (SY_ROOT_FOLDER),
 	# and ai_llm/plans holds authored plan files no re-run can regenerate.
 	$(MAKE) clean

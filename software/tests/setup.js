@@ -106,6 +106,10 @@ const mockFs = {
     };
   },
   createWriteStream: () => ({ on: () => {} }),
+  unlinkSync: (filePath) => {
+    delete fileSystem[filePath];
+    delete mockFsExistence[filePath];
+  },
   symlinkSync: (src, dest) => {
     mockSymlinkCalls.push({ src, dest });
     if (mockSymlinkError.value) throw mockSymlinkError.value;

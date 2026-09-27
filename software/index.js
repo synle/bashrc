@@ -2073,6 +2073,11 @@ async function backupText(filePath, text) {
  * - `<file>.bak_original` — first-ever snapshot (never overwritten once created).
  * - `<file>.bak_latest`   — previous content before each new write.
  * Call this before modifying a config file so the user can diff or restore.
+ *
+ * A `.bak_latest` is only written when the file differs from `.bak_original`, and
+ * any existing `.bak_latest` that is byte-identical to `.bak_original` is dropped
+ * retrospectively — the original already preserves that content, so the duplicate
+ * is dead weight. The original is always kept; only the redundant latest is removed.
  * @param {string} filePath - The config file to back up.
  * @returns {void}
  */
@@ -2093,6 +2098,25 @@ async function backupConfigFile(filePath) {
   } else {
     copyFile(filePath, latestPath);
     log("<<< Backup Created (latest)", latestPath);
+  }
+
+  // Retrospective dedupe: drop a `.bak_latest` byte-identical to `.bak_original`.
+  // Earlier runs (before this dedupe existed) or a file reverted to its original
+  // state can leave a `.bak_latest` that only duplicates the original snapshot.
+  // Keep the original, never the redundant latest. The else branch above wrote
+  // latest = current (which differs from original), so this only fires in the skip
+  // branch on a stale duplicate.
+  if (pathExists(latestPath) && (await md5Hash(latestPath)) === originalHash) {
+    if (IS_DRY_RUN) {
+      log("<<<< [DryRun] Would remove duplicate", latestPath);
+    } else {
+      try {
+        fs.unlinkSync(latestPath);
+        log("<<< Backup Deduped (removed latest identical to original)", latestPath);
+      } catch (err) {
+        log("<<< Backup Dedupe skipped (could not remove)", latestPath, String(err));
+      }
+    }
   }
 }
 
