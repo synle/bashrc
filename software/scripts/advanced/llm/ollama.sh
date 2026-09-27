@@ -24,6 +24,29 @@
 # the discovery side, this is the install side. Use the FIM-capable `-base`
 # checkpoint; `-instruct` produces chatty replies and is wrong for inline completion.
 #
+# Model roles, and where each is consumed:
+#   agent / coding — instruct checkpoints (no `-base`); chat templates + tool calls for
+#                    opencode, the Zed agent panel, and VS Code Copilot Chat (BYOK).
+#                    Per-model context/output limits: OLLAMA_MODEL_CONFIGS in
+#                    opencode/setup.js (unlisted tags get OLLAMA_DEFAULT_CONFIG).
+#   vision         — multimodal (OCR, document reading, image tagging).
+#   autocomplete   — `-base` only: the FIM tokens (<|fim_prefix|> / <|fim_suffix|> /
+#                    <|fim_middle|>) exist only in base checkpoints. Zed
+#                    `edit_predictions` only; VS Code has no inline-completion API for
+#                    custom endpoints.
+# Not auto-pulled but recognized downstream — pull by hand on the box that serves them:
+#   qwen2.5-coder:7b-base  AUTOCOMPLETE_MODELS fallback when 1.5b/3b-base are absent
+#   qwen3-coder:30b        opencode agent (~19 GB, 24 GB+ VRAM)
+#   qwen3.6:latest         opencode agent; user-tagged, not on the upstream registry
+# Any tag /api/tags advertises is auto-discovered by getOllamaProviderInputs()
+# (agent/chat) and getAutocompleteProvider() (Zed) on the next setup run.
+# Sizes below are approximate (ollama.com/library); quantization shifts VRAM 30-50%.
+#
+# Adding a model: (1) add it to the right tier(s) below; (2) chat model needing a
+# non-default limit → OLLAMA_MODEL_CONFIGS in opencode/setup.js; (3) FIM model →
+# AUTOCOMPLETE_MODELS in llm-common.js; (4) redeploy the consumer:
+# `bash run.sh --files=opencode/setup.js` (or `--files=zed.js`).
+#
 # Tiers are named by the VRAM they target. Thresholds are MiB; cards report a bit
 # under the marketing size (24 GB → 24576, 12 GB → 12288), so the cut sits below.
 #
@@ -143,10 +166,18 @@ if ((!is_os_mac && !is_os_windows)); then
 	fi
 fi
 
-# TODO: figure what to do with mac onboarding ollama
+# macOS: local personal Mac bootstrap only — $HOSTNAME must contain ".local"
+# (case-insensitive); anything else skips.
+# `tr` lowercases because bash 3.2 (macOS /bin/bash) has no ${var,,}.
 if ((is_os_mac)); then
-	echo ">>> Skipped ollama model pull: macOS installs via Homebrew (mac/_full-setup.sh); model pull TBD"
-	exit 0
+	_hostname_lower=$(echo "${HOSTNAME:-$(hostname)}" | tr '[:upper:]' '[:lower:]')
+	case "$_hostname_lower" in
+	*.local*) ;;
+	*)
+		echo ">>> Skipped ollama model pull: only applicable to personal Macs (hostname containing '.local'); this host is '$_hostname_lower'"
+		exit 0
+		;;
+	esac
 fi
 
 # --- Model pull (HTTP API) ---
