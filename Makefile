@@ -209,18 +209,19 @@ test_buildconfig:
 test_buildconfig_update:
 	npm run test:buildconfig:update
 
-# Run dry-run setup test (JS scripts only, no file writes or installs)
-DRYRUN_MAX_ERRORS ?= 3
+# Run dry-run setup test (JS scripts only, no file writes or installs).
+# Gates on run.sh's exit code plus per-script "error" statuses in run_timing.json
+# (software/tools/check-dryrun-results.js), not on grepping log text.
+# Temp roots mirror run.sh `_resolve_temp_root` (/tmp, else mktemp parent, else $HOME/tmp) + synle/bashrc.
 test_dryrun:
 	dryrun_log=$$(mktemp -t bashrc_dryrun_test.XXXXXX)
+	dryrun_start_ms=$$(node -e 'process.stdout.write(String(Date.now()))')
 	bash run.sh --dryrun --setup 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tee "$$dryrun_log"
+	run_status=$${PIPESTATUS[0]}
+	if [ "$$run_status" -ne 0 ]; then echo "FAIL: run.sh --dryrun exited $$run_status (log: $$dryrun_log)"; exit 1; fi
 	echo ">> Checking dry run results for errors..."
-	error_count=$$(command grep -ci 'error' "$$dryrun_log" || true)
-	if [ "$$error_count" -gt $(DRYRUN_MAX_ERRORS) ]; then \
-	  echo "FAIL: dry run had $$error_count error lines (threshold: $(DRYRUN_MAX_ERRORS))"; \
-	  command grep -i 'error' "$$dryrun_log"; \
-	  exit 1; \
-	fi
+	probe_folder=$$(mktemp -d); rmdir "$$probe_folder"
+	node software/tools/check-dryrun-results.js "$$dryrun_start_ms" /tmp/synle/bashrc "$$(dirname "$$probe_folder")/synle/bashrc" "$$HOME/tmp/synle/bashrc" || exit 1
 	echo ">> Dry run test passed"
 
 # Run all test suites (unit, profile, smoke, buildconfig, dryrun, shellcheck)

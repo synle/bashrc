@@ -63,7 +63,6 @@ jobs:
           "$HOME/.local/bin/shfmt" --version
 
       - uses: ./.github/actions/ci-install-chrome
-          fi
 
       # Compute the installer version string ONCE and reuse everywhere downstream:
       # - build-installer.js embeds it in the .build/install-bashrc.sh banner (via
@@ -634,7 +633,6 @@ jobs:
       - uses: ./.github/actions/ci-setup
 
       - uses: ./.github/actions/ci-install-chrome
-          fi
 
       # Apply patches from prep+publish when running after a full build (push only; manual modes skip patches)
       - name: Apply patches from build pipeline

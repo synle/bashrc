@@ -110,7 +110,7 @@ make test_coverage         # + istanbul; thresholds live in vitest.config.js
 make test_profile          # bash -n / profile invariants
 make test_buildconfig      # inline-snapshot shape (…_update to refresh)
 make test_smoke[_local]    # puppeteer webapp (live / local dist)
-make test_dryrun           # run.sh --dryrun --setup; fails past DRYRUN_MAX_ERRORS (3)
+make test_dryrun           # run.sh --dryrun --setup; fails on non-zero exit or any script status "error" in run_timing.json
 make test_all              # unit, profile, smoke, buildconfig, dryrun, shellcheck
 make validate              # format + unit + buildconfig + webapp + smoke_local
                            #   + dryrun + shellcheck   ← run this before pushing
