@@ -47,19 +47,6 @@ OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_SMALL_VRAM[@]}")
   exit 0
 }
 
-# Skip on macOS — brew formula in mac/_full-setup.sh already handles it.
-if ((is_os_mac)); then
-  echo ">>> Skipped ollama: macOS uses Homebrew (mac/_full-setup.sh)"
-  exit 0
-fi
-
-# Skip on WSL — Windows host install (winget Ollama.Ollama) exposes the API on
-# 127.0.0.1:11434 which WSL can hit through the WSL2 bridge.
-if ((is_os_windows)); then
-  echo ">>> Skipped ollama: WSL uses Windows host install (winget Ollama.Ollama)"
-  exit 0
-fi
-
 # Skip on Android/Termux — the upstream installer assumes glibc + systemd.
 if ((is_os_android_termux)); then
   echo ">>> Skipped ollama: not supported on Termux"
@@ -68,7 +55,9 @@ fi
 
 # --- GPU / VRAM gate ---
 # Detect total VRAM (MiB) of the largest GPU. NVIDIA via nvidia-smi (also works
-# inside WSL2 through /usr/lib/wsl/lib); AMD via amdgpu sysfs. No GPU → skip.
+# inside WSL2 through /usr/lib/wsl/lib); AMD via amdgpu sysfs; macOS Apple Silicon
+# via unified memory, counting only 2/3 of RAM since the GPU cannot claim it all
+# and the OS + apps need the rest. Intel Macs have no usable GPU → skip. No GPU → skip.
 # GPU present but VRAM unreadable → 0, which keeps the small VRAM default.
 _has_gpu=0
 _vram_mib=0
@@ -80,6 +69,11 @@ if type -P nvidia-smi > /dev/null 2>&1; then
   done << EOF_NVSMI
 $(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2> /dev/null)
 EOF_NVSMI
+fi
+if ((is_os_mac)) && [ "$(sysctl -n hw.optional.arm64 2> /dev/null)" = "1" ]; then
+  _has_gpu=1
+  _bytes=$(sysctl -n hw.memsize 2> /dev/null | tr -dc '0-9')
+  [ -n "$_bytes" ] && _vram_mib=$((_bytes / 1024 / 1024 * 2 / 3))
 fi
 for _vram_file in /sys/class/drm/card*/device/mem_info_vram_total; do
   [ -r "$_vram_file" ] || continue
@@ -105,25 +99,43 @@ else
   echo ">> ollama: ${_vram_mib} MiB VRAM (0 = unknown) → small VRAM models"
 fi
 
-# Force refresh: remove the persistent binary if stale so the installer can re-run.
-if is_force_refresh_stale "/usr/local/bin/ollama"; then
-  if has_persistent_binary ollama &> /dev/null; then
-    echo ">> Force refresh: removing ollama"
-    sudo rm -f /usr/local/bin/ollama
+# Install the binary — native Linux only. macOS installs it via Homebrew
+# (`installBrewPackageInBackground ollama` in mac/_full-setup.sh); WSL uses the
+# Windows host install (winget Ollama.Ollama in windows/_winget-install.sh).
+if ((!is_os_mac && !is_os_windows)); then
+  # Force refresh: remove the persistent binary if stale so the installer can re-run.
+  if is_force_refresh_stale "/usr/local/bin/ollama"; then
+    if has_persistent_binary ollama &> /dev/null; then
+      echo ">> Force refresh: removing ollama"
+      sudo rm -f /usr/local/bin/ollama
+    fi
+  fi
+
+  _bin=$(has_persistent_binary ollama)
+  if [ -n "$_bin" ]; then
+    echo ">> Skipped ollama: already installed at $_bin"
+  else
+    echo '>> Installing ollama'
+    # Upstream installer is `sh`-only (it greps /etc/os-release with POSIX syntax).
+    curl -fsSL https://ollama.com/install.sh | sh > /dev/null
   fi
 fi
 
-_bin=$(has_persistent_binary ollama)
-if [ -n "$_bin" ]; then
-  echo ">> Skipped ollama: already installed at $_bin"
-else
-  echo '>> Installing ollama'
-  # Upstream installer is `sh`-only (it greps /etc/os-release with POSIX syntax).
-  curl -fsSL https://ollama.com/install.sh | sh > /dev/null
+# Skip on WSL — Windows host install (winget Ollama.Ollama) exposes the API on
+# 127.0.0.1:11434 which WSL can hit through the WSL2 bridge.
+if ((is_os_windows)); then
+  echo ">>> Skipped ollama model pull: WSL installs via Windows host (winget Ollama.Ollama); model pull TBD"
+  exit 0
+fi
+
+# TODO: figure what to do with mac onboarding ollama
+if ((is_os_mac)); then
+  echo ">>> Skipped ollama model pull: macOS installs via Homebrew (mac/_full-setup.sh); model pull TBD"
+  exit 0
 fi
 
 # Pull the selected bucket. Skip if `ollama` isn't on PATH yet (install above may
-# have set up only the systemd unit). Skip models already pulled to avoid
+# have set up only the systemd unit; on macOS brew may still be installing it). Skip models already pulled to avoid
 # re-downloading multi-GB blobs. `ollama pull` spawns the server itself if needed.
 # Zed's `edit_predictions` targets the autocomplete model on localhost; VS Code has
 # no native inline-completion API for custom endpoints.
