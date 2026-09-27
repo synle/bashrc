@@ -2923,11 +2923,7 @@ async function _extractAppImageMetadata(appImagePath, appLabel, destFolder) {
   try {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bashrc-appimage-icon-"));
     const tmpAppImage = path.join(tmpDir, "App.AppImage");
-    try {
-      fs.copyFileSync(appImagePath, tmpAppImage);
-    } catch {
-      fs.writeFileSync(tmpAppImage, fs.readFileSync(appImagePath));
-    }
+    copyFile(appImagePath, tmpAppImage);
     fs.chmodSync(tmpAppImage, 0o755);
 
     await execBash(`"${tmpAppImage}" --appimage-extract`, {
@@ -2986,11 +2982,7 @@ async function _extractAppImageMetadata(appImagePath, appLabel, destFolder) {
       if (best) {
         const ext = path.extname(best);
         const destPath = path.join(destFolder, `App${ext}`);
-        try {
-          fs.copyFileSync(best, destPath);
-        } catch {
-          fs.writeFileSync(destPath, fs.readFileSync(best));
-        }
+        copyFile(best, destPath);
         iconPath = destPath;
       }
     }

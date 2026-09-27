@@ -1,0 +1,45 @@
+name: CI Install Chrome
+description: Install (or restore from cache) the pinned Chrome build used by Puppeteer smoke tests, and export PUPPETEER_EXECUTABLE_PATH
+
+inputs:
+  chrome-version:
+    description: Chrome build installed via @puppeteer/browsers
+    default: "147.0.7727.57"
+
+runs:
+  using: composite
+  steps:
+    # Cache keyed on the exact Chrome build, so prep and test (and later runs) reuse one download.
+    - name: Restore Chrome cache
+      id: chrome-cache
+      uses: actions/cache@v4
+      with:
+        path: /home/runner/.cache/puppeteer
+        key: puppeteer-chrome-${{ runner.os }}-${{ inputs.chrome-version }}
+
+    - name: Install Chrome for Puppeteer smoke tests
+      shell: bash
+      env:
+        PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
+        CHROME_VERSION: ${{ inputs.chrome-version }}
+      run: |
+        CHROME_PATH=$(find /home/runner/.cache/puppeteer/chrome -name "chrome" -type f 2>/dev/null | head -1)
+        if [ -z "$CHROME_PATH" ]; then
+          rm -rf /home/runner/.cache/puppeteer
+          node node_modules/.bin/browsers install "chrome@$CHROME_VERSION" --path /home/runner/.cache/puppeteer
+          CHROME_PATH=$(find /home/runner/.cache/puppeteer/chrome -name "chrome" -type f 2>/dev/null | head -1)
+        else
+          echo "Chrome restored from cache"
+        fi
+        if [ -n "$CHROME_PATH" ]; then
+          echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
+          echo "Chrome installed at: $CHROME_PATH"
+        else
+          echo "WARN: Chrome binary not found via browsers install, trying apt..."
+          sudo apt-get update -qq && sudo apt-get install -y -qq wget
+          wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y -qq /tmp/chrome.deb 2>/dev/null || sudo dpkg -i /tmp/chrome.deb
+          sudo apt-get install -y -qq -f 2>/dev/null || true
+          echo "PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable" >> "$GITHUB_ENV"
+          echo "Chrome installed via apt at: /usr/bin/google-chrome-stable"
+        fi
