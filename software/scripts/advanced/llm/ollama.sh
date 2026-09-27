@@ -6,6 +6,30 @@
 # macOS: handled by `installBrewPackageInBackground ollama` in mac/_full-setup.sh.
 # Windows host: handled by `Ollama.Ollama` in windows/_winget-install.sh.
 
+# --- Model buckets ---
+# Pull set picked by detected GPU VRAM (see gate below). Each bucket is one list;
+# the trailing comment names the role. The autocomplete entry MUST stay in sync
+# with AUTOCOMPLETE_MODELS in software/scripts/advanced/llm/llm-common.js — that is
+# the discovery side, this is the install side. Use the FIM-capable `-base`
+# checkpoint; `-instruct` produces chatty replies and is wrong for inline completion.
+#
+# DESKTOP_GPU: 24 GB+ cards (RTX 3090 / 4090 / 5090). Agent and vision are ~19 GB
+# each and cannot co-reside in 32 GB, so Ollama swaps them by workload.
+OLLAMA_MODELS_DESKTOP_GPU=(
+  "glm-4.7-flash:q4_K_M"  # agent / coding
+  "gemma4:26b"            # vision / OCR / image tagging
+  "qwen2.5-coder:3b-base" # autocomplete (FIM)
+)
+# LAPTOP_GPU: <= 8 GB VRAM, and the conservative fallback when VRAM is unknown.
+# Every model fits well under 8 GB on its own.
+OLLAMA_MODELS_LAPTOP_GPU=(
+  "qwen2.5-coder:7b"        # agent / coding (~4.7 GB)
+  "gemma3:4b"               # vision (~3.3 GB)
+  "qwen2.5-coder:1.5b-base" # autocomplete (FIM, ~1 GB)
+)
+# Minimum VRAM (MiB) to select the desktop bucket. A 3090 reports 24576.
+OLLAMA_DESKTOP_GPU_MIN_VRAM_MIB=24000
+
 # Skip in CI — install requires sudo + systemd, and pulling a daemon binary into a
 # throwaway runner has no value (no GPU, no follow-on inference).
 ((IS_CI)) && {
@@ -32,6 +56,43 @@ if ((is_os_android_termux)); then
   exit 0
 fi
 
+# --- GPU / VRAM gate ---
+# Detect total VRAM (MiB) of the largest GPU. NVIDIA via nvidia-smi (also works
+# inside WSL2 through /usr/lib/wsl/lib); AMD via amdgpu sysfs. No GPU → skip.
+# GPU present but VRAM unreadable → 0, which falls back to the laptop bucket.
+_has_gpu=0
+_vram_mib=0
+if type -P nvidia-smi > /dev/null 2>&1; then
+  _has_gpu=1
+  while IFS= read -r _line; do
+    _line=$(echo "$_line" | tr -dc '0-9')
+    [ -n "$_line" ] && [ "$_line" -gt "$_vram_mib" ] && _vram_mib=$_line
+  done << EOF_NVSMI
+$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2> /dev/null)
+EOF_NVSMI
+fi
+for _vram_file in /sys/class/drm/card*/device/mem_info_vram_total; do
+  [ -r "$_vram_file" ] || continue
+  _has_gpu=1
+  _bytes=$(command cat "$_vram_file" 2> /dev/null | tr -dc '0-9')
+  [ -n "$_bytes" ] || continue
+  _mib=$((_bytes / 1024 / 1024))
+  [ "$_mib" -gt "$_vram_mib" ] && _vram_mib=$_mib
+done
+
+if ((!_has_gpu)); then
+  echo ">>> Skipped ollama: no GPU detected"
+  exit 0
+fi
+
+if [ "$_vram_mib" -ge "$OLLAMA_DESKTOP_GPU_MIN_VRAM_MIB" ]; then
+  echo ">> ollama: ${_vram_mib} MiB VRAM → desktop GPU models"
+  OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_DESKTOP_GPU[@]}")
+else
+  echo ">> ollama: ${_vram_mib} MiB VRAM (0 = unknown) → laptop GPU models"
+  OLLAMA_MODELS_TO_PULL=("${OLLAMA_MODELS_LAPTOP_GPU[@]}")
+fi
+
 # Force refresh: remove the persistent binary if stale so the installer can re-run.
 if is_force_refresh_stale "/usr/local/bin/ollama"; then
   if has_persistent_binary ollama &> /dev/null; then
@@ -49,29 +110,13 @@ else
   curl -fsSL https://ollama.com/install.sh | sh > /dev/null
 fi
 
-# Pull the models this repo bootstraps on a new Ollama host. GLM-4.7-Flash q4_K_M
-# is the 19 GB coding model selected for a 32 GB RTX 5090. Gemma 4 26B is the
-# 19 GB multimodal model for receipt OCR, document reading, and image tagging.
-# They cannot co-reside in 32 GB, so Ollama swaps them by workload.
-#
-# The small FIM-capable model gives Zed's `edit_predictions` a localhost target.
-# (VS Code has no native inline-completion API for custom endpoints — Copilot Chat
-# handles only chat-side BYOK via chatLanguageModels.json.)
-# qwen2.5-coder:3b-base is a FIM-capable coding model for editor autocomplete.
-# The `-base` checkpoint has FIM tokens; `-instruct` produces chatty replies and is
-# wrong for inline completion. The model here MUST stay in sync with
-# AUTOCOMPLETE_MODELS in software/scripts/advanced/llm/llm-common.js — that's the
-# discovery side; this is the install side.
-#
-# Skip if `ollama` isn't on PATH yet (install above may have set up only the systemd
-# unit on a fresh box). Skip models already pulled (avoids re-downloading multi-GB
-# blobs on every run). Background daemon start is intentional — `ollama pull` will
-# spawn the server itself if needed.
-_agent_model="glm-4.7-flash:q4_K_M"
-_vision_model="gemma4:26b"
-_autocomplete_model="qwen2.5-coder:3b-base"
+# Pull the selected bucket. Skip if `ollama` isn't on PATH yet (install above may
+# have set up only the systemd unit). Skip models already pulled to avoid
+# re-downloading multi-GB blobs. `ollama pull` spawns the server itself if needed.
+# Zed's `edit_predictions` targets the autocomplete model on localhost; VS Code has
+# no native inline-completion API for custom endpoints.
 if type -P ollama > /dev/null 2>&1; then
-  for _model in "$_agent_model" "$_vision_model" "$_autocomplete_model"; do
+  for _model in "${OLLAMA_MODELS_TO_PULL[@]}"; do
     # `ollama list` prints `NAME ID SIZE MODIFIED` rows; match exact tags so one
     # quant or size never suppresses another model in the same family.
     if ollama list 2> /dev/null | grep -q "^${_model}[[:space:]]"; then
