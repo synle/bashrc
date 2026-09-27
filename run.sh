@@ -596,6 +596,12 @@ function run_files() {
   else
     curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js?raw=1"
   fi | node | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.sh") | bash 2>&1 | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.log") 2>&1
+  local pipeline_status=("${PIPESTATUS[@]}")
+  local status
+  for status in "${pipeline_status[@]}"; do
+    ((status)) && return "$status"
+  done
+  return 0
 }
 
 ################################################################################
@@ -667,6 +673,7 @@ unset os_flags
 # they survive any number of re-detects.
 #   bash run.sh --setup --is_gui=0   # rehearse a headless install on a GUI box
 ################################################################################
+IS_SETUP=0
 for arg in "$@"; do
   case "$arg" in
   --verbose | -verbose | -V) set -x ;;
@@ -674,8 +681,15 @@ for arg in "$@"; do
   --is_gui=* | -is_gui=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI=1 || export BASHRC_FORCE_IS_GUI=0 ;;
   --is_gui_x11=* | -is_gui_x11=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI_X11=1 || export BASHRC_FORCE_IS_GUI_X11=0 ;;
   --is_gui_wayland=* | -is_gui_wayland=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI_WAYLAND=1 || export BASHRC_FORCE_IS_GUI_WAYLAND=0 ;;
+  # Exported so bundled .sh scripts can tell a full setup from a plain profile
+  # refresh. index.js sets process.env.IS_SETUP for the JS scripts, but that
+  # mutation never reaches the generated bash: run.sh runs `... | node | bash`,
+  # so the final bash is a child of run.sh and inherits run.sh's env only.
+  # Without this, a .sh script cannot know a --setup run was requested.
+  --setup | -setup | --is-setup | -is-setup) IS_SETUP=1 ;;
   esac
 done
+export IS_SETUP
 
 # Re-detect so the override applies to this shell too (node inherits from here).
 _detect_gui_flags
@@ -749,8 +763,9 @@ if type -P npm > /dev/null 2>&1; then
   unset _npm_cache_folder
 fi
 
+_run_status=0
 if type -P node > /dev/null 2>&1; then
-  run_files
+  run_files || _run_status=$?
 else
   echo "[Skip] Node is not installed — skipping main script."
 fi
@@ -794,4 +809,4 @@ if [ -f "$BASH_SYLE_PATH" ] && bash -n "$BASH_SYLE_PATH" 2> /dev/null; then
   unset BASHRC_BUILD_DYNAMIC_CACHE
 fi
 
-exit
+exit "$_run_status"

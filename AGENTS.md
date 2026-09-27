@@ -766,6 +766,10 @@ when you change `software/index.js`, `run.sh`, `common-env.sh`, or
 `.github/actions/ci-build/action.yml`, and `docs/editor-keybindings.md` on any keybinding
 change.
 
+`run.sh` exports `IS_SETUP=0|1` during its pre-scan so emitted `.sh` scripts see the same
+setup intent as Node. Its `node | tee | bash | tee` pipeline must preserve every
+`PIPESTATUS` entry; otherwise a generated-shell failure becomes a false-success exit.
+
 ### 14.1 Validation cadence — batch it, don't run `make validate` per edit
 
 `make validate` is `format` + `test_unit` + `test_buildconfig` + `build_webapp` +
