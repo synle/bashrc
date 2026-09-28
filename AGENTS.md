@@ -755,10 +755,13 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
     `LLM_SHARED_INSTRUCTION_LINK_FOLDERS` (renamed to that folder's `suffix`, e.g.
     copilot's `.instructions.md` glob); non-symlink entries untouched. Claude/Gemini
     absent deliberately (they'd always-load and blow the budget).
-  - `persona.md` is the one split file also inlined back into `instructions.md` (BEGIN
+  - `~persona.md` is the one split file also inlined back into `instructions.md` (BEGIN
     block filled by `make format_build_include`; `inlined: true` in
     `SPLIT_EXPECTATIONS`). `instructions.md` closes with a short **Persona Check**
-    section — last thing read.
+    section — last thing read. It MUST also load last in opencode's ordered
+    `instructions: [...]`: the `~` prefix sorts after every letter, and
+    `getSharedLLMInstructionFilePaths()` forces it to the end
+    (`LLM_PERSONA_INSTRUCTION_FILE`). Mid-list, the rule prose after it drowns the voice.
 
 After any corpus change, deploy + verify:
 

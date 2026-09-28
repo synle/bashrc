@@ -135,7 +135,8 @@ const SPLIT_EXPECTATIONS = {
   // all siblings. Why both copies: claude and gemini read only the always-loaded block,
   // while opencode loads the standalone file as its own rules document — and position
   // matters for a persona, the smallest and oldest thing in a long context.
-  "persona.md": {
+  // Deployed as `~persona.md` so it sorts LAST — see LLM_PERSONA_INSTRUCTION_FILE.
+  "~persona.md": {
     heading: "# Persona — Caveman Speak",
     sections: [],
     inlined: true,
@@ -298,6 +299,34 @@ describe("shared instruction registry", () => {
     for (const { folder, destination } of llm.LLM_LEGACY_FOLDERS) {
       expect(folder).not.toBe(destination);
     }
+  });
+
+  // opencode loads `instructions: [...]` in array order and the last document read is
+  // the one that sticks. Alphabetical `persona.md` landed 2nd of 6 with ~40k chars of
+  // rules after it and the voice stopped holding — never let it drift mid-list again.
+  it("should list the persona file last, even behind a name that sorts after it", () => {
+    const folder = fs.mkdtempSync(path.join(os.tmpdir(), "llm-instr-"));
+    const original = llm.LLM_SHARED_INSTRUCTIONS_FOLDER;
+    try {
+      for (const name of ["testing.md", "~persona.md", "debugging.md", "~~late.md", "notes.txt"]) {
+        fs.writeFileSync(path.join(folder, name), "x");
+      }
+      llm.LLM_SHARED_INSTRUCTIONS_FOLDER = folder;
+      expect(llm.getSharedLLMInstructionFilePaths().map((p) => path.basename(p))).toEqual([
+        "debugging.md",
+        "testing.md",
+        "~~late.md",
+        "~persona.md",
+      ]);
+    } finally {
+      llm.LLM_SHARED_INSTRUCTIONS_FOLDER = original;
+      fs.rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("should deploy the persona under a name that sorts after every letter", () => {
+    expect(llm.LLM_PERSONA_INSTRUCTION_FILE).toBe("~persona.md");
+    expect(Object.keys(llm.LLM_SHARED_INSTRUCTION_FILES)).toContain(llm.LLM_PERSONA_INSTRUCTION_FILE);
   });
 });
 

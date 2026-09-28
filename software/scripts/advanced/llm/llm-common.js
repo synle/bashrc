@@ -816,6 +816,25 @@ const LLM_LEGACY_FOLDERS = [
 ];
 
 /**
+ * Deployed basename of the persona document. MUST load LAST.
+ *
+ * Why last: a style directive decays with distance — every token of dense, formal rule
+ * prose read after it pulls the reply back toward normal technical English. CLIs that
+ * take an ordered instruction list (opencode `instructions: [...]`) load in array
+ * order, so whatever sits last is the freshest thing in context. Sorted alphabetically
+ * as plain `persona.md` it landed 2nd of 6 with ~40k chars of rules behind it, and the
+ * persona stopped sticking.
+ *
+ * Two guards keep it last, on purpose:
+ *   1. The `~` prefix — `~` (0x7e) sorts after every letter, so even a plain `.sort()`
+ *      puts it at the end (same `~name` = "runs last" convention as `~cleanup.js`).
+ *   2. {@link getSharedLLMInstructionFilePaths} moves it to the end explicitly, so a
+ *      future file whose name also sorts late cannot overtake it.
+ * @type {string}
+ */
+const LLM_PERSONA_INSTRUCTION_FILE = "~persona.md";
+
+/**
  * The single registry of instruction files split out of the always-loaded block.
  *
  * Same "one registry, never a per-CLI list" rule as LLM_COMMAND_DEPLOY_MAP: every
@@ -838,7 +857,7 @@ const LLM_SHARED_INSTRUCTION_FILES = {
   // the standalone document can never drift. It is here so opencode loads it as a
   // separate rules document (instructions[]) rather than as ~1% of one 36k blob —
   // persona is the oldest, smallest thing in context and the first to decay.
-  "persona.md": "software/scripts/advanced/llm/_common/instructions-persona.md",
+  [LLM_PERSONA_INSTRUCTION_FILE]: "software/scripts/advanced/llm/_common/instructions-persona.md",
 };
 
 /**
@@ -1155,17 +1174,25 @@ function pruneStaleSharedLLMInstructions() {
  * Sorted for stable output: an unsorted readdir would reorder the generated config
  * between machines and show up as spurious diffs.
  *
- * @returns {string[]} Absolute paths to every `.md` in LLM_SHARED_INSTRUCTIONS_FOLDER.
+ * The persona file ({@link LLM_PERSONA_INSTRUCTION_FILE}) is then forced to the END.
+ * opencode loads `instructions` in array order and the last document read is the one
+ * that sticks; the persona placed mid-list decays under the rule prose after it.
+ *
+ * @returns {string[]} Absolute paths to every `.md` in LLM_SHARED_INSTRUCTIONS_FOLDER,
+ *   alphabetical, with the persona file last.
  */
 function getSharedLLMInstructionFilePaths() {
   if (!fs.existsSync(LLM_SHARED_INSTRUCTIONS_FOLDER)) return [];
 
   try {
-    return fs
+    const isPersona = (entry) => entry === LLM_PERSONA_INSTRUCTION_FILE;
+    const entries = fs
       .readdirSync(LLM_SHARED_INSTRUCTIONS_FOLDER)
       .filter((entry) => entry.endsWith(".md"))
-      .sort()
-      .map((entry) => path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, entry));
+      .sort();
+    return [...entries.filter((entry) => !isPersona(entry)), ...entries.filter(isPersona)].map((entry) =>
+      path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, entry),
+    );
   } catch (e) {
     log(`>> shared instructions: could not list ${LLM_SHARED_INSTRUCTIONS_FOLDER} — ${e.message}`);
     return [];
