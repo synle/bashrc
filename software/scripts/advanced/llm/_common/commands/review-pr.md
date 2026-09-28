@@ -14,6 +14,10 @@ Background agent is default **for a top-level invocation only.** Dispatch one se
 
 **`dry-run` (or any alias) forces foreground and a single pass.** It ends by asking the user to confirm before anything is posted, and a background agent cannot hold that conversation — so strip the token the same way, set dry-run mode, and run inline regardless of any background default. It also ignores the budgeted loop and any `pass=single` / `round=` slot tokens: dry-run is a one-shot, human-in-the-loop review (a slot driver never dispatches one). See **Dry-run mode**.
 
+## Run clock overrides
+
+Optional trailing tokens `budget=<duration>` and `keepalive=<duration>` override this run's clock; `<duration>` is `<n>s`, `<n>m`, `<n>h`, or combined (`4h`, `90m`, `6h40m`). `budget=` replaces the `<<SY_PR_RUN_BUDGET_SECONDS>>`-second run budget and `keepalive=` replaces the `<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>`-second keepalive everywhere below; the probe interval, retry policy, and every other rule stay unchanged. Strip both tokens before resolving scope or the PR ref, and echo the effective values in the first report line (`clock: budget 4h · keepalive 25m`). Clamp `budget` to `[10m, 24h]` and `keepalive` to `[5m, budget]`, saying so when a value was clamped; an unparseable value is reported and the default kept. A plain-English cadence in the prompt ("10 rounds 25 mins apart") maps to `budget = rounds × interval` and `keepalive = interval` — it never becomes a pass quota. A slot driver owns the clock, so these tokens are never forwarded to `pass=single` workers.
+
 ## Steps
 
 1. **Determine which PR to review:**

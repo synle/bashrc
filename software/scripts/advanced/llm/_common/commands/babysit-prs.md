@@ -19,6 +19,10 @@ Argument: $ARGUMENTS (optional — selects scope; the first token decides the mo
 
 Background agents are default. Resolve, sort, announce, and assign the complete PR set first, then dispatch the existing slot jobs in parallel and return while they run. Explicit foreground signals are `foreground`, `fg`, `inline`, `blocking`, `synchronous`, `sync`, or `wait`; strip that token, keep the same author-lens ranking and round-robin slot assignment, then execute assigned PRs inline in slot order without background agents. Never change scope, sorting, assignment, worktree reuse, state checkpoints, or pass cadence based on mode.
 
+## Run clock overrides
+
+Optional trailing tokens `budget=<duration>` and `keepalive=<duration>` override this run's clock; `<duration>` is `<n>s`, `<n>m`, `<n>h`, or combined (`4h`, `90m`, `6h40m`). `budget=` replaces the `<<SY_PR_RUN_BUDGET_SECONDS>>`-second run budget and `keepalive=` replaces the `<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>`-second keepalive everywhere below; the probe interval, retry policy, and every other rule stay unchanged. Strip both tokens before resolving scope or the PR ref, and echo the effective values in the first report line (`clock: budget 4h · keepalive 25m`). Clamp `budget` to `[10m, 24h]` and `keepalive` to `[5m, budget]`, saying so when a value was clamped; an unparseable value is reported and the default kept. A plain-English cadence in the prompt ("10 rounds 25 mins apart") maps to `budget = rounds × interval` and `keepalive = interval` — it never becomes a pass quota. A slot driver owns the clock, so these tokens are never forwarded to `pass=single` workers.
+
 ## Steps
 
 1. **Resolve target PR list from `$ARGUMENTS`.** Pick exactly one branch:
