@@ -698,12 +698,16 @@ const LLM_DOC_PATH_PLACEHOLDERS = {
  * @type {Record<string, string>}
  */
 const LLM_DOC_TUNING_PLACEHOLDERS = {
-  /** How long one babysit / review run keeps working before it stops on its own. */
-  "<<SY_PR_RUN_BUDGET_SECONDS>>": "21600",
+  /**
+   * How many rounds one babysit / review run keeps working before it stops on
+   * its own. One round = one keepalive interval, so the wall-clock budget is
+   * rounds x SY_PR_KEEPALIVE_INTERVAL_SECONDS (10 x 20m = 3h20m).
+   */
+  "<<SY_PR_RUN_BUDGET_ROUNDS>>": "10",
   /** How often a quiet PR is re-probed read-only for a state change. */
   "<<SY_PR_POLL_INTERVAL_SECONDS>>": "60",
   /** How long a full pass is forced even when nothing in the digest moved. */
-  "<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>": "1500",
+  "<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>": "1200",
   /** How long to wait between retries of an unreachable GitHub / model call. */
   "<<SY_PR_RETRY_INTERVAL_SECONDS>>": "15",
   /** How many consecutive unreachable retries end the run. */
