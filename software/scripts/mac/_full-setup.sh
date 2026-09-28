@@ -465,9 +465,16 @@ if [ "${_ghostty_macos_major:-0}" -ge 27 ] 2> /dev/null; then
   # stable first — otherwise installBrewPackage fast-paths past the existing
   # /Applications/Ghostty.app and the tip build never lands.
   if _brewPackageInstalled "$_BREW_INSTALLED_CASKS" ghostty && ! _brewPackageInstalled "$_BREW_INSTALLED_CASKS" ghostty@tip; then
+    # Blocking best-effort remove of the stable build: wait for the uninstall to
+    # finish — it must never race the tip install below — and ignore its output
+    # and errors so a stale/failed uninstall cannot fail the whole setup. The
+    # app fast-path in installBrewPackage only installs when Ghostty.app is gone.
     brew uninstall --cask --force ghostty < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
   fi
-  installBrewPackageInBackground --cask --app="Ghostty.app" ghostty@tip
+  # Foreground, not a background bucket: the parallel bucket swapped stable ->
+  # tip (2026-09-28) and its fish-completion symlink flaked mid-install, leaving
+  # the machine with no Ghostty at all. A foreground install fails loudly here.
+  installBrewPackage --cask --app="Ghostty.app" ghostty@tip
 else
   installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
 fi
