@@ -1,6 +1,6 @@
 [Sy] Upgrade dependencies safely — changelog first, local suite before push, exact pins on production deps, deprecations recorded. Runs the Risky Changes upgrade rule as a workflow.
 
-Argument: $ARGUMENTS (optional — a package name, a list, `outdated` to survey everything, `security` for advisories only, or `patch` / `minor` / `major` to scope by bump size. If empty, survey and propose.)
+Argument: $ARGUMENTS (optional — a package name, a list, `outdated` to survey everything, `security` for advisories only, or `patch` / `minor` / `major` to scope by bump size. If empty, survey and propose. Add `loop` to work the list to empty through `/sy-loop` — see **Loop mode**.)
 
 ## When to use
 
@@ -23,6 +23,15 @@ Two additions that make the above workable:
 
 - **One dependency per commit** whenever a bump is major, or minor on a runtime dep. Batching six upgrades into one commit means the revert is all-or-nothing and the bisect is useless. Batch only patch-level and dev-only bumps.
 - **Never upgrade to fix a bug you have not diagnosed.** "Maybe the new version fixes it" is a guess wearing a version number, and it swaps one unknown for a much larger one. Diagnose first (see the Debugging Discipline rules), then upgrade if the changelog says so.
+
+## Loop mode
+
+An explicit `loop` token (optionally with `max=<n>`) runs Steps 1–2 once, then works the proposed bump order through `/sy-loop` instead of upgrading in one sweep. Strip the token before surveying.
+
+- **Remaining list** — the Step 1 order (advisories, then majors one at a time, then batched patches), one commit-sized unit per line: one package for a major or a production minor, one batch for patch / dev-only. Bumps you recommended **not** doing stay out of the list and go under out-of-scope.
+- **Check command** — the full local test suite, plus the ecosystem's outdated / audit count for the in-scope packages. The starting number is that count.
+- **One iteration = one unit:** changelog read and linked, bump pinned, full suite green, deprecations recorded, then commit. A red suite is fixed or the bump reverted inside that iteration — never carried to the next.
+- **Stop, don't retry,** when a major needs a migration the changelog does not cover, or when a bump needs a runtime / language version change; both are separate work.
 
 ## Steps
 

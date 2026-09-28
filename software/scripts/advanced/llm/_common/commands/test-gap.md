@@ -1,6 +1,6 @@
 [Sy] Find code that changed without test coverage, ranked by risk, and write the missing tests. Not a coverage-percentage chase — targets the specific untested paths that matter.
 
-Argument: $ARGUMENTS (optional — a PR number/URL, a commit range like `main..HEAD`, a path, or `staged` / `unstaged`. If empty, use the current branch versus its base.)
+Argument: $ARGUMENTS (optional — a PR number/URL, a commit range like `main..HEAD`, a path, or `staged` / `unstaged`. If empty, use the current branch versus its base. Add `loop` to work the list to empty through `/sy-loop` — see **Loop mode**.)
 
 ## When to use
 
@@ -15,6 +15,16 @@ Argument: $ARGUMENTS (optional — a PR number/URL, a commit range like `main..H
 - **Never write a test purely to move the number.** A test asserting that a getter returns what was set is coverage theater — it costs maintenance forever and defends nothing.
 - **Every test written here must be able to fail.** Verify it: break the code it covers, watch the test go red, restore. A test never seen red proves nothing (see the Test Quality rules).
 - **Report gaps you chose not to fill.** A silent skip reads as "covered".
+
+## Loop mode
+
+An explicit `loop` token (optionally with `max=<n>`) runs Steps 1–3 once, then works the ranked gap list to empty through `/sy-loop` instead of filling gaps in one sweep. Strip the token before resolving the change set.
+
+- **Remaining list** — the Step 3 ranking, Critical first, **Low excluded** unless the user asks; one gap per line (`file:function — branch or path`).
+- **Check command** — the repo's own test command scoped to the touched specs, plus the count of remaining gaps. The starting number is the ranked gap count.
+- **One iteration = one gap:** write the test, prove it red by breaking the covered code, restore, prove it green. A test never seen red does not shrink the list.
+- **Out of scope** — pre-existing uncovered code outside the change set and any production-code change beyond the temporary break; record either as a follow-up.
+- The loop's durable file replaces the one-sweep report; the final report still lists every gap deliberately left unfilled and why.
 
 ## Steps
 
