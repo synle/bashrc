@@ -136,7 +136,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
   const bindings = await _getKeyBindings(isOsMac);
 
   // macOS-only block: option-as-alt is required for readline word-jumps and the
-  // native titlebar style matches modern Mac apps. Skipped on Linux where most
+  // tabs-in-titlebar style matches modern Mac apps. Skipped on Linux where most
   // of these settings either don't apply or use a different keybind.
   // background-blur is macOS-only (no Linux compositor equivalent in Ghostty)
   // and pairs with the cross-platform background-opacity below.
@@ -155,13 +155,14 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
         keybind = alt+arrow_right=csi:1;3C
         keybind = alt+arrow_up=csi:1;3A
         keybind = alt+arrow_down=csi:1;3B
-        # TODO: remove me — macOS 27 Golden Gate broke the Ghostty stable 1.3.1 tab
-        # bar with \`macos-titlebar-style = tabs\`: new tabs stacked half-cut in the
-        # top-right corner (see https://github.com/ghostty-org/ghostty/discussions/14244).
-        # \`native\` works around it. Revert to \`tabs\` (and delete this block) once
-        # the real fix ships in a stable release — upstream tracking issue:
-        # https://github.com/ghostty-org/ghostty/issues/13070.
-        macos-titlebar-style = native
+        # >>> GOLDEN_GATE_TIP_HACK >>> (cleanup: rg GOLDEN_GATE_TIP_HACK)
+        # macOS 27 Golden Gate broke macos-titlebar-style=tabs in stable 1.3.1
+        # (ghostty-org/ghostty#13070 - upstream fix only in the tip build until
+        # 1.4.0). Same problem as mac/_full-setup.sh pins \`ghostty@tip\` for;
+        # revert this line AND that cask pin together once stable > 1.3.1 ships
+        # the fix. Config is identical for both installs either way.
+        macos-titlebar-style = tabs
+        # <<< GOLDEN_GATE_TIP_HACK <<<
         # Renamed key: \`macos-non-native-fullscreen = visible-menu\` is the
         # pre-1.2 spelling. Still accepted as a compat alias, but \`fullscreen\`
         # is the current cross-platform key.

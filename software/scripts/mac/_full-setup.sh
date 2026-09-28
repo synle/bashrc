@@ -452,7 +452,25 @@ installBrewPackageInBackground xz
 # so a fix there now applies to every platform instead of just this file.
 
 # --- GUI apps (only if a display server is available) ---
-installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
+# >>> GOLDEN_GATE_TIP_HACK >>> (cleanup: rg GOLDEN_GATE_TIP_HACK)
+# Ghostty tabs-in-titlebar broke on macOS 27 "Golden Gate" in stable 1.3.1, so
+# pin the `ghostty@tip` cask here on macOS >= 27 and fall back to stable
+# `ghostty` elsewhere. Upstream tracking: ghostty-org/ghostty#13070 — fix only
+# ships in the tip build until 1.4.0. The config side of the same problem lives
+# in software/scripts/advanced/ghostty.js (macos-titlebar-style = tabs); revert
+# this version branch AND that line together once stable > 1.3.1 carries the fix.
+_ghostty_macos_major="$(sw_vers -productVersion 2> /dev/null | cut -d. -f1)"
+if [ "${_ghostty_macos_major:-0}" -ge 27 ] 2> /dev/null; then
+  # If the machine is on stable `ghostty` but not yet on `ghostty@tip`, uninstall
+  # stable first — otherwise installBrewPackage fast-paths past the existing
+  # /Applications/Ghostty.app and the tip build never lands.
+  if _brewPackageInstalled "$_BREW_INSTALLED_CASKS" ghostty && ! _brewPackageInstalled "$_BREW_INSTALLED_CASKS" ghostty@tip; then
+    brew uninstall --cask --force ghostty < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
+  fi
+  installBrewPackageInBackground --cask --app="Ghostty.app" ghostty@tip
+else
+  installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
+fi
 
 # TODO: remove me — iTerm2 uninstall (we migrated to ghostty); drop this block once every host has rolled through.
 # Gated on the cached cask list: the bare `brew uninstall` costs ~1.1s of brew startup on
