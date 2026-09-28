@@ -66,6 +66,16 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
 
 **(d) Anything else** — no match for keyword, SHA, or branch shape: **ABORT** with `"Unrecognized argument: <token>. Pass a SHA, branch name, or 'beta'."`
 
+### Step 2.5 — Build the changelog (always, no prompt)
+
+Every release gets a changelog summarizing everything since the last release. **Never ask the user for release notes, a changelog, or a prompt to write one** — derive it, show it in the Step 3 confirmation, and ship it.
+
+1. **Find the previous release.** Official: `gh release list --repo <owner/repo> --exclude-drafts --exclude-pre-releases --limit 1 --json tagName,publishedAt`. Beta: the same without `--exclude-pre-releases`. No release yet → fall back to `git describe --tags --abbrev=0 <target>`; no tag at all → the repo's first commit, and say "first release".
+2. **Collect the range** `<prev_tag>..<target>`, where `<target>` is `origin/<default_branch>` for official and `<ref_sha>` for beta. Run `git fetch --tags origin` first, then `git --no-pager log --no-merges --format='%h %s' <prev_tag>..<target>`, plus the PRs merged in that window: `gh pr list --repo <owner/repo> --state merged --base <default_branch> --search "merged:>=<prev_published_at>" --json number,title,url,author`.
+3. **Summarize, don't dump.** Open with a one-sentence summary of the release, then group into `### Features`, `### Fixes`, `### Other` (docs, chores, CI, deps — collapsed to a line or a count when noisy); drop empty groups. One plain-language line per change, each citing its PR URL (verbatim from `gh`) or short SHA. Never invent an entry — everything traces to a commit or PR in the range.
+4. **Empty range** → say "no changes since `<prev_tag>`" in the confirmation and let that answer decide; never fabricate notes.
+5. Write it to a temp Markdown file (`$TMPDIR/release-notes-<repo>-<version>.md`); never pass it inline on the command line.
+
 ### Step 3 — Route, confirm, trigger
 
 #### If `intent == "beta"`:
@@ -75,7 +85,7 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
 3. **Select** the beta workflow — name contains `release-beta`, `release beta`, `beta`, `prerelease`, `pre-release`, `canary`, or `nightly`.
 4. **Reject** any workflow whose name is the official/stable one (`release-official`, `release official`, `official-release`, `publish`, or bare `release` with no modifier). If the only matches are official, stop and report `"no beta release workflow found — aborting"`.
 5. If multiple beta candidates remain, ask the user which to trigger.
-6. Confirm: `"About to trigger BETA release '<workflow name>' at <source_label> in <owner/repo>. This is NOT an official release. Proceed? (yes/no)"`. If no: stop.
+6. Confirm: `"About to trigger BETA release '<workflow name>' at <source_label> in <owner/repo>. This is NOT an official release. Proceed? (yes/no)"`, printed directly under the Step 2.5 changelog so one answer covers both. If no: stop.
 7. Trigger: `gh workflow run <workflow-id> --repo <owner/repo> --ref <ref_sha>`.
 
 #### Else (`intent == "official"`):
@@ -94,7 +104,7 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
       - Sentinel matched **and** workflow has no `tag` input → **ABORT** with: `"Workflow falls back to github.ref_name with no tag input — a branch dispatch will create a bogus tag (e.g. vmain). Either (a) push a v* tag and let tag-trigger handle it, (b) add a 'tag' input to the workflow, or (c) re-run after the workflow is fixed."`
       - Neither sentinel nor `tag` input → safe to dispatch with `--ref <default_branch>` and no `--field`.
    6. If the version cannot be read (no version files, or all malformed) and a `tag` input exists, **ABORT** with: `"Cannot derive version for --field tag=...; pass it explicitly as /sy-release tag=vX.Y.Z or fix the version source files."`
-6. Confirm: `"About to trigger OFFICIAL release '<workflow name>' on '<default_branch>' in <owner/repo><, tag=v<version>>. This is NOT a beta. Proceed? (yes/no)"`. Include the `tag=` clause only if a tag was derived. If no: stop.
+6. Confirm: `"About to trigger OFFICIAL release '<workflow name>' on '<default_branch>' in <owner/repo><, tag=v<version>>. This is NOT a beta. Proceed? (yes/no)"`. Include the `tag=` clause only if a tag was derived. Print it directly under the Step 2.5 changelog so one answer covers both — the changelog is never a separate question. If no: stop.
 7. Trigger:
    - With derived tag: `gh workflow run <workflow-id> --repo <owner/repo> --ref <default_branch> --field tag=v<version>`.
    - Otherwise: `gh workflow run <workflow-id> --repo <owner/repo> --ref <default_branch>`.
@@ -109,6 +119,7 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
    - Validate against strict semver `^v\d+\.\d+\.\d+(-[\w.]+)?$`. If the resolved tag is `vmain`, `vmaster`, the bare branch name, or anything failing the regex, **immediately** warn the user with:
      `"BAD TAG DETECTED: <tag>. The release will overwrite real versions. Run: gh release delete <tag> --repo <owner/repo> --yes --cleanup-tag, then cancel the run: gh run cancel <databaseId> --repo <owner/repo>."`
    - Stop polling once a valid tag is observed or the run completes.
+4. **Attach the changelog.** If the workflow exposes a notes-style `workflow_dispatch` input (`notes`, `body`, `changelog`, `release_notes`), pass it at trigger time with `gh workflow run <workflow-id> --repo <owner/repo> --ref <ref> --json < <inputs.json>` (one JSON file holding every input, `tag` included) instead of `--field`. Otherwise, once the release exists, run `gh release edit <tag> --repo <owner/repo> --notes-file <notes.md>` — only when its current body is empty or auto-generated; never overwrite notes the workflow wrote on purpose. Report which path you took, then delete the temp files.
 
 ## Examples
 
@@ -129,6 +140,6 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
 
 - Never silently fall through to official when an arg is unrecognized. The riskiest failure mode is "user thought they were doing beta, we shipped to prod" — abort instead.
 - Never auto-pin a beta release to `HEAD` of the default branch — always prompt for a SHA / branch.
-- Always require user confirmation before `gh workflow run`.
+- Always require user confirmation before `gh workflow run`. That one confirmation also covers the changelog — never ask separately for notes or a changelog prompt.
 - SHA-shaped args must validate against the actual repo (`git cat-file -e`). A random hex string is not enough.
 - **Never dispatch an official release on a branch ref without verifying the workflow's tag handling.** A `workflow_dispatch` with `--ref main` sets `github.ref_name = "main"`, and any expression like `inputs.tag || github.ref_name` will produce a `vmain` release that overwrites real versions (observed incident, 2026-05-10). Always run the tag-safety pre-flight in Step 3 official #5 and pass `--field tag=v<version>` when the workflow exposes a `tag` input.
