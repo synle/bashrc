@@ -4313,17 +4313,69 @@ let _githubApiRateLimited = false;
  * @returns {Promise<string>} The response body as text, or "" on any failure
  */
 async function _readTextFromURL(url) {
+  return makeRESTAPI(url);
+}
+
+/**
+ * Pulls a human-readable reason out of an HTTP error body: the `error` / `message`
+ * field when the body is JSON (Ollama, most REST APIs), else the raw text. Newlines
+ * are collapsed so the reason fits on one log line.
+ * @param {string} body - Raw response body.
+ * @returns {string} Reason, at most 300 chars; "" for an empty body.
+ */
+function _describeRESTErrorBody(body) {
+  let reason = String(body || "");
+  try {
+    const json = JSON.parse(reason);
+    if (json && typeof json === "object") reason = String(json.error || json.message || reason);
+  } catch {
+    // Not JSON — keep the raw text.
+  }
+  return reason.replace(/\s+/g, " ").trim().slice(0, 300);
+}
+
+/**
+ * Makes one REST call and returns the response body as text. Uses the built-in `fetch`
+ * when available (Node 18+), else `curl` via execBash. Behavior shared with every GET
+ * caller (see {@link _readTextFromURL}): single transport selection, a
+ * {@link _URL_FETCH_TIMEOUT_MS} timeout, GitHub token only for api.github.com, rate-limit
+ * detection. GET-only: the 5 min disk cache. Non-GET: `data` is sent as a JSON body.
+ *
+ * Never throws on network/HTTP failure — returns "" and logs one line naming the method,
+ * full URL (including port), and the reason: timeout / errno / `HTTP <status>` plus the
+ * server's error message from the body, so a 500 says WHY it failed.
+ *
+ * @param {string} url - Absolute http(s) URL, including port when non-default.
+ * @param {string} [method="GET"] - HTTP method.
+ * @param {*} [data=null] - Request payload, JSON-encoded; null sends no body.
+ * @returns {Promise<string>} Trimmed response body, or "" on any failure.
+ * @throws {Error} When `url` is not http(s) or `method` is not a plain verb.
+ */
+async function makeRESTAPI(url, method = "GET", data = null) {
   if (!url.startsWith("http")) throw new Error(`Invalid URL: ${url}`);
-  const cached = _readUrlCache(url);
-  if (cached !== null) return cached.trim();
+  const verb = String(method || "GET").toUpperCase();
+  if (!/^[A-Z]+$/.test(verb)) throw new Error(`Invalid HTTP method: ${method}`);
+  const isGet = verb === "GET";
+  const bodyText = data === null || data === undefined ? null : JSON.stringify(data);
+  if (isGet) {
+    const cached = _readUrlCache(url);
+    if (cached !== null) return cached.trim();
+  }
   const isGitHubApi = url.startsWith(_GITHUB_API_URL_PREFIX);
   const authToken = isGitHubApi ? _getGitHubApiToken() : "";
+  const label = `${verb} ${url}`;
   let result = "";
   try {
     if (typeof fetch === "function") {
+      const headers = {
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        ...(bodyText !== null ? { "Content-Type": "application/json" } : {}),
+      };
       const res = await fetch(url, {
+        method: verb,
         signal: AbortSignal.timeout(_URL_FETCH_TIMEOUT_MS),
-        ...(authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : {}),
+        ...(Object.keys(headers).length > 0 ? { headers } : {}),
+        ...(bodyText !== null ? { body: bodyText } : {}),
       });
       if (!res.ok) {
         // A GitHub refusal with no remaining budget is a rate limit, not a missing
@@ -4340,17 +4392,26 @@ async function _readTextFromURL(url) {
           );
           return "";
         }
-        log(`[Warning] readTextFromURL ${url} failed: HTTP ${res.status} ${String(res.statusText || "").slice(0, 100)}`);
+        const errorReason = _describeRESTErrorBody(await res.text().catch(() => ""));
+        log(
+          `[Warning] makeRESTAPI ${label} failed: HTTP ${res.status} ${String(res.statusText || "").slice(0, 100)}` +
+            `${errorReason ? ` — ${errorReason}` : ""}`,
+        );
         return "";
       }
       result = await res.text();
     } else {
-      // Token goes through the environment, never the command line, so it cannot be read
-      // out of the process list by another user on the machine.
+      // Token and body go through the environment, never the command line, so neither
+      // can be read out of the process list by another user on the machine.
       const authHeaderArg = authToken ? `-H "Authorization: Bearer $BASHRC_GH_API_TOKEN" ` : "";
+      const bodyArgs = bodyText !== null ? `-H "Content-Type: application/json" --data-raw "$BASHRC_REST_BODY" ` : "";
+      const env = {
+        ...(authToken ? { BASHRC_GH_API_TOKEN: authToken } : {}),
+        ...(bodyText !== null ? { BASHRC_REST_BODY: bodyText } : {}),
+      };
       result = await execBash(
-        `curl -fsSL ${authHeaderArg}--max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`,
-        authToken ? { env: { ...process.env, BASHRC_GH_API_TOKEN: authToken } } : {},
+        `curl -fsSL -X ${verb} ${authHeaderArg}${bodyArgs}--max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`,
+        Object.keys(env).length > 0 ? { env: { ...process.env, ...env } } : {},
       );
     }
   } catch (err) {
@@ -4365,10 +4426,10 @@ async function _readTextFromURL(url) {
       (err && err.name) ||
       "unknown";
     const detail = String((err && err.message) || err || "").slice(0, 100);
-    log(`[Warning] readTextFromURL ${url} failed: ${reason} ${detail}`);
+    log(`[Warning] makeRESTAPI ${label} failed: ${reason} ${detail}`);
   }
   const trimmed = result.trim();
-  if (trimmed) _writeUrlCache(url, trimmed);
+  if (isGet && trimmed) _writeUrlCache(url, trimmed);
   return trimmed;
 }
 

@@ -74,34 +74,82 @@ async function _fetchInstalledOllamaModels() {
 }
 
 /**
- * Builds the detached bash that pulls every tag in parallel. Each tag is its own
- * background `curl` to `/api/pull` with `stream:false` (blocks until done); the outer
- * subshell `wait`s and appends one line per tag to `logPath`. All fds are redirected,
- * so the caller's exec returns immediately and run.sh never blocks on the download.
+ * Per-request timeout for one `/api/pull` inside the detached puller. A `stream:false`
+ * pull only answers once the whole multi-GB model is on disk, so the 3s default of
+ * makeRESTAPI would abort every pull; 6h bounds a stuck pull without killing a slow link.
+ * @type {number}
+ */
+const OLLAMA_PULL_TIMEOUT_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Builds the self-contained JS program the detached puller runs. It carries the real
+ * makeRESTAPI / _describeRESTErrorBody source (Function#toString) plus stubs for the
+ * index.js globals they touch: no URL cache, no GitHub token, OLLAMA_PULL_TIMEOUT_MS as
+ * the timeout, and `log` appending timestamped lines to `logPath`. So a failed pull
+ * logs exactly what makeRESTAPI logs everywhere else: method, full URL with port,
+ * HTTP status, and the daemon's error message.
  * Blobs are content-addressed: a re-run skips finished layers and resumes partials.
- * @param {string[]} tags - Model tags to pull.
+ * @param {string[]} tags - Model tags to pull, all in parallel.
  * @param {string} logPath - Absolute log file path.
- * @returns {string} A bash command line.
+ * @returns {string} JS source for `node -e`.
  * @throws {Error} When a tag fails OLLAMA_MODEL_TAG_PATTERN.
  */
-function _buildOllamaBackgroundPullCommand(tags, logPath) {
+function _buildOllamaBackgroundPullProgram(tags, logPath) {
   const unsafe = tags.filter((tag) => !OLLAMA_MODEL_TAG_PATTERN.test(tag));
   if (unsafe.length > 0) throw new Error(`ollama model pull: refusing unsafe model tag(s): ${unsafe.join(", ")}`);
-  const pulls = tags
-    .map((tag) => {
-      // CLI equivalent: ollama pull <tag>
-      const body = JSON.stringify({ model: tag, stream: false });
-      return `( if curl -fsS -X POST '${OLLAMA_MODELS_API_URL}/api/pull' -d '${body}' > /dev/null; then echo "$(date '+%H:%M:%S') done: ${tag}"; else echo "$(date '+%H:%M:%S') FAILED: ${tag}"; fi ) &`;
-    })
-    .join("\n");
-  return `(\n${pulls}\nwait\necho "$(date '+%H:%M:%S') all ollama pulls finished"\n) < /dev/null >> "${logPath}" 2>&1 &`;
+  return [
+    `const fs = require("fs");`,
+    `const LOG_PATH = ${JSON.stringify(logPath)};`,
+    `const API_URL = ${JSON.stringify(OLLAMA_MODELS_API_URL)};`,
+    `const TAGS = ${JSON.stringify(tags)};`,
+    `function log(...parts) { fs.appendFileSync(LOG_PATH, new Date().toTimeString().slice(0, 8) + " " + parts.join(" ") + "\\n"); }`,
+    `const _URL_FETCH_TIMEOUT_MS = ${OLLAMA_PULL_TIMEOUT_MS};`,
+    `const _GITHUB_API_URL_PREFIX = ${JSON.stringify(_GITHUB_API_URL_PREFIX)};`,
+    `let _githubApiRateLimited = false;`,
+    `function _readUrlCache() { return null; }`,
+    `function _writeUrlCache() {}`,
+    `function _getGitHubApiToken() { return ""; }`,
+    `async function execBash() { throw new Error("no fetch in this node; upgrade node to 18+"); }`,
+    _describeRESTErrorBody.toString(),
+    makeRESTAPI.toString(),
+    `(async () => {`,
+    `  const version = await makeRESTAPI(API_URL + "/api/version");`,
+    `  log("ollama daemon at " + API_URL + " version: " + (version || "unknown"));`,
+    `  await Promise.all(TAGS.map(async (tag) => {`,
+    `    log("pulling: " + tag + " (POST " + API_URL + "/api/pull)");`,
+    `    // CLI equivalent: ollama pull <tag>`,
+    `    const out = await makeRESTAPI(API_URL + "/api/pull", "POST", { model: tag, stream: false });`,
+    `    log((out.includes('"success"') ? "done: " : "FAILED: ") + tag);`,
+    `  }));`,
+    `  log("all ollama pulls finished");`,
+    `})();`,
+  ].join("\n");
+}
+
+/**
+ * Fire-and-forget: starts the puller as a detached `node` child with stdio pointed at
+ * the log file and unref()s it, so this run's node exits (and run.sh continues) at once
+ * while downloads keep going.
+ * @param {string[]} tags - Model tags to pull.
+ * @param {string} logPath - Absolute log file path.
+ * @returns {void}
+ */
+function _spawnOllamaBackgroundPull(tags, logPath) {
+  const program = _buildOllamaBackgroundPullProgram(tags, logPath);
+  const logFd = fs.openSync(logPath, "a");
+  const child = require("child_process").spawn(process.execPath, ["-e", program], {
+    detached: true,
+    stdio: ["ignore", logFd, logFd],
+  });
+  child.unref();
+  fs.closeSync(logFd);
 }
 
 /**
  * Registers the OLLAMA_DEFAULT_MODEL profile block (every host), then
  * resolves this host's VRAM tier from `system_gpu_vram_mib` and starts background
  * pulls for every tier model the daemon does not already have. Side effect: spawns
- * detached curl processes and appends to `$BASHRC_TEMP_DIR/ollama-pull.log`.
+ * one detached `node` puller (fire-and-forget) that appends to `$BASHRC_TEMP_DIR/ollama-pull.log`.
  * @returns {Promise<void>}
  * @throws {ScriptSkipError} When the host is gated out or the daemon is unreachable.
  */
@@ -134,5 +182,5 @@ async function doWork() {
   const logPath = path.join(BASHRC_TEMP_DIR, "ollama-pull.log");
   log(`>> ollama model pull: ${missing.length} model(s) in background: ${missing.join(", ")}`);
   log(`>> ollama model pull: progress → tail -f "${logPath}"`);
-  await execBash(_buildOllamaBackgroundPullCommand(missing, logPath));
+  _spawnOllamaBackgroundPull(missing, logPath);
 }
