@@ -581,11 +581,39 @@ function _git_patch_temp_file() {
 }
 
 # _git_patch_write: render the last N commits into a patch file (the only generator)
+#   $1 = output file, $2 = commit count (default 1)
+#   count 1  -> plain patch, unchanged format
+#   count N  -> one section per commit, oldest first, each fenced by
+#               `# BEGIN patch <i> (<sha>)` / `# END patch <i> (<sha>)`;
+#               patch 1 is the oldest, patch N is HEAD (apply order).
+#               `git apply` ignores the fence lines between diffs.
 function _git_patch_write() {
   local patch_file="$1"
+  local count="${2:-1}"
   # Rendered once into a file, then served to stdout / clipboard / upload from
   # there — a second `git patch-view` run could disagree with what was copied.
-  git patch-view "${2:-1}" > "$patch_file" 2> /dev/null && [ -s "$patch_file" ]
+  if [ "$count" -le 1 ]; then
+    git patch-view 1 > "$patch_file" 2> /dev/null && [ -s "$patch_file" ]
+    return $?
+  fi
+
+  local shas
+  shas=$(git rev-list --reverse -n "$count" HEAD 2> /dev/null) || return 1
+  [ -n "$shas" ] || return 1
+
+  : > "$patch_file"
+  local index=0 sha short_sha
+  while IFS= read -r sha; do
+    index=$((index + 1))
+    short_sha=$(git rev-parse --short "$sha")
+    {
+      echo "# BEGIN patch $index ($short_sha)"
+      git --no-pager format-patch -1 "$sha" --stdout | git patch-clean
+      echo "# END patch $index ($short_sha)"
+      echo ""
+    } >> "$patch_file" 2> /dev/null || return 1
+  done <<< "$shas"
+  [ -s "$patch_file" ]
 }
 
 # _git_patch_looks_like_patch: true when a file's head reads like a unified diff
@@ -953,10 +981,13 @@ function _git_patch_outcome_line() {
 function patch() {
   if is_help_arg "${1:-}"; then
     echo "patch: apply a patch when one is at hand, otherwise cut a new one
-  Usage: patch [-y] [patch_file]
+  Usage: patch [-y] [count | patch_file]
   Options:
     -y, --yes  assume yes to the clipboard apply prompt (skip it, apply)
   Resolution order:
+    0. <count>, a positive number     -> git_patch_create <count> (last N commits,
+                                         oldest first, each fenced by
+                                         '# BEGIN/END patch <i> (<sha>)')
     1. <patch_file>, when given       -> git_patch_apply <patch_file>
     2. clipboard reads like a diff    -> asks first, then applies it
     3. declined, empty, or not a diff -> git_patch_create (export the last commit)
@@ -966,6 +997,7 @@ function patch() {
   Examples:
     patch                  offer to apply the clipboard diff, else export the last commit
     patch -y               apply the clipboard diff without asking, else export the last commit
+    patch 3                export the last 3 commits (patch 1 = oldest, patch 3 = HEAD)
     patch /tmp/fix.patch   apply an existing patch file
   Shadows /usr/bin/patch — reach the binary with 'command patch'."
     return 1
@@ -982,6 +1014,17 @@ function patch() {
   esac
 
   local status
+
+  # A bare positive number means "create from the last N commits" — never a file.
+  case "${1:-}" in
+  '' | *[!0-9]* | 0) ;;
+  *)
+    git_patch_create "$1"
+    status=$?
+    [ "$status" -eq 0 ] && _git_patch_outcome_line copied
+    return "$status"
+    ;;
+  esac
 
   if [ -n "${1:-}" ]; then
     git_patch_apply "$@"

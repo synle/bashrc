@@ -137,7 +137,7 @@ describe("raw clipboard path", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     // The patch is rendered to a file once, then both the clipboard and stdout are
     // served from that file — but the clipboard hop is still the raw one.
-    expect(source).toMatch(/git patch-view "\$\{2:-1\}" > "\$patch_file"/);
+    expect(source).toMatch(/git patch-view 1 > "\$patch_file"/);
     expect(source).toContain('copy --raw "$patch_file"');
     expect(source).not.toMatch(/^\s*copy "\$patch_file"\s*$/m);
     expect(source).not.toMatch(/git patch-view \| copy$/m);
