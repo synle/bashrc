@@ -2688,6 +2688,22 @@ function unzip(zipPath, targetPath) {
 const DEFAULT_STALE_SECONDS = 1209600;
 
 /**
+ * Replacement for an empty `catch {}` in best-effort IO: stays silent when the
+ * error carries one of the expected `code`s (e.g. ENOENT on a probe), otherwise
+ * logs a warning naming the operation and the original error, so a real failure
+ * (EACCES, EROFS, ENOSPC) is visible instead of silently re-running work forever.
+ * @param {unknown} err - The caught error
+ * @param {string[]} expectedCodes - `err.code` values that are a normal outcome
+ * @param {string} context - Short description of the failed operation, for the log line
+ * @returns {void}
+ * @sideeffect Writes a warning to stderr via log() on unexpected errors
+ */
+function _warnUnlessErrorCode(err, expectedCodes, context) {
+  if (err && expectedCodes.includes(err.code)) return;
+  log(`>> Warning: ${context} failed:`, String((err && err.message) || err));
+}
+
+/**
  * Checks whether a filesystem path is stale (older than maxAgeSeconds) or missing.
  * @param {string} targetPath - The path to check
  * @param {number} [maxAgeSeconds=1209600] - Max age in seconds before considered stale (default: 2 weeks)
@@ -2699,7 +2715,9 @@ function isPathStale(targetPath, maxAgeSeconds) {
   try {
     const stats = fs.statSync(targetPath);
     return (Date.now() - stats.mtimeMs) / 1000 > maxAgeSeconds;
-  } catch {}
+  } catch (err) {
+    _warnUnlessErrorCode(err, ["ENOENT", "ENOTDIR"], `stat ${targetPath}`);
+  }
   return true;
 }
 
@@ -2740,7 +2758,9 @@ function _cacheLastrunBaseDir() {
   try {
     fs.accessSync("/tmp", fs.constants.W_OK);
     return "/tmp";
-  } catch {}
+  } catch {
+    // probe: any failure just means "/tmp not usable" — fall through to the next candidate
+  }
   return BASHRC_TEMP_ROOT_DIR || os.tmpdir();
 }
 
@@ -2777,18 +2797,24 @@ function isCacheLastrunDue(name, maxAgeSeconds) {
 
 /**
  * Records now (epoch seconds) as the last run of a named gate, creating the base
- * directory when needed. Best-effort: a write failure never throws.
+ * directory when needed. Best-effort: a write failure never throws, but is logged —
+ * a silent failure would leave the gate due forever and re-run it every time.
  * @param {string} name - Gate name
  * @returns {void}
+ * @sideeffect Writes the timestamp file; logs a warning on mkdir/write failure
  */
 function markCacheLastrun(name) {
   const file = cacheLastrunPath(name);
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
-  } catch {}
+  } catch (err) {
+    _warnUnlessErrorCode(err, ["EEXIST"], `mkdir ${path.dirname(file)}`);
+  }
   try {
     fs.writeFileSync(file, String(Math.floor(Date.now() / 1000)));
-  } catch {}
+  } catch (err) {
+    _warnUnlessErrorCode(err, [], `write last-run stamp ${file}`);
+  }
 }
 
 // --- Platform-Specific Path Utilities ---
@@ -2809,7 +2835,9 @@ function getWindowUserBaseDir() {
         return _windowUserBaseDir;
       }
     }
-  } catch (e) {}
+  } catch {
+    // probe: cmd.exe missing/failing is expected outside WSL — fall back to scanning /mnt/c/Users
+  }
   const usersDir = "/mnt/c/Users";
   const regexUsername = /(leng)|(sy[ ]*le)/i;
   const regexSystemUsers = /^(Public|Default|Default User|All Users)$/i;
@@ -3245,7 +3273,9 @@ async function _forceCloseApp(appLabel) {
         await execBash(`osascript -e 'quit app "${name}"'`);
         await execBash(`pkill -fi "${pattern}"`);
       }
-    } catch (e) {}
+    } catch {
+      // pkill exits non-zero when nothing matched — the app was already closed
+    }
   } else if (is_os_windows) {
     await execBash(`cmd.exe /C "taskkill /F /IM ${appLabel}*" 2>/dev/null`);
   } else {
@@ -4200,7 +4230,9 @@ function _readUrlCache(url) {
     if (Date.now() - stat.mtimeMs > _URL_CACHE_TTL_MS) {
       try {
         fs.unlinkSync(file);
-      } catch (_) {}
+      } catch (err) {
+        _warnUnlessErrorCode(err, ["ENOENT"], `remove stale URL cache ${file}`);
+      }
       return null;
     }
     return fs.readFileSync(file, "utf8");
@@ -4210,17 +4242,21 @@ function _readUrlCache(url) {
 }
 
 /**
- * Writes a successful URL response to the on-disk cache. Failures are
- * swallowed — caching is best-effort; a write error just means the next
- * call refetches.
+ * Writes a successful URL response to the on-disk cache. Failures never
+ * throw — caching is best-effort; a write error just means the next call
+ * refetches — but are logged so a persistently broken cache is visible.
  * @param {string} url - The URL being cached
  * @param {string} content - The response body to cache
+ * @returns {void}
+ * @sideeffect Writes under _URL_CACHE_DIR; logs a warning on failure
  */
 function _writeUrlCache(url, content) {
   try {
     fs.mkdirSync(_URL_CACHE_DIR, { recursive: true });
     fs.writeFileSync(_urlCachePath(url), content);
-  } catch (_) {}
+  } catch (err) {
+    _warnUnlessErrorCode(err, [], `write URL cache for ${url}`);
+  }
 }
 
 /**
@@ -4629,14 +4665,19 @@ function downloadAssets(urls, destination) {
       let fileSize = 0;
       try {
         fileSize = fs.statSync(dest).size || 0;
-      } catch (_) {}
+      } catch (err) {
+        // ENOENT = the download failed; recorded below as status "Error"
+        _warnUnlessErrorCode(err, ["ENOENT"], `stat download ${dest}`);
+      }
       if (fileSize === 0) status = "Error";
       metadata.push(`${status} ${url} ${dest} ${fileSize}`);
     }
     if (metadata.length > 0) {
       try {
         fs.appendFileSync(DOWNLOAD_ASSET_METADATA_PATH, metadata.join("\n") + "\n");
-      } catch (_) {}
+      } catch (err) {
+        _warnUnlessErrorCode(err, [], `append ${DOWNLOAD_ASSET_METADATA_PATH}`);
+      }
     }
   }
 
@@ -6225,7 +6266,9 @@ function printRunInfo() {
   for (const aPath of pathsToCreateDir) {
     try {
       await mkdir(aPath);
-    } catch (err) {}
+    } catch (err) {
+      _warnUnlessErrorCode(err, ["EEXIST"], `create tweaks folder ${aPath}`);
+    }
   }
 
   // for debugging

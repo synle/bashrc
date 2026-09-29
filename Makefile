@@ -189,6 +189,11 @@ test_unit:
 test_coverage:
 	npm test -- --coverage
 
+# Benchmark interactive shell startup (bash -i -c exit); fails when the median
+# exceeds the budget. Override with: make bench_profile BENCH_ARGS="--runs=20 --budget-ms=300"
+bench_profile:
+	node software/tools/bench-profile.js $(BENCH_ARGS)
+
 # Run profile syntax tests
 test_profile:
 	npm run test:profile

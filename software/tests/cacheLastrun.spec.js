@@ -6,7 +6,7 @@
  * gate semantics.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { getIndexFunction, fileSystem, getSandboxProcess } from "./setup.js";
+import { getIndexFunction, getIndexConstant, setSandboxGlobal, fileSystem, getSandboxProcess } from "./setup.js";
 
 const cacheLastrunPath = getIndexFunction("cacheLastrunPath");
 const isCacheLastrunDue = getIndexFunction("isCacheLastrunDue");
@@ -61,5 +61,70 @@ describe("cache_lastrun (JS mirror of profile-core.sh)", () => {
     expect(isCacheLastrunDue(NAME, 3600)).toBe(true);
     fileSystem[FILE] = "garbage";
     expect(isCacheLastrunDue(NAME, 3600)).toBe(true);
+  });
+
+  describe("write failures are logged, not swallowed", () => {
+    const sandboxFs = getIndexConstant("fs");
+    let originalWrite;
+    let originalMkdir;
+    let originalLog;
+    let logged;
+
+    beforeEach(() => {
+      originalWrite = sandboxFs.writeFileSync;
+      originalMkdir = sandboxFs.mkdirSync;
+      sandboxFs.mkdirSync = () => undefined; // real mkdir would hit the fake /mock root
+      originalLog = getIndexFunction("log");
+      logged = [];
+      setSandboxGlobal("log", (...args) => logged.push(args.join(" ")));
+    });
+
+    afterEach(() => {
+      sandboxFs.writeFileSync = originalWrite;
+      sandboxFs.mkdirSync = originalMkdir;
+      setSandboxGlobal("log", originalLog);
+    });
+
+    it("logs a warning naming the stamp file when the write fails with EACCES", () => {
+      sandboxFs.writeFileSync = () => {
+        throw Object.assign(new Error("EACCES: permission denied"), { code: "EACCES" });
+      };
+      expect(() => markCacheLastrun(NAME)).not.toThrow();
+      expect(logged).toEqual([`>> Warning: write last-run stamp ${FILE} failed: EACCES: permission denied`]);
+    });
+
+    it("stays silent on a successful write", () => {
+      markCacheLastrun(NAME);
+      expect(logged).toEqual([]);
+    });
+  });
+});
+
+describe("_warnUnlessErrorCode", () => {
+  const warnUnlessErrorCode = getIndexFunction("_warnUnlessErrorCode");
+  let originalLog;
+  let logged;
+
+  beforeEach(() => {
+    originalLog = getIndexFunction("log");
+    logged = [];
+    setSandboxGlobal("log", (...args) => logged.push(args.join(" ")));
+  });
+
+  afterEach(() => setSandboxGlobal("log", originalLog));
+
+  it("is silent when the error code is expected", () => {
+    warnUnlessErrorCode(Object.assign(new Error("gone"), { code: "ENOENT" }), ["ENOENT"], "stat x");
+    expect(logged).toEqual([]);
+  });
+
+  it("warns when the error code is not expected", () => {
+    warnUnlessErrorCode(Object.assign(new Error("full"), { code: "ENOSPC" }), ["ENOENT"], "write x");
+    expect(logged).toEqual([">> Warning: write x failed: full"]);
+  });
+
+  it("warns when the error has no code", () => {
+    warnUnlessErrorCode("boom", ["ENOENT"], "op");
+    expect(logged).toEqual([">> Warning: op failed: boom"]);
   });
 });

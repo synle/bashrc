@@ -115,7 +115,9 @@ make test_all              # unit, profile, smoke, buildconfig, dryrun, shellche
 make validate              # format + unit + buildconfig + webapp + smoke_local
                            #   + dryrun + shellcheck   ← run this before pushing
 make new-script name= os= type=
-make doctor                # environment diagnosis
+make doctor                # environment diagnosis (shows last bench_profile result)
+make bench_profile         # time `bash -i -c exit`; fails if median > budget
+                           #   (default 400ms ceiling; baseline ~330ms, goal 150ms)
 make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, node_modules …
 ```
 

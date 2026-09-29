@@ -318,6 +318,25 @@
   echo ""
 
   ################################################################################
+  # ---- Shell Startup ----
+  ################################################################################
+  echo "== Shell Startup =="
+
+  _bench_file="${BASHRC_TEMP_ROOT_DIR:-${TMPDIR:-/tmp}/synle/bashrc}/bench_profile.json"
+  if [ -f "$_bench_file" ]; then
+    _bench_line=$(node -e 'const r=require(process.argv[1]);console.log(`${r.withinBudget?"ok":"over"} median ${r.medianMs}ms (budget ${r.budgetMs}ms, ${r.date})`)' "$_bench_file" 2> /dev/null)
+    case "$_bench_line" in
+      ok*) _check_pass "startup ${_bench_line#ok }" ;;
+      over*) _check_warn "startup ${_bench_line#over } - over budget" ;;
+      *) _check_warn "unreadable $_bench_file" ;;
+    esac
+  else
+    _check_warn "no startup benchmark yet - run 'make bench_profile'"
+  fi
+
+  echo ""
+
+  ################################################################################
   # ---- Summary ----
   ################################################################################
   echo "================================"
