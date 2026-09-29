@@ -3,7 +3,8 @@
 Companion to the always-loaded engineering principles. Read before writing or
 reviewing code that touches multiple execution paths, retries, collection selectors,
 runtime control planes, pseudonymization or redaction, operational runbooks,
-persistent integration tests, streaming limits, or async request/RPC handlers.
+persistent integration tests, streaming limits, async request/RPC handlers, or
+long-running batch loops that mix database sessions with slow external I/O.
 
 Rules are named, not numbered — quote the name when referencing one. Epistemic
 Honesty from the main instructions governs this file too.
@@ -35,6 +36,24 @@ Honesty from the main instructions governs this file too.
   non-production environment. Recovery steps name scope, preconditions, idempotency,
   cancellation completion, rollback, and proof of success. Absolute security or
   privacy claims enumerate and verify every mode.
+- **Isolate every iteration of a long-running loop.** Materialize each iteration's
+  inputs into plain values before slow I/O; never carry ORM/session-bound objects
+  across a commit or rollback (both can expire them, turning later iterations into
+  lazy reloads on a stale connection). Release transactions, locks, and connections
+  before waiting on an external call; do follow-up writes in a fresh, bounded scope.
+  Test that one failed iteration — including a failure inside its own error
+  bookkeeping — cannot poison the next.
+- **Defaults exist only where they are applied.** Column/model defaults often apply at
+  flush or insert, not construction; a failure path reading a new, unsaved object sees
+  `None`. Set required initial values explicitly at construction, and make counters
+  tolerate absent (`(n or 0) + 1`).
+- **Systemic upstream failure trips a breaker.** When a batch exhausts its retry budget
+  on a server-side error (5xx, timeout), stop submitting remaining batches and leave
+  them pending for a later run. Continuing multiplies calls, commits, and rollbacks
+  against a dependency already known to be down.
+- **Keep the failure evidence.** On an upstream error, log a bounded, redacted excerpt
+  of the response body plus status and fault code — never only its size. A discarded
+  body turns root cause into guesswork.
 - **Persistent tests clean what they create.** Use a run-unique marker, capture the
   created resource identifier from the mutation response, and register cleanup
   immediately with language-native teardown (`finally`, `defer`, or equivalent);

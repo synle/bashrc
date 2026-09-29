@@ -123,6 +123,8 @@ const SPLIT_EXPECTATIONS = {
       "Control planes preserve identity",
       "Cryptographic pseudonyms fail closed",
       "Operational docs are executable interfaces",
+      "Isolate every iteration of a long-running loop",
+      "Systemic upstream failure trips a breaker",
       "Persistent tests clean what they create",
       "Enforce byte, item, page, token, and time limits",
       "Async request/RPC paths never call blocking",
