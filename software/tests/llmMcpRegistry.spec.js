@@ -11,8 +11,7 @@ const ROOT = path.resolve(".");
  * OLLAMA_MODELS_BY_VRAM), mirroring the runtime expansion.
  * @type {string}
  */
-const LLM_COMMON_SOURCE = expandSourceMarkers(fs
-  .readFileSync(path.join(ROOT, "software/scripts/advanced/llm/llm-common.js"), "utf-8"));
+const LLM_COMMON_SOURCE = expandSourceMarkers(fs.readFileSync(path.join(ROOT, "software/scripts/advanced/llm/llm-common.js"), "utf-8"));
 
 /**
  * Builds a vm sandbox seeded with the globals `llm-common.js` references

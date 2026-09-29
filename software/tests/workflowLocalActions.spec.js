@@ -32,7 +32,6 @@ it("finds at least one local action reference to check", () => {
 });
 
 describe.each(workflowsWithLocalUses)("$file local actions", ({ refs }) => {
-
   it.each(refs)("line $line: $ref has an action.yml", ({ ref }) => {
     const folder = path.join(REPO_ROOT, ref);
     expect(fs.existsSync(path.join(folder, "action.yml")) || fs.existsSync(path.join(folder, "action.yaml"))).toBe(true);

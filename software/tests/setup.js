@@ -253,12 +253,14 @@ export function getSandboxProcess() {
 /**
  * Inlines `// SOURCE <path>` markers recursively (a SOURCEd file may SOURCE another,
  * e.g. llm-common.js -> llm-models.jsonc), mirroring index.js's runtime expansion.
+ * Leading indentation is allowed, like the runtime pattern: oxfmt indents a marker
+ * sitting inside an array literal, and a column-0-only match silently inlined nothing.
  * @param {string} source - Script text.
  * @param {Set<string>} [seen] - Paths already on the expansion stack (cycle guard).
  * @returns {string} Text with every reachable marker replaced by file content.
  */
 export function expandSourceMarkers(source, seen = new Set()) {
-  return source.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
+  return source.replace(/^[ \t]*\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
     if (seen.has(srcFile)) return "";
     const next = new Set(seen).add(srcFile);
     return expandSourceMarkers(fs.readFileSync(path.resolve(srcFile), "utf-8"), next);

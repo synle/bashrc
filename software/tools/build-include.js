@@ -106,6 +106,33 @@ function autoTransform(sourceContent, sourceFile, targetFile) {
 }
 
 /**
+ * Ensures one blank line after a markdown BEGIN marker and before its END marker,
+ * matching what oxfmt produces, so build-include and the formatter agree and
+ * `make format` is a fixed point. Idempotent: an existing blank line is kept, and
+ * an empty block is left as-is.
+ * @param {string} content - Markdown file content
+ * @param {string} begin - The full BEGIN marker line
+ * @param {string} end - The full END marker line
+ * @returns {string} Content with the marker padding applied
+ */
+function padMarkdownMarkers(content, begin, end) {
+  // an empty slot (adjacent markers) has nothing to separate — leave it alone
+  if (content.includes(`${begin}\n${end}`)) return content;
+  return content
+    .replace(new RegExp(`${escapeRegExp(begin)}\\n(?=[^\\n])`), begin + "\n\n")
+    .replace(new RegExp(`([^\\n])\\n${escapeRegExp(end)}`), "$1\n\n" + end);
+}
+
+/**
+ * Escapes a literal string for use inside a RegExp source.
+ * @param {string} value - Literal text (e.g. a marker line)
+ * @returns {string} The text with regex metacharacters backslash-escaped
+ */
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
  * Generate a metadata comment for inlined source files: path | md5 | size.
  * @param {string} sourceFile - Path to the source file.
  * @param {string} content - The file content (used for md5 hash).
@@ -460,6 +487,7 @@ function cleanSCSSInlineMarkers(content) {
    not by unit tests. All testable logic lives in the exported helpers above. */
 if (typeof module !== "undefined" && require.main !== module) {
   module.exports = {
+    padMarkdownMarkers,
     TEXT_BLOCK_START_MARKER,
     TEXT_BLOCK_END_MARKER,
     COMMENT_STYLES,
@@ -583,12 +611,13 @@ if (typeof module !== "undefined" && require.main !== module) {
 
         replaced = replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix);
 
-        // Markdown: ensure blank lines between comment markers and code fences
+        // Markdown: ensure a blank line between each comment marker and the inlined
+        // content (code fence or prose). oxfmt inserts it after an HTML comment that
+        // precedes a block; omitting it here made `make format` flip the file every run.
         if (path.extname(target).toLowerCase() === ".md") {
           const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
           const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
-          replaced = replaced.replace(BEGIN + "\n```", BEGIN + "\n\n```");
-          replaced = replaced.replace("```\n" + END, "```\n\n" + END);
+          replaced = padMarkdownMarkers(replaced, BEGIN, END);
         }
       }
 

@@ -203,7 +203,7 @@ const OLLAMA_PORT = 11434;
  * @type {Array<{ id: string, minVramMib: number, description: string, models: Array<{ tag: string, role: "agent"|"vision"|"autocomplete" }> }>}
  */
 const OLLAMA_MODELS_BY_VRAM = [
-// SOURCE software/scripts/advanced/llm/llm-models.jsonc
+  // SOURCE software/scripts/advanced/llm/llm-models.jsonc
 ].flat();
 if (OLLAMA_MODELS_BY_VRAM.length === 0) {
   throw new Error("OLLAMA_MODELS_BY_VRAM is empty: llm-models.jsonc was not inlined by its SOURCE marker");

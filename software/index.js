@@ -1114,11 +1114,7 @@ async function getOllamaHosts() {
   const all = [...remotes];
   for (const d of defaults) if (!all.some((h) => h.ip === d.ip)) all.push(d);
   const defaultIp = (defaults[0] || all[0] || OLLAMA_LOCAL_HOST).ip;
-  const ordered = [
-    ...all.filter((h) => h.ip === defaultIp),
-    ...all.filter((h) => h.ip !== defaultIp),
-    OLLAMA_LOCAL_HOST,
-  ];
+  const ordered = [...all.filter((h) => h.ip === defaultIp), ...all.filter((h) => h.ip !== defaultIp), OLLAMA_LOCAL_HOST];
   return ordered.map((h) => ({ ...h, isDefault: h.ip === defaultIp, isLocal: h === OLLAMA_LOCAL_HOST }));
 }
 
