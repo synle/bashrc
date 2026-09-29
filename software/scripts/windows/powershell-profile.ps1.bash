@@ -142,6 +142,76 @@ function zed()    { _Launch-Editor "zed"    $script:_zedPaths    $args }
 
 Set-Alias merge smerge
 
+# code-server: serve VS Code in the browser (code serve-web) on 0.0.0.0, token-protected (matches bash code-server).
+# Token from $env:CODE_SERVER_AUTH_TOKEN; missing/invalid -> generated and persisted as a User env var.
+# $env:CODE_SERVER_ADDRESS overrides the shared base URL. Copies the LAN URL to the clipboard and opens the browser.
+function code-server {
+  param([string]$Folder = ".", [string]$Port = "9999")
+  if ($Folder -in @("-h", "--help", "help", "/?")) {
+    Write-Host "code-server: serve VS Code in the browser (code serve-web) on the LAN, token-protected"
+    Write-Host "  code-server                    serve ./ on port 9999"
+    Write-Host "  code-server <path> [<port>]    serve <path> on <port>"
+    Write-Host "  `$env:CODE_SERVER_AUTH_TOKEN / `$env:CODE_SERVER_ADDRESS override token / shared URL"
+    Write-Host "  WARNING: binds 0.0.0.0. Anyone on the network with the token gets full VS Code, terminal included."
+    return
+  }
+  if (-not (Test-Path $Folder -PathType Container)) { Write-Host "code-server: not a folder: $Folder"; return }
+  $Folder = (Resolve-Path $Folder).Path
+  $portNumber = 0
+  if (-not [int]::TryParse($Port, [ref]$portNumber) -or $portNumber -lt 1 -or $portNumber -gt 65535) {
+    Write-Host "code-server: port must be 1-65535: $Port"; return
+  }
+
+  # code serve-web lives in the CLI shim next to Code.exe, not in the GUI exe itself.
+  $cli = $null
+  foreach ($p in $script:_codePaths) {
+    $candidate = Join-Path (Split-Path $p -Parent) "bin/code.cmd"
+    if (Test-Path $candidate) { $cli = $candidate; break }
+  }
+  if (-not $cli) { Write-Host "code-server: VS Code CLI (bin/code.cmd) not found"; return }
+
+  $token = $env:CODE_SERVER_AUTH_TOKEN
+  if (-not $token -or $token -notmatch '^[A-Za-z0-9]{16,}$') {
+    $bytes = New-Object byte[] 16
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $token = -join ($bytes | ForEach-Object { $_.ToString("x2") })
+    [Environment]::SetEnvironmentVariable("CODE_SERVER_AUTH_TOKEN", $token, "User")
+    $env:CODE_SERVER_AUTH_TOKEN = $token
+    Write-Host ">> Generated new CODE_SERVER_AUTH_TOKEN, saved as a User environment variable"
+  }
+
+  # serve-web reads the token from a file so it never shows up in the process list.
+  $tokenFolder = Join-Path $env:USERPROFILE ".config/code-serve-web"
+  New-Item -ItemType Directory -Force -Path $tokenFolder | Out-Null
+  $tokenFile = Join-Path $tokenFolder "token"
+  Set-Content -Path $tokenFile -Value $token -NoNewline
+
+  $address = $env:CODE_SERVER_ADDRESS
+  if (-not $address) {
+    $ip = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+      Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.IPAddress -notlike "169.254.*" -and $_.PrefixOrigin -in @("Dhcp", "Manual") } |
+      Select-Object -First 1 -ExpandProperty IPAddress
+    if (-not $ip) { $ip = "<your-host-ip>" }
+    $address = "http://" + $ip + ":" + $portNumber
+  }
+  $address = $address.TrimEnd("/")
+  $url = "$address/?tkn=$token"
+  $localUrl = "http://localhost:$portNumber/?tkn=$token"
+
+  Write-Host "===================================="
+  Write-Host "PWD: $Folder"
+  Write-Host "LAN:   $url"
+  Write-Host "Local: $localUrl"
+  Write-Host "(LAN URL copied to clipboard; Ctrl+C to stop)"
+  Write-Host "===================================="
+  Set-Clipboard -Value $url
+
+  # Open the local URL once the server has had a moment to start.
+  Start-Process powershell -WindowStyle Hidden -ArgumentList @("-NoProfile", "-Command", "Start-Sleep 3; Start-Process '$localUrl'")
+
+  & $cli serve-web --host 0.0.0.0 --port $portNumber --connection-token-file $tokenFile --default-folder $Folder --accept-server-license-terms --disable-telemetry
+}
+
 # Claude aliases (matches bash profile-advanced.sh)
 function cl()  { claude --dangerously-skip-permissions $args }
 function cm()  { cl --model claude-opus-4-7[1m] $args }
