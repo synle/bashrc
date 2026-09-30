@@ -24,7 +24,8 @@ async function doWork() {
     "Text Server",
     code`
       # text-server: tiny browser file editor (Node, no deps) on 0.0.0.0, no auth.
-      # Same arguments as code-server. Server code is curl-fetched from the repo each run. Side effects: copies the LAN URL, opens the browser.
+      # Same arguments as code-server. Locked to files directly in <path> unless --allow-cd.
+      # Server code is curl-fetched from the repo each run. Side effects: copies the LAN URL, opens the browser.
       function text-server() {
         if is_help_arg "\${1:-}"; then
           echo "
@@ -32,13 +33,35 @@ async function doWork() {
               text-server                        serve ./ on port 9998
               text-server <path>                 serve <path> on port 9998
               text-server <path> <port>          serve <path> on <port>
+              text-server --allow-cd ...         also allow browsing/creating/deleting subfolders
+            Default: locked to files directly inside <path>; folders are hidden and cannot be entered.
+            Never reaches outside <path> (.., absolute paths, and symlink escapes are rejected).
             WARNING: binds 0.0.0.0. No auth: anyone on the network can read/write files under <path>.
           "
           return 0
         fi
 
-        local folder="\${1:-.}"
-        local port="\${2:-9998}"
+        local allow_cd=0
+        local positional=()
+        local arg
+        for arg in "$@"; do
+          case "$arg" in
+          --allow-cd) allow_cd=1 ;;
+          --no-allow-cd) allow_cd=0 ;;
+          -*)
+            echo "text-server: unknown flag: $arg" >&2
+            return 1
+            ;;
+          *) positional+=("$arg") ;;
+          esac
+        done
+        if ((\${#positional[@]} > 2)); then
+          echo "text-server: too many arguments (see text-server --help)" >&2
+          return 1
+        fi
+
+        local folder="\${positional[0]:-.}"
+        local port="\${positional[1]:-9998}"
         if [ ! -d "$folder" ]; then
           echo "text-server: not a folder: $folder" >&2
           return 1
@@ -73,6 +96,11 @@ async function doWork() {
         echo "text-server:"
         echo "  LAN:   $url"
         echo "  Local: $local_url"
+        if ((allow_cd)); then
+          echo "  Mode:  subfolders allowed (still confined to $folder)"
+        else
+          echo "  Mode:  locked to files in $folder (pass --allow-cd for subfolders)"
+        fi
         echo "  (LAN URL copied to clipboard; Ctrl+C to stop)"
         type copy &> /dev/null && copy "$url"
 
@@ -82,7 +110,7 @@ async function doWork() {
           ( sleep 2 && xdg-open "$local_url" > /dev/null 2>&1 ) &
         fi
 
-        node - "$folder" "$port" <<< "$server_code"
+        node - "$folder" "$port" "$allow_cd" <<< "$server_code"
       }
     `,
   );

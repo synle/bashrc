@@ -2,7 +2,11 @@
 /*
  * text-server — tiny browser file editor for one folder, zero npm dependencies.
  * ===========================================================================
- * Usage: text-server-app <folder> <port>
+ * Usage: text-server-app <folder> <port> [<allow_cd 0|1>]
+ *
+ * allow_cd=0 (default): locked to files directly in <folder> — no subfolder
+ * listing/navigation, no folder create/delete. allow_cd=1: subfolders allowed,
+ * still confined to <folder>.
  *
  * Serves a single-page UI (CodeMirror 5 from cdnjs) plus a small JSON API:
  *   GET    /api/list?path=<rel>   list a folder
@@ -28,6 +32,8 @@ const MAX_READ_BYTES = 5 * 1024 * 1024;
 
 const ROOT = fs.realpathSync(path.resolve(process.argv[2] || "."));
 const PORT = Number(process.argv[3] || 9998);
+/** When false, only files directly inside ROOT are reachable (no folder navigation). */
+const ALLOW_CD = process.argv[4] === "1";
 
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   process.stderr.write(`text-server: port out of range 1-65535: ${process.argv[3]}\n`);
@@ -35,25 +41,54 @@ if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
 }
 
 /**
+ * Build an HTTP-status-carrying error.
+ * @param {number} status HTTP status.
+ * @param {string} message Client-safe message.
+ * @returns {Error & {status: number}} Error with status.
+ */
+function httpError(status, message) {
+  return Object.assign(new Error(message), { status });
+}
+
+/**
+ * True when `p` is ROOT or strictly below it.
+ * @param {string} p Absolute path.
+ * @returns {boolean} Whether p is inside ROOT.
+ */
+function isInsideRoot(p) {
+  return p === ROOT || p.startsWith(ROOT.endsWith(path.sep) ? ROOT : ROOT + path.sep);
+}
+
+/**
  * Resolve a client-relative path inside ROOT, rejecting escapes (incl. via symlinks).
+ * Rejects absolute paths, `..` segments, and NUL outright rather than normalizing them.
+ * When ALLOW_CD is false the result must be ROOT itself or a direct child of ROOT.
  * @param {string} rel Relative path from the client.
  * @param {boolean} mustExist When false, only the parent folder must exist (create case).
  * @returns {string} Absolute path inside ROOT.
- * @throws {Error} with `status` 400/403/404 when invalid.
+ * @throws {Error} with `status` 403/404 when invalid.
  */
 function resolveSafe(rel, mustExist) {
-  const target = path.resolve(ROOT, "." + path.sep + String(rel || ""));
-  const inside = (p) => p === ROOT || p.startsWith(ROOT + path.sep);
-  if (!inside(target)) throw Object.assign(new Error("path outside root"), { status: 403 });
+  const raw = String(rel || "");
+  const segments = raw.split(/[\\/]+/).filter(Boolean);
+  if (raw.includes("\0") || path.isAbsolute(raw) || /^[A-Za-z]:/.test(raw) || segments.includes("..")) {
+    throw httpError(403, "path outside root");
+  }
+  if (!ALLOW_CD && segments.length > 1) throw httpError(403, "folder navigation disabled");
+  const target = path.resolve(ROOT, ...segments);
+  if (!isInsideRoot(target)) throw httpError(403, "path outside root");
   const probe = mustExist ? target : path.dirname(target);
   let real;
   try {
     real = fs.realpathSync(probe);
   } catch (err) {
-    throw Object.assign(new Error("not found"), { status: 404 });
+    throw httpError(404, "not found");
   }
-  if (!inside(real)) throw Object.assign(new Error("path outside root"), { status: 403 });
-  return mustExist ? real : path.join(real, path.basename(target));
+  if (!isInsideRoot(real)) throw httpError(403, "path outside root");
+  const resolved = mustExist ? real : path.join(real, path.basename(target));
+  // Symlinked files may point deeper into ROOT; locked mode still only allows ROOT's direct children.
+  if (!ALLOW_CD && resolved !== ROOT && path.dirname(resolved) !== ROOT) throw httpError(403, "folder navigation disabled");
+  return resolved;
 }
 
 /**
@@ -102,9 +137,11 @@ async function handleApi(req, res, url) {
 
   if (route === "GET /api/list") {
     const folder = resolveSafe(rel, true);
+    if (!ALLOW_CD && folder !== ROOT) return sendJson(res, 403, { error: "folder navigation disabled" });
     const entries = fs
       .readdirSync(folder, { withFileTypes: true })
       .map((d) => ({ name: d.name, folder: d.isDirectory() }))
+      .filter((e) => ALLOW_CD || !e.folder)
       .sort((a, b) => (a.folder === b.folder ? a.name.localeCompare(b.name) : a.folder ? -1 : 1));
     return sendJson(res, 200, { path: path.relative(ROOT, folder), entries });
   }
@@ -123,6 +160,7 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true });
   }
   if (route === "POST /api/folder") {
+    if (!ALLOW_CD) return sendJson(res, 403, { error: "folder navigation disabled" });
     if (!rel) return sendJson(res, 400, { error: "path required" });
     fs.mkdirSync(resolveSafe(rel, false));
     return sendJson(res, 200, { ok: true });
@@ -130,7 +168,10 @@ async function handleApi(req, res, url) {
   if (route === "DELETE /api/file") {
     const target = resolveSafe(rel, true);
     if (target === ROOT) return sendJson(res, 403, { error: "cannot delete root" });
-    if (fs.lstatSync(target).isDirectory()) fs.rmdirSync(target);
+    if (fs.lstatSync(target).isDirectory()) {
+      if (!ALLOW_CD) return sendJson(res, 403, { error: "folder navigation disabled" });
+      fs.rmdirSync(target);
+    }
     else fs.unlinkSync(target);
     return sendJson(res, 200, { ok: true });
   }
@@ -144,7 +185,9 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith("/api/")) return await handleApi(req, res, url);
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-      return res.end(PAGE_HTML.replace("__ROOT_NAME__", path.basename(ROOT).replace(/[<>&"]/g, "")));
+      return res.end(
+        PAGE_HTML.replace("__ROOT_NAME__", path.basename(ROOT).replace(/[<>&"]/g, "")).replace("__ALLOW_CD__", ALLOW_CD ? "true" : "false"),
+      );
     }
     res.writeHead(404);
     res.end();
@@ -160,7 +203,7 @@ server.on("error", (err) => {
   process.exit(1);
 });
 server.listen(PORT, "0.0.0.0", () => {
-  process.stderr.write(`text-server: serving ${ROOT} on 0.0.0.0:${PORT}\n`);
+  process.stderr.write(`text-server: serving ${ROOT} on 0.0.0.0:${PORT} (${ALLOW_CD ? "subfolders allowed" : "locked to top folder"})\n`);
 });
 
 // --- UI ---
@@ -207,7 +250,9 @@ const PAGE_HTML = String.raw`<!doctype html>
 </main>
 <script>
 CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
+const ALLOW_CD = __ALLOW_CD__;
 const $ = (id) => document.getElementById(id);
+if (!ALLOW_CD) { $("up").style.display = "none"; $("newFolder").style.display = "none"; }
 const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
 let cwd = "", openPath = null, clean = true;
 
@@ -226,6 +271,7 @@ async function loadList(rel) {
     const data = await api("GET", "/api/list", rel);
     cwd = data.path;
     $("crumb").textContent = "/" + cwd;
+    $("up").disabled = cwd === "";
     const ul = $("list");
     ul.innerHTML = "";
     for (const e of data.entries) {
@@ -294,7 +340,7 @@ $("newFolder").onclick = async () => {
   try { await api("POST", "/api/folder", join(cwd, name)); loadList(cwd); }
   catch (err) { alert("Create failed: " + err.message); }
 };
-$("up").onclick = () => loadList(cwd.split("/").slice(0, -1).join("/"));
+$("up").onclick = () => cwd && loadList(cwd.split("/").slice(0, -1).join("/"));
 $("refresh").onclick = () => loadList(cwd);
 $("save").onclick = save;
 editor.on("change", () => { if (openPath && clean) { clean = false; setStatus("modified"); } });

@@ -146,12 +146,14 @@ Set-Alias merge smerge
 # Token from $env:CODE_SERVER_AUTH_TOKEN; missing/invalid -> generated and persisted as a User env var.
 # $env:CODE_SERVER_ADDRESS overrides the shared base URL. Copies the LAN URL to the clipboard and opens the browser.
 function code-server {
-  param([string]$Folder = ".", [string]$Port = "9999")
+  param([string]$Folder = ".", [string]$Port = "9999", [switch]$AllowCd)
   if ($Folder -in @("-h", "--help", "help", "/?")) {
     Write-Host "code-server: serve VS Code in the browser (code serve-web) on the LAN, token-protected"
     Write-Host "  code-server                    serve ./ on port 9999"
     Write-Host "  code-server <path> [<port>]    serve <path> on <port>"
+    Write-Host "  code-server ... -AllowCd       acknowledge other folders are reachable (silences the lock warning)"
     Write-Host "  `$env:CODE_SERVER_AUTH_TOKEN / `$env:CODE_SERVER_ADDRESS override token / shared URL"
+    Write-Host "  Default lock is NOT enforced: serve-web has no path jail; Open Folder and the terminal reach the whole disk."
     Write-Host "  WARNING: binds 0.0.0.0. Anyone on the network with the token gets full VS Code, terminal included."
     return
   }
@@ -204,6 +206,9 @@ function code-server {
   Write-Host "Local: $localUrl"
   Write-Host "(LAN URL copied to clipboard; Ctrl+C to stop)"
   Write-Host "===================================="
+  if (-not $AllowCd) {
+    Write-Host "WARNING: folder lock NOT enforced by serve-web; Open Folder and the terminal reach the whole disk. Pass -AllowCd to acknowledge."
+  }
   Set-Clipboard -Value $url
 
   # Open the local URL once the server has had a moment to start.

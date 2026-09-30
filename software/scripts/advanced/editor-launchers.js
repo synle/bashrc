@@ -104,6 +104,7 @@ async function doWork() {
       # code-server: serve VS Code in the browser (code serve-web) on 0.0.0.0, token-protected.
       # Token comes from CODE_SERVER_AUTH_TOKEN; when missing or invalid a new one is generated
       # with openssl and persisted to ~/.bashrc. CODE_SERVER_ADDRESS overrides the shared base URL.
+      # --allow-cd mirrors text-server; serve-web has no path jail, so the default lock is advisory only.
       # Side effects: writes the token file, copies the LAN URL to the clipboard, opens the browser.
       function code-server() {
         if is_help_arg "\${1:-}"; then
@@ -112,9 +113,12 @@ async function doWork() {
               code-server                        serve ./ on port 9999
               code-server <path>                 serve <path> on port 9999
               code-server <path> <port>          serve <path> on <port>
+              code-server --allow-cd ...         acknowledge other folders are reachable (silences the lock warning)
               CODE_SERVER_AUTH_TOKEN=xxx code-server ...            use this token (16+ letters/digits)
               CODE_SERVER_ADDRESS=http://host:port code-server ...  override the URL printed and copied
             Missing/invalid token -> generated with openssl and saved to ~/.bashrc.
+            Default lock is NOT enforced: serve-web has no path jail; File > Open Folder and the
+            terminal still reach the whole disk. Use text-server for a real lock.
             WARNING: binds 0.0.0.0. Anyone on the network with the token gets full VS Code, terminal included.
           "
           return 0
@@ -124,8 +128,27 @@ async function doWork() {
           return 1
         fi
 
-        local folder="\${1:-.}"
-        local port="\${2:-9999}"
+        local allow_cd=0
+        local positional=()
+        local arg
+        for arg in "$@"; do
+          case "$arg" in
+          --allow-cd) allow_cd=1 ;;
+          --no-allow-cd) allow_cd=0 ;;
+          -*)
+            echo "code-server: unknown flag: $arg" >&2
+            return 1
+            ;;
+          *) positional+=("$arg") ;;
+          esac
+        done
+        if ((\${#positional[@]} > 2)); then
+          echo "code-server: too many arguments (see code-server --help)" >&2
+          return 1
+        fi
+
+        local folder="\${positional[0]:-.}"
+        local port="\${positional[1]:-9999}"
         if [ ! -d "$folder" ]; then
           echo "code-server: not a folder: $folder" >&2
           return 1
@@ -186,6 +209,10 @@ async function doWork() {
         echo "  LAN:   $url"
         echo "  Local: $local_url"
         echo "  (LAN URL copied to clipboard; Ctrl+C to stop)"
+        if ! ((allow_cd)); then
+          echo "  WARNING: folder lock NOT enforced by serve-web; File > Open Folder and the terminal reach the whole disk." >&2
+          echo "           Use text-server for an enforced lock, or pass --allow-cd to acknowledge." >&2
+        fi
         type copy &> /dev/null && copy "$url"
 
         # Open the local URL once the server has had a moment to start.
