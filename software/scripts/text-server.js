@@ -228,6 +228,68 @@ async function doWork() {
         echo "copy-to-server: $sent sent, $failed failed"
         ((sent > 0))
       }
+
+      # copy-from-server: fetch clipboard.txt (or <name>) from the FIRST reachable CODE_SERVER_REMOTE copy-server,
+      # put it on the local clipboard, and print it to stdout (status lines go to stderr, so it pipes cleanly).
+      # Hosts are tried in CODE_SERVER_REMOTE_HOSTS order; an unreachable one is skipped, but the first one that
+      # answers is final — a missing file there is reported, not looked up on the next host.
+      # Side effects: overwrites the local clipboard; creates and removes a temp file.
+      function copy-from-server() {
+        if is_help_arg "\${1:-}"; then
+          echo "
+            copy-from-server: pull a file from the first reachable CODE_SERVER_REMOTE copy-server into the clipboard
+              copy-from-server                   fetch clipboard.txt, copy it, and print it
+              copy-from-server <name>            fetch <name> instead (path relative to the served folder)
+            Targets: \\$CODE_SERVER_REMOTE_HOSTS (from software/metadata/ip-address.config; re-run run.sh to refresh)
+          "
+          return 0
+        fi
+        if [ -z "\${CODE_SERVER_REMOTE_HOSTS:-}" ]; then
+          echo "copy-from-server: no host tagged CODE_SERVER_REMOTE in ip-address.config (CODE_SERVER_REMOTE_HOSTS is empty; re-run run.sh)" >&2
+          return 1
+        fi
+
+        local name="\${1:-clipboard.txt}"
+        local encoded
+        encoded=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$name") || return 1
+        local response
+        response=$(mktemp) || {
+          echo "copy-from-server: mktemp failed" >&2
+          return 1
+        }
+
+        local host status
+        for host in $CODE_SERVER_REMOTE_HOSTS; do
+          # 000 = no HTTP answer (down / not running) -> try the next host; any real status means this host is the one.
+          status=$(command curl -s --max-time 5 -o "$response" -w '%{http_code}' "http://$host/api/file?path=$encoded")
+          if [ "$status" = "000" ]; then
+            echo "copy-from-server: skip   http://$host (not reachable)" >&2
+            continue
+          fi
+          if [ "$status" != "200" ]; then
+            echo "copy-from-server: http://$host/?path=$encoded -> HTTP $status: $(command cat "$response")" >&2
+            command rm -f "$response"
+            return 1
+          fi
+          echo "copy-from-server: using  http://$host/?path=$encoded" >&2
+          local content
+          content=$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).content + "x")' "$response") || {
+            echo "copy-from-server: unexpected response from http://$host" >&2
+            command rm -f "$response"
+            return 1
+          }
+          command rm -f "$response"
+          content="\${content%x}" # drop the sentinel that protected trailing newlines from \$( )
+          printf '%s' "$content" | copy --raw
+          printf '%s' "$content"
+          [[ "$content" == *$'\\n' ]] || echo # end the terminal line without doubling a trailing newline
+          echo "copy-from-server: \${#content} chars copied to the clipboard" >&2
+          return 0
+        done
+        command rm -f "$response"
+        echo "copy-from-server: no CODE_SERVER_REMOTE host reachable ($CODE_SERVER_REMOTE_HOSTS)" >&2
+        return 1
+      }
     `,
   );
 }
