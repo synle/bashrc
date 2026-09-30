@@ -86,6 +86,7 @@ async function doWork() {
         # always runs from that snapshot. A failed download or an invalid copy (bad push) falls back to the
         # last good snapshot, so the tool works offline and one broken commit does not break every machine.
         local snapshot_folder="$HOME/.text-server"
+        local server_script="$snapshot_folder/text-server.cjs"
         local app_folder app_file download_ok=1
         app_folder=$(mktemp -d) || {
           echo "text-server: mktemp failed" >&2
@@ -122,12 +123,23 @@ async function doWork() {
         elif [ -f "$snapshot_folder/text-server.cjs" ] && [ -f "$snapshot_folder/text-server.html" ]; then
           echo "text-server: using last good snapshot in $snapshot_folder" >&2
         else
-          echo "text-server: no download and no snapshot in $snapshot_folder; cannot start" >&2
-          command rm -rf "$app_folder"
-          return 1
+          # Last resort (first run, raw files unreachable or broken): the single-file bundle CI publishes to the
+          # binary-cache release (make build_text_server). Page inlined, so it runs alone.
+          echo "text-server: no snapshot yet; trying the single-file bundle from the binary-cache release" >&2
+          safe_mkdir "$snapshot_folder"
+          if command curl -fsSL --max-time 30 -o "$app_folder/text-server-bundle.cjs" "https://github.com/$REPO_PATH_IDENTIFIER/releases/download/binary-cache/text-server__text-server" \
+            && node --check "$app_folder/text-server-bundle.cjs" 2> /dev/null; then
+            command cp "$app_folder/text-server-bundle.cjs" "$snapshot_folder/text-server-bundle.cjs"
+          elif [ -f "$snapshot_folder/text-server-bundle.cjs" ]; then
+            echo "text-server: bundle download failed; using the bundle saved in $snapshot_folder" >&2
+          else
+            echo "text-server: no download, no snapshot, no bundle in $snapshot_folder; cannot start" >&2
+            command rm -rf "$app_folder"
+            return 1
+          fi
+          server_script="$snapshot_folder/text-server-bundle.cjs"
         fi
         command rm -rf "$app_folder"
-        app_folder="$snapshot_folder"
 
         # Requested port busy -> let the OS pick a free one, so the printed/opened URLs match the server.
         port=$(node -e '
@@ -160,15 +172,16 @@ async function doWork() {
           ( sleep 2 && xdg-open "$local_url" > /dev/null 2>&1 ) &
         fi
 
-        node "$app_folder/text-server.cjs" "$folder" "$port" "$allow_cd"
+        node "$server_script" "$folder" "$port" "$allow_cd"
       }
 
       # copy-server: text-server on a fresh mktemp folder holding an empty clipboard.txt — a LAN scratchpad for pasting text between machines.
-      # Args after the folder pass through to text-server ([<port>] [--allow-cd]). Side effects: creates a temp folder (left in place).
+      # Args after the folder pass through to text-server ([<port>] [--allow-cd]). Side effects: creates a temp folder, deleted when the server stops.
       function copy-server() {
         if is_help_arg "\${1:-}"; then
           echo "
             copy-server: text-server on a new temp folder seeded with an empty clipboard.txt (LAN scratchpad; alias: paste-server)
+            The temp folder and everything in it is deleted when the server stops.
               copy-server                        serve a new temp folder on port 9998
               copy-server <port>                 serve a new temp folder on <port>
               copy-server ... --allow-cd         pass-through flag, see text-server --help
@@ -182,7 +195,12 @@ async function doWork() {
         }
         # Seed the scratchpad copy-from-server reads; being the only file, the UI also auto-opens it.
         : > "$folder/clipboard.txt"
-        text-server "$folder" "$@"
+        # Subshell + EXIT trap: the scratch folder goes away however the server ends, Ctrl+C included
+        # (an interactive shell abandons the rest of a function on SIGINT, so a plain rm after would not run).
+        (
+          trap 'command rm -rf "$folder"' EXIT
+          text-server "$folder" "$@"
+        )
       }
       alias paste-server='copy-server'
 

@@ -41,8 +41,13 @@
   #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
   #name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
   #syntax { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
-  #status { color: #999; flex: none; width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; } /* fixed width: messages change without shifting the toolbar */
-  #version { color: #666; font-size: 11px; margin-left: 8px; white-space: nowrap; }
+  #foot { display: flex; gap: 12px; align-items: center; padding: 3px 8px; border-top: 1px solid #333; font-size: 12px; min-height: 18px; }
+  #status { flex: 1; min-width: 0; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; padding: 0 4px; }
+  #status.flash { animation: statusFlash 1.2s ease-out; }
+  @keyframes statusFlash { 0%, 30% { background: #8ab4f8; color: #1e1e1e; } 100% { background: transparent; color: #999; } }
+  #pos { flex: none; color: #999; white-space: nowrap; }
+  #size { flex: none; color: #999; white-space: nowrap; }
+  #version { flex: none; color: #666; font-size: 11px; white-space: nowrap; }
   #bar button { white-space: nowrap; flex: none; }
   button { background: #333; color: #ddd; border: 1px solid #555; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
   button:hover { background: #444; }
@@ -63,9 +68,10 @@
 </aside>
 <div id="resizer" title="Drag to resize the file list"></div>
 <main id="main">
-  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button><span id="status" title="Save / sync status"></span><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><span id="version" title="text-server version"></span><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
+  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
   <div id="editorWrap"></div>
   <div id="empty"><div class="title">No file open</div><div>Pick a file from the list on the left to start editing.</div><button id="emptyNewFile" title="Create a new file in this folder">+ Create a new file</button></div>
+  <div id="foot"><span id="status" title="Save / sync status"></span><span id="pos" title="Cursor line and column"></span><span id="size" title="Size of the open file as edited (UTF-8)"></span><span id="version" title="text-server version"></span></div>
 </main>
 <script>
 CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
@@ -148,6 +154,8 @@ const $ = (id) => document.getElementById(id);
 if (!ALLOW_CD) { $("up").style.display = "none"; $("newFolder").style.display = "none"; }
 const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
 $("editorWrap").append($("empty")); // overlay the editor area only, below the toolbar
+editor.on("change", () => renderSize()); // every edit, open, remote reload, and close
+editor.on("cursorActivity", () => renderCursor());
 // cwd/openPath are ROOT-relative with "/" separators; loadedContent is the last server copy of openPath.
 // clean=false means the editor holds edits not yet auto-saved.
 /** Page title as served ("text-server - <folder>"); the tab title prefixes the open file onto it. */
@@ -167,7 +175,46 @@ function setClean(value) {
   clean = value;
   document.title = openPath ? (clean ? "" : "\u25CF ") + basename(openPath) + " \u00B7 " + BASE_TITLE : BASE_TITLE;
 }
-const setStatus = (t) => { $("status").textContent = t; $("status").title = t || "Save / sync status"; };
+/**
+ * Show a status message in the footer. A changed message flashes briefly so it is noticed;
+ * repeating the same text (e.g. "editing..." per keystroke) does not re-flash.
+ * @param {string} t Message; "" clears it.
+ */
+/**
+ * Human-readable byte count: "0 B", "999 B", "1.2 KB", "3.4 MB".
+ * @param {number} bytes Byte count (>= 0).
+ * @returns {string} Formatted size.
+ */
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+/** Footer size of the open file as currently edited (UTF-8 bytes + line count); blank with no file open. */
+function renderSize() {
+  if (!openPath) { $("size").textContent = ""; renderCursor(); return; }
+  const text = editor.getValue();
+  $("size").textContent = formatBytes(new Blob([text]).size) + " \u00B7 " + editor.lineCount() + " lines";
+}
+
+/** Footer cursor position, 1-based like most editors ("Ln 12, Col 5"); blank with no file open. */
+function renderCursor() {
+  if (!openPath) { $("pos").textContent = ""; return; }
+  const cursor = editor.getCursor();
+  $("pos").textContent = "Ln " + (cursor.line + 1) + ", Col " + (cursor.ch + 1);
+}
+
+function setStatus(t) {
+  const el = $("status");
+  if (el.textContent === t) return;
+  el.textContent = t;
+  el.title = t || "Save / sync status";
+  el.classList.remove("flash");
+  if (!t) return;
+  void el.offsetWidth; // reflow so re-adding the class restarts the animation
+  el.classList.add("flash");
+}
 $("version").textContent = "v " + APP_VERSION;
 const searching = () => $("searchBar").classList.contains("open") && $("searchInput").value.trim() !== "";
 
