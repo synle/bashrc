@@ -150,12 +150,23 @@ const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbe
 $("editorWrap").append($("empty")); // overlay the editor area only, below the toolbar
 // cwd/openPath are ROOT-relative with "/" separators; loadedContent is the last server copy of openPath.
 // clean=false means the editor holds edits not yet auto-saved.
+/** Page title as served ("text-server - <folder>"); the tab title prefixes the open file onto it. */
+const BASE_TITLE = document.title;
 let cwd = "", openPath = null, clean = true, loadedContent = "", applyingRemote = false, lastAutoRefresh = 0, searchTimer = null, saveTimer = null, lastTypedAt = 0, openSeq = 0;
 
 const join = (a, b) => (a ? a + "/" + b : b);
 const dirname = (rel) => rel.split("/").slice(0, -1).join("/");
 const basename = (rel) => rel.split("/").pop();
 const absPath = (rel) => (rel ? ROOT_PATH.replace(/[\\/]+$/, "") + "/" + rel : ROOT_PATH);
+/**
+ * Record whether the editor matches disk, and reflect it in the tab title:
+ * "● <file> · text-server - <folder>" while unsaved, no dot when clean, BASE_TITLE with no file open.
+ * @param {boolean} value true when there are no unsaved edits.
+ */
+function setClean(value) {
+  clean = value;
+  document.title = openPath ? (clean ? "" : "\u25CF ") + basename(openPath) + " \u00B7 " + BASE_TITLE : BASE_TITLE;
+}
 const setStatus = (t) => { $("status").textContent = t; $("status").title = t || "Save / sync status"; };
 $("version").textContent = "v " + APP_VERSION;
 const searching = () => $("searchBar").classList.contains("open") && $("searchInput").value.trim() !== "";
@@ -303,7 +314,7 @@ async function flushSave() {
     await api("PUT", "/api/file", target, content);
     if (target !== openPath) return true;
     loadedContent = content;
-    if (editor.getValue() === content) { clean = true; setStatus("saved " + new Date().toLocaleTimeString()); }
+    if (editor.getValue() === content) { setClean(true); setStatus("saved " + new Date().toLocaleTimeString()); }
     return true;
   } catch (err) {
     setStatus("save failed: " + err.message);
@@ -338,7 +349,7 @@ async function openFile(rel) {
     applyingRemote = false;
     editor.clearHistory();
     applySyntax(data.content.length > HIGHLIGHT_MAX_CHARS ? "plain" : syntaxForFile(openPath));
-    clean = true;
+    setClean(true);
     setStatus("");
     setUrl(openPath);
     renderName();
@@ -350,7 +361,7 @@ function closeFile() {
   openSeq++;
   newReadSignal();
   clearTimeout(saveTimer);
-  openPath = null; clean = true; loadedContent = "";
+  openPath = null; loadedContent = ""; setClean(true);
   applyingRemote = true; editor.setValue(""); applyingRemote = false;
   editor.setOption("readOnly", true);
   applySyntax("plain");
@@ -508,7 +519,7 @@ $("searchInput").addEventListener("keydown", (e) => { if (e.key === "Escape") $(
 $("searchMode").addEventListener("change", () => runSearch(true));
 editor.on("change", () => {
   if (applyingRemote || !openPath) return;
-  clean = false; lastTypedAt = Date.now();
+  setClean(false); lastTypedAt = Date.now();
   setStatus("editing...");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(flushSave, AUTOSAVE_DELAY_MS);

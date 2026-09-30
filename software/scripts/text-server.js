@@ -82,32 +82,52 @@ async function doWork() {
           echo "text-server: node not found on PATH" >&2
           return 1
         fi
-        # Fetched fresh each run so the upstream copy is the only one maintained. The server reads
-        # text-server.html from its own folder, so both files land side by side in a temp folder.
-        local app_folder app_file
+        # Fetch fresh from upstream each run, validate, then promote into a local snapshot folder; the server
+        # always runs from that snapshot. A failed download or an invalid copy (bad push) falls back to the
+        # last good snapshot, so the tool works offline and one broken commit does not break every machine.
+        local snapshot_folder="$HOME/.text-server"
+        local app_folder app_file download_ok=1
         app_folder=$(mktemp -d) || {
           echo "text-server: mktemp failed" >&2
           return 1
         }
         for app_file in text-server.cjs text-server.html; do
-          command curl -fsSL -o "$app_folder/$app_file" "$(get_github_raw_url "software/scripts/$app_file")" || {
+          command curl -fsSL --max-time 15 -o "$app_folder/$app_file" "$(get_github_raw_url "software/scripts/$app_file")" || {
             echo "text-server: could not download $app_file" >&2
+            download_ok=0
+            break
+          }
+        done
+        # Valid = the server parses and the page is the real template (not an error page or a truncated file).
+        if ((download_ok)) && ! { node --check "$app_folder/text-server.cjs" 2> /dev/null && grep -q "__APP_VERSION__" "$app_folder/text-server.html" && grep -q "</html>" "$app_folder/text-server.html"; }; then
+          echo "text-server: downloaded copy failed validation" >&2
+          download_ok=0
+        fi
+        if ((download_ok)); then
+          # Version = file mtime; a fresh download's mtime is "now", so stamp each file with its last git
+          # commit time (GitHub API, best-effort: on failure the version is just the download time).
+          # curl + node (no fetch): the profile's node can be older than v18.
+          for app_file in text-server.cjs text-server.html; do
+            command curl -fsS --max-time 5 "https://api.github.com/repos/$REPO_PATH_IDENTIFIER/commits?per_page=1&path=software/scripts/$app_file" 2> /dev/null \
+              | node -e 'const fs = require("fs"); const when = new Date(JSON.parse(fs.readFileSync(0, "utf8"))[0].commit.committer.date); fs.utimesSync(process.argv[1], when, when);' "$app_folder/$app_file" 2> /dev/null \
+              || echo "text-server: could not stamp $app_file with its git commit time; version uses the download time" >&2
+          done
+          safe_mkdir "$snapshot_folder"
+          # cp -p keeps the stamped mtimes, which are the version.
+          command cp -p "$app_folder/text-server.cjs" "$app_folder/text-server.html" "$snapshot_folder/" || {
+            echo "text-server: could not update snapshot in $snapshot_folder" >&2
             command rm -rf "$app_folder"
             return 1
           }
-        done
-        # Version = file mtime; a fresh download's mtime is "now", so stamp each file with its last git
-        # commit time (GitHub API, best-effort: on failure the version is just the download time).
-        node -e '
-          const fs = require("fs"), path = require("path");
-          const [folder, repo, ...files] = process.argv.slice(1);
-          Promise.all(files.map(async (file) => {
-            const res = await fetch("https://api.github.com/repos/" + repo + "/commits?per_page=1&path=software/scripts/" + file, { signal: AbortSignal.timeout(5000) });
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            const when = new Date((await res.json())[0].commit.committer.date);
-            fs.utimesSync(path.join(folder, file), when, when);
-          })).catch((err) => process.stderr.write("text-server: could not stamp version from git (" + err.message + "); using download time\\n"));
-        ' "$app_folder" "$REPO_PATH_IDENTIFIER" text-server.cjs text-server.html
+        elif [ -f "$snapshot_folder/text-server.cjs" ] && [ -f "$snapshot_folder/text-server.html" ]; then
+          echo "text-server: using last good snapshot in $snapshot_folder" >&2
+        else
+          echo "text-server: no download and no snapshot in $snapshot_folder; cannot start" >&2
+          command rm -rf "$app_folder"
+          return 1
+        fi
+        command rm -rf "$app_folder"
+        app_folder="$snapshot_folder"
 
         # Requested port busy -> let the OS pick a free one, so the printed/opened URLs match the server.
         port=$(node -e '
@@ -116,7 +136,6 @@ async function doWork() {
           probe.listen(wanted, "0.0.0.0", () => { console.log(wanted); probe.close(); });
         ' "$port") || {
           echo "text-server: could not find a free port" >&2
-          command rm -rf "$app_folder"
           return 1
         }
 
@@ -142,7 +161,6 @@ async function doWork() {
         fi
 
         node "$app_folder/text-server.cjs" "$folder" "$port" "$allow_cd"
-        command rm -rf "$app_folder"
       }
 
       # copy-server: text-server on a fresh mktemp folder holding an empty clipboard.txt — a LAN scratchpad for pasting text between machines.
@@ -168,22 +186,46 @@ async function doWork() {
       }
       alias paste-server='copy-server'
 
-      # copy-to-server: push text to every CODE_SERVER_REMOTE copy-server as a new Temp-<date_time>.txt.
+      # copy-to-server: push text to every CODE_SERVER_REMOTE copy-server. Each send writes a history file
+      # (Temp-<date_time>.txt, or --name) AND overwrites clipboard.txt, the file copy-from-server reads.
       # Content source, first match wins: piped stdin, an existing file path, literal text args, the clipboard.
       # Targets come from CODE_SERVER_REMOTE_HOSTS (baked by run.sh from ip-address.config).
-      # Side effects: one HTTP PUT per reachable host; creates and removes a temp file.
+      # Side effects: two HTTP PUTs per host; replaces the local clipboard with the first sent URL
+      # (unless --no-copy-url); creates and removes a temp file.
       function copy-to-server() {
         if is_help_arg "\${1:-}"; then
           echo "
-            copy-to-server: send text to every copy-server tagged CODE_SERVER_REMOTE, as a new Temp-<date_time>.txt
+            copy-to-server: send text to every copy-server tagged CODE_SERVER_REMOTE
               copy-to-server                     send the clipboard
               copy-to-server <file>              send the content of <file>
               copy-to-server <text...>           send the literal text
               <cmd> | copy-to-server             send piped stdin
+            Options (before the content):
+              --name <name>                      history file name (default Temp-<date_time>.txt)
+              --no-copy-url                      leave the local clipboard alone (default: copy the sent URL)
+            Every send also overwrites clipboard.txt, so copy-from-server on another machine gets it back.
             Targets: \\$CODE_SERVER_REMOTE_HOSTS (from software/metadata/ip-address.config; re-run run.sh to refresh)
           "
           return 0
         fi
+        local name="" copy_url=1
+        while [ $# -gt 0 ]; do
+          case "$1" in
+          --name)
+            name="\${2:-}"
+            shift 2 || shift
+            ;;
+          --no-copy-url)
+            copy_url=0
+            shift
+            ;;
+          --)
+            shift
+            break
+            ;;
+          *) break ;;
+          esac
+        done
         if [ -z "\${CODE_SERVER_REMOTE_HOSTS:-}" ]; then
           echo "copy-to-server: no host tagged CODE_SERVER_REMOTE in ip-address.config (CODE_SERVER_REMOTE_HOSTS is empty; re-run run.sh)" >&2
           return 1
@@ -213,13 +255,23 @@ async function doWork() {
           return 1
         fi
 
-        local name="Temp-$(date +%Y-%m-%d_%H-%M-%S).txt"
+        [ -n "$name" ] || name="Temp-$(date +%Y-%m-%d_%H-%M-%S).txt"
+        local encoded
+        encoded=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$name") || {
+          command rm -f "$payload"
+          return 1
+        }
         local bytes=$(wc -c < "$payload" | tr -d ' ')
-        echo "copy-to-server: mode=$mode, $bytes bytes -> $name"
-        local host sent=0 failed=0
+        echo "copy-to-server: mode=$mode, $bytes bytes -> $name (+ clipboard.txt)"
+        local host target sent=0 failed=0 first_url=""
         for host in $CODE_SERVER_REMOTE_HOSTS; do
-          if command curl -fs --max-time 5 -X PUT --data-binary @"$payload" "http://$host/api/file?path=$name" > /dev/null 2>&1; then
-            echo "  sent   http://$host/?path=$name"
+          target="$encoded"
+          if command curl -fs --max-time 5 -X PUT --data-binary @"$payload" "http://$host/api/file?path=$target" > /dev/null 2>&1; then
+            [ "$name" = "clipboard.txt" ] \
+              || command curl -fs --max-time 5 -X PUT --data-binary @"$payload" "http://$host/api/file?path=clipboard.txt" > /dev/null 2>&1 \
+              || echo "  warn   http://$host: history file sent, clipboard.txt update failed" >&2
+            echo "  sent   http://$host/?path=$target"
+            [ -n "$first_url" ] || first_url="http://$host/?path=$target"
             sent=$((sent + 1))
           else
             echo "  failed http://$host (is copy-server running there?)" >&2
@@ -228,6 +280,10 @@ async function doWork() {
         done
         command rm -f "$payload"
         echo "copy-to-server: $sent sent, $failed failed"
+        if ((copy_url)) && [ -n "$first_url" ]; then
+          printf '%s' "$first_url" | copy --raw
+          echo "copy-to-server: URL copied to the clipboard: $first_url"
+        fi
         ((sent > 0))
       }
 

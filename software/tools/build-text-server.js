@@ -62,6 +62,15 @@ function newestSourceTime(files) {
   return new Date(Math.max(...times)).toISOString();
 }
 
+/**
+ * CDN stylesheet tag to inline. Tolerates oxfmt's self-closing `/>`: CI formats the page before
+ * building, and the `">`-only form once left the CodeMirror CSS un-inlined and failed the build.
+ * @type {RegExp}
+ */
+const STYLESHEET_TAG_PATTERN = /<link rel="stylesheet" href="(https:\/\/[^"]+)"\s*\/?>/g;
+/** CDN script tag to inline. @type {RegExp} */
+const SCRIPT_TAG_PATTERN = /<script src="(https:\/\/[^"]+)"><\/script>/g;
+
 /** Max redirects followed per download. */
 const MAX_REDIRECTS = 5;
 /** Per-download timeout, in ms. */
@@ -132,8 +141,8 @@ async function inlinePage(html) {
   if (!modeUrlMatch) throw new Error("CodeMirror.modeURL assignment not found in text-server.html");
   const modeUrlTemplate = modeUrlMatch[1];
 
-  const styles = [...html.matchAll(/<link rel="stylesheet" href="(https:\/\/[^"]+)"\s*\/?>/g)]; // tolerate oxfmt's self-closing `/>`
-  const scripts = [...html.matchAll(/<script src="(https:\/\/[^"]+)"><\/script>/g)];
+  const styles = [...html.matchAll(STYLESHEET_TAG_PATTERN)];
+  const scripts = [...html.matchAll(SCRIPT_TAG_PATTERN)];
   const modes = collectModes(html);
   const bodies = new Map();
   const urls = [...styles, ...scripts].map((m) => m[1]).concat(modes.map((m) => modeUrlTemplate.replace(/%N/g, m)));
@@ -193,7 +202,10 @@ async function main() {
   process.stderr.write(`Built ${path.relative(REPO_ROOT, OUTPUT_PATH)} (${bundled.length} bytes, version ${version})\n`);
 }
 
-main().catch((err) => {
+// Run only as a CLI (make build_text_server); requiring the file (tests) just exposes the patterns.
+if (require.main === module) main().catch((err) => {
   process.stderr.write(`build-text-server: ${err.stack || err.message}\n`);
   process.exit(1);
 });
+
+module.exports = { STYLESHEET_TAG_PATTERN, SCRIPT_TAG_PATTERN };
