@@ -1,1007 +1,1530 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>text-server - __ROOT_NAME__</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-<link rel="icon" href="data:,">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/loadmode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/overlay.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
-<style>
-  * { box-sizing: border-box; }
-  body { margin: 0; display: flex; height: 100vh; font: 13px system-ui, sans-serif; background: #1e1e1e; color: #ddd; }
-  #side { width: 280px; min-width: 160px; flex: none; display: flex; flex-direction: column; }
-  body.side-collapsed #side, body.side-collapsed #resizer { display: none; }
-  #resizer { width: 5px; flex: none; cursor: col-resize; background: #333; }
-  #resizer:hover, body.resizing #resizer { background: #094771; }
-  body.resizing { cursor: col-resize; user-select: none; }
-  #side header { padding: 8px; border-bottom: 1px solid #333; display: flex; gap: 4px; flex-wrap: wrap; }
-  #searchBar { padding: 6px 8px; border-bottom: 1px solid #333; display: none; gap: 4px; }
-  #searchBar.open { display: flex; }
-  #searchBar input { flex: 1; min-width: 0; background: #2a2a2a; color: #ddd; border: 1px solid #555; padding: 3px 6px; border-radius: 3px; }
-  #searchBar select { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
-  #crumbRow { display: flex; align-items: flex-start; gap: 6px; padding: 6px 8px; }
-  #crumb { flex: 1; min-width: 0; color: #8ab4f8; word-break: break-all; cursor: pointer; }
-  #crumb:hover, #name:hover { text-decoration: underline; }
-  #crumbRow button { flex: none; }
-  #copyPath { flex: none; } /* sits right after the path */
-  #download { flex: none; margin-right: auto; } /* next to copy; pushes the rest right */
-  #list { flex: 1; overflow: auto; list-style: none; margin: 0; padding: 0; }
-  #list li { padding: 4px 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 6px; }
-  #list li:hover { background: #2a2a2a; }
-  #list li.active { background: #094771; }
-  #list li .label { flex: 1; min-width: 0; word-break: break-all; }
-  #list li .sub { display: block; color: #999; font-size: 11px; }
-  #list li .act { visibility: hidden; flex: none; }
-  #list li:hover .act { visibility: visible; }
-  #list li .ren { color: #8ab4f8; }
-  #list li .del { color: #f88; }
-  #deleteAll { color: #f88; }
-  #list li.note { color: #999; cursor: default; }
-  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
-  #name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
-  #syntax { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
-  #foot.down { background: #5c1a1a; border-top-color: #f44; }
-  #foot.down #status { color: #fff; font-weight: bold; }
-  body.down #list, body.down #crumbRow { pointer-events: none; opacity: 0.5; }
-  #foot { display: flex; gap: 12px; align-items: center; padding: 3px 8px; border-top: 1px solid #333; font-size: 12px; min-height: 18px; }
-  #status { flex: 0 1 auto; min-width: 0; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; padding: 0 4px; }
-  #status.flash { animation: statusFlash 1.2s ease-out; }
-  /* Mild: faint tint behind the text only (#status sizes to its text), fading out. */
-  @keyframes statusFlash { 0% { background: rgba(138, 180, 248, 0.22); color: #cfe0ff; } 100% { background: transparent; color: #999; } }
-  #pos { flex: none; margin-left: auto; /* status sizes to its text; this pushes pos/size/version right */ color: #999; white-space: nowrap; }
-  #size { flex: none; color: #999; white-space: nowrap; }
-  #version { flex: none; color: #666; font-size: 11px; white-space: nowrap; }
-  #bar button { white-space: nowrap; flex: none; }
-  button { background: #333; color: #ddd; border: 1px solid #555; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
-  button:hover { background: #444; }
-  button:disabled { opacity: 0.4; cursor: default; }
-  .CodeMirror { flex: 1; height: auto; font-size: 14px; }
-  #editorWrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  #editorWrap { position: relative; }
-  #empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #1e1e1e; color: #999; z-index: 5; text-align: center; padding: 16px; }
-  #empty[hidden] { display: none; }
-  #empty .title { font-size: 16px; color: #ddd; }
-  #mediaView { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: auto; background: #1e1e1e; z-index: 4; padding: 16px; box-sizing: border-box; }
-  #mediaView[hidden], #mediaView > [hidden] { display: none; }
-  #mediaView img, #mediaView video { max-width: 100%; max-height: 100%; object-fit: contain; }
-  #mediaView img { background: repeating-conic-gradient(#2a2a2a 0% 25%, #333 0% 50%) 50% / 16px 16px; }
-  #mediaView iframe { width: 100%; height: 100%; border: 0; background: #fff; }
-</style></head>
-<body>
-<aside id="side">
-  <header><button id="up" title="Go up to the parent folder">..</button><button id="newFile" title="Create a new file in this folder">+ file</button><button id="newFolder" title="Create a new folder here">+ folder</button><button id="searchToggle" title="Search file names or file contents">&#x1F50D;</button></header>
-  <div id="searchBar"><input id="searchInput" placeholder="search..." autocomplete="off" title="Search text (Esc closes)"><select id="searchMode" title="Search file names or file contents"><option value="name">name</option><option value="content">content</option></select></div>
-  <div id="crumbRow"><div id="crumb"></div><button id="refresh" title="Reload the file list and the open file">&#x21bb;</button><button id="deleteAll" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1; all</button></div>
-  <ul id="list"></ul>
-</aside>
-<div id="resizer" title="Drag to resize the file list"></div>
-<main id="main">
-  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button><button id="download" title="Download the open file (saves pending edits first)">&#x2B07;</button><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
-  <div id="editorWrap"><div id="mediaView" hidden><img id="mediaImg" alt="" hidden><video id="mediaVideo" controls preload="metadata" hidden></video><iframe id="mediaPdf" title="PDF preview" hidden></iframe></div></div>
-  <div id="empty"><div class="title">No file open</div><div>Pick a file from the list on the left to start editing.</div><button id="emptyNewFile" title="Create a new file in this folder">+ Create a new file</button></div>
-  <div id="foot"><span id="status" title="Save / sync status"></span><span id="pos" title="Cursor line and column"></span><span id="size" title="Size of the open file as edited (UTF-8)"></span><span id="version" title="text-server version"></span></div>
-</main>
-<script>
-CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
-const ALLOW_CD = __ALLOW_CD__;
-const ROOT_PATH = __ROOT_PATH__;
-/** Server-reported app version (newest source time, ISO). */
-const APP_VERSION = __APP_VERSION__;
-console.info("text-server version", APP_VERSION);
-/** Minimum gap between automatic (focus/blur/online/click) refreshes, in ms. */
-const AUTO_REFRESH_GAP_MS = 2000;
-/** Debounce for search-as-you-type, in ms. */
-const SEARCH_DEBOUNCE_MS = 250;
-/** Idle time after the last keystroke before the file auto-saves, in ms. */
-const AUTOSAVE_DELAY_MS = 800;
-/**
- * Auto-snapshot policy (the single place both knobs live). Every intervalMs the open file is compared
- * with its content at the last check; a snapshot (same as Ctrl+S) is taken only when the change,
- * counted on letters and digits alone (whitespace and punctuation stripped), is at least minChangedChars.
- */
-const AUTO_SNAPSHOT = { intervalMs: 10 * 60 * 1000, minChangedChars: 150 };
-/** A snapshot (manual or auto) is skipped unless the file holds at least this many letters/digits (whitespace and symbols stripped). */
-const SNAPSHOT_MIN_CHARS = 10;
-/** While the server is down, how often to probe it for auto-recovery, in ms. */
-const RECOVERY_POLL_MS = 3000;
-/** Controls that talk to the server; disabled while it is down. Local-only ones (sidebar toggle, copy path, syntax) stay live. */
-const SERVER_CONTROL_IDS = ["up", "newFile", "newFolder", "refresh", "searchToggle", "searchInput", "searchMode", "save", "emptyNewFile"];
-/** Poll interval for reloading the open file, and the typing-idle time required first, in ms. */
-const IDLE_RELOAD_MS = 5000;
-/** Poll interval for reloading the file list (always on, independent of typing), in ms. */
-const LIST_RELOAD_MS = 5000;
-/** Sidebar width bounds while dragging, in px (max also capped at 70% of the window). */
-const SIDE_MIN_PX = 160, SIDE_MAX_RATIO = 0.7;
-/** Files larger than this (in characters, ~1 MB) always open as Plain: highlighting big files is slow. */
-const HIGHLIGHT_MAX_CHARS = 1024 * 1024;
-/**
- * The only syntaxes offered. label: dropdown text; mime: CodeMirror mode spec; modes: CodeMirror
- * mode files to lazy-load from cdnjs (dependencies first); exts: lowercase extensions / exact file names.
- */
-const SYNTAXES = {
-  plain: { label: "Plain", mime: "null", modes: [], exts: [] },
-  markdown: { label: "Markdown", mime: "text/x-markdown", modes: ["xml", "markdown"], exts: ["md", "markdown", "mdx"] },
-  javascript: { label: "JavaScript", mime: "text/javascript", modes: ["javascript"], exts: ["js", "mjs", "cjs", "jsx"] },
-  typescript: { label: "TypeScript", mime: "text/typescript", modes: ["javascript"], exts: ["ts", "mts", "cts", "tsx"] },
-  json: { label: "JSON", mime: "application/json", modes: ["javascript"], exts: ["json", "jsonc", "json5"] },
-  html: { label: "HTML", mime: "text/html", modes: ["xml", "javascript", "css", "htmlmixed"], exts: ["html", "htm", "vue", "svelte"] },
-  xml: { label: "XML", mime: "application/xml", modes: ["xml"], exts: ["xml", "svg", "plist", "xsd", "xsl"] },
-  css: { label: "CSS / SCSS / Less", mime: "text/css", modes: ["css"], exts: ["css", "scss", "less"] },
-  yaml: { label: "YAML", mime: "text/x-yaml", modes: ["yaml"], exts: ["yml", "yaml"] },
-  python: { label: "Python", mime: "text/x-python", modes: ["python"], exts: ["py", "pyi"] },
-  java: { label: "Java", mime: "text/x-java", modes: ["clike"], exts: ["java"] },
-  kotlin: { label: "Kotlin", mime: "text/x-kotlin", modes: ["clike"], exts: ["kt", "kts"] },
-  c: { label: "C / C++", mime: "text/x-c++src", modes: ["clike"], exts: ["c", "h", "cc", "cpp", "cxx", "hpp"] },
-  csharp: { label: "C#", mime: "text/x-csharp", modes: ["clike"], exts: ["cs"] },
-  go: { label: "Go", mime: "text/x-go", modes: ["go"], exts: ["go"] },
-  rust: { label: "Rust", mime: "text/x-rustsrc", modes: ["rust"], exts: ["rs"] },
-  shell: { label: "Shell", mime: "text/x-sh", modes: ["shell"], exts: ["sh", "bash", "zsh", ".bashrc", ".bash_profile", ".zshrc", ".profile"] },
-  powershell: { label: "PowerShell", mime: "application/x-powershell", modes: ["powershell"], exts: ["ps1", "psm1"] },
-  sql: { label: "SQL", mime: "text/x-sql", modes: ["sql"], exts: ["sql"] },
-  ini: { label: "INI / Properties / conf", mime: "text/x-properties", modes: ["properties"], exts: ["ini", "properties", "conf", "cfg", "env", ".gitconfig", ".editorconfig"] },
-  toml: { label: "TOML", mime: "text/x-toml", modes: ["toml"], exts: ["toml"] },
-  dockerfile: { label: "Dockerfile", mime: "text/x-dockerfile", modes: ["dockerfile"], exts: ["dockerfile"] },
-  diff: { label: "Diff / Patch", mime: "text/x-diff", modes: ["diff"], exts: ["diff", "patch"] },
-};
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>text-server - __ROOT_NAME__</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <link rel="icon" href="data:," />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/loadmode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/overlay.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        font:
+          13px system-ui,
+          sans-serif;
+        background: #1e1e1e;
+        color: #ddd;
+      }
+      #side {
+        width: 280px;
+        min-width: 160px;
+        flex: none;
+        display: flex;
+        flex-direction: column;
+      }
+      body.side-collapsed #side,
+      body.side-collapsed #resizer {
+        display: none;
+      }
+      #resizer {
+        width: 5px;
+        flex: none;
+        cursor: col-resize;
+        background: #333;
+      }
+      #resizer:hover,
+      body.resizing #resizer {
+        background: #094771;
+      }
+      body.resizing {
+        cursor: col-resize;
+        user-select: none;
+      }
+      #side header {
+        padding: 8px;
+        border-bottom: 1px solid #333;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      #searchBar {
+        padding: 6px 8px;
+        border-bottom: 1px solid #333;
+        display: none;
+        gap: 4px;
+      }
+      #searchBar.open {
+        display: flex;
+      }
+      #searchBar input {
+        flex: 1;
+        min-width: 0;
+        background: #2a2a2a;
+        color: #ddd;
+        border: 1px solid #555;
+        padding: 3px 6px;
+        border-radius: 3px;
+      }
+      #searchBar select {
+        background: #2a2a2a;
+        color: #ddd;
+        border: 1px solid #555;
+        border-radius: 3px;
+      }
+      #crumbRow {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 6px 8px;
+      }
+      #crumb {
+        flex: 1;
+        min-width: 0;
+        color: #8ab4f8;
+        word-break: break-all;
+        cursor: pointer;
+      }
+      #crumb:hover,
+      #name:hover {
+        text-decoration: underline;
+      }
+      #crumbRow button {
+        flex: none;
+      }
+      #copyPath {
+        flex: none;
+      } /* sits right after the path */
+      #download {
+        flex: none;
+        margin-right: auto;
+      } /* next to copy; pushes the rest right */
+      #list {
+        flex: 1;
+        overflow: auto;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      #list li {
+        padding: 4px 8px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      #list li:hover {
+        background: #2a2a2a;
+      }
+      #list li.active {
+        background: #094771;
+      }
+      #list li .label {
+        flex: 1;
+        min-width: 0;
+        word-break: break-all;
+      }
+      #list li .sub {
+        display: block;
+        color: #999;
+        font-size: 11px;
+      }
+      #list li .act {
+        visibility: hidden;
+        flex: none;
+      }
+      #list li:hover .act {
+        visibility: visible;
+      }
+      #list li .ren {
+        color: #8ab4f8;
+      }
+      #list li .del {
+        color: #f88;
+      }
+      #deleteAll {
+        color: #f88;
+      }
+      #list li.note {
+        color: #999;
+        cursor: default;
+      }
+      #main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      #bar {
+        padding: 6px 8px;
+        border-bottom: 1px solid #333;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      #name {
+        flex: 0 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        direction: rtl;
+        text-align: left;
+        color: #8ab4f8;
+        cursor: pointer;
+      }
+      #syntax {
+        background: #2a2a2a;
+        color: #ddd;
+        border: 1px solid #555;
+        border-radius: 3px;
+      }
+      #foot.down {
+        background: #5c1a1a;
+        border-top-color: #f44;
+      }
+      #foot.down #status {
+        color: #fff;
+        font-weight: bold;
+      }
+      body.down #list,
+      body.down #crumbRow {
+        pointer-events: none;
+        opacity: 0.5;
+      }
+      #foot {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 3px 8px;
+        border-top: 1px solid #333;
+        font-size: 12px;
+        min-height: 18px;
+      }
+      #status {
+        flex: 0 1 auto;
+        min-width: 0;
+        color: #999;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border-radius: 3px;
+        padding: 0 4px;
+      }
+      #status.flash {
+        animation: statusFlash 1.2s ease-out;
+      }
+      /* Mild: faint tint behind the text only (#status sizes to its text), fading out. */
+      @keyframes statusFlash {
+        0% {
+          background: rgba(138, 180, 248, 0.22);
+          color: #cfe0ff;
+        }
+        100% {
+          background: transparent;
+          color: #999;
+        }
+      }
+      #pos {
+        flex: none;
+        margin-left: auto; /* status sizes to its text; this pushes pos/size/version right */
+        color: #999;
+        white-space: nowrap;
+      }
+      #size {
+        flex: none;
+        color: #999;
+        white-space: nowrap;
+      }
+      #version {
+        flex: none;
+        color: #666;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      #bar button {
+        white-space: nowrap;
+        flex: none;
+      }
+      button {
+        background: #333;
+        color: #ddd;
+        border: 1px solid #555;
+        padding: 3px 8px;
+        cursor: pointer;
+        border-radius: 3px;
+      }
+      button:hover {
+        background: #444;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .CodeMirror {
+        flex: 1;
+        height: auto;
+        font-size: 14px;
+      }
+      #editorWrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      #editorWrap {
+        position: relative;
+      }
+      #empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: #1e1e1e;
+        color: #999;
+        z-index: 5;
+        text-align: center;
+        padding: 16px;
+      }
+      #empty[hidden] {
+        display: none;
+      }
+      #empty .title {
+        font-size: 16px;
+        color: #ddd;
+      }
+      #mediaView {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+        background: #1e1e1e;
+        z-index: 4;
+        padding: 16px;
+        box-sizing: border-box;
+      }
+      #mediaView[hidden],
+      #mediaView > [hidden] {
+        display: none;
+      }
+      #mediaView img,
+      #mediaView video {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+      #mediaView img {
+        background: repeating-conic-gradient(#2a2a2a 0% 25%, #333 0% 50%) 50% / 16px 16px;
+      }
+      #mediaView iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <aside id="side">
+      <header>
+        <button id="up" title="Go up to the parent folder">..</button
+        ><button id="newFile" title="Create a new file in this folder">+ file</button
+        ><button id="newFolder" title="Create a new folder here">+ folder</button
+        ><button id="searchToggle" title="Search file names or file contents">&#x1F50D;</button>
+      </header>
+      <div id="searchBar">
+        <input id="searchInput" placeholder="search..." autocomplete="off" title="Search text (Esc closes)" /><select
+          id="searchMode"
+          title="Search file names or file contents"
+        >
+          <option value="name">name</option>
+          <option value="content">content</option>
+        </select>
+      </div>
+      <div id="crumbRow">
+        <div id="crumb"></div>
+        <button id="refresh" title="Reload the file list and the open file">&#x21bb;</button
+        ><button id="deleteAll" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1; all</button>
+      </div>
+      <ul id="list"></ul>
+    </aside>
+    <div id="resizer" title="Drag to resize the file list"></div>
+    <main id="main">
+      <div id="bar">
+        <button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span
+        ><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button
+        ><button id="download" title="Download the open file (saves pending edits first)">&#x2B07;</button
+        ><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select
+        ><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button>
+      </div>
+      <div id="editorWrap">
+        <div id="mediaView" hidden>
+          <img id="mediaImg" alt="" hidden /><video id="mediaVideo" controls preload="metadata" hidden></video
+          ><iframe id="mediaPdf" title="PDF preview" hidden></iframe>
+        </div>
+      </div>
+      <div id="empty">
+        <div class="title">No file open</div>
+        <div>Pick a file from the list on the left to start editing.</div>
+        <button id="emptyNewFile" title="Create a new file in this folder">+ Create a new file</button>
+      </div>
+      <div id="foot">
+        <span id="status" title="Save / sync status"></span><span id="pos" title="Cursor line and column"></span
+        ><span id="size" title="Size of the open file as edited (UTF-8)"></span><span id="version" title="text-server version"></span>
+      </div>
+    </main>
+    <script>
+      CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
+      const ALLOW_CD = __ALLOW_CD__;
+      const ROOT_PATH = __ROOT_PATH__;
+      /** Server-reported app version (newest source time, ISO). */
+      const APP_VERSION = __APP_VERSION__;
+      console.info("text-server version", APP_VERSION);
+      /** Minimum gap between automatic (focus/blur/online/click) refreshes, in ms. */
+      const AUTO_REFRESH_GAP_MS = 2000;
+      /** Debounce for search-as-you-type, in ms. */
+      const SEARCH_DEBOUNCE_MS = 250;
+      /** Idle time after the last keystroke before the file auto-saves, in ms. */
+      const AUTOSAVE_DELAY_MS = 800;
+      /**
+       * Auto-snapshot policy (the single place both knobs live). Every intervalMs the open file is compared
+       * with its content at the last check; a snapshot (same as Ctrl+S) is taken only when the change,
+       * counted on letters and digits alone (whitespace and punctuation stripped), is at least minChangedChars.
+       */
+      const AUTO_SNAPSHOT = { intervalMs: 10 * 60 * 1000, minChangedChars: 150 };
+      /** A snapshot (manual or auto) is skipped unless the file holds at least this many letters/digits (whitespace and symbols stripped). */
+      const SNAPSHOT_MIN_CHARS = 10;
+      /** While the server is down, how often to probe it for auto-recovery, in ms. */
+      const RECOVERY_POLL_MS = 3000;
+      /** Controls that talk to the server; disabled while it is down. Local-only ones (sidebar toggle, copy path, syntax) stay live. */
+      const SERVER_CONTROL_IDS = [
+        "up",
+        "newFile",
+        "newFolder",
+        "refresh",
+        "searchToggle",
+        "searchInput",
+        "searchMode",
+        "save",
+        "emptyNewFile",
+      ];
+      /** Poll interval for reloading the open file, and the typing-idle time required first, in ms. */
+      const IDLE_RELOAD_MS = 5000;
+      /** Poll interval for reloading the file list (always on, independent of typing), in ms. */
+      const LIST_RELOAD_MS = 5000;
+      /** Sidebar width bounds while dragging, in px (max also capped at 70% of the window). */
+      const SIDE_MIN_PX = 160,
+        SIDE_MAX_RATIO = 0.7;
+      /** Files larger than this (in characters, ~1 MB) always open as Plain: highlighting big files is slow. */
+      const HIGHLIGHT_MAX_CHARS = 1024 * 1024;
+      /**
+       * The only syntaxes offered. label: dropdown text; mime: CodeMirror mode spec; modes: CodeMirror
+       * mode files to lazy-load from cdnjs (dependencies first); exts: lowercase extensions / exact file names.
+       */
+      const SYNTAXES = {
+        plain: { label: "Plain", mime: "null", modes: [], exts: [] },
+        markdown: { label: "Markdown", mime: "text/x-markdown", modes: ["xml", "markdown"], exts: ["md", "markdown", "mdx"] },
+        javascript: { label: "JavaScript", mime: "text/javascript", modes: ["javascript"], exts: ["js", "mjs", "cjs", "jsx"] },
+        typescript: { label: "TypeScript", mime: "text/typescript", modes: ["javascript"], exts: ["ts", "mts", "cts", "tsx"] },
+        json: { label: "JSON", mime: "application/json", modes: ["javascript"], exts: ["json", "jsonc", "json5"] },
+        html: {
+          label: "HTML",
+          mime: "text/html",
+          modes: ["xml", "javascript", "css", "htmlmixed"],
+          exts: ["html", "htm", "vue", "svelte"],
+        },
+        xml: { label: "XML", mime: "application/xml", modes: ["xml"], exts: ["xml", "svg", "plist", "xsd", "xsl"] },
+        css: { label: "CSS / SCSS / Less", mime: "text/css", modes: ["css"], exts: ["css", "scss", "less"] },
+        yaml: { label: "YAML", mime: "text/x-yaml", modes: ["yaml"], exts: ["yml", "yaml"] },
+        python: { label: "Python", mime: "text/x-python", modes: ["python"], exts: ["py", "pyi"] },
+        java: { label: "Java", mime: "text/x-java", modes: ["clike"], exts: ["java"] },
+        kotlin: { label: "Kotlin", mime: "text/x-kotlin", modes: ["clike"], exts: ["kt", "kts"] },
+        c: { label: "C / C++", mime: "text/x-c++src", modes: ["clike"], exts: ["c", "h", "cc", "cpp", "cxx", "hpp"] },
+        csharp: { label: "C#", mime: "text/x-csharp", modes: ["clike"], exts: ["cs"] },
+        go: { label: "Go", mime: "text/x-go", modes: ["go"], exts: ["go"] },
+        rust: { label: "Rust", mime: "text/x-rustsrc", modes: ["rust"], exts: ["rs"] },
+        shell: {
+          label: "Shell",
+          mime: "text/x-sh",
+          modes: ["shell"],
+          exts: ["sh", "bash", "zsh", ".bashrc", ".bash_profile", ".zshrc", ".profile"],
+        },
+        powershell: { label: "PowerShell", mime: "application/x-powershell", modes: ["powershell"], exts: ["ps1", "psm1"] },
+        sql: { label: "SQL", mime: "text/x-sql", modes: ["sql"], exts: ["sql"] },
+        ini: {
+          label: "INI / Properties / conf",
+          mime: "text/x-properties",
+          modes: ["properties"],
+          exts: ["ini", "properties", "conf", "cfg", "env", ".gitconfig", ".editorconfig"],
+        },
+        toml: { label: "TOML", mime: "text/x-toml", modes: ["toml"], exts: ["toml"] },
+        dockerfile: { label: "Dockerfile", mime: "text/x-dockerfile", modes: ["dockerfile"], exts: ["dockerfile"] },
+        diff: { label: "Diff / Patch", mime: "text/x-diff", modes: ["diff"], exts: ["diff", "patch"] },
+      };
 
-/**
- * Pick a syntax key from a file path: exact file name first (Dockerfile, .bashrc), then extension.
- * @param {string} rel File path.
- * @returns {string} SYNTAXES key; "plain" when unknown.
- */
-function syntaxForFile(rel) {
-  const name = basename(rel).toLowerCase();
-  const ext = name.includes(".") ? name.split(".").pop() : "";
-  for (const key in SYNTAXES) if (SYNTAXES[key].exts.includes(name)) return key;
-  for (const key in SYNTAXES) if (ext && SYNTAXES[key].exts.includes(ext)) return key;
-  return "plain";
-}
+      /**
+       * Pick a syntax key from a file path: exact file name first (Dockerfile, .bashrc), then extension.
+       * @param {string} rel File path.
+       * @returns {string} SYNTAXES key; "plain" when unknown.
+       */
+      function syntaxForFile(rel) {
+        const name = basename(rel).toLowerCase();
+        const ext = name.includes(".") ? name.split(".").pop() : "";
+        for (const key in SYNTAXES) if (SYNTAXES[key].exts.includes(name)) return key;
+        for (const key in SYNTAXES) if (ext && SYNTAXES[key].exts.includes(ext)) return key;
+        return "plain";
+      }
 
-/** Load CodeMirror mode files one after another (deps first), then call done. */
-function loadModes(modes, done) {
-  if (!modes.length) return done();
-  CodeMirror.requireMode(modes[0], () => loadModes(modes.slice(1), done));
-}
+      /** Load CodeMirror mode files one after another (deps first), then call done. */
+      function loadModes(modes, done) {
+        if (!modes.length) return done();
+        CodeMirror.requireMode(modes[0], () => loadModes(modes.slice(1), done));
+      }
 
-/** Switch highlighting to a SYNTAXES key; loads its mode files on first use. */
-function applySyntax(key) {
-  const syntax = SYNTAXES[key] || SYNTAXES.plain;
-  $("syntax").value = SYNTAXES[key] ? key : "plain";
-  if (!syntax.modes.length) return editor.setOption("mode", null);
-  loadModes(syntax.modes, () => { if ($("syntax").value === key) editor.setOption("mode", syntax.mime); });
-}
-const $ = (id) => document.getElementById(id);
-if (!ALLOW_CD) { $("up").style.display = "none"; $("newFolder").style.display = "none"; }
-const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
-$("editorWrap").append($("empty")); // overlay the editor area only, below the toolbar
-editor.on("change", () => renderSize()); // every edit, open, remote reload, and close
-editor.on("cursorActivity", () => renderCursor());
-// cwd/openPath are ROOT-relative with "/" separators; loadedContent is the last server copy of openPath.
-// clean=false means the editor holds edits not yet auto-saved.
-/** Page title as served ("text-server - <folder>"); the tab title prefixes the open file onto it. */
-const BASE_TITLE = document.title;
-let cwd = "", openPath = null, clean = true, loadedContent = "", applyingRemote = false, lastAutoRefresh = 0, searchTimer = null, saveTimer = null, lastTypedAt = 0, openSeq = 0;
+      /** Switch highlighting to a SYNTAXES key; loads its mode files on first use. */
+      function applySyntax(key) {
+        const syntax = SYNTAXES[key] || SYNTAXES.plain;
+        $("syntax").value = SYNTAXES[key] ? key : "plain";
+        if (!syntax.modes.length) return editor.setOption("mode", null);
+        loadModes(syntax.modes, () => {
+          if ($("syntax").value === key) editor.setOption("mode", syntax.mime);
+        });
+      }
+      const $ = (id) => document.getElementById(id);
+      if (!ALLOW_CD) {
+        $("up").style.display = "none";
+        $("newFolder").style.display = "none";
+      }
+      const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
+      $("editorWrap").append($("empty")); // overlay the editor area only, below the toolbar
+      editor.on("change", () => renderSize()); // every edit, open, remote reload, and close
+      editor.on("cursorActivity", () => renderCursor());
+      // cwd/openPath are ROOT-relative with "/" separators; loadedContent is the last server copy of openPath.
+      // clean=false means the editor holds edits not yet auto-saved.
+      /** Page title as served ("text-server - <folder>"); the tab title prefixes the open file onto it. */
+      const BASE_TITLE = document.title;
+      let cwd = "",
+        openPath = null,
+        clean = true,
+        loadedContent = "",
+        applyingRemote = false,
+        lastAutoRefresh = 0,
+        searchTimer = null,
+        saveTimer = null,
+        lastTypedAt = 0,
+        openSeq = 0;
 
-const join = (a, b) => (a ? a + "/" + b : b);
-const dirname = (rel) => rel.split("/").slice(0, -1).join("/");
-const basename = (rel) => rel.split("/").pop();
-const absPath = (rel) => (rel ? ROOT_PATH.replace(/[\\/]+$/, "") + "/" + rel : ROOT_PATH);
-/**
- * Record whether the editor matches disk, and reflect it in the tab title:
- * "● <file> · text-server - <folder>" while unsaved, no dot when clean, BASE_TITLE with no file open.
- * @param {boolean} value true when there are no unsaved edits.
- */
-function setClean(value) {
-  clean = value;
-  document.title = openPath ? (clean ? "" : "\u25CF ") + basename(openPath) + " \u00B7 " + BASE_TITLE : BASE_TITLE;
-}
-/**
- * Show a status message in the footer. A changed message flashes briefly so it is noticed;
- * repeating the same text (e.g. "editing..." per keystroke) does not re-flash.
- * @param {string} t Message; "" clears it.
- */
-/**
- * Human-readable byte count: "0 B", "999 B", "1.2 KB", "3.4 MB".
- * @param {number} bytes Byte count (>= 0).
- * @returns {string} Formatted size.
- */
-function formatBytes(bytes) {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-}
+      const join = (a, b) => (a ? a + "/" + b : b);
+      const dirname = (rel) => rel.split("/").slice(0, -1).join("/");
+      const basename = (rel) => rel.split("/").pop();
+      const absPath = (rel) => (rel ? ROOT_PATH.replace(/[\\/]+$/, "") + "/" + rel : ROOT_PATH);
+      /**
+       * Record whether the editor matches disk, and reflect it in the tab title:
+       * "● <file> · text-server - <folder>" while unsaved, no dot when clean, BASE_TITLE with no file open.
+       * @param {boolean} value true when there are no unsaved edits.
+       */
+      function setClean(value) {
+        clean = value;
+        document.title = openPath ? (clean ? "" : "\u25CF ") + basename(openPath) + " \u00B7 " + BASE_TITLE : BASE_TITLE;
+      }
+      /**
+       * Show a status message in the footer. A changed message flashes briefly so it is noticed;
+       * repeating the same text (e.g. "editing..." per keystroke) does not re-flash.
+       * @param {string} t Message; "" clears it.
+       */
+      /**
+       * Human-readable byte count: "0 B", "999 B", "1.2 KB", "3.4 MB".
+       * @param {number} bytes Byte count (>= 0).
+       * @returns {string} Formatted size.
+       */
+      function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+      }
 
-/** Footer size of the open file as currently edited (UTF-8 bytes + line count); blank with no file open. */
-function renderSize() {
-  if (!openPath) { $("size").textContent = ""; renderCursor(); return; }
-  const text = editor.getValue();
-  $("size").textContent = formatBytes(new Blob([text]).size) + " \u00B7 " + editor.lineCount() + " lines";
-}
+      /** Footer size of the open file as currently edited (UTF-8 bytes + line count); blank with no file open. */
+      function renderSize() {
+        if (!openPath) {
+          $("size").textContent = "";
+          renderCursor();
+          return;
+        }
+        const text = editor.getValue();
+        $("size").textContent = formatBytes(new Blob([text]).size) + " \u00B7 " + editor.lineCount() + " lines";
+      }
 
-/** Footer cursor position, 1-based like most editors ("Ln 12, Col 5"); blank with no file open. */
-function renderCursor() {
-  if (!openPath) { $("pos").textContent = ""; return; }
-  const cursor = editor.getCursor();
-  $("pos").textContent = "Ln " + (cursor.line + 1) + ", Col " + (cursor.ch + 1);
-}
+      /** Footer cursor position, 1-based like most editors ("Ln 12, Col 5"); blank with no file open. */
+      function renderCursor() {
+        if (!openPath) {
+          $("pos").textContent = "";
+          return;
+        }
+        const cursor = editor.getCursor();
+        $("pos").textContent = "Ln " + (cursor.line + 1) + ", Col " + (cursor.ch + 1);
+      }
 
-function setStatus(t) {
-  // While down, the red "not reachable" message owns the footer; follow-on failures must not replace it.
-  if (serverDown && t !== downMessage) return;
-  const el = $("status");
-  if (el.textContent === t) return;
-  el.textContent = t;
-  el.title = t || "Save / sync status";
-  el.classList.remove("flash");
-  if (!t) return;
-  void el.offsetWidth; // reflow so re-adding the class restarts the animation
-  el.classList.add("flash");
-}
-$("version").textContent = "v " + APP_VERSION;
-const searching = () => $("searchBar").classList.contains("open") && $("searchInput").value.trim() !== "";
+      function setStatus(t) {
+        // While down, the red "not reachable" message owns the footer; follow-on failures must not replace it.
+        if (serverDown && t !== downMessage) return;
+        const el = $("status");
+        if (el.textContent === t) return;
+        el.textContent = t;
+        el.title = t || "Save / sync status";
+        el.classList.remove("flash");
+        if (!t) return;
+        void el.offsetWidth; // reflow so re-adding the class restarts the animation
+        el.classList.add("flash");
+      }
+      $("version").textContent = "v " + APP_VERSION;
+      const searching = () => $("searchBar").classList.contains("open") && $("searchInput").value.trim() !== "";
 
-/** Top bar: full path of the open file, else of the current folder (only folders get a trailing /). */
-function renderName() {
-  const text = openPath ? absPath(openPath) : absPath(cwd) + "/";
-  $("empty").hidden = !!openPath; // zero state whenever no file is open
-  // #name is direction:rtl (ellipsis on the left); LRM marks stop the leading "/" rendering at the end.
-  $("name").textContent = "\u200E" + text + "\u200E";
-  $("name").title = text + "\n(click to copy the full path)";
-  $("name").dataset.copy = text;
-  $("crumb").dataset.copy = absPath(cwd) + "/";
-  $("crumb").title = "Current folder (click to copy the full path)";
-}
+      /** Top bar: full path of the open file, else of the current folder (only folders get a trailing /). */
+      function renderName() {
+        const text = openPath ? absPath(openPath) : absPath(cwd) + "/";
+        $("empty").hidden = !!openPath; // zero state whenever no file is open
+        // #name is direction:rtl (ellipsis on the left); LRM marks stop the leading "/" rendering at the end.
+        $("name").textContent = "\u200E" + text + "\u200E";
+        $("name").title = text + "\n(click to copy the full path)";
+        $("name").dataset.copy = text;
+        $("crumb").dataset.copy = absPath(cwd) + "/";
+        $("crumb").title = "Current folder (click to copy the full path)";
+      }
 
-/**
- * App URL that deep-links to a file/folder, using the host the page was opened from (LAN IP stays LAN IP).
- * @param {string} rel ROOT-relative path.
- * @returns {string} e.g. http://192.168.1.42:9998/?path=notes%2Fa.txt
- */
-function appLink(rel) {
-  return location.origin + "/?path=" + encodeURIComponent(rel);
-}
+      /**
+       * App URL that deep-links to a file/folder, using the host the page was opened from (LAN IP stays LAN IP).
+       * @param {string} rel ROOT-relative path.
+       * @returns {string} e.g. http://192.168.1.42:9998/?path=notes%2Fa.txt
+       */
+      function appLink(rel) {
+        return location.origin + "/?path=" + encodeURIComponent(rel);
+      }
 
-/**
- * Copy text to the clipboard. navigator.clipboard needs a secure context (https/localhost),
- * so plain-http LAN URLs fall back to a hidden textarea + execCommand("copy").
- * @param {string} text Text to copy.
- */
-async function copyText(text) {
-  try {
-    if (window.isSecureContext && navigator.clipboard) { await navigator.clipboard.writeText(text); }
-    else {
-      const ta = Object.assign(document.createElement("textarea"), { value: text });
-      ta.style.position = "fixed"; ta.style.opacity = "0";
-      document.body.append(ta); ta.select();
-      const ok = document.execCommand("copy");
-      ta.remove();
-      if (!ok) throw new Error("copy command refused");
-    }
-    setStatus("copied " + text);
-  } catch (err) {
-    setStatus("copy failed: " + err.message);
-  }
-}
+      /**
+       * Copy text to the clipboard. navigator.clipboard needs a secure context (https/localhost),
+       * so plain-http LAN URLs fall back to a hidden textarea + execCommand("copy").
+       * @param {string} text Text to copy.
+       */
+      async function copyText(text) {
+        try {
+          if (window.isSecureContext && navigator.clipboard) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const ta = Object.assign(document.createElement("textarea"), { value: text });
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.append(ta);
+            ta.select();
+            const ok = document.execCommand("copy");
+            ta.remove();
+            if (!ok) throw new Error("copy command refused");
+          }
+          setStatus("copied " + text);
+        } catch (err) {
+          setStatus("copy failed: " + err.message);
+        }
+      }
 
-/** Mirror the current file (or folder) into ?path= so a reload lands in the same place. */
-function setUrl(rel) {
-  history.replaceState(null, "", rel ? "?path=" + encodeURIComponent(rel) : location.pathname);
-}
+      /** Mirror the current file (or folder) into ?path= so a reload lands in the same place. */
+      function setUrl(rel) {
+        history.replaceState(null, "", rel ? "?path=" + encodeURIComponent(rel) : location.pathname);
+      }
 
-/**
- * Controller shared by every in-flight file READ (open + background refresh). Switching or closing
- * a file aborts them all so a large stale download stops. Saves (PUT) never use it: aborting a
- * write could lose edits. openSeq still guards responses that land before the abort.
- */
-let fileReads = new AbortController();
+      /**
+       * Controller shared by every in-flight file READ (open + background refresh). Switching or closing
+       * a file aborts them all so a large stale download stops. Saves (PUT) never use it: aborting a
+       * write could lose edits. openSeq still guards responses that land before the abort.
+       */
+      let fileReads = new AbortController();
 
-/**
- * Abort all in-flight file reads and start a fresh controller.
- * @returns {AbortSignal} Signal for the reads of the file being opened now.
- */
-function newReadSignal() {
-  fileReads.abort();
-  fileReads = new AbortController();
-  return fileReads.signal;
-}
+      /**
+       * Abort all in-flight file reads and start a fresh controller.
+       * @returns {AbortSignal} Signal for the reads of the file being opened now.
+       */
+      function newReadSignal() {
+        fileReads.abort();
+        fileReads = new AbortController();
+        return fileReads.signal;
+      }
 
-/** Max wait for one "is the server there?" probe, in ms. */
-const SERVER_PROBE_TIMEOUT_MS = 3000;
-/** True while the server (or this browser's network) is unreachable. */
-let serverDown = false;
-let recoveryTimer = null;
-/** The footer message for the current down state (setStatus only accepts this one while down). */
-let downMessage = "";
+      /** Max wait for one "is the server there?" probe, in ms. */
+      const SERVER_PROBE_TIMEOUT_MS = 3000;
+      /** True while the server (or this browser's network) is unreachable. */
+      let serverDown = false;
+      let recoveryTimer = null;
+      /** The footer message for the current down state (setStatus only accepts this one while down). */
+      let downMessage = "";
 
-/**
- * Enter down mode: red footer message, editor read-only (text can still be selected and copied),
- * server controls disabled, pending autosave held back, every api() call refused. Nothing can be
- * saved by accident against a server that is gone; unsaved edits stay in the editor and are
- * saved on recovery. Polls the server and recovers by itself.
- * @param {"server"|"client"} cause server = text-server stopped answering; client = this browser is offline.
- */
-function setServerDown(cause) {
-  const message = cause === "client"
-    ? "You are offline \u2014 read-only until the network is back"
-    : "Server not reachable (" + location.host + ") \u2014 read-only, retrying\u2026";
-  if (!serverDown) {
-    serverDown = true;
-    clearTimeout(saveTimer);
-    editor.setOption("readOnly", true);
-    document.body.classList.add("down");
-    for (const id of SERVER_CONTROL_IDS) $(id).disabled = true;
-    $("foot").classList.add("down");
-    recoveryTimer = setInterval(tryRecover, RECOVERY_POLL_MS);
-  }
-  downMessage = message + (openPath && !clean ? " (unsaved edits kept here)" : "");
-  setStatus(downMessage);
-}
+      /**
+       * Enter down mode: red footer message, editor read-only (text can still be selected and copied),
+       * server controls disabled, pending autosave held back, every api() call refused. Nothing can be
+       * saved by accident against a server that is gone; unsaved edits stay in the editor and are
+       * saved on recovery. Polls the server and recovers by itself.
+       * @param {"server"|"client"} cause server = text-server stopped answering; client = this browser is offline.
+       */
+      function setServerDown(cause) {
+        const message =
+          cause === "client"
+            ? "You are offline \u2014 read-only until the network is back"
+            : "Server not reachable (" + location.host + ") \u2014 read-only, retrying\u2026";
+        if (!serverDown) {
+          serverDown = true;
+          clearTimeout(saveTimer);
+          editor.setOption("readOnly", true);
+          document.body.classList.add("down");
+          for (const id of SERVER_CONTROL_IDS) $(id).disabled = true;
+          $("foot").classList.add("down");
+          recoveryTimer = setInterval(tryRecover, RECOVERY_POLL_MS);
+        }
+        downMessage = message + (openPath && !clean ? " (unsaved edits kept here)" : "");
+        setStatus(downMessage);
+      }
 
-/** Leave down mode once the server answers again: re-enable everything, save held edits, refresh. */
-async function tryRecover() {
-  if (!serverDown || !navigator.onLine || (await serverUnreachable())) return;
-  serverDown = false;
-  clearInterval(recoveryTimer);
-  document.body.classList.remove("down");
-  $("foot").classList.remove("down");
-  for (const id of SERVER_CONTROL_IDS) $(id).disabled = false;
-  editor.setOption("readOnly", !openPath);
-  setStatus("server back");
-  if (!clean) await flushSave();
-  lastAutoRefresh = 0;
-  refreshAll();
-}
+      /** Leave down mode once the server answers again: re-enable everything, save held edits, refresh. */
+      async function tryRecover() {
+        if (!serverDown || !navigator.onLine || (await serverUnreachable())) return;
+        serverDown = false;
+        clearInterval(recoveryTimer);
+        document.body.classList.remove("down");
+        $("foot").classList.remove("down");
+        for (const id of SERVER_CONTROL_IDS) $(id).disabled = false;
+        editor.setOption("readOnly", !openPath);
+        setStatus("server back");
+        if (!clean) await flushSave();
+        lastAutoRefresh = 0;
+        refreshAll();
+      }
 
-/**
- * Probe the server. Any HTTP answer (even 404) means reachable: a failed API call with a live
- * server was transient or ad-blocked (blockers fail matching URLs with the same TypeError).
- * @returns {Promise<boolean>} true when the server did not answer.
- */
-async function serverUnreachable() {
-  try {
-    await fetch("/?probe=" + Date.now(), { method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(SERVER_PROBE_TIMEOUT_MS) });
-    return false;
-  } catch {
-    return true;
-  }
-}
+      /**
+       * Probe the server. Any HTTP answer (even 404) means reachable: a failed API call with a live
+       * server was transient or ad-blocked (blockers fail matching URLs with the same TypeError).
+       * @returns {Promise<boolean>} true when the server did not answer.
+       */
+      async function serverUnreachable() {
+        try {
+          await fetch("/?probe=" + Date.now(), { method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(SERVER_PROBE_TIMEOUT_MS) });
+          return false;
+        } catch {
+          return true;
+        }
+      }
 
-async function api(method, route, rel, body, extra, signal) {
-  if (serverDown) throw Object.assign(new Error("server not reachable"), { name: "ServerDown" });
-  let res;
-  try {
-    res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body, signal });
-  } catch (err) {
-    // Network-level failure (not an abort): go read-only if the client or the server is gone.
-    if (err.name !== "AbortError") {
-      if (!navigator.onLine) setServerDown("client");
-      else if (await serverUnreachable()) setServerDown("server");
-    }
-    throw err;
-  }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(res.status + " " + (data.error || res.statusText)), { status: res.status });
-  return data;
-}
+      async function api(method, route, rel, body, extra, signal) {
+        if (serverDown) throw Object.assign(new Error("server not reachable"), { name: "ServerDown" });
+        let res;
+        try {
+          res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body, signal });
+        } catch (err) {
+          // Network-level failure (not an abort): go read-only if the client or the server is gone.
+          if (err.name !== "AbortError") {
+            if (!navigator.onLine) setServerDown("client");
+            else if (await serverUnreachable()) setServerDown("server");
+          }
+          throw err;
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw Object.assign(new Error(res.status + " " + (data.error || res.statusText)), { status: res.status });
+        return data;
+      }
 
-/** Render list rows: { name, full, folder, sub? }. */
-function renderEntries(items, note) {
-  const ul = $("list");
-  ul.innerHTML = "";
-  for (const e of items) {
-    const li = document.createElement("li");
-    if (e.full === openPath) li.className = "active";
-    const label = document.createElement("span");
-    label.className = "label";
-    label.title = (e.folder ? "Open folder " : "Open file ") + e.full;
-    label.textContent = (e.folder ? "\u{1F4C1} " : "\u{1F4C4} ") + e.name;
-    if (e.sub) {
-      const sub = document.createElement("span");
-      sub.className = "sub"; sub.textContent = e.sub;
-      label.append(sub);
-    }
-    const ren = document.createElement("span");
-    ren.className = "act ren"; ren.textContent = "\u270E"; ren.title = "Rename " + e.name;
-    ren.onclick = (ev) => { ev.stopPropagation(); renameEntry(e.full); };
-    const link = document.createElement("span");
-    link.className = "act"; link.textContent = "\u{1F4CB}"; link.title = "Copy a link that opens " + e.name + " in this app";
-    link.onclick = (ev) => { ev.stopPropagation(); copyText(appLink(e.full)); };
-    const del = document.createElement("span");
-    del.className = "act del"; del.textContent = "\u2715"; del.title = "Delete " + e.name;
-    del.onclick = (ev) => { ev.stopPropagation(); removeEntry(e.full, e.folder); };
-    li.append(label, link, ren, del);
-    li.onclick = () => (e.folder ? navigate(e.full) : openFile(e.full));
-    ul.append(li);
-  }
-  if (note) {
-    const li = document.createElement("li");
-    li.className = "note"; li.textContent = note;
-    ul.append(li);
-  }
-}
+      /** Render list rows: { name, full, folder, sub? }. */
+      function renderEntries(items, note) {
+        const ul = $("list");
+        ul.innerHTML = "";
+        for (const e of items) {
+          const li = document.createElement("li");
+          if (e.full === openPath) li.className = "active";
+          const label = document.createElement("span");
+          label.className = "label";
+          label.title = (e.folder ? "Open folder " : "Open file ") + e.full;
+          label.textContent = (e.folder ? "\u{1F4C1} " : "\u{1F4C4} ") + e.name;
+          if (e.sub) {
+            const sub = document.createElement("span");
+            sub.className = "sub";
+            sub.textContent = e.sub;
+            label.append(sub);
+          }
+          const ren = document.createElement("span");
+          ren.className = "act ren";
+          ren.textContent = "\u270E";
+          ren.title = "Rename " + e.name;
+          ren.onclick = (ev) => {
+            ev.stopPropagation();
+            renameEntry(e.full);
+          };
+          const link = document.createElement("span");
+          link.className = "act";
+          link.textContent = "\u{1F4CB}";
+          link.title = "Copy a link that opens " + e.name + " in this app";
+          link.onclick = (ev) => {
+            ev.stopPropagation();
+            copyText(appLink(e.full));
+          };
+          const del = document.createElement("span");
+          del.className = "act del";
+          del.textContent = "\u2715";
+          del.title = "Delete " + e.name;
+          del.onclick = (ev) => {
+            ev.stopPropagation();
+            removeEntry(e.full, e.folder);
+          };
+          li.append(label, link, ren, del);
+          li.onclick = () => (e.folder ? navigate(e.full) : openFile(e.full));
+          ul.append(li);
+        }
+        if (note) {
+          const li = document.createElement("li");
+          li.className = "note";
+          li.textContent = note;
+          ul.append(li);
+        }
+      }
 
-/** List a folder. quiet=true for background refreshes (no alerts, no URL change). */
-async function loadList(rel, quiet) {
-  try {
-    const data = await api("GET", "/api/list", rel);
-    cwd = data.path;
-    $("crumb").textContent = absPath(cwd) + "/";
-    $("up").disabled = cwd === "";
-    if (!searching()) renderEntries(data.entries.map((e) => ({ name: e.name, full: join(cwd, e.name), folder: e.folder })));
-    renderName();
-    // User-driven listing of a folder holding exactly one file (and nothing else): open it for them.
-    if (!quiet && !openPath && data.entries.length === 1 && !data.entries[0].folder) await openFile(join(cwd, data.entries[0].name));
-  } catch (err) {
-    if (!quiet) alert("List failed: " + err.message);
-  }
-}
+      /** List a folder. quiet=true for background refreshes (no alerts, no URL change). */
+      async function loadList(rel, quiet) {
+        try {
+          const data = await api("GET", "/api/list", rel);
+          cwd = data.path;
+          $("crumb").textContent = absPath(cwd) + "/";
+          $("up").disabled = cwd === "";
+          if (!searching()) renderEntries(data.entries.map((e) => ({ name: e.name, full: join(cwd, e.name), folder: e.folder })));
+          renderName();
+          // User-driven listing of a folder holding exactly one file (and nothing else): open it for them.
+          if (!quiet && !openPath && data.entries.length === 1 && !data.entries[0].folder) await openFile(join(cwd, data.entries[0].name));
+        } catch (err) {
+          if (!quiet) alert("List failed: " + err.message);
+        }
+      }
 
-/** User-driven folder change: list it and point the URL at it. */
-async function navigate(rel) {
-  await loadList(rel);
-  if (!openPath) setUrl(cwd);
-}
+      /** User-driven folder change: list it and point the URL at it. */
+      async function navigate(rel) {
+        await loadList(rel);
+        if (!openPath) setUrl(cwd);
+      }
 
-/**
- * Write pending edits to disk now (autosave flush). Called before switching files,
- * snapshotting, and from the autosave timer.
- * @returns {Promise<boolean>} true when nothing is left unsaved.
- */
-async function flushSave() {
-  clearTimeout(saveTimer);
-  if (clean || !openPath) return true;
-  const target = openPath, content = editor.getValue();
-  try {
-    await api("PUT", "/api/file", target, content);
-    if (target !== openPath) return true;
-    loadedContent = content;
-    if (editor.getValue() === content) { setClean(true); setStatus("saved " + new Date().toLocaleTimeString()); }
-    return true;
-  } catch (err) {
-    setStatus("save failed: " + err.message);
-    return false;
-  }
-}
+      /**
+       * Write pending edits to disk now (autosave flush). Called before switching files,
+       * snapshotting, and from the autosave timer.
+       * @returns {Promise<boolean>} true when nothing is left unsaved.
+       */
+      async function flushSave() {
+        clearTimeout(saveTimer);
+        if (clean || !openPath) return true;
+        const target = openPath,
+          content = editor.getValue();
+        try {
+          await api("PUT", "/api/file", target, content);
+          if (target !== openPath) return true;
+          loadedContent = content;
+          if (editor.getValue() === content) {
+            setClean(true);
+            setStatus("saved " + new Date().toLocaleTimeString());
+          }
+          return true;
+        } catch (err) {
+          setStatus("save failed: " + err.message);
+          return false;
+        }
+      }
 
-/** Replace editor content without flagging it as a user edit. */
-function setEditorContent(content) {
-  applyingRemote = true;
-  const cursor = editor.getCursor(), scroll = editor.getScrollInfo();
-  editor.setValue(content);
-  editor.setCursor(cursor);
-  editor.scrollTo(scroll.left, scroll.top);
-  applyingRemote = false;
-}
+      /** Replace editor content without flagging it as a user edit. */
+      function setEditorContent(content) {
+        applyingRemote = true;
+        const cursor = editor.getCursor(),
+          scroll = editor.getScrollInfo();
+        editor.setValue(content);
+        editor.setCursor(cursor);
+        editor.scrollTo(scroll.left, scroll.top);
+        applyingRemote = false;
+      }
 
-/**
- * Extension -> built-in viewer for files that are not text. Mirrors MEDIA_CONTENT_TYPES in
- * text-server.cjs (which serves them from /api/raw); keep both in sync.
- */
-const MEDIA_KINDS = Object.freeze({
-  png: "image", jpg: "image", jpeg: "image", gif: "image", webp: "image", bmp: "image", ico: "image", avif: "image", svg: "image",
-  pdf: "pdf",
-  mp4: "video", m4v: "video", mov: "video", webm: "video", ogv: "video",
-});
-/** Kind of the open file when it is shown in the media viewer ("image" | "video" | "pdf"), else null. */
-let openMediaKind = null;
+      /**
+       * Extension -> built-in viewer for files that are not text. Mirrors MEDIA_CONTENT_TYPES in
+       * text-server.cjs (which serves them from /api/raw); keep both in sync.
+       */
+      const MEDIA_KINDS = Object.freeze({
+        png: "image",
+        jpg: "image",
+        jpeg: "image",
+        gif: "image",
+        webp: "image",
+        bmp: "image",
+        ico: "image",
+        avif: "image",
+        svg: "image",
+        pdf: "pdf",
+        mp4: "video",
+        m4v: "video",
+        mov: "video",
+        webm: "video",
+        ogv: "video",
+      });
+      /** Kind of the open file when it is shown in the media viewer ("image" | "video" | "pdf"), else null. */
+      let openMediaKind = null;
 
-/**
- * Which built-in viewer a path needs.
- * @param {string} rel File path.
- * @returns {string|null} "image" | "video" | "pdf", or null for text.
- */
-function mediaKindFor(rel) {
-  const dot = rel.lastIndexOf(".");
-  return dot < 0 ? null : MEDIA_KINDS[rel.slice(dot + 1).toLowerCase()] || null;
-}
+      /**
+       * Which built-in viewer a path needs.
+       * @param {string} rel File path.
+       * @returns {string|null} "image" | "video" | "pdf", or null for text.
+       */
+      function mediaKindFor(rel) {
+        const dot = rel.lastIndexOf(".");
+        return dot < 0 ? null : MEDIA_KINDS[rel.slice(dot + 1).toLowerCase()] || null;
+      }
 
-/**
- * Show (kind + url) or hide (kind null) the media viewer over the editor. Unused elements get their
- * src removed so a hidden video stops playing and nothing keeps downloading.
- * @param {string|null} kind "image" | "video" | "pdf", or null to hide.
- * @param {string} [url] Source URL.
- */
-function showMedia(kind, url) {
-  const els = { image: $("mediaImg"), video: $("mediaVideo"), pdf: $("mediaPdf") };
-  for (const [k, el] of Object.entries(els)) {
-    if (k === kind) { el.src = url; el.hidden = false; continue; }
-    if (el.hasAttribute("src")) { if (k === "video") el.pause(); el.removeAttribute("src"); if (k === "video") el.load(); }
-    el.hidden = true;
-  }
-  $("mediaView").hidden = !kind;
-}
+      /**
+       * Show (kind + url) or hide (kind null) the media viewer over the editor. Unused elements get their
+       * src removed so a hidden video stops playing and nothing keeps downloading.
+       * @param {string|null} kind "image" | "video" | "pdf", or null to hide.
+       * @param {string} [url] Source URL.
+       */
+      function showMedia(kind, url) {
+        const els = { image: $("mediaImg"), video: $("mediaVideo"), pdf: $("mediaPdf") };
+        for (const [k, el] of Object.entries(els)) {
+          if (k === kind) {
+            el.src = url;
+            el.hidden = false;
+            continue;
+          }
+          if (el.hasAttribute("src")) {
+            if (k === "video") el.pause();
+            el.removeAttribute("src");
+            if (k === "video") el.load();
+          }
+          el.hidden = true;
+        }
+        $("mediaView").hidden = !kind;
+      }
 
-/** Raw-bytes URL for a media file; the stamp busts the browser cache so refresh shows the current file. */
-function rawUrl(rel) {
-  return "/api/raw?path=" + encodeURIComponent(rel) + "&v=" + Date.now();
-}
+      /** Raw-bytes URL for a media file; the stamp busts the browser cache so refresh shows the current file. */
+      function rawUrl(rel) {
+        return "/api/raw?path=" + encodeURIComponent(rel) + "&v=" + Date.now();
+      }
 
-async function openFile(rel) {
-  // Every switch bumps openSeq; responses from an older switch (or an in-flight refresh) are dropped.
-  const seq = ++openSeq;
-  const signal = newReadSignal();
-  if (rel !== openPath && !(await flushSave())) { alert("Could not save " + openPath + "; staying on it so no edits are lost."); return; }
-  if (seq !== openSeq) return;
-  const kind = mediaKindFor(rel);
-  if (kind) {
-    // Images / PDF / video render in the browser's own viewer; the editor stays empty and read-only.
-    openPath = rel; openMediaKind = kind; loadedContent = "";
-    applyingRemote = true; editor.setValue(""); applyingRemote = false;
-    editor.setOption("readOnly", true);
-    applySyntax("plain");
-    showMedia(kind, rawUrl(rel));
-    setClean(true);
-    setStatus("");
-    setUrl(openPath);
-    renderName();
-    refreshView(true);
-    return;
-  }
-  openMediaKind = null;
-  showMedia(null);
-  try {
-    const data = await api("GET", "/api/file", rel, undefined, "", signal);
-    if (seq !== openSeq) return;
-    openPath = data.path;
-    loadedContent = data.content;
-    editor.setOption("readOnly", false);
-    applyingRemote = true;
-    editor.setValue(data.content);
-    applyingRemote = false;
-    editor.clearHistory();
-    applySyntax(data.content.length > HIGHLIGHT_MAX_CHARS ? "plain" : syntaxForFile(openPath));
-    if (snapshotBaseline.path !== openPath) snapshotBaseline = { path: openPath, text: normalizeForSnapshot(data.content) };
-    setClean(true);
-    setStatus("");
-    setUrl(openPath);
-    renderName();
-    refreshView(true);
-  } catch (err) { if (seq === openSeq) alert("Open failed: " + err.message); }
-}
+      async function openFile(rel) {
+        // Every switch bumps openSeq; responses from an older switch (or an in-flight refresh) are dropped.
+        const seq = ++openSeq;
+        const signal = newReadSignal();
+        if (rel !== openPath && !(await flushSave())) {
+          alert("Could not save " + openPath + "; staying on it so no edits are lost.");
+          return;
+        }
+        if (seq !== openSeq) return;
+        const kind = mediaKindFor(rel);
+        if (kind) {
+          // Images / PDF / video render in the browser's own viewer; the editor stays empty and read-only.
+          openPath = rel;
+          openMediaKind = kind;
+          loadedContent = "";
+          applyingRemote = true;
+          editor.setValue("");
+          applyingRemote = false;
+          editor.setOption("readOnly", true);
+          applySyntax("plain");
+          showMedia(kind, rawUrl(rel));
+          setClean(true);
+          setStatus("");
+          setUrl(openPath);
+          renderName();
+          refreshView(true);
+          return;
+        }
+        openMediaKind = null;
+        showMedia(null);
+        try {
+          const data = await api("GET", "/api/file", rel, undefined, "", signal);
+          if (seq !== openSeq) return;
+          openPath = data.path;
+          loadedContent = data.content;
+          editor.setOption("readOnly", false);
+          applyingRemote = true;
+          editor.setValue(data.content);
+          applyingRemote = false;
+          editor.clearHistory();
+          applySyntax(data.content.length > HIGHLIGHT_MAX_CHARS ? "plain" : syntaxForFile(openPath));
+          if (snapshotBaseline.path !== openPath) snapshotBaseline = { path: openPath, text: normalizeForSnapshot(data.content) };
+          setClean(true);
+          setStatus("");
+          setUrl(openPath);
+          renderName();
+          refreshView(true);
+        } catch (err) {
+          if (seq === openSeq) alert("Open failed: " + err.message);
+        }
+      }
 
-function closeFile() {
-  openSeq++;
-  newReadSignal();
-  clearTimeout(saveTimer);
-  openPath = null; openMediaKind = null; loadedContent = ""; setClean(true);
-  showMedia(null);
-  applyingRemote = true; editor.setValue(""); applyingRemote = false;
-  editor.setOption("readOnly", true);
-  applySyntax("plain");
-  setUrl(cwd);
-  renderName();
-}
+      function closeFile() {
+        openSeq++;
+        newReadSignal();
+        clearTimeout(saveTimer);
+        openPath = null;
+        openMediaKind = null;
+        loadedContent = "";
+        setClean(true);
+        showMedia(null);
+        applyingRemote = true;
+        editor.setValue("");
+        applyingRemote = false;
+        editor.setOption("readOnly", true);
+        applySyntax("plain");
+        setUrl(cwd);
+        renderName();
+      }
 
-/**
- * Explicit version snapshot (Ctrl+S / Snapshot button): flush autosave, then copy the file to
- * <file>.<MM-DD-YYYY_HH-MM> unless the newest existing snapshot (new or legacy digit suffix) already has this content.
- */
-async function snapshot(auto) {
-  if (!openPath || openMediaKind) return; // media files are not edited here, nothing to version
-  if (!(await flushSave())) return;
-  const folder = dirname(openPath), prefix = basename(openPath) + ".";
-  const content = editor.getValue();
-  // Too little to be worth versioning: empty or under SNAPSHOT_MIN_CHARS letters/digits.
-  if (normalizeForSnapshot(content).length < SNAPSHOT_MIN_CHARS) {
-    setStatus("snapshot skipped: under " + SNAPSHOT_MIN_CHARS + " letters/digits");
-    return;
-  }
-  try {
-    const listing = await api("GET", "/api/list", folder);
-    let latestName = "", latestOrder = -Infinity;
-    for (const e of listing.entries) {
-      if (e.folder || !e.name.startsWith(prefix)) continue;
-      const order = snapshotOrder(e.name.slice(prefix.length));
-      if (order > latestOrder) { latestOrder = order; latestName = e.name; }
-    }
-    if (latestName) {
-      const latest = join(folder, latestName);
-      const prev = await api("GET", "/api/file", latest);
-      if (prev.content === content) { setStatus("no changes since snapshot " + basename(latest)); return; }
-    }
-    // /api/upload never overwrites: a second snapshot in the same minute gets <stamp>-1, -2, ...
-    const saved = await api("POST", "/api/upload", openPath + "." + formatDateTime(new Date()), content, "&onclash=suffix");
-    const name = saved.path;
-    setStatus((auto ? "auto snapshot " : "snapshot ") + basename(name));
-    refreshView(true);
-  } catch (err) {
-    if (auto) setStatus("auto snapshot failed: " + err.message);
-    else alert("Snapshot failed: " + err.message);
-  }
-}
+      /**
+       * Explicit version snapshot (Ctrl+S / Snapshot button): flush autosave, then copy the file to
+       * <file>.<MM-DD-YYYY_HH-MM> unless the newest existing snapshot (new or legacy digit suffix) already has this content.
+       */
+      async function snapshot(auto) {
+        if (!openPath || openMediaKind) return; // media files are not edited here, nothing to version
+        if (!(await flushSave())) return;
+        const folder = dirname(openPath),
+          prefix = basename(openPath) + ".";
+        const content = editor.getValue();
+        // Too little to be worth versioning: empty or under SNAPSHOT_MIN_CHARS letters/digits.
+        if (normalizeForSnapshot(content).length < SNAPSHOT_MIN_CHARS) {
+          setStatus("snapshot skipped: under " + SNAPSHOT_MIN_CHARS + " letters/digits");
+          return;
+        }
+        try {
+          const listing = await api("GET", "/api/list", folder);
+          let latestName = "",
+            latestOrder = -Infinity;
+          for (const e of listing.entries) {
+            if (e.folder || !e.name.startsWith(prefix)) continue;
+            const order = snapshotOrder(e.name.slice(prefix.length));
+            if (order > latestOrder) {
+              latestOrder = order;
+              latestName = e.name;
+            }
+          }
+          if (latestName) {
+            const latest = join(folder, latestName);
+            const prev = await api("GET", "/api/file", latest);
+            if (prev.content === content) {
+              setStatus("no changes since snapshot " + basename(latest));
+              return;
+            }
+          }
+          // /api/upload never overwrites: a second snapshot in the same minute gets <stamp>-1, -2, ...
+          const saved = await api("POST", "/api/upload", openPath + "." + formatDateTime(new Date()), content, "&onclash=suffix");
+          const name = saved.path;
+          setStatus((auto ? "auto snapshot " : "snapshot ") + basename(name));
+          refreshView(true);
+        } catch (err) {
+          if (auto) setStatus("auto snapshot failed: " + err.message);
+          else alert("Snapshot failed: " + err.message);
+        }
+      }
 
-/**
- * Letters and digits only: whitespace, punctuation, and symbols carry no weight in the
- * auto-snapshot change count (reformatting or re-indenting alone never triggers one).
- * @param {string} text Raw file text.
- * @returns {string} Normalized text.
- */
-const normalizeForSnapshot = (text) => text.replace(/[^\p{L}\p{N}]+/gu, "");
+      /**
+       * Letters and digits only: whitespace, punctuation, and symbols carry no weight in the
+       * auto-snapshot change count (reformatting or re-indenting alone never triggers one).
+       * @param {string} text Raw file text.
+       * @returns {string} Normalized text.
+       */
+      const normalizeForSnapshot = (text) => text.replace(/[^\p{L}\p{N}]+/gu, "");
 
-/**
- * Size of the changed region between two normalized texts: trim the common prefix and suffix,
- * then take the longer remaining middle. O(n), unlike an edit distance; it overcounts when two
- * far-apart edits sandwich unchanged text, which only makes a snapshot slightly more likely.
- * @param {string} before Normalized earlier text.
- * @param {string} after Normalized current text.
- * @returns {number} Changed character count.
- */
-function changedCharCount(before, after) {
-  let start = 0;
-  const maxStart = Math.min(before.length, after.length);
-  while (start < maxStart && before[start] === after[start]) start++;
-  let endBefore = before.length, endAfter = after.length;
-  while (endBefore > start && endAfter > start && before[endBefore - 1] === after[endAfter - 1]) { endBefore--; endAfter--; }
-  return Math.max(endBefore - start, endAfter - start);
-}
+      /**
+       * Size of the changed region between two normalized texts: trim the common prefix and suffix,
+       * then take the longer remaining middle. O(n), unlike an edit distance; it overcounts when two
+       * far-apart edits sandwich unchanged text, which only makes a snapshot slightly more likely.
+       * @param {string} before Normalized earlier text.
+       * @param {string} after Normalized current text.
+       * @returns {number} Changed character count.
+       */
+      function changedCharCount(before, after) {
+        let start = 0;
+        const maxStart = Math.min(before.length, after.length);
+        while (start < maxStart && before[start] === after[start]) start++;
+        let endBefore = before.length,
+          endAfter = after.length;
+        while (endBefore > start && endAfter > start && before[endBefore - 1] === after[endAfter - 1]) {
+          endBefore--;
+          endAfter--;
+        }
+        return Math.max(endBefore - start, endAfter - start);
+      }
 
-/** Normalized content of the open file at its last snapshot (or when it was opened); the auto-snapshot baseline. */
-let snapshotBaseline = { path: null, text: "" };
+      /** Normalized content of the open file at its last snapshot (or when it was opened); the auto-snapshot baseline. */
+      let snapshotBaseline = { path: null, text: "" };
 
-/** One auto-snapshot check (runs every AUTO_SNAPSHOT.intervalMs). */
-async function autoSnapshotTick() {
-  if (!openPath || serverDown) return;
-  const current = normalizeForSnapshot(editor.getValue());
-  if (snapshotBaseline.path !== openPath) { snapshotBaseline = { path: openPath, text: current }; return; }
-  if (changedCharCount(snapshotBaseline.text, current) < AUTO_SNAPSHOT.minChangedChars) return;
-  const path = openPath;
-  await snapshot(true);
-  if (openPath === path) snapshotBaseline = { path, text: current };
-}
+      /** One auto-snapshot check (runs every AUTO_SNAPSHOT.intervalMs). */
+      async function autoSnapshotTick() {
+        if (!openPath || serverDown) return;
+        const current = normalizeForSnapshot(editor.getValue());
+        if (snapshotBaseline.path !== openPath) {
+          snapshotBaseline = { path: openPath, text: current };
+          return;
+        }
+        if (changedCharCount(snapshotBaseline.text, current) < AUTO_SNAPSHOT.minChangedChars) return;
+        const path = openPath;
+        await snapshot(true);
+        if (openPath === path) snapshotBaseline = { path, text: current };
+      }
 
-async function removeEntry(rel, isFolder) {
-  if (!confirm("Delete " + (isFolder ? "folder (must be empty) " : "") + absPath(rel) + "?")) return;
-  try {
-    await api("DELETE", "/api/file", rel);
-    if (rel === openPath) closeFile();
-    refreshView(true);
-  } catch (err) { alert("Delete failed: " + err.message); }
-}
+      async function removeEntry(rel, isFolder) {
+        if (!confirm("Delete " + (isFolder ? "folder (must be empty) " : "") + absPath(rel) + "?")) return;
+        try {
+          await api("DELETE", "/api/file", rel);
+          if (rel === openPath) closeFile();
+          refreshView(true);
+        } catch (err) {
+          alert("Delete failed: " + err.message);
+        }
+      }
 
-/** Max file names spelled out in the delete-all confirmation before summarizing the rest. */
-const DELETE_ALL_PREVIEW_LIMIT = 30;
+      /** Max file names spelled out in the delete-all confirmation before summarizing the rest. */
+      const DELETE_ALL_PREVIEW_LIMIT = 30;
 
-/**
- * Delete every file directly in the current folder, after a confirmation that names each one.
- * Subfolders are never touched. Re-lists first so the dialog matches what is on disk now.
- */
-async function deleteAllFiles() {
-  let entries;
-  try { entries = (await api("GET", "/api/list", cwd)).entries; }
-  catch (err) { alert("List failed: " + err.message); return; }
-  const names = entries.filter((e) => !e.folder).map((e) => e.name);
-  if (!names.length) { alert("No files to delete in " + absPath(cwd) + "/"); return; }
-  const shown = names.slice(0, DELETE_ALL_PREVIEW_LIMIT).map((n) => "  - " + n);
-  if (names.length > DELETE_ALL_PREVIEW_LIMIT) shown.push("  ...and " + (names.length - DELETE_ALL_PREVIEW_LIMIT) + " more");
-  const message = "Permanently delete ALL " + names.length + " file(s) in " + absPath(cwd) + "/ ?\n"
-    + "Subfolders are kept. This cannot be undone.\n\n" + shown.join("\n");
-  if (!confirm(message)) return;
-  const failures = [];
-  for (const name of names) {
-    const rel = join(cwd, name);
-    try {
-      await api("DELETE", "/api/file", rel);
-      if (rel === openPath) closeFile();
-    } catch (err) { failures.push(name + ": " + err.message); }
-  }
-  refreshView(true);
-  setStatus("deleted " + (names.length - failures.length) + " of " + names.length + " file(s)");
-  if (failures.length) alert("Some deletes failed:\n" + failures.join("\n"));
-}
+      /**
+       * Delete every file directly in the current folder, after a confirmation that names each one.
+       * Subfolders are never touched. Re-lists first so the dialog matches what is on disk now.
+       */
+      async function deleteAllFiles() {
+        let entries;
+        try {
+          entries = (await api("GET", "/api/list", cwd)).entries;
+        } catch (err) {
+          alert("List failed: " + err.message);
+          return;
+        }
+        const names = entries.filter((e) => !e.folder).map((e) => e.name);
+        if (!names.length) {
+          alert("No files to delete in " + absPath(cwd) + "/");
+          return;
+        }
+        const shown = names.slice(0, DELETE_ALL_PREVIEW_LIMIT).map((n) => "  - " + n);
+        if (names.length > DELETE_ALL_PREVIEW_LIMIT) shown.push("  ...and " + (names.length - DELETE_ALL_PREVIEW_LIMIT) + " more");
+        const message =
+          "Permanently delete ALL " +
+          names.length +
+          " file(s) in " +
+          absPath(cwd) +
+          "/ ?\n" +
+          "Subfolders are kept. This cannot be undone.\n\n" +
+          shown.join("\n");
+        if (!confirm(message)) return;
+        const failures = [];
+        for (const name of names) {
+          const rel = join(cwd, name);
+          try {
+            await api("DELETE", "/api/file", rel);
+            if (rel === openPath) closeFile();
+          } catch (err) {
+            failures.push(name + ": " + err.message);
+          }
+        }
+        refreshView(true);
+        setStatus("deleted " + (names.length - failures.length) + " of " + names.length + " file(s)");
+        if (failures.length) alert("Some deletes failed:\n" + failures.join("\n"));
+      }
 
-async function renameEntry(rel) {
-  const oldName = basename(rel);
-  const input = prompt("Rename \"" + oldName + "\" (in " + absPath(dirname(rel)) + "/) to:", oldName);
-  if (input === null) return;
-  const name = input.trim();
-  if (!name) { alert("Name cannot be empty."); return; }
-  if (name === oldName) return;
-  try {
-    const data = await api("POST", "/api/rename", rel, undefined, "&to=" + encodeURIComponent(name));
-    if (openPath === rel) openPath = data.path;
-    else if (openPath && openPath.startsWith(rel + "/")) openPath = data.path + openPath.slice(rel.length);
-    if (openPath) setUrl(openPath);
-    renderName();
-    refreshView(true);
-  } catch (err) { alert("Rename failed: " + err.message); }
-}
+      async function renameEntry(rel) {
+        const oldName = basename(rel);
+        const input = prompt('Rename "' + oldName + '" (in ' + absPath(dirname(rel)) + "/) to:", oldName);
+        if (input === null) return;
+        const name = input.trim();
+        if (!name) {
+          alert("Name cannot be empty.");
+          return;
+        }
+        if (name === oldName) return;
+        try {
+          const data = await api("POST", "/api/rename", rel, undefined, "&to=" + encodeURIComponent(name));
+          if (openPath === rel) openPath = data.path;
+          else if (openPath && openPath.startsWith(rel + "/")) openPath = data.path + openPath.slice(rel.length);
+          if (openPath) setUrl(openPath);
+          renderName();
+          refreshView(true);
+        } catch (err) {
+          alert("Rename failed: " + err.message);
+        }
+      }
 
-/** Run the search box query under cwd and show hits in the list. */
-async function runSearch(quiet) {
-  const q = $("searchInput").value.trim();
-  if (!q) return loadList(cwd, quiet);
-  const mode = $("searchMode").value;
-  try {
-    const data = await api("GET", "/api/search", cwd, undefined, "&mode=" + mode + "&q=" + encodeURIComponent(q));
-    const items = data.results.map((r) => ({
-      name: basename(r.path),
-      full: r.path,
-      folder: false,
-      sub: (dirname(r.path) ? dirname(r.path) + "/" : "") + (r.line ? "L" + r.line + ": " + r.text : ""),
-    }));
-    renderEntries(items, items.length ? (data.truncated ? "results truncated" : "") : "no matches");
-  } catch (err) {
-    if (!quiet) alert("Search failed: " + err.message);
-  }
-}
+      /** Run the search box query under cwd and show hits in the list. */
+      async function runSearch(quiet) {
+        const q = $("searchInput").value.trim();
+        if (!q) return loadList(cwd, quiet);
+        const mode = $("searchMode").value;
+        try {
+          const data = await api("GET", "/api/search", cwd, undefined, "&mode=" + mode + "&q=" + encodeURIComponent(q));
+          const items = data.results.map((r) => ({
+            name: basename(r.path),
+            full: r.path,
+            folder: false,
+            sub: (dirname(r.path) ? dirname(r.path) + "/" : "") + (r.line ? "L" + r.line + ": " + r.text : ""),
+          }));
+          renderEntries(items, items.length ? (data.truncated ? "results truncated" : "") : "no matches");
+        } catch (err) {
+          if (!quiet) alert("Search failed: " + err.message);
+        }
+      }
 
-/** Re-fetch whatever the side list shows (folder listing or search hits). */
-function refreshView(quiet) {
-  return searching() ? runSearch(quiet) : loadList(cwd, quiet);
-}
+      /** Re-fetch whatever the side list shows (folder listing or search hits). */
+      function refreshView(quiet) {
+        return searching() ? runSearch(quiet) : loadList(cwd, quiet);
+      }
 
-/** Pull the latest folder list and open file from disk; never clobbers unsaved edits. */
-async function refreshAll() {
-  refreshView(true);
-  return refreshOpenFile();
-}
+      /** Pull the latest folder list and open file from disk; never clobbers unsaved edits. */
+      async function refreshAll() {
+        refreshView(true);
+        return refreshOpenFile();
+      }
 
-/** Re-fetch the open file from disk; never clobbers unsaved edits. */
-async function refreshOpenFile() {
-  if (!openPath) return;
-  // Media: never read as text. Images/PDF reload from disk; a video is left alone so playback is not reset.
-  if (openMediaKind) { if (openMediaKind !== "video") showMedia(openMediaKind, rawUrl(openPath)); return; }
-  const seq = openSeq, target = openPath;
-  try {
-    const data = await api("GET", "/api/file", target, undefined, "", fileReads.signal);
-    // The user switched/closed files while this was in flight: this content belongs to another file.
-    if (seq !== openSeq || target !== openPath) return;
-    if (data.content === loadedContent) return;
-    if (clean) {
-      loadedContent = data.content;
-      setEditorContent(data.content);
-      setStatus("reloaded " + new Date().toLocaleTimeString());
-    } else {
-      setStatus("changed on disk (your pending edits will overwrite it)");
-    }
-  } catch (err) {
-    if (err.status === 404 && seq === openSeq && target === openPath) setStatus("deleted on disk");
-  }
-}
+      /** Re-fetch the open file from disk; never clobbers unsaved edits. */
+      async function refreshOpenFile() {
+        if (!openPath) return;
+        // Media: never read as text. Images/PDF reload from disk; a video is left alone so playback is not reset.
+        if (openMediaKind) {
+          if (openMediaKind !== "video") showMedia(openMediaKind, rawUrl(openPath));
+          return;
+        }
+        const seq = openSeq,
+          target = openPath;
+        try {
+          const data = await api("GET", "/api/file", target, undefined, "", fileReads.signal);
+          // The user switched/closed files while this was in flight: this content belongs to another file.
+          if (seq !== openSeq || target !== openPath) return;
+          if (data.content === loadedContent) return;
+          if (clean) {
+            loadedContent = data.content;
+            setEditorContent(data.content);
+            setStatus("reloaded " + new Date().toLocaleTimeString());
+          } else {
+            setStatus("changed on disk (your pending edits will overwrite it)");
+          }
+        } catch (err) {
+          if (err.status === 404 && seq === openSeq && target === openPath) setStatus("deleted on disk");
+        }
+      }
 
-function autoRefresh() {
-  const now = Date.now();
-  if (now - lastAutoRefresh < AUTO_REFRESH_GAP_MS) return;
-  lastAutoRefresh = now;
-  refreshAll();
-}
+      function autoRefresh() {
+        const now = Date.now();
+        if (now - lastAutoRefresh < AUTO_REFRESH_GAP_MS) return;
+        lastAutoRefresh = now;
+        refreshAll();
+      }
 
-/**
- * Filename timestamp, local time, 24h: MM-DD-YYYY_HH-MM (e.g. 09-30-2026_14-44).
- * Byte-equivalent copy of formatDateTime in text-server.cjs; keep both in sync.
- * @param {Date} d Moment to format.
- * @returns {string} Formatted timestamp.
- */
-function formatDateTime(d) {
-  const p = (n) => String(n).padStart(2, "0");
-  return `${p(d.getMonth() + 1)}-${p(d.getDate())}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}`;
-}
+      /**
+       * Filename timestamp, local time, 24h: MM-DD-YYYY_HH-MM (e.g. 09-30-2026_14-44).
+       * Byte-equivalent copy of formatDateTime in text-server.cjs; keep both in sync.
+       * @param {Date} d Moment to format.
+       * @returns {string} Formatted timestamp.
+       */
+      function formatDateTime(d) {
+        const p = (n) => String(n).padStart(2, "0");
+        return `${p(d.getMonth() + 1)}-${p(d.getDate())}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}`;
+      }
 
-/** A formatDateTime stamp anywhere in a name. */
-const DATE_TIME_IN_NAME = /\d{2}-\d{2}-\d{4}_\d{2}-\d{2}/;
-/** Snapshot suffix: MM-DD-YYYY_HH-MM, optional legacy -SS (from the brief seconds format), optional clash -N. */
-const DATE_TIME_SUFFIX = /^(\d{2})-(\d{2})-(\d{4})_(\d{2})-(\d{2})(?:-(\d{2}))?(?:-(\d+))?$/;
+      /** A formatDateTime stamp anywhere in a name. */
+      const DATE_TIME_IN_NAME = /\d{2}-\d{2}-\d{4}_\d{2}-\d{2}/;
+      /** Snapshot suffix: MM-DD-YYYY_HH-MM, optional legacy -SS (from the brief seconds format), optional clash -N. */
+      const DATE_TIME_SUFFIX = /^(\d{2})-(\d{2})-(\d{4})_(\d{2})-(\d{2})(?:-(\d{2}))?(?:-(\d+))?$/;
 
-/**
- * Order key for a snapshot suffix. Accepts MM-DD-YYYY_HH-MM[-N] and legacy Date.now() digits.
- * A lone trailing -NN after the minutes reads as seconds; only same-minute order can be off.
- * @param {string} suffix Text after "<file>.".
- * @returns {number} Epoch ms (plus N/1000 as a same-minute tiebreak), or NaN when not a snapshot.
- */
-function snapshotOrder(suffix) {
-  if (/^[0-9]+$/.test(suffix)) return Number(suffix);
-  const m = DATE_TIME_SUFFIX.exec(suffix);
-  if (!m) return NaN;
-  return new Date(+m[3], m[1] - 1, +m[2], +m[4], +m[5], +(m[6] || 0)).getTime() + (m[7] ? m[7] / 1000 : 0);
-}
+      /**
+       * Order key for a snapshot suffix. Accepts MM-DD-YYYY_HH-MM[-N] and legacy Date.now() digits.
+       * A lone trailing -NN after the minutes reads as seconds; only same-minute order can be off.
+       * @param {string} suffix Text after "<file>.".
+       * @returns {number} Epoch ms (plus N/1000 as a same-minute tiebreak), or NaN when not a snapshot.
+       */
+      function snapshotOrder(suffix) {
+        if (/^[0-9]+$/.test(suffix)) return Number(suffix);
+        const m = DATE_TIME_SUFFIX.exec(suffix);
+        if (!m) return NaN;
+        return new Date(+m[3], m[1] - 1, +m[2], +m[4], +m[5], +(m[6] || 0)).getTime() + (m[7] ? m[7] / 1000 : 0);
+      }
 
-/**
- * The /api/upload clash mode for a name: "suffix" when it already carries a stamp (clash -> -1, -2
- * after it), else "stamp" (clash -> .<stamp>, then -1, -2).
- * @param {string} name File name.
- * @returns {string} Query fragment for api()'s `extra` argument.
- */
-function onClashFor(name) {
-  return "&onclash=" + (DATE_TIME_IN_NAME.test(name) ? "suffix" : "stamp");
-}
+      /**
+       * The /api/upload clash mode for a name: "suffix" when it already carries a stamp (clash -> -1, -2
+       * after it), else "stamp" (clash -> .<stamp>, then -1, -2).
+       * @param {string} name File name.
+       * @returns {string} Query fragment for api()'s `extra` argument.
+       */
+      function onClashFor(name) {
+        return "&onclash=" + (DATE_TIME_IN_NAME.test(name) ? "suffix" : "stamp");
+      }
 
-/** Suggested name for a new file: Temp-MM-DD-YYYY_HH-MM.txt in local time. */
-function defaultNewFileName() {
-  return "Temp-" + formatDateTime(new Date()) + ".txt";
-}
+      /** Suggested name for a new file: Temp-MM-DD-YYYY_HH-MM.txt in local time. */
+      function defaultNewFileName() {
+        return "Temp-" + formatDateTime(new Date()) + ".txt";
+      }
 
-$("newFile").onclick = async () => {
-  const input = prompt("Create a new file in " + absPath(cwd) + "/\nName (edit or press Enter to keep):", defaultNewFileName());
-  const name = input && input.trim();
-  if (!name) return;
-  // Upload, not PUT: an existing file with this name is never wiped; the new one gets a clash name.
-  try { const data = await api("POST", "/api/upload", join(cwd, name), "", onClashFor(name)); openFile(data.path); }
-  catch (err) { alert("Create failed: " + err.message); }
-};
-$("emptyNewFile").onclick = () => $("newFile").onclick();
-$("deleteAll").onclick = () => deleteAllFiles();
+      $("newFile").onclick = async () => {
+        const input = prompt("Create a new file in " + absPath(cwd) + "/\nName (edit or press Enter to keep):", defaultNewFileName());
+        const name = input && input.trim();
+        if (!name) return;
+        // Upload, not PUT: an existing file with this name is never wiped; the new one gets a clash name.
+        try {
+          const data = await api("POST", "/api/upload", join(cwd, name), "", onClashFor(name));
+          openFile(data.path);
+        } catch (err) {
+          alert("Create failed: " + err.message);
+        }
+      };
+      $("emptyNewFile").onclick = () => $("newFile").onclick();
+      $("deleteAll").onclick = () => deleteAllFiles();
 
-/** Clipboard image MIME subtype -> file extension (anything else uses the sanitized subtype). */
-const CLIPBOARD_IMAGE_EXT = { jpeg: "jpg", "svg+xml": "svg" };
-/**
- * Cmd+V / Ctrl+V with a picture on the clipboard: save it into the current folder as
- * clipboard.picture.<MM-DD-YYYY_HH-MM>.<png|jpg|...>. Text pastes are left to the editor.
- * Capture phase so CodeMirror never sees an image paste.
- */
-document.addEventListener("paste", async (e) => {
-  const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
-  const images = items.filter((it) => it.kind === "file" && it.type.startsWith("image/")).map((it) => it.getAsFile()).filter(Boolean);
-  if (!images.length) return;
-  e.preventDefault(); e.stopPropagation();
-  const stamp = formatDateTime(new Date());
-  for (const img of images) {
-    const subtype = img.type.slice("image/".length);
-    const ext = CLIPBOARD_IMAGE_EXT[subtype] || subtype.replace(/[^a-z0-9]/gi, "") || "png";
-    try {
-      const data = await api("POST", "/api/upload", join(cwd, "clipboard.picture." + stamp + "." + ext), img, "&onclash=suffix");
-      setStatus("pasted picture saved as " + data.path);
-    } catch (err) { alert("Paste failed: " + err.message); }
-  }
-  refreshView(true);
-}, true);
-/**
- * Drag-and-drop files from the OS into the current folder. Each file is created via
- * /api/upload, which never overwrites: a clashing name is saved as <name>.<MM-DD-YYYY_HH-MM>.
- * Capture phase so CodeMirror never inserts the dropped text into the open file.
- */
-function isFileDrag(e) { return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files"); }
-document.addEventListener("dragover", (e) => { if (!isFileDrag(e)) return; e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "copy"; }, true);
-document.addEventListener("drop", async (e) => {
-  if (!isFileDrag(e)) return;
-  e.preventDefault(); e.stopPropagation();
-  const files = Array.from(e.dataTransfer.files || []);
-  const failures = [];
-  let lastPath = "", lastFile = null;
-  for (const f of files) {
-    try {
-      // Send the File itself (raw bytes), never f.text(): images/binaries must not be utf8-decoded.
-      const data = await api("POST", "/api/upload", join(cwd, f.name), f);
-      lastPath = data.path; lastFile = f;
-      setStatus(data.duplicate ? "name taken, saved as " + data.path : "uploaded " + data.path);
-    } catch (err) { failures.push(f.name + ": " + err.message); }
-  }
-  refreshView(true);
-  // Auto-open a single drop when it is text or viewable media; other binaries would render as garbage.
-  const BINARY_MIME = /^(image|audio|video|font)\/|^application\/(octet-stream|pdf|zip|gzip|x-tar|x-7z-compressed)/;
-  if (files.length === 1 && lastPath && (mediaKindFor(lastPath) || !BINARY_MIME.test(lastFile.type))) await openFile(lastPath);
-  if (failures.length) alert("Upload failed:\n" + failures.join("\n"));
-}, true);
-$("newFolder").onclick = async () => {
-  const input = prompt("New folder name (in " + absPath(cwd) + "/)");
-  const name = input && input.trim();
-  if (!name) return;
-  try { await api("POST", "/api/folder", join(cwd, name)); refreshView(true); }
-  catch (err) { alert("Create failed: " + err.message); }
-};
-$("up").onclick = () => cwd && navigate(dirname(cwd));
-$("refresh").onclick = () => refreshAll();
-$("save").onclick = () => snapshot(false);
-$("name").onclick = () => copyText($("name").dataset.copy);
-$("crumb").onclick = () => copyText($("crumb").dataset.copy);
-$("copyPath").onclick = () => copyText($("name").dataset.copy);
-/** Download the open file as it is on disk, after flushing pending edits so the file matches the editor. */
-$("download").onclick = async () => {
-  if (!openPath) { alert("No file open to download."); return; }
-  if (!(await flushSave())) { alert("Could not save pending edits; download cancelled."); return; }
-  const a = document.createElement("a");
-  a.href = "/api/raw?path=" + encodeURIComponent(openPath) + "&download=1";
-  a.download = basename(openPath);
-  document.body.append(a); a.click(); a.remove();
-};
-for (const key in SYNTAXES) $("syntax").add(new Option(SYNTAXES[key].label, key));
-$("syntax").addEventListener("change", () => applySyntax($("syntax").value));
-$("searchToggle").onclick = () => {
-  const open = $("searchBar").classList.toggle("open");
-  if (open) { $("searchInput").focus(); return; }
-  $("searchInput").value = "";
-  loadList(cwd, true);
-};
-$("searchInput").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => runSearch(true), SEARCH_DEBOUNCE_MS); });
-$("searchInput").addEventListener("keydown", (e) => { if (e.key === "Escape") $("searchToggle").click(); });
-$("searchMode").addEventListener("change", () => runSearch(true));
-editor.on("change", () => {
-  if (applyingRemote || !openPath) return;
-  setClean(false); lastTypedAt = Date.now();
-  setStatus("editing...");
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(flushSave, AUTOSAVE_DELAY_MS);
-});
-document.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); snapshot(); }
-});
-// Last-chance autosave: keepalive lets the PUT outlive the page; no "leave page?" prompt.
-window.addEventListener("pagehide", () => {
-  if (clean || !openPath) return;
-  fetch("/api/file?path=" + encodeURIComponent(openPath), { method: "PUT", body: editor.getValue(), keepalive: true });
-});
-// Keep the view fresh: another device may have edited the same folder.
-// Returning to the app always refreshes (bypasses the throttle the blur refresh just armed).
-window.addEventListener("focus", () => { lastAutoRefresh = 0; autoRefresh(); });
-window.addEventListener("blur", () => { flushSave(); autoRefresh(); });
-window.addEventListener("pageshow", autoRefresh);
-// Network loss goes read-only right away; coming back triggers an immediate recovery probe.
-window.addEventListener("offline", () => setServerDown("client"));
-window.addEventListener("online", () => tryRecover());
-// Failures while down are expected; the red footer already says why, so no alert() pile-up.
-const nativeAlert = window.alert.bind(window);
-window.alert = (message) => { if (!serverDown) nativeAlert(message); };
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { lastAutoRefresh = 0; autoRefresh(); } });
-document.addEventListener("click", autoRefresh);
+      /** Clipboard image MIME subtype -> file extension (anything else uses the sanitized subtype). */
+      const CLIPBOARD_IMAGE_EXT = { jpeg: "jpg", "svg+xml": "svg" };
+      /**
+       * Cmd+V / Ctrl+V with a picture on the clipboard: save it into the current folder as
+       * clipboard.picture.<MM-DD-YYYY_HH-MM>.<png|jpg|...>. Text pastes are left to the editor.
+       * Capture phase so CodeMirror never sees an image paste.
+       */
+      document.addEventListener(
+        "paste",
+        async (e) => {
+          const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
+          const images = items
+            .filter((it) => it.kind === "file" && it.type.startsWith("image/"))
+            .map((it) => it.getAsFile())
+            .filter(Boolean);
+          if (!images.length) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const stamp = formatDateTime(new Date());
+          for (const img of images) {
+            const subtype = img.type.slice("image/".length);
+            const ext = CLIPBOARD_IMAGE_EXT[subtype] || subtype.replace(/[^a-z0-9]/gi, "") || "png";
+            try {
+              const data = await api("POST", "/api/upload", join(cwd, "clipboard.picture." + stamp + "." + ext), img, "&onclash=suffix");
+              setStatus("pasted picture saved as " + data.path);
+            } catch (err) {
+              alert("Paste failed: " + err.message);
+            }
+          }
+          refreshView(true);
+        },
+        true,
+      );
+      /**
+       * Drag-and-drop files from the OS into the current folder. Each file is created via
+       * /api/upload, which never overwrites: a clashing name is saved as <name>.<MM-DD-YYYY_HH-MM>.
+       * Capture phase so CodeMirror never inserts the dropped text into the open file.
+       */
+      function isFileDrag(e) {
+        return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+      }
+      document.addEventListener(
+        "dragover",
+        (e) => {
+          if (!isFileDrag(e)) return;
+          e.preventDefault();
+          e.stopPropagation();
+          e.dataTransfer.dropEffect = "copy";
+        },
+        true,
+      );
+      document.addEventListener(
+        "drop",
+        async (e) => {
+          if (!isFileDrag(e)) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const files = Array.from(e.dataTransfer.files || []);
+          const failures = [];
+          let lastPath = "",
+            lastFile = null;
+          for (const f of files) {
+            try {
+              // Send the File itself (raw bytes), never f.text(): images/binaries must not be utf8-decoded.
+              const data = await api("POST", "/api/upload", join(cwd, f.name), f);
+              lastPath = data.path;
+              lastFile = f;
+              setStatus(data.duplicate ? "name taken, saved as " + data.path : "uploaded " + data.path);
+            } catch (err) {
+              failures.push(f.name + ": " + err.message);
+            }
+          }
+          refreshView(true);
+          // Auto-open a single drop when it is text or viewable media; other binaries would render as garbage.
+          const BINARY_MIME = /^(image|audio|video|font)\/|^application\/(octet-stream|pdf|zip|gzip|x-tar|x-7z-compressed)/;
+          if (files.length === 1 && lastPath && (mediaKindFor(lastPath) || !BINARY_MIME.test(lastFile.type))) await openFile(lastPath);
+          if (failures.length) alert("Upload failed:\n" + failures.join("\n"));
+        },
+        true,
+      );
+      $("newFolder").onclick = async () => {
+        const input = prompt("New folder name (in " + absPath(cwd) + "/)");
+        const name = input && input.trim();
+        if (!name) return;
+        try {
+          await api("POST", "/api/folder", join(cwd, name));
+          refreshView(true);
+        } catch (err) {
+          alert("Create failed: " + err.message);
+        }
+      };
+      $("up").onclick = () => cwd && navigate(dirname(cwd));
+      $("refresh").onclick = () => refreshAll();
+      $("save").onclick = () => snapshot(false);
+      $("name").onclick = () => copyText($("name").dataset.copy);
+      $("crumb").onclick = () => copyText($("crumb").dataset.copy);
+      $("copyPath").onclick = () => copyText($("name").dataset.copy);
+      /** Download the open file as it is on disk, after flushing pending edits so the file matches the editor. */
+      $("download").onclick = async () => {
+        if (!openPath) {
+          alert("No file open to download.");
+          return;
+        }
+        if (!(await flushSave())) {
+          alert("Could not save pending edits; download cancelled.");
+          return;
+        }
+        const a = document.createElement("a");
+        a.href = "/api/raw?path=" + encodeURIComponent(openPath) + "&download=1";
+        a.download = basename(openPath);
+        document.body.append(a);
+        a.click();
+        a.remove();
+      };
+      for (const key in SYNTAXES) $("syntax").add(new Option(SYNTAXES[key].label, key));
+      $("syntax").addEventListener("change", () => applySyntax($("syntax").value));
+      $("searchToggle").onclick = () => {
+        const open = $("searchBar").classList.toggle("open");
+        if (open) {
+          $("searchInput").focus();
+          return;
+        }
+        $("searchInput").value = "";
+        loadList(cwd, true);
+      };
+      $("searchInput").addEventListener("input", () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => runSearch(true), SEARCH_DEBOUNCE_MS);
+      });
+      $("searchInput").addEventListener("keydown", (e) => {
+        if (e.key === "Escape") $("searchToggle").click();
+      });
+      $("searchMode").addEventListener("change", () => runSearch(true));
+      editor.on("change", () => {
+        if (applyingRemote || !openPath) return;
+        setClean(false);
+        lastTypedAt = Date.now();
+        setStatus("editing...");
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(flushSave, AUTOSAVE_DELAY_MS);
+      });
+      document.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+          e.preventDefault();
+          snapshot();
+        }
+      });
+      // Last-chance autosave: keepalive lets the PUT outlive the page; no "leave page?" prompt.
+      window.addEventListener("pagehide", () => {
+        if (clean || !openPath) return;
+        fetch("/api/file?path=" + encodeURIComponent(openPath), { method: "PUT", body: editor.getValue(), keepalive: true });
+      });
+      // Keep the view fresh: another device may have edited the same folder.
+      // Returning to the app always refreshes (bypasses the throttle the blur refresh just armed).
+      window.addEventListener("focus", () => {
+        lastAutoRefresh = 0;
+        autoRefresh();
+      });
+      window.addEventListener("blur", () => {
+        flushSave();
+        autoRefresh();
+      });
+      window.addEventListener("pageshow", autoRefresh);
+      // Network loss goes read-only right away; coming back triggers an immediate recovery probe.
+      window.addEventListener("offline", () => setServerDown("client"));
+      window.addEventListener("online", () => tryRecover());
+      // Failures while down are expected; the red footer already says why, so no alert() pile-up.
+      const nativeAlert = window.alert.bind(window);
+      window.alert = (message) => {
+        if (!serverDown) nativeAlert(message);
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          lastAutoRefresh = 0;
+          autoRefresh();
+        }
+      });
+      document.addEventListener("click", autoRefresh);
 
-// Idle reload of the open file: every IDLE_RELOAD_MS, once typing has stopped that long and
-// everything is saved. Only typing (editor changes) counts; clicks/scrolls don't.
-setInterval(() => {
-  if (!openPath || !clean || document.hidden || Date.now() - lastTypedAt < IDLE_RELOAD_MS) return;
-  refreshOpenFile();
-}, IDLE_RELOAD_MS);
+      // Idle reload of the open file: every IDLE_RELOAD_MS, once typing has stopped that long and
+      // everything is saved. Only typing (editor changes) counts; clicks/scrolls don't.
+      setInterval(() => {
+        if (!openPath || !clean || document.hidden || Date.now() - lastTypedAt < IDLE_RELOAD_MS) return;
+        refreshOpenFile();
+      }, IDLE_RELOAD_MS);
 
-setInterval(autoSnapshotTick, AUTO_SNAPSHOT.intervalMs);
+      setInterval(autoSnapshotTick, AUTO_SNAPSHOT.intervalMs);
 
-// List reload: every LIST_RELOAD_MS regardless of typing or open file (the list never touches
-// editor content). Skipped only while the tab is hidden; visibilitychange catches up on return.
-setInterval(() => {
-  if (!document.hidden) refreshView(true);
-}, LIST_RELOAD_MS);
+      // List reload: every LIST_RELOAD_MS regardless of typing or open file (the list never touches
+      // editor content). Skipped only while the tab is hidden; visibilitychange catches up on return.
+      setInterval(() => {
+        if (!document.hidden) refreshView(true);
+      }, LIST_RELOAD_MS);
 
-// Sidebar: collapse toggle + drag-to-resize; both remembered in localStorage.
-function setSideWidth(px) {
-  const width = Math.round(Math.min(Math.max(px, SIDE_MIN_PX), window.innerWidth * SIDE_MAX_RATIO));
-  $("side").style.width = width + "px";
-  return width;
-}
-function setSideCollapsed(collapsed) {
-  document.body.classList.toggle("side-collapsed", collapsed);
-  $("sideToggle").title = collapsed ? "Show the file list" : "Hide the file list";
-  localStorage.setItem("textServer.sideCollapsed", collapsed ? "1" : "0");
-  editor.refresh();
-}
-const savedWidth = Number(localStorage.getItem("textServer.sideWidth"));
-if (savedWidth) setSideWidth(savedWidth);
-setSideCollapsed(localStorage.getItem("textServer.sideCollapsed") === "1");
-$("sideToggle").onclick = () => setSideCollapsed(!document.body.classList.contains("side-collapsed"));
-$("resizer").addEventListener("pointerdown", (e) => {
-  e.preventDefault();
-  $("resizer").setPointerCapture(e.pointerId);
-  document.body.classList.add("resizing");
-  const move = (ev) => setSideWidth(ev.clientX);
-  const up = (ev) => {
-    $("resizer").removeEventListener("pointermove", move);
-    $("resizer").removeEventListener("pointerup", up);
-    document.body.classList.remove("resizing");
-    localStorage.setItem("textServer.sideWidth", String(setSideWidth(ev.clientX)));
-    editor.refresh();
-  };
-  $("resizer").addEventListener("pointermove", move);
-  $("resizer").addEventListener("pointerup", up);
-});
+      // Sidebar: collapse toggle + drag-to-resize; both remembered in localStorage.
+      function setSideWidth(px) {
+        const width = Math.round(Math.min(Math.max(px, SIDE_MIN_PX), window.innerWidth * SIDE_MAX_RATIO));
+        $("side").style.width = width + "px";
+        return width;
+      }
+      function setSideCollapsed(collapsed) {
+        document.body.classList.toggle("side-collapsed", collapsed);
+        $("sideToggle").title = collapsed ? "Show the file list" : "Hide the file list";
+        localStorage.setItem("textServer.sideCollapsed", collapsed ? "1" : "0");
+        editor.refresh();
+      }
+      const savedWidth = Number(localStorage.getItem("textServer.sideWidth"));
+      if (savedWidth) setSideWidth(savedWidth);
+      setSideCollapsed(localStorage.getItem("textServer.sideCollapsed") === "1");
+      $("sideToggle").onclick = () => setSideCollapsed(!document.body.classList.contains("side-collapsed"));
+      $("resizer").addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        $("resizer").setPointerCapture(e.pointerId);
+        document.body.classList.add("resizing");
+        const move = (ev) => setSideWidth(ev.clientX);
+        const up = (ev) => {
+          $("resizer").removeEventListener("pointermove", move);
+          $("resizer").removeEventListener("pointerup", up);
+          document.body.classList.remove("resizing");
+          localStorage.setItem("textServer.sideWidth", String(setSideWidth(ev.clientX)));
+          editor.refresh();
+        };
+        $("resizer").addEventListener("pointermove", move);
+        $("resizer").addEventListener("pointerup", up);
+      });
 
-/** Initial load: honor ?path= (file or folder), falling back to the root. */
-(async function init() {
-  const initial = (new URLSearchParams(location.search).get("path") || "").replace(/^\/+|\/+$/g, "");
-  if (!initial) return navigate("");
-  let step = "stat";
-  try {
-    const info = await api("GET", "/api/info", initial);
-    if (info.folder) return navigate(info.path);
-    step = "list";
-    await loadList(dirname(info.path), true);
-    step = "open";
-    await openFile(info.path);
-  } catch (err) {
-    // A newer read superseded this one (focus/poll refresh) — not a failure.
-    if (err.name === "AbortError") return;
-    console.error("text-server: deep link", step, initial, err);
-    alert("Cannot open " + initial + " (" + step + " failed): " + err.message);
-    navigate("");
-  }
-})();
-</script>
-</body></html>
+      /** Initial load: honor ?path= (file or folder), falling back to the root. */
+      (async function init() {
+        const initial = (new URLSearchParams(location.search).get("path") || "").replace(/^\/+|\/+$/g, "");
+        if (!initial) return navigate("");
+        let step = "stat";
+        try {
+          const info = await api("GET", "/api/info", initial);
+          if (info.folder) return navigate(info.path);
+          step = "list";
+          await loadList(dirname(info.path), true);
+          step = "open";
+          await openFile(info.path);
+        } catch (err) {
+          // A newer read superseded this one (focus/poll refresh) — not a failure.
+          if (err.name === "AbortError") return;
+          console.error("text-server: deep link", step, initial, err);
+          alert("Cannot open " + initial + " (" + step + " failed): " + err.message);
+          navigate("");
+        }
+      })();
+    </script>
+  </body>
+</html>
