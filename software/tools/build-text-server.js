@@ -114,7 +114,7 @@ async function inlinePage(html) {
   if (!modeUrlMatch) throw new Error("CodeMirror.modeURL assignment not found in text-server.html");
   const modeUrlTemplate = modeUrlMatch[1];
 
-  const styles = [...html.matchAll(/<link rel="stylesheet" href="(https:\/\/[^"]+)">/g)];
+  const styles = [...html.matchAll(/<link rel="stylesheet" href="(https:\/\/[^"]+)"\s*\/?>/g)]; // tolerate oxfmt's self-closing `/>`
   const scripts = [...html.matchAll(/<script src="(https:\/\/[^"]+)"><\/script>/g)];
   const modes = collectModes(html);
   const bodies = new Map();
