@@ -50,8 +50,8 @@
     }
   ],
   [
-    "sy-mbp-14-m1",
-    "192.168.1.24",
+    "sy-mbp-16-m1",
+    "192.168.1.23",
     {
       "NO_SSH": false,
       "OSX_REMOTE": true,
@@ -60,8 +60,8 @@
     }
   ],
   [
-    "sy-mbp-16-m1",
-    "192.168.1.25",
+    "sy-mbp-14-m1",
+    "192.168.1.24",
     {
       "NO_SSH": false,
       "OSX_REMOTE": true,

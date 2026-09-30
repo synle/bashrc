@@ -145,12 +145,12 @@ async function doWork() {
         command rm -rf "$app_folder"
       }
 
-      # copy-server: text-server on a fresh mktemp folder — a LAN scratchpad for pasting text between machines.
+      # copy-server: text-server on a fresh mktemp folder holding an empty clipboard.txt — a LAN scratchpad for pasting text between machines.
       # Args after the folder pass through to text-server ([<port>] [--allow-cd]). Side effects: creates a temp folder (left in place).
       function copy-server() {
         if is_help_arg "\${1:-}"; then
           echo "
-            copy-server: text-server on a new empty temp folder (LAN scratchpad; alias: paste-server)
+            copy-server: text-server on a new temp folder seeded with an empty clipboard.txt (LAN scratchpad; alias: paste-server)
               copy-server                        serve a new temp folder on port 9998
               copy-server <port>                 serve a new temp folder on <port>
               copy-server ... --allow-cd         pass-through flag, see text-server --help
@@ -162,6 +162,8 @@ async function doWork() {
           echo "copy-server: mktemp failed" >&2
           return 1
         }
+        # Seed the scratchpad copy-from-server reads; being the only file, the UI also auto-opens it.
+        : > "$folder/clipboard.txt"
         text-server "$folder" "$@"
       }
       alias paste-server='copy-server'

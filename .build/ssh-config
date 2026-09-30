@@ -34,11 +34,11 @@ Host sy-wintel
 Host sy-omen45l
   HostName 192.168.1.45
   Port 22
+Host sy-mbp-16-m1
+  HostName 192.168.1.23
+  Port 22
 Host sy-mbp-14-m1
   HostName 192.168.1.24
-  Port 2222
-Host sy-mbp-16-m1
-  HostName 192.168.1.25
   Port 2222
 Host sy-aero16
   HostName 192.168.1.26
