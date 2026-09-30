@@ -176,12 +176,12 @@ describe("text-server upload (drag and drop)", () => {
     const { status, body } = await upload("a.txt", "two");
     expect(status).toBe(200);
     expect(body.duplicate).toBe(true);
-    expect(body.path).toMatch(/^a\.txt\.\d{2}-\d{2}-\d{4}_\d{2}-\d{2}-\d{2}(-\d+)?$/);
+    expect(body.path).toMatch(/^a\.txt\.\d{2}-\d{2}-\d{4}_\d{2}-\d{2}(-\d+)?$/);
     expect(fs.readFileSync(path.join(sandbox, "root", body.path), "utf8")).toBe("two");
     expect(fs.readFileSync(path.join(sandbox, "root", "a.txt"), "utf8")).toBe("hello");
   });
 
-  it("gives a second clash in the same second its own -N name instead of failing", async () => {
+  it("gives a second clash in the same minute its own -N name instead of failing", async () => {
     fs.writeFileSync(path.join(sandbox, "root", "burst.txt"), "orig");
     const first = await upload("burst.txt", "x");
     const second = await upload("burst.txt", "y");
@@ -189,6 +189,23 @@ describe("text-server upload (drag and drop)", () => {
     expect(second.body.path).not.toBe(first.body.path);
     expect(fs.readFileSync(path.join(sandbox, "root", first.body.path), "utf8")).toBe("x");
     expect(fs.readFileSync(path.join(sandbox, "root", second.body.path), "utf8")).toBe("y");
+  });
+
+  it("onclash=suffix inserts -1, -2 right after the stamp, keeping the extension last", async () => {
+    const rel = "clipboard.picture.09-30-2026_14-44.png";
+    const suffix = async (content) => {
+      const res = await fetch(`http://127.0.0.1:${port}/api/upload?path=${encodeURIComponent(rel)}&onclash=suffix`, { method: "POST", body: content });
+      return res.json();
+    };
+    expect(await suffix("p0")).toEqual({ path: "clipboard.picture.09-30-2026_14-44.png" });
+    expect(await suffix("p1")).toEqual({ path: "clipboard.picture.09-30-2026_14-44-1.png", duplicate: true });
+    expect(await suffix("p2")).toEqual({ path: "clipboard.picture.09-30-2026_14-44-2.png", duplicate: true });
+    expect(fs.readFileSync(path.join(sandbox, "root", "clipboard.picture.09-30-2026_14-44-2.png"), "utf8")).toBe("p2");
+  });
+
+  it("rejects an unknown onclash mode with 400", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/api/upload?path=x.txt&onclash=overwrite`, { method: "POST", body: "z" });
+    expect({ status: res.status, body: await res.json() }).toEqual({ status: 400, body: { error: "invalid onclash" } });
   });
 });
 

@@ -508,7 +508,7 @@ function closeFile() {
 
 /**
  * Explicit version snapshot (Ctrl+S / Snapshot button): flush autosave, then copy the file to
- * <file>.<MM-DD-YYYY_HH-MM-SS> unless the newest existing snapshot (new or legacy digit suffix) already has this content.
+ * <file>.<MM-DD-YYYY_HH-MM> unless the newest existing snapshot (new or legacy digit suffix) already has this content.
  */
 async function snapshot(auto) {
   if (!openPath) return;
@@ -528,8 +528,8 @@ async function snapshot(auto) {
       const prev = await api("GET", "/api/file", latest);
       if (prev.content === content) { setStatus("no changes since snapshot " + basename(latest)); return; }
     }
-    // /api/upload never overwrites: a same-second second snapshot gets its own name.
-    const saved = await api("POST", "/api/upload", openPath + "." + formatDateTime(new Date()), content);
+    // /api/upload never overwrites: a second snapshot in the same minute gets <stamp>-1, -2, ...
+    const saved = await api("POST", "/api/upload", openPath + "." + formatDateTime(new Date()), content, "&onclash=suffix");
     const name = saved.path;
     setStatus((auto ? "auto snapshot " : "snapshot ") + basename(name));
     refreshView(true);
@@ -694,32 +694,45 @@ function autoRefresh() {
 }
 
 /**
- * Filename timestamp, local time, 24h: MM-DD-YYYY_HH-MM-SS (e.g. 09-30-2026_14-44-01).
+ * Filename timestamp, local time, 24h: MM-DD-YYYY_HH-MM (e.g. 09-30-2026_14-44).
  * Byte-equivalent copy of formatDateTime in text-server.cjs; keep both in sync.
  * @param {Date} d Moment to format.
  * @returns {string} Formatted timestamp.
  */
 function formatDateTime(d) {
   const p = (n) => String(n).padStart(2, "0");
-  return `${p(d.getMonth() + 1)}-${p(d.getDate())}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}`;
 }
 
-/** Snapshot suffix in the formatDateTime shape, with the server's optional same-second -N. */
-const DATE_TIME_SUFFIX = /^(\d{2})-(\d{2})-(\d{4})_(\d{2})-(\d{2})-(\d{2})(?:-(\d+))?$/;
+/** A formatDateTime stamp anywhere in a name. */
+const DATE_TIME_IN_NAME = /\d{2}-\d{2}-\d{4}_\d{2}-\d{2}/;
+/** Snapshot suffix: MM-DD-YYYY_HH-MM, optional legacy -SS (from the brief seconds format), optional clash -N. */
+const DATE_TIME_SUFFIX = /^(\d{2})-(\d{2})-(\d{4})_(\d{2})-(\d{2})(?:-(\d{2}))?(?:-(\d+))?$/;
 
 /**
- * Order key for a snapshot suffix. Accepts MM-DD-YYYY_HH-MM-SS[-N] and legacy Date.now() digits.
+ * Order key for a snapshot suffix. Accepts MM-DD-YYYY_HH-MM[-N] and legacy Date.now() digits.
+ * A lone trailing -NN after the minutes reads as seconds; only same-minute order can be off.
  * @param {string} suffix Text after "<file>.".
- * @returns {number} Epoch ms (plus N/1000 as a same-second tiebreak), or NaN when not a snapshot.
+ * @returns {number} Epoch ms (plus N/1000 as a same-minute tiebreak), or NaN when not a snapshot.
  */
 function snapshotOrder(suffix) {
   if (/^[0-9]+$/.test(suffix)) return Number(suffix);
   const m = DATE_TIME_SUFFIX.exec(suffix);
   if (!m) return NaN;
-  return new Date(+m[3], m[1] - 1, +m[2], +m[4], +m[5], +m[6]).getTime() + (m[7] ? m[7] / 1000 : 0);
+  return new Date(+m[3], m[1] - 1, +m[2], +m[4], +m[5], +(m[6] || 0)).getTime() + (m[7] ? m[7] / 1000 : 0);
 }
 
-/** Suggested name for a new file: Temp-MM-DD-YYYY_HH-MM-SS.txt in local time. */
+/**
+ * The /api/upload clash mode for a name: "suffix" when it already carries a stamp (clash -> -1, -2
+ * after it), else "stamp" (clash -> .<stamp>, then -1, -2).
+ * @param {string} name File name.
+ * @returns {string} Query fragment for api()'s `extra` argument.
+ */
+function onClashFor(name) {
+  return "&onclash=" + (DATE_TIME_IN_NAME.test(name) ? "suffix" : "stamp");
+}
+
+/** Suggested name for a new file: Temp-MM-DD-YYYY_HH-MM.txt in local time. */
 function defaultNewFileName() {
   return "Temp-" + formatDateTime(new Date()) + ".txt";
 }
@@ -728,7 +741,8 @@ $("newFile").onclick = async () => {
   const input = prompt("Create a new file in " + absPath(cwd) + "/\nName (edit or press Enter to keep):", defaultNewFileName());
   const name = input && input.trim();
   if (!name) return;
-  try { await api("PUT", "/api/file", join(cwd, name), ""); openFile(join(cwd, name)); }
+  // Upload, not PUT: an existing file with this name is never wiped; the new one gets a clash name.
+  try { const data = await api("POST", "/api/upload", join(cwd, name), "", onClashFor(name)); openFile(data.path); }
   catch (err) { alert("Create failed: " + err.message); }
 };
 $("emptyNewFile").onclick = () => $("newFile").onclick();
@@ -738,7 +752,7 @@ $("deleteAll").onclick = () => deleteAllFiles();
 const CLIPBOARD_IMAGE_EXT = { jpeg: "jpg", "svg+xml": "svg" };
 /**
  * Cmd+V / Ctrl+V with a picture on the clipboard: save it into the current folder as
- * clipboard.picture.<MM-DD-YYYY_HH-MM-SS>.<png|jpg|...>. Text pastes are left to the editor.
+ * clipboard.picture.<MM-DD-YYYY_HH-MM>.<png|jpg|...>. Text pastes are left to the editor.
  * Capture phase so CodeMirror never sees an image paste.
  */
 document.addEventListener("paste", async (e) => {
@@ -751,7 +765,7 @@ document.addEventListener("paste", async (e) => {
     const subtype = img.type.slice("image/".length);
     const ext = CLIPBOARD_IMAGE_EXT[subtype] || subtype.replace(/[^a-z0-9]/gi, "") || "png";
     try {
-      const data = await api("POST", "/api/upload", join(cwd, "clipboard.picture." + stamp + "." + ext), img);
+      const data = await api("POST", "/api/upload", join(cwd, "clipboard.picture." + stamp + "." + ext), img, "&onclash=suffix");
       setStatus("pasted picture saved as " + data.path);
     } catch (err) { alert("Paste failed: " + err.message); }
   }
@@ -759,7 +773,7 @@ document.addEventListener("paste", async (e) => {
 }, true);
 /**
  * Drag-and-drop files from the OS into the current folder. Each file is created via
- * /api/upload, which never overwrites: a clashing name is saved as <name>.<MM-DD-YYYY_HH-MM-SS>.
+ * /api/upload, which never overwrites: a clashing name is saved as <name>.<MM-DD-YYYY_HH-MM>.
  * Capture phase so CodeMirror never inserts the dropped text into the open file.
  */
 function isFileDrag(e) { return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files"); }

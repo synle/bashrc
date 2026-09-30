@@ -15,8 +15,10 @@
  *                                  (not "/api/stat": tracker-blocking extensions match "/stat?" and block it)
  *   GET    /api/file?path=<rel>   read a file (utf8)
  *   PUT    /api/file?path=<rel>   create/overwrite a file (body = content)
- *   POST   /api/upload?path=<rel> create a file from raw bytes, never overwrite; on a name clash
- *                                  saves as <rel>.<MM-DD-YYYY_HH-MM-SS> instead. Returns { path, duplicate? }
+ *   POST   /api/upload?path=<rel>[&onclash=stamp|suffix]  create a file from raw bytes, never
+ *                                  overwrite. On a clash: stamp (default) -> <rel>.<MM-DD-YYYY_HH-MM>,
+ *                                  then -1, -2, ...; suffix (<rel> already holds a stamp) -> -1, -2, ...
+ *                                  after that stamp. Returns { path, duplicate? }
  *   POST   /api/folder?path=<rel> create a folder
  *   POST   /api/rename?path=<rel>&to=<name>  rename in place (same folder, no overwrite)
  *   GET    /api/search?path=<rel>&q=<text>&mode=name|content  search file names or contents
@@ -42,18 +44,38 @@ const MAX_SEARCH_FILES = 5000;
 const MAX_SEARCH_RESULTS = 200;
 /** Folder names a search never descends into. */
 const SEARCH_SKIP_FOLDERS = new Set([".git", "node_modules"]);
-/** Max -N suffixes tried when several uploads clash within the same second. */
+/** Max -N counters tried when several uploads clash within the same minute. */
 const MAX_DUPLICATE_ATTEMPTS = 100;
+/** /api/upload `onclash` modes: STAMP appends .<stamp> first (dropped files); SUFFIX means the name already carries a stamp. */
+const UPLOAD_ON_CLASH = Object.freeze({ STAMP: "stamp", SUFFIX: "suffix" });
+/** A formatDateTime stamp inside a file name. */
+const DATE_TIME_PATTERN = /\d{2}-\d{2}-\d{4}_\d{2}-\d{2}/g;
 
 /**
- * Filename timestamp, local time, 24h: MM-DD-YYYY_HH-MM-SS (e.g. 09-30-2026_14-44-01).
+ * Filename timestamp, local time, 24h: MM-DD-YYYY_HH-MM (e.g. 09-30-2026_14-44).
  * The page (text-server.html) carries a byte-equivalent copy; keep both in sync.
  * @param {Date} d Moment to format.
  * @returns {string} Formatted timestamp.
  */
 function formatDateTime(d) {
   const p = (n) => String(n).padStart(2, "0");
-  return `${p(d.getMonth() + 1)}-${p(d.getDate())}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}`;
+}
+
+/**
+ * Insert a -N clash counter right after the last timestamp in the file name, so an
+ * extension after it survives (clipboard.picture.<stamp>-1.png). No stamp -> append at the end.
+ * @param {string} file Absolute path whose basename may carry a formatDateTime stamp.
+ * @param {number} n Counter (1-based).
+ * @returns {string} Path with the counter inserted.
+ */
+function withCounter(file, n) {
+  const name = path.basename(file);
+  const stamps = [...name.matchAll(DATE_TIME_PATTERN)];
+  if (!stamps.length) return `${file}-${n}`;
+  const last = stamps[stamps.length - 1];
+  const cut = last.index + last[0].length;
+  return path.join(path.dirname(file), `${name.slice(0, cut)}-${n}${name.slice(cut)}`);
 }
 
 const ROOT = fs.realpathSync(path.resolve(process.argv[2] || "."));
@@ -333,22 +355,20 @@ async function handleApi(req, res, url) {
   }
   if (route === "POST /api/upload") {
     if (!rel) return sendJson(res, 400, { error: "path required" });
+    const onClash = url.searchParams.get("onclash") || UPLOAD_ON_CLASH.STAMP;
+    if (!Object.values(UPLOAD_ON_CLASH).includes(onClash)) return sendJson(res, 400, { error: "invalid onclash" });
     const file = resolveSafe(rel, false);
     const content = await readBodyBytes(req); // raw bytes: images/binaries survive unchanged
-    // Never overwrite: on a name clash save as <name>.<MM-DD-YYYY_HH-MM-SS>. "wx" makes the create atomic.
-    try {
-      fs.writeFileSync(file, content, { flag: "wx" });
-      return sendJson(res, 200, { path: path.relative(ROOT, file) });
-    } catch (err) {
-      if (err.code !== "EEXIST") throw err;
-    }
-    // Same-second clashes get -2, -3, ... so a burst of drops never collides.
-    const stamped = `${file}.${formatDateTime(new Date())}`;
-    for (let attempt = 1; attempt <= MAX_DUPLICATE_ATTEMPTS; attempt++) {
-      const dup = attempt === 1 ? stamped : `${stamped}-${attempt}`;
+    // Never overwrite; "wx" makes each create atomic. Candidates, in order:
+    //   stamp:  <name>, <name>.<stamp>, <name>.<stamp>-1, -2, ...
+    //   suffix: <name>, then -1, -2, ... inserted right after the stamp already in <name>
+    const base = onClash === UPLOAD_ON_CLASH.STAMP ? `${file}.${formatDateTime(new Date())}` : file;
+    const candidates = onClash === UPLOAD_ON_CLASH.STAMP ? [file, base] : [file];
+    for (let n = 1; n <= MAX_DUPLICATE_ATTEMPTS; n++) candidates.push(withCounter(base, n));
+    for (const [index, candidate] of candidates.entries()) {
       try {
-        fs.writeFileSync(dup, content, { flag: "wx" });
-        return sendJson(res, 200, { path: path.relative(ROOT, dup), duplicate: true });
+        fs.writeFileSync(candidate, content, { flag: "wx" });
+        return sendJson(res, 200, index === 0 ? { path: path.relative(ROOT, candidate) } : { path: path.relative(ROOT, candidate), duplicate: true });
       } catch (err) {
         if (err.code !== "EEXIST") throw err;
       }
