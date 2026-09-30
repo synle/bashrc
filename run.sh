@@ -362,6 +362,28 @@ function get_ollama_default_server_ip() {
   done
 }
 
+# get_code_server_hosts - Print every copy/text-server target as space-separated
+# `<ip>:<port>`, from hosts tagged CODE_SERVER_REMOTE in ip-address.config (file order,
+# port 9998 = text-server default). Selected by tag, never hostname. No reachability
+# probe: servers run on demand, so copy-to-server checks each one at call time.
+# Prints nothing when no host is tagged or the fetch fails.
+function get_code_server_hosts() {
+  local url="https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/refs/heads/main/software/metadata/ip-address.config"
+  curl -s --max-time 5 "$url" | awk -F'[:,|]' '
+        /^[[:space:]]*([=#]|$)/ { next }
+        {
+            ip = $1;
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", ip);
+            for (i = 2; i <= NF; i++) {
+                token = $i;
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", token);
+                if (token == "CODE_SERVER_REMOTE") { hosts = hosts (hosts == "" ? "" : " ") ip ":9998"; break; }
+            }
+        }
+        END { print hosts }
+    '
+}
+
 ################################################################################
 # --- Temp Root (single source of truth for all scratch paths) ---
 # Prefer /tmp when writable so mac + Linux keep today's /tmp/synle/bashrc layout.
@@ -708,6 +730,8 @@ $os_flags
 _detect_gui_flags
 
 export OLLAMA_DEFAULT_SERVER_IP="$(get_ollama_default_server_ip)"
+# copy-to-server targets (space-separated <ip>:<port>), parsed once from ip-address.config.
+export CODE_SERVER_REMOTE_HOSTS="$(get_code_server_hosts)"
 
 # Hardware flags from common-env.sh — baked (not re-probed per shell) because the
 # battery / GPU probes spawn subprocesses (powershell.exe, nvidia-smi) and the

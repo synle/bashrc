@@ -165,6 +165,69 @@ async function doWork() {
         text-server "$folder" "$@"
       }
       alias paste-server='copy-server'
+
+      # copy-to-server: push text to every CODE_SERVER_REMOTE copy-server as a new Temp-<date_time>.txt.
+      # Content source, first match wins: piped stdin, an existing file path, literal text args, the clipboard.
+      # Targets come from CODE_SERVER_REMOTE_HOSTS (baked by run.sh from ip-address.config).
+      # Side effects: one HTTP PUT per reachable host; creates and removes a temp file.
+      function copy-to-server() {
+        if is_help_arg "\${1:-}"; then
+          echo "
+            copy-to-server: send text to every copy-server tagged CODE_SERVER_REMOTE, as a new Temp-<date_time>.txt
+              copy-to-server                     send the clipboard
+              copy-to-server <file>              send the content of <file>
+              copy-to-server <text...>           send the literal text
+              <cmd> | copy-to-server             send piped stdin
+            Targets: \\$CODE_SERVER_REMOTE_HOSTS (from software/metadata/ip-address.config; re-run run.sh to refresh)
+          "
+          return 0
+        fi
+        if [ -z "\${CODE_SERVER_REMOTE_HOSTS:-}" ]; then
+          echo "copy-to-server: no host tagged CODE_SERVER_REMOTE in ip-address.config (CODE_SERVER_REMOTE_HOSTS is empty; re-run run.sh)" >&2
+          return 1
+        fi
+
+        local payload mode
+        payload=$(mktemp) || {
+          echo "copy-to-server: mktemp failed" >&2
+          return 1
+        }
+        if [ $# -eq 0 ] && [ ! -t 0 ]; then
+          mode="stdin"
+          command cat > "$payload"
+        elif [ $# -eq 1 ] && [ -f "$1" ]; then
+          mode="file ($1)"
+          command cat -- "$1" > "$payload"
+        elif [ $# -gt 0 ]; then
+          mode="raw text"
+          printf '%s' "$*" > "$payload"
+        else
+          mode="clipboard"
+          paste > "$payload"
+        fi
+        if [ ! -s "$payload" ]; then
+          echo "copy-to-server: content from $mode is empty; nothing sent" >&2
+          command rm -f "$payload"
+          return 1
+        fi
+
+        local name="Temp-$(date +%Y-%m-%d_%H-%M-%S).txt"
+        local bytes=$(wc -c < "$payload" | tr -d ' ')
+        echo "copy-to-server: mode=$mode, $bytes bytes -> $name"
+        local host sent=0 failed=0
+        for host in $CODE_SERVER_REMOTE_HOSTS; do
+          if command curl -fs --max-time 5 -X PUT --data-binary @"$payload" "http://$host/api/file?path=$name" > /dev/null 2>&1; then
+            echo "  sent   http://$host/?path=$name"
+            sent=$((sent + 1))
+          else
+            echo "  failed http://$host (is copy-server running there?)" >&2
+            failed=$((failed + 1))
+          fi
+        done
+        command rm -f "$payload"
+        echo "copy-to-server: $sent sent, $failed failed"
+        ((sent > 0))
+      }
     `,
   );
 }
