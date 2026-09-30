@@ -591,19 +591,24 @@ queue_pmset womp 0 "Disable wake for network access (better battery)"
 queue_pmset proximitywake 0 "Disable proximity wake (prevents spurious wakes)"
 queue_pmset tcpkeepalive 0 "Disable TCP keepalive during sleep (better battery)"
 
-# flush all queued pmset changes in up to 3 sudo calls (one per power source)
-if [ -n "$_pmset_all" ]; then
-  echo ">> Power: Applying all-source changes:$_pmset_all"
-  sudo pmset -a $_pmset_all
-fi
-if [ -n "$_pmset_ac" ]; then
-  echo ">> Power: Applying AC-only changes:$_pmset_ac"
-  sudo pmset -c $_pmset_ac
-fi
-if [ -n "$_pmset_battery" ]; then
-  echo ">> Power: Applying battery-only changes:$_pmset_battery"
-  sudo pmset -b $_pmset_battery
-fi
+# apply_pmset <flag> <label> <settings> - Apply one source's queued pmset changes WITHOUT a password
+# prompt (`sudo -n`): power tweaks never block setup. Applies when sudo is already cached (or
+# passwordless); otherwise prints the exact command to run by hand and moves on. Returns 0 always.
+function apply_pmset() {
+  local flag="$1" label="$2" settings="$3"
+  [ -n "$settings" ] || return 0
+  # $settings is intentionally unquoted: it is a space-separated "key value key value" list.
+  if sudo -n pmset "$flag" $settings 2> /dev/null; then
+    echo ">> Power: Applied $label changes:$settings"
+  else
+    echo ">> Power: $label changes need sudo (not prompting); run: sudo pmset $flag$settings"
+  fi
+}
+
+# flush all queued pmset changes in up to 3 non-prompting sudo calls (one per power source)
+apply_pmset -a "all-source" "$_pmset_all"
+apply_pmset -c "AC-only" "$_pmset_ac"
+apply_pmset -b "battery-only" "$_pmset_battery"
 
 unset _pmset_current
 

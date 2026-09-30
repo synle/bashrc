@@ -45,10 +45,11 @@
   #foot.down #status { color: #fff; font-weight: bold; }
   body.down #list, body.down #crumbRow { pointer-events: none; opacity: 0.5; }
   #foot { display: flex; gap: 12px; align-items: center; padding: 3px 8px; border-top: 1px solid #333; font-size: 12px; min-height: 18px; }
-  #status { flex: 1; min-width: 0; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; padding: 0 4px; }
+  #status { flex: 0 1 auto; min-width: 0; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; padding: 0 4px; }
   #status.flash { animation: statusFlash 1.2s ease-out; }
-  @keyframes statusFlash { 0%, 30% { background: #8ab4f8; color: #1e1e1e; } 100% { background: transparent; color: #999; } }
-  #pos { flex: none; color: #999; white-space: nowrap; }
+  /* Mild: faint tint behind the text only (#status sizes to its text), fading out. */
+  @keyframes statusFlash { 0% { background: rgba(138, 180, 248, 0.22); color: #cfe0ff; } 100% { background: transparent; color: #999; } }
+  #pos { flex: none; margin-left: auto; /* status sizes to its text; this pushes pos/size/version right */ color: #999; white-space: nowrap; }
   #size { flex: none; color: #999; white-space: nowrap; }
   #version { flex: none; color: #666; font-size: 11px; white-space: nowrap; }
   #bar button { white-space: nowrap; flex: none; }
