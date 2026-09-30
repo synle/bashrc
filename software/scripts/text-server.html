@@ -21,8 +21,10 @@
   #searchBar.open { display: flex; }
   #searchBar input { flex: 1; min-width: 0; background: #2a2a2a; color: #ddd; border: 1px solid #555; padding: 3px 6px; border-radius: 3px; }
   #searchBar select { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
-  #crumb { padding: 6px 8px; color: #8ab4f8; word-break: break-all; cursor: pointer; }
+  #crumbRow { display: flex; align-items: flex-start; gap: 6px; padding: 6px 8px; }
+  #crumb { flex: 1; min-width: 0; color: #8ab4f8; word-break: break-all; cursor: pointer; }
   #crumb:hover, #name:hover { text-decoration: underline; }
+  #crumbRow button, #copyPath { flex: none; }
   #list { flex: 1; overflow: auto; list-style: none; margin: 0; padding: 0; }
   #list li { padding: 4px 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 6px; }
   #list li:hover { background: #2a2a2a; }
@@ -38,25 +40,30 @@
   #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
   #name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
   #syntax { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
-  #status { color: #999; }
+  #status { color: #999; flex: none; width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; } /* fixed width: messages change without shifting the toolbar */
   #version { color: #666; font-size: 11px; margin-left: 8px; }
   button { background: #333; color: #ddd; border: 1px solid #555; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
   button:hover { background: #444; }
   button:disabled { opacity: 0.4; cursor: default; }
   .CodeMirror { flex: 1; height: auto; font-size: 14px; }
   #editorWrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #editorWrap { position: relative; }
+  #empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #1e1e1e; color: #999; z-index: 5; text-align: center; padding: 16px; }
+  #empty[hidden] { display: none; }
+  #empty .title { font-size: 16px; color: #ddd; }
 </style></head>
 <body>
 <aside id="side">
-  <header><button id="up" title="Go up to the parent folder">..</button><button id="newFile" title="Create a new file in this folder">+ file</button><button id="newFolder" title="Create a new folder here">+ folder</button><button id="refresh" title="Reload the file list and the open file">&#x21bb;</button><button id="searchToggle" title="Search file names or file contents">&#x1F50D;</button></header>
+  <header><button id="up" title="Go up to the parent folder">..</button><button id="newFile" title="Create a new file in this folder">+ file</button><button id="newFolder" title="Create a new folder here">+ folder</button><button id="searchToggle" title="Search file names or file contents">&#x1F50D;</button></header>
   <div id="searchBar"><input id="searchInput" placeholder="search..." autocomplete="off" title="Search text (Esc closes)"><select id="searchMode" title="Search file names or file contents"><option value="name">name</option><option value="content">content</option></select></div>
-  <div id="crumb"></div>
+  <div id="crumbRow"><div id="crumb"></div><button id="refresh" title="Reload the file list and the open file">&#x21bb;</button></div>
   <ul id="list"></ul>
 </aside>
 <div id="resizer" title="Drag to resize the file list"></div>
 <main id="main">
-  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><span id="status" title="Save / sync status"></span><span id="version" title="text-server version"></span><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
+  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button><span id="status" title="Save / sync status"></span><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><span id="version" title="text-server version"></span><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
   <div id="editorWrap"></div>
+  <div id="empty"><div class="title">No file open</div><div>Pick a file from the list on the left to start editing.</div><button id="emptyNewFile" title="Create a new file in this folder">+ Create a new file</button></div>
 </main>
 <script>
 CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
@@ -138,6 +145,7 @@ function applySyntax(key) {
 const $ = (id) => document.getElementById(id);
 if (!ALLOW_CD) { $("up").style.display = "none"; $("newFolder").style.display = "none"; }
 const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
+$("editorWrap").append($("empty")); // overlay the editor area only, below the toolbar
 // cwd/openPath are ROOT-relative with "/" separators; loadedContent is the last server copy of openPath.
 // clean=false means the editor holds edits not yet auto-saved.
 let cwd = "", openPath = null, clean = true, loadedContent = "", applyingRemote = false, lastAutoRefresh = 0, searchTimer = null, saveTimer = null, lastTypedAt = 0, openSeq = 0;
@@ -146,13 +154,14 @@ const join = (a, b) => (a ? a + "/" + b : b);
 const dirname = (rel) => rel.split("/").slice(0, -1).join("/");
 const basename = (rel) => rel.split("/").pop();
 const absPath = (rel) => (rel ? ROOT_PATH.replace(/[\\/]+$/, "") + "/" + rel : ROOT_PATH);
-const setStatus = (t) => { $("status").textContent = t; };
+const setStatus = (t) => { $("status").textContent = t; $("status").title = t || "Save / sync status"; };
 $("version").textContent = "v " + APP_VERSION;
 const searching = () => $("searchBar").classList.contains("open") && $("searchInput").value.trim() !== "";
 
 /** Top bar: full path of the open file, else of the current folder (only folders get a trailing /). */
 function renderName() {
   const text = openPath ? absPath(openPath) : absPath(cwd) + "/";
+  $("empty").hidden = !!openPath; // zero state whenever no file is open
   // #name is direction:rtl (ellipsis on the left); LRM marks stop the leading "/" rendering at the end.
   $("name").textContent = "\u200E" + text + "\u200E";
   $("name").title = text + "\n(click to copy the full path)";
@@ -266,6 +275,8 @@ async function loadList(rel, quiet) {
     $("up").disabled = cwd === "";
     if (!searching()) renderEntries(data.entries.map((e) => ({ name: e.name, full: join(cwd, e.name), folder: e.folder })));
     renderName();
+    // User-driven listing of a folder holding exactly one file (and nothing else): open it for them.
+    if (!quiet && !openPath && data.entries.length === 1 && !data.entries[0].folder) await openFile(join(cwd, data.entries[0].name));
   } catch (err) {
     if (!quiet) alert("List failed: " + err.message);
   }
@@ -455,13 +466,20 @@ function autoRefresh() {
   refreshAll();
 }
 
+/** Suggested name for a new file: Temp-YYYY-MM-DD_HH-MM-SS.txt in local time. */
+function defaultNewFileName() {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  return "Temp-" + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "_" + p(d.getHours()) + "-" + p(d.getMinutes()) + "-" + p(d.getSeconds()) + ".txt";
+}
+
 $("newFile").onclick = async () => {
-  const input = prompt("New file name (in " + absPath(cwd) + "/)");
+  const input = prompt("Create a new file in " + absPath(cwd) + "/\nName (edit or press Enter to keep):", defaultNewFileName());
   const name = input && input.trim();
   if (!name) return;
   try { await api("PUT", "/api/file", join(cwd, name), ""); openFile(join(cwd, name)); }
   catch (err) { alert("Create failed: " + err.message); }
 };
+$("emptyNewFile").onclick = () => $("newFile").onclick();
 $("newFolder").onclick = async () => {
   const input = prompt("New folder name (in " + absPath(cwd) + "/)");
   const name = input && input.trim();
@@ -474,6 +492,7 @@ $("refresh").onclick = () => refreshAll();
 $("save").onclick = snapshot;
 $("name").onclick = () => copyText($("name").dataset.copy);
 $("crumb").onclick = () => copyText($("crumb").dataset.copy);
+$("copyPath").onclick = () => copyText($("name").dataset.copy);
 for (const key in SYNTAXES) $("syntax").add(new Option(SYNTAXES[key].label, key));
 $("syntax").addEventListener("change", () => applySyntax($("syntax").value));
 $("searchToggle").onclick = () => {
