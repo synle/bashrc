@@ -44,6 +44,24 @@ const OUTPUT_DIR = path.join(REPO_ROOT, ".build", "_text-server");
 const OUTPUT_PATH = path.join(OUTPUT_DIR, "text-server");
 /** Exact expression in the server that loads the page; replaced by the inlined page literal. */
 const PAGE_READ_EXPRESSION = 'fs.readFileSync(path.join(__dirname, "text-server.html"), "utf8")';
+/** Literal in the server replaced by the baked version string. */
+const BAKED_VERSION_EXPRESSION = "const BAKED_VERSION = null;";
+
+/**
+ * Newest last-commit time across the given files (git's notion of "modified"), falling back to fs mtime
+ * for a file git has no history for (uncommitted edit, shallow clone miss).
+ * @param {string[]} files Absolute source paths.
+ * @returns {string} ISO-8601 timestamp of the newest file.
+ */
+function newestSourceTime(files) {
+  const times = files.map((file) => {
+    const git = spawnSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: REPO_ROOT, encoding: "utf8" });
+    const committed = git.status === 0 && git.stdout.trim() ? Date.parse(git.stdout.trim()) : NaN;
+    return Number.isNaN(committed) ? fs.statSync(file).mtimeMs : committed;
+  });
+  return new Date(Math.max(...times)).toISOString();
+}
+
 /** Max redirects followed per download. */
 const MAX_REDIRECTS = 5;
 /** Per-download timeout, in ms. */
@@ -152,7 +170,7 @@ async function inlinePage(html) {
 /**
  * Build the bundle and write it to OUTPUT_PATH (mode 755).
  * @returns {Promise<void>}
- * @throws {Error} When the server's page-read expression is not found exactly once, or the output fails `node --check`.
+ * @throws {Error} When the server's page-read expression is not found exactly once, the version literal is missing, or the output fails `node --check`.
  */
 async function main() {
   const server = fs.readFileSync(SERVER_SOURCE, "utf8");
@@ -160,7 +178,11 @@ async function main() {
 
   const occurrences = server.split(PAGE_READ_EXPRESSION).length - 1;
   if (occurrences !== 1) throw new Error(`expected 1 occurrence of ${PAGE_READ_EXPRESSION} in text-server.cjs, found ${occurrences}`);
-  const bundled = server.replace(PAGE_READ_EXPRESSION, () => JSON.stringify(page));
+  if (!server.includes(BAKED_VERSION_EXPRESSION)) throw new Error(`${BAKED_VERSION_EXPRESSION} not found in text-server.cjs`);
+  const version = newestSourceTime([SERVER_SOURCE, PAGE_SOURCE]);
+  const bundled = server
+    .replace(PAGE_READ_EXPRESSION, () => JSON.stringify(page))
+    .replace(BAKED_VERSION_EXPRESSION, () => `const BAKED_VERSION = ${JSON.stringify(version)};`);
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, bundled, { mode: 0o755 });
@@ -168,7 +190,7 @@ async function main() {
 
   const check = spawnSync(process.execPath, ["--check", OUTPUT_PATH], { encoding: "utf8" });
   if (check.status !== 0) throw new Error(`bundle failed node --check:\n${check.stderr}`);
-  process.stderr.write(`Built ${path.relative(REPO_ROOT, OUTPUT_PATH)} (${bundled.length} bytes)\n`);
+  process.stderr.write(`Built ${path.relative(REPO_ROOT, OUTPUT_PATH)} (${bundled.length} bytes, version ${version})\n`);
 }
 
 main().catch((err) => {

@@ -39,6 +39,7 @@
   #name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
   #syntax { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
   #status { color: #999; }
+  #version { color: #666; font-size: 11px; margin-left: 8px; }
   button { background: #333; color: #ddd; border: 1px solid #555; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
   button:hover { background: #444; }
   button:disabled { opacity: 0.4; cursor: default; }
@@ -54,13 +55,16 @@
 </aside>
 <div id="resizer" title="Drag to resize the file list"></div>
 <main id="main">
-  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><span id="status" title="Save / sync status"></span><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
+  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><span id="status" title="Save / sync status"></span><span id="version" title="text-server version"></span><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
   <div id="editorWrap"></div>
 </main>
 <script>
 CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
 const ALLOW_CD = __ALLOW_CD__;
 const ROOT_PATH = __ROOT_PATH__;
+/** Server-reported app version (newest source time, ISO). */
+const APP_VERSION = __APP_VERSION__;
+console.info("text-server version", APP_VERSION);
 /** Minimum gap between automatic (focus/blur/online/click) refreshes, in ms. */
 const AUTO_REFRESH_GAP_MS = 2000;
 /** Debounce for search-as-you-type, in ms. */
@@ -143,6 +147,7 @@ const dirname = (rel) => rel.split("/").slice(0, -1).join("/");
 const basename = (rel) => rel.split("/").pop();
 const absPath = (rel) => (rel ? ROOT_PATH.replace(/[\\/]+$/, "") + "/" + rel : ROOT_PATH);
 const setStatus = (t) => { $("status").textContent = t; };
+$("version").textContent = "v " + APP_VERSION;
 const searching = () => $("searchBar").classList.contains("open") && $("searchInput").value.trim() !== "";
 
 /** Top bar: full path of the open file, else of the current folder (only folders get a trailing /). */
@@ -212,7 +217,7 @@ function newReadSignal() {
 async function api(method, route, rel, body, extra, signal) {
   const res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body, signal });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), { status: res.status });
+  if (!res.ok) throw Object.assign(new Error(res.status + " " + (data.error || res.statusText)), { status: res.status });
   return data;
 }
 
@@ -554,13 +559,19 @@ $("resizer").addEventListener("pointerdown", (e) => {
 (async function init() {
   const initial = (new URLSearchParams(location.search).get("path") || "").replace(/^\/+|\/+$/g, "");
   if (!initial) return navigate("");
+  let step = "stat";
   try {
     const info = await api("GET", "/api/stat", initial);
     if (info.folder) return navigate(info.path);
+    step = "list";
     await loadList(dirname(info.path), true);
+    step = "open";
     await openFile(info.path);
   } catch (err) {
-    alert("Cannot open " + initial + ": " + err.message);
+    // A newer read superseded this one (focus/poll refresh) — not a failure.
+    if (err.name === "AbortError") return;
+    console.error("text-server: deep link", step, initial, err);
+    alert("Cannot open " + initial + " (" + step + " failed): " + err.message);
     navigate("");
   }
 })();

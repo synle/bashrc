@@ -32,7 +32,7 @@ async function doWork() {
             text-server: browse/create/edit/delete files in the browser on the LAN (no auth)
               text-server                        serve ./ on port 9998
               text-server <path>                 serve <path> on port 9998
-              text-server <path> <port>          serve <path> on <port>
+              text-server <path> <port>          serve <path> on <port> (busy port -> any free port)
               text-server --allow-cd ...         also allow browsing/creating/deleting subfolders
             Default: locked to files directly inside <path>; folders are hidden and cannot be entered.
             Never reaches outside <path> (.., absolute paths, and symlink escapes are rejected).
@@ -96,6 +96,29 @@ async function doWork() {
             return 1
           }
         done
+        # Version = file mtime; a fresh download's mtime is "now", so stamp each file with its last git
+        # commit time (GitHub API, best-effort: on failure the version is just the download time).
+        node -e '
+          const fs = require("fs"), path = require("path");
+          const [folder, repo, ...files] = process.argv.slice(1);
+          Promise.all(files.map(async (file) => {
+            const res = await fetch("https://api.github.com/repos/" + repo + "/commits?per_page=1&path=software/scripts/" + file, { signal: AbortSignal.timeout(5000) });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const when = new Date((await res.json())[0].commit.committer.date);
+            fs.utimesSync(path.join(folder, file), when, when);
+          })).catch((err) => process.stderr.write("text-server: could not stamp version from git (" + err.message + "); using download time\\n"));
+        ' "$app_folder" "$REPO_PATH_IDENTIFIER" text-server.cjs text-server.html
+
+        # Requested port busy -> let the OS pick a free one, so the printed/opened URLs match the server.
+        port=$(node -e '
+          const net = require("net"), wanted = Number(process.argv[1]), probe = net.createServer();
+          probe.once("error", () => probe.listen(0, "0.0.0.0", () => { console.log(probe.address().port); probe.close(); }));
+          probe.listen(wanted, "0.0.0.0", () => { console.log(wanted); probe.close(); });
+        ' "$port") || {
+          echo "text-server: could not find a free port" >&2
+          command rm -rf "$app_folder"
+          return 1
+        }
 
         local url="http://$(_docker_share_host_ip):$port/"
         local local_url="http://localhost:$port/"

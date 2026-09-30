@@ -54,6 +54,29 @@ try {
   process.exit(1);
 }
 
+/** Build-time version override; build-text-server.js replaces this literal with a baked ISO time. null = derive from file mtimes. */
+const BAKED_VERSION = null;
+
+/**
+ * App version: the newer mtime of this file and its UI template, as an ISO timestamp
+ * (the text-server wrapper stamps each download with its last git commit time).
+ * @returns {string} ISO-8601 timestamp, or "unknown" when neither file can be stat'd.
+ */
+function computeAppVersion() {
+  if (BAKED_VERSION) return BAKED_VERSION;
+  const mtimes = [__filename, path.join(__dirname, "text-server.html")].map((file) => {
+    try {
+      return fs.statSync(file).mtimeMs;
+    } catch {
+      return 0; // bundled build has no sibling html; the other file still counts
+    }
+  });
+  const newest = Math.max(...mtimes);
+  return newest > 0 ? new Date(newest).toISOString() : "unknown";
+}
+/** Version shown in the startup log and the UI. */
+const APP_VERSION = computeAppVersion();
+
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   process.stderr.write(`text-server: port out of range 1-65535: ${process.argv[3]}\n`);
   process.exit(1);
@@ -67,6 +90,31 @@ if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
  */
 function httpError(status, message) {
   return Object.assign(new Error(message), { status });
+}
+
+/** Filesystem error codes surfaced to the UI as a status + readable message; anything else is a 500. */
+const FS_ERROR_RESPONSES = {
+  ENOENT: { status: 404, message: "not found" },
+  ENOTDIR: { status: 404, message: "not found (a parent is not a folder)" },
+  EACCES: { status: 403, message: "permission denied" },
+  EPERM: { status: 403, message: "operation not permitted" },
+  EROFS: { status: 403, message: "read-only file system" },
+  EISDIR: { status: 400, message: "is a folder, not a file" },
+  EEXIST: { status: 409, message: "already exists" },
+  ENOTEMPTY: { status: 409, message: "folder is not empty" },
+  EBUSY: { status: 409, message: "file is busy" },
+};
+
+/**
+ * Map a thrown error to the HTTP status and client-safe message the UI shows.
+ * @param {Error & {status?: number, code?: string}} err Error from a handler.
+ * @returns {{status: number, message: string}} Response status and message (code appended for fs errors).
+ */
+function describeError(err) {
+  if (err.status) return { status: err.status, message: err.message };
+  const known = FS_ERROR_RESPONSES[err.code];
+  if (known) return { status: known.status, message: `${known.message} (${err.code})` };
+  return { status: 500, message: "internal error" };
 }
 
 /**
@@ -288,6 +336,7 @@ const server = http.createServer(async (req, res) => {
       return res.end(
         PAGE_HTML.replace("__ROOT_NAME__", () => path.basename(ROOT).replace(/[<>&"]/g, ""))
           .replace("__ALLOW_CD__", ALLOW_CD ? "true" : "false")
+          .replace("__APP_VERSION__", () => JSON.stringify(APP_VERSION))
           .replace("__ROOT_PATH__", () => JSON.stringify(ROOT).replace(/</g, "\\u003c")),
       );
     }
@@ -295,18 +344,31 @@ const server = http.createServer(async (req, res) => {
     res.end();
     process.stderr.write(`text-server: ${req.method} ${req.url} -> 404\n`);
   } catch (err) {
-    const status = err.status || (err.code === "ENOENT" ? 404 : err.code === "EEXIST" || err.code === "ENOTEMPTY" ? 409 : 500);
+    const { status, message } = describeError(err);
     // 500s get the full stack server-side; sendJson logs the status line for every error.
     if (status === 500) process.stderr.write(`text-server: ${req.method} ${req.url} failed: ${err.stack}\n`);
-    sendJson(res, status, { error: status === 500 ? "internal error" : err.code || err.message });
+    sendJson(res, status, { error: message });
   }
 });
 
+/** Port 0 asks the OS for any free port; used when the requested one is taken. */
+const ANY_FREE_PORT = 0;
+let fellBack = false;
+
 server.on("error", (err) => {
+  // Requested port busy: retry once on an OS-picked free port instead of dying.
+  if (err.code === "EADDRINUSE" && !fellBack) {
+    fellBack = true;
+    process.stderr.write(`text-server: port ${PORT} in use, picking a free port\n`);
+    server.listen(ANY_FREE_PORT, "0.0.0.0");
+    return;
+  }
   process.stderr.write(`text-server: cannot listen on port ${PORT}: ${err.code || err.message}\n`);
   process.exit(1);
 });
-server.listen(PORT, "0.0.0.0", () => {
-  process.stderr.write(`text-server: serving ${ROOT} on 0.0.0.0:${PORT} (${ALLOW_CD ? "subfolders allowed" : "locked to top folder"})\n`);
+server.on("listening", () => {
+  const port = server.address().port;
+  process.stderr.write(`text-server: version ${APP_VERSION}, serving ${ROOT} on 0.0.0.0:${port} (${ALLOW_CD ? "subfolders allowed" : "locked to top folder"})\n`);
+  process.stderr.write(`text-server: open http://localhost:${port}/\n`);
 });
-
+server.listen(PORT, "0.0.0.0");
