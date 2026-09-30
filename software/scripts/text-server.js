@@ -1,6 +1,6 @@
 /**
- * Registers `text-server`: a bash launcher that streams the zero-dependency Node web
- * editor (software/scripts/text-server.cjs) from the repo on every run, so nothing is
+ * Registers `text-server`: a bash launcher that downloads the zero-dependency Node web
+ * editor (software/scripts/text-server.cjs + its UI, text-server.html) from the repo on every run, so nothing is
  * installed locally and the latest upstream version always runs.
  */
 
@@ -82,12 +82,20 @@ async function doWork() {
           echo "text-server: node not found on PATH" >&2
           return 1
         fi
-        # Fetched fresh each run so the upstream copy is the only one maintained.
-        local server_code
-        server_code=$(command curl -fsSL "$(get_github_raw_url software/scripts/text-server.cjs)") || {
-          echo "text-server: could not download server code" >&2
+        # Fetched fresh each run so the upstream copy is the only one maintained. The server reads
+        # text-server.html from its own folder, so both files land side by side in a temp folder.
+        local app_folder app_file
+        app_folder=$(mktemp -d) || {
+          echo "text-server: mktemp failed" >&2
           return 1
         }
+        for app_file in text-server.cjs text-server.html; do
+          command curl -fsSL -o "$app_folder/$app_file" "$(get_github_raw_url "software/scripts/$app_file")" || {
+            echo "text-server: could not download $app_file" >&2
+            command rm -rf "$app_folder"
+            return 1
+          }
+        done
 
         local url="http://$(_docker_share_host_ip):$port/"
         local local_url="http://localhost:$port/"
@@ -110,8 +118,30 @@ async function doWork() {
           ( sleep 2 && xdg-open "$local_url" > /dev/null 2>&1 ) &
         fi
 
-        node - "$folder" "$port" "$allow_cd" <<< "$server_code"
+        node "$app_folder/text-server.cjs" "$folder" "$port" "$allow_cd"
+        command rm -rf "$app_folder"
       }
+
+      # copy-server: text-server on a fresh mktemp folder — a LAN scratchpad for pasting text between machines.
+      # Args after the folder pass through to text-server ([<port>] [--allow-cd]). Side effects: creates a temp folder (left in place).
+      function copy-server() {
+        if is_help_arg "\${1:-}"; then
+          echo "
+            copy-server: text-server on a new empty temp folder (LAN scratchpad; alias: paste-server)
+              copy-server                        serve a new temp folder on port 9998
+              copy-server <port>                 serve a new temp folder on <port>
+              copy-server ... --allow-cd         pass-through flag, see text-server --help
+          "
+          return 0
+        fi
+        local folder
+        folder=$(mktemp -d) || {
+          echo "copy-server: mktemp failed" >&2
+          return 1
+        }
+        text-server "$folder" "$@"
+      }
+      alias paste-server='copy-server'
     `,
   );
 }

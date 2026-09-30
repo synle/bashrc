@@ -8,11 +8,15 @@
  * listing/navigation, no folder create/delete. allow_cd=1: subfolders allowed,
  * still confined to <folder>.
  *
- * Serves a single-page UI (CodeMirror 5 from cdnjs) plus a small JSON API:
+ * Serves a single-page UI (text-server.html, read from this file's folder; CodeMirror 5
+ * from cdnjs) plus a small JSON API:
  *   GET    /api/list?path=<rel>   list a folder
+ *   GET    /api/stat?path=<rel>   { path, folder } — lets the UI deep-link ?path= to a file or folder
  *   GET    /api/file?path=<rel>   read a file (utf8)
  *   PUT    /api/file?path=<rel>   create/overwrite a file (body = content)
  *   POST   /api/folder?path=<rel> create a folder
+ *   POST   /api/rename?path=<rel>&to=<name>  rename in place (same folder, no overwrite)
+ *   GET    /api/search?path=<rel>&q=<text>&mode=name|content  search file names or contents
  *   DELETE /api/file?path=<rel>   delete a file or empty folder
  *
  * No auth: anyone who can reach the port can read/write under <folder>.
@@ -29,11 +33,26 @@ const path = require("path");
 const MAX_BODY_BYTES = 10 * 1024 * 1024;
 /** Max file size served to the editor, in bytes (5 MiB). */
 const MAX_READ_BYTES = 5 * 1024 * 1024;
+/** Max files a single search visits before stopping (keeps one request bounded). */
+const MAX_SEARCH_FILES = 5000;
+/** Max hits a single search returns. */
+const MAX_SEARCH_RESULTS = 200;
+/** Folder names a search never descends into. */
+const SEARCH_SKIP_FOLDERS = new Set([".git", "node_modules"]);
 
 const ROOT = fs.realpathSync(path.resolve(process.argv[2] || "."));
 const PORT = Number(process.argv[3] || 9998);
 /** When false, only files directly inside ROOT are reachable (no folder navigation). */
 const ALLOW_CD = process.argv[4] === "1";
+
+/** UI page template (placeholders __ROOT_NAME__, __ALLOW_CD__, __ROOT_PATH__), read once from the sibling file. */
+let PAGE_HTML;
+try {
+  PAGE_HTML = fs.readFileSync(path.join(__dirname, "text-server.html"), "utf8");
+} catch (err) {
+  process.stderr.write(`text-server: cannot read UI template next to ${__filename}: ${err.code || err.message}\n`);
+  process.exit(1);
+}
 
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   process.stderr.write(`text-server: port out of range 1-65535: ${process.argv[3]}\n`);
@@ -126,6 +145,56 @@ function readBody(req) {
 }
 
 /**
+ * Search under `folder` by file name or content. Recurses only when ALLOW_CD; never follows
+ * symlinks (dirent types are lstat-based), so results stay inside ROOT.
+ * @param {string} folder Absolute folder inside ROOT to start from.
+ * @param {string} query Case-insensitive needle (non-empty).
+ * @param {"name"|"content"} mode What to match.
+ * @returns {{results: {path: string, line?: number, text?: string}[], truncated: boolean}} Hits, relative to ROOT.
+ */
+function searchFiles(folder, query, mode) {
+  const needle = query.toLowerCase();
+  const results = [];
+  const pending = [folder];
+  let visited = 0;
+  while (pending.length) {
+    const current = pending.shift();
+    let dirents;
+    try {
+      dirents = fs.readdirSync(current, { withFileTypes: true });
+    } catch (err) {
+      continue; // unreadable folder: skip, keep searching the rest
+    }
+    for (const d of dirents.sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = path.join(current, d.name);
+      if (d.isDirectory()) {
+        if (ALLOW_CD && !SEARCH_SKIP_FOLDERS.has(d.name)) pending.push(full);
+        continue;
+      }
+      if (!d.isFile()) continue;
+      if (++visited > MAX_SEARCH_FILES || results.length >= MAX_SEARCH_RESULTS) return { results, truncated: true };
+      const rel = path.relative(ROOT, full);
+      if (mode === "name") {
+        if (d.name.toLowerCase().includes(needle)) results.push({ path: rel });
+        continue;
+      }
+      let buf;
+      try {
+        if (fs.statSync(full).size > MAX_READ_BYTES) continue;
+        buf = fs.readFileSync(full);
+      } catch (err) {
+        continue;
+      }
+      if (buf.includes(0)) continue; // binary
+      const lines = buf.toString("utf8").split("\n");
+      const idx = lines.findIndex((l) => l.toLowerCase().includes(needle));
+      if (idx >= 0) results.push({ path: rel, line: idx + 1, text: lines[idx].trim().slice(0, 200) });
+    }
+  }
+  return { results, truncated: false };
+}
+
+/**
  * Route one API request.
  * @param {http.IncomingMessage} req Request.
  * @param {http.ServerResponse} res Response.
@@ -144,6 +213,32 @@ async function handleApi(req, res, url) {
       .filter((e) => ALLOW_CD || !e.folder)
       .sort((a, b) => (a.folder === b.folder ? a.name.localeCompare(b.name) : a.folder ? -1 : 1));
     return sendJson(res, 200, { path: path.relative(ROOT, folder), entries });
+  }
+  if (route === "GET /api/stat") {
+    const target = resolveSafe(rel, true);
+    const isFolder = fs.statSync(target).isDirectory();
+    if (!ALLOW_CD && isFolder && target !== ROOT) return sendJson(res, 403, { error: "folder navigation disabled" });
+    return sendJson(res, 200, { path: path.relative(ROOT, target), folder: isFolder });
+  }
+  if (route === "POST /api/rename") {
+    const name = String(url.searchParams.get("to") || "").trim();
+    if (!name || name === "." || name === ".." || /[\\/\0]/.test(name)) return sendJson(res, 400, { error: "invalid new name" });
+    if (!rel) return sendJson(res, 403, { error: "cannot rename root" });
+    const source = resolveSafe(rel, false); // the entry itself, not its symlink target
+    fs.lstatSync(source); // ENOENT -> 404
+    if (!ALLOW_CD && fs.lstatSync(source).isDirectory()) return sendJson(res, 403, { error: "folder navigation disabled" });
+    const dest = path.join(path.dirname(source), name);
+    if (fs.existsSync(dest)) return sendJson(res, 409, { error: "name already exists" });
+    fs.renameSync(source, dest);
+    return sendJson(res, 200, { path: path.relative(ROOT, dest) });
+  }
+  if (route === "GET /api/search") {
+    const query = String(url.searchParams.get("q") || "").trim();
+    const mode = url.searchParams.get("mode") === "content" ? "content" : "name";
+    if (!query) return sendJson(res, 400, { error: "query required" });
+    const folder = resolveSafe(rel, true);
+    if (!fs.statSync(folder).isDirectory()) return sendJson(res, 400, { error: "not a folder" });
+    return sendJson(res, 200, searchFiles(folder, query, mode));
   }
   if (route === "GET /api/file") {
     const file = resolveSafe(rel, true);
@@ -185,8 +280,11 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith("/api/")) return await handleApi(req, res, url);
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+      // Function replacers: a `$&`-style sequence in a folder name must stay literal.
       return res.end(
-        PAGE_HTML.replace("__ROOT_NAME__", path.basename(ROOT).replace(/[<>&"]/g, "")).replace("__ALLOW_CD__", ALLOW_CD ? "true" : "false"),
+        PAGE_HTML.replace("__ROOT_NAME__", () => path.basename(ROOT).replace(/[<>&"]/g, ""))
+          .replace("__ALLOW_CD__", ALLOW_CD ? "true" : "false")
+          .replace("__ROOT_PATH__", () => JSON.stringify(ROOT).replace(/</g, "\\u003c")),
       );
     }
     res.writeHead(404);
@@ -206,148 +304,3 @@ server.listen(PORT, "0.0.0.0", () => {
   process.stderr.write(`text-server: serving ${ROOT} on 0.0.0.0:${PORT} (${ALLOW_CD ? "subfolders allowed" : "locked to top folder"})\n`);
 });
 
-// --- UI ---
-const PAGE_HTML = String.raw`<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>text-server - __ROOT_NAME__</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-<link rel="icon" href="data:,">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/loadmode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/overlay.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/meta.min.js"></script>
-<style>
-  * { box-sizing: border-box; }
-  body { margin: 0; display: flex; height: 100vh; font: 13px system-ui, sans-serif; background: #1e1e1e; color: #ddd; }
-  #side { width: 260px; border-right: 1px solid #333; display: flex; flex-direction: column; }
-  #side header { padding: 8px; border-bottom: 1px solid #333; display: flex; gap: 4px; flex-wrap: wrap; }
-  #crumb { padding: 6px 8px; color: #8ab4f8; word-break: break-all; }
-  #list { flex: 1; overflow: auto; list-style: none; margin: 0; padding: 0; }
-  #list li { padding: 4px 8px; cursor: pointer; display: flex; justify-content: space-between; }
-  #list li:hover { background: #2a2a2a; }
-  #list li.active { background: #094771; }
-  #list li .del { visibility: hidden; color: #f88; }
-  #list li:hover .del { visibility: visible; }
-  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
-  #name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #status { color: #999; }
-  button { background: #333; color: #ddd; border: 1px solid #555; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
-  button:hover { background: #444; }
-  .CodeMirror { flex: 1; height: auto; font-size: 14px; }
-  #editorWrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-</style></head>
-<body>
-<aside id="side">
-  <header><button id="up">..</button><button id="newFile">+ file</button><button id="newFolder">+ folder</button><button id="refresh">&#x21bb;</button></header>
-  <div id="crumb"></div>
-  <ul id="list"></ul>
-</aside>
-<main id="main">
-  <div id="bar"><span id="name">No file open</span><span id="status"></span><button id="save">Save (Ctrl+S)</button></div>
-  <div id="editorWrap"></div>
-</main>
-<script>
-CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
-const ALLOW_CD = __ALLOW_CD__;
-const $ = (id) => document.getElementById(id);
-if (!ALLOW_CD) { $("up").style.display = "none"; $("newFolder").style.display = "none"; }
-const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
-let cwd = "", openPath = null, clean = true;
-
-const join = (a, b) => (a ? a + "/" + b : b);
-const setStatus = (t) => { $("status").textContent = t; };
-
-async function api(method, route, rel, body) {
-  const res = await fetch(route + "?path=" + encodeURIComponent(rel), { method, body });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || res.statusText);
-  return data;
-}
-
-async function loadList(rel) {
-  try {
-    const data = await api("GET", "/api/list", rel);
-    cwd = data.path;
-    $("crumb").textContent = "/" + cwd;
-    $("up").disabled = cwd === "";
-    const ul = $("list");
-    ul.innerHTML = "";
-    for (const e of data.entries) {
-      const li = document.createElement("li");
-      const full = join(cwd, e.name);
-      if (full === openPath) li.className = "active";
-      const label = document.createElement("span");
-      label.textContent = (e.folder ? "\u{1F4C1} " : "\u{1F4C4} ") + e.name;
-      const del = document.createElement("span");
-      del.className = "del"; del.textContent = "\u2715"; del.title = "delete";
-      del.onclick = (ev) => { ev.stopPropagation(); removeEntry(full, e.folder); };
-      li.append(label, del);
-      li.onclick = () => (e.folder ? loadList(full) : openFile(full));
-      ul.append(li);
-    }
-  } catch (err) { alert("List failed: " + err.message); }
-}
-
-function confirmDiscard() { return clean || confirm("Discard unsaved changes?"); }
-
-async function openFile(rel) {
-  if (!confirmDiscard()) return;
-  try {
-    const data = await api("GET", "/api/file", rel);
-    openPath = data.path;
-    editor.setOption("readOnly", false);
-    editor.setValue(data.content);
-    editor.clearHistory();
-    const info = CodeMirror.findModeByFileName(openPath) || { mode: "null" };
-    editor.setOption("mode", info.mime || info.mode);
-    if (info.mode !== "null") CodeMirror.autoLoadMode(editor, info.mode);
-    clean = true;
-    $("name").textContent = openPath;
-    setStatus("");
-    loadList(cwd);
-  } catch (err) { alert("Open failed: " + err.message); }
-}
-
-async function save() {
-  if (!openPath) return;
-  try {
-    await api("PUT", "/api/file", openPath, editor.getValue());
-    clean = true;
-    setStatus("saved " + new Date().toLocaleTimeString());
-  } catch (err) { alert("Save failed: " + err.message); }
-}
-
-async function removeEntry(rel, isFolder) {
-  if (!confirm("Delete " + (isFolder ? "folder (must be empty) " : "") + rel + "?")) return;
-  try {
-    await api("DELETE", "/api/file", rel);
-    if (rel === openPath) { openPath = null; clean = true; editor.setValue(""); editor.setOption("readOnly", true); $("name").textContent = "No file open"; }
-    loadList(cwd);
-  } catch (err) { alert("Delete failed: " + err.message); }
-}
-
-$("newFile").onclick = async () => {
-  const name = prompt("New file name (relative to /" + cwd + ")");
-  if (!name) return;
-  try { await api("PUT", "/api/file", join(cwd, name), ""); await loadList(cwd); openFile(join(cwd, name)); }
-  catch (err) { alert("Create failed: " + err.message); }
-};
-$("newFolder").onclick = async () => {
-  const name = prompt("New folder name");
-  if (!name) return;
-  try { await api("POST", "/api/folder", join(cwd, name)); loadList(cwd); }
-  catch (err) { alert("Create failed: " + err.message); }
-};
-$("up").onclick = () => cwd && loadList(cwd.split("/").slice(0, -1).join("/"));
-$("refresh").onclick = () => loadList(cwd);
-$("save").onclick = save;
-editor.on("change", () => { if (openPath && clean) { clean = false; setStatus("modified"); } });
-document.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); save(); }
-});
-window.addEventListener("beforeunload", (e) => { if (!clean) { e.preventDefault(); e.returnValue = ""; } });
-loadList("");
-</script>
-</body></html>`;

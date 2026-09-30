@@ -1,0 +1,345 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>text-server - __ROOT_NAME__</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<link rel="icon" href="data:,">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/loadmode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/overlay.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/meta.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; display: flex; height: 100vh; font: 13px system-ui, sans-serif; background: #1e1e1e; color: #ddd; }
+  #side { width: 280px; border-right: 1px solid #333; display: flex; flex-direction: column; }
+  #side header { padding: 8px; border-bottom: 1px solid #333; display: flex; gap: 4px; flex-wrap: wrap; }
+  #searchBar { padding: 6px 8px; border-bottom: 1px solid #333; display: none; gap: 4px; }
+  #searchBar.open { display: flex; }
+  #searchBar input { flex: 1; min-width: 0; background: #2a2a2a; color: #ddd; border: 1px solid #555; padding: 3px 6px; border-radius: 3px; }
+  #searchBar select { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
+  #crumb { padding: 6px 8px; color: #8ab4f8; word-break: break-all; }
+  #list { flex: 1; overflow: auto; list-style: none; margin: 0; padding: 0; }
+  #list li { padding: 4px 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 6px; }
+  #list li:hover { background: #2a2a2a; }
+  #list li.active { background: #094771; }
+  #list li .label { flex: 1; min-width: 0; word-break: break-all; }
+  #list li .sub { display: block; color: #999; font-size: 11px; }
+  #list li .act { visibility: hidden; flex: none; }
+  #list li:hover .act { visibility: visible; }
+  #list li .ren { color: #8ab4f8; }
+  #list li .del { color: #f88; }
+  #list li.note { color: #999; cursor: default; }
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
+  #name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+  #status { color: #999; }
+  button { background: #333; color: #ddd; border: 1px solid #555; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
+  button:hover { background: #444; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .CodeMirror { flex: 1; height: auto; font-size: 14px; }
+  #editorWrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+</style></head>
+<body>
+<aside id="side">
+  <header><button id="up" title="parent folder">..</button><button id="newFile">+ file</button><button id="newFolder">+ folder</button><button id="refresh" title="refresh">&#x21bb;</button><button id="searchToggle" title="search">&#x1F50D;</button></header>
+  <div id="searchBar"><input id="searchInput" placeholder="search..." autocomplete="off"><select id="searchMode"><option value="name">name</option><option value="content">content</option></select></div>
+  <div id="crumb"></div>
+  <ul id="list"></ul>
+</aside>
+<main id="main">
+  <div id="bar"><span id="name"></span><span id="status"></span><button id="save">Save (Ctrl+S)</button></div>
+  <div id="editorWrap"></div>
+</main>
+<script>
+CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
+const ALLOW_CD = __ALLOW_CD__;
+const ROOT_PATH = __ROOT_PATH__;
+/** Minimum gap between automatic (focus/blur/online/click) refreshes, in ms. */
+const AUTO_REFRESH_GAP_MS = 2000;
+/** Debounce for search-as-you-type, in ms. */
+const SEARCH_DEBOUNCE_MS = 250;
+const $ = (id) => document.getElementById(id);
+if (!ALLOW_CD) { $("up").style.display = "none"; $("newFolder").style.display = "none"; }
+const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
+// cwd/openPath are ROOT-relative with "/" separators; loadedContent is the last server copy of openPath.
+let cwd = "", openPath = null, clean = true, loadedContent = "", applyingRemote = false, lastAutoRefresh = 0, searchTimer = null;
+
+const join = (a, b) => (a ? a + "/" + b : b);
+const dirname = (rel) => rel.split("/").slice(0, -1).join("/");
+const basename = (rel) => rel.split("/").pop();
+const absPath = (rel) => (rel ? ROOT_PATH.replace(/[\\/]+$/, "") + "/" + rel : ROOT_PATH);
+const setStatus = (t) => { $("status").textContent = t; };
+const searching = () => $("searchBar").classList.contains("open") && $("searchInput").value.trim() !== "";
+
+/** Top bar: full path of the open file, else of the current folder. */
+function renderName() {
+  $("name").textContent = openPath ? absPath(openPath) : absPath(cwd) + "/";
+  $("name").title = $("name").textContent;
+}
+
+/** Mirror the current file (or folder) into ?path= so a reload lands in the same place. */
+function setUrl(rel) {
+  history.replaceState(null, "", rel ? "?path=" + encodeURIComponent(rel) : location.pathname);
+}
+
+async function api(method, route, rel, body, extra) {
+  const res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), { status: res.status });
+  return data;
+}
+
+/** Render list rows: { name, full, folder, sub? }. */
+function renderEntries(items, note) {
+  const ul = $("list");
+  ul.innerHTML = "";
+  for (const e of items) {
+    const li = document.createElement("li");
+    if (e.full === openPath) li.className = "active";
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = (e.folder ? "\u{1F4C1} " : "\u{1F4C4} ") + e.name;
+    if (e.sub) {
+      const sub = document.createElement("span");
+      sub.className = "sub"; sub.textContent = e.sub;
+      label.append(sub);
+    }
+    const ren = document.createElement("span");
+    ren.className = "act ren"; ren.textContent = "\u270E"; ren.title = "rename";
+    ren.onclick = (ev) => { ev.stopPropagation(); renameEntry(e.full); };
+    const del = document.createElement("span");
+    del.className = "act del"; del.textContent = "\u2715"; del.title = "delete";
+    del.onclick = (ev) => { ev.stopPropagation(); removeEntry(e.full, e.folder); };
+    li.append(label, ren, del);
+    li.onclick = () => (e.folder ? navigate(e.full) : openFile(e.full));
+    ul.append(li);
+  }
+  if (note) {
+    const li = document.createElement("li");
+    li.className = "note"; li.textContent = note;
+    ul.append(li);
+  }
+}
+
+/** List a folder. quiet=true for background refreshes (no alerts, no URL change). */
+async function loadList(rel, quiet) {
+  try {
+    const data = await api("GET", "/api/list", rel);
+    cwd = data.path;
+    $("crumb").textContent = absPath(cwd) + "/";
+    $("up").disabled = cwd === "";
+    if (!searching()) renderEntries(data.entries.map((e) => ({ name: e.name, full: join(cwd, e.name), folder: e.folder })));
+    renderName();
+  } catch (err) {
+    if (!quiet) alert("List failed: " + err.message);
+  }
+}
+
+/** User-driven folder change: list it and point the URL at it. */
+async function navigate(rel) {
+  await loadList(rel);
+  if (!openPath) setUrl(cwd);
+}
+
+/**
+ * Leaving a dirty file never throws the edits away: OK keeps them in a draft copy
+ * (<file>.<Date.now()>) next to the file; Cancel stays on the current file.
+ * @returns {Promise<boolean>} true when it is safe to switch away.
+ */
+async function leaveFile() {
+  if (clean || !openPath) return true;
+  const draft = openPath + "." + Date.now();
+  if (!confirm("Keep your unsaved changes to " + openPath + "?\n\nOK: save them as draft " + draft + " and continue.\nCancel: stay on this file.")) return false;
+  try {
+    await api("PUT", "/api/file", draft, editor.getValue());
+    clean = true;
+    return true;
+  } catch (err) {
+    alert("Could not save draft: " + err.message);
+    return false;
+  }
+}
+
+/** Replace editor content without flagging it as a user edit. */
+function setEditorContent(content) {
+  applyingRemote = true;
+  const cursor = editor.getCursor(), scroll = editor.getScrollInfo();
+  editor.setValue(content);
+  editor.setCursor(cursor);
+  editor.scrollTo(scroll.left, scroll.top);
+  applyingRemote = false;
+}
+
+async function openFile(rel) {
+  if (rel !== openPath && !(await leaveFile())) return;
+  try {
+    const data = await api("GET", "/api/file", rel);
+    openPath = data.path;
+    loadedContent = data.content;
+    editor.setOption("readOnly", false);
+    applyingRemote = true;
+    editor.setValue(data.content);
+    applyingRemote = false;
+    editor.clearHistory();
+    const info = CodeMirror.findModeByFileName(openPath) || { mode: "null" };
+    editor.setOption("mode", info.mime || info.mode);
+    if (info.mode !== "null") CodeMirror.autoLoadMode(editor, info.mode);
+    clean = true;
+    setStatus("");
+    setUrl(openPath);
+    renderName();
+    refreshView(true);
+  } catch (err) { alert("Open failed: " + err.message); }
+}
+
+function closeFile() {
+  openPath = null; clean = true; loadedContent = "";
+  applyingRemote = true; editor.setValue(""); applyingRemote = false;
+  editor.setOption("readOnly", true);
+  setUrl(cwd);
+  renderName();
+}
+
+async function save() {
+  if (!openPath) return;
+  try {
+    const content = editor.getValue();
+    await api("PUT", "/api/file", openPath, content);
+    loadedContent = content;
+    clean = true;
+    setStatus("saved " + new Date().toLocaleTimeString());
+  } catch (err) { alert("Save failed: " + err.message); }
+}
+
+async function removeEntry(rel, isFolder) {
+  if (!confirm("Delete " + (isFolder ? "folder (must be empty) " : "") + absPath(rel) + "?")) return;
+  try {
+    await api("DELETE", "/api/file", rel);
+    if (rel === openPath) closeFile();
+    refreshView(true);
+  } catch (err) { alert("Delete failed: " + err.message); }
+}
+
+async function renameEntry(rel) {
+  const oldName = basename(rel);
+  const input = prompt("Rename \"" + oldName + "\" (in " + absPath(dirname(rel)) + "/) to:", oldName);
+  if (input === null) return;
+  const name = input.trim();
+  if (!name) { alert("Name cannot be empty."); return; }
+  if (name === oldName) return;
+  try {
+    const data = await api("POST", "/api/rename", rel, undefined, "&to=" + encodeURIComponent(name));
+    if (openPath === rel) openPath = data.path;
+    else if (openPath && openPath.startsWith(rel + "/")) openPath = data.path + openPath.slice(rel.length);
+    if (openPath) setUrl(openPath);
+    renderName();
+    refreshView(true);
+  } catch (err) { alert("Rename failed: " + err.message); }
+}
+
+/** Run the search box query under cwd and show hits in the list. */
+async function runSearch(quiet) {
+  const q = $("searchInput").value.trim();
+  if (!q) return loadList(cwd, quiet);
+  const mode = $("searchMode").value;
+  try {
+    const data = await api("GET", "/api/search", cwd, undefined, "&mode=" + mode + "&q=" + encodeURIComponent(q));
+    const items = data.results.map((r) => ({
+      name: basename(r.path),
+      full: r.path,
+      folder: false,
+      sub: (dirname(r.path) ? dirname(r.path) + "/" : "") + (r.line ? "L" + r.line + ": " + r.text : ""),
+    }));
+    renderEntries(items, items.length ? (data.truncated ? "results truncated" : "") : "no matches");
+  } catch (err) {
+    if (!quiet) alert("Search failed: " + err.message);
+  }
+}
+
+/** Re-fetch whatever the side list shows (folder listing or search hits). */
+function refreshView(quiet) {
+  return searching() ? runSearch(quiet) : loadList(cwd, quiet);
+}
+
+/** Pull the latest folder list and open file from disk; never clobbers unsaved edits. */
+async function refreshAll() {
+  refreshView(true);
+  if (!openPath) return;
+  try {
+    const data = await api("GET", "/api/file", openPath);
+    if (data.content === loadedContent) return;
+    if (clean) {
+      loadedContent = data.content;
+      setEditorContent(data.content);
+      setStatus("reloaded " + new Date().toLocaleTimeString());
+    } else {
+      setStatus("changed on disk (you have unsaved edits)");
+    }
+  } catch (err) {
+    if (err.status === 404) setStatus("deleted on disk");
+  }
+}
+
+function autoRefresh() {
+  const now = Date.now();
+  if (now - lastAutoRefresh < AUTO_REFRESH_GAP_MS) return;
+  lastAutoRefresh = now;
+  refreshAll();
+}
+
+$("newFile").onclick = async () => {
+  const input = prompt("New file name (in " + absPath(cwd) + "/)");
+  const name = input && input.trim();
+  if (!name) return;
+  try { await api("PUT", "/api/file", join(cwd, name), ""); openFile(join(cwd, name)); }
+  catch (err) { alert("Create failed: " + err.message); }
+};
+$("newFolder").onclick = async () => {
+  const input = prompt("New folder name (in " + absPath(cwd) + "/)");
+  const name = input && input.trim();
+  if (!name) return;
+  try { await api("POST", "/api/folder", join(cwd, name)); refreshView(true); }
+  catch (err) { alert("Create failed: " + err.message); }
+};
+$("up").onclick = () => cwd && navigate(dirname(cwd));
+$("refresh").onclick = () => refreshAll();
+$("save").onclick = save;
+$("searchToggle").onclick = () => {
+  const open = $("searchBar").classList.toggle("open");
+  if (open) { $("searchInput").focus(); return; }
+  $("searchInput").value = "";
+  loadList(cwd, true);
+};
+$("searchInput").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => runSearch(true), SEARCH_DEBOUNCE_MS); });
+$("searchInput").addEventListener("keydown", (e) => { if (e.key === "Escape") $("searchToggle").click(); });
+$("searchMode").addEventListener("change", () => runSearch(true));
+editor.on("change", () => { if (!applyingRemote && openPath && clean) { clean = false; setStatus("modified"); } });
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); save(); }
+});
+window.addEventListener("beforeunload", (e) => { if (!clean) { e.preventDefault(); e.returnValue = ""; } });
+// Keep the view fresh: another device may have edited the same folder.
+window.addEventListener("focus", autoRefresh);
+window.addEventListener("blur", autoRefresh);
+window.addEventListener("pageshow", autoRefresh);
+window.addEventListener("online", () => { setStatus("back online"); lastAutoRefresh = 0; autoRefresh(); });
+window.addEventListener("offline", () => setStatus("offline"));
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") autoRefresh(); });
+document.addEventListener("click", autoRefresh);
+
+/** Initial load: honor ?path= (file or folder), falling back to the root. */
+(async function init() {
+  const initial = (new URLSearchParams(location.search).get("path") || "").replace(/^\/+|\/+$/g, "");
+  if (!initial) return navigate("");
+  try {
+    const info = await api("GET", "/api/stat", initial);
+    if (info.folder) return navigate(info.path);
+    await loadList(dirname(info.path), true);
+    await openFile(info.path);
+  } catch (err) {
+    alert("Cannot open " + initial + ": " + err.message);
+    navigate("");
+  }
+})();
+</script>
+</body></html>
