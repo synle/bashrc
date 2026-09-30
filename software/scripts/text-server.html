@@ -69,6 +69,8 @@ const SEARCH_DEBOUNCE_MS = 250;
 const AUTOSAVE_DELAY_MS = 800;
 /** Poll interval for reloading the open file, and the typing-idle time required first, in ms. */
 const IDLE_RELOAD_MS = 5000;
+/** Poll interval for reloading the file list (always on, independent of typing), in ms. */
+const LIST_RELOAD_MS = 5000;
 /** Sidebar width bounds while dragging, in px (max also capped at 70% of the window). */
 const SIDE_MIN_PX = 160, SIDE_MAX_RATIO = 0.7;
 /** Files larger than this (in characters, ~1 MB) always open as Plain: highlighting big files is slow. */
@@ -155,6 +157,15 @@ function renderName() {
 }
 
 /**
+ * App URL that deep-links to a file/folder, using the host the page was opened from (LAN IP stays LAN IP).
+ * @param {string} rel ROOT-relative path.
+ * @returns {string} e.g. http://192.168.1.42:9998/?path=notes%2Fa.txt
+ */
+function appLink(rel) {
+  return location.origin + "/?path=" + encodeURIComponent(rel);
+}
+
+/**
  * Copy text to the clipboard. navigator.clipboard needs a secure context (https/localhost),
  * so plain-http LAN URLs fall back to a hidden textarea + execCommand("copy").
  * @param {string} text Text to copy.
@@ -181,8 +192,25 @@ function setUrl(rel) {
   history.replaceState(null, "", rel ? "?path=" + encodeURIComponent(rel) : location.pathname);
 }
 
-async function api(method, route, rel, body, extra) {
-  const res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body });
+/**
+ * Controller shared by every in-flight file READ (open + background refresh). Switching or closing
+ * a file aborts them all so a large stale download stops. Saves (PUT) never use it: aborting a
+ * write could lose edits. openSeq still guards responses that land before the abort.
+ */
+let fileReads = new AbortController();
+
+/**
+ * Abort all in-flight file reads and start a fresh controller.
+ * @returns {AbortSignal} Signal for the reads of the file being opened now.
+ */
+function newReadSignal() {
+  fileReads.abort();
+  fileReads = new AbortController();
+  return fileReads.signal;
+}
+
+async function api(method, route, rel, body, extra, signal) {
+  const res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body, signal });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), { status: res.status });
   return data;
@@ -207,10 +235,13 @@ function renderEntries(items, note) {
     const ren = document.createElement("span");
     ren.className = "act ren"; ren.textContent = "\u270E"; ren.title = "Rename " + e.name;
     ren.onclick = (ev) => { ev.stopPropagation(); renameEntry(e.full); };
+    const link = document.createElement("span");
+    link.className = "act"; link.textContent = "\u{1F4CB}"; link.title = "Copy a link that opens " + e.name + " in this app";
+    link.onclick = (ev) => { ev.stopPropagation(); copyText(appLink(e.full)); };
     const del = document.createElement("span");
     del.className = "act del"; del.textContent = "\u2715"; del.title = "Delete " + e.name;
     del.onclick = (ev) => { ev.stopPropagation(); removeEntry(e.full, e.folder); };
-    li.append(label, ren, del);
+    li.append(label, link, ren, del);
     li.onclick = () => (e.folder ? navigate(e.full) : openFile(e.full));
     ul.append(li);
   }
@@ -275,10 +306,11 @@ function setEditorContent(content) {
 async function openFile(rel) {
   // Every switch bumps openSeq; responses from an older switch (or an in-flight refresh) are dropped.
   const seq = ++openSeq;
+  const signal = newReadSignal();
   if (rel !== openPath && !(await flushSave())) { alert("Could not save " + openPath + "; staying on it so no edits are lost."); return; }
   if (seq !== openSeq) return;
   try {
-    const data = await api("GET", "/api/file", rel);
+    const data = await api("GET", "/api/file", rel, undefined, "", signal);
     if (seq !== openSeq) return;
     openPath = data.path;
     loadedContent = data.content;
@@ -298,6 +330,7 @@ async function openFile(rel) {
 
 function closeFile() {
   openSeq++;
+  newReadSignal();
   clearTimeout(saveTimer);
   openPath = null; clean = true; loadedContent = "";
   applyingRemote = true; editor.setValue(""); applyingRemote = false;
@@ -386,10 +419,15 @@ function refreshView(quiet) {
 /** Pull the latest folder list and open file from disk; never clobbers unsaved edits. */
 async function refreshAll() {
   refreshView(true);
+  return refreshOpenFile();
+}
+
+/** Re-fetch the open file from disk; never clobbers unsaved edits. */
+async function refreshOpenFile() {
   if (!openPath) return;
   const seq = openSeq, target = openPath;
   try {
-    const data = await api("GET", "/api/file", target);
+    const data = await api("GET", "/api/file", target, undefined, "", fileReads.signal);
     // The user switched/closed files while this was in flight: this content belongs to another file.
     if (seq !== openSeq || target !== openPath) return;
     if (data.content === loadedContent) return;
@@ -458,20 +496,27 @@ window.addEventListener("pagehide", () => {
   fetch("/api/file?path=" + encodeURIComponent(openPath), { method: "PUT", body: editor.getValue(), keepalive: true });
 });
 // Keep the view fresh: another device may have edited the same folder.
-window.addEventListener("focus", autoRefresh);
+// Returning to the app always refreshes (bypasses the throttle the blur refresh just armed).
+window.addEventListener("focus", () => { lastAutoRefresh = 0; autoRefresh(); });
 window.addEventListener("blur", () => { flushSave(); autoRefresh(); });
 window.addEventListener("pageshow", autoRefresh);
 window.addEventListener("online", () => { setStatus("back online"); lastAutoRefresh = 0; autoRefresh(); });
 window.addEventListener("offline", () => setStatus("offline"));
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") autoRefresh(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { lastAutoRefresh = 0; autoRefresh(); } });
 document.addEventListener("click", autoRefresh);
 
-// Idle reload: every IDLE_RELOAD_MS, once typing has stopped that long and everything is saved,
-// pull the latest file + list. Only typing (editor changes) counts; clicks/scrolls don't.
+// Idle reload of the open file: every IDLE_RELOAD_MS, once typing has stopped that long and
+// everything is saved. Only typing (editor changes) counts; clicks/scrolls don't.
 setInterval(() => {
   if (!openPath || !clean || document.hidden || Date.now() - lastTypedAt < IDLE_RELOAD_MS) return;
-  refreshAll();
+  refreshOpenFile();
 }, IDLE_RELOAD_MS);
+
+// List reload: every LIST_RELOAD_MS regardless of typing or open file (the list never touches
+// editor content). Skipped only while the tab is hidden; visibilitychange catches up on return.
+setInterval(() => {
+  if (!document.hidden) refreshView(true);
+}, LIST_RELOAD_MS);
 
 // Sidebar: collapse toggle + drag-to-resize; both remembered in localStorage.
 function setSideWidth(px) {
