@@ -41,11 +41,9 @@
   #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
   #name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
   #syntax { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
-  #lockout { position: fixed; inset: 0; z-index: 1000; background: rgba(20, 20, 20, 0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px; color: #ddd; }
-  #lockout[hidden] { display: none; }
-  #lockout .title { font-size: 18px; color: #f88; }
-  #lockout .detail { color: #aaa; max-width: 520px; }
-  #lockout .actions { display: flex; gap: 8px; }
+  #foot.down { background: #5c1a1a; border-top-color: #f44; }
+  #foot.down #status { color: #fff; font-weight: bold; }
+  body.down #list, body.down #crumbRow { pointer-events: none; opacity: 0.5; }
   #foot { display: flex; gap: 12px; align-items: center; padding: 3px 8px; border-top: 1px solid #333; font-size: 12px; min-height: 18px; }
   #status { flex: 1; min-width: 0; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; padding: 0 4px; }
   #status.flash { animation: statusFlash 1.2s ease-out; }
@@ -76,7 +74,6 @@
   <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
   <div id="editorWrap"></div>
   <div id="empty"><div class="title">No file open</div><div>Pick a file from the list on the left to start editing.</div><button id="emptyNewFile" title="Create a new file in this folder">+ Create a new file</button></div>
-  <div id="lockout" hidden role="alertdialog" aria-live="assertive"><div class="title" id="lockTitle"></div><div class="detail" id="lockDetail"></div><div class="actions"><button id="lockReload" title="Reload the page">Reload page</button><button id="lockCopy" title="Copy the editor content, including unsaved edits" hidden>Copy unsaved text</button></div></div>
   <div id="foot"><span id="status" title="Save / sync status"></span><span id="pos" title="Cursor line and column"></span><span id="size" title="Size of the open file as edited (UTF-8)"></span><span id="version" title="text-server version"></span></div>
 </main>
 <script>
@@ -92,6 +89,16 @@ const AUTO_REFRESH_GAP_MS = 2000;
 const SEARCH_DEBOUNCE_MS = 250;
 /** Idle time after the last keystroke before the file auto-saves, in ms. */
 const AUTOSAVE_DELAY_MS = 800;
+/**
+ * Auto-snapshot policy (the single place both knobs live). Every intervalMs the open file is compared
+ * with its content at the last check; a snapshot (same as Ctrl+S) is taken only when the change,
+ * counted on letters and digits alone (whitespace and punctuation stripped), is at least minChangedChars.
+ */
+const AUTO_SNAPSHOT = { intervalMs: 10 * 60 * 1000, minChangedChars: 150 };
+/** While the server is down, how often to probe it for auto-recovery, in ms. */
+const RECOVERY_POLL_MS = 3000;
+/** Controls that talk to the server; disabled while it is down. Local-only ones (sidebar toggle, copy path, syntax) stay live. */
+const SERVER_CONTROL_IDS = ["up", "newFile", "newFolder", "refresh", "searchToggle", "searchInput", "searchMode", "save", "emptyNewFile"];
 /** Poll interval for reloading the open file, and the typing-idle time required first, in ms. */
 const IDLE_RELOAD_MS = 5000;
 /** Poll interval for reloading the file list (always on, independent of typing), in ms. */
@@ -212,6 +219,8 @@ function renderCursor() {
 }
 
 function setStatus(t) {
+  // While down, the red "not reachable" message owns the footer; follow-on failures must not replace it.
+  if (serverDown && t !== downMessage) return;
   const el = $("status");
   if (el.textContent === t) return;
   el.textContent = t;
@@ -289,39 +298,56 @@ function newReadSignal() {
   return fileReads.signal;
 }
 
-/** Max wait for the "is the server really down?" probe, in ms. */
+/** Max wait for one "is the server there?" probe, in ms. */
 const SERVER_PROBE_TIMEOUT_MS = 3000;
-/** True once the page is locked out; stays true until the user reloads. */
-let lockedOut = false;
+/** True while the server (or this browser's network) is unreachable. */
+let serverDown = false;
+let recoveryTimer = null;
+/** The footer message for the current down state (setStatus only accepts this one while down). */
+let downMessage = "";
 
 /**
- * Lock the whole page: overlay over everything, editor read-only, pending autosave dropped,
- * every later api() call refused, clicks and keys blocked. Stays until reload (no auto-recovery),
- * so nothing half-works against a server that may have restarted on another folder.
- * @param {"server"|"client"} cause server = text-server stopped answering; client = this browser lost its network.
+ * Enter down mode: red footer message, editor read-only (text can still be selected and copied),
+ * server controls disabled, pending autosave held back, every api() call refused. Nothing can be
+ * saved by accident against a server that is gone; unsaved edits stay in the editor and are
+ * saved on recovery. Polls the server and recovers by itself.
+ * @param {"server"|"client"} cause server = text-server stopped answering; client = this browser is offline.
  */
-function lockOut(cause) {
-  const unsaved = !!openPath && !clean;
-  if (!lockedOut) {
-    lockedOut = true;
+function setServerDown(cause) {
+  const message = cause === "client"
+    ? "You are offline \u2014 read-only until the network is back"
+    : "Server not reachable (" + location.host + ") \u2014 read-only, retrying\u2026";
+  if (!serverDown) {
+    serverDown = true;
     clearTimeout(saveTimer);
-    editor.setOption("readOnly", "nocursor");
-    if (document.activeElement) document.activeElement.blur();
-    $("lockout").hidden = false;
+    editor.setOption("readOnly", true);
+    document.body.classList.add("down");
+    for (const id of SERVER_CONTROL_IDS) $(id).disabled = true;
+    $("foot").classList.add("down");
+    recoveryTimer = setInterval(tryRecover, RECOVERY_POLL_MS);
   }
-  $("lockTitle").textContent = cause === "client" ? "You are offline" : "Server not reachable";
-  $("lockDetail").textContent =
-    (cause === "client" ? "This browser lost its network connection." : "text-server at " + location.host + " stopped responding (stopped, restarted, or the network dropped).") +
-    " Editing is disabled. Reload once it is back." +
-    (unsaved ? " Unsaved edits to " + basename(openPath) + " are only in this tab: copy them before reloading." : "");
-  $("lockCopy").hidden = !unsaved;
-  setStatus(cause === "client" ? "offline" : "server not reachable");
+  downMessage = message + (openPath && !clean ? " (unsaved edits kept here)" : "");
+  setStatus(downMessage);
+}
+
+/** Leave down mode once the server answers again: re-enable everything, save held edits, refresh. */
+async function tryRecover() {
+  if (!serverDown || !navigator.onLine || (await serverUnreachable())) return;
+  serverDown = false;
+  clearInterval(recoveryTimer);
+  document.body.classList.remove("down");
+  $("foot").classList.remove("down");
+  for (const id of SERVER_CONTROL_IDS) $(id).disabled = false;
+  editor.setOption("readOnly", !openPath);
+  setStatus("server back");
+  if (!clean) await flushSave();
+  lastAutoRefresh = 0;
+  refreshAll();
 }
 
 /**
- * After a network-level fetch failure, check whether the server is really gone before locking out.
- * Any HTTP answer (even 404) means reachable: the failure was transient or one blocked request
- * (ad blockers fail matching URLs with the same TypeError).
+ * Probe the server. Any HTTP answer (even 404) means reachable: a failed API call with a live
+ * server was transient or ad-blocked (blockers fail matching URLs with the same TypeError).
  * @returns {Promise<boolean>} true when the server did not answer.
  */
 async function serverUnreachable() {
@@ -334,15 +360,15 @@ async function serverUnreachable() {
 }
 
 async function api(method, route, rel, body, extra, signal) {
-  if (lockedOut) throw Object.assign(new Error("locked out: " + $("lockTitle").textContent), { name: "LockedOut" });
+  if (serverDown) throw Object.assign(new Error("server not reachable"), { name: "ServerDown" });
   let res;
   try {
     res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body, signal });
   } catch (err) {
-    // Network-level failure (not an abort): lock the page if the client or the server is gone.
+    // Network-level failure (not an abort): go read-only if the client or the server is gone.
     if (err.name !== "AbortError") {
-      if (!navigator.onLine) lockOut("client");
-      else if (await serverUnreachable()) lockOut("server");
+      if (!navigator.onLine) setServerDown("client");
+      else if (await serverUnreachable()) setServerDown("server");
     }
     throw err;
   }
@@ -457,6 +483,7 @@ async function openFile(rel) {
     applyingRemote = false;
     editor.clearHistory();
     applySyntax(data.content.length > HIGHLIGHT_MAX_CHARS ? "plain" : syntaxForFile(openPath));
+    if (snapshotBaseline.path !== openPath) snapshotBaseline = { path: openPath, text: normalizeForSnapshot(data.content) };
     setClean(true);
     setStatus("");
     setUrl(openPath);
@@ -481,7 +508,7 @@ function closeFile() {
  * Explicit version snapshot (Ctrl+S / Snapshot button): flush autosave, then copy the file to
  * <file>.<Date.now()> unless the newest existing <file>.<digits> snapshot already has this content.
  */
-async function snapshot() {
+async function snapshot(auto) {
   if (!openPath) return;
   if (!(await flushSave())) return;
   const folder = dirname(openPath), prefix = basename(openPath) + ".";
@@ -498,9 +525,51 @@ async function snapshot() {
     }
     const name = openPath + "." + Date.now();
     await api("PUT", "/api/file", name, content);
-    setStatus("snapshot " + basename(name));
+    setStatus((auto ? "auto snapshot " : "snapshot ") + basename(name));
     refreshView(true);
-  } catch (err) { alert("Snapshot failed: " + err.message); }
+  } catch (err) {
+    if (auto) setStatus("auto snapshot failed: " + err.message);
+    else alert("Snapshot failed: " + err.message);
+  }
+}
+
+/**
+ * Letters and digits only: whitespace, punctuation, and symbols carry no weight in the
+ * auto-snapshot change count (reformatting or re-indenting alone never triggers one).
+ * @param {string} text Raw file text.
+ * @returns {string} Normalized text.
+ */
+const normalizeForSnapshot = (text) => text.replace(/[^\p{L}\p{N}]+/gu, "");
+
+/**
+ * Size of the changed region between two normalized texts: trim the common prefix and suffix,
+ * then take the longer remaining middle. O(n), unlike an edit distance; it overcounts when two
+ * far-apart edits sandwich unchanged text, which only makes a snapshot slightly more likely.
+ * @param {string} before Normalized earlier text.
+ * @param {string} after Normalized current text.
+ * @returns {number} Changed character count.
+ */
+function changedCharCount(before, after) {
+  let start = 0;
+  const maxStart = Math.min(before.length, after.length);
+  while (start < maxStart && before[start] === after[start]) start++;
+  let endBefore = before.length, endAfter = after.length;
+  while (endBefore > start && endAfter > start && before[endBefore - 1] === after[endAfter - 1]) { endBefore--; endAfter--; }
+  return Math.max(endBefore - start, endAfter - start);
+}
+
+/** Normalized content of the open file at its last snapshot (or when it was opened); the auto-snapshot baseline. */
+let snapshotBaseline = { path: null, text: "" };
+
+/** One auto-snapshot check (runs every AUTO_SNAPSHOT.intervalMs). */
+async function autoSnapshotTick() {
+  if (!openPath || serverDown) return;
+  const current = normalizeForSnapshot(editor.getValue());
+  if (snapshotBaseline.path !== openPath) { snapshotBaseline = { path: openPath, text: current }; return; }
+  if (changedCharCount(snapshotBaseline.text, current) < AUTO_SNAPSHOT.minChangedChars) return;
+  const path = openPath;
+  await snapshot(true);
+  if (openPath === path) snapshotBaseline = { path, text: current };
 }
 
 async function removeEntry(rel, isFolder) {
@@ -610,7 +679,7 @@ $("newFolder").onclick = async () => {
 };
 $("up").onclick = () => cwd && navigate(dirname(cwd));
 $("refresh").onclick = () => refreshAll();
-$("save").onclick = snapshot;
+$("save").onclick = () => snapshot(false);
 $("name").onclick = () => copyText($("name").dataset.copy);
 $("crumb").onclick = () => copyText($("crumb").dataset.copy);
 $("copyPath").onclick = () => copyText($("name").dataset.copy);
@@ -645,25 +714,12 @@ window.addEventListener("pagehide", () => {
 window.addEventListener("focus", () => { lastAutoRefresh = 0; autoRefresh(); });
 window.addEventListener("blur", () => { flushSave(); autoRefresh(); });
 window.addEventListener("pageshow", autoRefresh);
-// Losing the network locks the page right away; coming back only updates the message (reload to resume).
-window.addEventListener("offline", () => lockOut("client"));
-window.addEventListener("online", () => {
-  if (lockedOut) $("lockDetail").textContent = "Network is back. Reload to continue" + ($("lockCopy").hidden ? "." : " (copy your unsaved edits first).");
-});
-// While locked, swallow every key and click outside the lockout dialog (capture phase: before any handler).
-for (const type of ["keydown", "click", "mousedown"]) {
-  document.addEventListener(type, (ev) => {
-    if (lockedOut && !$("lockout").contains(ev.target)) { ev.preventDefault(); ev.stopImmediatePropagation(); }
-  }, true);
-}
-$("lockReload").onclick = () => location.reload();
-$("lockCopy").onclick = async () => {
-  await copyText(editor.getValue());
-  $("lockCopy").textContent = $("status").textContent.startsWith("copy failed") ? "Copy failed" : "Copied";
-};
-// Failures that follow a lockout are expected; the overlay already says why, so no alert() pile-up.
+// Network loss goes read-only right away; coming back triggers an immediate recovery probe.
+window.addEventListener("offline", () => setServerDown("client"));
+window.addEventListener("online", () => tryRecover());
+// Failures while down are expected; the red footer already says why, so no alert() pile-up.
 const nativeAlert = window.alert.bind(window);
-window.alert = (message) => { if (!lockedOut) nativeAlert(message); };
+window.alert = (message) => { if (!serverDown) nativeAlert(message); };
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { lastAutoRefresh = 0; autoRefresh(); } });
 document.addEventListener("click", autoRefresh);
 
@@ -673,6 +729,8 @@ setInterval(() => {
   if (!openPath || !clean || document.hidden || Date.now() - lastTypedAt < IDLE_RELOAD_MS) return;
   refreshOpenFile();
 }, IDLE_RELOAD_MS);
+
+setInterval(autoSnapshotTick, AUTO_SNAPSHOT.intervalMs);
 
 // List reload: every LIST_RELOAD_MS regardless of typing or open file (the list never touches
 // editor content). Skipped only while the tab is hidden; visibilitychange catches up on return.
