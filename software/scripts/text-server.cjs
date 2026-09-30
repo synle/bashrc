@@ -15,6 +15,8 @@
  *                                  (not "/api/stat": tracker-blocking extensions match "/stat?" and block it)
  *   GET    /api/file?path=<rel>   read a file (utf8)
  *   PUT    /api/file?path=<rel>   create/overwrite a file (body = content)
+ *   POST   /api/upload?path=<rel> create a file, never overwrite; on a name clash saves
+ *                                  as <rel>.<Date.now()> instead. Returns { path, duplicate? }
  *   POST   /api/folder?path=<rel> create a folder
  *   POST   /api/rename?path=<rel>&to=<name>  rename in place (same folder, no overwrite)
  *   GET    /api/search?path=<rel>&q=<text>&mode=name|content  search file names or contents
@@ -306,6 +308,21 @@ async function handleApi(req, res, url) {
     if (fs.existsSync(file) && !fs.statSync(file).isFile()) return sendJson(res, 400, { error: "not a file" });
     fs.writeFileSync(file, await readBody(req), "utf8");
     return sendJson(res, 200, { ok: true });
+  }
+  if (route === "POST /api/upload") {
+    if (!rel) return sendJson(res, 400, { error: "path required" });
+    const file = resolveSafe(rel, false);
+    const content = await readBody(req);
+    // Never overwrite: on a name clash save as <name>.<Date.now()>. "wx" makes the create atomic.
+    try {
+      fs.writeFileSync(file, content, { encoding: "utf8", flag: "wx" });
+      return sendJson(res, 200, { path: path.relative(ROOT, file) });
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+    }
+    const dup = `${file}.${Date.now()}`;
+    fs.writeFileSync(dup, content, { encoding: "utf8", flag: "wx" });
+    return sendJson(res, 200, { path: path.relative(ROOT, dup), duplicate: true });
   }
   if (route === "POST /api/folder") {
     if (!ALLOW_CD) return sendJson(res, 403, { error: "folder navigation disabled" });

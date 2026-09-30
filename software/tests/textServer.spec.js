@@ -143,6 +143,38 @@ describe("text-server path confinement", () => {
   });
 });
 
+describe("text-server upload (drag and drop)", () => {
+  let port;
+  beforeAll(async () => {
+    ({ port } = await startServer(path.join(sandbox, "root"), await freePort(), "1"));
+  });
+
+  /**
+   * POST a body to /api/upload.
+   * @param {string} rel Target relative path.
+   * @param {string} content File content.
+   * @returns {Promise<{status: number, body: any}>} Status and JSON body.
+   */
+  async function upload(rel, content) {
+    const res = await fetch(`http://127.0.0.1:${port}/api/upload?path=${encodeURIComponent(rel)}`, { method: "POST", body: content });
+    return { status: res.status, body: await res.json() };
+  }
+
+  it("creates a new file with the dropped content", async () => {
+    expect(await upload("dropped.txt", "one")).toEqual({ status: 200, body: { path: "dropped.txt" } });
+    expect(fs.readFileSync(path.join(sandbox, "root", "dropped.txt"), "utf8")).toBe("one");
+  });
+
+  it("saves a clashing name as <name>.<timestamp> and leaves the original untouched", async () => {
+    const { status, body } = await upload("a.txt", "two");
+    expect(status).toBe(200);
+    expect(body.duplicate).toBe(true);
+    expect(body.path).toMatch(/^a\.txt\.\d{13}$/);
+    expect(fs.readFileSync(path.join(sandbox, "root", body.path), "utf8")).toBe("two");
+    expect(fs.readFileSync(path.join(sandbox, "root", "a.txt"), "utf8")).toBe("hello");
+  });
+});
+
 describe("text-server error mapping", () => {
   let port;
   beforeAll(async () => {

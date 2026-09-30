@@ -671,6 +671,30 @@ $("newFile").onclick = async () => {
   catch (err) { alert("Create failed: " + err.message); }
 };
 $("emptyNewFile").onclick = () => $("newFile").onclick();
+/**
+ * Drag-and-drop files from the OS into the current folder. Each file is created via
+ * /api/upload, which never overwrites: a clashing name is saved as <name>.<Date.now()>.
+ * Capture phase so CodeMirror never inserts the dropped text into the open file.
+ */
+function isFileDrag(e) { return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files"); }
+document.addEventListener("dragover", (e) => { if (!isFileDrag(e)) return; e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "copy"; }, true);
+document.addEventListener("drop", async (e) => {
+  if (!isFileDrag(e)) return;
+  e.preventDefault(); e.stopPropagation();
+  const files = Array.from(e.dataTransfer.files || []);
+  const failures = [];
+  let lastPath = "";
+  for (const f of files) {
+    try {
+      const data = await api("POST", "/api/upload", join(cwd, f.name), await f.text());
+      lastPath = data.path;
+      setStatus(data.duplicate ? "name taken, saved as " + data.path : "uploaded " + data.path);
+    } catch (err) { failures.push(f.name + ": " + err.message); }
+  }
+  refreshView(true);
+  if (files.length === 1 && lastPath) await openFile(lastPath);
+  if (failures.length) alert("Upload failed:\n" + failures.join("\n"));
+}, true);
 $("newFolder").onclick = async () => {
   const input = prompt("New folder name (in " + absPath(cwd) + "/)");
   const name = input && input.trim();
