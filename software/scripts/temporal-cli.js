@@ -1,3 +1,6 @@
+/** Budget for `curl … | sh` — the archive is tens of MB, so the 30s execBash default can kill a healthy download. */
+const TEMPORAL_INSTALL_TIMEOUT_MS = 120_000;
+
 /** Installs the Temporal CLI and registers it with bashrc. */
 async function doWork() {
   log(">> Setting up Temporal CLI");
@@ -13,7 +16,15 @@ async function doWork() {
 
   if (!fs.existsSync(temporalBin)) {
     log(">> Installing Temporal CLI:", temporalDir);
-    await execBash(`curl -fsSL https://temporal.download/cli.sh | sh`);
+    await execBash(`curl -fsSL https://temporal.download/cli.sh | sh`, {
+      timeout: TEMPORAL_INSTALL_TIMEOUT_MS,
+    });
+    // execBash never rejects and `curl | sh` exits 0 on an empty script, so a
+    // timed-out or half-downloaded install looks like success. Fail loudly here
+    // instead of leaving a missing binary behind.
+    if (!fs.existsSync(temporalBin)) {
+      throw new Error(`Temporal CLI install produced no binary at ${temporalBin}`);
+    }
   }
 
   registerWithBashSyleProfile(

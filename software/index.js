@@ -5160,19 +5160,37 @@ async function getSoftwareScriptFiles() {
 }
 
 // --- Bash Execution ---
+/** Default per-command timeout for execBash / execBashSync, in milliseconds. */
+const EXEC_DEFAULT_TIMEOUT_MS = 30_000;
+/** Hard ceiling for a caller-supplied `timeout`, in milliseconds — a slow download needs minutes, not an unbounded hang. */
+const EXEC_MAX_TIMEOUT_MS = 300_000;
+
 /**
- * Executes a bash command asynchronously and returns the trimmed output as a string. Default timeout is 30s, capped at 30s max.
+ * Resolves the per-command timeout: the caller's `timeout` when given, else the 30s
+ * default, always clamped to the 5-minute ceiling.
+ * @param {object} [options] - Optional exec options; only `timeout` is read here
+ * @returns {number} Timeout in milliseconds
+ */
+function resolveExecTimeout(options) {
+  return Math.min(options?.timeout || EXEC_DEFAULT_TIMEOUT_MS, EXEC_MAX_TIMEOUT_MS);
+}
+
+/**
+ * Executes a bash command asynchronously and returns the trimmed output as a string. Default timeout is 30s, capped at 5m max.
+ *
+ * Never rejects: a non-zero exit, a spawn error, and a timeout kill all resolve to
+ * whatever stdout was captured. A command that installs something must verify its own
+ * result — `curl … | sh` reports success even when the curl half failed or was killed.
  * @param {string} cmd - The shell command to execute
- * @param {object} [options] - Optional exec options (cwd, env, timeout, etc.)
+ * @param {object} [options] - Optional exec options (cwd, env, timeout, etc.); `timeout` overrides the 30s default, clamped to 5m
  * @returns {Promise<string>} The command's trimmed stdout
  */
 async function execBash(cmd, options) {
-  const MAX_TIMEOUT = 30_000;
   const execOptions = {
     ...options,
     encoding: "utf8",
     maxBuffer: 50 * 1024 * 1024,
-    timeout: Math.min(options?.timeout || MAX_TIMEOUT, MAX_TIMEOUT),
+    timeout: resolveExecTimeout(options),
   };
   return new Promise((resolve) => {
     exec(cmd, execOptions, (error, stdout, stderr) => {
@@ -5182,18 +5200,17 @@ async function execBash(cmd, options) {
 }
 
 /**
- * Executes a bash command synchronously and returns the trimmed output as a string. Default timeout is 30s, capped at 30s max.
+ * Executes a bash command synchronously and returns the trimmed output as a string. Default timeout is 30s, capped at 5m max.
  * @param {string} cmd - The shell command to execute
- * @param {object} [options] - Optional exec options (cwd, env, timeout, etc.)
+ * @param {object} [options] - Optional exec options (cwd, env, timeout, etc.); `timeout` overrides the 30s default, clamped to 5m
  * @returns {string} The command's trimmed stdout
  */
 function execBashSync(cmd, options) {
-  const MAX_TIMEOUT = 30_000;
   return execSync(cmd, {
     ...options,
     encoding: "utf8",
     maxBuffer: 50 * 1024 * 1024,
-    timeout: Math.min(options?.timeout || MAX_TIMEOUT, MAX_TIMEOUT),
+    timeout: resolveExecTimeout(options),
   }).trim();
 }
 

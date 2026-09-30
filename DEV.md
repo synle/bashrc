@@ -172,10 +172,11 @@ logic (see AGENTS.md §2, Golden rules).
   `exitIfNoChromiumBrowser`, `exitIfNoGui("any"|"x11"|"wayland")`. **GUI flags:**
   `is_gui`, `is_gui_x11`, `is_gui_wayland` (§7.5). **Staleness:** `isPathStale`,
   `isForceRefreshStale`, `isBashSyleStale`.
-- **Exec/output:** `execBash` (async, 30s cap), `execBashSync`, `hasBinary`, `emitBash`,
-  `log`, `echo`, `color*`, `printSectionBlock`, `printRunInfo`. **Options:**
-  `getRuntimeOption("KEY")` reads `--KEY=value` or the env var; `parseString` /
-  `parseInteger` (clamping) / `parseBoolean`.
+- **Exec/output:** `execBash` (async, 30s default, `timeout` option up to a 5m ceiling,
+  never rejects — an installer must verify its own result), `execBashSync`,
+  `hasBinary`, `emitBash`, `log`, `echo`, `color*`, `printSectionBlock`,
+  `printRunInfo`. **Options:** `getRuntimeOption("KEY")` reads `--KEY=value` or the
+  env var; `parseString` / `parseInteger` (clamping) / `parseBoolean`.
 
 Bash equivalents in `software/bootstrap/common-functions.bash`: `is_help_arg`,
 `safe_source`, `curl_bash_install`, `npm_install_global`, `has_persistent_binary`,
