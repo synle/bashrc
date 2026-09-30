@@ -21,7 +21,8 @@
   #searchBar.open { display: flex; }
   #searchBar input { flex: 1; min-width: 0; background: #2a2a2a; color: #ddd; border: 1px solid #555; padding: 3px 6px; border-radius: 3px; }
   #searchBar select { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
-  #crumb { padding: 6px 8px; color: #8ab4f8; word-break: break-all; }
+  #crumb { padding: 6px 8px; color: #8ab4f8; word-break: break-all; cursor: pointer; }
+  #crumb:hover, #name:hover { text-decoration: underline; }
   #list { flex: 1; overflow: auto; list-style: none; margin: 0; padding: 0; }
   #list li { padding: 4px 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 6px; }
   #list li:hover { background: #2a2a2a; }
@@ -35,7 +36,7 @@
   #list li.note { color: #999; cursor: default; }
   #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
-  #name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+  #name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
   #syntax { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
   #status { color: #999; }
   button { background: #333; color: #ddd; border: 1px solid #555; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
@@ -48,7 +49,7 @@
 <aside id="side">
   <header><button id="up" title="Go up to the parent folder">..</button><button id="newFile" title="Create a new file in this folder">+ file</button><button id="newFolder" title="Create a new folder here">+ folder</button><button id="refresh" title="Reload the file list and the open file">&#x21bb;</button><button id="searchToggle" title="Search file names or file contents">&#x1F50D;</button></header>
   <div id="searchBar"><input id="searchInput" placeholder="search..." autocomplete="off" title="Search text (Esc closes)"><select id="searchMode" title="Search file names or file contents"><option value="name">name</option><option value="content">content</option></select></div>
-  <div id="crumb" title="Current folder"></div>
+  <div id="crumb"></div>
   <ul id="list"></ul>
 </aside>
 <div id="resizer" title="Drag to resize the file list"></div>
@@ -147,7 +148,32 @@ function renderName() {
   const text = openPath ? absPath(openPath) : absPath(cwd) + "/";
   // #name is direction:rtl (ellipsis on the left); LRM marks stop the leading "/" rendering at the end.
   $("name").textContent = "\u200E" + text + "\u200E";
-  $("name").title = text;
+  $("name").title = text + "\n(click to copy the full path)";
+  $("name").dataset.copy = text;
+  $("crumb").dataset.copy = absPath(cwd) + "/";
+  $("crumb").title = "Current folder (click to copy the full path)";
+}
+
+/**
+ * Copy text to the clipboard. navigator.clipboard needs a secure context (https/localhost),
+ * so plain-http LAN URLs fall back to a hidden textarea + execCommand("copy").
+ * @param {string} text Text to copy.
+ */
+async function copyText(text) {
+  try {
+    if (window.isSecureContext && navigator.clipboard) { await navigator.clipboard.writeText(text); }
+    else {
+      const ta = Object.assign(document.createElement("textarea"), { value: text });
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.append(ta); ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      if (!ok) throw new Error("copy command refused");
+    }
+    setStatus("copied " + text);
+  } catch (err) {
+    setStatus("copy failed: " + err.message);
+  }
 }
 
 /** Mirror the current file (or folder) into ?path= so a reload lands in the same place. */
@@ -395,6 +421,8 @@ $("newFolder").onclick = async () => {
 $("up").onclick = () => cwd && navigate(dirname(cwd));
 $("refresh").onclick = () => refreshAll();
 $("save").onclick = snapshot;
+$("name").onclick = () => copyText($("name").dataset.copy);
+$("crumb").onclick = () => copyText($("crumb").dataset.copy);
 for (const key in SYNTAXES) $("syntax").add(new Option(SYNTAXES[key].label, key));
 $("syntax").addEventListener("change", () => applySyntax($("syntax").value));
 $("searchToggle").onclick = () => {

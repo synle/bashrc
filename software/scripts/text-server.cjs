@@ -117,6 +117,10 @@ function resolveSafe(rel, mustExist) {
  * @param {unknown} body JSON-serializable payload.
  */
 function sendJson(res, status, body) {
+  // Log every error response so failures are debuggable from the terminal running the server.
+  if (status >= 400 && res.req) {
+    process.stderr.write(`text-server: ${new Date().toISOString()} ${res.req.method} ${res.req.url} -> ${status} ${body && body.error}\n`);
+  }
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
   res.end(JSON.stringify(body));
 }
@@ -289,9 +293,11 @@ const server = http.createServer(async (req, res) => {
     }
     res.writeHead(404);
     res.end();
+    process.stderr.write(`text-server: ${req.method} ${req.url} -> 404\n`);
   } catch (err) {
     const status = err.status || (err.code === "ENOENT" ? 404 : err.code === "EEXIST" || err.code === "ENOTEMPTY" ? 409 : 500);
-    if (status === 500) process.stderr.write(`text-server: ${req.method} ${url.pathname} failed: ${err.stack}\n`);
+    // 500s get the full stack server-side; sendJson logs the status line for every error.
+    if (status === 500) process.stderr.write(`text-server: ${req.method} ${req.url} failed: ${err.stack}\n`);
     sendJson(res, status, { error: status === 500 ? "internal error" : err.code || err.message });
   }
 });
