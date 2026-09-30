@@ -158,6 +158,13 @@ build_webapp:
 build_installer:
 	node software/tools/build-installer.js
 
+# Build the single-file, offline text-server (.build/_text-server/text-server): the Node
+# server with its UI page embedded and every CDN stylesheet/script/CodeMirror mode inlined.
+# Run it with `./text-server <folder> [<port>] [<allow_cd 0|1>]`. CI mirrors it to the
+# binary-cache rolling release as text-server__text-server.
+build_text_server:
+	node software/tools/build-text-server.js
+
 # Render every generated editor theme into .build/_theme-preview.{html,png}.
 # The unit tests assert contrast floors for the pairs someone listed; this
 # renders the surfaces where two colors sit side by side, so a collision no
@@ -264,8 +271,8 @@ build_hosts: build_update_hosts
 # ---- CI ----
 ################################################################################
 
-# CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, build installer, and download release binaries
-ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun build_installer ci_download_release_binaries
+# CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, build installer + text-server bundle, and download release binaries
+ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun build_installer build_text_server ci_download_release_binaries
 
 # Mirror latest release binaries (url-porter, sqlui-native, display-dj, skiff-files, proxie)
 # into the binary-cache rolling release on synle/bashrc. No local files are written —
