@@ -36,12 +36,13 @@
       #fileNav {
         flex: none;
         display: flex;
+        justify-content: center;
         gap: 4px;
         padding: 6px 8px;
         border-top: 1px solid #333;
       }
       #fileNav button {
-        flex: 1;
+        flex: none;
       }
       body.side-collapsed #side,
       body.side-collapsed #resizer {
@@ -281,6 +282,25 @@
         opacity: 0.4;
         cursor: default;
       }
+      /* Every icon-only button: one fixed square with the shared border + background, glyph centered. */
+      button.icon-btn {
+        flex: none;
+        box-sizing: border-box;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        line-height: 1;
+        background: #333;
+        border: 1px solid #555;
+        border-radius: 3px;
+      }
+      button.icon-btn:hover {
+        background: #444;
+      }
       .CodeMirror {
         flex: 1;
         height: auto;
@@ -352,10 +372,10 @@
   <body>
     <aside id="side">
       <header>
-        <button id="up" title="Go up to the parent folder">..</button
+        <button id="up" class="icon-btn" title="Go up to the parent folder">..</button
         ><button id="newFile" title="Create a new file in this folder">+ file</button
         ><button id="newFolder" title="Create a new folder here">+ folder</button
-        ><button id="searchToggle" title="Search file names or file contents">&#x1F50D;</button>
+        ><button id="searchToggle" class="icon-btn" title="Search file names or file contents">&#x1F50D;</button>
       </header>
       <div id="searchBar">
         <input id="searchInput" placeholder="search..." autocomplete="off" title="Search text (Esc closes)" /><select
@@ -368,21 +388,21 @@
       </div>
       <div id="crumbRow">
         <div id="crumb"></div>
-        <button id="refresh" title="Reload the file list and the open file">&#x21bb;</button
-        ><button id="deleteAll" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1;</button>
+        <button id="refresh" class="icon-btn" title="Reload the file list and the open file">&#x21bb;</button
+        ><button id="deleteAll" class="icon-btn" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1;</button>
       </div>
       <ul id="list"></ul>
       <div id="fileNav">
-        <button id="prevFile" title="Previous file in the list, wraps to the bottom (Ctrl+[)">&#x25C0;</button
-        ><button id="nextFile" title="Next file in the list, wraps to the top (Ctrl+])">&#x25B6;</button>
+        <button id="prevFile" class="icon-btn" title="Previous file in the list, wraps to the bottom (Ctrl+[)">&#x25C0;</button
+        ><button id="nextFile" class="icon-btn" title="Next file in the list, wraps to the top (Ctrl+])">&#x25B6;</button>
       </div>
     </aside>
     <div id="resizer" title="Drag to resize the file list"></div>
     <main id="main">
       <div id="bar">
-        <button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span
-        ><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button
-        ><button id="download" title="Download the open file (saves pending edits first)">&#x2B07;</button
+        <button id="sideToggle" class="icon-btn" title="Hide or show the file list">&#x2630;</button><span id="name"></span
+        ><button id="copyPath" class="icon-btn" title="Copy the full path to the clipboard">&#x1F4CB;</button
+        ><button id="download" class="icon-btn" title="Download the open file (saves pending edits first)">&#x2B07;</button
         ><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select
         ><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button>
       </div>
