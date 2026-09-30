@@ -1,38 +1,30 @@
 /**
- * Installs `text-server`: a zero-dependency Node web editor (create/open/edit/delete
- * files in one folder) plus a bash launcher mirroring `code-server`'s arguments and
- * token handling.
+ * Registers `text-server`: a bash launcher that streams the zero-dependency Node web
+ * editor (software/scripts/text-server.cjs) from the repo on every run, so nothing is
+ * installed locally and the latest upstream version always runs.
  */
 
-/** @type {string} Repo path of the Node server payload. */
-const TEXT_SERVER_SOURCE = `software/scripts/text-server.cjs`;
+/** @type {string} Legacy installed payload path, removed so a stale copy cannot linger. */
+const TEXT_SERVER_LEGACY_PAYLOAD = path.join(BASE_HOMEDIR_LINUX, `.local`, `bin`, `text-server-app`);
 
 /**
- * Resolve the installed server payload path.
- * @returns {string} Absolute path under ~/.local/bin.
+ * Delete the payload older versions of this script installed.
  */
-function _textServerDestination() {
-  return path.join(BASE_HOMEDIR_LINUX, `.local`, `bin`, `text-server-app`);
+function _removeLegacyPayload() {
+  if (IS_DRY_RUN || !fs.existsSync(TEXT_SERVER_LEGACY_PAYLOAD)) return;
+  fs.unlinkSync(TEXT_SERVER_LEGACY_PAYLOAD);
+  log(`Removed legacy ${TEXT_SERVER_LEGACY_PAYLOAD}`);
 }
 
-/** Install the server payload and register the `text-server` bash function. */
+/** Register the `text-server` bash function. */
 async function doWork() {
-  const dest = _textServerDestination();
-  const content = await readText`${TEXT_SERVER_SOURCE}`;
-  if (!IS_DRY_RUN) {
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-  }
-  await writeText(dest, content);
-  if (!IS_DRY_RUN) {
-    fs.chmodSync(dest, 0o755);
-  }
-  log(`text-server-app installed at ${dest}`);
+  _removeLegacyPayload();
 
   registerWithBashSyleProfile(
     "Text Server",
     code`
       # text-server: tiny browser file editor (Node, no deps) on 0.0.0.0, no auth.
-      # Same arguments as code-server. Side effects: copies the LAN URL, opens the browser.
+      # Same arguments as code-server. Server code is curl-fetched from the repo each run. Side effects: copies the LAN URL, opens the browser.
       function text-server() {
         if is_help_arg "\${1:-}"; then
           echo "
@@ -63,15 +55,16 @@ async function doWork() {
           return 1
         fi
 
-        local server_file="$HOME/.local/bin/text-server-app"
-        if [ ! -f "$server_file" ]; then
-          echo "text-server: $server_file missing; run: bash run.sh --files=text-server.js" >&2
-          return 1
-        fi
         if ! type -P node &> /dev/null; then
           echo "text-server: node not found on PATH" >&2
           return 1
         fi
+        # Fetched fresh each run so the upstream copy is the only one maintained.
+        local server_code
+        server_code=$(command curl -fsSL "$(get_github_raw_url software/scripts/text-server.cjs)") || {
+          echo "text-server: could not download server code" >&2
+          return 1
+        }
 
         local url="http://$(_docker_share_host_ip):$port/"
         local local_url="http://localhost:$port/"
@@ -89,20 +82,14 @@ async function doWork() {
           ( sleep 2 && xdg-open "$local_url" > /dev/null 2>&1 ) &
         fi
 
-        node "$server_file" "$folder" "$port"
+        node - "$folder" "$port" <<< "$server_code"
       }
     `,
   );
 }
 
-/** Remove the server payload and the `text-server` bash function. */
+/** Remove the `text-server` bash function. */
 async function undoWork() {
-  const dest = _textServerDestination();
-  if (IS_DRY_RUN) {
-    log(`[dry-run] would remove ${dest}`);
-  } else if (fs.existsSync(dest)) {
-    fs.unlinkSync(dest);
-    log(`Removed ${dest}`);
-  }
+  _removeLegacyPayload();
   await removeFromBashSyleProfile("Text Server");
 }
