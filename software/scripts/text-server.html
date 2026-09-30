@@ -25,7 +25,8 @@
   #crumb { flex: 1; min-width: 0; color: #8ab4f8; word-break: break-all; cursor: pointer; }
   #crumb:hover, #name:hover { text-decoration: underline; }
   #crumbRow button { flex: none; }
-  #copyPath { flex: none; margin-right: auto; } /* sits right after the path; pushes the rest right */
+  #copyPath { flex: none; } /* sits right after the path */
+  #download { flex: none; margin-right: auto; } /* next to copy; pushes the rest right */
   #list { flex: 1; overflow: auto; list-style: none; margin: 0; padding: 0; }
   #list li { padding: 4px 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 6px; }
   #list li:hover { background: #2a2a2a; }
@@ -63,6 +64,11 @@
   #empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #1e1e1e; color: #999; z-index: 5; text-align: center; padding: 16px; }
   #empty[hidden] { display: none; }
   #empty .title { font-size: 16px; color: #ddd; }
+  #mediaView { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: auto; background: #1e1e1e; z-index: 4; padding: 16px; box-sizing: border-box; }
+  #mediaView[hidden], #mediaView > [hidden] { display: none; }
+  #mediaView img, #mediaView video { max-width: 100%; max-height: 100%; object-fit: contain; }
+  #mediaView img { background: repeating-conic-gradient(#2a2a2a 0% 25%, #333 0% 50%) 50% / 16px 16px; }
+  #mediaView iframe { width: 100%; height: 100%; border: 0; background: #fff; }
 </style></head>
 <body>
 <aside id="side">
@@ -73,8 +79,8 @@
 </aside>
 <div id="resizer" title="Drag to resize the file list"></div>
 <main id="main">
-  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
-  <div id="editorWrap"></div>
+  <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button><button id="download" title="Download the open file (saves pending edits first)">&#x2B07;</button><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
+  <div id="editorWrap"><div id="mediaView" hidden><img id="mediaImg" alt="" hidden><video id="mediaVideo" controls preload="metadata" hidden></video><iframe id="mediaPdf" title="PDF preview" hidden></iframe></div></div>
   <div id="empty"><div class="title">No file open</div><div>Pick a file from the list on the left to start editing.</div><button id="emptyNewFile" title="Create a new file in this folder">+ Create a new file</button></div>
   <div id="foot"><span id="status" title="Save / sync status"></span><span id="pos" title="Cursor line and column"></span><span id="size" title="Size of the open file as edited (UTF-8)"></span><span id="version" title="text-server version"></span></div>
 </main>
@@ -97,6 +103,8 @@ const AUTOSAVE_DELAY_MS = 800;
  * counted on letters and digits alone (whitespace and punctuation stripped), is at least minChangedChars.
  */
 const AUTO_SNAPSHOT = { intervalMs: 10 * 60 * 1000, minChangedChars: 150 };
+/** A snapshot (manual or auto) is skipped unless the file holds at least this many letters/digits (whitespace and symbols stripped). */
+const SNAPSHOT_MIN_CHARS = 10;
 /** While the server is down, how often to probe it for auto-recovery, in ms. */
 const RECOVERY_POLL_MS = 3000;
 /** Controls that talk to the server; disabled while it is down. Local-only ones (sidebar toggle, copy path, syntax) stay live. */
@@ -468,12 +476,72 @@ function setEditorContent(content) {
   applyingRemote = false;
 }
 
+/**
+ * Extension -> built-in viewer for files that are not text. Mirrors MEDIA_CONTENT_TYPES in
+ * text-server.cjs (which serves them from /api/raw); keep both in sync.
+ */
+const MEDIA_KINDS = Object.freeze({
+  png: "image", jpg: "image", jpeg: "image", gif: "image", webp: "image", bmp: "image", ico: "image", avif: "image", svg: "image",
+  pdf: "pdf",
+  mp4: "video", m4v: "video", mov: "video", webm: "video", ogv: "video",
+});
+/** Kind of the open file when it is shown in the media viewer ("image" | "video" | "pdf"), else null. */
+let openMediaKind = null;
+
+/**
+ * Which built-in viewer a path needs.
+ * @param {string} rel File path.
+ * @returns {string|null} "image" | "video" | "pdf", or null for text.
+ */
+function mediaKindFor(rel) {
+  const dot = rel.lastIndexOf(".");
+  return dot < 0 ? null : MEDIA_KINDS[rel.slice(dot + 1).toLowerCase()] || null;
+}
+
+/**
+ * Show (kind + url) or hide (kind null) the media viewer over the editor. Unused elements get their
+ * src removed so a hidden video stops playing and nothing keeps downloading.
+ * @param {string|null} kind "image" | "video" | "pdf", or null to hide.
+ * @param {string} [url] Source URL.
+ */
+function showMedia(kind, url) {
+  const els = { image: $("mediaImg"), video: $("mediaVideo"), pdf: $("mediaPdf") };
+  for (const [k, el] of Object.entries(els)) {
+    if (k === kind) { el.src = url; el.hidden = false; continue; }
+    if (el.hasAttribute("src")) { if (k === "video") el.pause(); el.removeAttribute("src"); if (k === "video") el.load(); }
+    el.hidden = true;
+  }
+  $("mediaView").hidden = !kind;
+}
+
+/** Raw-bytes URL for a media file; the stamp busts the browser cache so refresh shows the current file. */
+function rawUrl(rel) {
+  return "/api/raw?path=" + encodeURIComponent(rel) + "&v=" + Date.now();
+}
+
 async function openFile(rel) {
   // Every switch bumps openSeq; responses from an older switch (or an in-flight refresh) are dropped.
   const seq = ++openSeq;
   const signal = newReadSignal();
   if (rel !== openPath && !(await flushSave())) { alert("Could not save " + openPath + "; staying on it so no edits are lost."); return; }
   if (seq !== openSeq) return;
+  const kind = mediaKindFor(rel);
+  if (kind) {
+    // Images / PDF / video render in the browser's own viewer; the editor stays empty and read-only.
+    openPath = rel; openMediaKind = kind; loadedContent = "";
+    applyingRemote = true; editor.setValue(""); applyingRemote = false;
+    editor.setOption("readOnly", true);
+    applySyntax("plain");
+    showMedia(kind, rawUrl(rel));
+    setClean(true);
+    setStatus("");
+    setUrl(openPath);
+    renderName();
+    refreshView(true);
+    return;
+  }
+  openMediaKind = null;
+  showMedia(null);
   try {
     const data = await api("GET", "/api/file", rel, undefined, "", signal);
     if (seq !== openSeq) return;
@@ -498,7 +566,8 @@ function closeFile() {
   openSeq++;
   newReadSignal();
   clearTimeout(saveTimer);
-  openPath = null; loadedContent = ""; setClean(true);
+  openPath = null; openMediaKind = null; loadedContent = ""; setClean(true);
+  showMedia(null);
   applyingRemote = true; editor.setValue(""); applyingRemote = false;
   editor.setOption("readOnly", true);
   applySyntax("plain");
@@ -511,10 +580,15 @@ function closeFile() {
  * <file>.<MM-DD-YYYY_HH-MM> unless the newest existing snapshot (new or legacy digit suffix) already has this content.
  */
 async function snapshot(auto) {
-  if (!openPath) return;
+  if (!openPath || openMediaKind) return; // media files are not edited here, nothing to version
   if (!(await flushSave())) return;
   const folder = dirname(openPath), prefix = basename(openPath) + ".";
   const content = editor.getValue();
+  // Too little to be worth versioning: empty or under SNAPSHOT_MIN_CHARS letters/digits.
+  if (normalizeForSnapshot(content).length < SNAPSHOT_MIN_CHARS) {
+    setStatus("snapshot skipped: under " + SNAPSHOT_MIN_CHARS + " letters/digits");
+    return;
+  }
   try {
     const listing = await api("GET", "/api/list", folder);
     let latestName = "", latestOrder = -Infinity;
@@ -668,6 +742,8 @@ async function refreshAll() {
 /** Re-fetch the open file from disk; never clobbers unsaved edits. */
 async function refreshOpenFile() {
   if (!openPath) return;
+  // Media: never read as text. Images/PDF reload from disk; a video is left alone so playback is not reset.
+  if (openMediaKind) { if (openMediaKind !== "video") showMedia(openMediaKind, rawUrl(openPath)); return; }
   const seq = openSeq, target = openPath;
   try {
     const data = await api("GET", "/api/file", target, undefined, "", fileReads.signal);
@@ -793,9 +869,9 @@ document.addEventListener("drop", async (e) => {
     } catch (err) { failures.push(f.name + ": " + err.message); }
   }
   refreshView(true);
-  // Auto-open only a single text-like drop; binaries would render as garbage in the editor.
+  // Auto-open a single drop when it is text or viewable media; other binaries would render as garbage.
   const BINARY_MIME = /^(image|audio|video|font)\/|^application\/(octet-stream|pdf|zip|gzip|x-tar|x-7z-compressed)/;
-  if (files.length === 1 && lastPath && !BINARY_MIME.test(lastFile.type)) await openFile(lastPath);
+  if (files.length === 1 && lastPath && (mediaKindFor(lastPath) || !BINARY_MIME.test(lastFile.type))) await openFile(lastPath);
   if (failures.length) alert("Upload failed:\n" + failures.join("\n"));
 }, true);
 $("newFolder").onclick = async () => {
@@ -811,6 +887,15 @@ $("save").onclick = () => snapshot(false);
 $("name").onclick = () => copyText($("name").dataset.copy);
 $("crumb").onclick = () => copyText($("crumb").dataset.copy);
 $("copyPath").onclick = () => copyText($("name").dataset.copy);
+/** Download the open file as it is on disk, after flushing pending edits so the file matches the editor. */
+$("download").onclick = async () => {
+  if (!openPath) { alert("No file open to download."); return; }
+  if (!(await flushSave())) { alert("Could not save pending edits; download cancelled."); return; }
+  const a = document.createElement("a");
+  a.href = "/api/raw?path=" + encodeURIComponent(openPath) + "&download=1";
+  a.download = basename(openPath);
+  document.body.append(a); a.click(); a.remove();
+};
 for (const key in SYNTAXES) $("syntax").add(new Option(SYNTAXES[key].label, key));
 $("syntax").addEventListener("change", () => applySyntax($("syntax").value));
 $("searchToggle").onclick = () => {

@@ -14,6 +14,8 @@
  *   GET    /api/info?path=<rel>   { path, folder } — lets the UI deep-link ?path= to a file or folder
  *                                  (not "/api/stat": tracker-blocking extensions match "/stat?" and block it)
  *   GET    /api/file?path=<rel>   read a file (utf8)
+ *   GET    /api/raw?path=<rel>    raw bytes of an image / pdf / video for the built-in viewer (supports Range)
+ *   GET    /api/raw?path=<rel>&download=1  any file as an attachment download
  *   PUT    /api/file?path=<rel>   create/overwrite a file (body = content)
  *   POST   /api/upload?path=<rel>[&onclash=stamp|suffix]  create a file from raw bytes, never
  *                                  overwrite. On a clash: stamp (default) -> <rel>.<MM-DD-YYYY_HH-MM>,
@@ -46,6 +48,27 @@ const MAX_SEARCH_RESULTS = 200;
 const SEARCH_SKIP_FOLDERS = new Set([".git", "node_modules"]);
 /** Max -N counters tried when several uploads clash within the same minute. */
 const MAX_DUPLICATE_ATTEMPTS = 100;
+/**
+ * Extensions /api/raw serves (lowercase, no dot) -> Content-Type: images, PDF, common browser-playable video.
+ * The page's MEDIA_KINDS mirrors these keys; keep both in sync.
+ */
+const MEDIA_CONTENT_TYPES = Object.freeze({
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  bmp: "image/bmp",
+  ico: "image/x-icon",
+  avif: "image/avif",
+  svg: "image/svg+xml",
+  pdf: "application/pdf",
+  mp4: "video/mp4",
+  m4v: "video/mp4",
+  mov: "video/quicktime",
+  webm: "video/webm",
+  ogv: "video/ogg",
+});
 /** /api/upload `onclash` modes: STAMP appends .<stamp> first (dropped files); SUFFIX means the name already carries a stamp. */
 const UPLOAD_ON_CLASH = Object.freeze({ STAMP: "stamp", SUFFIX: "suffix" });
 /** A formatDateTime stamp inside a file name. */
@@ -338,6 +361,45 @@ async function handleApi(req, res, url) {
     const folder = resolveSafe(rel, true);
     if (!fs.statSync(folder).isDirectory()) return sendJson(res, 400, { error: "not a folder" });
     return sendJson(res, 200, searchFiles(folder, query, mode));
+  }
+  if (route === "GET /api/raw") {
+    const file = resolveSafe(rel, true);
+    const stat = fs.statSync(file);
+    if (!stat.isFile()) return sendJson(res, 400, { error: "not a file" });
+    const download = url.searchParams.get("download") === "1";
+    // Download serves any file (unknown types as octet-stream); inline viewing only known media.
+    const type = MEDIA_CONTENT_TYPES[path.extname(file).slice(1).toLowerCase()] || (download ? "application/octet-stream" : null);
+    if (!type) return sendJson(res, 415, { error: "not a viewable media type" });
+    const headers = {
+      "Content-Type": type,
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Accept-Ranges": "bytes",
+    };
+    // RFC 6266/5987: ASCII fallback name plus the exact UTF-8 name.
+    if (download) {
+      const name = path.basename(file);
+      headers["Content-Disposition"] = `attachment; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+    }
+    // SVG is the one type here that can carry script: lock it down if opened directly at this URL.
+    // (Not applied to PDF: a CSP sandbox blocks the browser's built-in PDF viewer.)
+    if (type === "image/svg+xml") headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+    // Single "bytes=start-end" range: <video> needs it to seek, and Safari will not play mp4 without it.
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || "");
+    if (range && stat.size > 0 && (range[1] || range[2])) {
+      let start = range[1] ? Number(range[1]) : Math.max(0, stat.size - Number(range[2])); // "-N" = last N bytes
+      let end = range[1] && range[2] ? Math.min(Number(range[2]), stat.size - 1) : stat.size - 1;
+      if (start > end || start >= stat.size) {
+        res.writeHead(416, { "Content-Range": `bytes */${stat.size}` });
+        return res.end();
+      }
+      res.writeHead(206, { ...headers, "Content-Length": end - start + 1, "Content-Range": `bytes ${start}-${end}/${stat.size}` });
+      fs.createReadStream(file, { start, end }).on("error", () => res.destroy()).pipe(res);
+      return;
+    }
+    res.writeHead(200, { ...headers, "Content-Length": stat.size });
+    fs.createReadStream(file).on("error", () => res.destroy()).pipe(res);
+    return;
   }
   if (route === "GET /api/file") {
     const file = resolveSafe(rel, true);

@@ -175,32 +175,47 @@ async function doWork() {
         node "$server_script" "$folder" "$port" "$allow_cd"
       }
 
-      # copy-server: text-server on a fresh mktemp folder holding an empty clipboard.txt — a LAN scratchpad for pasting text between machines.
-      # Args after the folder pass through to text-server ([<port>] [--allow-cd]). Side effects: creates a temp folder, deleted when the server stops.
+      # copy-server: text-server on a persistent scratch folder holding clipboard.txt — a LAN scratchpad for pasting text between machines.
+      # Reuses the folder recorded in $HOME/.copy-server (recreated with mkdir -p if gone); when that file is missing
+      # or empty, or --new is passed, makes a fresh mktemp folder and records it there. Other args pass through to
+      # text-server ([<port>] [--allow-cd]). Side effects: writes $HOME/.copy-server; the folder is kept after exit.
       function copy-server() {
         if is_help_arg "\${1:-}"; then
           echo "
-            copy-server: text-server on a new temp folder seeded with an empty clipboard.txt (LAN scratchpad; alias: paste-server)
-            The temp folder and everything in it is deleted when the server stops.
-              copy-server                        serve a new temp folder on port 9998
-              copy-server <port>                 serve a new temp folder on <port>
+            copy-server: text-server on a reusable scratch folder seeded with clipboard.txt (LAN scratchpad; alias: paste-server)
+            The folder path lives in \$HOME/.copy-server and is reused (and recreated if deleted) on every run.
+              copy-server                        serve the last folder (or a new temp one) on port 9998
+              copy-server <port>                 same, on <port>
+              copy-server --new ...              start a fresh temp folder and remember it instead
               copy-server ... --allow-cd         pass-through flag, see text-server --help
           "
           return 0
         fi
-        local folder
-        folder=$(mktemp -d) || {
-          echo "copy-server: mktemp failed" >&2
-          return 1
-        }
-        # Seed the scratchpad copy-from-server reads; being the only file, the UI also auto-opens it.
-        : > "$folder/clipboard.txt"
-        # Subshell + EXIT trap: the scratch folder goes away however the server ends, Ctrl+C included
-        # (an interactive shell abandons the rest of a function on SIGINT, so a plain rm after would not run).
-        (
-          trap 'command rm -rf "$folder"' EXIT
-          text-server "$folder" "$@"
-        )
+        local state_file="$HOME/.copy-server"
+        local folder="" arg
+        local -a pass_args=()
+        local want_new=0
+        for arg in "$@"; do
+          if [ "$arg" = "--new" ]; then want_new=1; else pass_args+=("$arg"); fi
+        done
+        if ((!want_new)) && [ -f "$state_file" ]; then
+          IFS= read -r folder < "$state_file" || true
+        fi
+        if [ -n "$folder" ]; then
+          command mkdir -p "$folder" || {
+            echo "copy-server: cannot create $folder (from $state_file); run copy-server --new" >&2
+            return 1
+          }
+        else
+          folder=$(mktemp -d) || {
+            echo "copy-server: mktemp failed" >&2
+            return 1
+          }
+          printf '%s\\n' "$folder" > "$state_file"
+        fi
+        # Seed the scratchpad copy-from-server reads, only when missing so earlier text survives.
+        [ -e "$folder/clipboard.txt" ] || : > "$folder/clipboard.txt"
+        text-server "$folder" \${pass_args[@]+"\${pass_args[@]}"}
       }
       alias paste-server='copy-server'
 

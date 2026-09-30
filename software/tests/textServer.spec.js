@@ -209,6 +209,47 @@ describe("text-server upload (drag and drop)", () => {
   });
 });
 
+describe("text-server raw media and download", () => {
+  let port;
+  const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff]);
+  beforeAll(async () => {
+    fs.writeFileSync(path.join(sandbox, "root", "pic.png"), PNG);
+    fs.writeFileSync(path.join(sandbox, "root", "notes.txt"), "text body");
+    ({ port } = await startServer(path.join(sandbox, "root"), await freePort(), "1"));
+  });
+
+  it("serves an image's exact bytes with its content type", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/api/raw?path=pic.png`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("image/png");
+    expect(Buffer.from(await res.arrayBuffer()).equals(PNG)).toBe(true);
+  });
+
+  it("answers a byte range with 206 and only that slice (video seeking)", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/api/raw?path=pic.png`, { headers: { Range: "bytes=1-3" } });
+    expect(res.status).toBe(206);
+    expect(res.headers.get("content-range")).toBe("bytes 1-3/10");
+    expect(Buffer.from(await res.arrayBuffer()).equals(Buffer.from([0x50, 0x4e, 0x47]))).toBe(true);
+  });
+
+  it("rejects an unsatisfiable range with 416", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/api/raw?path=pic.png`, { headers: { Range: "bytes=50-60" } });
+    expect(res.status).toBe(416);
+  });
+
+  it("refuses to view a non-media file inline with 415", async () => {
+    expect(await call(port, "/api/raw?path=notes.txt")).toEqual({ status: 415, body: { error: "not a viewable media type" } });
+  });
+
+  it("downloads any file as an attachment named after it", async () => {
+    const res = await fetch(`http://127.0.0.1:${port}/api/raw?path=notes.txt&download=1`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/octet-stream");
+    expect(res.headers.get("content-disposition")).toBe(`attachment; filename="notes.txt"; filename*=UTF-8''notes.txt`);
+    expect(await res.text()).toBe("text body");
+  });
+});
+
 describe("text-server error mapping", () => {
   let port;
   beforeAll(async () => {
