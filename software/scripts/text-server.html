@@ -24,7 +24,8 @@
   #crumbRow { display: flex; align-items: flex-start; gap: 6px; padding: 6px 8px; }
   #crumb { flex: 1; min-width: 0; color: #8ab4f8; word-break: break-all; cursor: pointer; }
   #crumb:hover, #name:hover { text-decoration: underline; }
-  #crumbRow button, #copyPath { flex: none; }
+  #crumbRow button { flex: none; }
+  #copyPath { flex: none; margin-right: auto; } /* sits right after the path; pushes the rest right */
   #list { flex: 1; overflow: auto; list-style: none; margin: 0; padding: 0; }
   #list li { padding: 4px 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 6px; }
   #list li:hover { background: #2a2a2a; }
@@ -38,10 +39,11 @@
   #list li.note { color: #999; cursor: default; }
   #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
-  #name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
+  #name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
   #syntax { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
   #status { color: #999; flex: none; width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; } /* fixed width: messages change without shifting the toolbar */
-  #version { color: #666; font-size: 11px; margin-left: 8px; }
+  #version { color: #666; font-size: 11px; margin-left: 8px; white-space: nowrap; }
+  #bar button { white-space: nowrap; flex: none; }
   button { background: #333; color: #ddd; border: 1px solid #555; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
   button:hover { background: #444; }
   button:disabled { opacity: 0.4; cursor: default; }
@@ -580,7 +582,7 @@ $("resizer").addEventListener("pointerdown", (e) => {
   if (!initial) return navigate("");
   let step = "stat";
   try {
-    const info = await api("GET", "/api/stat", initial);
+    const info = await api("GET", "/api/info", initial);
     if (info.folder) return navigate(info.path);
     step = "list";
     await loadList(dirname(info.path), true);

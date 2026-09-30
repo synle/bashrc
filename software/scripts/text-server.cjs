@@ -11,7 +11,8 @@
  * Serves a single-page UI (text-server.html, read from this file's folder; CodeMirror 5
  * from cdnjs) plus a small JSON API:
  *   GET    /api/list?path=<rel>   list a folder
- *   GET    /api/stat?path=<rel>   { path, folder } — lets the UI deep-link ?path= to a file or folder
+ *   GET    /api/info?path=<rel>   { path, folder } — lets the UI deep-link ?path= to a file or folder
+ *                                  (not "/api/stat": tracker-blocking extensions match "/stat?" and block it)
  *   GET    /api/file?path=<rel>   read a file (utf8)
  *   PUT    /api/file?path=<rel>   create/overwrite a file (body = content)
  *   POST   /api/folder?path=<rel> create a folder
@@ -266,7 +267,7 @@ async function handleApi(req, res, url) {
       .sort((a, b) => (a.folder === b.folder ? a.name.localeCompare(b.name) : a.folder ? -1 : 1));
     return sendJson(res, 200, { path: path.relative(ROOT, folder), entries });
   }
-  if (route === "GET /api/stat") {
+  if (route === "GET /api/info") {
     const target = resolveSafe(rel, true);
     const isFolder = fs.statSync(target).isDirectory();
     if (!ALLOW_CD && isFolder && target !== ROOT) return sendJson(res, 403, { error: "folder navigation disabled" });
