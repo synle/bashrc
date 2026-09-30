@@ -861,6 +861,35 @@ _PATCH_FIND_EOF_
   echo ">>> committed and archived to $archive_folder"
 }
 
+# _git_patch_send_to_copy_servers: fire-and-forget copy-to-server for a new patch
+#
+# Sends the patch to every CODE_SERVER_REMOTE copy-server as <repo>-<date_time>.patch
+# (copy-to-server also overwrites clipboard.txt there, so copy-from-server on the
+# other machine returns this patch). Runs in the background so a slow or down
+# server never delays `patch`; output goes to <patch>.copy-to-server.log beside the
+# patch so a failed send is still traceable. --no-copy-url keeps the patch, not a
+# URL, on the local clipboard. Skips with a one-line reason when copy-to-server or
+# its host list is unavailable.
+#   $1 - patch file path
+#   $2 - repo name (remote file name prefix)
+# Returns 0 always (a skipped or failed send never fails patch creation).
+function _git_patch_send_to_copy_servers() {
+  local patch_file="$1" repo_name="$2"
+  if ! type copy-to-server &> /dev/null; then
+    echo ">>> copy-servers: skipped (copy-to-server not loaded)"
+    return 0
+  fi
+  if [ -z "${CODE_SERVER_REMOTE_HOSTS:-}" ]; then
+    echo ">>> copy-servers: skipped (no CODE_SERVER_REMOTE hosts; re-run run.sh)"
+    return 0
+  fi
+  local remote_name="${repo_name}-$(date +%Y-%m-%d_%H-%M-%S).patch"
+  local log_file="${patch_file}.copy-to-server.log"
+  (copy-to-server --no-copy-url --name "$remote_name" "$patch_file" < /dev/null > "$log_file" 2>&1 &)
+  echo ">>> copy-servers: sending $remote_name in the background to $CODE_SERVER_REMOTE_HOSTS (log: $log_file)"
+  return 0
+}
+
 # git_patch_create: export the last commit as a patch — print, copy, save, upload
 function git_patch_create() {
   if is_help_arg "${1:-}"; then
@@ -871,6 +900,8 @@ function git_patch_create() {
     2. copies it to the clipboard ('copy --raw' — unwrap would corrupt the diff)
     3. saves it to a fresh /tmp/patch-<rand>/<repo>.patch
     4. uploads it to the shared dropbox folder, or says why it could not
+    5. sends it to every CODE_SERVER_REMOTE copy-server in the background
+       (fire-and-forget; log next to the patch file)
   Examples:
     git_patch_create        last commit
     git_patch_create 3      last 3 commits
@@ -909,6 +940,7 @@ function git_patch_create() {
   echo ">>> patch copied to clipboard"
   echo ">>> patch file created $patch_file"
   _git_patch_upload "$patch_file" "$repo_name"
+  _git_patch_send_to_copy_servers "$patch_file" "$repo_name"
   # cd to the REPO, not to the patch. `git_patch_apply` runs `git apply`, whose
   # paths are repo-relative, so the default "cd to the file's folder" block sent
   # you into the throwaway /tmp patch folder — not a git repo — where every hunk
