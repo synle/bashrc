@@ -15,8 +15,8 @@
  *                                  (not "/api/stat": tracker-blocking extensions match "/stat?" and block it)
  *   GET    /api/file?path=<rel>   read a file (utf8)
  *   PUT    /api/file?path=<rel>   create/overwrite a file (body = content)
- *   POST   /api/upload?path=<rel> create a file, never overwrite; on a name clash saves
- *                                  as <rel>.<Date.now()> instead. Returns { path, duplicate? }
+ *   POST   /api/upload?path=<rel> create a file from raw bytes, never overwrite; on a name clash
+ *                                  saves as <rel>.<MM-DD-YYYY_HH-MM-SS> instead. Returns { path, duplicate? }
  *   POST   /api/folder?path=<rel> create a folder
  *   POST   /api/rename?path=<rel>&to=<name>  rename in place (same folder, no overwrite)
  *   GET    /api/search?path=<rel>&q=<text>&mode=name|content  search file names or contents
@@ -42,6 +42,19 @@ const MAX_SEARCH_FILES = 5000;
 const MAX_SEARCH_RESULTS = 200;
 /** Folder names a search never descends into. */
 const SEARCH_SKIP_FOLDERS = new Set([".git", "node_modules"]);
+/** Max -N suffixes tried when several uploads clash within the same second. */
+const MAX_DUPLICATE_ATTEMPTS = 100;
+
+/**
+ * Filename timestamp, local time, 24h: MM-DD-YYYY_HH-MM-SS (e.g. 09-30-2026_14-44-01).
+ * The page (text-server.html) carries a byte-equivalent copy; keep both in sync.
+ * @param {Date} d Moment to format.
+ * @returns {string} Formatted timestamp.
+ */
+function formatDateTime(d) {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+}
 
 const ROOT = fs.realpathSync(path.resolve(process.argv[2] || "."));
 const PORT = Number(process.argv[3] || 9998);
@@ -322,16 +335,25 @@ async function handleApi(req, res, url) {
     if (!rel) return sendJson(res, 400, { error: "path required" });
     const file = resolveSafe(rel, false);
     const content = await readBodyBytes(req); // raw bytes: images/binaries survive unchanged
-    // Never overwrite: on a name clash save as <name>.<Date.now()>. "wx" makes the create atomic.
+    // Never overwrite: on a name clash save as <name>.<MM-DD-YYYY_HH-MM-SS>. "wx" makes the create atomic.
     try {
       fs.writeFileSync(file, content, { flag: "wx" });
       return sendJson(res, 200, { path: path.relative(ROOT, file) });
     } catch (err) {
       if (err.code !== "EEXIST") throw err;
     }
-    const dup = `${file}.${Date.now()}`;
-    fs.writeFileSync(dup, content, { flag: "wx" });
-    return sendJson(res, 200, { path: path.relative(ROOT, dup), duplicate: true });
+    // Same-second clashes get -2, -3, ... so a burst of drops never collides.
+    const stamped = `${file}.${formatDateTime(new Date())}`;
+    for (let attempt = 1; attempt <= MAX_DUPLICATE_ATTEMPTS; attempt++) {
+      const dup = attempt === 1 ? stamped : `${stamped}-${attempt}`;
+      try {
+        fs.writeFileSync(dup, content, { flag: "wx" });
+        return sendJson(res, 200, { path: path.relative(ROOT, dup), duplicate: true });
+      } catch (err) {
+        if (err.code !== "EEXIST") throw err;
+      }
+    }
+    return sendJson(res, 409, { error: "too many files with this name" });
   }
   if (route === "POST /api/folder") {
     if (!ALLOW_CD) return sendJson(res, 403, { error: "folder navigation disabled" });

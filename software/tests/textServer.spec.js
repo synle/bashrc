@@ -176,9 +176,19 @@ describe("text-server upload (drag and drop)", () => {
     const { status, body } = await upload("a.txt", "two");
     expect(status).toBe(200);
     expect(body.duplicate).toBe(true);
-    expect(body.path).toMatch(/^a\.txt\.\d{13}$/);
+    expect(body.path).toMatch(/^a\.txt\.\d{2}-\d{2}-\d{4}_\d{2}-\d{2}-\d{2}(-\d+)?$/);
     expect(fs.readFileSync(path.join(sandbox, "root", body.path), "utf8")).toBe("two");
     expect(fs.readFileSync(path.join(sandbox, "root", "a.txt"), "utf8")).toBe("hello");
+  });
+
+  it("gives a second clash in the same second its own -N name instead of failing", async () => {
+    fs.writeFileSync(path.join(sandbox, "root", "burst.txt"), "orig");
+    const first = await upload("burst.txt", "x");
+    const second = await upload("burst.txt", "y");
+    expect(second.status).toBe(200);
+    expect(second.body.path).not.toBe(first.body.path);
+    expect(fs.readFileSync(path.join(sandbox, "root", first.body.path), "utf8")).toBe("x");
+    expect(fs.readFileSync(path.join(sandbox, "root", second.body.path), "utf8")).toBe("y");
   });
 });
 

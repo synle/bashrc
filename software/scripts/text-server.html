@@ -36,6 +36,7 @@
   #list li:hover .act { visibility: visible; }
   #list li .ren { color: #8ab4f8; }
   #list li .del { color: #f88; }
+  #deleteAll { color: #f88; }
   #list li.note { color: #999; cursor: default; }
   #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
@@ -67,7 +68,7 @@
 <aside id="side">
   <header><button id="up" title="Go up to the parent folder">..</button><button id="newFile" title="Create a new file in this folder">+ file</button><button id="newFolder" title="Create a new folder here">+ folder</button><button id="searchToggle" title="Search file names or file contents">&#x1F50D;</button></header>
   <div id="searchBar"><input id="searchInput" placeholder="search..." autocomplete="off" title="Search text (Esc closes)"><select id="searchMode" title="Search file names or file contents"><option value="name">name</option><option value="content">content</option></select></div>
-  <div id="crumbRow"><div id="crumb"></div><button id="refresh" title="Reload the file list and the open file">&#x21bb;</button></div>
+  <div id="crumbRow"><div id="crumb"></div><button id="refresh" title="Reload the file list and the open file">&#x21bb;</button><button id="deleteAll" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1; all</button></div>
   <ul id="list"></ul>
 </aside>
 <div id="resizer" title="Drag to resize the file list"></div>
@@ -507,7 +508,7 @@ function closeFile() {
 
 /**
  * Explicit version snapshot (Ctrl+S / Snapshot button): flush autosave, then copy the file to
- * <file>.<Date.now()> unless the newest existing <file>.<digits> snapshot already has this content.
+ * <file>.<MM-DD-YYYY_HH-MM-SS> unless the newest existing snapshot (new or legacy digit suffix) already has this content.
  */
 async function snapshot(auto) {
   if (!openPath) return;
@@ -516,16 +517,20 @@ async function snapshot(auto) {
   const content = editor.getValue();
   try {
     const listing = await api("GET", "/api/list", folder);
-    const stamps = listing.entries
-      .filter((e) => !e.folder && e.name.startsWith(prefix) && /^[0-9]+$/.test(e.name.slice(prefix.length)))
-      .map((e) => Number(e.name.slice(prefix.length)));
-    if (stamps.length) {
-      const latest = join(folder, prefix + Math.max(...stamps));
+    let latestName = "", latestOrder = -Infinity;
+    for (const e of listing.entries) {
+      if (e.folder || !e.name.startsWith(prefix)) continue;
+      const order = snapshotOrder(e.name.slice(prefix.length));
+      if (order > latestOrder) { latestOrder = order; latestName = e.name; }
+    }
+    if (latestName) {
+      const latest = join(folder, latestName);
       const prev = await api("GET", "/api/file", latest);
       if (prev.content === content) { setStatus("no changes since snapshot " + basename(latest)); return; }
     }
-    const name = openPath + "." + Date.now();
-    await api("PUT", "/api/file", name, content);
+    // /api/upload never overwrites: a same-second second snapshot gets its own name.
+    const saved = await api("POST", "/api/upload", openPath + "." + formatDateTime(new Date()), content);
+    const name = saved.path;
     setStatus((auto ? "auto snapshot " : "snapshot ") + basename(name));
     refreshView(true);
   } catch (err) {
@@ -580,6 +585,37 @@ async function removeEntry(rel, isFolder) {
     if (rel === openPath) closeFile();
     refreshView(true);
   } catch (err) { alert("Delete failed: " + err.message); }
+}
+
+/** Max file names spelled out in the delete-all confirmation before summarizing the rest. */
+const DELETE_ALL_PREVIEW_LIMIT = 30;
+
+/**
+ * Delete every file directly in the current folder, after a confirmation that names each one.
+ * Subfolders are never touched. Re-lists first so the dialog matches what is on disk now.
+ */
+async function deleteAllFiles() {
+  let entries;
+  try { entries = (await api("GET", "/api/list", cwd)).entries; }
+  catch (err) { alert("List failed: " + err.message); return; }
+  const names = entries.filter((e) => !e.folder).map((e) => e.name);
+  if (!names.length) { alert("No files to delete in " + absPath(cwd) + "/"); return; }
+  const shown = names.slice(0, DELETE_ALL_PREVIEW_LIMIT).map((n) => "  - " + n);
+  if (names.length > DELETE_ALL_PREVIEW_LIMIT) shown.push("  ...and " + (names.length - DELETE_ALL_PREVIEW_LIMIT) + " more");
+  const message = "Permanently delete ALL " + names.length + " file(s) in " + absPath(cwd) + "/ ?\n"
+    + "Subfolders are kept. This cannot be undone.\n\n" + shown.join("\n");
+  if (!confirm(message)) return;
+  const failures = [];
+  for (const name of names) {
+    const rel = join(cwd, name);
+    try {
+      await api("DELETE", "/api/file", rel);
+      if (rel === openPath) closeFile();
+    } catch (err) { failures.push(name + ": " + err.message); }
+  }
+  refreshView(true);
+  setStatus("deleted " + (names.length - failures.length) + " of " + names.length + " file(s)");
+  if (failures.length) alert("Some deletes failed:\n" + failures.join("\n"));
 }
 
 async function renameEntry(rel) {
@@ -657,10 +693,35 @@ function autoRefresh() {
   refreshAll();
 }
 
-/** Suggested name for a new file: Temp-YYYY-MM-DD_HH-MM-SS.txt in local time. */
+/**
+ * Filename timestamp, local time, 24h: MM-DD-YYYY_HH-MM-SS (e.g. 09-30-2026_14-44-01).
+ * Byte-equivalent copy of formatDateTime in text-server.cjs; keep both in sync.
+ * @param {Date} d Moment to format.
+ * @returns {string} Formatted timestamp.
+ */
+function formatDateTime(d) {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+}
+
+/** Snapshot suffix in the formatDateTime shape, with the server's optional same-second -N. */
+const DATE_TIME_SUFFIX = /^(\d{2})-(\d{2})-(\d{4})_(\d{2})-(\d{2})-(\d{2})(?:-(\d+))?$/;
+
+/**
+ * Order key for a snapshot suffix. Accepts MM-DD-YYYY_HH-MM-SS[-N] and legacy Date.now() digits.
+ * @param {string} suffix Text after "<file>.".
+ * @returns {number} Epoch ms (plus N/1000 as a same-second tiebreak), or NaN when not a snapshot.
+ */
+function snapshotOrder(suffix) {
+  if (/^[0-9]+$/.test(suffix)) return Number(suffix);
+  const m = DATE_TIME_SUFFIX.exec(suffix);
+  if (!m) return NaN;
+  return new Date(+m[3], m[1] - 1, +m[2], +m[4], +m[5], +m[6]).getTime() + (m[7] ? m[7] / 1000 : 0);
+}
+
+/** Suggested name for a new file: Temp-MM-DD-YYYY_HH-MM-SS.txt in local time. */
 function defaultNewFileName() {
-  const d = new Date(), p = (n) => String(n).padStart(2, "0");
-  return "Temp-" + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "_" + p(d.getHours()) + "-" + p(d.getMinutes()) + "-" + p(d.getSeconds()) + ".txt";
+  return "Temp-" + formatDateTime(new Date()) + ".txt";
 }
 
 $("newFile").onclick = async () => {
@@ -671,9 +732,34 @@ $("newFile").onclick = async () => {
   catch (err) { alert("Create failed: " + err.message); }
 };
 $("emptyNewFile").onclick = () => $("newFile").onclick();
+$("deleteAll").onclick = () => deleteAllFiles();
+
+/** Clipboard image MIME subtype -> file extension (anything else uses the sanitized subtype). */
+const CLIPBOARD_IMAGE_EXT = { jpeg: "jpg", "svg+xml": "svg" };
+/**
+ * Cmd+V / Ctrl+V with a picture on the clipboard: save it into the current folder as
+ * clipboard.picture.<MM-DD-YYYY_HH-MM-SS>.<png|jpg|...>. Text pastes are left to the editor.
+ * Capture phase so CodeMirror never sees an image paste.
+ */
+document.addEventListener("paste", async (e) => {
+  const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
+  const images = items.filter((it) => it.kind === "file" && it.type.startsWith("image/")).map((it) => it.getAsFile()).filter(Boolean);
+  if (!images.length) return;
+  e.preventDefault(); e.stopPropagation();
+  const stamp = formatDateTime(new Date());
+  for (const img of images) {
+    const subtype = img.type.slice("image/".length);
+    const ext = CLIPBOARD_IMAGE_EXT[subtype] || subtype.replace(/[^a-z0-9]/gi, "") || "png";
+    try {
+      const data = await api("POST", "/api/upload", join(cwd, "clipboard.picture." + stamp + "." + ext), img);
+      setStatus("pasted picture saved as " + data.path);
+    } catch (err) { alert("Paste failed: " + err.message); }
+  }
+  refreshView(true);
+}, true);
 /**
  * Drag-and-drop files from the OS into the current folder. Each file is created via
- * /api/upload, which never overwrites: a clashing name is saved as <name>.<Date.now()>.
+ * /api/upload, which never overwrites: a clashing name is saved as <name>.<MM-DD-YYYY_HH-MM-SS>.
  * Capture phase so CodeMirror never inserts the dropped text into the open file.
  */
 function isFileDrag(e) { return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files"); }
