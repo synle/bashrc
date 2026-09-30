@@ -134,7 +134,7 @@ if (!ALLOW_CD) { $("up").style.display = "none"; $("newFolder").style.display = 
 const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
 // cwd/openPath are ROOT-relative with "/" separators; loadedContent is the last server copy of openPath.
 // clean=false means the editor holds edits not yet auto-saved.
-let cwd = "", openPath = null, clean = true, loadedContent = "", applyingRemote = false, lastAutoRefresh = 0, searchTimer = null, saveTimer = null, lastTypedAt = 0;
+let cwd = "", openPath = null, clean = true, loadedContent = "", applyingRemote = false, lastAutoRefresh = 0, searchTimer = null, saveTimer = null, lastTypedAt = 0, openSeq = 0;
 
 const join = (a, b) => (a ? a + "/" + b : b);
 const dirname = (rel) => rel.split("/").slice(0, -1).join("/");
@@ -273,9 +273,13 @@ function setEditorContent(content) {
 }
 
 async function openFile(rel) {
+  // Every switch bumps openSeq; responses from an older switch (or an in-flight refresh) are dropped.
+  const seq = ++openSeq;
   if (rel !== openPath && !(await flushSave())) { alert("Could not save " + openPath + "; staying on it so no edits are lost."); return; }
+  if (seq !== openSeq) return;
   try {
     const data = await api("GET", "/api/file", rel);
+    if (seq !== openSeq) return;
     openPath = data.path;
     loadedContent = data.content;
     editor.setOption("readOnly", false);
@@ -289,10 +293,11 @@ async function openFile(rel) {
     setUrl(openPath);
     renderName();
     refreshView(true);
-  } catch (err) { alert("Open failed: " + err.message); }
+  } catch (err) { if (seq === openSeq) alert("Open failed: " + err.message); }
 }
 
 function closeFile() {
+  openSeq++;
   clearTimeout(saveTimer);
   openPath = null; clean = true; loadedContent = "";
   applyingRemote = true; editor.setValue(""); applyingRemote = false;
@@ -382,8 +387,11 @@ function refreshView(quiet) {
 async function refreshAll() {
   refreshView(true);
   if (!openPath) return;
+  const seq = openSeq, target = openPath;
   try {
-    const data = await api("GET", "/api/file", openPath);
+    const data = await api("GET", "/api/file", target);
+    // The user switched/closed files while this was in flight: this content belongs to another file.
+    if (seq !== openSeq || target !== openPath) return;
     if (data.content === loadedContent) return;
     if (clean) {
       loadedContent = data.content;
@@ -393,7 +401,7 @@ async function refreshAll() {
       setStatus("changed on disk (your pending edits will overwrite it)");
     }
   } catch (err) {
-    if (err.status === 404) setStatus("deleted on disk");
+    if (err.status === 404 && seq === openSeq && target === openPath) setStatus("deleted on disk");
   }
 }
 
