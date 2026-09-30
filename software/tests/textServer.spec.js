@@ -6,6 +6,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "fs";
+import http from "http";
 import os from "os";
 import net from "net";
 import path from "path";
@@ -209,6 +210,29 @@ describe("text-server upload (drag and drop)", () => {
     expect(fs.readFileSync(path.join(sandbox, "root", "clipboard.picture.09-30-2026_14-44-2.png"), "utf8")).toBe("p2");
   });
 
+  it("answers an over-limit upload with a 413 JSON reply, not a connection reset", async () => {
+    // Declare 301 MiB (over the 300 MiB cap) but send only a few bytes: the server must refuse from
+    // Content-Length alone and still deliver the 413 body.
+    const declared = 301 * 1024 * 1024;
+    const reply = await new Promise((resolve, reject) => {
+      const req = http.request(
+        { host: "127.0.0.1", port, method: "POST", path: "/api/upload?path=huge.bin", headers: { "Content-Length": declared } },
+        (res) => {
+          let body = "";
+          res.on("data", (c) => (body += c));
+          res.on("end", () => {
+            req.destroy();
+            resolve({ status: res.statusCode, connection: res.headers.connection, body: JSON.parse(body) });
+          });
+        },
+      );
+      req.on("error", () => {}); // the socket is torn down after the reply; that is expected
+      req.write("tiny");
+    });
+    expect(reply).toEqual({ status: 413, connection: "close", body: { error: "body too large (max 300 MiB)" } });
+    expect(fs.existsSync(path.join(sandbox, "root", "huge.bin"))).toBe(false);
+  });
+
   it("rejects an unknown onclash mode with 400", async () => {
     const res = await fetch(`http://127.0.0.1:${port}/api/upload?path=x.txt&onclash=overwrite`, { method: "POST", body: "z" });
     expect({ status: res.status, body: await res.json() }).toEqual({ status: 400, body: { error: "invalid onclash" } });
@@ -289,6 +313,17 @@ describe("text-server error mapping", () => {
 });
 
 describe("text-server startup", () => {
+  it("answers the HEAD / liveness probe with 200 and no body, not 404", async () => {
+    const { port } = await startServer(path.join(sandbox, "root"), await freePort(), "1");
+    const res = await fetch(`http://127.0.0.1:${port}/`, { method: "HEAD" });
+    expect({ status: res.status, body: await res.text() }).toEqual({ status: 200, body: "" });
+  });
+
+  it("injects the server's upload limit into the page", async () => {
+    const { port } = await startServer(path.join(sandbox, "root"), await freePort(), "1");
+    const page = await (await fetch(`http://127.0.0.1:${port}/`)).text();
+    expect(page).toContain(`const MAX_BODY_BYTES = ${300 * 1024 * 1024};`);
+  });
   it("falls back to a free port when the requested one is busy", async () => {
     const blocker = net.createServer();
     const busyPort = await new Promise((resolve) => blocker.listen(0, "0.0.0.0", () => resolve(blocker.address().port)));

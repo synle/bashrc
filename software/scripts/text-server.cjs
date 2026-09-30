@@ -36,8 +36,14 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-/** Max request body accepted for a file save, in bytes (10 MiB). */
-const MAX_BODY_BYTES = 10 * 1024 * 1024;
+/**
+ * Max request body, in bytes (300 MiB): the one knob for every write — editor saves, drag-and-drop
+ * uploads, pasted pictures, snapshots. Also handed to the page (__MAX_BODY_BYTES__) so it can refuse
+ * an oversized file before sending it.
+ */
+const MAX_BODY_BYTES = 300 * 1024 * 1024;
+/** Past this many bytes an oversized body stops being drained and the socket is dropped (bounds a runaway client). */
+const MAX_DRAIN_BYTES = 2 * MAX_BODY_BYTES;
 /** Max file size served to the editor, in bytes (5 MiB). */
 const MAX_READ_BYTES = 5 * 1024 * 1024;
 /** Max files a single search visits before stopping (keeps one request bounded). */
@@ -106,7 +112,7 @@ const PORT = Number(process.argv[3] || 9998);
 /** When false, only files directly inside ROOT are reachable (no folder navigation). */
 const ALLOW_CD = process.argv[4] === "1";
 
-/** UI page template (placeholders __ROOT_NAME__, __ALLOW_CD__, __ROOT_PATH__), read once from the sibling file. */
+/** UI page template (placeholders __ROOT_NAME__, __ALLOW_CD__, __MAX_BODY_BYTES__, __APP_VERSION__, __ROOT_PATH__), read once from the sibling file. */
 let PAGE_HTML;
 try {
   PAGE_HTML = fs.readFileSync(path.join(__dirname, "text-server.html"), "utf8");
@@ -236,23 +242,46 @@ function sendJson(res, status, body) {
 
 /**
  * Collect the request body with a size cap, as raw bytes (safe for binary uploads).
+ * Oversized bodies reject with status 413. The rest of the body is drained, not reset, so the
+ * 413 JSON actually reaches the browser (a reset reads as "server down" and Chrome retries the
+ * POST); "Connection: close" keeps the socket from being reused. A declared Content-Length over
+ * the cap is refused before reading anything.
  * @param {http.IncomingMessage} req Request.
+ * @param {http.ServerResponse} res Response (gets "Connection: close" on a 413).
  * @returns {Promise<Buffer>} Body bytes.
+ * @throws {Error & {status: 413}} When the body exceeds MAX_BODY_BYTES.
  */
-function readBodyBytes(req) {
+function readBodyBytes(req, res) {
   return new Promise((resolve, reject) => {
+    const tooLarge = () => {
+      res.setHeader("Connection", "close");
+      reject(Object.assign(new Error(`body too large (max ${MAX_BODY_BYTES / (1024 * 1024)} MiB)`), { status: 413 }));
+    };
+    if (Number(req.headers["content-length"]) > MAX_BODY_BYTES) {
+      tooLarge();
+      req.resume(); // discard the body so the response can be delivered
+      return;
+    }
     const chunks = [];
     let size = 0;
+    let overflowed = false;
     req.on("data", (chunk) => {
       size += chunk.length;
+      if (overflowed) {
+        if (size > MAX_DRAIN_BYTES) req.destroy();
+        return;
+      }
       if (size > MAX_BODY_BYTES) {
-        reject(Object.assign(new Error("body too large"), { status: 413 }));
-        req.destroy();
+        overflowed = true;
+        chunks.length = 0; // free what was buffered; keep draining
+        tooLarge();
         return;
       }
       chunks.push(chunk);
     });
-    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("end", () => {
+      if (!overflowed) resolve(Buffer.concat(chunks));
+    });
     req.on("error", reject);
   });
 }
@@ -260,10 +289,11 @@ function readBodyBytes(req) {
 /**
  * Collect the request body with a size cap, decoded as utf8 (editor saves).
  * @param {http.IncomingMessage} req Request.
+ * @param {http.ServerResponse} res Response (gets "Connection: close" on a 413).
  * @returns {Promise<string>} Body as utf8.
  */
-async function readBody(req) {
-  return (await readBodyBytes(req)).toString("utf8");
+async function readBody(req, res) {
+  return (await readBodyBytes(req, res)).toString("utf8");
 }
 
 /**
@@ -421,7 +451,7 @@ async function handleApi(req, res, url) {
     if (!rel) return sendJson(res, 400, { error: "path required" });
     const file = resolveSafe(rel, false);
     if (fs.existsSync(file) && !fs.statSync(file).isFile()) return sendJson(res, 400, { error: "not a file" });
-    fs.writeFileSync(file, await readBody(req), "utf8");
+    fs.writeFileSync(file, await readBody(req, res), "utf8");
     return sendJson(res, 200, { ok: true });
   }
   if (route === "POST /api/upload") {
@@ -429,7 +459,7 @@ async function handleApi(req, res, url) {
     const onClash = url.searchParams.get("onclash") || UPLOAD_ON_CLASH.STAMP;
     if (!Object.values(UPLOAD_ON_CLASH).includes(onClash)) return sendJson(res, 400, { error: "invalid onclash" });
     const file = resolveSafe(rel, false);
-    const content = await readBodyBytes(req); // raw bytes: images/binaries survive unchanged
+    const content = await readBodyBytes(req, res); // raw bytes: images/binaries survive unchanged
     // Never overwrite; "wx" makes each create atomic. Candidates, in order:
     //   stamp:  <name>, <name>.<stamp>, <name>.<stamp>-1, -2, ...
     //   suffix: <name>, then -1, -2, ... inserted right after the stamp already in <name>
@@ -473,12 +503,18 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (url.pathname.startsWith("/api/")) return await handleApi(req, res, url);
+    // HEAD / is the page's "is the server alive?" probe: same headers, no body.
+    if (req.method === "HEAD" && url.pathname === "/") {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+      return res.end();
+    }
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
       // Function replacers: a `$&`-style sequence in a folder name must stay literal.
       return res.end(
         PAGE_HTML.replace("__ROOT_NAME__", () => path.basename(ROOT).replace(/[<>&"]/g, ""))
           .replace("__ALLOW_CD__", ALLOW_CD ? "true" : "false")
+          .replace("__MAX_BODY_BYTES__", String(MAX_BODY_BYTES))
           .replace("__APP_VERSION__", () => JSON.stringify(APP_VERSION))
           .replace("__ROOT_PATH__", () => JSON.stringify(ROOT).replace(/</g, "\\u003c")),
       );

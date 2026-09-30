@@ -425,6 +425,8 @@
     <script>
       CodeMirror.modeURL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/%N/%N.min.js";
       const ALLOW_CD = __ALLOW_CD__;
+      /** Server's max upload / save size in bytes (MAX_BODY_BYTES in text-server.cjs, the single source). */
+      const MAX_BODY_BYTES = __MAX_BODY_BYTES__;
       const ROOT_PATH = __ROOT_PATH__;
       /** Server-reported app version (newest source time, ISO). */
       const APP_VERSION = __APP_VERSION__;
@@ -1420,6 +1422,10 @@
           e.stopPropagation();
           const stamp = formatDateTime(new Date());
           for (const img of images) {
+            if (img.size > MAX_BODY_BYTES) {
+              alert("Paste failed: picture is " + formatBytes(img.size) + ", over the " + formatBytes(MAX_BODY_BYTES) + " limit");
+              continue;
+            }
             const subtype = img.type.slice("image/".length);
             const ext = CLIPBOARD_IMAGE_EXT[subtype] || subtype.replace(/[^a-z0-9]/gi, "") || "png";
             try {
@@ -1462,6 +1468,11 @@
           let lastPath = "",
             lastFile = null;
           for (const f of files) {
+            // Refuse locally: sending an over-limit file only to get a 413 wastes the whole upload.
+            if (f.size > MAX_BODY_BYTES) {
+              failures.push(f.name + ": " + formatBytes(f.size) + " is over the " + formatBytes(MAX_BODY_BYTES) + " limit");
+              continue;
+            }
             try {
               // Send the File itself (raw bytes), never f.text(): images/binaries must not be utf8-decoded.
               const data = await api("POST", "/api/upload", join(cwd, f.name), f);
