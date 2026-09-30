@@ -342,6 +342,8 @@ const server = http.createServer(async (req, res) => {
     }
     res.writeHead(404);
     res.end();
+    // Browser probes (Chrome DevTools asks every localhost origin for /.well-known/...) are noise, not errors.
+    if (url.pathname.startsWith("/.well-known/")) return;
     process.stderr.write(`text-server: ${req.method} ${req.url} -> 404\n`);
   } catch (err) {
     const { status, message } = describeError(err);
