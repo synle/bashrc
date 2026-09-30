@@ -41,6 +41,11 @@
   #bar { padding: 6px 8px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; }
   #name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; color: #8ab4f8; cursor: pointer; }
   #syntax { background: #2a2a2a; color: #ddd; border: 1px solid #555; border-radius: 3px; }
+  #lockout { position: fixed; inset: 0; z-index: 1000; background: rgba(20, 20, 20, 0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px; color: #ddd; }
+  #lockout[hidden] { display: none; }
+  #lockout .title { font-size: 18px; color: #f88; }
+  #lockout .detail { color: #aaa; max-width: 520px; }
+  #lockout .actions { display: flex; gap: 8px; }
   #foot { display: flex; gap: 12px; align-items: center; padding: 3px 8px; border-top: 1px solid #333; font-size: 12px; min-height: 18px; }
   #status { flex: 1; min-width: 0; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; padding: 0 4px; }
   #status.flash { animation: statusFlash 1.2s ease-out; }
@@ -71,6 +76,7 @@
   <div id="bar"><button id="sideToggle" title="Hide or show the file list">&#x2630;</button><span id="name"></span><button id="copyPath" title="Copy the full path to the clipboard">&#x1F4CB;</button><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button></div>
   <div id="editorWrap"></div>
   <div id="empty"><div class="title">No file open</div><div>Pick a file from the list on the left to start editing.</div><button id="emptyNewFile" title="Create a new file in this folder">+ Create a new file</button></div>
+  <div id="lockout" hidden role="alertdialog" aria-live="assertive"><div class="title" id="lockTitle"></div><div class="detail" id="lockDetail"></div><div class="actions"><button id="lockReload" title="Reload the page">Reload page</button><button id="lockCopy" title="Copy the editor content, including unsaved edits" hidden>Copy unsaved text</button></div></div>
   <div id="foot"><span id="status" title="Save / sync status"></span><span id="pos" title="Cursor line and column"></span><span id="size" title="Size of the open file as edited (UTF-8)"></span><span id="version" title="text-server version"></span></div>
 </main>
 <script>
@@ -283,8 +289,63 @@ function newReadSignal() {
   return fileReads.signal;
 }
 
+/** Max wait for the "is the server really down?" probe, in ms. */
+const SERVER_PROBE_TIMEOUT_MS = 3000;
+/** True once the page is locked out; stays true until the user reloads. */
+let lockedOut = false;
+
+/**
+ * Lock the whole page: overlay over everything, editor read-only, pending autosave dropped,
+ * every later api() call refused, clicks and keys blocked. Stays until reload (no auto-recovery),
+ * so nothing half-works against a server that may have restarted on another folder.
+ * @param {"server"|"client"} cause server = text-server stopped answering; client = this browser lost its network.
+ */
+function lockOut(cause) {
+  const unsaved = !!openPath && !clean;
+  if (!lockedOut) {
+    lockedOut = true;
+    clearTimeout(saveTimer);
+    editor.setOption("readOnly", "nocursor");
+    if (document.activeElement) document.activeElement.blur();
+    $("lockout").hidden = false;
+  }
+  $("lockTitle").textContent = cause === "client" ? "You are offline" : "Server not reachable";
+  $("lockDetail").textContent =
+    (cause === "client" ? "This browser lost its network connection." : "text-server at " + location.host + " stopped responding (stopped, restarted, or the network dropped).") +
+    " Editing is disabled. Reload once it is back." +
+    (unsaved ? " Unsaved edits to " + basename(openPath) + " are only in this tab: copy them before reloading." : "");
+  $("lockCopy").hidden = !unsaved;
+  setStatus(cause === "client" ? "offline" : "server not reachable");
+}
+
+/**
+ * After a network-level fetch failure, check whether the server is really gone before locking out.
+ * Any HTTP answer (even 404) means reachable: the failure was transient or one blocked request
+ * (ad blockers fail matching URLs with the same TypeError).
+ * @returns {Promise<boolean>} true when the server did not answer.
+ */
+async function serverUnreachable() {
+  try {
+    await fetch("/?probe=" + Date.now(), { method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(SERVER_PROBE_TIMEOUT_MS) });
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 async function api(method, route, rel, body, extra, signal) {
-  const res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body, signal });
+  if (lockedOut) throw Object.assign(new Error("locked out: " + $("lockTitle").textContent), { name: "LockedOut" });
+  let res;
+  try {
+    res = await fetch(route + "?path=" + encodeURIComponent(rel) + (extra || ""), { method, body, signal });
+  } catch (err) {
+    // Network-level failure (not an abort): lock the page if the client or the server is gone.
+    if (err.name !== "AbortError") {
+      if (!navigator.onLine) lockOut("client");
+      else if (await serverUnreachable()) lockOut("server");
+    }
+    throw err;
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(res.status + " " + (data.error || res.statusText)), { status: res.status });
   return data;
@@ -584,8 +645,25 @@ window.addEventListener("pagehide", () => {
 window.addEventListener("focus", () => { lastAutoRefresh = 0; autoRefresh(); });
 window.addEventListener("blur", () => { flushSave(); autoRefresh(); });
 window.addEventListener("pageshow", autoRefresh);
-window.addEventListener("online", () => { setStatus("back online"); lastAutoRefresh = 0; autoRefresh(); });
-window.addEventListener("offline", () => setStatus("offline"));
+// Losing the network locks the page right away; coming back only updates the message (reload to resume).
+window.addEventListener("offline", () => lockOut("client"));
+window.addEventListener("online", () => {
+  if (lockedOut) $("lockDetail").textContent = "Network is back. Reload to continue" + ($("lockCopy").hidden ? "." : " (copy your unsaved edits first).");
+});
+// While locked, swallow every key and click outside the lockout dialog (capture phase: before any handler).
+for (const type of ["keydown", "click", "mousedown"]) {
+  document.addEventListener(type, (ev) => {
+    if (lockedOut && !$("lockout").contains(ev.target)) { ev.preventDefault(); ev.stopImmediatePropagation(); }
+  }, true);
+}
+$("lockReload").onclick = () => location.reload();
+$("lockCopy").onclick = async () => {
+  await copyText(editor.getValue());
+  $("lockCopy").textContent = $("status").textContent.startsWith("copy failed") ? "Copy failed" : "Copied";
+};
+// Failures that follow a lockout are expected; the overlay already says why, so no alert() pile-up.
+const nativeAlert = window.alert.bind(window);
+window.alert = (message) => { if (!lockedOut) nativeAlert(message); };
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { lastAutoRefresh = 0; autoRefresh(); } });
 document.addEventListener("click", autoRefresh);
 
