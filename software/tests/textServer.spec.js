@@ -165,6 +165,13 @@ describe("text-server upload (drag and drop)", () => {
     expect(fs.readFileSync(path.join(sandbox, "root", "dropped.txt"), "utf8")).toBe("one");
   });
 
+  it("stores binary bytes unchanged (no utf8 round-trip)", async () => {
+    const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0xfe, 0x80]);
+    const res = await fetch(`http://127.0.0.1:${port}/api/upload?path=img.png`, { method: "POST", body: bytes });
+    expect(await res.json()).toEqual({ path: "img.png" });
+    expect(fs.readFileSync(path.join(sandbox, "root", "img.png")).equals(bytes)).toBe(true);
+  });
+
   it("saves a clashing name as <name>.<timestamp> and leaves the original untouched", async () => {
     const { status, body } = await upload("a.txt", "two");
     expect(status).toBe(200);

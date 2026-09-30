@@ -683,16 +683,19 @@ document.addEventListener("drop", async (e) => {
   e.preventDefault(); e.stopPropagation();
   const files = Array.from(e.dataTransfer.files || []);
   const failures = [];
-  let lastPath = "";
+  let lastPath = "", lastFile = null;
   for (const f of files) {
     try {
-      const data = await api("POST", "/api/upload", join(cwd, f.name), await f.text());
-      lastPath = data.path;
+      // Send the File itself (raw bytes), never f.text(): images/binaries must not be utf8-decoded.
+      const data = await api("POST", "/api/upload", join(cwd, f.name), f);
+      lastPath = data.path; lastFile = f;
       setStatus(data.duplicate ? "name taken, saved as " + data.path : "uploaded " + data.path);
     } catch (err) { failures.push(f.name + ": " + err.message); }
   }
   refreshView(true);
-  if (files.length === 1 && lastPath) await openFile(lastPath);
+  // Auto-open only a single text-like drop; binaries would render as garbage in the editor.
+  const BINARY_MIME = /^(image|audio|video|font)\/|^application\/(octet-stream|pdf|zip|gzip|x-tar|x-7z-compressed)/;
+  if (files.length === 1 && lastPath && !BINARY_MIME.test(lastFile.type)) await openFile(lastPath);
   if (failures.length) alert("Upload failed:\n" + failures.join("\n"));
 }, true);
 $("newFolder").onclick = async () => {

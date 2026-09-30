@@ -177,11 +177,11 @@ function sendJson(res, status, body) {
 }
 
 /**
- * Collect the request body with a size cap.
+ * Collect the request body with a size cap, as raw bytes (safe for binary uploads).
  * @param {http.IncomingMessage} req Request.
- * @returns {Promise<string>} Body as utf8.
+ * @returns {Promise<Buffer>} Body bytes.
  */
-function readBody(req) {
+function readBodyBytes(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
@@ -194,9 +194,18 @@ function readBody(req) {
       }
       chunks.push(chunk);
     });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
   });
+}
+
+/**
+ * Collect the request body with a size cap, decoded as utf8 (editor saves).
+ * @param {http.IncomingMessage} req Request.
+ * @returns {Promise<string>} Body as utf8.
+ */
+async function readBody(req) {
+  return (await readBodyBytes(req)).toString("utf8");
 }
 
 /**
@@ -312,16 +321,16 @@ async function handleApi(req, res, url) {
   if (route === "POST /api/upload") {
     if (!rel) return sendJson(res, 400, { error: "path required" });
     const file = resolveSafe(rel, false);
-    const content = await readBody(req);
+    const content = await readBodyBytes(req); // raw bytes: images/binaries survive unchanged
     // Never overwrite: on a name clash save as <name>.<Date.now()>. "wx" makes the create atomic.
     try {
-      fs.writeFileSync(file, content, { encoding: "utf8", flag: "wx" });
+      fs.writeFileSync(file, content, { flag: "wx" });
       return sendJson(res, 200, { path: path.relative(ROOT, file) });
     } catch (err) {
       if (err.code !== "EEXIST") throw err;
     }
     const dup = `${file}.${Date.now()}`;
-    fs.writeFileSync(dup, content, { encoding: "utf8", flag: "wx" });
+    fs.writeFileSync(dup, content, { flag: "wx" });
     return sendJson(res, 200, { path: path.relative(ROOT, dup), duplicate: true });
   }
   if (route === "POST /api/folder") {
