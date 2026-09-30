@@ -636,3 +636,20 @@ already orphaned because `ctrl+p` (`previous-history`) is bound to fuzzy cd. TRA
 readline's default `ctrl+g` (`abort`) is given up — low impact, since its main job is
 cancelling an incremental search and `ctrl+r` is bound to fzf, which aborts on `esc` /
 `ctrl+c`. The `glog` alias also still opens the git log browser.
+
+---
+
+## text-server (browser editor)
+
+Source: `software/scripts/text-server.html` (page-level handlers, not a keymap file). Same keys on every OS.
+
+| Key                | Action                                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| `ctrl+s` / `cmd+s` | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits)  |
+| `ctrl+[`           | Previous file in the sidebar list, wraps to the bottom (also the ◀ button)               |
+| `ctrl+]`           | Next file in the sidebar list, wraps to the top (also the ▶ button)                      |
+| `ctrl+v` / `cmd+v` | With a picture on the clipboard: save it as `clipboard.picture.<MM-DD-YYYY_HH-MM>.<ext>` |
+
+`ctrl+[` / `ctrl+]` are caught before CodeMirror, so its default indent-less / indent-more on
+those chords is given up inside text-server. Folders in the list are skipped; with no file open,
+`ctrl+]` opens the first file and `ctrl+[` the last.

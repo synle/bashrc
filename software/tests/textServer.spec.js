@@ -128,7 +128,10 @@ describe("text-server path confinement", () => {
   });
 
   it("rejects a .. escape with 403", async () => {
-    expect(await call(port, "/api/file?path=" + encodeURIComponent("../outside.txt"))).toEqual({ status: 403, body: { error: "path outside root" } });
+    expect(await call(port, "/api/file?path=" + encodeURIComponent("../outside.txt"))).toEqual({
+      status: 403,
+      body: { error: "path outside root" },
+    });
   });
 
   it("rejects an absolute path with 403", async () => {
@@ -194,7 +197,10 @@ describe("text-server upload (drag and drop)", () => {
   it("onclash=suffix inserts -1, -2 right after the stamp, keeping the extension last", async () => {
     const rel = "clipboard.picture.09-30-2026_14-44.png";
     const suffix = async (content) => {
-      const res = await fetch(`http://127.0.0.1:${port}/api/upload?path=${encodeURIComponent(rel)}&onclash=suffix`, { method: "POST", body: content });
+      const res = await fetch(`http://127.0.0.1:${port}/api/upload?path=${encodeURIComponent(rel)}&onclash=suffix`, {
+        method: "POST",
+        body: content,
+      });
       return res.json();
     };
     expect(await suffix("p0")).toEqual({ path: "clipboard.picture.09-30-2026_14-44.png" });
@@ -273,7 +279,11 @@ describe("text-server error mapping", () => {
   });
 
   it("answers the deep-link lookup on /api/info, not the ad-blocked /api/stat", async () => {
-    expect(await call(port, "/api/info?path=a.txt")).toEqual({ status: 200, body: { path: "a.txt", folder: false } });
+    expect(await call(port, "/api/info?path=a.txt")).toEqual({ status: 200, body: { path: "a.txt", folder: false, size: 5 } });
+  });
+
+  it("omits size for a folder in /api/info", async () => {
+    expect(await call(port, "/api/info?path=existing")).toEqual({ status: 200, body: { path: "existing", folder: true } });
     expect((await call(port, "/api/stat?path=a.txt")).status).toBe(404);
   });
 });

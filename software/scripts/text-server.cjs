@@ -11,7 +11,7 @@
  * Serves a single-page UI (text-server.html, read from this file's folder; CodeMirror 5
  * from cdnjs) plus a small JSON API:
  *   GET    /api/list?path=<rel>   list a folder
- *   GET    /api/info?path=<rel>   { path, folder } — lets the UI deep-link ?path= to a file or folder
+ *   GET    /api/info?path=<rel>   { path, folder, size? } — lets the UI deep-link ?path= to a file or folder; size (bytes) for files
  *                                  (not "/api/stat": tracker-blocking extensions match "/stat?" and block it)
  *   GET    /api/file?path=<rel>   read a file (utf8)
  *   GET    /api/raw?path=<rel>    raw bytes of an image / pdf / video for the built-in viewer (supports Range)
@@ -338,9 +338,13 @@ async function handleApi(req, res, url) {
   }
   if (route === "GET /api/info") {
     const target = resolveSafe(rel, true);
-    const isFolder = fs.statSync(target).isDirectory();
+    const stat = fs.statSync(target);
+    const isFolder = stat.isDirectory();
     if (!ALLOW_CD && isFolder && target !== ROOT) return sendJson(res, 403, { error: "folder navigation disabled" });
-    return sendJson(res, 200, { path: path.relative(ROOT, target), folder: isFolder });
+    // size (bytes) for files only: the media viewer footer shows it.
+    const body = { path: path.relative(ROOT, target), folder: isFolder };
+    if (!isFolder) body.size = stat.size;
+    return sendJson(res, 200, body);
   }
   if (route === "POST /api/rename") {
     const name = String(url.searchParams.get("to") || "").trim();
@@ -379,7 +383,8 @@ async function handleApi(req, res, url) {
     // RFC 6266/5987: ASCII fallback name plus the exact UTF-8 name.
     if (download) {
       const name = path.basename(file);
-      headers["Content-Disposition"] = `attachment; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+      headers["Content-Disposition"] =
+        `attachment; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
     }
     // SVG is the one type here that can carry script: lock it down if opened directly at this URL.
     // (Not applied to PDF: a CSP sandbox blocks the browser's built-in PDF viewer.)
@@ -394,11 +399,15 @@ async function handleApi(req, res, url) {
         return res.end();
       }
       res.writeHead(206, { ...headers, "Content-Length": end - start + 1, "Content-Range": `bytes ${start}-${end}/${stat.size}` });
-      fs.createReadStream(file, { start, end }).on("error", () => res.destroy()).pipe(res);
+      fs.createReadStream(file, { start, end })
+        .on("error", () => res.destroy())
+        .pipe(res);
       return;
     }
     res.writeHead(200, { ...headers, "Content-Length": stat.size });
-    fs.createReadStream(file).on("error", () => res.destroy()).pipe(res);
+    fs.createReadStream(file)
+      .on("error", () => res.destroy())
+      .pipe(res);
     return;
   }
   if (route === "GET /api/file") {
@@ -430,7 +439,11 @@ async function handleApi(req, res, url) {
     for (const [index, candidate] of candidates.entries()) {
       try {
         fs.writeFileSync(candidate, content, { flag: "wx" });
-        return sendJson(res, 200, index === 0 ? { path: path.relative(ROOT, candidate) } : { path: path.relative(ROOT, candidate), duplicate: true });
+        return sendJson(
+          res,
+          200,
+          index === 0 ? { path: path.relative(ROOT, candidate) } : { path: path.relative(ROOT, candidate), duplicate: true },
+        );
       } catch (err) {
         if (err.code !== "EEXIST") throw err;
       }
@@ -449,8 +462,7 @@ async function handleApi(req, res, url) {
     if (fs.lstatSync(target).isDirectory()) {
       if (!ALLOW_CD) return sendJson(res, 403, { error: "folder navigation disabled" });
       fs.rmdirSync(target);
-    }
-    else fs.unlinkSync(target);
+    } else fs.unlinkSync(target);
     return sendJson(res, 200, { ok: true });
   }
   return sendJson(res, 404, { error: "unknown route" });
@@ -501,7 +513,9 @@ server.on("error", (err) => {
 });
 server.on("listening", () => {
   const port = server.address().port;
-  process.stderr.write(`text-server: version ${APP_VERSION}, serving ${ROOT} on 0.0.0.0:${port} (${ALLOW_CD ? "subfolders allowed" : "locked to top folder"})\n`);
+  process.stderr.write(
+    `text-server: version ${APP_VERSION}, serving ${ROOT} on 0.0.0.0:${port} (${ALLOW_CD ? "subfolders allowed" : "locked to top folder"})\n`,
+  );
   process.stderr.write(`text-server: open http://localhost:${port}/\n`);
 });
 server.listen(PORT, "0.0.0.0");

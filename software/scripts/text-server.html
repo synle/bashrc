@@ -32,6 +32,17 @@
         display: flex;
         flex-direction: column;
       }
+      /* Pinned under the scrolling #list (which takes flex: 1), so it stays at the sidebar bottom. */
+      #fileNav {
+        flex: none;
+        display: flex;
+        gap: 4px;
+        padding: 6px 8px;
+        border-top: 1px solid #333;
+      }
+      #fileNav button {
+        flex: 1;
+      }
       body.side-collapsed #side,
       body.side-collapsed #resizer {
         display: none;
@@ -361,6 +372,10 @@
         ><button id="deleteAll" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1;</button>
       </div>
       <ul id="list"></ul>
+      <div id="fileNav">
+        <button id="prevFile" title="Previous file in the list, wraps to the bottom (Ctrl+[)">&#x25C0;</button
+        ><button id="nextFile" title="Next file in the list, wraps to the top (Ctrl+])">&#x25B6;</button>
+      </div>
     </aside>
     <div id="resizer" title="Drag to resize the file list"></div>
     <main id="main">
@@ -559,6 +574,7 @@
 
       /** Footer size of the open file as currently edited (UTF-8 bytes + line count); blank with no file open. */
       function renderSize() {
+        if (openMediaKind) return renderMediaInfo();
         if (!openPath) {
           $("size").textContent = "";
           renderCursor();
@@ -570,12 +586,58 @@
 
       /** Footer cursor position, 1-based like most editors ("Ln 12, Col 5"); blank with no file open. */
       function renderCursor() {
+        if (openMediaKind) return renderMediaInfo();
         if (!openPath) {
           $("pos").textContent = "";
           return;
         }
         const cursor = editor.getCursor();
         $("pos").textContent = "Ln " + (cursor.line + 1) + ", Col " + (cursor.ch + 1);
+      }
+
+      /**
+       * Facts about the open media file for the footer. bytes from /api/info; dims and duration from the
+       * browser once the <img> / <video> has loaded (a PDF has neither). Reset on every media open.
+       * @type {{bytes: number|null, dims: string, duration: string}}
+       */
+      let mediaInfo = { bytes: null, dims: "", duration: "" };
+
+      /**
+       * Seconds as m:ss, or h:mm:ss from one hour up.
+       * @param {number} seconds Duration in seconds.
+       * @returns {string} Formatted duration; "" when unknown (NaN / Infinity, e.g. a live stream).
+       */
+      function formatDuration(seconds) {
+        if (!Number.isFinite(seconds) || seconds < 0) return "";
+        const total = Math.round(seconds),
+          h = Math.floor(total / 3600),
+          m = Math.floor((total % 3600) / 60),
+          s = total % 60;
+        const pad = (n) => String(n).padStart(2, "0");
+        return h ? h + ":" + pad(m) + ":" + pad(s) : m + ":" + pad(s);
+      }
+
+      /** Media footer: resolution (+ video duration) where Ln/Col would be, file size where the text size would be. */
+      function renderMediaInfo() {
+        $("pos").textContent = [mediaInfo.dims, mediaInfo.duration].filter(Boolean).join(" \u00B7 ");
+        $("size").textContent = mediaInfo.bytes === null ? "" : formatBytes(mediaInfo.bytes);
+      }
+
+      /**
+       * Fetch the on-disk size of the open media file into the footer. Dropped when the user has
+       * moved to another file by the time it answers; a failure just leaves the size blank.
+       * @param {number} seq openSeq at the time of the request.
+       * @param {string} rel File path.
+       */
+      async function loadMediaSize(seq, rel) {
+        try {
+          const info = await api("GET", "/api/info", rel);
+          if (seq !== openSeq || rel !== openPath) return;
+          mediaInfo.bytes = typeof info.size === "number" ? info.size : null;
+          renderMediaInfo();
+        } catch (err) {
+          // footer detail only: size stays blank, the viewer still works
+        }
       }
 
       function setStatus(t) {
@@ -741,8 +803,28 @@
         return data;
       }
 
+      /** File rows (not folders) currently shown in the list, in display order; drives prev/next navigation. */
+      let listedFiles = [];
+
+      /**
+       * Open the previous (-1) or next (+1) file in the visible list, wrapping at both ends.
+       * With no file open (or the open file not listed), next starts at the top and previous at the bottom.
+       * @param {number} step -1 for previous, +1 for next.
+       */
+      function stepFile(step) {
+        if (!listedFiles.length) {
+          setStatus("no files in this list");
+          return;
+        }
+        const index = listedFiles.indexOf(openPath);
+        const from = index < 0 ? (step > 0 ? -1 : 0) : index;
+        const target = listedFiles[(from + step + listedFiles.length) % listedFiles.length];
+        if (target !== openPath) openFile(target);
+      }
+
       /** Render list rows: { name, full, folder, sub? }. */
       function renderEntries(items, note) {
+        listedFiles = items.filter((e) => !e.folder).map((e) => e.full);
         const ul = $("list");
         ul.innerHTML = "";
         for (const e of items) {
@@ -915,6 +997,21 @@
         return "/api/raw?path=" + encodeURIComponent(rel) + "&v=" + Date.now();
       }
 
+      // Resolution / duration arrive once the browser has decoded enough of the file.
+      $("mediaImg").addEventListener("load", () => {
+        if (openMediaKind !== "image") return;
+        const img = $("mediaImg");
+        mediaInfo.dims = img.naturalWidth && img.naturalHeight ? img.naturalWidth + " \u00D7 " + img.naturalHeight : "";
+        renderMediaInfo();
+      });
+      $("mediaVideo").addEventListener("loadedmetadata", () => {
+        if (openMediaKind !== "video") return;
+        const video = $("mediaVideo");
+        mediaInfo.dims = video.videoWidth && video.videoHeight ? video.videoWidth + " \u00D7 " + video.videoHeight : "";
+        mediaInfo.duration = formatDuration(video.duration);
+        renderMediaInfo();
+      });
+
       async function openFile(rel) {
         // Every switch bumps openSeq; responses from an older switch (or an in-flight refresh) are dropped.
         const seq = ++openSeq;
@@ -929,6 +1026,7 @@
           // Images / PDF / video render in the browser's own viewer; the editor stays empty and read-only.
           openPath = rel;
           openMediaKind = kind;
+          mediaInfo = { bytes: null, dims: "", duration: "" };
           loadedContent = "";
           applyingRemote = true;
           editor.setValue("");
@@ -936,6 +1034,8 @@
           editor.setOption("readOnly", true);
           applySyntax("plain");
           showMedia(kind, rawUrl(rel));
+          renderMediaInfo();
+          loadMediaSize(seq, rel);
           setClean(true);
           setStatus("");
           setUrl(openPath);
@@ -1192,6 +1292,7 @@
         // Media: never read as text. Images/PDF reload from disk; a video is left alone so playback is not reset.
         if (openMediaKind) {
           if (openMediaKind !== "video") showMedia(openMediaKind, rawUrl(openPath));
+          loadMediaSize(openSeq, openPath); // the file may have been replaced on disk
           return;
         }
         const seq = openSeq,
@@ -1426,6 +1527,22 @@
           snapshot();
         }
       });
+      $("prevFile").onclick = () => stepFile(-1);
+      $("nextFile").onclick = () => stepFile(1);
+      // Ctrl+[ / Ctrl+]: previous / next file. Capture phase so CodeMirror's own Ctrl+[ / Ctrl+]
+      // (indent less / more) never sees it. e.code is layout-independent (the bracket keys' position).
+      document.addEventListener(
+        "keydown",
+        (e) => {
+          if (!e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+          const step = e.code === "BracketLeft" ? -1 : e.code === "BracketRight" ? 1 : 0;
+          if (!step) return;
+          e.preventDefault();
+          e.stopPropagation();
+          stepFile(step);
+        },
+        true,
+      );
       // Last-chance autosave: keepalive lets the PUT outlive the page; no "leave page?" prompt.
       window.addEventListener("pagehide", () => {
         if (clean || !openPath) return;
