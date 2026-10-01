@@ -159,7 +159,6 @@ winget_packages=(
   "Microsoft.VisualStudioCode"
   "SublimeHQ.SublimeText.4"
   "SublimeHQ.SublimeMerge"
-  "ZedIndustries.Zed"
 
   # ---- Git ----
   "Git.Git"
@@ -270,6 +269,19 @@ winget_packages=(
   "SSHFS-Win.SSHFS-Win"
 )
 
+# Packages that must be reinstalled on EVERY pass — the "already installed"
+# check is never consulted for these, and the install always runs with
+# `--force --uninstall-previous`.
+#
+# Why Zed lives here: its machine-scope install keeps half-failing in place.
+# A previous Zed build is registered with winget, the skip check sees it, and
+# the run reports success while the editor is stale, broken, or missing its
+# per-user registration. Skipping is what kept the failure going; forcing the
+# reinstall every pass is the reliable fix.
+winget_required_packages=(
+  "ZedIndustries.Zed"
+)
+
 # --- Install-loop gate ---
 #
 # Gated on THIS SCRIPT'S OWN STAMP plus the run's intent — never on
@@ -338,6 +350,10 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
   # Every install uses --force --uninstall-previous so the install path is the
   # same in both modes — the only difference is whether we skip or not.
   #
+  # $1 — "required" for an id from winget_required_packages (never skipped,
+  #      always reinstalled) or "optional" for one from winget_packages
+  #      (normal skip-if-installed behavior).
+  #
   # Failures are collected instead of swallowed. The old `|| true` on every
   # install made a machine-scope miss look identical to a clean run, which is
   # how Zed and friends could go uninstalled with no trace in the log. A failed
@@ -346,10 +362,16 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
   # localized winget message text.
   _failed_packages=()
   _lookup_failed_packages=()
-  for pkg in "${winget_packages[@]}"; do
-    if ! ((FORCE_INSTALL)) && _winget_package_is_installed "$pkg"; then
+
+  # $1 — package id
+  # $2 — "required" (never skip) or "optional" (skip when already installed)
+  _winget_install_one() {
+    local pkg="$1"
+    local kind="$2"
+
+    if [ "$kind" != "required" ] && ! ((FORCE_INSTALL)) && _winget_package_is_installed "$pkg"; then
       echo "  Skipped: $pkg (already installed)"
-      continue
+      return 0
     fi
 
     echo "  Installing: $pkg"
@@ -357,10 +379,12 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
     # success stays quiet because it is only the progress bar we already hid.
     # `< /dev/null` is mandatory for the same heredoc reason as the
     # `winget source update` call above.
+    local _winget_output
     if _winget_output=$(winget.exe install --id "$pkg" -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent --force --uninstall-previous < /dev/null 2>&1); then
-      continue
+      return 0
     fi
 
+    local _install_reason
     _install_reason=$(_winget_last_line "$_winget_output")
     _failed_packages+=("$pkg")
     if ! winget.exe search --id "$pkg" -e --source winget --accept-source-agreements --disable-interactivity < /dev/null > /dev/null 2>&1; then
@@ -369,6 +393,17 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
     else
       echo "  FAILED: $pkg — ${_install_reason:-no output from winget}"
     fi
+  }
+
+  for pkg in "${winget_packages[@]}"; do
+    _winget_install_one "$pkg" optional
+  done
+
+  # Required packages run last and are never skipped — a stale or half-broken
+  # install must be replaced on every pass, not left standing because winget
+  # still lists the id.
+  for pkg in "${winget_required_packages[@]}"; do
+    _winget_install_one "$pkg" required
   done
 
   if ((${#_failed_packages[@]} > 0)); then
