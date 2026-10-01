@@ -643,17 +643,20 @@ cancelling an incremental search and `ctrl+r` is bound to fzf, which aborts on `
 
 Source: `software/scripts/text-server.html` (page-level handlers + CodeMirror `extraKeys`, not a keymap file).
 
-| Key                | Action                                                                                  |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| `ctrl+s` / `cmd+s` | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits) |
-| `ctrl+[`           | Previous file in the sidebar list, wraps to the bottom (also the ◀ button)              |
-| `ctrl+]`           | Next file in the sidebar list, wraps to the top (also the ▶ button)                     |
-| `ctrl+v` / `cmd+v` | With a picture on the clipboard: save it as `Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>` |
-| `OS_KEY+shift+f`   | Find in files: open the search bar in content mode, seeded with the selection           |
-| `OS_KEY+d`         | Select next match (adds a cursor; empty selection selects the word first)               |
-| `OS_KEY+shift+d`   | Select previous match (reverse of `OS_KEY+d`)                                           |
-| `OS_KEY+shift+l`   | Split selection into one cursor per line                                                |
-| `OS_KEY+ctrl+g`    | Select all matches of the selection / word (`ctrl+g` off mac)                           |
+| Key                     | Action                                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------- |
+| `ctrl`/`cmd`/`alt` `+s` | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits)      |
+| `ctrl`/`cmd`/`alt` `+r` | Refresh all: reload the file list and the open file (the ↻ button; overrides browser reload) |
+| `ctrl`/`cmd`/`alt` `+\` | Hide / show the file list sidebar                                                            |
+| `ctrl`/`cmd`/`alt` `+c` | With an image open and no text selected: copy the image (as PNG; needs https or localhost)   |
+| `ctrl+[`                | Previous file in the sidebar list, wraps to the bottom (also the ◀ button)                   |
+| `ctrl+]`                | Next file in the sidebar list, wraps to the top (also the ▶ button)                          |
+| `ctrl+v` / `cmd+v`      | With a picture on the clipboard: save it as `Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>`      |
+| `OS_KEY+shift+f`        | Find in files: show the sidebar, open content search seeded with the selection               |
+| `OS_KEY+d`              | Select next match (adds a cursor; empty selection selects the word first)                    |
+| `OS_KEY+shift+d`        | Select previous match (reverse of `OS_KEY+d`)                                                |
+| `OS_KEY+shift+l`        | Split selection into one cursor per line                                                     |
+| `OS_KEY+ctrl+g`         | Select all matches of the selection / word (`ctrl+g` off mac)                                |
 
 `OS_KEY` rows are Cmd on mac, Ctrl elsewhere; the editor ones need the editor focused.
 

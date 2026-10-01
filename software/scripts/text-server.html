@@ -391,7 +391,7 @@
       </div>
       <div id="crumbRow">
         <div id="crumb"></div>
-        <button id="refresh" class="icon-btn" title="Reload the file list and the open file">&#x21bb;</button
+        <button id="refresh" class="icon-btn" title="Reload the file list and the open file (Ctrl/Cmd/Alt+R)">&#x21bb;</button
         ><button id="deleteAll" class="icon-btn" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1;</button>
       </div>
       <ul id="list"></ul>
@@ -403,11 +403,13 @@
     <div id="resizer" title="Drag to resize the file list"></div>
     <main id="main">
       <div id="bar">
-        <button id="sideToggle" class="icon-btn" title="Hide or show the file list">&#x2630;</button><span id="name"></span
+        <button id="sideToggle" class="icon-btn" title="Hide or show the file list (Ctrl/Cmd/Alt+\)">&#x2630;</button><span id="name"></span
         ><button id="copyPath" class="icon-btn" title="Copy the full path to the clipboard">&#x1F4CB;</button
         ><button id="download" class="icon-btn" title="Download the open file (saves pending edits first)">&#x2B07;</button
         ><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select
-        ><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one">Snapshot (Ctrl+S)</button>
+        ><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one (Ctrl/Cmd/Alt+S)">
+          Snapshot
+        </button>
       </div>
       <div id="editorWrap">
         <div id="mediaView" hidden>
@@ -1587,12 +1589,61 @@
         clearTimeout(saveTimer);
         saveTimer = setTimeout(flushSave, AUTOSAVE_DELAY_MS);
       });
-      document.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-          e.preventDefault();
-          snapshot();
+      /**
+       * Copy the open image to the clipboard as PNG (the one image type every browser's clipboard accepts);
+       * other formats are re-encoded through a canvas. Needs a secure context (localhost / https) — on a
+       * plain-http LAN URL the browser has no navigator.clipboard.write, so this reports that instead.
+       */
+      async function copyOpenImage() {
+        if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) {
+          setStatus("image copy needs https or localhost (browser clipboard API unavailable)");
+          return;
         }
-      });
+        const img = $("mediaImg");
+        try {
+          const png = new Promise((resolve, reject) => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("could not encode image"))), "image/png");
+          });
+          // Pass the promise (not the awaited blob) so Safari keeps the user-gesture permission.
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+          setStatus("image copied to the clipboard");
+        } catch (err) {
+          setStatus("image copy failed: " + err.message);
+        }
+      }
+      /**
+       * App chords, accepted with Ctrl, Cmd, or Alt (one modifier, no Shift): S snapshot, R refresh all,
+       * \ toggle the sidebar, C copy the open image (only while an image is shown and no text is selected;
+       * otherwise the normal copy runs). e.code keeps Alt chords working on mac, where Alt+key types a symbol.
+       * Capture phase so the browser reload / CodeMirror never sees them.
+       */
+      document.addEventListener(
+        "keydown",
+        (e) => {
+          const mods = [e.ctrlKey, e.metaKey, e.altKey].filter(Boolean).length;
+          if (mods !== 1 || e.shiftKey) return;
+          if (e.code === "KeyC") {
+            if (openMediaKind !== "image" || String(window.getSelection() || "")) return;
+            e.preventDefault();
+            copyOpenImage();
+            return;
+          }
+          const actions = {
+            KeyS: () => snapshot(),
+            KeyR: () => refreshAll(),
+            Backslash: () => setSideCollapsed(!document.body.classList.contains("side-collapsed")),
+          };
+          if (!actions[e.code]) return;
+          e.preventDefault();
+          e.stopPropagation();
+          actions[e.code]();
+        },
+        true,
+      );
       $("prevFile").onclick = () => stepFile(-1);
       $("nextFile").onclick = () => stepFile(1);
       // Ctrl+[ / Ctrl+]: previous / next file. Capture phase so CodeMirror's own Ctrl+[ / Ctrl+]
@@ -1619,6 +1670,7 @@
           e.stopPropagation();
           const picked = editor.getSelection();
           if (picked && !picked.includes("\n")) $("searchInput").value = picked;
+          setSideCollapsed(false); // results show in the sidebar, so a hidden one must come back
           $("searchMode").value = "content";
           $("searchBar").classList.add("open");
           $("searchInput").focus();
@@ -1682,7 +1734,7 @@
       }
       function setSideCollapsed(collapsed) {
         document.body.classList.toggle("side-collapsed", collapsed);
-        $("sideToggle").title = collapsed ? "Show the file list" : "Hide the file list";
+        $("sideToggle").title = (collapsed ? "Show" : "Hide") + " the file list (Ctrl/Cmd/Alt+\\)";
         localStorage.setItem("textServer.sideCollapsed", collapsed ? "1" : "0");
         editor.refresh();
       }
