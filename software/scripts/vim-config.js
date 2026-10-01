@@ -13,6 +13,9 @@ async function doWork() {
 
     """""""""""""""""""""""""""""""""""""""""""""""""
     " vim-plug Plugin Manager
+    "
+    " Install vim-plug + every plugin below (one line, from scratch):
+    "   mkdir -p ~/.vim && curl -fsSLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim && vim -E -s -u ~/.vimrc +PlugInstall +qall
     """""""""""""""""""""""""""""""""""""""""""""""""
     set nocompatible              " Disable vi compatibility — required for vim-plug and modern vim features
     filetype off                  " Turn off filetype detection temporarily — re-enabled after plug#end()
