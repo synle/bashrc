@@ -560,9 +560,9 @@ function print_action_summary() {
   resolved_dir=$(to_windows_path "$dir")
   resolved_target=$(to_windows_path "$target_abs")
 
-  echo "===================================="
-  echo "PWD: \"$(pwd)\""
-  echo "cd \"$dir\""
+  printf '\033[0;36m%s\033[0m\n' "$LINE_BREAK_EQUAL"
+  printf '\033[0;34m%s\033[0m\n' "PWD: \"$(pwd)\""
+  printf '\033[0;34m%s\033[0m\n' "cd \"$dir\""
   [ "$resolved_dir" != "$dir" ] && echo "cd \"$resolved_dir\""
   if [ -n "$binary" ]; then
     local prefix="$binary"
@@ -570,7 +570,7 @@ function print_action_summary() {
     echo "$prefix \"$target_abs\""
     [ "$resolved_target" != "$target_abs" ] && echo "$prefix \"$resolved_target\""
   fi
-  echo "===================================="
+  printf '\033[0;36m%s\033[0m\n' "$LINE_BREAK_EQUAL"
 }
 
 # --- Aliases: Coreutils Defaults ---
