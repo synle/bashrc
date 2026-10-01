@@ -1,4 +1,4 @@
-/** Generates vimrc configuration with vim-plug plugins, syntax highlighting, and keybindings for Linux, Mac, and Windows. */
+/** Generates vimrc configuration with vim-jetpack plugins, syntax highlighting, and keybindings for Linux, Mac, and Windows. */
 // SOURCE software/scripts/advanced/editor.common.js
 
 async function doWork() {
@@ -12,43 +12,74 @@ async function doWork() {
     " ~/.vimrc
 
     """""""""""""""""""""""""""""""""""""""""""""""""
-    " vim-plug Plugin Manager
+    " vim-jetpack Plugin Manager
     "
-    " Install vim-plug + every plugin below (one line, from scratch):
-    "   mkdir -p ~/.vim && curl -fsSLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim && vim -E -s -u ~/.vimrc +PlugInstall +qall
+    " Install vim-jetpack + every plugin below (one line, from scratch; Windows: ~/vimfiles):
+    "   mkdir -p ~/.vim && curl -fsSLo ~/.vim/pack/jetpack/opt/vim-jetpack/plugin/jetpack.vim --create-dirs https://raw.githubusercontent.com/tani/vim-jetpack/master/plugin/jetpack.vim && vim -E -s -u ~/.vimrc +JetpackSync +qall
+    " Opening vim also self-bootstraps: it fetches jetpack.vim when missing (needs curl)
+    " and runs :JetpackSync when a declared plugin is not installed yet.
+    " Update / clean later: :JetpackSync
     """""""""""""""""""""""""""""""""""""""""""""""""
-    set nocompatible              " Disable vi compatibility — required for vim-plug and modern vim features
-    filetype off                  " Turn off filetype detection temporarily — re-enabled after plug#end()
-    call plug#begin('~/.vim/plugged')
+    set nocompatible              " Disable vi compatibility — required for plugin managers and modern vim features
+    filetype off                  " Turn off filetype detection temporarily — re-enabled after jetpack#end()
 
-    " --- Syntax & Language Support ---
-    Plug 'pangloss/vim-javascript'                                    " Improved JavaScript syntax and indentation
-    Plug 'isRuslan/vim-es6'                                           " ES6+ syntax highlighting (arrow functions, template strings, etc.)
-    Plug 'maxmellon/vim-jsx-pretty'                                   " JSX/TSX syntax highlighting with pretty indentation
-    Plug 'mxw/vim-jsx'                                                " JSX syntax support for React components
-    Plug 'peitalin/vim-jsx-typescript'                                " TypeScript JSX (.tsx) syntax highlighting
-    Plug 'leafgarland/typescript-vim'                                 " TypeScript syntax highlighting and indentation
-    Plug 'styled-components/vim-styled-components', { 'branch': 'main' } " Syntax highlighting inside styled-components template literals
-    Plug 'jparise/vim-graphql'                                        " GraphQL schema and query syntax highlighting
-    Plug 'JulesWang/css.vim'                                          " Improved CSS syntax highlighting
-    Plug 'cakebaker/scss-syntax.vim'                                  " SCSS/Sass syntax highlighting
+    " First packpath entry is ~/.vim on mac/linux, ~/vimfiles on Windows — same place jetpack#begin() uses.
+    let s:jetpack_home = split(&packpath, ',')[0]
+    let s:jetpack_file = s:jetpack_home . '/pack/jetpack/opt/vim-jetpack/plugin/jetpack.vim'
+    if !filereadable(s:jetpack_file) && executable('curl')
+      call system('curl -fsSLo ' . shellescape(s:jetpack_file) . ' --create-dirs https://raw.githubusercontent.com/tani/vim-jetpack/master/plugin/jetpack.vim')
+    endif
+    " Minimal shells (browser terminals, iVim) often lack git — let jetpack fetch tarballs with curl instead.
+    if !executable('git')
+      let g:jetpack_download_method = 'curl'
+    endif
+    silent! packadd vim-jetpack
 
-    " --- UI & Status ---
-    Plug 'vim-airline/vim-airline'                                     " Lightweight status bar with mode, branch, and file info
-    Plug 'vim-airline/vim-airline-themes'                              " Theme pack for vim-airline
-    Plug 'tomasiser/vim-code-dark'                                     " VS Code Default Dark+ palette — matches Sublime/Zed/VSCode 'Sy Dark' high-contrast palette
+    if exists('*jetpack#begin')
+      call jetpack#begin()
+      Jetpack 'tani/vim-jetpack', { 'opt': 1 }                          " Self-manage so :JetpackSync keeps the manager updated
 
-    " --- Git ---
-    Plug 'airblade/vim-gitgutter'                                     " Show git diff markers (+/-/~) in the gutter
+      " --- Syntax & Language Support ---
+      Jetpack 'pangloss/vim-javascript'                                 " Improved JavaScript syntax and indentation
+      Jetpack 'isRuslan/vim-es6'                                        " ES6+ syntax highlighting (arrow functions, template strings, etc.)
+      Jetpack 'maxmellon/vim-jsx-pretty'                                " JSX/TSX syntax highlighting with pretty indentation
+      Jetpack 'mxw/vim-jsx'                                             " JSX syntax support for React components
+      Jetpack 'peitalin/vim-jsx-typescript'                             " TypeScript JSX (.tsx) syntax highlighting
+      Jetpack 'leafgarland/typescript-vim'                              " TypeScript syntax highlighting and indentation
+      Jetpack 'styled-components/vim-styled-components', { 'branch': 'main' } " Syntax highlighting inside styled-components template literals
+      Jetpack 'jparise/vim-graphql'                                     " GraphQL schema and query syntax highlighting
+      Jetpack 'JulesWang/css.vim'                                       " Improved CSS syntax highlighting
+      Jetpack 'cakebaker/scss-syntax.vim'                               " SCSS/Sass syntax highlighting
 
-    " --- Search ---
-    Plug 'junegunn/fzf'                                               " Fuzzy finder core (binary integration)
-    Plug 'junegunn/fzf.vim'                                           " Fuzzy finder vim commands (:Files, :Rg, :Buffers, etc.)
+      " --- UI & Status ---
+      Jetpack 'itchyny/lightline.vim'                                   " Light, fast status line (replaces vim-airline)
+      Jetpack 'mengelbrecht/lightline-bufferline'                       " Open buffers as tabs in the top line (airline tabline parity)
+      Jetpack 'tomasiser/vim-code-dark'                                 " VS Code Default Dark+ palette (+ lightline theme) — matches Sublime/Zed/VSCode 'Sy Dark'
 
-    " --- Editing ---
-    Plug 'mg979/vim-visual-multi', { 'branch': 'master' }             " Sublime-style multi-cursor (select all matches, cursor per line)
+      " --- Git ---
+      Jetpack 'mhinz/vim-signify'                                       " Diff markers (+/-/~) in the gutter; lighter than gitgutter, any VCS
 
-    call plug#end()
+      " --- Search ---
+      Jetpack 'junegunn/fzf'                                            " Fuzzy finder core (binary integration)
+      Jetpack 'junegunn/fzf.vim'                                        " Fuzzy finder vim commands (:Files, :Rg, :Buffers, etc.)
+
+      " --- Editing ---
+      Jetpack 'mg979/vim-visual-multi', { 'branch': 'master' }          " Sublime-style multi-cursor (select all matches, cursor per line)
+
+      call jetpack#end()
+
+      " Install anything declared but missing (first run, or after adding a Jetpack line).
+      for s:name in jetpack#names()
+        if !jetpack#tap(s:name)
+          call jetpack#sync()
+          break
+        endif
+      endfor
+    else
+      echohl WarningMsg
+      echom "vim-jetpack not found (no curl?) — plugins disabled. See the install line at the top of ~/.vimrc"
+      echohl None
+    endif
 
     """""""""""""""""""""""""""""""""""""""""""""""""
     " Color Scheme
@@ -57,10 +88,10 @@ async function doWork() {
         colorscheme codedark      " VS Code Default Dark+ palette — high contrast, matches Sy Dark in Sublime/Zed/VSCode
     catch /^Vim\\%((\\a\\+)\\)\\=:E185/
         " E185 = colorscheme not found. Loud warning so a missing vim-code-dark install
-        " (e.g. vim-plug.sh never ran, or PlugInstall failed) is visible instead of
+        " (e.g. vim-jetpack.sh never ran, or JetpackSync failed) is visible instead of
         " a silent fallback that looks like codedark "just doesn't work".
         echohl WarningMsg
-        echom "codedark colorscheme not found — run: bash run.sh --files=vim-plug.sh"
+        echom "codedark colorscheme not found — run: bash run.sh --files=vim-jetpack.sh"
         echohl None
         colorscheme ${vimBuiltinColorScheme}      " Fallback (vim built-in, high contrast) if vim-code-dark is not installed
     endtry

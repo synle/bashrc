@@ -227,7 +227,7 @@
   ################################################################################
   echo "== Common Directories & Files =="
 
-  for _dir in "$HOME/.local/bin" "$HOME/.ssh" "$HOME/.ssh/sockets" "$HOME/.vim/autoload" "$HOME/.vim/plugged"; do
+  for _dir in "$HOME/.local/bin" "$HOME/.ssh" "$HOME/.ssh/sockets" "$HOME/.vim/pack/jetpack/opt"; do
     if [ -d "$_dir" ]; then
       _check_pass "$_dir exists"
     else

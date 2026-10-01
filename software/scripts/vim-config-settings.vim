@@ -30,15 +30,17 @@ hi ReactLifeCycleMethods ctermfg=204 guifg=#D19A66                  " React life
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Plugin Settings
 """""""""""""""""""""""""""""""""""""""""""""""""
-filetype on                                                         " Re-enable filetype detection after vim-plug init
-let g:airline_theme = 'codedark'                                    " Match codedark colorscheme — ships with vim-code-dark
-let g:airline#extensions#tabline#enabled = 1                        " Show open buffers as tabs in the top bar
-let g:airline#extensions#tabline#formatter = 'default'              " Use default tab label format (filename only)
-let g:airline#extensions#tabline#left_alt_sep = '|'                 " Alternate separator between inactive tabs
-let g:airline#extensions#tabline#left_sep = ' '                     " Separator between active and inactive tabs
+filetype on                                                         " Re-enable filetype detection after plugin manager init
+" lightline: codedark theme (ships with vim-code-dark) + open buffers as tabs via lightline-bufferline
+let g:lightline = {
+  \ 'colorscheme': 'codedark',
+  \ 'tabline': { 'left': [ [ 'buffers' ] ], 'right': [ [] ] },
+  \ 'component_expand': { 'buffers': 'lightline#bufferline#buffers' },
+  \ 'component_type': { 'buffers': 'tabsel' },
+  \ }
+set showtabline=2                                                   " Always show the buffer tabline
 let g:xml_syntax_folding = 1                                        " Enable syntax-based folding for XML files
-let g:gitgutter_enabled = 1                                         " Enable git gutter signs by default
-let g:gitgutter_map_keys = 0                                        " Disable default gitgutter key mappings — use custom ones below
+let g:signify_sign_change = '~'                                     " gitgutter-style change marker (signify default is !)
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " General Settings
@@ -107,10 +109,10 @@ set wildmenu                  " Show autocomplete menu for commands (Tab in comm
 set wildmode=longest:full,full " Complete to longest common string first, then cycle through matches
 set scrolloff=5               " Keep 5 lines visible above and below the cursor when scrolling
 set sidescrolloff=5           " Keep 5 columns visible to the left and right when scrolling horizontally
-set laststatus=2              " Always show the status bar (needed for vim-airline)
+set laststatus=2              " Always show the status bar (needed for lightline)
 set signcolumn=yes            " Always show the sign column — prevents layout shift from git/lint signs
 set shortmess+=I              " Suppress the intro message when starting vim
-set noshowmode                " Hide -- INSERT -- from the command line — airline already shows it
+set noshowmode                " Hide -- INSERT -- from the command line — lightline already shows it
 " Enable setting the terminal title
 set title
 
@@ -290,6 +292,12 @@ inoremap . <C-g>u.
 """""""""""""""""""""""""""""""""""""""""""""""""
 " ,n to clear search highlighting
 nnoremap <silent> ,n :nohlsearch<CR>
+
+" Tab is a second ',' prefix in normal mode: Tab g == ,g, Tab v == ,v, and so on.
+" Recursive nmap so the inserted ',' joins the next typed key. Normal mode only —
+" visual-mode Tab stays the soft-wrap toggle. Trade-off: terminals send Tab and
+" Ctrl-I as the same byte, so Ctrl-I (jumplist forward) is gone; Ctrl-O still works.
+nmap <Tab> ,
 
 " Multi-cursor (vim-visual-multi) — Sublime parity:
 "   ,g          select every match of the word under cursor (Sublime OS_KEY+ctrl+g)

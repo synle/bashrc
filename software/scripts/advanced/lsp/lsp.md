@@ -34,7 +34,7 @@ Shared LSP server binaries on `$PATH` so vim, Sublime Text, Zed, and VS Code all
 - **Zed**: `settings.json` `lsp.*.binary.path` overrides point at the installed binaries by absolute path.
 - **VS Code**: extension IDs live in `vs-code.js` — the matching extensions discover the binaries on `$PATH`.
 - **Sublime**: `LSP` package + per-language `LSP-*` packages (e.g. `LSP-pyright`, `LSP-typescript`) installed via Package Control; configured to use the shared binaries.
-- **Vim**: not wired. coc.nvim was removed (recurring `ReferenceError: crypto is not defined` startup crashes under the bundled Node); vim keeps syntax highlighting, airline, gitgutter, and fzf only.
+- **Vim**: not wired. coc.nvim was removed (recurring `ReferenceError: crypto is not defined` startup crashes under the bundled Node); vim keeps syntax highlighting, lightline, signify, and fzf only.
 
 ## Adding a New Server
 
@@ -184,7 +184,7 @@ Where to inspect at runtime:
 
 Vim is **not** wired for LSP. coc.nvim was removed after recurring startup crashes
 (`ReferenceError: crypto is not defined` from coc's `SyncConfigurationFeature.initialize`
-under the bundled Node). Vim keeps only syntax highlighting, airline, gitgutter, and fzf
+under the bundled Node). Vim keeps only syntax highlighting, lightline, signify, and fzf
 (see `software/scripts/vim-config.js`). Use Zed / VS Code / Sublime for LSP editing.
 
 Where to inspect at runtime:
