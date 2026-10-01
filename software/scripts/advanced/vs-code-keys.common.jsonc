@@ -12,6 +12,14 @@
   { "key": "OS_KEY+9", "command": "workbench.action.openEditorAtIndex9" },
   // reset font zoom to default (browser-style OS_KEY+0)
   { "key": "OS_KEY+0", "command": "editor.action.fontZoomReset" },
+  // trim trailing whitespace (whole file) — OS_KEY/ctrl/alt + shift + backspace, same in every editor
+  { "key": "OS_KEY+shift+backspace", "command": "editor.action.trimTrailingWhitespace", "when": "editorTextFocus && !editorReadonly" },
+  { "key": "ctrl+shift+backspace", "command": "editor.action.trimTrailingWhitespace", "when": "editorTextFocus && !editorReadonly" },
+  { "key": "alt+shift+backspace", "command": "editor.action.trimTrailingWhitespace", "when": "editorTextFocus && !editorReadonly" },
+  // remove duplicate lines (keep first, selection or whole file) — OS_KEY/ctrl/alt + shift + delete
+  { "key": "OS_KEY+shift+delete", "command": "editor.action.removeDuplicateLines", "when": "editorTextFocus && !editorReadonly" },
+  { "key": "ctrl+shift+delete", "command": "editor.action.removeDuplicateLines", "when": "editorTextFocus && !editorReadonly" },
+  { "key": "alt+shift+delete", "command": "editor.action.removeDuplicateLines", "when": "editorTextFocus && !editorReadonly" },
   {
     "key": "f5",
     "command": "runCommands",

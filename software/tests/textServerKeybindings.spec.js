@@ -67,3 +67,26 @@ describe("text-server keybindings: BINDINGS table", () => {
     expect(keys.hintFor("snapshot", false)).toBe("Ctrl+S / Alt+S");
   });
 });
+
+describe("text-server keybindings: trim / unique line chords", () => {
+  it("maps cmd, ctrl, and alt + shift + backspace to trimTrailingWhitespace on mac", () => {
+    const index = keys.buildIndex(keys.BINDINGS, true);
+    expect(index.get("Shift-Cmd-Backspace").action).toBe("trimTrailingWhitespace");
+    expect(index.get("Shift-Ctrl-Backspace").action).toBe("trimTrailingWhitespace");
+    expect(index.get("Shift-Alt-Backspace").action).toBe("trimTrailingWhitespace");
+  });
+  it("maps ctrl and alt + shift + delete to uniqueLines off mac", () => {
+    const index = keys.buildIndex(keys.BINDINGS, false);
+    expect(index.get("Shift-Ctrl-Delete").action).toBe("uniqueLines");
+    expect(index.get("Shift-Alt-Delete").action).toBe("uniqueLines");
+  });
+  it("names the forward Delete key from its physical code", () => {
+    expect(keys.eventKeyName({ code: "Delete", shiftKey: true, metaKey: false, ctrlKey: true, altKey: false })).toBe("Shift-Ctrl-Delete");
+  });
+  it("strips trailing spaces and tabs but keeps leading indent", () => {
+    expect(keys.trimTrailingLines(["  a  ", "b\t \t", "", "c"])).toEqual(["  a", "b", "", "c"]);
+  });
+  it("drops repeated lines keeping the first occurrence in order", () => {
+    expect(keys.uniqueLines(["b", "a", "b", "A", "a"])).toEqual(["b", "a", "A"]);
+  });
+});

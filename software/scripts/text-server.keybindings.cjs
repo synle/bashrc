@@ -36,6 +36,7 @@
     left: "Left",
     right: "Right",
     backspace: "Backspace",
+    delete: "Delete",
     enter: "Enter",
     "\\": "\\",
   };
@@ -58,6 +59,7 @@
     ArrowLeft: "Left",
     ArrowRight: "Right",
     Backspace: "Backspace",
+    Delete: "Delete",
     Enter: "Enter",
   };
 
@@ -116,6 +118,13 @@
     { chord: "super+y", action: "redo", scope: Scope.EDITOR, label: "Redo" },
     { chord: "super+shift+z", action: "redo", scope: Scope.EDITOR, label: "Redo (alt)" },
     { chord: "super+backspace", action: "delLineLeft", scope: Scope.EDITOR, label: "Delete to line start" },
+    // Literal cmd/ctrl/alt (no super pair): super would collide with the explicit alt chord off mac.
+    { chord: "cmd+shift+backspace", action: "trimTrailingWhitespace", scope: Scope.EDITOR, label: "Trim trailing whitespace" },
+    { chord: "ctrl+shift+backspace", action: "trimTrailingWhitespace", scope: Scope.EDITOR, label: "Trim trailing whitespace (alt)" },
+    { chord: "alt+shift+backspace", action: "trimTrailingWhitespace", scope: Scope.EDITOR, label: "Trim trailing whitespace (alt)" },
+    { chord: "cmd+shift+delete", action: "uniqueLines", scope: Scope.EDITOR, label: "Remove duplicate lines" },
+    { chord: "ctrl+shift+delete", action: "uniqueLines", scope: Scope.EDITOR, label: "Remove duplicate lines (alt)" },
+    { chord: "alt+shift+delete", action: "uniqueLines", scope: Scope.EDITOR, label: "Remove duplicate lines (alt)" },
     // --- Code editing ---
     { chord: "super+/", action: "toggleComment", scope: Scope.EDITOR, label: "Toggle comment" },
     { chord: "super+[", action: "indentLess", scope: Scope.EDITOR, label: "Outdent" },
@@ -227,12 +236,54 @@
   }
 
   /**
+   * Strip trailing spaces / tabs from every line.
+   * @param {string[]} lines Document lines.
+   * @returns {string[]} New array, same length, each line right-trimmed of whitespace.
+   */
+  function trimTrailingLines(lines) {
+    return lines.map((line) => line.replace(/[ \t]+$/, ""));
+  }
+
+  /**
+   * Drop repeated lines, keeping the first occurrence and the original order (case-sensitive).
+   * @param {string[]} lines Lines to dedupe.
+   * @returns {string[]} New array without duplicates.
+   */
+  function uniqueLines(lines) {
+    const seen = new Set();
+    return lines.filter((line) => (seen.has(line) ? false : seen.add(line)));
+  }
+
+  /**
    * Register the editor commands the table names that CodeMirror and its addons do not ship.
+   * trimTrailingWhitespace: right-trim every line of the document in one undo step.
+   * uniqueLines: drop duplicate lines (first wins) in the lines the primary selection touches,
+   * or the whole document when nothing is selected.
    * selectPrevOccurrence: reverse of the sublime keymap's selectNextOccurrence — add a cursor on the
    * previous match of the topmost selection's text, wrapping at the top. Empty selection selects the word.
    * @param {object} CodeMirror The CodeMirror 5 global.
    */
   function registerCommands(CodeMirror) {
+    CodeMirror.commands.trimTrailingWhitespace = (cm) => {
+      const before = cm.getValue().split("\n");
+      const after = trimTrailingLines(before);
+      cm.operation(() => {
+        after.forEach((line, i) => {
+          if (line !== before[i]) cm.replaceRange("", CodeMirror.Pos(i, line.length), CodeMirror.Pos(i, before[i].length));
+        });
+      });
+    };
+    CodeMirror.commands.uniqueLines = (cm) => {
+      const sel = cm.listSelections()[0];
+      const whole = !cm.somethingSelected();
+      const first = whole ? cm.firstLine() : sel.from().line;
+      const last = whole ? cm.lastLine() : sel.to().line;
+      const from = CodeMirror.Pos(first, 0);
+      const to = CodeMirror.Pos(last, cm.getLine(last).length);
+      const before = cm.getRange(from, to).split("\n");
+      const after = uniqueLines(before);
+      if (after.length !== before.length) cm.replaceRange(after.join("\n"), from, to);
+    };
     CodeMirror.commands.selectPrevOccurrence = (cm) => {
       if (!cm.somethingSelected()) return CodeMirror.commands.selectNextOccurrence(cm);
       const sels = cm.listSelections();
@@ -301,7 +352,19 @@
       .join(" or ");
   }
 
-  const api = { IS_MAC, Scope, BINDINGS, expandChord, eventKeyName, buildIndex, registerCommands, install, hintFor };
+  const api = {
+    IS_MAC,
+    Scope,
+    BINDINGS,
+    expandChord,
+    eventKeyName,
+    buildIndex,
+    trimTrailingLines,
+    uniqueLines,
+    registerCommands,
+    install,
+    hintFor,
+  };
   root.TextServerKeys = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

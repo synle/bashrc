@@ -167,6 +167,23 @@ if has("gui_macvim")
   inoremap <D-S-CR> <C-o>:set wrap!<CR>
 endif
 
+" Trim trailing whitespace (whole file): cmd/ctrl/alt + shift + backspace, matching
+" VS Code/Sublime/text-server. Remove duplicate lines (keep first, order kept):
+" cmd/ctrl/alt + shift + delete. Only GUI vim / CSI-u terminals deliver these chords.
+command! TrimTrailingWhitespace let s:view = winsaveview() | keeppatterns %s/\s\+$//e | call winrestview(s:view)
+command! -range=% UniqueLines <line1>,<line2>!awk '\!seen[$0]++'
+let s:trim_lhs = ['<C-S-BS>', '<M-S-BS>'] + (has('gui_macvim') ? ['<D-S-BS>'] : [])
+let s:uniq_lhs = ['<C-S-Del>', '<M-S-Del>'] + (has('gui_macvim') ? ['<D-S-Del>'] : [])
+for s:lhs in s:trim_lhs
+  execute 'nnoremap <silent> ' . s:lhs . ' :TrimTrailingWhitespace<CR>'
+  execute 'inoremap <silent> ' . s:lhs . ' <C-o>:TrimTrailingWhitespace<CR>'
+endfor
+for s:lhs in s:uniq_lhs
+  execute 'nnoremap <silent> ' . s:lhs . ' :UniqueLines<CR>'
+  execute 'xnoremap <silent> ' . s:lhs . ' :UniqueLines<CR>'
+  execute 'inoremap <silent> ' . s:lhs . ' <C-o>:UniqueLines<CR>'
+endfor
+
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Splits
 """""""""""""""""""""""""""""""""""""""""""""""""

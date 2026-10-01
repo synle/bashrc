@@ -132,20 +132,25 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Text Editing
 
-| Key                | Action                 | VS Code | Subl Text | Subl Merge | Zed | Vim |
-| ------------------ | ---------------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+c`         | Copy                   |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `OS_KEY+x`         | Cut                    |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `OS_KEY+v`         | Paste                  |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `OS_KEY+a`         | Select all             |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `OS_KEY+z`         | Undo                   |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
-| `OS_KEY+y`         | Redo                   |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
-| `OS_KEY+shift+z`   | Redo (alt)             |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
-| `OS_KEY+s`         | Save                   |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
-| `OS_KEY+shift+s`   | Save all               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+l`         | Select line            |   ✅    |    ❌     |     ❌     | ✅  | ✅  |
-| `OS_KEY+shift+l`   | Multi-cursor line ends |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
-| `OS_KEY+backspace` | Delete to BOL          |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
+| Key                                                                       | Action                                                       | VS Code | Subl Text | Subl Merge |       Zed        |       Vim        |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------ | :-----: | :-------: | :--------: | :--------------: | :--------------: |
+| `OS_KEY+c`                                                                | Copy                                                         |   ✅    |    ✅     |     ✅     |        ✅        |        ❌        |
+| `OS_KEY+x`                                                                | Cut                                                          |   ✅    |    ✅     |     ✅     |        ✅        |        ❌        |
+| `OS_KEY+v`                                                                | Paste                                                        |   ✅    |    ✅     |     ✅     |        ✅        |        ❌        |
+| `OS_KEY+a`                                                                | Select all                                                   |   ✅    |    ✅     |     ✅     |        ✅        |        ❌        |
+| `OS_KEY+z`                                                                | Undo                                                         |   ✅    |    ✅     |     ✅     |        ✅        |        ✅        |
+| `OS_KEY+y`                                                                | Redo                                                         |   ✅    |    ✅     |     ✅     |        ✅        |        ✅        |
+| `OS_KEY+shift+z`                                                          | Redo (alt)                                                   |   ✅    |    ✅     |     ✅     |        ✅        |        ✅        |
+| `OS_KEY+s`                                                                | Save                                                         |   ✅    |    ✅     |     ❌     |        ✅        |        ✅        |
+| `OS_KEY+shift+s`                                                          | Save all                                                     |   ✅    |    ✅     |     ❌     |        ✅        |        ❌        |
+| `OS_KEY+l`                                                                | Select line                                                  |   ✅    |    ❌     |     ❌     |        ✅        |        ✅        |
+| `OS_KEY+shift+l`                                                          | Multi-cursor line ends                                       |   ✅    |    ❌     |     ❌     |        ✅        |        ❌        |
+| `OS_KEY+backspace`                                                        | Delete to BOL                                                |   ✅    |    ✅     |     ✅     |        ✅        |        ✅        |
+| `OS_KEY+shift+backspace` / `ctrl+shift+backspace` / `alt+shift+backspace` | Trim trailing whitespace (whole file)                        |   ✅    |    ✅     |     ❌     | ⚠️ <sup>tw</sup> | ✅ <sup>gv</sup> |
+| `OS_KEY+shift+delete` / `ctrl+shift+delete` / `alt+shift+delete`          | Remove duplicate lines (first wins; selection or whole file) |   ✅    |    ✅     |     ❌     |        ✅        | ✅ <sup>gv</sup> |
+
+<sup>tw</sup> Zed ships no trim-trailing-whitespace action (only the `remove_trailing_whitespace_on_save` setting), so the chord is left unbound.
+<sup>gv</sup> Vim exposes `:TrimTrailingWhitespace` / `:UniqueLines`; the chords fire only in GUI vim or terminals that report modified keys (CSI u), and `cmd` only in MacVim.
 
 ### Search
 
@@ -658,39 +663,41 @@ and arrows / Backspace drop the OS's native word-motion modifier (Alt on mac, Ct
 working (`super+left` → `Cmd-Left` on mac, `Alt-Left` elsewhere). Editor rows fire only while the editor has focus.
 Browser-reserved chords (`cmd+n`, `cmd+w`, `cmd+t` in Chrome) cannot be intercepted; their Alt member still works.
 
-| Key                                    | Action                                                                                  |
-| -------------------------------------- | --------------------------------------------------------------------------------------- |
-| `super+s`                              | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits) |
-| `super+shift+s`                        | Save pending edits now                                                                  |
-| `super+r` / `f5`                       | Refresh all: file list + open file (the ↻ button; overrides browser reload)             |
-| `super+n`                              | New file                                                                                |
-| `f2`                                   | Rename the open file                                                                    |
-| `super+shift+[` / `]`                  | Previous / next file in the list, wraps (◀ / ▶ buttons)                                 |
-| `super+c`                              | With an image open: copy it as PNG (needs https or localhost); otherwise normal copy    |
-| `super+v`                              | With a picture on the clipboard: save it as `Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>` |
-| `super+\`                              | Toggle the file list sidebar                                                            |
-| `ctrl+shift+super+\`                   | Toggle soft wrap                                                                        |
-| `cmd+shift+enter` / `ctrl+shift+enter` | Toggle soft wrap (alt chords, literal modifiers — no Alt pair)                          |
-| `super+=` / `-` / `0`                  | Editor font zoom in / out / reset (remembered)                                          |
-| `super+shift+f`                        | Find in files: show the sidebar, content search seeded with the selection               |
-| `super+p`                              | Quick open: show the sidebar, file-name search                                          |
-| `super+f` / `super+h`                  | Find / find and replace (CodeMirror dialog)                                             |
-| `super+g` / `super+shift+g`            | Find next / previous                                                                    |
-| `super+;`                              | Go to line                                                                              |
-| `ctrl+m`                               | Jump to matching bracket                                                                |
-| `super+d`                              | Select next match (adds a cursor; empty selection selects the word first)               |
-| `super+shift+d`                        | Select previous match                                                                   |
-| `super+ctrl+g`                         | Select all matches of the selection / word                                              |
-| `super+l`                              | Select line                                                                             |
-| `super+shift+l`                        | One cursor per selected line                                                            |
-| `super+a` / `z` / `y` / `shift+z`      | Select all / undo / redo / redo                                                         |
-| `super+backspace`                      | Delete to line start                                                                    |
-| `super+/`                              | Toggle comment                                                                          |
-| `super+[` / `]`                        | Outdent / indent                                                                        |
-| `super+,` / `.`                        | Fold / unfold                                                                           |
-| `super+up` / `down`                    | Page up / down (`+shift` selects)                                                       |
-| `super+left` / `right`                 | Line start / end (`+shift` selects)                                                     |
-| `super+ctrl+up` / `down`               | Top / bottom of file (`+shift` selects)                                                 |
+| Key                                       | Action                                                                                  |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| `super+s`                                 | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits) |
+| `super+shift+s`                           | Save pending edits now                                                                  |
+| `super+r` / `f5`                          | Refresh all: file list + open file (the ↻ button; overrides browser reload)             |
+| `super+n`                                 | New file                                                                                |
+| `f2`                                      | Rename the open file                                                                    |
+| `super+shift+[` / `]`                     | Previous / next file in the list, wraps (◀ / ▶ buttons)                                 |
+| `super+c`                                 | With an image open: copy it as PNG (needs https or localhost); otherwise normal copy    |
+| `super+v`                                 | With a picture on the clipboard: save it as `Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>` |
+| `super+\`                                 | Toggle the file list sidebar                                                            |
+| `ctrl+shift+super+\`                      | Toggle soft wrap                                                                        |
+| `cmd+shift+enter` / `ctrl+shift+enter`    | Toggle soft wrap (alt chords, literal modifiers — no Alt pair)                          |
+| `super+=` / `-` / `0`                     | Editor font zoom in / out / reset (remembered)                                          |
+| `super+shift+f`                           | Find in files: show the sidebar, content search seeded with the selection               |
+| `super+p`                                 | Quick open: show the sidebar, file-name search                                          |
+| `super+f` / `super+h`                     | Find / find and replace (CodeMirror dialog)                                             |
+| `super+g` / `super+shift+g`               | Find next / previous                                                                    |
+| `super+;`                                 | Go to line                                                                              |
+| `ctrl+m`                                  | Jump to matching bracket                                                                |
+| `super+d`                                 | Select next match (adds a cursor; empty selection selects the word first)               |
+| `super+shift+d`                           | Select previous match                                                                   |
+| `super+ctrl+g`                            | Select all matches of the selection / word                                              |
+| `super+l`                                 | Select line                                                                             |
+| `super+shift+l`                           | One cursor per selected line                                                            |
+| `super+a` / `z` / `y` / `shift+z`         | Select all / undo / redo / redo                                                         |
+| `super+backspace`                         | Delete to line start                                                                    |
+| `cmd` / `ctrl` / `alt` `+shift+backspace` | Trim trailing whitespace (whole file)                                                   |
+| `cmd` / `ctrl` / `alt` `+shift+delete`    | Remove duplicate lines (first wins; selection or whole file)                            |
+| `super+/`                                 | Toggle comment                                                                          |
+| `super+[` / `]`                           | Outdent / indent                                                                        |
+| `super+,` / `.`                           | Fold / unfold                                                                           |
+| `super+up` / `down`                       | Page up / down (`+shift` selects)                                                       |
+| `super+left` / `right`                    | Line start / end (`+shift` selects)                                                     |
+| `super+ctrl+up` / `down`                  | Top / bottom of file (`+shift` selects)                                                 |
 
 Not mapped (no equivalent in a single-file browser editor): tabs by index, splits, terminal, debugging,
 format document, goto symbol / definition, right dock, fullscreen.

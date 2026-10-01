@@ -174,6 +174,12 @@
       "OS_KEY-l": "editor::SelectLine",
       // delete from cursor to beginning of line — matches VS Code's `deleteAllLeft` (OS_KEY+backspace)
       "OS_KEY-backspace": "editor::DeleteToBeginningOfLine",
+      // remove duplicate lines (keep first, selection or whole file) — matches VS Code's
+      // `removeDuplicateLines` (OS_KEY/ctrl/alt + shift + delete). Zed has no trim-trailing-whitespace
+      // action (only `remove_trailing_whitespace_on_save`), so the shift+backspace twin is not mapped here.
+      "OS_KEY-shift-delete": "editor::UniqueLinesCaseSensitive",
+      "ctrl-shift-delete": "editor::UniqueLinesCaseSensitive",
+      "alt-shift-delete": "editor::UniqueLinesCaseSensitive",
       // jump to matching bracket — matches VS Code/Sublime `editor.action.jumpToBracket` (ctrl+m).
       // Zed's action is named `MoveToEnclosingBracket` (NOT `GoToEnclosingBracket`) — verified
       // against the Zed binary's bundled keymap, which ships `ctrl-m` as a JetBrains-compat default.
