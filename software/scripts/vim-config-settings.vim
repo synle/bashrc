@@ -274,6 +274,15 @@ inoremap . <C-g>u.
 " ,n to clear search highlighting
 nnoremap <silent> ,n :nohlsearch<CR>
 
+" Multi-cursor (vim-visual-multi) — Sublime parity:
+"   ,g          select every match of the word under cursor (Sublime OS_KEY+ctrl+g)
+"   ,l (visual) one cursor per selected line (Sublime cmd+shift+l)
+"   ctrl+n      plugin default: add the next match (Sublime OS_KEY+d)
+" Esc leaves multi-cursor mode. Set before the plugin loads (vimrc runs first).
+let g:VM_maps = {}
+let g:VM_maps['Select All'] = ',g'
+let g:VM_maps['Visual Cursors'] = ',l'
+
 " Y to yank from cursor to end of line (consistent with D and C)
 nnoremap Y y$
 

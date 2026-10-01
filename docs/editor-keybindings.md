@@ -505,13 +505,16 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these single-key toggles fire in normal mode. They override vim's default `[`/`]`/`}` prefix motions.
 
-| Key                                             | Action                                             |
-| ----------------------------------------------- | -------------------------------------------------- |
-| `\`                                             | Toggle line numbers                                |
-| `]`                                             | Toggle whitespace markers                          |
-| `[` / `}`                                       | Toggle soft wrap (`set wrap!`)                     |
-| `Tab` (visual mode)                             | Toggle soft wrap, keep selection                   |
-| `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only) |
+| Key                                             | Action                                                                            |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `\`                                             | Toggle line numbers                                                               |
+| `]`                                             | Toggle whitespace markers                                                         |
+| `[` / `}`                                       | Toggle soft wrap (`set wrap!`)                                                    |
+| `Tab` (visual mode)                             | Toggle soft wrap, keep selection                                                  |
+| `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |
+| `,g`                                            | Multi-cursor: select all matches of word (vim-visual-multi, like `OS_KEY+ctrl+g`) |
+| `,l` (visual mode)                              | Multi-cursor: one cursor per selected line (like `OS_KEY+shift+l`)                |
+| `ctrl+n`                                        | Multi-cursor: add next match (plugin default, like `OS_KEY+d`)                    |
 
 ### FZF / Search
 

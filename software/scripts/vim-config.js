@@ -42,6 +42,9 @@ async function doWork() {
     Plug 'junegunn/fzf'                                               " Fuzzy finder core (binary integration)
     Plug 'junegunn/fzf.vim'                                           " Fuzzy finder vim commands (:Files, :Rg, :Buffers, etc.)
 
+    " --- Editing ---
+    Plug 'mg979/vim-visual-multi', { 'branch': 'master' }             " Sublime-style multi-cursor (select all matches, cursor per line)
+
     call plug#end()
 
     """""""""""""""""""""""""""""""""""""""""""""""""
