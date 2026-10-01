@@ -520,7 +520,7 @@ NO_COLOR="${NO_COLOR:-0}" && [ -n "$NO_COLOR" ] && [ "$NO_COLOR" != "0" ] && NO_
 os_flags=""
 for var in $(compgen -v | grep '^is_os_\|^IS_CI$'); do
   os_flags="$os_flags
-export $var=${!var}"
+export $var='${!var}'"
   unset "$var"
 done
 unset var
@@ -729,9 +729,12 @@ $os_flags
 # is_os_* exports above because is_gui consults is_os_mac / is_os_windows.
 _detect_gui_flags
 
-export OLLAMA_DEFAULT_SERVER_IP="$(get_ollama_default_server_ip)"
+# Single-quoted, not double: this whole block sits inside echo \"\"\"...\"\"\", so an
+# inner double quote closes the outer string and the value is written unquoted —
+# a space-separated value then becomes 'export X=a b' (\"b: not a valid identifier\").
+export OLLAMA_DEFAULT_SERVER_IP='$(get_ollama_default_server_ip)'
 # copy-to-server targets (space-separated <ip>:<port>), parsed once from ip-address.config.
-export CODE_SERVER_REMOTE_HOSTS="$(get_code_server_hosts)"
+export CODE_SERVER_REMOTE_HOSTS='$(get_code_server_hosts)'
 
 # Hardware flags from common-env.sh — baked (not re-probed per shell) because the
 # battery / GPU probes spawn subprocesses (powershell.exe, nvidia-smi) and the
