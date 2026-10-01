@@ -107,6 +107,48 @@ describe("loadSharedMcpServers", () => {
     const result = await sandbox.loadSharedMcpServers();
     expect(result).toEqual({});
   });
+
+  it("uses argsOnMac in place of args on macOS and strips the key", async () => {
+    const sandbox = loadLlmCommon({ mcpServers: { pw: { command: "npx", args: ["pkg", "--headless"], argsOnMac: ["pkg"] } } });
+    const result = await sandbox.loadSharedMcpServers(true);
+    expect(result).toEqual({ pw: { command: "npx", args: ["pkg"] } });
+  });
+
+  it("keeps args and strips argsOnMac off macOS", async () => {
+    const sandbox = loadLlmCommon({ mcpServers: { pw: { command: "npx", args: ["pkg", "--headless"], argsOnMac: ["pkg"] } } });
+    const result = await sandbox.loadSharedMcpServers(false);
+    expect(result).toEqual({ pw: { command: "npx", args: ["pkg", "--headless"] } });
+  });
+
+  it("falls back to args on macOS when argsOnMac is not an array", async () => {
+    const sandbox = loadLlmCommon({ mcpServers: { pw: { command: "npx", args: ["pkg", "--headless"], argsOnMac: "pkg" } } });
+    const result = await sandbox.loadSharedMcpServers(true);
+    expect(result).toEqual({ pw: { command: "npx", args: ["pkg", "--headless"] } });
+  });
+});
+
+describe("_common/mcp-servers.jsonc playwright entry", () => {
+  /** Reads the checked-in registry with comments + trailing commas stripped. */
+  const readRegistry = () =>
+    JSON.parse(
+      fs
+        .readFileSync(path.join(ROOT, "software/scripts/advanced/llm/_common/mcp-servers.jsonc"), "utf-8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "")
+        .replace(/,(\s*[}\]])/g, "$1"),
+    );
+
+  it("deploys playwright headed with a persistent profile on macOS", async () => {
+    const sandbox = loadLlmCommon(readRegistry());
+    const { playwright } = await sandbox.loadSharedMcpServers(true);
+    expect(playwright.args).toEqual(["-y", "@playwright/mcp@latest"]);
+  });
+
+  it("deploys playwright headless and isolated off macOS", async () => {
+    const sandbox = loadLlmCommon(readRegistry());
+    const { playwright } = await sandbox.loadSharedMcpServers(false);
+    expect(playwright.args).toEqual(["-y", "@playwright/mcp@latest", "--headless", "--isolated"]);
+  });
 });
 
 describe("translateMcpServersForOpencode", () => {

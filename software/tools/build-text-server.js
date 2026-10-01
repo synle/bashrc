@@ -203,9 +203,10 @@ async function main() {
 }
 
 // Run only as a CLI (make build_text_server); requiring the file (tests) just exposes the patterns.
-if (require.main === module) main().catch((err) => {
-  process.stderr.write(`build-text-server: ${err.stack || err.message}\n`);
-  process.exit(1);
-});
+if (require.main === module)
+  main().catch((err) => {
+    process.stderr.write(`build-text-server: ${err.stack || err.message}\n`);
+    process.exit(1);
+  });
 
 module.exports = { STYLESHEET_TAG_PATTERN, SCRIPT_TAG_PATTERN };

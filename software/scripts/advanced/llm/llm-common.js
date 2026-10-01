@@ -87,15 +87,30 @@ const SHARED_MCP_REGISTRY_PATH = "software/scripts/advanced/llm/_common/mcp-serv
  * `mcpServers` key is absent — callers can iterate the result without
  * additional guards.
  *
+ * Resolves the registry-only `argsOnMac` key: on macOS it replaces `args`,
+ * elsewhere it is ignored. It is always stripped, so no CLI ever sees it.
+ *
+ * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global `is_os_mac` flag.
  * @returns {Promise<Record<string, any>>} Map of server name to server config (standard shape).
  */
-async function loadSharedMcpServers() {
+async function loadSharedMcpServers(isOsMac) {
+  const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
   /** @type {{ mcpServers?: Record<string, any> } | null} */
   const json = await readJson`${SHARED_MCP_REGISTRY_PATH}`;
   if (!json || typeof json !== "object") return {};
   /** @type {Record<string, any>} */
   const servers = json.mcpServers && typeof json.mcpServers === "object" ? json.mcpServers : {};
-  return servers;
+  /** @type {Record<string, any>} */
+  const resolved = {};
+  for (const [name, entry] of Object.entries(servers)) {
+    if (!entry || typeof entry !== "object" || !("argsOnMac" in entry)) {
+      resolved[name] = entry;
+      continue;
+    }
+    const { argsOnMac, ...rest } = entry;
+    resolved[name] = isMac && Array.isArray(argsOnMac) ? { ...rest, args: argsOnMac } : rest;
+  }
+  return resolved;
 }
 
 /**

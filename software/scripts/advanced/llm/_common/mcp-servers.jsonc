@@ -72,9 +72,14 @@
     // an in-memory profile so it never touches personal browser sessions. The
     // first browser launch downloads Chromium into ms-playwright's cache; if a
     // run reports a missing browser, run `npx playwright install chromium`.
+    // `argsOnMac` (registry-only, resolved by loadSharedMcpServers) replaces
+    // `args` on macOS: headed so the user can approve Okta / Touch ID SSO in
+    // the window, and a persistent Playwright-owned profile (not the personal
+    // browser) so that SSO login survives across sessions.
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest", "--headless", "--isolated"],
+      "argsOnMac": ["-y", "@playwright/mcp@latest"],
     },
     // Example (commented; uncomment + edit to enable everywhere):
     // "context7": {
