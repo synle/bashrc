@@ -196,7 +196,7 @@ describe("text-server upload (drag and drop)", () => {
   });
 
   it("onclash=suffix inserts -1, -2 right after the stamp, keeping the extension last", async () => {
-    const rel = "clipboard.picture.09-30-2026_14-44.png";
+    const rel = "Clipboard.Pasted.09-30-2026_14-44.png";
     const suffix = async (content) => {
       const res = await fetch(`http://127.0.0.1:${port}/api/upload?path=${encodeURIComponent(rel)}&onclash=suffix`, {
         method: "POST",
@@ -204,10 +204,10 @@ describe("text-server upload (drag and drop)", () => {
       });
       return res.json();
     };
-    expect(await suffix("p0")).toEqual({ path: "clipboard.picture.09-30-2026_14-44.png" });
-    expect(await suffix("p1")).toEqual({ path: "clipboard.picture.09-30-2026_14-44-1.png", duplicate: true });
-    expect(await suffix("p2")).toEqual({ path: "clipboard.picture.09-30-2026_14-44-2.png", duplicate: true });
-    expect(fs.readFileSync(path.join(sandbox, "root", "clipboard.picture.09-30-2026_14-44-2.png"), "utf8")).toBe("p2");
+    expect(await suffix("p0")).toEqual({ path: "Clipboard.Pasted.09-30-2026_14-44.png" });
+    expect(await suffix("p1")).toEqual({ path: "Clipboard.Pasted.09-30-2026_14-44-1.png", duplicate: true });
+    expect(await suffix("p2")).toEqual({ path: "Clipboard.Pasted.09-30-2026_14-44-2.png", duplicate: true });
+    expect(fs.readFileSync(path.join(sandbox, "root", "Clipboard.Pasted.09-30-2026_14-44-2.png"), "utf8")).toBe("p2");
   });
 
   it("answers an over-limit upload with a 413 JSON reply, not a connection reset", async () => {

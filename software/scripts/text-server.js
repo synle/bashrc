@@ -220,7 +220,7 @@ async function doWork() {
       alias paste-server='copy-server'
 
       # copy-to-server: push text to every CODE_SERVER_REMOTE copy-server. Each send writes a history file
-      # (Temp-<date_time>.txt, or --name) AND overwrites clipboard.txt, the file copy-from-server reads.
+      # (Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.txt, or --name) AND overwrites clipboard.txt, the file copy-from-server reads.
       # Content source, first match wins: piped stdin, an existing file path, literal text args, the clipboard.
       # Targets come from CODE_SERVER_REMOTE_HOSTS (baked by run.sh from ip-address.config).
       # Side effects: two HTTP PUTs per host; replaces the local clipboard with the first sent URL
@@ -234,7 +234,7 @@ async function doWork() {
               copy-to-server <text...>           send the literal text
               <cmd> | copy-to-server             send piped stdin
             Options (before the content):
-              --name <name>                      history file name (default Temp-<date_time>.txt)
+              --name <name>                      history file name (default Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.txt)
               --no-copy-url                      leave the local clipboard alone (default: copy the sent URL)
             Every send also overwrites clipboard.txt, so copy-from-server on another machine gets it back.
             Targets: \\$CODE_SERVER_REMOTE_HOSTS (from software/metadata/ip-address.config; re-run run.sh to refresh)
@@ -288,7 +288,7 @@ async function doWork() {
           return 1
         fi
 
-        [ -n "$name" ] || name="Temp-$(date +%Y-%m-%d_%H-%M-%S).txt"
+        [ -n "$name" ] || name="Clipboard.Pasted.$(date +%m-%d-%Y_%H-%M).txt"
         local encoded
         encoded=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$name") || {
           command rm -f "$payload"

@@ -641,14 +641,21 @@ cancelling an incremental search and `ctrl+r` is bound to fzf, which aborts on `
 
 ## text-server (browser editor)
 
-Source: `software/scripts/text-server.html` (page-level handlers, not a keymap file). Same keys on every OS.
+Source: `software/scripts/text-server.html` (page-level handlers + CodeMirror `extraKeys`, not a keymap file).
 
-| Key                | Action                                                                                   |
-| ------------------ | ---------------------------------------------------------------------------------------- |
-| `ctrl+s` / `cmd+s` | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits)  |
-| `ctrl+[`           | Previous file in the sidebar list, wraps to the bottom (also the ◀ button)               |
-| `ctrl+]`           | Next file in the sidebar list, wraps to the top (also the ▶ button)                      |
-| `ctrl+v` / `cmd+v` | With a picture on the clipboard: save it as `clipboard.picture.<MM-DD-YYYY_HH-MM>.<ext>` |
+| Key                | Action                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `ctrl+s` / `cmd+s` | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits) |
+| `ctrl+[`           | Previous file in the sidebar list, wraps to the bottom (also the ◀ button)              |
+| `ctrl+]`           | Next file in the sidebar list, wraps to the top (also the ▶ button)                     |
+| `ctrl+v` / `cmd+v` | With a picture on the clipboard: save it as `Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>` |
+| `OS_KEY+shift+f`   | Find in files: open the search bar in content mode, seeded with the selection           |
+| `OS_KEY+d`         | Select next match (adds a cursor; empty selection selects the word first)               |
+| `OS_KEY+shift+d`   | Select previous match (reverse of `OS_KEY+d`)                                           |
+| `OS_KEY+shift+l`   | Split selection into one cursor per line                                                |
+| `OS_KEY+ctrl+g`    | Select all matches of the selection / word (`ctrl+g` off mac)                           |
+
+`OS_KEY` rows are Cmd on mac, Ctrl elsewhere; the editor ones need the editor focused.
 
 `ctrl+[` / `ctrl+]` are caught before CodeMirror, so its default indent-less / indent-more on
 those chords is given up inside text-server. Folders in the list are skipped; with no file open,

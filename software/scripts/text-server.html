@@ -11,6 +11,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/loadmode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/overlay.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+    <!-- Only for its multi-cursor commands (selectNextOccurrence, splitSelectionByLine, findAllUnder); the sublime keyMap itself is not enabled. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/keymap/sublime.min.js"></script>
     <style>
       * {
         box-sizing: border-box;
@@ -547,6 +550,35 @@
         $("newFolder").style.display = "none";
       }
       const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
+      /**
+       * Reverse of the sublime keymap's selectNextOccurrence: add a cursor on the previous match of the
+       * selected text, searching backwards from the topmost selection and wrapping at the top.
+       * Empty selection -> selects the word under the cursor first (same as Cmd/Ctrl+D).
+       * @param {CodeMirror.Editor} cm Editor to act on.
+       */
+      CodeMirror.commands.selectPrevOccurrence = (cm) => {
+        if (cm.somethingSelected() === false) return CodeMirror.commands.selectNextOccurrence(cm);
+        const sels = cm.listSelections();
+        const text = cm.getRange(sels[0].from(), sels[0].to());
+        let cur = cm.getSearchCursor(text, sels[0].from());
+        let found = cur.findPrevious();
+        if (!found) {
+          cur = cm.getSearchCursor(text, CodeMirror.Pos(cm.lastLine()));
+          found = cur.findPrevious();
+        }
+        if (!found) return;
+        const taken = sels.some((s) => CodeMirror.cmpPos(s.from(), cur.from()) === 0 && CodeMirror.cmpPos(s.to(), cur.to()) === 0);
+        if (!taken) cm.addSelection(cur.from(), cur.to());
+      };
+      /** True on macOS, where the OS key is Cmd; elsewhere it is Ctrl. */
+      const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
+      // Multi-cursor keys matching VS Code / Sublime / Zed (docs/editor-keybindings.md, OS_KEY = Cmd on mac, Ctrl elsewhere).
+      editor.setOption("extraKeys", {
+        "Mod-D": "selectNextOccurrence",
+        "Shift-Mod-D": "selectPrevOccurrence",
+        "Shift-Mod-L": "splitSelectionByLine",
+        [IS_MAC ? "Cmd-Ctrl-G" : "Ctrl-G"]: "findAllUnder",
+      });
       $("editorWrap").append($("empty")); // overlay the editor area only, below the toolbar
       editor.on("change", () => renderSize()); // every edit, open, remote reload, and close
       editor.on("cursorActivity", () => renderCursor());
@@ -1404,9 +1436,12 @@
 
       /** Clipboard image MIME subtype -> file extension (anything else uses the sanitized subtype). */
       const CLIPBOARD_IMAGE_EXT = { jpeg: "jpg", "svg+xml": "svg" };
+      /** Name prefix for every clipboard paste saved as a file: Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>. */
+      const CLIPBOARD_PASTED_PREFIX = "Clipboard.Pasted.";
       /**
        * Cmd+V / Ctrl+V with a picture on the clipboard: save it into the current folder as
-       * clipboard.picture.<MM-DD-YYYY_HH-MM>.<png|jpg|...>. Text pastes are left to the editor.
+       * Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<png|jpg|...> (same prefix copy-to-server uses for .txt).
+       * Text pastes are left to the editor.
        * Capture phase so CodeMirror never sees an image paste.
        */
       document.addEventListener(
@@ -1429,7 +1464,7 @@
             const subtype = img.type.slice("image/".length);
             const ext = CLIPBOARD_IMAGE_EXT[subtype] || subtype.replace(/[^a-z0-9]/gi, "") || "png";
             try {
-              const data = await api("POST", "/api/upload", join(cwd, "clipboard.picture." + stamp + "." + ext), img, "&onclash=suffix");
+              const data = await api("POST", "/api/upload", join(cwd, CLIPBOARD_PASTED_PREFIX + stamp + "." + ext), img, "&onclash=suffix");
               setStatus("pasted picture saved as " + data.path);
             } catch (err) {
               alert("Paste failed: " + err.message);
@@ -1571,6 +1606,24 @@
           e.preventDefault();
           e.stopPropagation();
           stepFile(step);
+        },
+        true,
+      );
+      // OS_KEY+Shift+F: find in files -> open the search bar in content mode, seeded with the editor selection.
+      // Capture phase so the browser / CodeMirror never sees it.
+      document.addEventListener(
+        "keydown",
+        (e) => {
+          if (!(IS_MAC ? e.metaKey : e.ctrlKey) || !e.shiftKey || e.altKey || e.code !== "KeyF") return;
+          e.preventDefault();
+          e.stopPropagation();
+          const picked = editor.getSelection();
+          if (picked && !picked.includes("\n")) $("searchInput").value = picked;
+          $("searchMode").value = "content";
+          $("searchBar").classList.add("open");
+          $("searchInput").focus();
+          $("searchInput").select();
+          runSearch(true);
         },
         true,
       );

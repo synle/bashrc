@@ -93,7 +93,7 @@ function formatDateTime(d) {
 
 /**
  * Insert a -N clash counter right after the last timestamp in the file name, so an
- * extension after it survives (clipboard.picture.<stamp>-1.png). No stamp -> append at the end.
+ * extension after it survives (Clipboard.Pasted.<stamp>-1.png). No stamp -> append at the end.
  * @param {string} file Absolute path whose basename may carry a formatDateTime stamp.
  * @param {number} n Counter (1-based).
  * @returns {string} Path with the counter inserted.
