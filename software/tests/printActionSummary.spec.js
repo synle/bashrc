@@ -28,7 +28,7 @@ const HELPER_SOURCE = (() => {
 
 let sandbox = "";
 
-const REQUIRED_TOOLS = ["realpath", "dirname", "stat", "id", "mkdir", "rm", "cat", "ln", "chmod"];
+const REQUIRED_TOOLS = ["realpath", "dirname", "stat", "id", "mkdir", "rm", "cat", "ln", "chmod", "tr"];
 
 beforeEach(() => {
   sandbox = fs.mkdtempSync("/tmp/_print_action_summary_");
@@ -90,6 +90,7 @@ function callSummary({ args, cwd, wslpath }) {
   const workdir = cwd ?? home;
   const script = [
     `set -euo pipefail`,
+    `unset LINE_BREAK_EQUAL`,
     `HOME=${JSON.stringify(home)}`,
     `PATH=${JSON.stringify(path.join(sandbox, "bin"))}`,
     `cd ${JSON.stringify(workdir)}`,
@@ -129,11 +130,11 @@ describe("print_action_summary", () => {
       const out = callSummary({ args: [`--run-folder=${repo}`, patch, "git_patch_apply"] });
       expect(out).toBe(
         [
-          "====================================",
+          "=".repeat(80),
           `PWD: "${path.join(sandbox, "home")}"`,
           `cd "${rp(repo)}"`,
           `git_patch_apply "${rp(patch)}"`,
-          "====================================",
+          "=".repeat(80),
           "",
         ].join("\n"),
       );
@@ -176,11 +177,11 @@ describe("print_action_summary", () => {
     const out = callSummary({ args: [file, "vim"] });
     expect(out).toBe(
       [
-        "====================================",
+        "=".repeat(80),
         `PWD: "${path.join(sandbox, "home")}"`,
         `cd "${rp(dir)}"`,
         `vim "${rp(file)}"`,
-        "====================================",
+        "=".repeat(80),
         "",
       ].join("\n"),
     );
@@ -192,11 +193,11 @@ describe("print_action_summary", () => {
     const out = callSummary({ args: [dir, "subl"] });
     expect(out).toBe(
       [
-        "====================================",
+        "=".repeat(80),
         `PWD: "${path.join(sandbox, "home")}"`,
         `cd "${rp(dir)}"`,
         `subl "${rp(dir)}"`,
-        "====================================",
+        "=".repeat(80),
         "",
       ].join("\n"),
     );
@@ -208,10 +209,10 @@ describe("print_action_summary", () => {
     const out = callSummary({ args: [dir] });
     expect(out).toBe(
       [
-        "====================================",
+        "=".repeat(80),
         `PWD: "${path.join(sandbox, "home")}"`,
         `cd "${rp(dir)}"`,
-        "====================================",
+        "=".repeat(80),
         "",
       ].join("\n"),
     );
@@ -254,13 +255,13 @@ describe("print_action_summary", () => {
     });
     expect(out).toBe(
       [
-        "====================================",
+        "=".repeat(80),
         `PWD: "${path.join(sandbox, "home")}"`,
         `cd "${rp(dir)}"`,
         `cd "C:/proj"`, // resolved cd is the second hop, immediately after the unix cd
         `vim "${rp(file)}"`, // binary line is the unix path first…
         `vim "C:/proj/f.txt"`, // …then mirrored with the resolved (Windows-style) target
-        "====================================",
+        "=".repeat(80),
         "",
       ].join("\n"),
     );

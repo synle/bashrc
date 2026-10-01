@@ -279,7 +279,14 @@ Profile registration is buffered: `registerProfileBlock` /
   `-E`; use basic regex (`[0-9][0-9]*`, not `[0-9]+`).
 - **No `disown`** — use `( … ) &`. **No `"""`/`'''`** — bash has no triple quotes.
 - **`LINE_BREAK_HASH` / `LINE_BREAK_SLASH` / `LINE_BREAK_EQUAL`** instead of hardcoded
-  separator strings.
+  separator strings. One width everywhere: `LINE_BREAK_COUNT=80` — `run.sh`,
+  `profile-core.sh`, and the `index.js` default must agree; never a literal
+  `"======…"` of ad-hoc length. Printed banners use the one shape: divider in cyan
+  (`\033[0;36m`), title/body lines in blue (`\033[0;34m`), divider again. Contexts
+  that can't see the profile (Makefile recipes, `software/tools/*.sh`) use
+  `$(DIVIDER)` in Make or `"${LINE_BREAK_EQUAL:-$(printf '%80s' '' | tr ' ' '=')}"` in
+  bash; PowerShell uses `("=" * 80)`. Output meant to be copied, piped, or parsed
+  (`print_action_summary`) colors only when `[ -t 1 ]`.
 - **"folder", not "dir"/"directory"/"path", in function and variable names.**
 - **POSIX only when the shebang says so.** If it's `#!/bin/sh` or `#!/system/bin/sh`:
   no arrays, no `function`, no `[[ ]]`, no `${var,,}`, no `(( ))`.

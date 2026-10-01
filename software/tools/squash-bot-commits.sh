@@ -110,9 +110,9 @@
   backup_ref="refs/backup/clean-squash-git-$ts"
   backup_bundle="/tmp/bashrc-clean-squash-git-$ts.bundle"
 
-  printf '\033[0;36m%s\033[0m\n' "===================================="
+  printf '\033[0;36m%s\033[0m\n' "${LINE_BREAK_EQUAL:-$(printf '%80s' '' | tr ' ' '=')}"
   printf '\033[0;34m%s\033[0m\n' "DESTRUCTIVE: about to rewrite $bot_count commit(s) on $current_branch"
-  printf '\033[0;36m%s\033[0m\n' "===================================="
+  printf '\033[0;36m%s\033[0m\n' "${LINE_BREAK_EQUAL:-$(printf '%80s' '' | tr ' ' '=')}"
   echo ">> Rebase base:    $rebase_base_display"
   echo ">> Backup ref:     $backup_ref"
   echo ">> Backup bundle:  $backup_bundle"

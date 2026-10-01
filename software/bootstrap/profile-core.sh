@@ -94,7 +94,7 @@ export VISUAL="$EDITOR"
 export PAGER="less"
 export GIT_EDITOR="$EDITOR"
 export BASH_PATH=~/.bash_syle
-export LINE_BREAK_COUNT=100
+export LINE_BREAK_COUNT=80
 printf -v LINE_BREAK_HASH '%*s' "$LINE_BREAK_COUNT" ''
 LINE_BREAK_HASH=${LINE_BREAK_HASH// /#}
 export LINE_BREAK_HASH
@@ -560,17 +560,27 @@ function print_action_summary() {
   resolved_dir=$(to_windows_path "$dir")
   resolved_target=$(to_windows_path "$target_abs")
 
-  printf '\033[0;36m%s\033[0m\n' "$LINE_BREAK_EQUAL"
-  printf '\033[0;34m%s\033[0m\n' "PWD: \"$(pwd)\""
-  printf '\033[0;34m%s\033[0m\n' "cd \"$dir\""
-  [ "$resolved_dir" != "$dir" ] && echo "cd \"$resolved_dir\""
+  # Color only on a TTY: piped/captured output stays plain so it remains
+  # copy-paste-runnable and parseable (callers grep for lines starting `cd `).
+  local c_rule="" c_text="" c_reset=""
+  if [ -t 1 ]; then
+    c_rule=$'\033[0;36m'
+    c_text=$'\033[0;34m'
+    c_reset=$'\033[0m'
+  fi
+  local divider="${LINE_BREAK_EQUAL:-$(printf '%80s' '' | tr ' ' '=')}"
+
+  printf '%s%s%s\n' "$c_rule" "$divider" "$c_reset"
+  printf '%s%s%s\n' "$c_text" "PWD: \"$(pwd)\"" "$c_reset"
+  printf '%s%s%s\n' "$c_text" "cd \"$dir\"" "$c_reset"
+  [ "$resolved_dir" != "$dir" ] && printf '%s%s%s\n' "$c_text" "cd \"$resolved_dir\"" "$c_reset"
   if [ -n "$binary" ]; then
     local prefix="$binary"
     [ ${#extra_args[@]} -gt 0 ] && prefix="$binary ${extra_args[*]}"
-    echo "$prefix \"$target_abs\""
-    [ "$resolved_target" != "$target_abs" ] && echo "$prefix \"$resolved_target\""
+    printf '%s%s%s\n' "$c_text" "$prefix \"$target_abs\"" "$c_reset"
+    [ "$resolved_target" != "$target_abs" ] && printf '%s%s%s\n' "$c_text" "$prefix \"$resolved_target\"" "$c_reset"
   fi
-  printf '\033[0;36m%s\033[0m\n' "$LINE_BREAK_EQUAL"
+  printf '%s%s%s\n' "$c_rule" "$divider" "$c_reset"
 }
 
 # --- Aliases: Coreutils Defaults ---

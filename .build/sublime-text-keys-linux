@@ -21,6 +21,24 @@
     ]
   },
   {
+    "keys": [
+      "alt+shift+enter"
+    ],
+    "command": "toggle_setting",
+    "args": {
+      "setting": "word_wrap"
+    }
+  },
+  {
+    "keys": [
+      "ctrl+shift+enter"
+    ],
+    "command": "toggle_setting",
+    "args": {
+      "setting": "word_wrap"
+    }
+  },
+  {
     "command": "chain",
     "args": {
       "commands": [

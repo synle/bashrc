@@ -122,12 +122,12 @@ function _Launch-Editor {
       Start-Process $p -ArgumentList $EditorArgs
       $resolvedPath = if ($EditorArgs.Count -gt 0) { Resolve-Path $EditorArgs[-1] -ErrorAction SilentlyContinue } else { "" }
       $dir = if ($resolvedPath) { Split-Path $resolvedPath -Parent } else { "" }
-      Write-Host "===================================="
+      Write-Host ("=" * 80) -ForegroundColor Cyan
       Write-Host """$p"" $EditorArgs"
       Write-Host "PWD: $(Get-Location)"
       if ($dir) { Write-Host "Dir: $dir" }
       if ($resolvedPath) { Write-Host "Path: $resolvedPath" }
-      Write-Host "===================================="
+      Write-Host ("=" * 80) -ForegroundColor Cyan
       return
     }
   }
@@ -200,12 +200,12 @@ function code-server {
   $url = "$address/?tkn=$token"
   $localUrl = "http://localhost:$portNumber/?tkn=$token"
 
-  Write-Host "===================================="
+  Write-Host ("=" * 80) -ForegroundColor Cyan
   Write-Host "PWD: $Folder"
   Write-Host "LAN:   $url"
   Write-Host "Local: $localUrl"
   Write-Host "(LAN URL copied to clipboard; Ctrl+C to stop)"
-  Write-Host "===================================="
+  Write-Host ("=" * 80) -ForegroundColor Cyan
   if (-not $AllowCd) {
     Write-Host "WARNING: folder lock NOT enforced by serve-web; Open Folder and the terminal reach the whole disk. Pass -AllowCd to acknowledge."
   }

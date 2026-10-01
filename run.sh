@@ -283,7 +283,7 @@ fi
 ################################################################################
 # --- Formatting Constants ---
 ################################################################################
-export LINE_BREAK_COUNT=40
+export LINE_BREAK_COUNT=80
 export LINE_BREAK_HASH=$(printf '#%.0s' $(seq 1 $LINE_BREAK_COUNT))
 export PRINT_WIDTH_BREAK_COUNT=140
 ################################################################################

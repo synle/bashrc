@@ -277,5 +277,13 @@
   {
     "key": "shift+ctrl+cmd+\\",
     "command": "editor.action.toggleWordWrap"
+  },
+  {
+    "key": "cmd+shift+enter",
+    "command": "editor.action.toggleWordWrap"
+  },
+  {
+    "key": "ctrl+shift+enter",
+    "command": "editor.action.toggleWordWrap"
   }
 ]

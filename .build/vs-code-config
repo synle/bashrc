@@ -1991,6 +1991,7 @@
     "editor.action.selectAll",
     "editor.action.selectHighlights",
     "editor.action.startFindReplaceAction",
+    "editor.action.toggleWordWrap",
     "editor.action.webvieweditor.selectAll",
     "editor.fold",
     "editor.unfold",
