@@ -54,6 +54,15 @@ set lazyredraw                " Don't redraw screen during macros — significan
 set ttyfast                   " Assume a fast terminal connection — smoother scrolling
 set history=500               " Remember 500 commands in history
 set undolevels=500            " Allow 500 undo steps
+" Persistent undo — history survives closing the file. vim won't create the
+" folder itself, so make it (0700: undo files hold file contents).
+if has("persistent_undo")
+  if !isdirectory($HOME . "/.vim/undo")
+    call mkdir($HOME . "/.vim/undo", "p", 0700)
+  endif
+  set undodir=$HOME/.vim/undo
+  set undofile
+endif
 set mouse=i                   " Mouse only in insert mode — normal/visual use terminal-native selection
 set clipboard=unnamed         " Use system clipboard for yank/paste — matches Cmd+C/V behavior
 
@@ -91,6 +100,8 @@ set pastetoggle=<F2>              " Press F2 to toggle paste mode — disables a
 " Display & UI
 """""""""""""""""""""""""""""""""""""""""""""""""
 syntax on                     " Enable syntax highlighting
+set linebreak                 " Soft wrap breaks at word boundaries, not mid-word
+set breakindent               " Wrapped continuation lines keep the line's indent
 set showmatch                 " Briefly jump to matching bracket when inserting one
 set wildmenu                  " Show autocomplete menu for commands (Tab in command mode)
 set wildmode=longest:full,full " Complete to longest common string first, then cycle through matches
@@ -128,8 +139,12 @@ nnoremap <silent> <C-g> <C-b>
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Toggle
 """""""""""""""""""""""""""""""""""""""""""""""""
-" [ to toggle line numbers
-nnoremap [ :set nonumber!<CR>
+" \ to toggle line numbers. Binding \ shadows vim's default <Leader>;
+" no <Leader> mappings exist here — set mapleader elsewhere before adding any.
+nnoremap <Bslash> :set nonumber!<CR>
+
+" [ to toggle soft wrap (same as } and visual-mode Tab).
+nnoremap [ :set wrap!<CR>
 
 " ] to toggle whitespace visualization
 nnoremap ] :set list!<CR>
@@ -138,6 +153,19 @@ nnoremap ] :set list!<CR>
 " ctrl+shift+OS_KEY+\ chord conceptually (one-key wrap toggle).
 " Overrides vim's default `}` (jump to next paragraph end).
 nnoremap } :set wrap!<CR>
+
+" Tab in visual mode toggles soft wrap and keeps the selection.
+xnoremap <Tab> <Esc>:set wrap!<CR>gv
+
+" ctrl+shift+enter (all OSes) / cmd+shift+enter (MacVim) also toggle soft wrap,
+" matching VS Code/Sublime/Zed/text-server. GUI vim and terminals that report
+" modified keys (CSI u / modifyOtherKeys) deliver these; plain terminals send a bare CR.
+nnoremap <C-S-CR> :set wrap!<CR>
+inoremap <C-S-CR> <C-o>:set wrap!<CR>
+if has("gui_macvim")
+  nnoremap <D-S-CR> :set wrap!<CR>
+  inoremap <D-S-CR> <C-o>:set wrap!<CR>
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Splits

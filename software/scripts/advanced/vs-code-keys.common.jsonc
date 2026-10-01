@@ -245,4 +245,13 @@
     "key": "shift+ctrl+OS_KEY+\\",
     "command": "editor.action.toggleWordWrap",
   },
+  // toggle soft wrap (alt chords, matches Zed/Sublime/Vim/text-server): cmd+shift+enter on mac, ctrl+shift+enter everywhere
+  {
+    "key": "OS_KEY+shift+enter",
+    "command": "editor.action.toggleWordWrap",
+  },
+  {
+    "key": "ctrl+shift+enter",
+    "command": "editor.action.toggleWordWrap",
+  },
 ]

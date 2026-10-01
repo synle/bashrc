@@ -28,6 +28,9 @@
       "OS_KEY-|": "workspace::ToggleRightDock",
       // toggle soft wrap — matches VS Code/Sublime's `ctrl+shift+OS_KEY+\`
       "ctrl-OS_KEY-|": "editor::ToggleSoftWrap",
+      // toggle soft wrap (alt chords): cmd-shift-enter on mac, ctrl-shift-enter everywhere
+      "OS_KEY-shift-enter": "editor::ToggleSoftWrap",
+      "ctrl-shift-enter": "editor::ToggleSoftWrap",
       // toggle the terminal panel — same chord across mac/linux/windows.
       // `ctrl-`` is Zed's default everywhere; lock it in explicitly so a
       // future default change can't silently break it. Mirrors VS Code's

@@ -90,6 +90,8 @@
     // --- Editor UI ---
     { chord: "super+\\", action: "toggleSidebar", scope: Scope.PAGE, label: "Toggle the file list sidebar" },
     { chord: "ctrl+shift+super+\\", action: "toggleWrap", scope: Scope.PAGE, label: "Toggle soft wrap" },
+    { chord: "cmd+shift+enter", action: "toggleWrap", scope: Scope.PAGE, label: "Toggle soft wrap (mac alt)" },
+    { chord: "ctrl+shift+enter", action: "toggleWrap", scope: Scope.PAGE, label: "Toggle soft wrap (alt)" },
     { chord: "super+=", action: "zoomIn", scope: Scope.PAGE, label: "Editor font zoom in" },
     { chord: "super+-", action: "zoomOut", scope: Scope.PAGE, label: "Editor font zoom out" },
     { chord: "super+0", action: "zoomReset", scope: Scope.PAGE, label: "Reset editor font zoom" },
