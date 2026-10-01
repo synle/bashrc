@@ -20,7 +20,7 @@
 {
   "lightweight": {
     "description": "Minimal config-only setup: git, vim, inputrc. Only the listed files run — no advanced/heavy installs.",
-    "files": ["git.js", "vim-config.js", "vim-jetpack.sh", "bash-inputrc.js"],
+    "files": ["git.js", "vim-config.js", "vim-jetpack.sh", "vim-plug.sh", "bash-inputrc.js"],
   },
 
   // --- Building blocks ---
@@ -30,6 +30,7 @@
     "files": [
       "vim-config.js",
       "vim-jetpack.sh",
+      "vim-plug.sh",
       "zed.js",
       "advanced/sublime-text.js",
       "advanced/sublime-merge.js",

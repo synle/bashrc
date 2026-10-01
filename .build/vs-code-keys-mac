@@ -46,6 +46,36 @@
     "command": "editor.action.fontZoomReset"
   },
   {
+    "key": "cmd+shift+backspace",
+    "command": "editor.action.trimTrailingWhitespace",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+backspace",
+    "command": "editor.action.trimTrailingWhitespace",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+shift+backspace",
+    "command": "editor.action.trimTrailingWhitespace",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "cmd+shift+delete",
+    "command": "editor.action.removeDuplicateLines",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+delete",
+    "command": "editor.action.removeDuplicateLines",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+shift+delete",
+    "command": "editor.action.removeDuplicateLines",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
     "key": "f5",
     "command": "runCommands",
     "args": {

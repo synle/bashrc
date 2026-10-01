@@ -12,6 +12,51 @@
     "command": "alignment"
   },
   {
+    "keys": [
+      "super+shift+backspace"
+    ],
+    "command": "trim_trailing_white_space"
+  },
+  {
+    "keys": [
+      "ctrl+shift+backspace"
+    ],
+    "command": "trim_trailing_white_space"
+  },
+  {
+    "keys": [
+      "alt+shift+backspace"
+    ],
+    "command": "trim_trailing_white_space"
+  },
+  {
+    "keys": [
+      "super+shift+delete"
+    ],
+    "command": "permute_lines",
+    "args": {
+      "operation": "unique"
+    }
+  },
+  {
+    "keys": [
+      "ctrl+shift+delete"
+    ],
+    "command": "permute_lines",
+    "args": {
+      "operation": "unique"
+    }
+  },
+  {
+    "keys": [
+      "alt+shift+delete"
+    ],
+    "command": "permute_lines",
+    "args": {
+      "operation": "unique"
+    }
+  },
+  {
     "command": "toggle_setting",
     "args": {
       "setting": "word_wrap"
