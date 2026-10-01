@@ -112,10 +112,21 @@ const PORT = Number(process.argv[3] || 9998);
 /** When false, only files directly inside ROOT are reachable (no folder navigation). */
 const ALLOW_CD = process.argv[4] === "1";
 
+/** Keybindings module file name (sibling of this file), inlined into the page at startup. */
+const KEYBINDINGS_FILE = "text-server.keybindings.cjs";
+/** Exact tag in text-server.html replaced by the inlined keybindings module (build-text-server.js does the same). */
+const KEYBINDINGS_TAG = `<script src="${KEYBINDINGS_FILE}"></script>`;
+
 /** UI page template (placeholders __ROOT_NAME__, __ALLOW_CD__, __MAX_BODY_BYTES__, __APP_VERSION__, __ROOT_PATH__), read once from the sibling file. */
 let PAGE_HTML;
 try {
   PAGE_HTML = fs.readFileSync(path.join(__dirname, "text-server.html"), "utf8");
+  // The keybindings module is a sibling file; inline it so the page never makes a second request.
+  // The single-file bundle has it inlined already (tag gone), so the sibling read is skipped there.
+  if (PAGE_HTML.includes(KEYBINDINGS_TAG)) {
+    const keysJs = fs.readFileSync(path.join(__dirname, KEYBINDINGS_FILE), "utf8").replace(/<\/script/gi, "<\\/script");
+    PAGE_HTML = PAGE_HTML.replace(KEYBINDINGS_TAG, () => `<script>\n${keysJs}\n</script>`);
+  }
 } catch (err) {
   process.stderr.write(`text-server: cannot read UI template next to ${__filename}: ${err.code || err.message}\n`);
   process.exit(1);
@@ -131,11 +142,11 @@ const BAKED_VERSION = null;
  */
 function computeAppVersion() {
   if (BAKED_VERSION) return BAKED_VERSION;
-  const mtimes = [__filename, path.join(__dirname, "text-server.html")].map((file) => {
+  const mtimes = [__filename, path.join(__dirname, "text-server.html"), path.join(__dirname, KEYBINDINGS_FILE)].map((file) => {
     try {
       return fs.statSync(file).mtimeMs;
     } catch {
-      return 0; // bundled build has no sibling html; the other file still counts
+      return 0; // bundled build has no sibling html/keybindings; the other file still counts
     }
   });
   const newest = Math.max(...mtimes);

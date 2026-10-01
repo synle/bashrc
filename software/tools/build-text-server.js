@@ -3,7 +3,8 @@
  *
  * Output: .build/_text-server/text-server   (gitignored via /.build/_*)
  *
- * Inputs: software/scripts/text-server.cjs (Node server) + software/scripts/text-server.html (UI).
+ * Inputs: software/scripts/text-server.cjs (Node server) + software/scripts/text-server.html (UI)
+ *   + software/scripts/text-server.keybindings.cjs (shortcut table, inlined into the page).
  * Every CDN resource the page uses is downloaded at build time and inlined:
  *   - <link rel="stylesheet" href="https://..."> -> <style>...</style>
  *   - <script src="https://..."></script>        -> <script>...</script>
@@ -38,6 +39,10 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const SERVER_SOURCE = path.join(REPO_ROOT, "software", "scripts", "text-server.cjs");
 /** UI page source. */
 const PAGE_SOURCE = path.join(REPO_ROOT, "software", "scripts", "text-server.html");
+/** Keybindings module, inlined in place of its relative <script src> tag (the server does the same at startup). */
+const KEYBINDINGS_SOURCE = path.join(REPO_ROOT, "software", "scripts", "text-server.keybindings.cjs");
+/** Exact relative tag in the page that loads the keybindings module. */
+const KEYBINDINGS_TAG = '<script src="text-server.keybindings.cjs"></script>';
 /** Output folder; `/.build/_*` is gitignored so the bundle never lands in a commit or the CI prep patch. */
 const OUTPUT_DIR = path.join(REPO_ROOT, ".build", "_text-server");
 /** Final single-file executable. */
@@ -183,12 +188,15 @@ async function inlinePage(html) {
  */
 async function main() {
   const server = fs.readFileSync(SERVER_SOURCE, "utf8");
-  const page = await inlinePage(fs.readFileSync(PAGE_SOURCE, "utf8"));
+  const rawPage = fs.readFileSync(PAGE_SOURCE, "utf8");
+  if (!rawPage.includes(KEYBINDINGS_TAG)) throw new Error(`${KEYBINDINGS_TAG} not found in text-server.html`);
+  const keysJs = escapeInlineScript(fs.readFileSync(KEYBINDINGS_SOURCE, "utf8"));
+  const page = await inlinePage(rawPage.replace(KEYBINDINGS_TAG, () => `<script>\n${keysJs}\n</script>`));
 
   const occurrences = server.split(PAGE_READ_EXPRESSION).length - 1;
   if (occurrences !== 1) throw new Error(`expected 1 occurrence of ${PAGE_READ_EXPRESSION} in text-server.cjs, found ${occurrences}`);
   if (!server.includes(BAKED_VERSION_EXPRESSION)) throw new Error(`${BAKED_VERSION_EXPRESSION} not found in text-server.cjs`);
-  const version = newestSourceTime([SERVER_SOURCE, PAGE_SOURCE]);
+  const version = newestSourceTime([SERVER_SOURCE, PAGE_SOURCE, KEYBINDINGS_SOURCE]);
   const bundled = server
     .replace(PAGE_READ_EXPRESSION, () => JSON.stringify(page))
     .replace(BAKED_VERSION_EXPRESSION, () => `const BAKED_VERSION = ${JSON.stringify(version)};`);

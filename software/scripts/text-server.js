@@ -1,6 +1,6 @@
 /**
  * Registers `text-server`: a bash launcher that downloads the zero-dependency Node web
- * editor (software/scripts/text-server.cjs + its UI, text-server.html) from the repo on every run, so nothing is
+ * editor (software/scripts/text-server.cjs + its UI, text-server.html + text-server.keybindings.cjs) from the repo on every run, so nothing is
  * installed locally and the latest upstream version always runs.
  */
 
@@ -92,7 +92,7 @@ async function doWork() {
           echo "text-server: mktemp failed" >&2
           return 1
         }
-        for app_file in text-server.cjs text-server.html; do
+        for app_file in text-server.cjs text-server.html text-server.keybindings.cjs; do
           command curl -fsSL --max-time 15 -o "$app_folder/$app_file" "$(get_github_raw_url "software/scripts/$app_file")" || {
             echo "text-server: could not download $app_file" >&2
             download_ok=0
@@ -100,7 +100,7 @@ async function doWork() {
           }
         done
         # Valid = the server parses and the page is the real template (not an error page or a truncated file).
-        if ((download_ok)) && ! { node --check "$app_folder/text-server.cjs" 2> /dev/null && grep -q "__APP_VERSION__" "$app_folder/text-server.html" && grep -q "</html>" "$app_folder/text-server.html"; }; then
+        if ((download_ok)) && ! { node --check "$app_folder/text-server.cjs" 2> /dev/null && node --check "$app_folder/text-server.keybindings.cjs" 2> /dev/null && grep -q "__APP_VERSION__" "$app_folder/text-server.html" && grep -q "</html>" "$app_folder/text-server.html"; }; then
           echo "text-server: downloaded copy failed validation" >&2
           download_ok=0
         fi
@@ -108,19 +108,19 @@ async function doWork() {
           # Version = file mtime; a fresh download's mtime is "now", so stamp each file with its last git
           # commit time (GitHub API, best-effort: on failure the version is just the download time).
           # curl + node (no fetch): the profile's node can be older than v18.
-          for app_file in text-server.cjs text-server.html; do
+          for app_file in text-server.cjs text-server.html text-server.keybindings.cjs; do
             command curl -fsS --max-time 5 "https://api.github.com/repos/$REPO_PATH_IDENTIFIER/commits?per_page=1&path=software/scripts/$app_file" 2> /dev/null \
               | node -e 'const fs = require("fs"); const when = new Date(JSON.parse(fs.readFileSync(0, "utf8"))[0].commit.committer.date); fs.utimesSync(process.argv[1], when, when);' "$app_folder/$app_file" 2> /dev/null \
               || echo "text-server: could not stamp $app_file with its git commit time; version uses the download time" >&2
           done
           safe_mkdir "$snapshot_folder"
           # cp -p keeps the stamped mtimes, which are the version.
-          command cp -p "$app_folder/text-server.cjs" "$app_folder/text-server.html" "$snapshot_folder/" || {
+          command cp -p "$app_folder/text-server.cjs" "$app_folder/text-server.html" "$app_folder/text-server.keybindings.cjs" "$snapshot_folder/" || {
             echo "text-server: could not update snapshot in $snapshot_folder" >&2
             command rm -rf "$app_folder"
             return 1
           }
-        elif [ -f "$snapshot_folder/text-server.cjs" ] && [ -f "$snapshot_folder/text-server.html" ]; then
+        elif [ -f "$snapshot_folder/text-server.cjs" ] && [ -f "$snapshot_folder/text-server.html" ] && [ -f "$snapshot_folder/text-server.keybindings.cjs" ]; then
           echo "text-server: using last good snapshot in $snapshot_folder" >&2
         else
           # Last resort (first run, raw files unreachable or broken): the single-file bundle CI publishes to the

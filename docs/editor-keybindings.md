@@ -641,25 +641,48 @@ cancelling an incremental search and `ctrl+r` is bound to fzf, which aborts on `
 
 ## text-server (browser editor)
 
-Source: `software/scripts/text-server.html` (page-level handlers + CodeMirror `extraKeys`, not a keymap file).
+Source: `software/scripts/text-server.keybindings.cjs` — one `BINDINGS` table plus the dispatcher; `text-server.cjs`
+inlines it into `text-server.html`. Tests: `software/tests/textServerKeybindings.spec.js`.
 
-| Key                     | Action                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| `ctrl`/`cmd`/`alt` `+s` | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits)      |
-| `ctrl`/`cmd`/`alt` `+r` | Refresh all: reload the file list and the open file (the ↻ button; overrides browser reload) |
-| `ctrl`/`cmd`/`alt` `+\` | Hide / show the file list sidebar                                                            |
-| `ctrl`/`cmd`/`alt` `+c` | With an image open and no text selected: copy the image (as PNG; needs https or localhost)   |
-| `ctrl+[`                | Previous file in the sidebar list, wraps to the bottom (also the ◀ button)                   |
-| `ctrl+]`                | Next file in the sidebar list, wraps to the top (also the ▶ button)                          |
-| `ctrl+v` / `cmd+v`      | With a picture on the clipboard: save it as `Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>`      |
-| `OS_KEY+shift+f`        | Find in files: show the sidebar, open content search seeded with the selection               |
-| `OS_KEY+d`              | Select next match (adds a cursor; empty selection selects the word first)                    |
-| `OS_KEY+shift+d`        | Select previous match (reverse of `OS_KEY+d`)                                                |
-| `OS_KEY+shift+l`        | Split selection into one cursor per line                                                     |
-| `OS_KEY+ctrl+g`         | Select all matches of the selection / word (`ctrl+g` off mac)                                |
+**`super` is registered as a pair**, since a browser page cannot know which convention the hands expect:
+Cmd **and** Alt on mac, Ctrl **and** Alt on Windows/Linux (`super+d` → `Cmd-D` + `Alt-D` / `Ctrl-D` + `Alt-D`).
+Two exceptions: a chord that already names `ctrl` drops the Ctrl member off mac (`super+ctrl+g` → `Ctrl-Alt-G`),
+and arrows / Backspace drop the OS's native word-motion modifier (Alt on mac, Ctrl elsewhere) so word jump keeps
+working (`super+left` → `Cmd-Left` on mac, `Alt-Left` elsewhere). Editor rows fire only while the editor has focus.
+Browser-reserved chords (`cmd+n`, `cmd+w`, `cmd+t` in Chrome) cannot be intercepted; their Alt member still works.
 
-`OS_KEY` rows are Cmd on mac, Ctrl elsewhere; the editor ones need the editor focused.
+| Key                               | Action                                                                                  |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| `super+s`                         | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits) |
+| `super+shift+s`                   | Save pending edits now                                                                  |
+| `super+r` / `f5`                  | Refresh all: file list + open file (the ↻ button; overrides browser reload)             |
+| `super+n`                         | New file                                                                                |
+| `f2`                              | Rename the open file                                                                    |
+| `super+shift+[` / `]`             | Previous / next file in the list, wraps (◀ / ▶ buttons)                                 |
+| `super+c`                         | With an image open: copy it as PNG (needs https or localhost); otherwise normal copy    |
+| `super+v`                         | With a picture on the clipboard: save it as `Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>` |
+| `super+\`                         | Toggle the file list sidebar                                                            |
+| `ctrl+shift+super+\`              | Toggle soft wrap                                                                        |
+| `super+=` / `-` / `0`             | Editor font zoom in / out / reset (remembered)                                          |
+| `super+shift+f`                   | Find in files: show the sidebar, content search seeded with the selection               |
+| `super+p`                         | Quick open: show the sidebar, file-name search                                          |
+| `super+f` / `super+h`             | Find / find and replace (CodeMirror dialog)                                             |
+| `super+g` / `super+shift+g`       | Find next / previous                                                                    |
+| `super+;`                         | Go to line                                                                              |
+| `ctrl+m`                          | Jump to matching bracket                                                                |
+| `super+d`                         | Select next match (adds a cursor; empty selection selects the word first)               |
+| `super+shift+d`                   | Select previous match                                                                   |
+| `super+ctrl+g`                    | Select all matches of the selection / word                                              |
+| `super+l`                         | Select line                                                                             |
+| `super+shift+l`                   | One cursor per selected line                                                            |
+| `super+a` / `z` / `y` / `shift+z` | Select all / undo / redo / redo                                                         |
+| `super+backspace`                 | Delete to line start                                                                    |
+| `super+/`                         | Toggle comment                                                                          |
+| `super+[` / `]`                   | Outdent / indent                                                                        |
+| `super+,` / `.`                   | Fold / unfold                                                                           |
+| `super+up` / `down`               | Page up / down (`+shift` selects)                                                       |
+| `super+left` / `right`            | Line start / end (`+shift` selects)                                                     |
+| `super+ctrl+up` / `down`          | Top / bottom of file (`+shift` selects)                                                 |
 
-`ctrl+[` / `ctrl+]` are caught before CodeMirror, so its default indent-less / indent-more on
-those chords is given up inside text-server. Folders in the list are skipped; with no file open,
-`ctrl+]` opens the first file and `ctrl+[` the last.
+Not mapped (no equivalent in a single-file browser editor): tabs by index, splits, terminal, debugging,
+format document, goto symbol / definition, right dock, fullscreen.

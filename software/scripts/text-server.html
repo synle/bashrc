@@ -6,14 +6,25 @@
     <title>text-server - __ROOT_NAME__</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
     <link rel="icon" href="data:," />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/loadmode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/overlay.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
-    <!-- Only for its multi-cursor commands (selectNextOccurrence, splitSelectionByLine, findAllUnder); the sublime keyMap itself is not enabled. -->
+    <!-- Only for its commands (selectNextOccurrence, splitSelectionByLine, findAllUnder, selectLine, goToBracket); the sublime keyMap itself is not enabled. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/keymap/sublime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/jump-to-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/indent-fold.min.js"></script>
+    <!-- Every keyboard shortcut; text-server.cjs inlines this file in place of the tag (relative, never fetched). -->
+    <script src="text-server.keybindings.cjs"></script>
     <style>
       * {
         box-sizing: border-box;
@@ -552,35 +563,6 @@
         $("newFolder").style.display = "none";
       }
       const editor = CodeMirror($("editorWrap"), { theme: "material-darker", lineNumbers: true, lineWrapping: true, readOnly: true });
-      /**
-       * Reverse of the sublime keymap's selectNextOccurrence: add a cursor on the previous match of the
-       * selected text, searching backwards from the topmost selection and wrapping at the top.
-       * Empty selection -> selects the word under the cursor first (same as Cmd/Ctrl+D).
-       * @param {CodeMirror.Editor} cm Editor to act on.
-       */
-      CodeMirror.commands.selectPrevOccurrence = (cm) => {
-        if (cm.somethingSelected() === false) return CodeMirror.commands.selectNextOccurrence(cm);
-        const sels = cm.listSelections();
-        const text = cm.getRange(sels[0].from(), sels[0].to());
-        let cur = cm.getSearchCursor(text, sels[0].from());
-        let found = cur.findPrevious();
-        if (!found) {
-          cur = cm.getSearchCursor(text, CodeMirror.Pos(cm.lastLine()));
-          found = cur.findPrevious();
-        }
-        if (!found) return;
-        const taken = sels.some((s) => CodeMirror.cmpPos(s.from(), cur.from()) === 0 && CodeMirror.cmpPos(s.to(), cur.to()) === 0);
-        if (!taken) cm.addSelection(cur.from(), cur.to());
-      };
-      /** True on macOS, where the OS key is Cmd; elsewhere it is Ctrl. */
-      const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
-      // Multi-cursor keys matching VS Code / Sublime / Zed (docs/editor-keybindings.md, OS_KEY = Cmd on mac, Ctrl elsewhere).
-      editor.setOption("extraKeys", {
-        "Mod-D": "selectNextOccurrence",
-        "Shift-Mod-D": "selectPrevOccurrence",
-        "Shift-Mod-L": "splitSelectionByLine",
-        [IS_MAC ? "Cmd-Ctrl-G" : "Ctrl-G"]: "findAllUnder",
-      });
       $("editorWrap").append($("empty")); // overlay the editor area only, below the toolbar
       editor.on("change", () => renderSize()); // every edit, open, remote reload, and close
       editor.on("cursorActivity", () => renderCursor());
@@ -692,6 +674,7 @@
           mediaInfo.bytes = typeof info.size === "number" ? info.size : null;
           renderMediaInfo();
         } catch (err) {
+          if (err.status === 404 && seq === openSeq && rel === openPath) missingPath = rel; // stop re-polling a deleted media file
           // footer detail only: size stays blank, the viewer still works
         }
       }
@@ -939,6 +922,8 @@
           cwd = data.path;
           $("crumb").textContent = absPath(cwd) + "/";
           $("up").disabled = cwd === "";
+          // The deleted open file is back in this folder: resume polling it.
+          if (missingPath && data.entries.some((e) => !e.folder && join(cwd, e.name) === missingPath)) missingPath = null;
           if (!searching()) renderEntries(data.entries.map((e) => ({ name: e.name, full: join(cwd, e.name), folder: e.folder })));
           renderName();
           // User-driven listing of a folder holding exactly one file (and nothing else): open it for them.
@@ -966,6 +951,7 @@
           content = editor.getValue();
         try {
           await api("PUT", "/api/file", target, content);
+          if (missingPath === target) missingPath = null; // the save recreated it
           if (target !== openPath) return true;
           loadedContent = content;
           if (editor.getValue() === content) {
@@ -1072,6 +1058,7 @@
         // Every switch bumps openSeq; responses from an older switch (or an in-flight refresh) are dropped.
         const seq = ++openSeq;
         const signal = newReadSignal();
+        missingPath = null; // an explicit open always tries the server again
         if (rel !== openPath && !(await flushSave())) {
           alert("Could not save " + openPath + "; staying on it so no edits are lost.");
           return;
@@ -1342,9 +1329,17 @@
         return refreshOpenFile();
       }
 
-      /** Re-fetch the open file from disk; never clobbers unsaved edits. */
+      /**
+       * Open file last seen deleted on disk (404). Polls skip it so the idle / focus reloads do not hit
+       * the server with the same 404 every few seconds; cleared when the file shows up in a folder
+       * listing again, is saved (recreated) from the editor, or another file is opened.
+       * @type {string|null}
+       */
+      let missingPath = null;
+
+      /** Re-fetch the open file from disk; never clobbers unsaved edits. Skipped while it is known deleted. */
       async function refreshOpenFile() {
-        if (!openPath) return;
+        if (!openPath || openPath === missingPath) return;
         // Media: never read as text. Images/PDF reload from disk; a video is left alone so playback is not reset.
         if (openMediaKind) {
           if (openMediaKind !== "video") showMedia(openMediaKind, rawUrl(openPath));
@@ -1366,7 +1361,10 @@
             setStatus("changed on disk (your pending edits will overwrite it)");
           }
         } catch (err) {
-          if (err.status === 404 && seq === openSeq && target === openPath) setStatus("deleted on disk");
+          if (err.status === 404 && seq === openSeq && target === openPath) {
+            missingPath = target;
+            setStatus("deleted on disk (polling paused until it reappears or you save)");
+          }
         }
       }
 
@@ -1615,70 +1613,78 @@
           setStatus("image copy failed: " + err.message);
         }
       }
-      /**
-       * App chords, accepted with Ctrl, Cmd, or Alt (one modifier, no Shift): S snapshot, R refresh all,
-       * \ toggle the sidebar, C copy the open image (only while an image is shown and no text is selected;
-       * otherwise the normal copy runs). e.code keeps Alt chords working on mac, where Alt+key types a symbol.
-       * Capture phase so the browser reload / CodeMirror never sees them.
-       */
-      document.addEventListener(
-        "keydown",
-        (e) => {
-          const mods = [e.ctrlKey, e.metaKey, e.altKey].filter(Boolean).length;
-          if (mods !== 1 || e.shiftKey) return;
-          if (e.code === "KeyC") {
-            if (openMediaKind !== "image" || String(window.getSelection() || "")) return;
-            e.preventDefault();
-            copyOpenImage();
-            return;
-          }
-          const actions = {
-            KeyS: () => snapshot(),
-            KeyR: () => refreshAll(),
-            Backslash: () => setSideCollapsed(!document.body.classList.contains("side-collapsed")),
-          };
-          if (!actions[e.code]) return;
-          e.preventDefault();
-          e.stopPropagation();
-          actions[e.code]();
-        },
-        true,
-      );
       $("prevFile").onclick = () => stepFile(-1);
       $("nextFile").onclick = () => stepFile(1);
-      // Ctrl+[ / Ctrl+]: previous / next file. Capture phase so CodeMirror's own Ctrl+[ / Ctrl+]
-      // (indent less / more) never sees it. e.code is layout-independent (the bracket keys' position).
-      document.addEventListener(
-        "keydown",
-        (e) => {
-          if (!e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
-          const step = e.code === "BracketLeft" ? -1 : e.code === "BracketRight" ? 1 : 0;
-          if (!step) return;
-          e.preventDefault();
-          e.stopPropagation();
-          stepFile(step);
+      /** Editor font size bounds and step for super+= / super+- / super+0, in px. */
+      const EDITOR_FONT = { min: 8, max: 40, step: 1, base: 14 };
+      /**
+       * Set the editor font size (clamped), remember it, and re-measure CodeMirror.
+       * @param {number} px Requested size; non-finite falls back to the base size.
+       */
+      function setEditorFont(px) {
+        const size = Number.isFinite(px) ? Math.min(Math.max(px, EDITOR_FONT.min), EDITOR_FONT.max) : EDITOR_FONT.base;
+        editor.getWrapperElement().style.fontSize = size + "px";
+        localStorage.setItem("textServer.fontSize", String(size));
+        editor.refresh();
+        return size;
+      }
+      /** Current editor font size in px. */
+      function editorFont() {
+        return parseFloat(editor.getWrapperElement().style.fontSize) || EDITOR_FONT.base;
+      }
+      setEditorFont(Number(localStorage.getItem("textServer.fontSize")) || EDITOR_FONT.base);
+      /**
+       * Open the sidebar search in a mode and focus it. Content mode seeds the box with a one-line
+       * editor selection. The sidebar is shown first since results render there.
+       * @param {"name"|"content"} mode Search mode.
+       */
+      function openSearch(mode) {
+        const picked = editor.getSelection();
+        if (mode === "content" && picked && !picked.includes("\n")) $("searchInput").value = picked;
+        setSideCollapsed(false);
+        $("searchMode").value = mode;
+        $("searchBar").classList.add("open");
+        $("searchInput").focus();
+        $("searchInput").select();
+        runSearch(true);
+      }
+      // Every keyboard shortcut lives in text-server.keybindings.cjs (one table, super = Cmd/Ctrl + Alt pairs).
+      // These are the page-level actions it calls; editor-scoped bindings run CodeMirror commands directly.
+      TextServerKeys.install({
+        editor,
+        CodeMirror,
+        actions: {
+          snapshot: () => snapshot(),
+          saveNow: () => flushSave(),
+          refreshAll: () => refreshAll(),
+          newFile: () => $("newFile").onclick(),
+          renameFile: () => (openPath ? renameEntry(openPath) : false),
+          prevFile: () => stepFile(-1),
+          nextFile: () => stepFile(1),
+          // Only for an open image; otherwise decline so the normal text copy runs.
+          copyImage: () => (openMediaKind === "image" ? copyOpenImage() : false),
+          toggleSidebar: () => setSideCollapsed(!document.body.classList.contains("side-collapsed")),
+          toggleWrap: () => {
+            editor.setOption("lineWrapping", !editor.getOption("lineWrapping"));
+            setStatus("soft wrap " + (editor.getOption("lineWrapping") ? "on" : "off"));
+          },
+          zoomIn: () => setEditorFont(editorFont() + EDITOR_FONT.step),
+          zoomOut: () => setEditorFont(editorFont() - EDITOR_FONT.step),
+          zoomReset: () => setEditorFont(EDITOR_FONT.base),
+          findInFiles: () => openSearch("content"),
+          quickOpen: () => openSearch("name"),
         },
-        true,
-      );
-      // OS_KEY+Shift+F: find in files -> open the search bar in content mode, seeded with the editor selection.
-      // Capture phase so the browser / CodeMirror never sees it.
-      document.addEventListener(
-        "keydown",
-        (e) => {
-          if (!(IS_MAC ? e.metaKey : e.ctrlKey) || !e.shiftKey || e.altKey || e.code !== "KeyF") return;
-          e.preventDefault();
-          e.stopPropagation();
-          const picked = editor.getSelection();
-          if (picked && !picked.includes("\n")) $("searchInput").value = picked;
-          setSideCollapsed(false); // results show in the sidebar, so a hidden one must come back
-          $("searchMode").value = "content";
-          $("searchBar").classList.add("open");
-          $("searchInput").focus();
-          $("searchInput").select();
-          runSearch(true);
-        },
-        true,
-      );
+      });
+      // Tooltips show the live chords for this OS (from the same table).
+      for (const [id, action] of [
+        ["save", "snapshot"],
+        ["refresh", "refreshAll"],
+        ["sideToggle", "toggleSidebar"],
+        ["prevFile", "prevFile"],
+        ["nextFile", "nextFile"],
+        ["newFile", "newFile"],
+      ])
+        $(id).title = $(id).title.replace(/ \([^()]*\)$/, "") + " (" + TextServerKeys.hintFor(action) + ")";
       // Last-chance autosave: keepalive lets the PUT outlive the page; no "leave page?" prompt.
       window.addEventListener("pagehide", () => {
         if (clean || !openPath) return;
@@ -1734,7 +1740,7 @@
       }
       function setSideCollapsed(collapsed) {
         document.body.classList.toggle("side-collapsed", collapsed);
-        $("sideToggle").title = (collapsed ? "Show" : "Hide") + " the file list (Ctrl/Cmd/Alt+\\)";
+        $("sideToggle").title = (collapsed ? "Show" : "Hide") + " the file list (" + TextServerKeys.hintFor("toggleSidebar") + ")";
         localStorage.setItem("textServer.sideCollapsed", collapsed ? "1" : "0");
         editor.refresh();
       }
