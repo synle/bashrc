@@ -867,6 +867,7 @@ const LLM_SHARED_INSTRUCTION_FILES = {
   "testing.md": "software/scripts/advanced/llm/_common/instructions-testing.md",
   "readability.md": "software/scripts/advanced/llm/_common/instructions-readability.md",
   "review-guardrails.md": "software/scripts/advanced/llm/_common/instructions-review-guardrails.md",
+  "performance.md": "software/scripts/advanced/llm/_common/instructions-performance.md",
   // Unlike its siblings, this one is ALSO inlined back into the top of
   // instructions.md through a BEGIN/END path block, so the always-loaded copy and
   // the standalone document can never drift. It is here so opencode loads it as a

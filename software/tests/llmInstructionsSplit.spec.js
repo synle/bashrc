@@ -130,6 +130,17 @@ const SPLIT_EXPECTATIONS = {
       "Async request/RPC paths never call blocking",
     ],
   },
+  "performance.md": {
+    heading: "# Measure Before Optimizing",
+    sections: ["## Prove the win", "## Spend complexity carefully"],
+    leads: [
+      "No optimization without a number before and after",
+      "Profile; don't guess",
+      "State the budget before optimizing",
+      "Fix the complexity class before micro-optimizing",
+      "Re-measure after landing",
+    ],
+  },
   // The one INLINED split file: persona.md is also pulled back into the top of
   // instructions.md through a BEGIN/END path block, so unlike its siblings its rules
   // are SUPPOSED to appear in the always-loaded file too. `inlined` turns the
