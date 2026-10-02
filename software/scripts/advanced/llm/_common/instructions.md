@@ -162,7 +162,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 Everything governing branches, commits, pull requests, worktrees, links, merging, and review is in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` — ~100 rules, kept out of this file so it loads every session. Binding as if inline; "it wasn't in my instructions" is wrong — this pointer is the instruction.
 
 - **Read it in full before your first branch, commit, push, PR, or review action of a session**, and follow it as written.
-- Highest-cost rules: never open a stacked PR, squash merge only, never work a PR branch in the primary checkout, never hand-build a PR URL or write a bare `#<number>`, never enable `--auto` on a PR you didn't author.
+- Highest-cost rules: PR body fills repo's `pull_request_template.md` if present, no stacked PRs, squash merge only, never work a PR branch in the primary checkout, never hand-build a PR URL or write a bare `#<number>`, never enable `--auto` on a PR you didn't author.
 - Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
 
 ## Plans & Wrap-Ups
