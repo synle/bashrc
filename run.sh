@@ -43,7 +43,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 459fb3bd84a091ea5af4ad7037d58fea | 11.3 KB
+# software/bootstrap/common-env.sh | df358ed4c0dd14d3a2108b5530b0294a | 12.0 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -227,6 +227,21 @@ function _detect_gui_flags() {
 
   export is_gui is_gui_x11 is_gui_wayland
 }
+
+# h1..h7 - print each argument on its own line in a fixed color, named after
+# HTML headings so the level reads as emphasis. Functions, not aliases: aliases
+# do not expand in non-interactive scripts.
+#   h1 blue (banner title/body)  h2 cyan  h3 green  h4 yellow
+#   h5 magenta                   h6 red   h7 gray
+#   h1 "message"            prints "message" in blue
+#   h3 "line 1" "line 2"    one green line per argument
+function h1() { printf '\033[0;34m%s\033[0m\n' "$@"; }
+function h2() { printf '\033[0;36m%s\033[0m\n' "$@"; }
+function h3() { printf '\033[0;32m%s\033[0m\n' "$@"; }
+function h4() { printf '\033[0;33m%s\033[0m\n' "$@"; }
+function h5() { printf '\033[0;35m%s\033[0m\n' "$@"; }
+function h6() { printf '\033[0;31m%s\033[0m\n' "$@"; }
+function h7() { printf '\033[90m%s\033[0m\n' "$@"; }
 
 # checks if a value is truthy (1, true, y, yes — case-insensitive)
 function is_truthy() {
@@ -718,6 +733,7 @@ $LINE_BREAK_HASH
 declare -f mktemp >> "$BASH_SYLE_COMMON_PATH"
 declare -f get_home_ip_address >> "$BASH_SYLE_COMMON_PATH"
 declare -f is_truthy >> "$BASH_SYLE_COMMON_PATH"
+declare -f h1 h2 h3 h4 h5 h6 h7 >> "$BASH_SYLE_COMMON_PATH"
 declare -f _detect_gui_flags >> "$BASH_SYLE_COMMON_PATH"
 
 echo """

@@ -282,10 +282,11 @@ Profile registration is buffered: `registerProfileBlock` /
   separator strings. One width everywhere: `LINE_BREAK_COUNT=80` — `run.sh`,
   `profile-core.sh`, and the `index.js` default must agree; never a literal
   `"======…"` of ad-hoc length. Printed banners use the one shape: divider in cyan
-  (`\033[0;36m`), title/body lines in blue (`\033[0;34m`), divider again. Contexts
-  that can't see the profile (Makefile recipes, `software/tools/*.sh`) use
-  `$(DIVIDER)` in Make or `"${LINE_BREAK_EQUAL:-$(printf '%80s' '' | tr ' ' '=')}"` in
-  bash; PowerShell uses `("=" * 80)`. Output meant to be copied, piped, or parsed
+  (`\033[0;36m`), title/body lines in blue (`\033[0;34m`), divider again. Exception:
+  **Makefile recipes and `software/tools/*.sh` stay plain** — `echo "$(DIVIDER)"` /
+  `echo "==============="` (15 `=`) + `echo "title"`, no colors, no wrapper macros,
+  never profile functions (`hr`, `br`, `h1`..`h7`); they never source the profile.
+  PowerShell uses `("=" * 80)`. Output meant to be copied, piped, or parsed
   (`print_action_summary`) colors only when `[ -t 1 ]`.
 - **"folder", not "dir"/"directory"/"path", in function and variable names.**
 - **POSIX only when the shebang says so.** If it's `#!/bin/sh` or `#!/system/bin/sh`:

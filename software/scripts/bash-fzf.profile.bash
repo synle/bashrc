@@ -611,17 +611,17 @@ function fuzzy_favorite_command() {
 
   if [ -n "$cmd" ]; then
     # Echo the selected command in blue, then frame its capped `type` resolution
-    # in cyan before running it — so an aliased bookmark like ssh_tde_backend
+    # (also blue) between rainbow `hr` separators before running it — so an aliased bookmark like ssh_tde_backend
     # shows the real command it expands to (e.g. `command kubectl in exec ...`).
     _cmd_word=$(echo "$cmd" | awk '{print $1}')
     _cmd_type_output=$(type "$_cmd_word" 2>&1 || true)
     if [ "${#_cmd_type_output}" -gt "$_MAX_TYPE_OUTPUT_CHARS" ]; then
       _cmd_type_output="${_cmd_type_output:0:$_MAX_TYPE_OUTPUT_CHARS}"
     fi
-    printf '\033[0;34m%s\033[0m\n' "$cmd"
-    printf '\033[0;36m%s\033[0m\n' "$LINE_BREAK_EQUAL"
-    printf '\033[90m%s\033[0m\n' "$_cmd_type_output"
-    printf '\033[0;36m%s\033[0m\n' "$LINE_BREAK_EQUAL"
+    h1 "$cmd"
+    hr
+    h1 "$_cmd_type_output"
+    hr
     eval "$cmd"
     history -s "$cmd"
   fi

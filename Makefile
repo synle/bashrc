@@ -20,9 +20,12 @@ export NO_COLOR := 0
 # Used below in `shfmt -i $(TAB_SIZE)` so changing one value flows everywhere.
 TAB_SIZE := 2
 
-# Banner divider line — LINE_BREAK_COUNT (80) `=` chars, matching $LINE_BREAK_EQUAL
-# in the shell profile. Make recipes can't rely on the profile being sourced.
-DIVIDER := $(shell printf '%80s' '' | tr ' ' '=')
+# Banner divider line — a short, plain 15 `=` chars for recipe banners.
+DIVIDER := ===============
+
+# RULE: recipes stay plain. Banners are `echo "$(DIVIDER)"` + `echo "title"` —
+# no ANSI colors, no wrapper macros, and never profile functions (hr, br, h1..h7,
+# etc.): recipes run in a bare bash that never sources ~/.bash_syle.
 
 # Shared preamble that sources common environment variables (use: $(_BUILD_ENV) && cmd)
 _BUILD_ENV = source software/bootstrap/common-env.sh
@@ -455,9 +458,9 @@ clean_git_history_dryrun:
 	  echo "          or:  pip install git-filter-repo    (cross-platform)"
 	  exit 1
 	fi
-	printf '\033[0;36m%s\033[0m\n' "$(DIVIDER)"
-	printf '\033[0;34m%s\033[0m\n' "git filter-repo DRY RUN — no changes will be made"
-	printf '\033[0;36m%s\033[0m\n' "$(DIVIDER)"
+	echo "$(DIVIDER)"
+	echo "git filter-repo DRY RUN — no changes will be made"
+	echo "$(DIVIDER)"
 	echo ">> Current .git size:  $$(du -sh .git | cut -f1)"
 	echo ""
 	echo ">> Paths targeted for removal:"
@@ -500,9 +503,9 @@ clean_git_history:
 	fi
 	remote_url=$$(git remote get-url origin 2> /dev/null || true)
 	backup="/tmp/bashrc-history-backup-$$(date +%Y%m%d-%H%M%S).bundle"
-	printf '\033[0;36m%s\033[0m\n' "$(DIVIDER)"
-	printf '\033[0;34m%s\033[0m\n' "DESTRUCTIVE: about to rewrite git history"
-	printf '\033[0;36m%s\033[0m\n' "$(DIVIDER)"
+	echo "$(DIVIDER)"
+	echo "DESTRUCTIVE: about to rewrite git history"
+	echo "$(DIVIDER)"
 	echo ">> Backup bundle:        $$backup"
 	echo ">> Current .git size:    $$(du -sh .git | cut -f1)"
 	echo ">> Origin URL (saved):   $$remote_url"

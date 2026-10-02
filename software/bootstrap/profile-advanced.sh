@@ -1634,17 +1634,18 @@ function rainbow_print() {
   echo
 }
 
-# br [count] [no-clear] [reverse]
+# br [clear|no-clear] [normal|reverse] [count]
 function br() {
   if is_help_arg "${1:-}"; then
     echo "br: print rainbow separator lines
-  Usage: br [count] [clear|no-clear] [normal|reverse]
-  count defaults to 5, screen is cleared unless 'no-clear' is passed."
+  Usage: br [clear|no-clear] [normal|reverse] [count]
+  Screen is cleared unless 'no-clear' is passed; colors normal unless 'reverse'; count defaults to 5.
+  See also: hr (= br no-clear)"
     return 0
   fi
-  local repeat_count=${1:-5}
-  local clear_flag=${2:-"clear"}
-  local reverse_flag=${3:-"normal"}
+  local clear_flag=${1:-"clear"}
+  local reverse_flag=${2:-"normal"}
+  local repeat_count=${3:-5}
 
   [[ "$clear_flag" != "no-clear" ]] && printf "\033[H\033[2J"
 
@@ -1664,6 +1665,15 @@ function br() {
   done
 
   echo "$line" | rainbow_print "${colors[*]}"
+}
+
+# hr - rainbow separator without clearing the screen (br no-clear).
+# A function, not an alias, so other profile functions can call it regardless
+# of definition order.
+#   hr                same as: br no-clear
+#   hr reverse 10     same as: br no-clear reverse 10
+function hr() {
+  br no-clear "$@"
 }
 
 # spinner &; SPIN_PID=$!; sleep 3; kill $SPIN_PID
