@@ -694,7 +694,7 @@ describe("build config shape - arrays", () => {
       return;
     }
     const shape = readBuildArrayShape("sublime-text-keys-mac");
-    expect(shape.length).toMatchInlineSnapshot(`35`);
+    expect(shape.length).toMatchInlineSnapshot(`43`);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
         "command",
