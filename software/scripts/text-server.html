@@ -24,6 +24,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/indent-fold.min.js"></script>
     <!-- Every keyboard shortcut; text-server.cjs inlines this file in place of the tag (relative, never fetched). -->
+    <script src="https://unpkg.com/prettier@3.3.3/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@3.3.3/plugins/babel.js"></script>
+    <script src="https://unpkg.com/prettier@3.3.3/plugins/estree.js"></script>
+    <script src="https://unpkg.com/prettier@3.3.3/plugins/postcss.js"></script>
+    <script src="https://unpkg.com/prettier@3.3.3/plugins/html.js"></script>
+    <script src="https://unpkg.com/prettier@3.3.3/plugins/markdown.js"></script>
+    <script src="https://unpkg.com/prettier@3.3.3/plugins/yaml.js"></script>
     <script src="text-server.keybindings.cjs"></script>
     <style>
       * {
@@ -40,7 +47,7 @@
         color: #ddd;
       }
       #side {
-        width: 280px;
+        width: 350px;
         min-width: 160px;
         flex: none;
         display: flex;
@@ -82,6 +89,9 @@
         display: flex;
         gap: 4px;
         flex-wrap: wrap;
+      }
+      #side header #refresh {
+        margin-left: auto;
       }
       #searchBar {
         padding: 6px 8px;
@@ -315,12 +325,42 @@
       button.icon-btn:hover {
         background: #444;
       }
-      button.icon-btn[aria-pressed="true"] {
-        background: #0e639c;
-        border-color: #1177bb;
+      #snapGroup {
+        position: relative;
+        display: inline-flex;
+        flex: none;
       }
-      button.icon-btn[aria-pressed="false"] {
-        opacity: 0.5;
+      #snapGroup #save {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      #snapGroup #snapMenuBtn {
+        border-left: 0;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        padding: 3px 5px;
+      }
+      #snapMenu {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        margin-top: 2px;
+        z-index: 20;
+        background: #2a2a2a;
+        border: 1px solid #555;
+        border-radius: 3px;
+        padding: 3px 0;
+        white-space: nowrap;
+      }
+      #snapMenu label {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+      #snapMenu label:hover {
+        background: #3a3a3a;
       }
       .CodeMirror {
         flex: 1;
@@ -396,7 +436,9 @@
         <button id="up" class="icon-btn" title="Go up to the parent folder">..</button
         ><button id="newFile" title="Create a new file in this folder">+ file</button
         ><button id="newFolder" title="Create a new folder here">+ folder</button
-        ><button id="searchToggle" class="icon-btn" title="Search file names or file contents">&#x1F50D;</button>
+        ><button id="searchToggle" class="icon-btn" title="Search file names or file contents">&#x1F50D;</button
+        ><button id="refresh" class="icon-btn" title="Reload the file list and the open file (Ctrl/Cmd/Alt+R)">&#x21bb;</button
+        ><button id="deleteAll" class="icon-btn" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1;</button>
       </header>
       <div id="searchBar">
         <input id="searchInput" placeholder="search..." autocomplete="off" title="Search text (Esc closes)" /><select
@@ -409,9 +451,6 @@
       </div>
       <div id="crumbRow">
         <div id="crumb"></div>
-        <button id="refresh" class="icon-btn" title="Reload the file list and the open file (Ctrl/Cmd/Alt+R)">&#x21bb;</button
-        ><button id="deleteAll" class="icon-btn" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1;</button
-        ><button id="autoSnapshot" class="icon-btn" aria-pressed="false" title="Auto snapshot: off">&#x23F1;</button>
       </div>
       <ul id="list"></ul>
       <div id="fileNav">
@@ -426,9 +465,17 @@
         ><button id="copyPath" class="icon-btn" title="Copy the full path to the clipboard">&#x1F4CB;</button
         ><button id="download" class="icon-btn" title="Download the open file (saves pending edits first)">&#x2B07;</button
         ><select id="syntax" title="Syntax highlighting (Plain is fastest)"></select
-        ><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one (Ctrl/Cmd/Alt+S)">
-          Snapshot
-        </button>
+        ><button id="format" title="Format with Prettier (JS / TS / JSX / TSX, JSON, CSS, HTML, Markdown, YAML)">Format</button
+        ><span id="snapGroup"
+          ><button id="save" title="Save a version copy (file.timestamp) if the content changed since the last one (Ctrl/Cmd/Alt+S)">
+            Snapshot</button
+          ><button id="snapMenuBtn" title="Snapshot options" aria-haspopup="true">&#x25BE;</button>
+          <div id="snapMenu" hidden>
+            <label title="Every 10 min, snapshot automatically when enough text changed"
+              ><input type="checkbox" id="autoSnapshot" /> Auto snapshot</label
+            >
+          </div></span
+        >
       </div>
       <div id="editorWrap">
         <div id="mediaView" hidden>
@@ -499,8 +546,12 @@
       const SYNTAXES = {
         plain: { label: "Plain", mime: "null", modes: [], exts: [] },
         markdown: { label: "Markdown", mime: "text/x-markdown", modes: ["xml", "markdown"], exts: ["md", "markdown", "mdx"] },
-        javascript: { label: "JavaScript", mime: "text/javascript", modes: ["javascript"], exts: ["js", "mjs", "cjs", "jsx"] },
-        typescript: { label: "TypeScript", mime: "text/typescript", modes: ["javascript"], exts: ["ts", "mts", "cts", "tsx"] },
+        javascript: {
+          label: "JS / TS / JSX / TSX",
+          mime: "text/typescript-jsx",
+          modes: ["xml", "javascript", "jsx"],
+          exts: ["js", "mjs", "cjs", "jsx", "ts", "mts", "cts", "tsx"],
+        },
         json: { label: "JSON", mime: "application/json", modes: ["javascript"], exts: ["json", "jsonc", "json5"] },
         html: {
           label: "HTML",
@@ -560,6 +611,7 @@
       function applySyntax(key) {
         const syntax = SYNTAXES[key] || SYNTAXES.plain;
         $("syntax").value = SYNTAXES[key] ? key : "plain";
+        renderFormatButton();
         if (!syntax.modes.length) return editor.setOption("mode", null);
         loadModes(syntax.modes, () => {
           if ($("syntax").value === key) editor.setOption("mode", syntax.mime);
@@ -704,6 +756,7 @@
 
       /** Top bar: full path of the open file, else of the current folder (only folders get a trailing /). */
       function renderName() {
+        renderFormatButton();
         const text = openPath ? absPath(openPath) : absPath(cwd) + "/";
         $("empty").hidden = !!openPath; // zero state whenever no file is open
         // #name is direction:rtl (ellipsis on the left); LRM marks stop the leading "/" rendering at the end.
@@ -1741,15 +1794,49 @@
        */
       function setAutoSnapshot(on) {
         autoSnapshotEnabled = on;
-        const btn = $("autoSnapshot");
-        btn.setAttribute("aria-pressed", on ? "true" : "false");
-        btn.title =
-          "Auto snapshot: " + (on ? "on" : "off") + " (every " + AUTO_SNAPSHOT.intervalMs / 60000 + " min when " + AUTO_SNAPSHOT.minChangedChars + "+ letters/digits changed)";
+        $("autoSnapshot").checked = on;
+        $("snapMenuBtn").title = "Snapshot options (auto snapshot: " + (on ? "on" : "off") + ")";
         localStorage.setItem("textServer.autoSnapshot", on ? "1" : "0");
         if (on) snapshotBaseline = { path: null, text: "" };
       }
       setAutoSnapshot(localStorage.getItem("textServer.autoSnapshot") === "1");
-      $("autoSnapshot").onclick = () => setAutoSnapshot(!autoSnapshotEnabled);
+      $("autoSnapshot").onchange = () => setAutoSnapshot($("autoSnapshot").checked);
+      $("snapMenuBtn").onclick = (ev) => {
+        ev.stopPropagation();
+        $("snapMenu").hidden = !$("snapMenu").hidden;
+      };
+      $("snapMenu").onclick = (ev) => ev.stopPropagation();
+      document.addEventListener("click", () => ($("snapMenu").hidden = true));
+
+      /** Prettier parser per SYNTAXES key; keys absent here have no formatter (Format button disabled). */
+      const PRETTIER_PARSERS = { javascript: "babel-ts", json: "json", css: "css", html: "html", markdown: "markdown", yaml: "yaml" };
+      /** Enable the Format button only for an editable file whose syntax Prettier handles. */
+      function renderFormatButton() {
+        $("format").disabled = !openPath || !!openMediaKind || !PRETTIER_PARSERS[$("syntax").value];
+      }
+      /**
+       * Format the editor buffer with Prettier using the current syntax; replaces the text in one undoable
+       * step (autosave picks it up). Parse errors go to the status line, buffer untouched.
+       */
+      async function formatBuffer() {
+        const parser = PRETTIER_PARSERS[$("syntax").value];
+        if (!parser || !openPath || openMediaKind) return;
+        const before = editor.getValue();
+        try {
+          const after = await prettier.format(before, { parser, plugins: Object.values(window.prettierPlugins || {}) });
+          if (after === before) return setStatus("already formatted");
+          const cursor = editor.getCursor();
+          editor.operation(() => {
+            editor.replaceRange(after, { line: 0, ch: 0 }, { line: editor.lastLine() });
+            editor.setCursor(cursor);
+          });
+          setStatus("formatted (" + parser + ")");
+        } catch (err) {
+          setStatus("format failed: " + String(err.message).split("\n")[0]);
+        }
+      }
+      $("format").onclick = () => formatBuffer();
+
       setInterval(autoSnapshotTick, AUTO_SNAPSHOT.intervalMs);
 
       // List reload: every LIST_RELOAD_MS regardless of typing or open file (the list never touches
