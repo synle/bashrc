@@ -315,6 +315,13 @@
       button.icon-btn:hover {
         background: #444;
       }
+      button.icon-btn[aria-pressed="true"] {
+        background: #0e639c;
+        border-color: #1177bb;
+      }
+      button.icon-btn[aria-pressed="false"] {
+        opacity: 0.5;
+      }
       .CodeMirror {
         flex: 1;
         height: auto;
@@ -403,7 +410,8 @@
       <div id="crumbRow">
         <div id="crumb"></div>
         <button id="refresh" class="icon-btn" title="Reload the file list and the open file (Ctrl/Cmd/Alt+R)">&#x21bb;</button
-        ><button id="deleteAll" class="icon-btn" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1;</button>
+        ><button id="deleteAll" class="icon-btn" title="Delete every file in this folder (subfolders are kept)">&#x1F5D1;</button
+        ><button id="autoSnapshot" class="icon-btn" aria-pressed="false" title="Auto snapshot: off">&#x23F1;</button>
       </div>
       <ul id="list"></ul>
       <div id="fileNav">
@@ -1208,7 +1216,7 @@
 
       /** One auto-snapshot check (runs every AUTO_SNAPSHOT.intervalMs). */
       async function autoSnapshotTick() {
-        if (!openPath || serverDown) return;
+        if (!autoSnapshotEnabled || !openPath || serverDown) return;
         const current = normalizeForSnapshot(editor.getValue());
         if (snapshotBaseline.path !== openPath) {
           snapshotBaseline = { path: openPath, text: current };
@@ -1724,6 +1732,24 @@
         refreshOpenFile();
       }, IDLE_RELOAD_MS);
 
+      // Auto snapshot is opt-in (default off); the toggle is remembered in localStorage.
+      let autoSnapshotEnabled = false;
+      /**
+       * Turn auto snapshots on or off and reflect it on the toggle button.
+       * @param {boolean} on - true to snapshot automatically when the change is large enough.
+       * Side effects: persists to localStorage; turning on resets the baseline so only later edits count.
+       */
+      function setAutoSnapshot(on) {
+        autoSnapshotEnabled = on;
+        const btn = $("autoSnapshot");
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        btn.title =
+          "Auto snapshot: " + (on ? "on" : "off") + " (every " + AUTO_SNAPSHOT.intervalMs / 60000 + " min when " + AUTO_SNAPSHOT.minChangedChars + "+ letters/digits changed)";
+        localStorage.setItem("textServer.autoSnapshot", on ? "1" : "0");
+        if (on) snapshotBaseline = { path: null, text: "" };
+      }
+      setAutoSnapshot(localStorage.getItem("textServer.autoSnapshot") === "1");
+      $("autoSnapshot").onclick = () => setAutoSnapshot(!autoSnapshotEnabled);
       setInterval(autoSnapshotTick, AUTO_SNAPSHOT.intervalMs);
 
       // List reload: every LIST_RELOAD_MS regardless of typing or open file (the list never touches
