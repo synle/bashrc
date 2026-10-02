@@ -209,13 +209,12 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     // and adds none of our own overrides. tradeoff: language servers spawn per
     // project and cost RAM. risk: low.
     lsp: true,
-    // Enable opencode's built-in formatters. Same omitted-means-disabled rule as
-    // `lsp` above (https://opencode.ai/docs/config/#formatters). Without it every
-    // agent edit lands unformatted and shows up as diff noise on the next
-    // `make format` / pre-commit run. tradeoff: opencode reformats files it
-    // touches. risk: low — built-ins defer to the repo's own config
-    // (.prettierrc, .editorconfig) when present.
-    formatter: true,
+    // Disable opencode's built-in formatters. They can pick a tool the repo does
+    // not use (e.g. prettier in an oxfmt repo) and reformat mid-edit, breaking the
+    // agent's next exact-match edit. Instead, the shared instructions require the
+    // agent to run the repo's OWN formatter once before committing.
+    // tradeoff: edits stay unformatted until that pre-commit format pass.
+    formatter: false,
     // Explicitly load every shared instruction file. The always-loaded AGENTS.md
     // block only POINTS at these (they live outside the 40k always-loaded budget —
     // see llm-common.js LLM_SHARED_INSTRUCTION_FILES), and a pointer is only

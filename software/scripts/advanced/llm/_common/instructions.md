@@ -129,6 +129,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 ## Validation Cadence
 
 - Run the full gate **once, after the last edit** — never after each one. The repo-wide command (`make validate`, `npm run check`, `cargo test`, `./gradlew build`) is a _release_ gate, not a save hook.
+- **Run the repo's own formatter before every commit**, once, after the last edit. Discover it, never assume: a `format`/`fmt` target (`Makefile`, `package.json`, `justfile`), else the configured tool (oxfmt, prettier, `ruff format`, `cargo fmt`, `gofmt`). Prefer the repo's wrapper; scope to changed files; stage only those. None found → say so; never substitute a harness built-in formatter.
 - Trust gate output, not exit code alone: inspect result lines, bound runtime, report skips, and re-baseline only from accepted green runs.
 - Climb the feedback ladder, cheapest rung first. Escalate only when the cheaper rung passes or can't answer:
 
