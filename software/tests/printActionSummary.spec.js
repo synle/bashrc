@@ -168,6 +168,38 @@ describe("print_action_summary", () => {
     });
   });
 
+  describe("symlinked target", () => {
+    it("prints the command against the link and again against the file it points to", () => {
+      const dir = path.join(sandbox, "home", "repo");
+      fs.mkdirSync(dir);
+      const real = path.join(dir, "AGENTS.md");
+      fs.writeFileSync(real, "");
+      fs.symlinkSync("AGENTS.md", path.join(dir, "CLAUDE.md"));
+
+      const out = callSummary({ args: [path.join(dir, "CLAUDE.md"), "cat"] });
+      expect(out).toBe(
+        [
+          "=".repeat(80),
+          `PWD: "${path.join(sandbox, "home")}"`,
+          `cd "${rp(dir)}"`,
+          `cat "${rp(dir)}/CLAUDE.md"`,
+          `cat "${rp(real)}"`,
+          "=".repeat(80),
+          "",
+        ].join("\n"),
+      );
+    });
+
+    it("prints a single command line for a regular file", () => {
+      const dir = path.join(sandbox, "home", "plain");
+      fs.mkdirSync(dir);
+      fs.writeFileSync(path.join(dir, "README.md"), "");
+
+      const out = callSummary({ args: [path.join(dir, "README.md"), "cat"] });
+      expect(out.split("\n").filter((l) => l.startsWith("cat "))).toEqual([`cat "${rp(dir)}/README.md"`]);
+    });
+  });
+
   it("prints PWD + cd <parent> + binary <file> for a file selection with binary", () => {
     const dir = path.join(sandbox, "home", "proj");
     fs.mkdirSync(dir);

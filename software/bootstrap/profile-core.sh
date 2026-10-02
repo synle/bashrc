@@ -525,16 +525,21 @@ function print_action_summary() {
   [ $# -gt 0 ] && shift
   local -a extra_args=("$@")
 
-  # Resolve to absolute. Tolerate non-existent paths.
-  local target_abs
-  if type -P realpath &> /dev/null; then
-    target_abs=$(realpath "$target" 2> /dev/null) || target_abs="$target"
-  else
-    local _dir
-    _dir=$(dirname "$target" 2> /dev/null)
-    _dir=$(cd -P "$_dir" 2> /dev/null && pwd -P)
-    target_abs="${_dir:+$_dir/}$(basename "$target")"
-    [ -z "$_dir" ] && target_abs="$target"
+  # Resolve to absolute WITHOUT following a symlinked final component, so the
+  # summary names the path the user picked. Tolerate non-existent paths.
+  local target_abs _dir _name="$target"
+  [ "$_name" != "/" ] && _name="${_name%/}"
+  _dir="."
+  case "$_name" in */*) _dir="${_name%/*}" && _dir="${_dir:-/}" ;; esac
+  _name="${_name##*/}"
+  _dir=$(cd -P "$_dir" 2> /dev/null && pwd -P)
+  target_abs="${_dir:+${_dir%/}/}$_name"
+  [ -z "$_dir" ] && target_abs="$target"
+
+  # Symlinked target: also resolve where it points, printed as an extra line.
+  local link_abs=""
+  if [ -L "$target_abs" ] && type -P realpath &> /dev/null; then
+    link_abs=$(realpath "$target_abs" 2> /dev/null) || link_abs=""
   fi
 
   # cd target = the override when given, else the folder. Parent for files, self
@@ -552,7 +557,8 @@ function print_action_summary() {
   elif [ -d "$target_abs" ]; then
     dir="$target_abs"
   else
-    dir=$(dirname "$target_abs")
+    dir="."
+    case "$target_abs" in */*) dir="${target_abs%/*}" && dir="${dir:-/}" ;; esac
   fi
 
   # WSL conversion.
@@ -579,20 +585,22 @@ function print_action_summary() {
     [ ${#extra_args[@]} -gt 0 ] && prefix="$binary ${extra_args[*]}"
     printf '%s%s%s\n' "$c_text" "$prefix \"$target_abs\"" "$c_reset"
     [ "$resolved_target" != "$target_abs" ] && printf '%s%s%s\n' "$c_text" "$prefix \"$resolved_target\"" "$c_reset"
+    # Symlink: also show the same command against the file it points to.
+    [ -n "$link_abs" ] && printf '%s%s%s\n' "$c_text" "$prefix \"$link_abs\"" "$c_reset"
   fi
   printf '%s%s%s\n' "$c_rule" "$divider" "$c_reset"
 
-	# Push the resolved, runnable command onto the history stack so Up-arrow
-	# recalls `cat "/abs/README.md"` instead of the picker (`fcat`) that produced
-	# it — same trick the Ctrl+R / Ctrl+B pickers use. Interactive shells only;
-	# history builtins are inert in batch mode.
-	case "$-" in *i*) ;; *) return 0 ;; esac
-	local history_cmd="cd \"$dir\""
-	if [ -n "$binary" ]; then
-		history_cmd="$prefix \"$target_abs\""
-		[ -n "$run_folder" ] && history_cmd="cd \"$dir\" && $history_cmd"
-	fi
-	builtin history -s "$history_cmd"
+  # Push the resolved, runnable command onto the history stack so Up-arrow
+  # recalls `cat "/abs/README.md"` instead of the picker (`fcat`) that produced
+  # it — same trick the Ctrl+R / Ctrl+B pickers use. Interactive shells only;
+  # history builtins are inert in batch mode.
+  case "$-" in *i*) ;; *) return 0 ;; esac
+  local history_cmd="cd \"$dir\""
+  if [ -n "$binary" ]; then
+    history_cmd="$prefix \"$target_abs\""
+    [ -n "$run_folder" ] && history_cmd="cd \"$dir\" && $history_cmd"
+  fi
+  builtin history -s "$history_cmd"
 }
 
 # --- Aliases: Coreutils Defaults ---

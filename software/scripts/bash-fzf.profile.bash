@@ -712,8 +712,9 @@ function fuzzy_edit() {
   # No such file or directory" error) for every selection made from a
   # subdirectory of a repo, and handed the editor a path relative to the wrong
   # base whenever fuzzy_edit was called with an explicit "$dir".
+  # No realpath here: it would follow a symlinked selection to its target and
+  # hide the link from print_action_summary, which shows both lines itself.
   FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
-  FULL_PATH=$(realpath "$FULL_PATH" 2> /dev/null) || FULL_PATH=$(_fzf_resolve_path "$abs_dir" "$OUT")
 
   # Folder selections: just print PWD + cd. File selections: also print the editor line
   # (mirrors what we're about to invoke). print_action_summary handles the format.
