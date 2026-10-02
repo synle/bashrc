@@ -581,6 +581,18 @@ function print_action_summary() {
     [ "$resolved_target" != "$target_abs" ] && printf '%s%s%s\n' "$c_text" "$prefix \"$resolved_target\"" "$c_reset"
   fi
   printf '%s%s%s\n' "$c_rule" "$divider" "$c_reset"
+
+	# Push the resolved, runnable command onto the history stack so Up-arrow
+	# recalls `cat "/abs/README.md"` instead of the picker (`fcat`) that produced
+	# it — same trick the Ctrl+R / Ctrl+B pickers use. Interactive shells only;
+	# history builtins are inert in batch mode.
+	case "$-" in *i*) ;; *) return 0 ;; esac
+	local history_cmd="cd \"$dir\""
+	if [ -n "$binary" ]; then
+		history_cmd="$prefix \"$target_abs\""
+		[ -n "$run_folder" ] && history_cmd="cd \"$dir\" && $history_cmd"
+	fi
+	builtin history -s "$history_cmd"
 }
 
 # --- Aliases: Coreutils Defaults ---
