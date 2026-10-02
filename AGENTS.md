@@ -652,6 +652,7 @@ One `SKILL.md` is read by four CLIs — write to the open Agent Skills lowest co
   Missing `## Safety` = destructive steps guarded by nothing.
 - **Invariants bluntly stated; verification demands quoted command output**, never paraphrase.
 - **Split into `references/` / `scripts/` only on genuine weight or third reuse** (YAGNI).
+- **Hard size limits:** `name` ≤64 chars; `description` ≤1024 chars with no `<` or `>` (placeholders never belong there); `SKILL.md` body under 500 lines — past that, split.
 
 ### 13.1 The global `/sy-*` corpus — one registry, never a per-CLI list
 

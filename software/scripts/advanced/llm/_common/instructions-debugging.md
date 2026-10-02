@@ -25,6 +25,7 @@ Honesty from the main instructions governs this file too.
 - Instrument narrowly, clean up after. Prefer one debugger breakpoint or REPL inspection over ten logs; never log-everything-and-grep. Tag every temporary debug log with a unique prefix (`[DEBUG-a4f2]`) so removal is one `grep` — and remove them all before declaring done.
 - Perf regression: logs mislead. Establish a baseline measurement first (timing harness, profiler, query plan), then bisect. Measure first, fix second.
 - After three consecutive ruled-out hypotheses, attack the premise instead of forming a fourth. Usual culprits: the code read is not the code run (stale build, cached artifact, shadowed module, wrong branch), the test asserts something other than assumed, the "known good" baseline was never good, or the environment differs.
+- Prove the running thing is the built thing before trusting any live result — a version/SHA endpoint, or a process start time after the build. A stale server makes every observation lie.
 
 ## Fix the cause, then prove it
 

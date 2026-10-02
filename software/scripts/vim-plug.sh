@@ -11,10 +11,10 @@
 
 # --- vim-plug cleanup ---
 for _vim_plug_path in "$HOME/.vim/autoload/plug.vim" "$HOME/.vim/plugged"; do
-	if [ -e "$_vim_plug_path" ]; then
-		echo ">> Removing old vim-plug install - $_vim_plug_path"
-		rm -rf "$_vim_plug_path"
-	fi
+  if [ -e "$_vim_plug_path" ]; then
+    echo ">> Removing old vim-plug install - $_vim_plug_path"
+    rm -rf "$_vim_plug_path"
+  fi
 done
 unset _vim_plug_path
 

@@ -13,11 +13,15 @@ Honesty from the main instructions governs this file too.
 
 - **Concrete failure or question.** A finding names the input or state, traces the reachable bad behavior, checks surrounding guards, and gives one correction. If that path cannot be constructed, ask a question instead of asserting a defect.
 - **Review expected absences.** Before reading hunks, list artifacts the intent should require — migration, test, logging, rollback, docs, config — then investigate missing ones. A file absent from the diff can carry the highest-risk regression.
+- **Removed guards have history.** Before approving a deleted or weakened guard, `git log -L` its lines; an introducing commit citing a bug, CVE, or incident makes the removal a regression until the author shows the cause is gone.
+- **Hunt deletable complexity.** Beyond defects, flag reinvented stdlib, single-implementation abstractions, and unused flexibility — one line each: location, cut, replacement.
 - **One behavior, every path.** Route sync/async, streaming/batch, manual/scheduled,
   list/detail, runtime/standalone, and fallback paths through one implementation seam.
   When duplication is unavoidable, run identical contract fixtures through every path
   and compare observable results.
 - **Retry taxonomy is public behavior.** Map one exception or result type to one retry
+- **Idempotency keys come from intent, not attempt.** Claim the key atomically (never SELECT-then-INSERT); same key with a different payload is rejected; a timeout is `unknown`, not failure.
+- **Authorize the resource, not just the caller.** Every request checks the caller may touch that specific object (IDOR); server-side fetches of user-supplied URLs go through an allowlist (SSRF).
   policy. Keep transient transport failures, deterministic input or contract failures,
   authorization failures, and capacity limits distinct; tests assert both the public
   error and whether the caller retries. Unknown failures never become empty data or

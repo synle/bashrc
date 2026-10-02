@@ -176,14 +176,7 @@ describe("print_action_summary", () => {
 
     const out = callSummary({ args: [file, "vim"] });
     expect(out).toBe(
-      [
-        "=".repeat(80),
-        `PWD: "${path.join(sandbox, "home")}"`,
-        `cd "${rp(dir)}"`,
-        `vim "${rp(file)}"`,
-        "=".repeat(80),
-        "",
-      ].join("\n"),
+      ["=".repeat(80), `PWD: "${path.join(sandbox, "home")}"`, `cd "${rp(dir)}"`, `vim "${rp(file)}"`, "=".repeat(80), ""].join("\n"),
     );
   });
 
@@ -192,14 +185,7 @@ describe("print_action_summary", () => {
     fs.mkdirSync(dir);
     const out = callSummary({ args: [dir, "subl"] });
     expect(out).toBe(
-      [
-        "=".repeat(80),
-        `PWD: "${path.join(sandbox, "home")}"`,
-        `cd "${rp(dir)}"`,
-        `subl "${rp(dir)}"`,
-        "=".repeat(80),
-        "",
-      ].join("\n"),
+      ["=".repeat(80), `PWD: "${path.join(sandbox, "home")}"`, `cd "${rp(dir)}"`, `subl "${rp(dir)}"`, "=".repeat(80), ""].join("\n"),
     );
   });
 
@@ -207,15 +193,7 @@ describe("print_action_summary", () => {
     const dir = path.join(sandbox, "home", "proj");
     fs.mkdirSync(dir);
     const out = callSummary({ args: [dir] });
-    expect(out).toBe(
-      [
-        "=".repeat(80),
-        `PWD: "${path.join(sandbox, "home")}"`,
-        `cd "${rp(dir)}"`,
-        "=".repeat(80),
-        "",
-      ].join("\n"),
-    );
+    expect(out).toBe(["=".repeat(80), `PWD: "${path.join(sandbox, "home")}"`, `cd "${rp(dir)}"`, "=".repeat(80), ""].join("\n"));
   });
 
   it("inserts extra args between binary and target", () => {
