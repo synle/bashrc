@@ -31,7 +31,7 @@ afterEach(() => {
 
 /**
  * Runs the real installer with Windows commands stubbed in a hermetic sandbox.
- * @param {{ listOutput?: string, listStatus?: number, installStatus?: number, installOutput?: string, searchStatus?: number, refresh?: boolean }} [options]
+ * @param {{ listOutput?: string, listStatus?: number, installStatus?: number, installOutput?: string, searchStatus?: number, refresh?: boolean, isWorkProfile?: boolean }} [options]
  * @returns {{ status: number | null, output: string, installs: string[], stampExists: boolean }}
  */
 function runInstaller({
@@ -41,6 +41,7 @@ function runInstaller({
   installOutput = "",
   searchStatus = 0,
   refresh = false,
+  isWorkProfile = false,
 } = {}) {
   const bin = path.join(sandbox, "bin");
   const calls = path.join(sandbox, "installs");
@@ -77,6 +78,7 @@ BASH_SYLE_PATH="$HOME/.bash_syle"
 IS_SETUP=1
 IS_REFRESH_MODE=${refresh ? 1 : 0}
 is_os_windows=1
+is_work_profile=${isWorkProfile ? 1 : 0}
 function has_persistent_binary() { type -P "$1"; }
 function is_path_stale() { return 0; }
 function safe_touch() { [ -e "$1" ] || command touch "$1"; }
@@ -111,6 +113,12 @@ describe("winget installer", () => {
     expect(result.status).toBe(0);
     expect(result.installs).toContain("Python.Python.3.12");
     expect(result.stampExists).toBe(true);
+  });
+
+  it("does not install Ollama on a work profile", () => {
+    const result = runInstaller({ isWorkProfile: true });
+    expect(result.status).toBe(0);
+    expect(result.installs).not.toContain("Ollama.Ollama");
   });
 
   it("fails closed when installed packages cannot be listed", () => {

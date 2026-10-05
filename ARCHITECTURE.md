@@ -40,10 +40,11 @@ Also ships a Vite + React webapp (`webapp/`, sources in `src/`) at https://synle
 1. **Bootstrap.** `run.sh` detects local vs remote mode (presence of `software/index.js`). Remote fetches `run.sh` + `software/` from raw.githubusercontent into `$BASHRC_TEMP_DIR` (rooted at `$BASHRC_TEMP_ROOT_DIR`, `/tmp` with mktemp fallback on locked-down hosts) and re-execs.
 2. **Arg pre-scan.** Bash exports `IS_SETUP` and extracts flags it acts on directly (`--debug`, `--verbose`, `--dryrun`, `--force-refresh`, `--remove`); all arguments are also JSON-encoded into `BASHRC_RAW_ARGS`.
 3. **OS detection.** `_detect_os` writes `is_os_<name>=1` vars. Order matters — `is_os_ubuntu` is the Debian-family catch-all and stays last. Tested by `osDetection.spec.js`.
-4. **Env sourcing.** `common-env.sh` exports shared constants; inlined into `run.sh` via BEGIN/END so it works standalone.
-5. **`node | bash`.** `index.js` runs as library (defines globals) and runner (enumerates scripts, evaluates each, writes bash to stdout). `run.sh` preserves every pipeline status so generated-shell failures survive the logging `tee` stages.
-6. **Bash execution.** Installs tools, writes configs, registers profile blocks. `ScriptSkipError` aborts one script without killing the run.
-7. **Cleanup & wrapup.** `~cleanup.js` flushes buffers, strips unfilled markers; `~wrapup.sh` dumps CI logs, stamps `run_timing.json`.
+4. **Profile detection.** `_detect_work_profile` defaults to personal, then marks macOS hostnames without `.local` as work unless `_IS_WORK_PROFILE_OVERRIDE` is defined.
+5. **Env sourcing.** `common-env.sh` exports shared constants; inlined into `run.sh` via BEGIN/END so it works standalone.
+6. **`node | bash`.** `index.js` runs as library (defines globals) and runner (enumerates scripts, evaluates each, writes bash to stdout). `run.sh` preserves every pipeline status so generated-shell failures survive the logging `tee` stages.
+7. **Bash execution.** Installs tools, writes configs, registers profile blocks. `ScriptSkipError` aborts one script without killing the run.
+8. **Cleanup & wrapup.** `~cleanup.js` flushes buffers, strips unfilled markers; `~wrapup.sh` dumps CI logs, stamps `run_timing.json`.
 
 Output redirection: only `emitBash()` writes stdout; everything human-readable uses `log()` (stderr).
 

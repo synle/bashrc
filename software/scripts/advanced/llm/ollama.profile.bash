@@ -28,35 +28,37 @@
 #                          not worth it on either form factor.
 #   OLLAMA_LOAD_TIMEOUT    stall detector during model load; the 5m default is
 #                          tight for a large model on a cold page cache.
-export OLLAMA_FLASH_ATTENTION=1
-export OLLAMA_KV_CACHE_TYPE=q8_0
-export OLLAMA_LOAD_TIMEOUT=10m
+if ((!is_work_profile)); then
+  export OLLAMA_FLASH_ATTENTION=1
+  export OLLAMA_KV_CACHE_TYPE=q8_0
+  export OLLAMA_LOAD_TIMEOUT=10m
 
-if ((is_system_desktop)); then
-  # Desktop — more VRAM headroom: bigger context, one spare slot for a second agent.
-  export OLLAMA_NUM_PARALLEL=2
-  export OLLAMA_CONTEXT_LENGTH=32768
-  export OLLAMA_KEEP_ALIVE=30m
-  export OLLAMA_MAX_LOADED_MODELS=2
-else
-  # Laptop — conserve VRAM: single slot, smaller context, shorter residency.
-  export OLLAMA_NUM_PARALLEL=1
-  export OLLAMA_CONTEXT_LENGTH=16384
-  export OLLAMA_KEEP_ALIVE=15m
-  export OLLAMA_MAX_LOADED_MODELS=1
+  if ((is_system_desktop)); then
+    # Desktop — more VRAM headroom: bigger context, one spare slot for a second agent.
+    export OLLAMA_NUM_PARALLEL=2
+    export OLLAMA_CONTEXT_LENGTH=32768
+    export OLLAMA_KEEP_ALIVE=30m
+    export OLLAMA_MAX_LOADED_MODELS=2
+  else
+    # Laptop — conserve VRAM: single slot, smaller context, shorter residency.
+    export OLLAMA_NUM_PARALLEL=1
+    export OLLAMA_CONTEXT_LENGTH=16384
+    export OLLAMA_KEEP_ALIVE=15m
+    export OLLAMA_MAX_LOADED_MODELS=1
+  fi
+
+  # The OLLAMA_* names this repo manages. `ollama_apply_daemon_env` persists exactly
+  # this list into the service manager, so adding a var above is enough for it to be
+  # picked up there too.
+  export SY_OLLAMA_MANAGED_ENV_VARS="OLLAMA_FLASH_ATTENTION OLLAMA_KV_CACHE_TYPE OLLAMA_LOAD_TIMEOUT OLLAMA_NUM_PARALLEL OLLAMA_CONTEXT_LENGTH OLLAMA_KEEP_ALIVE OLLAMA_MAX_LOADED_MODELS"
+
+  # Default Ollama server connection details. OLLAMA_DEFAULT_SERVER_IP is baked by run.sh
+  # (get_ollama_default_server_ip) from software/metadata/ip-address.config, selected by
+  # tag — OLLAMA_DEFAULT_SERVER, else the first reachable OLLAMA_REMOTE, else 127.0.0.1 —
+  # never by hostname, so no machine name or address is hardcoded in any profile partial.
+  # Empty when no host serves a model; consumers fall back to 127.0.0.1 in that case.
+  export OLLAMA_DEFAULT_SERVER_PORT="11434"
 fi
-
-# The OLLAMA_* names this repo manages. `ollama_apply_daemon_env` persists exactly
-# this list into the service manager, so adding a var above is enough for it to be
-# picked up there too.
-export SY_OLLAMA_MANAGED_ENV_VARS="OLLAMA_FLASH_ATTENTION OLLAMA_KV_CACHE_TYPE OLLAMA_LOAD_TIMEOUT OLLAMA_NUM_PARALLEL OLLAMA_CONTEXT_LENGTH OLLAMA_KEEP_ALIVE OLLAMA_MAX_LOADED_MODELS"
-
-# Default Ollama server connection details. OLLAMA_DEFAULT_SERVER_IP is baked by run.sh
-# (get_ollama_default_server_ip) from software/metadata/ip-address.config, selected by
-# tag — OLLAMA_DEFAULT_SERVER, else the first reachable OLLAMA_REMOTE, else 127.0.0.1 —
-# never by hostname, so no machine name or address is hardcoded in any profile partial.
-# Empty when no host serves a model; consumers fall back to 127.0.0.1 in that case.
-export OLLAMA_DEFAULT_SERVER_PORT="11434"
 
 # OLLAMA_DEFAULT_MODEL is the SINGLE default model for ollama_warmup,
 # claude.profile.bash's claude_local, and the opencode/Zed/VS Code provider wiring;

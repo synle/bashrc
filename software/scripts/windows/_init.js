@@ -4,7 +4,7 @@ async function doWork() {
   // later scripts append blocks via registerWithPowershellProfile()
   log(">> Initializing PowerShell profile template:", POWERSHELL_SYLE_PATH);
   const psTemplate = await readText`software/scripts/windows/powershell-profile.ps1.bash`;
-  writeText(POWERSHELL_SYLE_PATH, resolvePlaceholders(psTemplate, { MAX_NESTED_DEPTH }));
+  writeText(POWERSHELL_SYLE_PATH, resolvePlaceholders(psTemplate, { MAX_NESTED_DEPTH, IS_WORK_PROFILE: Number(is_work_profile) }));
 
   let targetPath = "/mnt/d";
 
@@ -37,7 +37,9 @@ async function doWork() {
     if (pathExists(desktopPath)) {
       log(">> Copying PowerShell setup scripts to Desktop:", desktopPath);
       const bootstrapScript = await readText`software/scripts/windows/_full-setup-bootstrap.ps1.bash`;
-      const setupScript = await readText`software/scripts/windows/_full-setup.ps1.bash`;
+      const setupScript = resolvePlaceholders(await readText`software/scripts/windows/_full-setup.ps1.bash`, {
+        IS_WORK_PROFILE: Number(is_work_profile),
+      });
       writeText(path.join(desktopPath, "_full-setup-bootstrap.ps1"), bootstrapScript);
       writeText(path.join(desktopPath, "_full-setup.ps1"), setupScript);
     }

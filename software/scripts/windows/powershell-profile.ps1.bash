@@ -242,23 +242,25 @@ function cm()  { cl --model claude-opus-4-7[1m] $args }
 # Session scope only -- a daemon started by the Ollama service or tray app never sees
 # these. software/scripts/windows/_full-setup.ps1 persists the same values at User
 # scope, which is what the daemon actually reads.
-$env:OLLAMA_FLASH_ATTENTION = "1"
-$env:OLLAMA_KV_CACHE_TYPE = "q8_0"
-$env:OLLAMA_LOAD_TIMEOUT = "10m"
-# A physical battery means laptop; anything else is treated as a desktop (matches the
-# is_system_laptop / is_system_desktop split in software/bootstrap/common-env.sh).
-if ($null -ne (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue)) {
-  # Laptop -- conserve VRAM: single slot, smaller context, shorter residency.
-  $env:OLLAMA_NUM_PARALLEL = "1"
-  $env:OLLAMA_CONTEXT_LENGTH = "16384"
-  $env:OLLAMA_KEEP_ALIVE = "15m"
-  $env:OLLAMA_MAX_LOADED_MODELS = "1"
-} else {
-  # Desktop -- more VRAM headroom: bigger context, one spare slot for a second agent.
-  $env:OLLAMA_NUM_PARALLEL = "2"
-  $env:OLLAMA_CONTEXT_LENGTH = "32768"
-  $env:OLLAMA_KEEP_ALIVE = "30m"
-  $env:OLLAMA_MAX_LOADED_MODELS = "2"
+if (<<IS_WORK_PROFILE>> -eq 0) {
+  $env:OLLAMA_FLASH_ATTENTION = "1"
+  $env:OLLAMA_KV_CACHE_TYPE = "q8_0"
+  $env:OLLAMA_LOAD_TIMEOUT = "10m"
+  # A physical battery means laptop; anything else is treated as a desktop (matches the
+  # is_system_laptop / is_system_desktop split in software/bootstrap/common-env.sh).
+  if ($null -ne (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue)) {
+    # Laptop -- conserve VRAM: single slot, smaller context, shorter residency.
+    $env:OLLAMA_NUM_PARALLEL = "1"
+    $env:OLLAMA_CONTEXT_LENGTH = "16384"
+    $env:OLLAMA_KEEP_ALIVE = "15m"
+    $env:OLLAMA_MAX_LOADED_MODELS = "1"
+  } else {
+    # Desktop -- more VRAM headroom: bigger context, one spare slot for a second agent.
+    $env:OLLAMA_NUM_PARALLEL = "2"
+    $env:OLLAMA_CONTEXT_LENGTH = "32768"
+    $env:OLLAMA_KEEP_ALIVE = "30m"
+    $env:OLLAMA_MAX_LOADED_MODELS = "2"
+  }
 }
 
 # clear - preserve scrollback buffer (match iTerm2 behavior)

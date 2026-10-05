@@ -345,7 +345,7 @@ installBrewPackageInBackground dotnet
 installBrewPackageInBackground powershell
 
 # --- Local LLM ---
-installBrewPackageInBackground ollama
+((is_work_profile)) || installBrewPackageInBackground ollama
 installBrewPackageInBackground --cask --app="LM Studio.app" lm-studio
 
 # --- Observability ---

@@ -281,10 +281,13 @@ async function _fetchOllamaModelNames(host) {
  * `127.0.0.1`) and keeps only hosts that answer with at least one model. A host that is
  * unreachable, or reachable with no models, is skipped and never registered anywhere.
  * Probes are bounded by the `readJson` fetch timeout, so a dead host cannot stall setup.
+ * Work profiles return immediately without probing local or personal-network endpoints.
  * @returns {Promise<Array<{ip: string, hostname: string, isDefault: boolean, isLocal: boolean, models: string[]}>>}
  *   Reachable hosts in `getOllamaHosts()` order; `[]` when none serve a model.
  */
 async function getReachableOllamaHosts() {
+  if (is_work_profile) return [];
+
   const reachable = [];
   for (const host of await getOllamaHosts()) {
     const models = await _fetchOllamaModelNames(host.ip);

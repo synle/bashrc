@@ -454,6 +454,17 @@ that both bash and node consume:
   `is_gui_wayland` to pick _which_ server-specific tool (xclip vs wl-copy, wmctrl vs
   swaymsg). Never gate a GUI app on `is_gui_x11` alone — that skips Wayland desktops.
 
+### 7.6 Work profile
+
+`is_work_profile` defaults to `0`. On macOS only, `_detect_work_profile()` sets it to
+`1` when the hostname does not contain `.local`; non-macOS hosts remain personal by
+default. A defined `_IS_WORK_PROFILE_OVERRIDE` wins, including explicit `0`; rerun
+`run.sh` after setting it so `~/.bash_syle_common` receives the resolved value.
+
+Use this flag to block automatic personal-network routing and local Ollama bootstrap:
+copy-server patch sends, endpoint discovery, installs, model pulls, and generated editor
+providers. Keep manual helpers available unless their invocation itself would be unsafe.
+
 ---
 
 ## 8. Portability constraints — these fail CI

@@ -212,7 +212,6 @@ winget_packages=(
   "Microsoft.PowerShell"
 
   # ---- Local LLM ----
-  "Ollama.Ollama"
   "ElementLabs.LMStudio" # LM Studio GUI — local LLM runner (https://lmstudio.ai)
 
   # ---- AI / agentic CLIs ----
@@ -268,6 +267,10 @@ winget_packages=(
   "WinFsp.WinFsp"
   "SSHFS-Win.SSHFS-Win"
 )
+
+if ((!is_work_profile)); then
+  winget_packages+=("Ollama.Ollama")
+fi
 
 # Packages that must be reinstalled on EVERY pass — the "already installed"
 # check is never consulted for these, and the install always runs with

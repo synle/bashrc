@@ -43,7 +43,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | df358ed4c0dd14d3a2108b5530b0294a | 12.0 KB
+# software/bootstrap/common-env.sh | 9fe0f4091d331e2f18ca61b60bbbe60f | 12.9 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -84,6 +84,28 @@ export SY_ROOT_FOLDER="$HOME/_extra"
 export LLM_ROOT_FOLDER="$SY_ROOT_FOLDER/ai_llm"
 export LIMITED_SUPPORT_OSES="is_os_android_termux,is_os_mingw64"
 export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_android_termux,is_os_arch_linux,is_os_steamos,is_os_redhat,is_os_windows,is_os_wsl"
+
+# _detect_work_profile - Classify managed/work machines without changing non-macOS defaults.
+#
+# Default is personal (`0`) on every platform. On macOS only, a hostname without
+# `.local` is treated as a managed/work profile; the normal personal Mac hostname
+# contains `.local`. Set `_IS_WORK_PROFILE_OVERRIDE` to any truthy/falsy value to
+# override this dynamic value, then rerun run.sh to refresh ~/.bash_syle_common.
+# The presence check matters: an explicit `0` must override a detected work profile.
+function _detect_work_profile() {
+  is_work_profile=0
+  if ((${is_os_mac:-0})); then
+    local hostname
+    hostname=$(command hostname 2> /dev/null | tr '[:upper:]' '[:lower:]')
+    [[ "$hostname" != *".local"* ]] && is_work_profile=1
+  fi
+
+  if [ -n "${_IS_WORK_PROFILE_OVERRIDE+x}" ]; then
+    is_truthy "$_IS_WORK_PROFILE_OVERRIDE" && is_work_profile=1 || is_work_profile=0
+  fi
+
+  export is_work_profile
+}
 
 # Detect physical battery to set is_system_laptop / is_system_desktop.
 # Used by scripts that tune resource usage to expected power envelope
@@ -529,6 +551,8 @@ fi
 is_os_windows=0 && _detect_os --name "microsoft" --path "/mnt/c/Windows, /c/Windows" && is_os_windows=1
 is_os_wsl=0 && ((is_os_windows)) && is_os_wsl=1
 
+_detect_work_profile
+
 IS_CI=0 && [ -n "$CI" ] && IS_CI=1
 NO_COLOR="${NO_COLOR:-0}" && [ -n "$NO_COLOR" ] && [ "$NO_COLOR" != "0" ] && NO_COLOR=1 || NO_COLOR=0
 
@@ -736,6 +760,13 @@ declare -f is_truthy >> "$BASH_SYLE_COMMON_PATH"
 declare -f h1 h2 h3 h4 h5 h6 h7 >> "$BASH_SYLE_COMMON_PATH"
 declare -f _detect_gui_flags >> "$BASH_SYLE_COMMON_PATH"
 
+ollama_default_server_ip=""
+code_server_remote_hosts=""
+if ((!is_work_profile)); then
+  ollama_default_server_ip=$(get_ollama_default_server_ip)
+  code_server_remote_hosts=$(get_code_server_hosts)
+fi
+
 echo """
 $os_flags
 
@@ -745,12 +776,16 @@ $os_flags
 # is_os_* exports above because is_gui consults is_os_mac / is_os_windows.
 _detect_gui_flags
 
+# Work profile is detected once per run. Default is 0; on macOS a hostname without
+# .local sets 1. Set _IS_WORK_PROFILE_OVERRIDE before run.sh to override this dynamic value.
+export is_work_profile='$is_work_profile'
+
 # Single-quoted, not double: this whole block sits inside echo \"\"\"...\"\"\", so an
 # inner double quote closes the outer string and the value is written unquoted —
 # a space-separated value then becomes 'export X=a b' (\"b: not a valid identifier\").
-export OLLAMA_DEFAULT_SERVER_IP='$(get_ollama_default_server_ip)'
+export OLLAMA_DEFAULT_SERVER_IP='$ollama_default_server_ip'
 # copy-to-server targets (space-separated <ip>:<port>), parsed once from ip-address.config.
-export CODE_SERVER_REMOTE_HOSTS='$(get_code_server_hosts)'
+export CODE_SERVER_REMOTE_HOSTS='$code_server_remote_hosts'
 
 # Hardware flags from common-env.sh — baked (not re-probed per shell) because the
 # battery / GPU probes spawn subprocesses (powershell.exe, nvidia-smi) and the
@@ -778,7 +813,7 @@ alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
 
 . "$BASH_SYLE_COMMON_PATH"
 export BASH_ENV="$BASH_SYLE_COMMON_PATH"
-unset os_flags
+unset os_flags ollama_default_server_ip code_server_remote_hosts
 
 ################################################################################
 # --- Pre-scan for flags that must take effect before node runs ---

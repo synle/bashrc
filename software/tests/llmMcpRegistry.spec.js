@@ -28,9 +28,10 @@ const LLM_COMMON_SOURCE = expandSourceMarkers(fs.readFileSync(path.join(ROOT, "s
  * lives only in `software/metadata/ip-address.config`.
  *
  * @param {{ mcpServers?: Record<string, any> } | null} registryPayload - What `readJson` returns for the registry path.
- * @param {{ remoteIps?: string[], tagsByHost?: Record<string, string[]> }} [opts] - Discovery stubs.
+ * @param {{ remoteIps?: string[], tagsByHost?: Record<string, string[]>, isWorkProfile?: boolean }} [opts] - Discovery stubs.
  * @param {string[]} [opts.remoteIps] - OLLAMA_REMOTE host IPs, default first (`[]` = none tagged).
  * @param {Record<string, string[]>} [opts.tagsByHost] - Model names each host's `/api/tags` reports.
+ * @param {boolean} [opts.isWorkProfile] - Whether local-model discovery must be disabled.
  * @returns {Record<string, any>} The populated sandbox.
  */
 function loadLlmCommon(registryPayload, opts = {}) {
@@ -45,6 +46,7 @@ function loadLlmCommon(registryPayload, opts = {}) {
   /** @type {Record<string, any>} */
   const sandbox = {
     is_os_mac: false,
+    is_work_profile: opts.isWorkProfile || false,
     path,
     // llm-common.js derives every legacy folder from this at top level.
     BASE_HOMEDIR_LINUX: "/tmp/sandbox-home",
@@ -253,6 +255,15 @@ describe("getOllamaProviderInputs > tagged host discovery", () => {
   it("returns no providers when nothing is reachable", async () => {
     const sandbox = loadLlmCommon(null, { remoteIps: ["192.0.2.45"], tagsByHost: {} });
     expect(await sandbox.getOllamaProviderInputs()).toEqual([]);
+  });
+
+  it("returns no providers and probes no endpoints on a work profile", async () => {
+    const sandbox = loadLlmCommon(null, {
+      isWorkProfile: true,
+      tagsByHost: { "192.0.2.45": ["glm-4.7-flash:q4_K_M"], "127.0.0.1": ["qwen2.5-coder:3b"] },
+    });
+    expect(await sandbox.getOllamaProviderInputs()).toEqual([]);
+    expect(sandbox.probedHosts).toEqual([]);
   });
 });
 

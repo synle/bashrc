@@ -11,13 +11,6 @@
 const OLLAMA_MODELS_API_URL = `http://127.0.0.1:${OLLAMA_PORT}`;
 
 /**
- * Case-insensitive hostname marker a Mac must carry to auto-pull — local personal
- * Mac bootstrap only; managed Macs never download multi-GB models.
- * @type {string}
- */
-const OLLAMA_MODELS_MAC_HOSTNAME_MARKER = ".local";
-
-/**
  * Allowlist for a tag interpolated into the background shell command. Real tags are
  * `name:tag` built from letters, digits, `.`, `_`, `-`, `/` — anything else is rejected
  * rather than quoted.
@@ -38,8 +31,7 @@ function _getOllamaDefaultAgentModel() {
 }
 
 /**
- * Skips hosts that must not pull: CI, dry runs, Termux, GPU-less boxes, and Macs
- * that are not a personal `.local` host.
+ * Skips hosts that must not pull: CI, dry runs, Termux, and GPU-less boxes.
  * @throws {ScriptSkipError} When this host should not pull models.
  */
 function _exitIfOllamaModelPullUnsupported() {
@@ -47,15 +39,6 @@ function _exitIfOllamaModelPullUnsupported() {
   if (IS_DRY_RUN) throw new ScriptSkipError("ollama model pull: dry run (multi-GB downloads)");
   exitIfUnsupportedOs("is_os_android_termux");
   if (!is_system_gpu) throw new ScriptSkipError("ollama model pull: no GPU detected");
-
-  if (is_os_mac) {
-    const hostname = os.hostname().toLowerCase();
-    if (!hostname.includes(OLLAMA_MODELS_MAC_HOSTNAME_MARKER)) {
-      throw new ScriptSkipError(
-        `ollama model pull: only applicable to personal Macs (hostname containing '${OLLAMA_MODELS_MAC_HOSTNAME_MARKER}'); this host is '${hostname}'`,
-      );
-    }
-  }
 }
 
 /**
@@ -146,7 +129,7 @@ function _spawnOllamaBackgroundPull(tags, logPath) {
 }
 
 /**
- * Registers the OLLAMA_DEFAULT_MODEL profile block (every host), then
+ * Registers the OLLAMA_DEFAULT_MODEL profile block (personal profiles), then
  * resolves this host's VRAM tier from `system_gpu_vram_mib` and starts background
  * pulls for every tier model the daemon does not already have. Side effect: spawns
  * one detached `node` puller (fire-and-forget) that appends to `$BASHRC_TEMP_DIR/ollama-pull.log`.
@@ -154,8 +137,8 @@ function _spawnOllamaBackgroundPull(tags, logPath) {
  * @throws {ScriptSkipError} When the host is gated out or the daemon is unreachable.
  */
 async function doWork() {
-  // Registered before the pull gates: every host needs the default (claude_local on a
-  // laptop still targets the default server), not only hosts that pull models themselves.
+  if (is_work_profile) throw new ScriptSkipError("ollama model bootstrap: work profile");
+
   registerWithBashSyleProfile(
     "ollama default model",
     `export OLLAMA_DEFAULT_MODEL="\${OLLAMA_DEFAULT_MODEL:-${_getOllamaDefaultAgentModel()}}"`,

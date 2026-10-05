@@ -9,6 +9,11 @@
 # Model pulls live in ollama-models.js; the model inventory lives in
 # llm-models.jsonc (OLLAMA_MODELS_BY_VRAM in llm-common.js).
 
+((is_work_profile)) && {
+  echo ">>> Skipped ollama: work profile"
+  exit 0
+}
+
 # Skip in CI — install requires sudo + systemd, and a daemon binary on a throwaway
 # runner has no value (no GPU, no follow-on inference).
 ((IS_CI)) && {

@@ -280,7 +280,7 @@ $allowRules = @(
             443,          # HTTPS (mkcert, self-signed, Docker)
             1433,         # SQL Server
             "3000-9999",  # dev servers, MySQL, Postgres, Redis, backends, Jupyter, Portainer, Temporal (7233 gRPC, 8233 UI), etc.
-            11434,        # Ollama REST API
+            $(if (<<IS_WORK_PROFILE>> -eq 0) { 11434 }), # Ollama REST API
             27017,         # MongoDB
             # Media streaming
             8096,         # Jellyfin HTTP
@@ -676,40 +676,42 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 #                          by the firewall section earlier in this script.
 ################################################################################
 
-Write-Host "`nConfiguring Ollama daemon environment..." -ForegroundColor Cyan
+if (<<IS_WORK_PROFILE>> -eq 0) {
+    Write-Host "`nConfiguring Ollama daemon environment..." -ForegroundColor Cyan
 
-$ollamaEnv = @{
-    OLLAMA_FLASH_ATTENTION = "1"
-    OLLAMA_KV_CACHE_TYPE   = "q8_0"
-    OLLAMA_LOAD_TIMEOUT    = "10m"
-    OLLAMA_HOST            = "0.0.0.0:11434"
-}
-# A physical battery means laptop; anything else is treated as a desktop (matches the
-# is_system_laptop / is_system_desktop split in software/bootstrap/common-env.sh).
-if ($null -ne (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue)) {
-    # Laptop -- conserve VRAM: single slot, smaller context, shorter residency.
-    $ollamaEnv["OLLAMA_NUM_PARALLEL"] = "1"
-    $ollamaEnv["OLLAMA_CONTEXT_LENGTH"] = "16384"
-    $ollamaEnv["OLLAMA_KEEP_ALIVE"] = "15m"
-    $ollamaEnv["OLLAMA_MAX_LOADED_MODELS"] = "1"
-} else {
-    # Desktop -- more VRAM headroom: bigger context, one spare slot for a second agent.
-    $ollamaEnv["OLLAMA_NUM_PARALLEL"] = "2"
-    $ollamaEnv["OLLAMA_CONTEXT_LENGTH"] = "32768"
-    $ollamaEnv["OLLAMA_KEEP_ALIVE"] = "30m"
-    $ollamaEnv["OLLAMA_MAX_LOADED_MODELS"] = "2"
-}
-
-foreach ($name in ($ollamaEnv.Keys | Sort-Object)) {
-    $value = $ollamaEnv[$name]
-    if ([Environment]::GetEnvironmentVariable($name, "User") -eq $value) {
-        Write-Host "  Skipped: $name (already $value)" -ForegroundColor Yellow
-    } else {
-        [Environment]::SetEnvironmentVariable($name, $value, "User")
-        Write-Host "  Set: $name=$value" -ForegroundColor Green
+    $ollamaEnv = @{
+        OLLAMA_FLASH_ATTENTION = "1"
+        OLLAMA_KV_CACHE_TYPE   = "q8_0"
+        OLLAMA_LOAD_TIMEOUT    = "10m"
+        OLLAMA_HOST            = "0.0.0.0:11434"
     }
+    # A physical battery means laptop; anything else is treated as a desktop (matches the
+    # is_system_laptop / is_system_desktop split in software/bootstrap/common-env.sh).
+    if ($null -ne (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue)) {
+        # Laptop -- conserve VRAM: single slot, smaller context, shorter residency.
+        $ollamaEnv["OLLAMA_NUM_PARALLEL"] = "1"
+        $ollamaEnv["OLLAMA_CONTEXT_LENGTH"] = "16384"
+        $ollamaEnv["OLLAMA_KEEP_ALIVE"] = "15m"
+        $ollamaEnv["OLLAMA_MAX_LOADED_MODELS"] = "1"
+    } else {
+        # Desktop -- more VRAM headroom: bigger context, one spare slot for a second agent.
+        $ollamaEnv["OLLAMA_NUM_PARALLEL"] = "2"
+        $ollamaEnv["OLLAMA_CONTEXT_LENGTH"] = "32768"
+        $ollamaEnv["OLLAMA_KEEP_ALIVE"] = "30m"
+        $ollamaEnv["OLLAMA_MAX_LOADED_MODELS"] = "2"
+    }
+
+    foreach ($name in ($ollamaEnv.Keys | Sort-Object)) {
+        $value = $ollamaEnv[$name]
+        if ([Environment]::GetEnvironmentVariable($name, "User") -eq $value) {
+            Write-Host "  Skipped: $name (already $value)" -ForegroundColor Yellow
+        } else {
+            [Environment]::SetEnvironmentVariable($name, $value, "User")
+            Write-Host "  Set: $name=$value" -ForegroundColor Green
+        }
+    }
+    Write-Host "  Restart Ollama (or log off) for these to take effect." -ForegroundColor Yellow
 }
-Write-Host "  Restart Ollama (or log off) for these to take effect." -ForegroundColor Yellow
 
 Write-Host "`nTo enable Windows Store on LTSC, run the following manually:" -ForegroundColor Yellow
 Write-Host "  wsreset.exe -i" -ForegroundColor White

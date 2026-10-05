@@ -875,6 +875,10 @@ _PATCH_FIND_EOF_
 # Returns 0 always (a skipped or failed send never fails patch creation).
 function _git_patch_send_to_copy_servers() {
   local patch_file="$1" repo_name="$2"
+  if ((is_work_profile)); then
+    echo ">>> copy-servers: skipped (work profile)"
+    return 0
+  fi
   if ! type copy-to-server &> /dev/null; then
     echo ">>> copy-servers: skipped (copy-to-server not loaded)"
     return 0

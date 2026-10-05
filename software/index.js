@@ -1171,6 +1171,11 @@ Object.keys(process.env)
 /** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_windows = !!global.is_os_windows;
 /** @type {boolean} Windows Subsystem for Linux */ const is_os_wsl = !!global.is_os_wsl;
 
+// --- Machine Profile ---
+/** @type {boolean} Managed/work profile; detected for macOS by common-env.sh, with `_IS_WORK_PROFILE_OVERRIDE` as an escape hatch */
+const is_work_profile = getRuntimeOption("is_work_profile", parseBoolean);
+global.is_work_profile = is_work_profile;
+
 // --- GUI / Display Flags ---
 /**
  * Display-surface flags, the JS half of the single detection source.

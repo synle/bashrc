@@ -154,6 +154,12 @@ describe("raw clipboard path", () => {
     expect(source).not.toMatch(/_patch_(create_and_upload|view_copy|download_and_apply)/);
   });
 
+  it("skips copy-server patch routing on a work profile", () => {
+    const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
+    expect(source).toMatch(/function _git_patch_send_to_copy_servers\(\) \{[\s\S]*?if \(\(is_work_profile\)\); then/);
+    expect(source).toContain(">>> copy-servers: skipped (work profile)");
+  });
+
   it("git_patch_apply dry-runs before touching the working tree", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     expect(source).toContain('git apply --check "$patch_file"');
