@@ -555,7 +555,8 @@ is_os_wsl=0 && ((is_os_windows)) && is_os_wsl=1
 
 _detect_work_profile
 
-IS_CI=0 && [ -n "$CI" ] && IS_CI=1
+IS_CI=0
+case "$(printf '%s' "${CI:-}" | tr '[:upper:]' '[:lower:]')" in true | 1) IS_CI=1 ;; esac
 NO_COLOR="${NO_COLOR:-0}" && [ -n "$NO_COLOR" ] && [ "$NO_COLOR" != "0" ] && NO_COLOR=1 || NO_COLOR=0
 
 os_flags=""
