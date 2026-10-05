@@ -84,6 +84,11 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 `software/index.js` or `software/tools/build-include.js`, add or update unit tests.
 The convention-linter specs (one rule each) are listed in AGENTS.md §11.
 
+Executable scripts may use `.personal.js` / `.personal.sh` or `.work.js` / `.work.sh`.
+Discovery and explicit `--files` / preset runs enforce the active `is_work_profile`;
+same-name variants run common → personal → work. These suffixes do not apply to profile
+partials, PowerShell templates, `.common.*`, or other SOURCE files.
+
 **VS Code debugging:** `.vscode/launch.json` has configs for the current script (via
 `software/.debug-runner.js`) and for Vitest.
 

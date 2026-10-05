@@ -590,8 +590,8 @@ there — its skills stay model-invoked only.
 The model inventory is [`llm-models.jsonc`](llm-models.jsonc), inlined as `OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js) —
 the single source of truth. Each VRAM tier lists one `{ tag, role }` per role (agent,
 vision, autocomplete); `AUTOCOMPLETE_MODELS` and `LLM_LOCAL_AGENT_MODELS` are derived
-from it. [`ollama.sh`](ollama.sh) installs the binary (native Linux only);
-[`ollama-models.js`](ollama-models.js) pulls the tier matching `system_gpu_vram_mib`
+from it. [`ollama.personal.sh`](ollama.personal.sh) installs the binary (native Linux only);
+[`ollama-models.personal.js`](ollama-models.personal.js) pulls the tier matching `system_gpu_vram_mib`
 (detected in `software/bootstrap/common-env.sh`) through the daemon's HTTP API, in the
 background. This section covers only how the discoverers pick a host.
 
@@ -639,5 +639,5 @@ added via the Manage Models... UI) pass through untouched.
 2. Put it in the right tier of [`llm-models.jsonc`](llm-models.jsonc),
    replacing that tier's model for the same role. Autocomplete models must be `-base`
    (FIM tokens exist only in base checkpoints).
-3. `bash run.sh --files=ollama-models.js` to pull it, then
+3. `bash run.sh --files=ollama-models.personal.js` to pull it, then
    `bash run.sh --files=opencode/setup.js` (or `--files=zed.js`) to redeploy the config.

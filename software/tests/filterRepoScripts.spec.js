@@ -51,6 +51,25 @@ describe("filterRepoScripts", () => {
     expect(result.indexOf("software/scripts/mac/dock.js")).toBeLessThan(result.indexOf("software/scripts/vim.js"));
   });
 
+  it("sorts common, personal, then work variants of the same script", () => {
+    const result = filterRepoScripts([
+      "software/scripts/abc.work.js",
+      "software/scripts/abc.personal.js",
+      "software/scripts/abc.js",
+      "software/scripts/tool.work.sh",
+      "software/scripts/tool.sh",
+      "software/scripts/tool.personal.sh",
+    ]);
+    expect(result).toEqual([
+      "software/scripts/abc.js",
+      "software/scripts/abc.personal.js",
+      "software/scripts/abc.work.js",
+      "software/scripts/tool.sh",
+      "software/scripts/tool.personal.sh",
+      "software/scripts/tool.work.sh",
+    ]);
+  });
+
   it("should push lastFiles (vs-code-ext.sh) to end", () => {
     const result = filterRepoScripts(["software/scripts/git.js", "software/scripts/advanced/vs-code-ext.sh", "software/scripts/vim.js"]);
     const lastIdx = result.indexOf("software/scripts/advanced/vs-code-ext.sh");

@@ -170,6 +170,8 @@ does) is a clean skip, never a failure. Scaffold with
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `.js`                                           | Node script with `doWork()`; consecutive siblings bundle into one `node` heredoc                                       |
 | `.sh`                                           | bash script; own heredoc; **skipped entirely under `--dryrun`**                                                        |
+| `.personal.js` / `.personal.sh`                 | executable only when `is_work_profile=0`; explicit `--files` cannot bypass the profile guard                           |
+| `.work.js` / `.work.sh`                         | executable only when `is_work_profile=1`; explicit `--files` cannot bypass the profile guard                           |
 | `.su.js`                                        | runs under `sudo -E node`; **all** `.su.js` collapse into one sudo prompt; self-contained, no state from other scripts |
 | `.su.sh`, `.sh.js`, `.su.sh.js`                 | never bundled                                                                                                          |
 | `.common.js` / `.common.bash` / `.common.jsonc` | shared helper; excluded from discovery; pull in via `SOURCE`                                                           |
@@ -184,7 +186,9 @@ does) is a clean skip, never a failure. Scaffold with
 Discovery order: `_init` → OS `_init` → `_full-setup` → alphabetical (`/advanced/`
 stripped from the sort key) → `~` post-scripts → pinned `lastFiles`. Every `--files` run
 auto-appends `~refresh-source.standalone.js` to refresh SOURCE blocks in `~/.bash_syle`;
-full runs use `~cleanup.js`.
+full runs use `~cleanup.js`. Profile siblings sort common → personal → work
+(`abc.js`, `abc.personal.js`, `abc.work.js`). Profile suffixes apply only to executable
+`.js` / `.sh` scripts, not `.profile.bash`, PowerShell templates, or SOURCE helpers.
 
 ### Two marker systems — do not confuse them
 
@@ -418,7 +422,7 @@ smaller card).
 | `is_system_gpu`       | NVIDIA (`nvidia-smi`, incl. WSL2), AMD (amdgpu sysfs), or Apple Silicon found   |
 | `system_gpu_vram_mib` | Largest GPU's VRAM in MiB (Apple Silicon: 2/3 of RAM); `0` = none or unreadable |
 
-Consumer today: `ollama-models.js` picks a tier from `OLLAMA_MODELS_BY_VRAM` by
+Consumer today: `ollama-models.personal.js` picks a tier from `OLLAMA_MODELS_BY_VRAM` by
 `system_gpu_vram_mib`.
 
 ### 7.5 GUI / display detection

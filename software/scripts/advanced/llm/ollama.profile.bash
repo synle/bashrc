@@ -63,13 +63,13 @@ fi
 # OLLAMA_DEFAULT_MODEL is the SINGLE default model for ollama_warmup,
 # claude.profile.bash's claude_local, and the opencode/Zed/VS Code provider wiring;
 # consumers read it at call time and must NOT re-declare a `:-<model>` literal.
-# It is NOT set here: ollama-models.js derives it from llm-models.jsonc (the largest
+# It is NOT set here: ollama-models.personal.js derives it from llm-models.jsonc (the largest
 # VRAM tier's first `agent` model — the default server is expected to be a big card) and registers it as
 # the "ollama default model" block right after this partial. The `${VAR:-...}` form
 # there lets an earlier export (~/.bash_custom_tweaks, or
 # `OLLAMA_DEFAULT_MODEL=x claude_local`) win over the repo default.
 
-# WSL: no Linux ollama is installed (ollama.sh skips it); the daemon and CLI live on
+# WSL: no Linux ollama is installed (ollama.personal.sh skips it); the daemon and CLI live on
 # the Windows host (winget Ollama.Ollama). Alias so `ollama list` / `ollama rm` work
 # from WSL. Interactive-only — `type -P ollama` in scripts ignores aliases on purpose.
 ((is_os_windows)) && type -P ollama.exe &> /dev/null && alias ollama="ollama.exe"

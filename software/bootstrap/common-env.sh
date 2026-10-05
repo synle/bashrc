@@ -57,7 +57,9 @@ function _detect_work_profile() {
   fi
 
   if [ -n "${_IS_WORK_PROFILE_OVERRIDE+x}" ]; then
-    is_truthy "$_IS_WORK_PROFILE_OVERRIDE" && is_work_profile=1 || is_work_profile=0
+    local override
+    override=$(printf '%s' "$_IS_WORK_PROFILE_OVERRIDE" | tr '[:upper:]' '[:lower:]')
+    case "$override" in 1 | true | y | yes) is_work_profile=1 ;; *) is_work_profile=0 ;; esac
   fi
 
   export is_work_profile
@@ -106,7 +108,7 @@ else
 fi
 
 # Detect a GPU and its VRAM to set is_system_gpu (0/1) and system_gpu_vram_mib.
-# Used to size local LLM pulls (software/scripts/advanced/llm/ollama-models.js picks
+# Used to size local LLM pulls (software/scripts/advanced/llm/ollama-models.personal.js picks
 # a model tier from system_gpu_vram_mib). Hardware does not change per session, so
 # run.sh bakes both values into ~/.bash_syle_common instead of re-probing per shell.
 #

@@ -165,7 +165,7 @@ Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
   fi
 
   # No `:-<model>` literal here on purpose. The default comes from llm-models.jsonc via
-  # the "ollama default model" profile block (ollama-models.js); duplicating a fallback
+  # the "ollama default model" profile block (ollama-models.personal.js); duplicating a fallback
   # tag is how this surface drifts away from opencode/Zed/VS Code.
   local default_model="$OLLAMA_DEFAULT_MODEL"
 

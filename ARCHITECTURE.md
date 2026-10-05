@@ -54,7 +54,8 @@ Output redirection: only `emitBash()` writes stdout; everything human-readable u
 
 1. Drop `.common.js` (shared helpers), `.standalone.js` (on-demand); `_full-setup.*` unless `IS_SETUP`; `advanced/` on limited-support OSes.
 2. Keep top-level scripts + only matching OS subdirs.
-3. Order: `_init` → `_full-setup` → `_only` → lexical → `~cleanup`/`~wrapup`.
+3. Filter exact `.personal.{js,sh}` / `.work.{js,sh}` suffixes against `is_work_profile`; explicit and preset runs use the same guard.
+4. Order: `_init` → `_full-setup` → `_only` → lexical → `~cleanup`/`~wrapup`, with same-name variants common → personal → work.
 
 Consecutive same-type scripts batch into one bash subshell; `.su.js` bundled so sudo prompts once. `--files=` bypasses ordering and always appends `~refresh-source.standalone.js` to refresh SOURCE blocks.
 

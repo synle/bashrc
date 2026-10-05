@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { getIndexFunction, getIndexConstant } from "./setup.js";
 
 const _filterFilesByOsGuard = getIndexFunction("_filterFilesByOsGuard");
+const _filterFilesByProfile = getIndexFunction("_filterFilesByProfile");
 const OS_SCRIPT_PATHS = getIndexConstant("OS_SCRIPT_PATHS");
 
 /**
@@ -94,5 +95,21 @@ describe("_filterFilesByOsGuard", () => {
       const input = ["mac/iterm.js", "windows/windows-terminal.js"];
       expect(_filterFilesByOsGuard(input)).toEqual(input);
     });
+  });
+});
+
+describe("_filterFilesByProfile", () => {
+  const files = ["abc.js", "abc.personal.js", "abc.work.js", "tool.sh", "tool.personal.sh", "tool.work.sh"];
+
+  it("keeps common and personal scripts on a personal profile", () => {
+    expect(_filterFilesByProfile(files, false)).toEqual(["abc.js", "abc.personal.js", "tool.sh", "tool.personal.sh"]);
+  });
+
+  it("keeps common and work scripts on a work profile", () => {
+    expect(_filterFilesByProfile(files, true)).toEqual(["abc.js", "abc.work.js", "tool.sh", "tool.work.sh"]);
+  });
+
+  it("does not classify incidental profile words as suffixes", () => {
+    expect(_filterFilesByProfile(["personal-tools.js", "work-helper.sh"], true)).toEqual(["personal-tools.js", "work-helper.sh"]);
   });
 });

@@ -27,6 +27,13 @@ describe("_getBundleRunnerType", () => {
     expect(_getBundleRunnerType("software/scripts/test.sh")).toBe("sh");
   });
 
+  it("keeps profile-qualified scripts in their language bundles", () => {
+    expect(_getBundleRunnerType("software/scripts/tool.personal.js")).toBe("js");
+    expect(_getBundleRunnerType("software/scripts/tool.work.js")).toBe("js");
+    expect(_getBundleRunnerType("software/scripts/tool.personal.sh")).toBe("sh");
+    expect(_getBundleRunnerType("software/scripts/tool.work.sh")).toBe("sh");
+  });
+
   it("should return null for .sh.js files", () => {
     expect(_getBundleRunnerType("software/scripts/install.sh.js")).toBe(null);
   });

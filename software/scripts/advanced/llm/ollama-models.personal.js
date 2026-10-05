@@ -137,8 +137,6 @@ function _spawnOllamaBackgroundPull(tags, logPath) {
  * @throws {ScriptSkipError} When the host is gated out or the daemon is unreachable.
  */
 async function doWork() {
-  if (is_work_profile) throw new ScriptSkipError("ollama model bootstrap: work profile");
-
   registerWithBashSyleProfile(
     "ollama default model",
     `export OLLAMA_DEFAULT_MODEL="\${OLLAMA_DEFAULT_MODEL:-${_getOllamaDefaultAgentModel()}}"`,

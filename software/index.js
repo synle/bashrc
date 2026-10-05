@@ -5036,6 +5036,13 @@ function filterRepoScripts(files) {
     // const bBundleRank = bundleOrder[_getBundleRunnerType(b)] ?? 2;
     // if (aBundleRank !== bBundleRank) return aBundleRank - bBundleRank;
 
+    // Profile variants stay adjacent to their common sibling in deterministic order.
+    const aProfileSort = _getScriptProfileSortParts(a);
+    const bProfileSort = _getScriptProfileSortParts(b);
+    if (aProfileSort.logicalPath === bProfileSort.logicalPath && aProfileSort.rank !== bProfileSort.rank) {
+      return aProfileSort.rank - bProfileSort.rank;
+    }
+
     // then alphabetically (byte-order, not locale, for cross-platform consistency)
     // ASCII sort reference for filename prefixes/markers:
     //   !  (33)   +  (43)   -  (45)   .  (46)
@@ -5046,6 +5053,46 @@ function filterRepoScripts(files) {
     const aSort = a.replace("/advanced/", "/");
     const bSort = b.replace("/advanced/", "/");
     return aSort < bSort ? -1 : aSort > bSort ? 1 : 0;
+  });
+}
+
+/**
+ * Returns the execution profile encoded by an exact script filename suffix.
+ * @param {string} file - Script path or basename.
+ * @returns {"common"|"personal"|"work"} Required profile.
+ */
+function _getScriptProfile(file) {
+  if (/\.personal\.(js|sh)$/.test(file)) return "personal";
+  if (/\.work\.(js|sh)$/.test(file)) return "work";
+  return "common";
+}
+
+/**
+ * Builds the sibling sort key and profile rank for an executable script.
+ * @param {string} file - Script path.
+ * @returns {{ logicalPath: string, rank: number }} Sort parts.
+ */
+function _getScriptProfileSortParts(file) {
+  const profile = _getScriptProfile(file);
+  const logicalPath = file.replace(/\.(personal|work)(?=\.(js|sh)$)/, "").replace("/advanced/", "/");
+  return { logicalPath, rank: { common: 0, personal: 1, work: 2 }[profile] };
+}
+
+/**
+ * Filters executable scripts by their exact `.personal.*` or `.work.*` suffix.
+ * @param {string[]} files - Script paths or basenames.
+ * @param {boolean} [workProfile=is_work_profile] - Active profile selector.
+ * @param {boolean} [logSkipped=false] - Whether to log each rejected explicit target.
+ * @returns {string[]} Scripts applicable to the active profile.
+ */
+function _filterFilesByProfile(files, workProfile = is_work_profile, logSkipped = false) {
+  return files.filter((file) => {
+    const profile = _getScriptProfile(file);
+    const accepted = profile === "common" || (profile === "work") === workProfile;
+    if (!accepted && logSkipped) {
+      log(`>> Skipped [profile guard]: ${file} — requires '${profile}' profile`);
+    }
+    return accepted;
   });
 }
 
@@ -5161,7 +5208,7 @@ async function getSoftwareScriptFiles() {
     softwareFiles = softwareFiles.filter((f) => !f.includes("/advanced/"));
   }
 
-  return _filterByOsFolders(softwareFiles, "software/scripts");
+  return _filterFilesByProfile(_filterByOsFolders(softwareFiles, "software/scripts"));
 }
 
 // --- Bash Execution ---
@@ -5855,14 +5902,12 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
   printOsFlags();
   printScriptsToRun(softwareFiles);
 
-  const total = softwareFiles.length;
-
   // Build entries with expanded paths, refresh targets, and bundle types.
   // filterRepoScripts() already groups scripts by bundle type (js → su.js → sh),
   // so consecutive grouping here naturally produces mega-bundles.
   // Scripts with ~ prefix (e.g. ~cleanup.js, ~wrapup.sh) are excluded from bundling —
   // they are slow or have special ordering requirements and must run individually.
-  const entries = softwareFiles.map((originalFile, i) => {
+  let entries = softwareFiles.map((originalFile, i) => {
     let file = originalFile;
     if (!file.startsWith("software/")) {
       file = `software/scripts/${file}`;
@@ -5883,6 +5928,11 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
       resolved,
     };
   });
+
+  // Re-check resolved paths so a fuzzy unsuffixed input cannot bypass profile policy
+  // by resolving to a `.personal.*` or `.work.*` script.
+  entries = entries.filter((entry) => _filterFilesByProfile([entry.file], is_work_profile, true).length > 0);
+  const total = entries.length;
 
   // Surface ambiguous matches up-front. Without this, an input like `--files=vim` would
   // route to the bundle dispatcher first, fail on missing extension, and the helpful
@@ -6127,6 +6177,7 @@ async function _doWorkTestFiles() {
   // Without this, explicit --files= or preset-expanded entries like windows/windows-terminal.js
   // would run on macOS and crash. Each filtered entry is logged so the user can see why.
   softwareFiles = _filterFilesByOsGuard(softwareFiles);
+  softwareFiles = _filterFilesByProfile(softwareFiles, is_work_profile, true);
 
   // Auto-append ~refresh-source.standalone.js to refresh SOURCE blocks in the profile
   // (full runs handle this via ~cleanup.js, but --files runs need it explicitly)

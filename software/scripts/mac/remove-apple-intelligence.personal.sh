@@ -4,7 +4,7 @@
 # Disable Apple Intelligence (Siri, Writing Tools, Genmoji, summaries, models, ...) on macOS 27
 # ("Golden Gate") only, via RemoveMacAI: https://github.com/omlahore/RemoveMacAI
 # Interactive: the tool confirms first and macOS requires approving its configuration profile.
-# Usage: bash run.sh --files="mac/remove-apple-intelligence.sh"
+# Usage: bash run.sh --files="mac/remove-apple-intelligence.personal.sh"
 # Undo:  curl -fsSL https://raw.githubusercontent.com/omlahore/RemoveMacAI/main/install.sh | bash -s revert
 
 REMOVE_MAC_AI_URL="https://raw.githubusercontent.com/omlahore/RemoveMacAI/main/install.sh"

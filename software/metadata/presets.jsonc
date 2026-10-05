@@ -58,8 +58,8 @@
   "llm": {
     "description": "Building block: AI CLI clients — install + configure Claude Code, GitHub Copilot, Google Gemini, OpenCode, and Pi (settings, keybindings, shared instructions, slash commands). Claude is the base — all CLIs read the same `_common/instructions.md`, OpenCode symlinks Claude's `/sy-*` commands, and Pi reads the shared skills from `~/.agents/skills`.",
     "files": [
-      "advanced/llm/ollama.sh",
-      "advanced/llm/ollama-models.js",
+      "advanced/llm/ollama.personal.sh",
+      "advanced/llm/ollama-models.personal.js",
       "advanced/llm/claude/install.sh",
       "advanced/llm/claude/setup.js",
       "advanced/llm/copilot/install.sh",

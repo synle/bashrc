@@ -114,8 +114,9 @@ describe("SY_ROOT_FOLDER", () => {
   });
 
   it("has no personal-root literal outside the declaration and its documented fallbacks", () => {
-    const tracked = execFileSync("git", ["ls-files"], { cwd: ROOT_DIR, encoding: "utf8" })
+    const tracked = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], { cwd: ROOT_DIR, encoding: "utf8" })
       .split("\n")
+      .filter((file) => fs.existsSync(path.join(ROOT_DIR, file)))
       .filter((file) => /\.(js|sh|bash)$/.test(file))
       .filter((file) => !file.startsWith("software/tests/"))
       .filter((file) => !ALLOWED_LITERAL_FILES.includes(file));

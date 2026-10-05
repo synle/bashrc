@@ -200,7 +200,7 @@ and any doc or config claiming otherwise is wrong.
 > **Model picks live in one place:**
 > [`software/scripts/advanced/llm/llm-models.jsonc`](../software/scripts/advanced/llm/llm-models.jsonc)
 > — the Ollama inventory, one `{ tag, role }` set per VRAM tier (agent, vision,
-> autocomplete), with size and an ollama.com link per model. `ollama-models.js`
+> autocomplete), with size and an ollama.com link per model. `ollama-models.personal.js`
 > pulls the tier matching the host's VRAM. Local models move fast, so this doc
 > deliberately carries no model tables; read the tiers there.
 

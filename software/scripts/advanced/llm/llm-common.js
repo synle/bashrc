@@ -183,7 +183,7 @@ const OLLAMA_PORT = 11434;
 // never hand-maintain a second list:
 //   AUTOCOMPLETE_MODELS      Zed edit_predictions (tiers smallest → largest)
 //   LLM_LOCAL_AGENT_MODELS   opencode `local` agent (tiers largest → smallest)
-//   getOllamaModelsForVram   what ollama-models.js pulls for a given VRAM size
+//   getOllamaModelsForVram   what ollama-models.personal.js pulls for a given VRAM size
 // A model pulled by hand that is not in a tier still works: opencode and Zed discover
 // it from /api/tags, it just gets no `local` agent slot.
 //

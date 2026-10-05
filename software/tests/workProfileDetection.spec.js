@@ -34,7 +34,6 @@ function extractFunction(name) {
 }
 
 const DETECTOR = extractFunction("_detect_work_profile");
-const IS_TRUTHY = extractFunction("is_truthy");
 
 /**
  * Runs the real detector with a controlled OS, hostname, and optional override.
@@ -43,9 +42,7 @@ const IS_TRUTHY = extractFunction("is_truthy");
  */
 function detectWorkProfile({ isMac = false, hostname = "personal.local", override } = {}) {
   const script = [
-    IS_TRUTHY,
     DETECTOR,
-    "function is_help_arg() { return 1; }",
     `export TEST_HOSTNAME=${JSON.stringify(hostname)}`,
     `export PATH=${JSON.stringify(`${TEST_BIN}:/usr/bin:/bin`)}`,
     `export is_os_mac=${isMac ? 1 : 0}`,
