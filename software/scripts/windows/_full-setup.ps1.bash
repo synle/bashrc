@@ -269,32 +269,36 @@ foreach ($exe in $AdobeExeList) {
 
 # --- Allow inbound ports for local dev, AI, and DB services (Private network only) ---
 # To set a network as Private: Settings > Network & Internet > Wi-Fi/Ethernet > Private network
+$devStackPorts = @(
+    # dev stack
+    22,           # SSH
+    80,           # HTTP (local nginx, Apache, Docker)
+    443,          # HTTPS (mkcert, self-signed, Docker)
+    1433,         # SQL Server
+    "3000-9999",  # dev servers, MySQL, Postgres, Redis, backends, Jupyter, Portainer, Temporal (7233 gRPC, 8233 UI), etc.
+    27017,         # MongoDB
+    # Media streaming
+    8096,         # Jellyfin HTTP
+    8920,         # Jellyfin HTTPS
+    32400,        # Plex web UI / streaming
+    3005,         # Plex Companion
+    8324,         # Plex for Roku
+    32469,        # Plex DLNA server
+    # Game streaming
+    47984,        # Sunshine HTTPS
+    47989,        # Sunshine HTTP
+    47990,        # Sunshine Control
+    48010         # Sunshine Web UI
+)
+if (<<IS_WORK_PROFILE>> -eq 0) {
+    $devStackPorts += 11434 # Ollama REST API
+}
+
 $allowRules = @(
     @{
         Name = "_Sy_ALLOW_DevStack"
         Desc = "Dev servers, databases, backends, and standard services"
-        Ports = @(
-            # dev stack
-            22,           # SSH
-            80,           # HTTP (local nginx, Apache, Docker)
-            443,          # HTTPS (mkcert, self-signed, Docker)
-            1433,         # SQL Server
-            "3000-9999",  # dev servers, MySQL, Postgres, Redis, backends, Jupyter, Portainer, Temporal (7233 gRPC, 8233 UI), etc.
-            $(if (<<IS_WORK_PROFILE>> -eq 0) { 11434 }), # Ollama REST API
-            27017,         # MongoDB
-            # Media streaming
-            8096,         # Jellyfin HTTP
-            8920,         # Jellyfin HTTPS
-            32400,        # Plex web UI / streaming
-            3005,         # Plex Companion
-            8324,         # Plex for Roku
-            32469,        # Plex DLNA server
-            # Game streaming
-            47984,        # Sunshine HTTPS
-            47989,        # Sunshine HTTP
-            47990,        # Sunshine Control
-            48010         # Sunshine Web UI
-        )
+        Ports = $devStackPorts
     }
 )
 foreach ($rule in $allowRules) {

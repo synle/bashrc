@@ -7,6 +7,9 @@ import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const COMMON_ENV = path.join(ROOT_DIR, "software/bootstrap/common-env.sh");
+const WINDOWS_INIT = path.join(ROOT_DIR, "software/scripts/windows/_init.js");
+const WINDOWS_SETUP = path.join(ROOT_DIR, "software/scripts/windows/_full-setup.ps1.bash");
+const POWERSHELL_PROFILE = path.join(ROOT_DIR, "software/scripts/windows/powershell-profile.ps1.bash");
 const TEST_BIN = fs.mkdtempSync("/tmp/work_profile_detection_");
 fs.writeFileSync(path.join(TEST_BIN, "hostname"), "#!/bin/bash\ncommand printf '%s\\n' \"$TEST_HOSTNAME\"\n", { mode: 0o755 });
 
@@ -73,5 +76,22 @@ describe("_detect_work_profile", () => {
 
   it("lets a truthy override enable work profile off macOS", () => {
     expect(detectWorkProfile({ hostname: "personal.local", override: "yes" })).toBe(1);
+  });
+});
+
+describe("Windows work-profile templates", () => {
+  it("renders every work-profile placeholder through windows/_init.js", () => {
+    const initSource = fs.readFileSync(WINDOWS_INIT, "utf-8");
+    for (const template of [WINDOWS_SETUP, POWERSHELL_PROFILE]) {
+      expect(fs.readFileSync(template, "utf-8")).toContain("<<IS_WORK_PROFILE>>");
+    }
+    expect(initSource.match(/IS_WORK_PROFILE: Number\(is_work_profile\)/g)).toHaveLength(2);
+  });
+
+  it("builds the firewall port list without a null-producing inline conditional", () => {
+    const setupSource = fs.readFileSync(WINDOWS_SETUP, "utf-8");
+    expect(setupSource).toContain("$devStackPorts += 11434 # Ollama REST API");
+    expect(setupSource).toContain("Ports = $devStackPorts");
+    expect(setupSource).not.toMatch(/\$\(if \(<<IS_WORK_PROFILE>>/);
   });
 });
