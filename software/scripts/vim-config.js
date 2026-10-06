@@ -41,9 +41,7 @@ async function doWork() {
 
       " --- Syntax & Language Support ---
       Jetpack 'pangloss/vim-javascript'                                 " Improved JavaScript syntax and indentation
-      Jetpack 'isRuslan/vim-es6'                                        " ES6+ syntax highlighting (arrow functions, template strings, etc.)
       Jetpack 'maxmellon/vim-jsx-pretty'                                " JSX/TSX syntax highlighting with pretty indentation
-      Jetpack 'mxw/vim-jsx'                                             " JSX syntax support for React components
       Jetpack 'peitalin/vim-jsx-typescript'                             " TypeScript JSX (.tsx) syntax highlighting
       Jetpack 'leafgarland/typescript-vim'                              " TypeScript syntax highlighting and indentation
       Jetpack 'styled-components/vim-styled-components', { 'branch': 'main' } " Syntax highlighting inside styled-components template literals
