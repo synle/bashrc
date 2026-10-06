@@ -1028,7 +1028,11 @@ describe("list_prs — shell wrappers", () => {
   it("offers am / dm / ig with am as the default and prints the gh commands first", () => {
     expect(MERGE_CLI_SOURCE).toContain("function parseAction(");
     expect(MERGE_CLI_SOURCE).toContain('if (!value) return "am"');
-    expect(MERGE_CLI_SOURCE).toContain("[am] enable auto-merge · [dm] disable auto-merge · [ig] ignore (default: am)");
+    expect(MERGE_CLI_SOURCE).toContain('info(colorize(34, "[am] enable auto-merge (default)"))');
+    expect(MERGE_CLI_SOURCE).toContain('info(colorize(36, "[dm] disable auto-merge"))');
+    expect(MERGE_CLI_SOURCE).toContain('info(colorize(32, "[ig] ignore"))');
+    expect(MERGE_CLI_SOURCE.match(/info\(LINE_BREAK_EQUAL\);/g)).toHaveLength(2);
+    expect(MERGE_CLI_SOURCE).toContain('input.question("Enter action: ", resolve)');
     expect(MERGE_CLI_SOURCE).toContain("--disable-auto");
     expect(MERGE_CLI_SOURCE).toContain("Commands to be run:");
     expect(MERGE_CLI_SOURCE).toContain("function formatCommand(");

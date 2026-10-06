@@ -12,6 +12,9 @@ const { spawnSync } = require("child_process");
 const fs = require("fs");
 const readline = require("readline");
 
+/** Standard terminal separator. */
+const LINE_BREAK_EQUAL = "=".repeat(80);
+
 /**
  * Write a message to stderr.
  * @param {string} message
@@ -19,6 +22,17 @@ const readline = require("readline");
  */
 function info(message) {
   process.stderr.write(`${message}\n`);
+}
+
+/**
+ * Add terminal color when stderr is interactive.
+ * @param {number} color
+ * @param {string} message
+ * @returns {string}
+ */
+function colorize(color, message) {
+  if (!process.stderr.isTTY) return message;
+  return `\x1b[0;${color}m${message}\x1b[0m`;
 }
 
 /**
@@ -135,10 +149,13 @@ function askAction(prompt) {
   }
 
   const input = readline.createInterface({ input: source, output: process.stderr });
-  const ask = () =>
-    new Promise((resolve) => {
-      input.question(`${prompt} [am] enable auto-merge · [dm] disable auto-merge · [ig] ignore (default: am) `, resolve);
-    });
+  info(LINE_BREAK_EQUAL);
+  info(prompt);
+  info(colorize(34, "[am] enable auto-merge (default)"));
+  info(colorize(36, "[dm] disable auto-merge"));
+  info(colorize(32, "[ig] ignore"));
+  info(LINE_BREAK_EQUAL);
+  const ask = () => new Promise((resolve) => input.question("Enter action: ", resolve));
   return (async () => {
     for (;;) {
       const action = parseAction(await ask());
