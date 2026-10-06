@@ -296,7 +296,9 @@ function _sy_apply_arguments() {
   shift
   if [[ "$body" == *'$ARGUMENTS'* ]]; then
     local joined="$*"
-    printf '%s' "${body//\$ARGUMENTS/$joined}"
+    # Quote the replacement: bash 5.2+ patsub_replacement expands a bare `&`
+    # in it to the matched text, corrupting args like `?a=1&b=2`.
+    printf '%s' "${body//\$ARGUMENTS/"$joined"}"
   elif [ $# -gt 0 ]; then
     printf '%s\n\nArguments: %s' "$body" "$*"
   else

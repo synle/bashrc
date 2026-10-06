@@ -268,6 +268,12 @@ describe("sy-commands dispatch modes", () => {
     expect(out).toBe("opencode [--prompt] [the body]");
   });
 
+  it("keeps a literal & in $ARGUMENTS under bash 5.2+ patsub_replacement", () => {
+    writeCommand("foo", "Open $ARGUMENTS now");
+    const out = runBash('SY_SKILL_INLINE=1 opencode_skill_foo "https://x.test/?a=1&b=2" 2>/dev/null');
+    expect(out).toBe("opencode [--prompt] [Open https://x.test/?a=1&b=2 now]");
+  });
+
   it("forwards OpenCode args inside the interactive slash prompt", () => {
     writeCommand("foo", "the body");
     const out = runBash("opencode_skill_foo alpha beta 2>/dev/null");
