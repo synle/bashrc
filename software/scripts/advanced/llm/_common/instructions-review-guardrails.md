@@ -15,6 +15,10 @@ Honesty from the main instructions governs this file too.
 - **Review expected absences.** Before reading hunks, list artifacts the intent should require — migration, test, logging, rollback, docs, config — then investigate missing ones. A file absent from the diff can carry the highest-risk regression.
 - **Removed guards have history.** Before approving a deleted or weakened guard, `git log -L` its lines; an introducing commit citing a bug, CVE, or incident makes the removal a regression until the author shows the cause is gone.
 - **Hunt deletable complexity.** Beyond defects, flag reinvented stdlib, single-implementation abstractions, and unused flexibility — one line each: location, cut, replacement.
+- **Self-review from a fresh context.** Review your own diff in a fresh subagent given only the diff, touched files, and rules — or, with none available, judge only from re-read files, never from memory of writing them.
+- **Bolted-on conditionals are design findings.** A new branch special-casing one input inside an unrelated flow, or the same shape test repeated across call sites, signals a missing model or dispatcher — report it at design severity, not as a nit.
+- **CI expressions are untrusted input.** A workflow interpolating `${{ github.event.* }}` (titles, bodies, branch names) into a `run:` block is script injection — pass it through `env:` instead; flag unscoped or write-all `permissions:`.
+- **Feature flags carry an owner and an expiry.** CI exercises both flag states; a flag with no removal date is permanent dead code waiting to happen.
 - **One behavior, every path.** Route sync/async, streaming/batch, manual/scheduled,
   list/detail, runtime/standalone, and fallback paths through one implementation seam.
   When duplication is unavoidable, run identical contract fixtures through every path

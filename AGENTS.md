@@ -651,7 +651,8 @@ ln -sfn ../../.claude/skills/<name>/SKILL.md .opencode/commands/<name>.md
 
 One `SKILL.md` is read by four CLIs — write to the open Agent Skills lowest common denominator.
 
-- **Frontmatter is exactly two keys:** `name` (kebab-case, equals folder name) and
+- **Frontmatter is exactly two keys:** `name` (kebab-case, no leading/trailing/double
+  hyphen, equals folder name) and
   `description`. No `model`, `agent`, `tools`, `permissions`, `allowed-tools`,
   `context`, `argument-hint`. Vendor-specific behavior goes in a supporting file beside `SKILL.md`.
 - **`description` is the trigger** — what + when in one sentence-pair ("Synchronize …
