@@ -768,7 +768,7 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
   helpers (`isSharedLLMArtifactTarget()`, `isUnderSharedLLMHome()`) match every root we
   have ever used on a path boundary, so pre-move dangling links stay recognized as ours.
 - **The always-loaded block has a hard size budget:** Claude Code refuses `CLAUDE.md`
-  over 40k chars; keep `instructions.md` under 35k — split a section rather than trim rules.
+  over 40k chars; keep `instructions.md` under 39.5k — split a section rather than trim rules.
   PR-workflow/debugging/testing/readability/review-guardrail rules live in
   `_common/instructions-{pr-workflow,debugging,testing,readability,review-guardrails}.md`.
   - Reference split files as a backticked path, **never `@path`** (an `@`-import

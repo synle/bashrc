@@ -52,12 +52,8 @@ const resolvePlaceholders = getIndexFunction("resolvePlaceholders");
  */
 const CLAUDE_MD_CHAR_LIMIT = 40000;
 
-/**
- * Headroom kept below the limit so a normal rule addition can't push the deployed
- * file over between one commit and the next.
- * @type {number}
- */
-const CHAR_BUDGET = CLAUDE_MD_CHAR_LIMIT - 5000;
+/** @type {number} Maximum character budget for the source instructions. */
+const CHAR_BUDGET = 39500;
 
 /** @type {string} Always-loaded instructions, as deployed. */
 const instructions = fs.readFileSync(INSTRUCTIONS_PATH, "utf-8");
