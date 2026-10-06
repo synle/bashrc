@@ -20,12 +20,13 @@ Honesty from the main instructions governs this file too.
   When duplication is unavoidable, run identical contract fixtures through every path
   and compare observable results.
 - **Retry taxonomy is public behavior.** Map one exception or result type to one retry
-- **Idempotency keys come from intent, not attempt.** Claim the key atomically (never SELECT-then-INSERT); same key with a different payload is rejected; a timeout is `unknown`, not failure.
-- **Authorize the resource, not just the caller.** Every request checks the caller may touch that specific object (IDOR); server-side fetches of user-supplied URLs go through an allowlist (SSRF).
   policy. Keep transient transport failures, deterministic input or contract failures,
   authorization failures, and capacity limits distinct; tests assert both the public
   error and whether the caller retries. Unknown failures never become empty data or
   success.
+- **Idempotency keys come from intent, not attempt.** Claim the key atomically (never SELECT-then-INSERT); same key with a different payload is rejected; retention outlives the longest retry or redelivery path; in-flight duplicates have explicit bounded behavior; a timeout is `unknown`, not failure.
+- **Authorize the resource, not just the caller.** Every request checks the caller may touch that specific object (IDOR); server-side fetches of user-supplied URLs go through an allowlist (SSRF).
+- **Derived deletion targets prove containment.** Resolve the final path, reject symlinks and check/use races, require an allowlisted root plus minimum depth and ownership evidence, then delete only that verified target.
 - **Selectors prove uniqueness.** Select from a repeated collection with the complete
   structural key. A reduced key needs a documented uniqueness scope enforced by
   producer validation and consumer tests.
@@ -33,6 +34,9 @@ Honesty from the main instructions governs this file too.
   write, reject unknowns, bound numerics, enforce one persisted value per scope+key,
   and use symmetric read/write resolution. Safety controls fail closed outside
   explicit development mode.
+- **Caches key every varying input.** Include every value that can change the result,
+  especially tenant, user, locale, authorization scope, and version. Name acceptable
+  staleness, invalidation, and stampede behavior before adding a cache.
 - **Cryptographic pseudonyms fail closed.** Missing key material is an error, never an
   empty-key fallback. Redactors normalize key style before matching and test nested
   snake_case, camelCase, and mixed payloads.
