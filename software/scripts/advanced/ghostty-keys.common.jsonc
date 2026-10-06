@@ -75,6 +75,11 @@
   { "key": "OS_KEY+shift+v", "action": "paste_from_clipboard" },
   { "key": "OS_KEY+shift+a", "action": "select_all" },
   { "key": "OS_KEY+shift+f", "action": "start_search" },
+  // OS_KEY+y sends ESC y (= alt+y), which tmux binds to "copy the whole
+  // scrollback". Needed on macOS where cmd never reaches tmux; on Linux
+  // OS_KEY is alt, so this just re-sends the same chord. Outside tmux bash
+  // reads it as yank-pop.
+  { "key": "OS_KEY+y", "action": "text:\\x1by" },
 
   // ---- View ----
   { "key": "f11", "action": "toggle_fullscreen" },

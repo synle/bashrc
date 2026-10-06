@@ -353,6 +353,7 @@ the `prefix+:` prompt.
 | `OS_KEY+v`       | Paste                     |        ✅        |  ❌  |   ✅    |
 | `OS_KEY+f`       | Find                      |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+g`       | Copy mode                 |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+y`       | Copy whole scrollback     |        ❌        |  ✅  |   ✅    |
 | `OS_KEY+a`       | Select all                |        ✅        |  ❌  |   ✅    |
 | `OS_KEY+shift+c` | Copy (escape hatch)       |        ✅        |  ❌  |   ✅    |
 | `OS_KEY+shift+v` | Paste (escape hatch)      |        ✅        |  ❌  |   ✅    |
