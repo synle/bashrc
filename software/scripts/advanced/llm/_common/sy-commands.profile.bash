@@ -43,7 +43,7 @@
 #   opencode_skill_inline "free text"    # raw prompt, no skill body
 #   sy-inline gemini "free text"         # raw prompt, CLI picked at call time
 #
-# --- Dispatch modes: inline (default) vs native ---
+# --- Dispatch modes: inline vs native ---
 #
 # inline  Read the skill body off disk and hand the whole text to the CLI as an
 #         ordinary prompt. Works on every CLI, needs nothing deployed into that
@@ -80,15 +80,16 @@
 
 # --- Registry ---
 
-# Default dispatch mode. `inline` is the only shape every CLI supports, so it
-# is the floor; override per-call or per-shell with $SY_SKILL_MODE.
+# Fallback dispatch mode for CLI records that do not choose their own default.
+# `inline` is the only shape every CLI supports; override per-call or per-shell
+# with $SY_SKILL_MODE.
 _SY_DEFAULT_SKILL_MODE="inline"
 
 # THE registry. One record per LLM CLI, and the ONLY place in this file that
 # names a CLI or knows how to invoke one — every function below is generic and
 # reads its argv shape from here. Record fields are `|` separated:
 #
-#   <cli>|<prompt-args>|<native-kind>|<native-args>
+#   <cli>|<prompt-args>|<native-kind>|<native-args>|<default-mode>
 #
 #   cli          Binary name, also the `<cli>_skill_<name>` wrapper prefix and
 #                the accepted `$LLM` / positional-override token.
@@ -109,6 +110,8 @@ _SY_DEFAULT_SKILL_MODE="inline"
 #                           `inline`, which always works.
 #   native-args  Fixed argv tokens for the `command` kind, followed by the skill
 #                name and then the forwarded args. Only read when kind=command.
+#   default-mode Optional `inline` or `native` override for this CLI. Empty uses
+#                `_SY_DEFAULT_SKILL_MODE`. Explicit $SY_SKILL_MODE always wins.
 #
 # A native-kind is a CLAIM ABOUT A BINARY — verify it or leave it empty. An
 # unproven `slash` silently sends `/sy-foo` as literal prose and the skill never
@@ -117,15 +120,15 @@ _SY_DEFAULT_SKILL_MODE="inline"
 #                      `--bare` states "Skills still resolve via /skill-name".
 #                      Not runtime-verified here (no API key on the test host).
 #   copilot   slash    runtime-verified v1.0.81: `copilot -p "/sy-<name>"` fired
-#                      `skill(sy-<name>)` and returned the skill's output.
+#                      `skill(sy-<name>)` and returned the skill's output. This
+#                      verified native route is the default for pinned wrappers.
 #   gemini    (empty)  no `--command` flag and no documented slash handling for
 #                      `-p`; left unset so it degrades to inline rather than
 #                      shipping an unproven claim.
-#   opencode  command  runtime-verified: `opencode run --command sy-<name>`
-#                      returned the skill's output. Flag is documented in
-#                      `opencode run --help`. Its prompt-args are `--prompt`
-#                      (documented in `opencode --help` as "prompt to use"),
-#                      which seeds the TUI, NOT `run`, which is headless.
+#   opencode  slash    runtime-verified: `opencode --prompt "/sy-<name>"`
+#                      opens the TUI and resolves the mirrored command. Inline
+#                      prompts can exceed OpenCode's initial-prompt handling and
+#                      fall back to help, so this CLI defaults to native mode.
 #   pi        (empty)  `pi -p "<text>"` is the non-interactive print mode
 #                      (`pi --help`). Skills register as `/skill:<name>` commands
 #                      but that resolution is documented for the interactive
@@ -135,11 +138,11 @@ _SY_DEFAULT_SKILL_MODE="inline"
 # Adding a CLI is ONE record here and nothing else. Order matters only in that
 # the first record is the default CLI (see _SY_DEFAULT_LLM below).
 _SY_LLM_SPECS=(
-  "claude||slash|"
-  "copilot|-p|slash|"
-  "gemini|-p||"
-  "opencode|--prompt|command|run --command"
-  "pi|-p||"
+  "claude||slash||"
+  "copilot|-p|slash||native"
+  "gemini|-p|||"
+  "opencode|--prompt|slash||native"
+  "pi|-p|||"
 )
 
 # Directory where the deployed prompt bodies live. Single canonical location
@@ -189,14 +192,14 @@ function _sy_is_supported_llm() {
 }
 
 # _sy_load_spec: look CLI $1 up in _SY_LLM_SPECS and ASSIGN its fields to the
-# caller's `_sy_prompt_args` / `_sy_kind` / `_sy_native_args` locals. Returns 1
-# when the CLI is not in the registry.
+# caller's `_sy_prompt_args` / `_sy_kind` / `_sy_native_args` /
+# `_sy_default_mode` locals. Returns 1 when the CLI is not in the registry.
 #
 # Assigns into caller locals (bash dynamic scoping) rather than echoing so a
 # dispatch costs no subshell fork, and parses with parameter expansion only —
 # no `cut`, no `read`, no herestring.
 #
-# Callers MUST declare all three as `local` before calling.
+# Callers MUST declare all four as `local` before calling.
 function _sy_load_spec() {
   local candidate="$1"
   local spec rest
@@ -206,7 +209,9 @@ function _sy_load_spec() {
     _sy_prompt_args="${rest%%|*}"
     rest="${rest#*|}"
     _sy_kind="${rest%%|*}"
-    _sy_native_args="${rest#*|}"
+    rest="${rest#*|}"
+    _sy_native_args="${rest%%|*}"
+    _sy_default_mode="${rest#*|}"
     return 0
   done
   return 1
@@ -216,7 +221,7 @@ function _sy_load_spec() {
 # that CLI has no native surface. Thin read-only view over _sy_load_spec, kept
 # so callers that only care about the kind don't declare three throwaway locals.
 function _sy_native_kind() {
-  local _sy_prompt_args _sy_kind _sy_native_args
+  local _sy_prompt_args _sy_kind _sy_native_args _sy_default_mode
   _sy_load_spec "$1" || return 1
   echo "$_sy_kind"
 }
@@ -240,12 +245,13 @@ function _sy_resolve_llm() {
   echo "$_SY_DEFAULT_LLM"
 }
 
-# _sy_resolve_mode: stdout `inline` or `native`. Unknown values for
-# $SY_SKILL_MODE fall back to the default rather than failing the call.
+# _sy_resolve_mode: stdout `inline` or `native`. $1 is the CLI's optional
+# default. Unknown $SY_SKILL_MODE values fall back to that CLI default, then the
+# shared default, rather than failing the call.
 function _sy_resolve_mode() {
   case "${SY_SKILL_MODE:-}" in
   inline | native) echo "$SY_SKILL_MODE" ;;
-  *) echo "$_SY_DEFAULT_SKILL_MODE" ;;
+  *) echo "${1:-$_SY_DEFAULT_SKILL_MODE}" ;;
   esac
 }
 
@@ -307,7 +313,7 @@ function _sy_apply_arguments() {
 function _sy_exec_prompt() {
   local llm="$1"
   local prompt="$2"
-  local _sy_prompt_args _sy_kind _sy_native_args
+  local _sy_prompt_args _sy_kind _sy_native_args _sy_default_mode
   if ! _sy_load_spec "$llm"; then
     echo "sy: '$llm' is not in _SY_LLM_SPECS" >&2
     return 1
@@ -332,7 +338,7 @@ function _sy_exec_named() {
   local llm="$1"
   local skill="$2"
   shift 2
-  local _sy_prompt_args _sy_kind _sy_native_args
+  local _sy_prompt_args _sy_kind _sy_native_args _sy_default_mode
   if ! _sy_load_spec "$llm"; then
     echo "sy: '$llm' is not in _SY_LLM_SPECS" >&2
     return 1
@@ -447,13 +453,13 @@ function _sy_run() {
   shift
   local llm
   llm=$(_sy_resolve_llm "${_SY_LLM:-}")
-  local _sy_prompt_args _sy_kind _sy_native_args
+  local _sy_prompt_args _sy_kind _sy_native_args _sy_default_mode
   if ! _sy_load_spec "$llm"; then
     echo "sy-$name: '$llm' is not in _SY_LLM_SPECS" >&2
     return 1
   fi
   local mode
-  mode=$(_sy_resolve_mode)
+  mode=$(_sy_resolve_mode "$_sy_default_mode")
   if [ "$mode" = "native" ] && [ -n "$_sy_kind" ]; then
     _sy_assert_skill "$name" || return 1
     echo ">> sy-$name -> $llm (native/$_sy_kind)" >&2
@@ -509,9 +515,9 @@ function _sy_help() {
   Pinned per-CLI variants exist too: ${_SY_SUPPORTED_LLMS[0]}_skill_${name//-/_} (etc)."
   fi
   echo "
-  SY_SKILL_MODE   'inline' (default) sends the whole body as a prompt; 'native'
-                  names the skill and lets the CLI resolve it. CLIs with no
-                  native surface fall back to inline.
+  SY_SKILL_MODE   'inline' sends the whole body as a prompt; 'native' names the
+                  skill and lets the CLI resolve it. Unset uses the CLI's
+                  registry default. CLIs with no native surface fall back to inline.
 
   Body is loaded from $_SY_SKILLS_DIR/sy-$name/SKILL.md (deployed by any CLI's setup.js).
   Re-run \`bash run.sh --preset=llm\` to refresh if the body is stale."

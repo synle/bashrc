@@ -106,9 +106,7 @@ describe("sy-commands dispatcher", () => {
   it("uses the leading positional arg when it names a supported CLI, stripping it from prompt args", () => {
     writeCommand("foo", "body");
     const out = runBash("sy-foo opencode arg1 arg2 2>/dev/null");
-    expect(out).toContain("opencode [--prompt]");
-    expect(out).toContain("body");
-    expect(out).toContain("Arguments: arg1 arg2");
+    expect(out).toBe("opencode [--prompt] [/sy-foo arg1 arg2]");
   });
 
   it("does NOT strip the first arg when it is not a supported CLI", () => {
@@ -190,7 +188,7 @@ describe("sy-commands CLI registry", () => {
   it("declares a native dispatch kind only for CLIs that expose one", () => {
     expect(runBash("_sy_native_kind claude")).toBe("slash");
     expect(runBash("_sy_native_kind copilot")).toBe("slash");
-    expect(runBash("_sy_native_kind opencode")).toBe("command");
+    expect(runBash("_sy_native_kind opencode")).toBe("slash");
     // gemini and pi have no verified native surface — empty means "degrade to inline".
     expect(runBash("_sy_native_kind gemini")).toBe("");
     expect(runBash("_sy_native_kind pi")).toBe("");
@@ -256,24 +254,29 @@ describe("sy-commands pinned <cli>_skill_<name> wrappers", () => {
 });
 
 describe("sy-commands dispatch modes", () => {
-  it("inlines the whole body by default", () => {
+  it("uses OpenCode's interactive native skill route by default", () => {
     writeCommand("foo", "the body");
-    expect(runBash("opencode_skill_foo 2>/dev/null")).toBe("opencode [--prompt] [the body]");
+    expect(runBash("opencode_skill_foo alpha beta 2>/dev/null")).toBe("opencode [--prompt] [/sy-foo alpha beta]");
   });
 
-  it("names the skill through the CLI flag when the kind is `command`", () => {
-    writeCommand("foo", "the body");
-    const out = runBash("SY_SKILL_MODE=native opencode_skill_foo 2>/dev/null");
-    expect(out).toBe("opencode [run] [--command] [sy-foo]");
+  it("uses Copilot's native skill route by default", () => {
+    writeCommand("list-prs", "the full list-prs body");
+    expect(runBash("copilot_skill_list_prs table pwd 2>/dev/null")).toBe("copilot [-p] [/sy-list-prs table pwd]");
   });
 
-  it("forwards args after the skill name for a `command` CLI", () => {
+  it("honors an explicit inline override for OpenCode", () => {
+    writeCommand("foo", "the body");
+    const out = runBash("SY_SKILL_MODE=inline opencode_skill_foo 2>/dev/null");
+    expect(out).toBe("opencode [--prompt] [the body]");
+  });
+
+  it("forwards OpenCode args inside the interactive slash prompt", () => {
     writeCommand("foo", "the body");
     const out = runBash("SY_SKILL_MODE=native opencode_skill_foo alpha beta 2>/dev/null");
-    expect(out).toBe("opencode [run] [--command] [sy-foo] [alpha] [beta]");
+    expect(out).toBe("opencode [--prompt] [/sy-foo alpha beta]");
   });
 
-  it("sends `/<skill>` as ordinary prompt text when the kind is `slash`", () => {
+  it("sends `/<skill>` as ordinary prompt text when native mode is explicit", () => {
     writeCommand("foo", "the body");
     expect(runBash("SY_SKILL_MODE=native copilot_skill_foo 2>/dev/null")).toBe("copilot [-p] [/sy-foo]");
     expect(runBash("SY_SKILL_MODE=native claude_skill_foo 2>/dev/null")).toBe("claude [/sy-foo]");
@@ -293,12 +296,12 @@ describe("sy-commands dispatch modes", () => {
   it("honors SY_SKILL_MODE on the call-time sy-<name> family too", () => {
     writeCommand("foo", "the body");
     const out = runBash("SY_SKILL_MODE=native sy-foo opencode 2>/dev/null");
-    expect(out).toBe("opencode [run] [--command] [sy-foo]");
+    expect(out).toBe("opencode [--prompt] [/sy-foo]");
   });
 
-  it("falls back to inline when SY_SKILL_MODE is an unknown value", () => {
+  it("falls back to the CLI default when SY_SKILL_MODE is an unknown value", () => {
     writeCommand("foo", "the body");
-    expect(runBash("SY_SKILL_MODE=bogus opencode_skill_foo 2>/dev/null")).toBe("opencode [--prompt] [the body]");
+    expect(runBash("SY_SKILL_MODE=bogus opencode_skill_foo 2>/dev/null")).toBe("opencode [--prompt] [/sy-foo]");
   });
 
   it("still errors on a missing skill in native mode, before invoking any CLI", () => {
@@ -314,8 +317,8 @@ describe("sy-commands dispatch modes", () => {
 
   it("tags the routing line with the mode that fired", () => {
     writeCommand("foo", "body");
-    expect(runBash("opencode_skill_foo 2>&1 >/dev/null")).toContain(">> sy-foo -> opencode (inline)");
-    expect(runBash("SY_SKILL_MODE=native opencode_skill_foo 2>&1 >/dev/null")).toContain(">> sy-foo -> opencode (native/command)");
+    expect(runBash("opencode_skill_foo 2>&1 >/dev/null")).toContain(">> sy-foo -> opencode (native/slash)");
+    expect(runBash("SY_SKILL_MODE=inline opencode_skill_foo 2>&1 >/dev/null")).toContain(">> sy-foo -> opencode (inline)");
   });
 });
 
@@ -346,7 +349,9 @@ describe("sy-commands raw-prompt inline wrappers", () => {
     writeCommand("foo", "the body");
     // Shadow the pinned inline wrapper: if the skill dispatch still reaches the
     // CLI, it bypassed <cli>_skill_inline and the indirection is not real.
-    const out = runBash('function opencode_skill_inline() { echo "intercepted [$1]"; }; opencode_skill_foo 2>/dev/null');
+    const out = runBash(
+      'function opencode_skill_inline() { echo "intercepted [$1]"; }; SY_SKILL_MODE=inline opencode_skill_foo 2>/dev/null',
+    );
     expect(out).toBe("intercepted [the body]");
   });
 

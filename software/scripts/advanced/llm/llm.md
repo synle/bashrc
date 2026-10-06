@@ -272,14 +272,16 @@ lives in the registry instead of being repeated per call site. A deployed skill
 literally named `sy-inline` is skipped (with a warning) rather than allowed to
 shadow the wrapper.
 
-#### Dispatch modes: `inline` (default) vs `native`
+#### Dispatch modes: `inline` vs `native`
 
 `$SY_SKILL_MODE` picks how the skill reaches the CLI. Unknown values fall back
-to `inline`.
+to the CLI's registry default. Copilot and OpenCode default to `native` because
+their slash-command routes are runtime-verified and avoid sending the full
+`SKILL.md` as one prompt. Other CLIs default to `inline`.
 
 | Mode     | What is sent                                    | Works on                           |
 | -------- | ----------------------------------------------- | ---------------------------------- |
-| `inline` | The whole `SKILL.md` body as an ordinary prompt | every CLI — hence the default      |
+| `inline` | The whole `SKILL.md` body as an ordinary prompt | every CLI                          |
 | `native` | Just the skill NAME, resolved by the CLI itself | CLIs with a native surface (below) |
 
 ```bash
@@ -289,16 +291,15 @@ export SY_SKILL_MODE=native          # opt in for the whole shell
 
 Native support is declared once, in `_SY_LLM_SPECS` — the only place in that
 file where a CLI name appears at all. Each record is
-`<cli>|<prompt-args>|<native-kind>|<native-args>`, and everything else derives
-from it: `_SY_SUPPORTED_LLMS`, `_SY_DEFAULT_LLM`, both wrapper families, and the
-argv each dispatch builds. A CLI with no native surface degrades to `inline`, so
-`native` is always safe to export.
+`<cli>|<prompt-args>|<native-kind>|<native-args>|<default-mode>`, and everything
+else derives from it: `_SY_SUPPORTED_LLMS`, `_SY_DEFAULT_LLM`, both wrapper
+families, each CLI's default mode, and the argv each dispatch builds. A CLI with
+no native surface degrades to `inline`, so `native` is always safe to export.
 
 `<prompt-args>` is the shape `<cli>_skill_inline` executes — chosen to match how
 each CLI is actually driven by hand, so it is the seeded-TUI form where the CLI
-offers one. It is independent of `<native-args>`: opencode is seeded
-interactively as a prompt (`--prompt`, documented in `opencode --help`) and
-headless as a named skill (`run --command`), on purpose.
+offers one. Slash-native dispatch reuses that same shape with
+`/sy-<name> <args>` as the prompt.
 
 | CLI        | `<cli>_skill_inline "<text>"` runs |
 | ---------- | ---------------------------------- |
@@ -307,12 +308,12 @@ headless as a named skill (`run --command`), on purpose.
 | `gemini`   | `gemini -p "<text>"`               |
 | `opencode` | `opencode --prompt "<text>"`       |
 
-| CLI        | Kind      | Sent as                                   | Evidence                                                                                                                                                 |
-| ---------- | --------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claude`   | `slash`   | `claude "/sy-<name> <args>"`              | documented — `--disable-slash-commands`, and `--bare` states "Skills still resolve via /skill-name". Not runtime-verified (no API key on the test host). |
-| `copilot`  | `slash`   | `copilot -p "/sy-<name> <args>"`          | runtime-verified v1.0.81 — fired `skill(sy-<name>)` and returned the skill's output.                                                                     |
-| `gemini`   | — (none)  | falls back to inline                      | no `--command` flag, no documented slash handling for `-p`; left unset rather than guessed.                                                              |
-| `opencode` | `command` | `opencode run --command sy-<name> <args>` | runtime-verified — returned the skill's output; flag documented in `opencode run --help`.                                                                |
+| CLI        | Kind     | Sent as                                 | Evidence                                                                                                                                                 |
+| ---------- | -------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `claude`   | `slash`  | `claude "/sy-<name> <args>"`            | documented — `--disable-slash-commands`, and `--bare` states "Skills still resolve via /skill-name". Not runtime-verified (no API key on the test host). |
+| `copilot`  | `slash`  | `copilot -p "/sy-<name> <args>"`        | runtime-verified v1.0.81 — fired `skill(sy-<name>)` and returned the skill's output.                                                                     |
+| `gemini`   | — (none) | falls back to inline                    | no `--command` flag, no documented slash handling for `-p`; left unset rather than guessed.                                                              |
+| `opencode` | `slash`  | `opencode --prompt "/sy-<name> <args>"` | runtime-verified — opened the TUI and resolved the mirrored command.                                                                                     |
 
 **Adding a CLI is ONE record in `_SY_LLM_SPECS` and nothing else.** No `case`
 arm, no second array, no edit to any dispatch function — `_sy_exec_prompt` and
