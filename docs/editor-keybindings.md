@@ -268,27 +268,27 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 
 ### Tabs & Windows
 
-| Key                | Action           | Windows Terminal | tmux | Ghostty |
-| ------------------ | ---------------- | :--------------: | :--: | :-----: |
-| `OS_KEY+t`         | New tab          |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+1-9`       | Tab by index     |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+shift+[/]` | Prev / next tab  |        ✅        |  ⚠️  |   ✅    |
-| `OS_KEY+tab`       | Next tab         |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+shift+tab` | Prev tab         |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+w`         | Close pane       |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+x`         | Close pane (alt) |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+q`         | Close window     |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+n`         | New window       |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+/`         | New window (alt) |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+,`         | Prev tab (alt)   |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+.`         | Next tab (alt)   |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+[`         | Prev tab (alt)   |        ❌        |  ⚠️  |   ❌    |
-| `OS_KEY+]`         | Next tab (alt)   |        ❌        |  ⚠️  |   ❌    |
-| `F2`               | Rename tab       |        ✅        |  ⚠️  |   ✅    |
-| `OS_KEY+F2`        | Rename tab       |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+;`         | Rename tab (alt) |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+m`         | Window switcher  |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+p`         | Key palette      |        ❌        |  ✅  |   ❌    |
+| Key                | Action                 | Windows Terminal | tmux | Ghostty |
+| ------------------ | ---------------------- | :--------------: | :--: | :-----: |
+| `OS_KEY+t`         | New tab                |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+1-9`       | Tab by index           |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+shift+[/]` | Prev / next tab        |        ✅        |  ⚠️  |   ✅    |
+| `OS_KEY+tab`       | Next tab               |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+shift+tab` | Prev tab               |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+w`         | Close pane             |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+x`         | Close pane (alt)       |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+q`         | Close window           |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+n`         | New window             |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+/`         | New window (alt)       |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+,`         | Prev tab (alt)         |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+.`         | Next tab (alt)         |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+[`         | Prev tab (alt)         |        ❌        |  ⚠️  |   ❌    |
+| `OS_KEY+]`         | Next tab (alt)         |        ❌        |  ⚠️  |   ❌    |
+| `F2`               | Rename tab             |        ✅        |  ⚠️  |   ✅    |
+| `OS_KEY+F2`        | Rename tab             |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+;`         | Rename tab (alt)       |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+m`         | Tab / session switcher |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+p`         | Key palette            |        ❌        |  ✅  |   ❌    |
 
 ⚠️ `ctrl+1-9` is deliberately **not** bound. A terminal encodes those as legacy control
 characters rather than a distinct chord — `ctrl+1` arrives as a bare `1`, `ctrl+2` as NUL,
