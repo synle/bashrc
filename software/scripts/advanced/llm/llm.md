@@ -1,7 +1,7 @@
 # LLM CLI & Ollama Model Reference
 
-Single source of truth for the four LLM CLIs we provision (Claude Code, GitHub
-Copilot CLI, Google Gemini CLI, OpenCode). Ollama model names live in
+Single source of truth for the five LLM CLIs we provision (Claude Code, GitHub
+Copilot CLI, Google Gemini CLI, OpenCode, Pi). Ollama model names live in
 [`llm-models.jsonc`](llm-models.jsonc). Keep this file in sync with the linked code any time
 a CLI surface, managed setting, or model is added, renamed, or dropped. If this
 file and the code disagree, the code wins — but file an edit so the next reader
@@ -11,11 +11,7 @@ doesn't have to chase references.
 
 ## Part 1 — LLM CLI setup (shared rules)
 
-Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini,
-OpenCode) derives its rules, slash commands, and ergonomics from the same
-source files in `_common/`. Each per-CLI `setup.js` is responsible for mapping
-the shared content onto whatever config surface that specific CLI exposes on
-disk.
+Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini, OpenCode) derives its rules, slash commands, and ergonomics from the same source files in `_common/`. Each per-CLI `setup.js` is responsible for mapping the shared content onto whatever config surface that specific CLI exposes on disk.
 
 ### Single sources of truth
 
@@ -70,11 +66,7 @@ build so the schema stays exercised.
 
 ### Settings-intent table
 
-Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal
-key names differ (`banner` vs `hideBanner` vs `spinnerTipsEnabled`). The
-_intent_ is supposed to stay aligned across the four. Use this table when
-adding a new managed setting — implement it everywhere it has a meaning, and
-call out anywhere it can't be expressed.
+Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key names differ (`banner` vs `hideBanner` vs `spinnerTipsEnabled`). The _intent_ is supposed to stay aligned across the four. Use this table when adding a new managed setting — implement it everywhere it has a meaning, and call out anywhere it can't be expressed.
 
 | Intent                                 | claude                                                   | copilot                               | gemini                                                       | opencode                                          |
 | -------------------------------------- | -------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------- |
@@ -119,9 +111,7 @@ call out anywhere it can't be expressed.
 | Leader-chord timeout                   | n/a                                                      | n/a                                   | n/a                                                          | `leader_timeout: 1500`                            |
 | Prompt textarea height cap             | n/a                                                      | n/a                                   | n/a                                                          | `prompt.max_height: 20`                           |
 
-**n/a** here means _the CLI does not expose a settings key for that intent
-today_. Don't silently drop an intent if upstream later ships one — add the
-key and update this table in the same edit.
+**n/a** here means _the CLI does not expose a settings key for that intent today_. Don't silently drop an intent if upstream later ships one — add the key and update this table in the same edit.
 
 ### Editing rules
 
@@ -134,10 +124,7 @@ key and update this table in the same edit.
 
 ### Using the MarkItDown MCP server
 
-Microsoft's [`markitdown-mcp`](https://github.com/microsoft/markitdown) ships in
-the shared registry (`_common/mcp-servers.jsonc`) and deploys to all four CLIs.
-It converts binary / office documents into Markdown the agent can read: **PDF,
-DOCX, XLSX, PPTX, images, audio, HTML, CSV, JSON, ZIP**, and more.
+Microsoft's [`markitdown-mcp`](https://github.com/microsoft/markitdown) ships in the shared registry (`_common/mcp-servers.jsonc`) and deploys to all four CLIs. It converts binary / office documents into Markdown the agent can read: **PDF, DOCX, XLSX, PPTX, images, audio, HTML, CSV, JSON, ZIP**, and more.
 
 - **Runtime**: launched on demand as
   `uvx --with "mcp>=1.19,<2" markitdown-mcp` (STDIO). `uv` is installed cross-OS
@@ -217,16 +204,18 @@ own `webapp/` or any web task.
 ### Shell dispatchers (`sy-*` and `<cli>_skill_*` from the terminal)
 
 Every `_common/commands/<name>.md` slash command also has matching bash
-functions so the same workflow can run from the terminal without opening a TUI.
+functions so the same workflow can run interactively or print output and exit.
 Source: `_common/sy-commands.profile.bash` (sourced via `profile-advanced.sh`).
-Two families are registered per skill, from one loop, on shell load — no
+Four families are registered per skill, from one loop, on shell load — no
 per-command edits are ever needed (any CLI's setup.js creates the body and the
-next shell picks up both wrappers):
+next shell picks up every wrapper):
 
-| Family               | CLI chosen                         | Example                             |
-| -------------------- | ---------------------------------- | ----------------------------------- |
-| `sy-<name>`          | at call time (`EDITOR` convention) | `sy-review-pr opencode <pr-url>`    |
-| `<cli>_skill_<name>` | baked into the function name       | `opencode_skill_review_pr <pr-url>` |
+| Family                   | Surface        | CLI chosen   | Example                                 |
+| ------------------------ | -------------- | ------------ | --------------------------------------- |
+| `sy-<name>`              | interactive    | at call time | `sy-review-pr opencode <pr-url>`        |
+| `sy-run-<name>`          | print and exit | at call time | `sy-run-review-pr opencode <pr-url>`    |
+| `<cli>_skill_<name>`     | interactive    | pinned       | `opencode_skill_review_pr <pr-url>`     |
+| `<cli>_skill_run_<name>` | print and exit | pinned       | `opencode_skill_run_review_pr <pr-url>` |
 
 CLI selection for the `sy-<name>` family mirrors the `EDITOR` convention:
 
@@ -236,98 +225,66 @@ sy-review-pr opencode <pr-url>       # leading positional override
 LLM=gemini sy-review-pr <pr-url>     # env-var override
 ```
 
-Supported tags: `claude`, `copilot`, `gemini`, `opencode`. Unknown values for
+Supported tags: `claude`, `copilot`, `gemini`, `opencode`, `pi`. Unknown values for
 `$LLM` fall back to the default. Resolved CLI is echoed to stderr so the
-user can see which one fired. `sy-<name> --help` prints inline help without
-invoking any CLI.
+user can see which one fired, which route runs, and both boolean controls.
+`sy-<name> --help` prints inline help without invoking any CLI.
 
-The `<cli>_skill_<name>` family pins one CLI, so argv is never scanned for an
-override and `$LLM` is ignored — every arg goes to the prompt. Hyphens in the
-skill name flatten to underscores to match the prefix
+The pinned families ignore `$LLM`; every arg goes to the workflow. Hyphens in
+the skill name flatten to underscores to match the prefix
 (`sy-review-pr` → `opencode_skill_review_pr`), which also makes
 `opencode_skill_<TAB>` complete every skill that CLI can run.
 
-#### Raw prompts: `<cli>_skill_inline` and `sy-inline`
+#### Raw prompts
 
-`inline` is a reserved name in both families carrying no `SKILL.md` at all —
-the arguments **are** the prompt:
+`inline` is a reserved name in both families carrying no `SKILL.md` at all — the arguments **are** the prompt:
 
 ```bash
 opencode_skill_inline "look at the failing migration and fix it"
+opencode_skill_run_inline "summarize this repo"
 sy-inline gemini "summarize this repo"           # CLI picked at call time
+sy-run-inline gemini "summarize this repo"       # print output and exit
 LLM=copilot sy-inline "summarize this repo"      # env-var override
 ```
 
-`<cli>_skill_inline` is the shortest spelling of "run this CLI with this
-prompt" — `opencode_skill_inline "<text>"` is exactly `opencode --prompt
-"<text>"`, and `claude_skill_inline "<text>"` is exactly `claude "<text>"`,
-because the argv shape comes from that CLI's `<prompt-args>` record.
+Raw wrappers read no `SKILL.md`; arguments become the prompt. Interactive and run argv both come from the CLI registry. A deployed skill named `sy-inline` is skipped rather than allowed to shadow these reserved wrappers.
 
-It is also the **single exec path**: every `<cli>_skill_<name>` above finishes
-by calling its own `<cli>_skill_inline`, so a prompt reaches a CLI through one
-function whether it came from a `SKILL.md` or straight off the command line.
-That is what makes `opencode_skill_inline` a safe drop-in for a hand-written
-`opencode --prompt "..."` in a personal profile or a tmux workspace — the flag
-lives in the registry instead of being repeated per call site. A deployed skill
-literally named `sy-inline` is skipped (with a warning) rather than allowed to
-shadow the wrapper.
+#### Boolean controls
 
-#### Dispatch modes: `inline` vs `native`
+Two independent booleans control transport and execution. Both use `is_truthy`,
+so `1`, `true`, `y`, and `yes` enable them; unset and false values disable them.
 
-`$SY_SKILL_MODE` picks how the skill reaches the CLI. Unknown values fall back
-to the CLI's registry default. Copilot and OpenCode default to `native` because
-their slash-command routes are runtime-verified and avoid sending the full
-`SKILL.md` as one prompt. Other CLIs default to `inline`.
-
-| Mode     | What is sent                                    | Works on                           |
-| -------- | ----------------------------------------------- | ---------------------------------- |
-| `inline` | The whole `SKILL.md` body as an ordinary prompt | every CLI                          |
-| `native` | Just the skill NAME, resolved by the CLI itself | CLIs with a native surface (below) |
+| Variable                 | Default | `0`                                                    | `1`                                     |
+| ------------------------ | ------- | ------------------------------------------------------ | --------------------------------------- |
+| `SY_SKILL_INLINE`        | `0`     | native skill loading, with inline fallback when absent | send full `SKILL.md` as ordinary prompt |
+| `SY_LLM_NON_INTERACTIVE` | `0`     | interactive session                                    | print output and exit                   |
 
 ```bash
-SY_SKILL_MODE=native sy-review-pr <pr-url>
-export SY_SKILL_MODE=native          # opt in for the whole shell
+sy-review-pr <pr-url>                              # native + interactive
+SY_SKILL_INLINE=1 sy-review-pr <pr-url>            # inline + interactive
+SY_LLM_NON_INTERACTIVE=1 sy-review-pr <pr-url>     # native + print output
+opencode_skill_run_review_pr <pr-url>              # same print behavior, pinned
 ```
 
-Native support is declared once, in `_SY_LLM_SPECS` — the only place in that
-file where a CLI name appears at all. Each record is
-`<cli>|<prompt-args>|<native-kind>|<native-args>|<default-mode>`, and everything
-else derives from it: `_SY_SUPPORTED_LLMS`, `_SY_DEFAULT_LLM`, both wrapper
-families, each CLI's default mode, and the argv each dispatch builds. A CLI with
-no native surface degrades to `inline`, so `native` is always safe to export.
+Native support and both execution argv live once in `_SY_LLM_SPECS`. Gemini and Pi have documented interactive native routes but no verified print-mode native route, so their run wrappers fall back to inline transport. OpenCode uses its dedicated `run --command` native route.
 
-`<prompt-args>` is the shape `<cli>_skill_inline` executes — chosen to match how
-each CLI is actually driven by hand, so it is the seeded-TUI form where the CLI
-offers one. Slash-native dispatch reuses that same shape with
-`/sy-<name> <args>` as the prompt.
-
-| CLI        | `<cli>_skill_inline "<text>"` runs |
-| ---------- | ---------------------------------- |
-| `claude`   | `claude "<text>"`                  |
-| `copilot`  | `copilot -p "<text>"`              |
-| `gemini`   | `gemini -p "<text>"`               |
-| `opencode` | `opencode --prompt "<text>"`       |
-
-| CLI        | Kind     | Sent as                                 | Evidence                                                                                                                                                 |
-| ---------- | -------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claude`   | `slash`  | `claude "/sy-<name> <args>"`            | documented — `--disable-slash-commands`, and `--bare` states "Skills still resolve via /skill-name". Not runtime-verified (no API key on the test host). |
-| `copilot`  | `slash`  | `copilot -p "/sy-<name> <args>"`        | runtime-verified v1.0.81 — fired `skill(sy-<name>)` and returned the skill's output.                                                                     |
-| `gemini`   | — (none) | falls back to inline                    | no `--command` flag, no documented slash handling for `-p`; left unset rather than guessed.                                                              |
-| `opencode` | `slash`  | `opencode --prompt "/sy-<name> <args>"` | runtime-verified — opened the TUI and resolved the mirrored command.                                                                                     |
+| CLI        | Interactive native route                | Non-interactive native route                 |
+| ---------- | --------------------------------------- | -------------------------------------------- |
+| `claude`   | `claude "/sy-<name> <args>"`            | `claude -p "/sy-<name> <args>"`              |
+| `copilot`  | `copilot -i "/sy-<name> <args>"`        | `copilot -p "/sy-<name> <args>"`             |
+| `gemini`   | `gemini -i "/sy-<name> <args>"`         | inline fallback through `gemini -p`          |
+| `opencode` | `opencode --prompt "/sy-<name> <args>"` | `opencode run --command sy-<name> <args...>` |
+| `pi`       | `pi "/skill:sy-<name> <args>"`          | inline fallback through `pi -p`              |
 
 **Adding a CLI is ONE record in `_SY_LLM_SPECS` and nothing else.** No `case`
 arm, no second array, no edit to any dispatch function — `_sy_exec_prompt` and
-`_sy_exec_named` read their argv shape out of the record. The invariant is
+`_sy_exec_native` read both surfaces from the record. The invariant is
 enforced by a test that fails on any CLI name appearing outside the registry
 block (`software/tests/syCommandsDispatcher.spec.js`).
 
 ### Memory promotion bridge (Claude → other CLIs)
 
-Claude Code auto-loads `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` and
-every record it links on every turn. The other three CLIs have no equivalent
-layer — every session starts cold. To bridge, snapshot Claude's per-project
-memory into a single managed "Persistent Context" appendix and upsert into the
-other three CLIs' user-level instructions files:
+Claude Code auto-loads `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` and every record it links on every turn. The other three CLIs have no equivalent layer — every session starts cold. To bridge, snapshot Claude's per-project memory into a single managed "Persistent Context" appendix and upsert into the other three CLIs' user-level instructions files:
 
 ```bash
 bash run.sh --files=memory-bridge.standalone.js
@@ -352,10 +309,7 @@ without maintaining two copies, drop an `AGENTS.md` symlink next to every
 bash run.sh --files=repo-agents-symlink.standalone.js
 ```
 
-Standalone — runs on demand, NOT on every `bash run.sh --preset=llm`. Walks
-`$HOME/git/*/` by default; override / extend with comma-separated paths via
-`BASHRC_AGENTS_REPO_ROOTS=~/git,~/work`. Idempotent. Never clobbers an existing
-regular file or a foreign symlink — those are reported and skipped.
+Standalone — runs on demand, NOT on every `bash run.sh --preset=llm`. Walks `$HOME/git/*/` by default; override / extend with comma-separated paths via `BASHRC_AGENTS_REPO_ROOTS=~/git,~/work`. Idempotent. Never clobbers an existing regular file or a foreign symlink — those are reported and skipped.
 
 ---
 
@@ -369,8 +323,7 @@ is the cheat sheet for that move.
 
 ### What "Claude Code state" actually consists of
 
-If you wiped your machine today, this is the full surface area you'd need to
-recreate by hand before any other CLI feels comparable:
+If you wiped your machine today, this is the full surface area you'd need to recreate by hand before any other CLI feels comparable:
 
 | Layer                      | Path                                                                     | Purpose                                                             |
 | -------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
@@ -425,8 +378,7 @@ You will lose ergonomics. Plan accordingly.
 
 ### Starting from scratch — what a brand-new machine needs
 
-If you've never set up _any_ of these CLIs and want all four in parity, you
-need — at minimum — to author and place:
+If you've never set up _any_ of these CLIs and want all four in parity, you need — at minimum — to author and place:
 
 1. **One canonical instructions doc** (engineering rules, tone, persona, guardrails)
    that gets deployed to four different filenames in four different folders.
@@ -506,9 +458,7 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
 
 ## Skills across CLIs
 
-Agent skills (`SKILL.md` playbooks) need **no translation layer**. Three of the
-four CLIs read Claude's `.claude/skills/` path directly. What differs is _where_
-they look and _how_ a skill gets fired.
+Agent skills (`SKILL.md` playbooks) need **no translation layer**. Three of the four CLIs read Claude's `.claude/skills/` path directly. What differs is _where_ they look and _how_ a skill gets fired.
 
 ### Discovery — where each CLI looks
 
@@ -523,16 +473,9 @@ OpenCode also accepts `.agents/skills/` and `~/.agents/skills/`, and walks up
 from the cwd to the git worktree root when resolving project skills
 ([docs](https://opencode.ai/docs/skills/)).
 
-Copilot's own path list comes from `copilot skill --help` on `v1.0.76`. Note the
-asymmetry: it reads `<repo>/.claude/skills/` but **not** `~/.claude/skills/`. That
-asymmetry no longer costs anything, because no CLI reads another's folder here:
-`deploySharedLLMSkills()` (llm-common.js) writes each `_common/commands/<name>.md`
-once to `~/_extra/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then
-symlinks that folder into every CLI's own skills path — Claude, Copilot, Gemini,
-OpenCode, and the interoperable `~/.agents/skills/`.
+Copilot's own path list comes from `copilot skill --help` on `v1.0.76`. Note the asymmetry: it reads `<repo>/.claude/skills/` but **not** `~/.claude/skills/`. That asymmetry no longer costs anything, because no CLI reads another's folder here: `deploySharedLLMSkills()` (llm-common.js) writes each `_common/commands/<name>.md` once to `~/_extra/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then symlinks that folder into every CLI's own skills path — Claude, Copilot, Gemini, OpenCode, and the interoperable `~/.agents/skills/`.
 
-Practical consequence: **this repo's seven skills already work in OpenCode and
-Copilot CLI with zero setup.** Nothing to copy, nothing to deploy.
+Practical consequence: **this repo's seven skills already work in OpenCode and Copilot CLI with zero setup.** Nothing to copy, nothing to deploy.
 
 ### Layout — folder form only
 
@@ -568,21 +511,16 @@ file can serve both surfaces via a symlink:
 ln -sfn ../../.claude/skills/add-package/SKILL.md .opencode/commands/add-package.md
 ```
 
-That yields `/add-package fzf` as a direct command **and** keeps the skill
-model-invocable. Verified against `GET /command` + `GET /skill` on opencode
-`1.14.33` — the same file shows up in both listings.
+That yields `/add-package fzf` as a direct command **and** keeps the skill model-invocable. Verified against `GET /command` + `GET /skill` on opencode `1.14.33` — the same file shows up in both listings.
 
 | Scope    | Wired by                                                     | Result                                                                    |
 | -------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
 | Global   | `_syncOpencodeSkillCommandSymlinks()` in `opencode/setup.js` | `~/.claude/skills/<n>/SKILL.md` → `~/.config/opencode/commands/<n>.md`    |
 | Per-repo | committed symlinks under `<repo>/.opencode/commands/`        | `<repo>/.claude/skills/<n>/SKILL.md` → `<repo>/.opencode/commands/<n>.md` |
 
-Name collisions resolve first-writer-wins: `_syncOpencodeCommandSymlinks()`
-(real `/sy-*` commands) runs first, so a command always beats a same-named
-skill.
+Name collisions resolve first-writer-wins: `_syncOpencodeCommandSymlinks()` (real `/sy-*` commands) runs first, so a command always beats a same-named skill.
 
-Copilot CLI has no `commands/` slot at all, so `/skill-name` is not reachable
-there — its skills stay model-invoked only.
+Copilot CLI has no `commands/` slot at all, so `/skill-name` is not reachable there — its skills stay model-invoked only.
 
 ---
 
@@ -612,14 +550,7 @@ hammering a dead endpoint on every keystroke. For Zed that means
 `zed-config.jsonc`'s `edit_predictions.disabled_globs: ["**/*"]` survives and inline
 predictions stay fully off — deliberately not Zed's cloud Zeta.
 
-Hosts come from [`ip-address.config`](../../../metadata/ip-address.config) by tag,
-never by machine name: every host tagged `OLLAMA_REMOTE` is a server, and the one
-tagged `OLLAMA_DEFAULT_SERVER` (at most one) leads — else the first `OLLAMA_REMOTE`.
-`getOllamaHosts()` in [`software/index.js`](../../../index.js) returns that list with
-`127.0.0.1` appended; `getReachableOllamaHosts()` in [`llm-common.js`](llm-common.js)
-keeps only hosts whose `/api/tags` lists at least one model, so an unreachable or
-empty host (remote or local) is never registered. `run.sh` bakes the same pick into
-`OLLAMA_DEFAULT_SERVER_IP` for the shell helpers. Example line:
+Hosts come from [`ip-address.config`](../../../metadata/ip-address.config) by tag, never by machine name: every host tagged `OLLAMA_REMOTE` is a server, and the one tagged `OLLAMA_DEFAULT_SERVER` (at most one) leads — else the first `OLLAMA_REMOTE`. `getOllamaHosts()` in [`software/index.js`](../../../index.js) returns that list with `127.0.0.1` appended; `getReachableOllamaHosts()` in [`llm-common.js`](llm-common.js) keeps only hosts whose `/api/tags` lists at least one model, so an unreachable or empty host (remote or local) is never registered. `run.sh` bakes the same pick into `OLLAMA_DEFAULT_SERVER_IP` for the shell helpers. Example line:
 
 ```
 192.168.1.45: my-desktop | WINDOWS_REMOTE | OLLAMA_REMOTE | OLLAMA_DEFAULT_SERVER
