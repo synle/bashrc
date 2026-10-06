@@ -66,6 +66,15 @@
   { "key": "OS_KEY+c", "action": "copy_to_clipboard:mixed" },
   { "key": "OS_KEY+v", "action": "paste_from_clipboard" },
   { "key": "OS_KEY+a", "action": "select_all" },
+  // Escape hatch: OS_KEY+shift+<key> does the same thing, for when the plain
+  // chord is taken by an app inside the terminal (on Linux OS_KEY is alt, which
+  // tmux / vim / readline may want). Overrides two Ghostty defaults:
+  // OS_KEY+shift+f (end_search - escape still ends search) and OS_KEY+shift+v
+  // (paste_from_selection). Verified via `ghostty +show-config --default`.
+  { "key": "OS_KEY+shift+c", "action": "copy_to_clipboard:mixed" },
+  { "key": "OS_KEY+shift+v", "action": "paste_from_clipboard" },
+  { "key": "OS_KEY+shift+a", "action": "select_all" },
+  { "key": "OS_KEY+shift+f", "action": "start_search" },
 
   // ---- View ----
   { "key": "f11", "action": "toggle_fullscreen" },

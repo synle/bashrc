@@ -347,12 +347,23 @@ the `prefix+:` prompt.
 
 ### Text & Search
 
-| Key        | Action     | Windows Terminal | tmux | Ghostty |
-| ---------- | ---------- | :--------------: | :--: | :-----: |
-| `OS_KEY+c` | Copy       |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+v` | Paste      |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+f` | Find       |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+a` | Select all |        ✅        |  ❌  |   ✅    |
+| Key              | Action                    | Windows Terminal | tmux | Ghostty |
+| ---------------- | ------------------------- | :--------------: | :--: | :-----: |
+| `OS_KEY+c`       | Copy                      |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+v`       | Paste                     |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+f`       | Find                      |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+g`       | Copy mode                 |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+a`       | Select all                |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+c` | Copy (escape hatch)       |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+v` | Paste (escape hatch)      |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+f` | Find (escape hatch)       |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+a` | Select all (escape hatch) |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+g` | Copy mode (escape hatch)  |        ❌        |  ✅  |   ❌    |
+
+The `OS_KEY+shift+` rows are an escape hatch: same action as the plain chord, for when an
+app inside the terminal (tmux, vim, readline — `OS_KEY` is `alt` off macOS) takes the plain
+one. In Ghostty they override two defaults: `OS_KEY+shift+f` (`end_search` — `escape` still
+ends search) and `OS_KEY+shift+v` (`paste_from_selection`).
 
 Ghostty's search chords (`OS_KEY+f` start, `OS_KEY+g` / `OS_KEY+shift+g` next / previous,
 `OS_KEY+e` search selection) come from Ghostty's **own defaults** — search shipped in
