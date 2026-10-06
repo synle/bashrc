@@ -9,28 +9,36 @@ au BufNewFile,BufRead *.ts,*.js,*.tsx,*.jsx set filetype=typescript.tsx " Treat 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " TSX / React Syntax Colors
 """""""""""""""""""""""""""""""""""""""""""""""""
-hi tsxTagName guifg=#EE0000                                         " JSX tag names in red
-hi tsxCloseString guifg=#F99575                                     " Closing tag slash
-hi tsxCloseTag guifg=#F99575                                        " Closing tag bracket
-hi tsxCloseTagName guifg=#F99575                                    " Closing tag name
-hi tsxAttributeBraces guifg=#F99575                                 " Attribute value braces {…}
-hi tsxEqual guifg=#F99575                                           " Attribute equals sign
-hi tsxAttrib guifg=#F8BD7F cterm=italic                             " JSX attribute names in italic
+" Wrapped in a function + ColorScheme autocmd so a later :colorscheme does not wipe them.
+function! s:ApplyCustomHighlights() abort
+hi tsxTagName guifg=#ee0000                                         " JSX tag names in red
+hi tsxCloseString guifg=#f99575                                     " Closing tag slash
+hi tsxCloseTag guifg=#f99575                                        " Closing tag bracket
+hi tsxCloseTagName guifg=#f99575                                    " Closing tag name
+hi tsxAttributeBraces guifg=#f99575                                 " Attribute value braces {…}
+hi tsxEqual guifg=#f99575                                           " Attribute equals sign
+hi tsxAttrib guifg=#f8bd7f cterm=italic                             " JSX attribute names in italic
 hi tsxTypeBraces guifg=#999999                                      " TypeScript generic braces <T>
 hi tsxTypes guifg=#666666                                           " TypeScript type annotations
-hi ReactState guifg=#C176A7                                         " React state variables
-hi ReactProps guifg=#D19A66                                         " React props
-hi ApolloGraphQL guifg=#CB886B                                      " Apollo/GraphQL keywords
-hi Events ctermfg=204 guifg=#56B6C2                                 " DOM event handlers
-hi ReduxKeywords ctermfg=204 guifg=#C678DD                          " Redux action/dispatch keywords
-hi ReduxHooksKeywords ctermfg=204 guifg=#C176A7                     " Redux hooks (useSelector, useDispatch)
-hi WebBrowser ctermfg=204 guifg=#56B6C2                             " Browser API keywords
-hi ReactLifeCycleMethods ctermfg=204 guifg=#D19A66                  " React lifecycle methods (componentDidMount, etc.)
+hi ReactState guifg=#c176a7                                         " React state variables
+hi ReactProps guifg=#d19a66                                         " React props
+hi ApolloGraphQL guifg=#cb886b                                      " Apollo/GraphQL keywords
+hi Events ctermfg=204 guifg=#56b6c2                                 " DOM event handlers
+hi ReduxKeywords ctermfg=204 guifg=#c678dd                          " Redux action/dispatch keywords
+hi ReduxHooksKeywords ctermfg=204 guifg=#c176a7                     " Redux hooks (useSelector, useDispatch)
+hi WebBrowser ctermfg=204 guifg=#56b6c2                             " Browser API keywords
+hi ReactLifeCycleMethods ctermfg=204 guifg=#d19a66                  " React lifecycle methods (componentDidMount, etc.)
+endfunction
+augroup SyCustomHighlights
+  autocmd!
+  autocmd ColorScheme * call s:ApplyCustomHighlights()
+augroup END
+call s:ApplyCustomHighlights()
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Plugin Settings
 """""""""""""""""""""""""""""""""""""""""""""""""
-filetype on                                                         " Re-enable filetype detection after plugin manager init
+filetype plugin indent on                                           " Re-enable filetype detection + ftplugins + indent rules after plugin manager init
 " lightline: codedark theme (ships with vim-code-dark) + open buffers as tabs via lightline-bufferline
 let g:lightline = {
   \ 'colorscheme': 'codedark',
@@ -41,17 +49,30 @@ let g:lightline = {
 set showtabline=2                                                   " Always show the buffer tabline
 let g:xml_syntax_folding = 1                                        " Enable syntax-based folding for XML files
 let g:signify_sign_change = '~'                                     " gitgutter-style change marker (signify default is !)
+set updatetime=300                                                  " Faster CursorHold — signify refreshes gutter markers sooner (default 4000ms)
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " General Settings
 """""""""""""""""""""""""""""""""""""""""""""""""
-set shell=/bin/bash           " Use bash as the shell for :! commands
+if !has("win32")
+  set shell=/bin/bash         " Use bash as the shell for :! commands (Windows keeps cmd.exe)
+endif
 set encoding=utf-8            " Use UTF-8 encoding for files and buffers
 set noswapfile                " Disable swap files — prevents .swp clutter
 set nobackup                  " Disable backup files — prevents ~ file clutter
 set nowritebackup             " Don't create backup before overwriting a file
 set hidden                    " Allow switching buffers without saving — keeps undo history intact
 set autoread                  " Auto-reload files changed outside of vim (e.g. by git)
+" autoread only fires on a check — trigger one when focus or buffer changes
+augroup AutoReadCheck
+  autocmd!
+  autocmd FocusGained,BufEnter * silent! checktime
+augroup END
+set backspace=indent,eol,start " Backspace over indent, line breaks, and insert start (defaults.vim is skipped when ~/.vimrc exists)
+set ttimeout ttimeoutlen=50   " Short key-code timeout — <Esc>-prefixed Alt mappings no longer stall Esc for 1s
+set nrformats-=octal          " Ctrl-A/Ctrl-X treat 007 as decimal, not octal
+set splitright splitbelow     " New splits open right / below, like modern editors
+set wildignore+=*/node_modules/*,*/.git/* " Skip vendor/VCS folders in file completion
 set lazyredraw                " Don't redraw screen during macros — significant speed boost
 set ttyfast                   " Assume a fast terminal connection — smoother scrolling
 set history=500               " Remember 500 commands in history
@@ -66,7 +87,14 @@ if has("persistent_undo")
   set undofile
 endif
 set mouse=i                   " Mouse only in insert mode — normal/visual use terminal-native selection
-set clipboard=unnamed         " Use system clipboard for yank/paste — matches Cmd+C/V behavior
+" Use system clipboard for yank/paste — matches Cmd+C/V behavior.
+" unnamed = macOS/Windows clipboard; unnamedplus = X11/Wayland CLIPBOARD on Linux.
+if has("clipboard")
+  set clipboard=unnamed
+  if has("unnamedplus")
+    set clipboard+=unnamedplus
+  endif
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Search
@@ -84,24 +112,27 @@ set expandtab                 " Insert spaces when pressing Tab — never use ac
 set autoindent                " Copy indentation from the current line when starting a new line
 set smartindent               " Auto-indent after {, if, etc. — smarter than autoindent alone
 
-" Strip trailing whitespace on every save
-autocmd BufWritePre * %s/\s\+$//e
+" Strip trailing whitespace on every save (cursor + search history preserved).
+" Markdown skipped — two trailing spaces there are a hard line break.
+augroup TrimTrailingWhitespaceOnSave
+  autocmd!
+  autocmd BufWritePre * if &filetype !=# 'markdown' | TrimTrailingWhitespace | endif
+augroup END
 
-" Whitespace visualization (toggled with ] key)
+" Whitespace visualization (toggled with ,i)
 set listchars=tab:>-          " Show tabs as >---
 set listchars+=space:␣        " Show spaces as ␣
 set listchars+=trail:·        " Show trailing spaces as ·
 set listchars+=eol:¬          " Show end-of-line as ¬
 
 """""""""""""""""""""""""""""""""""""""""""""""""
-" Paste Mode
-"""""""""""""""""""""""""""""""""""""""""""""""""
-set pastetoggle=<F2>              " Press F2 to toggle paste mode — disables autoindent for clean pasting
-
-"""""""""""""""""""""""""""""""""""""""""""""""""
 " Display & UI
 """""""""""""""""""""""""""""""""""""""""""""""""
 syntax on                     " Enable syntax highlighting
+" 24-bit color so the guifg= highlights above render in terminals too (tmux needs RGB enabled)
+if has("termguicolors")
+  set termguicolors
+endif
 set linebreak                 " Soft wrap breaks at word boundaries, not mid-word
 set breakindent               " Wrapped continuation lines keep the line's indent
 set showmatch                 " Briefly jump to matching bracket when inserting one
@@ -134,22 +165,22 @@ augroup END
 " Ctrl+A / Ctrl+E to jump to beginning / end of line (matches readline/bash)
 nnoremap <silent> <C-a> ^
 nnoremap <silent> <C-e> $
-" Ctrl+F / Ctrl+G to page forward / backward (matches less/readline)
-nnoremap <silent> <C-f> <C-f>
+" Ctrl+F pages forward natively; Ctrl+G pages backward (matches less/readline)
 nnoremap <silent> <C-g> <C-b>
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Toggle
 """""""""""""""""""""""""""""""""""""""""""""""""
-" \ to toggle line numbers. Binding \ shadows vim's default <Leader>;
+" \ to toggle line numbers (absolute current line + relative others). Binding \ shadows vim's default <Leader>;
 " no <Leader> mappings exist here — set mapleader elsewhere before adding any.
-nnoremap <Bslash> :set nonumber!<CR>
+nnoremap <Bslash> :set number! relativenumber!<CR>
 
-" [ to toggle soft wrap (same as } and visual-mode Tab).
-nnoremap [ :set wrap!<CR>
+" ,z to toggle soft wrap (same as } and visual-mode Tab). [ / ] stay vim's
+" bracket prefixes so ]c / [c (signify hunk jumps) and [[ / ]] keep working.
+nnoremap <silent> ,z :set wrap!<CR>
 
-" ] to toggle whitespace visualization
-nnoremap ] :set list!<CR>
+" ,i to toggle whitespace visualization (invisibles)
+nnoremap <silent> ,i :set list!<CR>
 
 " } (shift+]) to toggle soft wrap — matches VS Code/Sublime/Zed's
 " ctrl+shift+OS_KEY+\ chord conceptually (one-key wrap toggle).
@@ -172,7 +203,7 @@ endif
 " Trim trailing whitespace (whole file): cmd/ctrl/alt + shift + backspace, matching
 " VS Code/Sublime/text-server. Remove duplicate lines (keep first, order kept):
 " cmd/ctrl/alt + shift + delete. Only GUI vim / CSI-u terminals deliver these chords.
-command! TrimTrailingWhitespace let s:view = winsaveview() | keeppatterns %s/\s\+$//e | call winrestview(s:view)
+command! -bar TrimTrailingWhitespace let s:view = winsaveview() | keeppatterns %s/\s\+$//e | call winrestview(s:view)
 command! -range=% UniqueLines <line1>,<line2>!awk '\!seen[$0]++'
 let s:trim_lhs = ['<C-S-BS>', '<M-S-BS>'] + (has('gui_macvim') ? ['<D-S-BS>'] : [])
 let s:uniq_lhs = ['<C-S-Del>', '<M-S-Del>'] + (has('gui_macvim') ? ['<D-S-Del>'] : [])
@@ -324,9 +355,15 @@ nnoremap J mzJ`z
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
-" ,c to copy to system clipboard (pbcopy)
-nnoremap <silent> ,c :%w !pbcopy<CR>
-vnoremap <silent> ,c :w !pbcopy<CR>
-
-" ,p to paste from system clipboard (pbpaste), replacing entire buffer
-nnoremap <silent> ,p :%d \| r !pbpaste \| 1d<CR>
+" ,c to copy to system clipboard (whole buffer, or the selection in visual mode)
+" ,p to replace the entire buffer with the system clipboard.
+" Uses vim's clipboard register; falls back to pbcopy/pbpaste on vim built without +clipboard.
+if has("clipboard")
+  nnoremap <silent> ,c :%y +<CR>
+  vnoremap <silent> ,c "+y
+  nnoremap <silent> ,p :%d _ \| put + \| 1d _<CR>
+elseif executable("pbcopy")
+  nnoremap <silent> ,c :%w !pbcopy<CR>
+  vnoremap <silent> ,c :w !pbcopy<CR>
+  nnoremap <silent> ,p :%d \| r !pbpaste \| 1d<CR>
+endif

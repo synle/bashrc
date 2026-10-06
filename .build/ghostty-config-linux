@@ -164,5 +164,10 @@ keybind = alt+0=reset_font_size
 keybind = alt+c=copy_to_clipboard:mixed
 keybind = alt+v=paste_from_clipboard
 keybind = alt+a=select_all
+keybind = alt+shift+c=copy_to_clipboard:mixed
+keybind = alt+shift+v=paste_from_clipboard
+keybind = alt+shift+a=select_all
+keybind = alt+shift+f=start_search
+keybind = alt+y=text:\x1by
 keybind = f11=toggle_fullscreen
 keybind = alt+\=toggle_window_decorations

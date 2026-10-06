@@ -43,6 +43,86 @@ async function doWork() {
 
   await writeTmuxCopyShim();
   await writeTmuxKeysShim();
+  await writeTmuxUrlsShim();
+}
+
+/**
+ * Writes the `sy-tmux-urls` shim onto PATH — the alt+u / prefix+u URL picker.
+ *
+ * With `mouse on`, tmux swallows plain clicks, so URLs printed as text (not
+ * OSC 8) are hard to open. The shim scrapes the target pane's whole scrollback
+ * for http(s) URLs, dedupes them newest first, lets fzf pick one or several,
+ * and opens each through the profile's cross-platform `open()`.
+ *
+ * Args at runtime: `$1` = tmux pane id to scrape (the popup is its own pane).
+ *
+ * @returns {Promise<void>}
+ */
+async function writeTmuxUrlsShim() {
+  const shimPath = path.join(BASE_HOMEDIR_LINUX, ".local", "bin", "sy-tmux-urls");
+
+  log(">> Updating tmux URL picker shim", shimPath);
+
+  if (!IS_DRY_RUN) {
+    fs.mkdirSync(path.dirname(shimPath), { recursive: true });
+  }
+
+  await writeText(
+    shimPath,
+    code`
+      #!/usr/bin/env bash
+      # Pick URLs from a tmux pane's scrollback and open them in the browser.
+      # Usage: sy-tmux-urls <pane-id>
+      # Run by tmux with no profile loaded, so source it for open() and PATH.
+      # shellcheck disable=SC1090,SC1091
+      source "$HOME/.bash_syle" > /dev/null 2>&1 || true
+
+      pane="\${1:-}"
+      # Dedupe + sort: the dedupe key ignores trailing slashes so \`abc.com\` and
+      # \`abc.com/\` collapse to one row; the list is then sorted A-Z, case-insensitive.
+      # Pipeline: split into tokens on whitespace and markdown/quote delimiters
+      # (\`](\` splits nested links like \`[![a](u1)](u2)\`), strip leading \`(*_~!\`,
+      # keep tokens that START as a URL - \`http(s)://\`, \`www.\`, or a bare
+      # \`host.tld/\` (the slash is required so \`foo.js\` / \`index.js:412\` never
+      # match; anchoring at token start keeps \`~/x/a.io/\` paths out). The trim
+      # loop drops trailing prose/emphasis (\`.,;:!?}>*_~\`) plus any unbalanced
+      # \`)\`, and scheme-less hits get \`https://\` so open() sees a URL, not a file.
+      urls="\$(tmux capture-pane -p -J -S - \${pane:+-t "\$pane"} \\
+        | sed -E 's/\\]\\(/ /g' \\
+        | tr -s ' \\t<>"'"'"'\`[]' '\\n' \\
+        | sed -E 's/^[(*_~!]+//' \\
+        | command grep -oE '^(https?://|www\\.|[[:alnum:]][[:alnum:]-]*(\\.[[:alnum:]-]+)*\\.[[:alpha:]]{2,}/)[^[:space:]]*' \\
+        | awk '{ u = \$0; while (length(u)) { c = substr(u, length(u), 1); if (index(".,;:!?}>*_~", c)) { u = substr(u, 1, length(u) - 1); continue } if (c == ")") { t = u; o = gsub(/\\(/, "", t); t = u; cl = gsub(/\\)/, "", t); if (cl > o) { u = substr(u, 1, length(u) - 1); continue } } break } if (u !~ /^https?:\\/\\//) u = "https://" u; print u }' \\
+        | awk '{ k = \$0; sub(/\\/+\$/, "", k); if (!seen[k]++) print }' \\
+        | sort -f)"
+
+      if [ -z "\$urls" ]; then
+        echo "No URLs found in this pane. Press any key."
+        read -r -n 1 -s
+        exit 0
+      fi
+
+      if type -P fzf > /dev/null 2>&1; then
+        picked="\$(printf '%s\\n' "\$urls" | fzf --multi --no-sort --prompt='open url> ' --header='enter open - tab multi-select - esc close')"
+      else
+        # No fzf: open the newest URL.
+        picked="\$(printf '%s\\n' "\$urls" | head -n 1)"
+      fi
+      [ -z "\$picked" ] && exit 0
+
+      printf '%s\\n' "\$picked" | while IFS= read -r url; do
+        if type open > /dev/null 2>&1; then
+          open "\$url" > /dev/null 2>&1
+        elif type -P xdg-open > /dev/null 2>&1; then
+          xdg-open "\$url" > /dev/null 2>&1 &
+        fi
+      done
+    `,
+  );
+
+  if (!IS_DRY_RUN) {
+    fs.chmodSync(shimPath, 0o755);
+  }
 }
 
 /**

@@ -399,23 +399,24 @@ defaults, so they keep working in any tmux, including one running a config this 
 write. The exceptions are marked ⚠️ below: `c` inherits the current pane's path, `,` / `.`
 / `n` / `r` are rebound away from their stock actions, and both resize steps are widened.
 
-| Chord                      | Action                                                                         |
-| -------------------------- | ------------------------------------------------------------------------------ |
-| `ctrl+b` then `[`          | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit) |
-| `ctrl+b` then `,`          | ⚠️ Previous window (stock: rename window — now `r`)                            |
-| `ctrl+b` then `.`          | ⚠️ Next window (stock: move window — use the `prefix+:` prompt)                |
-| `ctrl+b` then `r`          | ⚠️ Rename the current window (stock: `refresh-client`)                         |
-| `ctrl+b` then `c`          | ⚠️ Create a new window (opens in the current pane's folder)                    |
-| `ctrl+b` then `n`          | ⚠️ Create a new window, alias of `c` (stock: next window — now `.`)            |
-| `ctrl+b` then `w`          | Interactive window/session switcher (`choose-tree`)                            |
-| `ctrl+b` then `tab`        | Same switcher as `w` — `tab` is unbound in stock tmux, so this is an addition  |
-| `ctrl+b` then `x`          | Close / kill the current pane (confirms first)                                 |
-| `ctrl+b` then `p`          | Previous window                                                                |
-| `ctrl+b` then `arrow`      | Focus the split in that direction (`select-pane`)                              |
-| `ctrl+b` then `alt+arrow`  | ⚠️ Resize the split by 10 (stock 5) — hold `ctrl+b`, tap repeatedly            |
-| `ctrl+b` then `ctrl+arrow` | ⚠️ Resize the split by 10 (stock 1)                                            |
-| `ctrl+b` then `y`          | Copy the whole visible pane to the clipboard                                   |
-| `ctrl+b` then `'`          | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)       |
+| Chord                      | Action                                                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `ctrl+b` then `[`          | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit)                                   |
+| `ctrl+b` then `,`          | ⚠️ Previous window (stock: rename window — now `r`)                                                              |
+| `ctrl+b` then `.`          | ⚠️ Next window (stock: move window — use the `prefix+:` prompt)                                                  |
+| `ctrl+b` then `r`          | ⚠️ Rename the current window (stock: `refresh-client`)                                                           |
+| `ctrl+b` then `c`          | ⚠️ Create a new window (opens in the current pane's folder)                                                      |
+| `ctrl+b` then `n`          | ⚠️ Create a new window, alias of `c` (stock: next window — now `.`)                                              |
+| `ctrl+b` then `w`          | Interactive window/session switcher (`choose-tree`)                                                              |
+| `ctrl+b` then `tab`        | Same switcher as `w` — `tab` is unbound in stock tmux, so this is an addition                                    |
+| `ctrl+b` then `x`          | Close / kill the current pane (confirms first)                                                                   |
+| `ctrl+b` then `p`          | Previous window                                                                                                  |
+| `ctrl+b` then `arrow`      | Focus the split in that direction (`select-pane`)                                                                |
+| `ctrl+b` then `alt+arrow`  | ⚠️ Resize the split by 10 (stock 5) — hold `ctrl+b`, tap repeatedly                                              |
+| `ctrl+b` then `ctrl+arrow` | ⚠️ Resize the split by 10 (stock 1)                                                                              |
+| `ctrl+b` then `y`          | Copy the whole visible pane to the clipboard                                                                     |
+| `ctrl+b` then `u`          | Pick URLs from the pane scrollback (fzf) and open them in the browser — also `alt+u` / `alt+b` (option on macOS) |
+| `ctrl+b` then `'`          | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)                                         |
 
 Copy mode is pinned to vi keys (`setw -g mode-keys vi`) so `g`/`G`/`/` behave as listed —
 without it tmux picks emacs keys whenever `$EDITOR` is not vim-like. `mode-keys vi` alone

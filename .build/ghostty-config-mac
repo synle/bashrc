@@ -193,5 +193,10 @@ keybind = cmd+0=reset_font_size
 keybind = cmd+c=copy_to_clipboard:mixed
 keybind = cmd+v=paste_from_clipboard
 keybind = cmd+a=select_all
+keybind = cmd+shift+c=copy_to_clipboard:mixed
+keybind = cmd+shift+v=paste_from_clipboard
+keybind = cmd+shift+a=select_all
+keybind = cmd+shift+f=start_search
+keybind = cmd+y=text:\x1by
 keybind = f11=toggle_fullscreen
 keybind = cmd+\=toggle_window_decorations
