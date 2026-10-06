@@ -282,6 +282,8 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 | `OS_KEY+/`         | New window (alt) |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+,`         | Prev tab (alt)   |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+.`         | Next tab (alt)   |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+[`         | Prev tab (alt)   |        ❌        |  ⚠️  |   ❌    |
+| `OS_KEY+]`         | Next tab (alt)   |        ❌        |  ⚠️  |   ❌    |
 | `F2`               | Rename tab       |        ✅        |  ⚠️  |   ✅    |
 | `OS_KEY+F2`        | Rename tab       |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+;`         | Rename tab (alt) |        ❌        |  ✅  |   ❌    |
@@ -306,6 +308,10 @@ macOS + Ghostty: `[` and `]` are the CSI and OSC escape-sequence introducers, so
 forwards the raw `ESC {` / `ESC }` to the pane instead of matching the binding. The
 binding is kept for terminals where it does work; `OS_KEY+tab` / `OS_KEY+shift+tab` are
 the pair verified to fire everywhere and are the ones to reach for.
+
+⚠️ `OS_KEY+[/]` (unshifted) is bound the same way, as `M-[` / `M-]`, and is unverified:
+`ESC [` / `ESC ]` are the CSI / OSC introducers, so tmux only treats them as the chord
+when nothing follows within `escape-time`. If it does not fire, use `OS_KEY+,/.`.
 
 ### Splits & Panes
 
