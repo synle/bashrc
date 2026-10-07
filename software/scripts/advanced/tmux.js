@@ -87,12 +87,15 @@ async function writeTmuxUrlsShim() {
       # match; anchoring at token start keeps \`~/x/a.io/\` paths out). The trim
       # loop drops trailing prose/emphasis (\`.,;:!?}>*_~\`) plus any unbalanced
       # \`)\`, and scheme-less hits get \`https://\` so open() sees a URL, not a file.
+      # Final gate: after the scheme the host must contain a dot or a port (\`:\`),
+      # OR a \`/\` must follow - drops junk like \`http://www\` while keeping
+      # \`http://localhost:3000\` and \`http://localhost/x\`.
       urls="\$(tmux capture-pane -p -J -S - \${pane:+-t "\$pane"} \\
         | sed -E 's/\\]\\(/ /g' \\
         | tr -s ' \\t<>"'"'"'\`[]' '\\n' \\
         | sed -E 's/^[(*_~!]+//' \\
         | command grep -oE '^(https?://|www\\.|[[:alnum:]][[:alnum:]-]*(\\.[[:alnum:]-]+)*\\.[[:alpha:]]{2,}/)[^[:space:]]*' \\
-        | awk '{ u = \$0; while (length(u)) { c = substr(u, length(u), 1); if (index(".,;:!?}>*_~", c)) { u = substr(u, 1, length(u) - 1); continue } if (c == ")") { t = u; o = gsub(/\\(/, "", t); t = u; cl = gsub(/\\)/, "", t); if (cl > o) { u = substr(u, 1, length(u) - 1); continue } } break } if (u !~ /^https?:\\/\\//) u = "https://" u; print u }' \\
+        | awk '{ u = \$0; while (length(u)) { c = substr(u, length(u), 1); if (index(".,;:!?}>*_~", c)) { u = substr(u, 1, length(u) - 1); continue } if (c == ")") { t = u; o = gsub(/\\(/, "", t); t = u; cl = gsub(/\\)/, "", t); if (cl > o) { u = substr(u, 1, length(u) - 1); continue } } break } if (u !~ /^https?:\\/\\//) u = "https://" u; r = substr(u, index(u, "://") + 3); if (r ~ /^[^\\/]*[.:]/ || r ~ /\\//) print u }' \\
         | awk '{ k = \$0; sub(/\\/+\$/, "", k); if (!seen[k]++) print }' \\
         | sort -f)"
 
