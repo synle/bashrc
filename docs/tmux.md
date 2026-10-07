@@ -32,11 +32,11 @@ prefix (`ws`, `wst`) is **create**, the primary verb — which is what frees `ws
 The shipped `workspace_create` reads a **tmuxp subset** in JSON and depends only on
 `tmux` + `jq`:
 
-| Level   | Keys                                                                                                                         |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| session | `session` (`session_name`), `start_directory` (`folder`), `active_window`, `windows[]`                                       |
-| window  | `name` (`window_name`), `command`, `start_directory`, `layout`, `focus`, `panes[]`, `sleep_before/after`                     |
-| pane    | command string, `null` / `"pane"` / `"blank"`, or `{ shell_command \| command, start_directory, focus, sleep_before/after }` |
+| Level   | Keys                                                                                                                               |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| session | `session` (`session_name`), `start_directory` (`folder`), `active_window`, `windows[]`                                             |
+| window  | `name` (`window_name`), `command`, `start_directory`, `layout`, `focus`, `panes[]`, `sleep_before/after`                           |
+| pane    | command string, `null` / `"pane"` / `"blank"`, or `{ name, shell_command \| command, start_directory, focus, sleep_before/after }` |
 
 ```json
 {
@@ -49,7 +49,7 @@ The shipped `workspace_create` reads a **tmuxp subset** in JSON and depends only
       "layout": "even-horizontal",
       "focus": true,
       "panes": [
-        { "shell_command": ["cd src", "vim"], "focus": true },
+        { "name": "editor", "shell_command": ["cd src", "vim"], "focus": true },
         { "command": "npm test", "start_directory": "web", "sleep_before": 5 },
         "pane"
       ]
@@ -66,6 +66,8 @@ The shipped `workspace_create` reads a **tmuxp subset** in JSON and depends only
 - **`layout`** is allowlisted to `even-horizontal`, `even-vertical`, `main-horizontal`,
   `main-vertical`, `tiled`; anything else is warned about and skipped. It is re-applied
   after every split, so a long pane list never runs out of room.
+- **`name`** on a pane object sets its `@pane_name`, shown as a purple badge in the pane
+  title — the same name `OS_KEY+shift+F2` edits.
 - **`focus: true`** picks the selected window and, inside a window, the selected pane
   (default: first window, first pane).
 - **`sleep_before` / `sleep_after`**: whole seconds clamped to 0–3600, slept **inside the

@@ -485,6 +485,43 @@ These prefix chords cover most day-to-day tmux use and need no mouse. Prefer the
 Workflow patterns built on top of these — scripted workspace sessions, detach/re-attach —
 live in [`docs/tmux.md`](./tmux.md).
 
+### tmux Right-click Menus
+
+`advanced/tmux.config` replaces tmux's stock right-click menus with short custom ones. A
+right-click first focuses what was clicked, so every item acts on that split or tab. Each
+item's letter works as a key while the menu is open.
+
+**Pane** — right-click inside a pane or on its title bar:
+
+| Group      | Items                                                                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rename     | Rename Session `s` (`ctrl+b` then `F6`), Rename Tab `t` (`F2`), Rename Pane Split `p` (`OS_KEY+shift+F2`)                                    |
+| Close      | Close Session `S`, Close Tab `T`, Close Pane Split `P` — each confirms first                                                                 |
+| Split      | Vertical Split `v` (`OS_KEY+d`), Horizontal Split `h` (`OS_KEY+'`), Break Pane to New Tab `b` (`OS_KEY+0`)                                   |
+| Arrange    | Swap Up `u`, Swap Down `d`, Zoom `z`                                                                                                         |
+| Scrollback | Find in Scrollback `f` (`OS_KEY+f`), Copy Mode (vim keys) `g` (`OS_KEY+g`), Copy All Scrollback `y` (`OS_KEY+y`), Open URLs `o` (`OS_KEY+u`) |
+
+When the app in the pane owns the mouse (vim, htop) the click goes to the app; hold
+`OS_KEY` while right-clicking to force the menu.
+
+**Tab** — right-click a tab in the status bar:
+
+| Group       | Items                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| New         | New Tab `n`, New Tab (2 Vertical Split) `v`, New Tab (2 Horizontal Split) `h` — always added last                 |
+| Tab         | Rename Tab `t`, Move Left `l`, Move Right `r`                                                                     |
+| Active Pane | Find in Scrollback `f`, Copy Mode (vim keys) `g`, Copy Scrollback `y`, Open URLs `o` — on the tab's focused split |
+| Close       | Close Tab `T` — confirms first                                                                                    |
+
+Split names follow the table above: **vertical** = side by side, **horizontal** = top /
+bottom. Every scrollback copy (`OS_KEY+y`, `ctrl+b` then `y`, the menu items) trims trailing
+spaces and blank lines at the start and end; a copy-mode selection is copied byte-exact.
+
+**Pane names.** `OS_KEY+shift+F2`, `ctrl+shift+F2`, `ctrl+b` then `shift+F2`, or Rename Pane
+Split set the pane option `@pane_name`, shown as a purple badge after `T<n>` in the pane
+title; an empty name clears it. A workspace config sets it with `"name"` on a pane object
+(see [`docs/tmux.md`](./tmux.md)).
+
 ### Terminal-specific Gaps
 
 | Gap                              | Reason                                                    |

@@ -14,8 +14,8 @@
 #         "sleep_before": 30 },
 #       { "name": "split",  "layout": "even-horizontal", "focus": true,
 #         "panes": [
-#           { "shell_command": ["cd src", "vim"], "focus": true },
-#           { "command": "npm test", "start_directory": "web", "sleep_before": 5 },
+#           { "name": "editor", "shell_command": ["cd src", "vim"], "focus": true },
+#           { "name": "tests", "command": "npm test", "start_directory": "web", "sleep_before": 5 },
 #           "pane"
 #         ] }
 #     ]
@@ -25,7 +25,8 @@
 # relative value joins onto its parent, ~ is $HOME, empty inherits, and the
 # session itself falls back to $PWD.
 # panes follow tmuxp: a string is the command, null / "pane" / "blank" is an
-# empty shell, an object takes shell_command (string or list) or command. A
+# empty shell, an object takes shell_command (string or list) or command, and
+# an optional "name" shown as the pane-title badge (@pane_name). A
 # window without panes is one pane running its own command.
 # layout: even-horizontal | even-vertical | main-horizontal | main-vertical | tiled.
 # sleep_before / sleep_after: whole seconds (0-3600) slept INSIDE the pane around
@@ -253,7 +254,8 @@ function workspace_create() {
   Per window: name, command, start_directory (alias folder), layout, panes[],
   sleep_before / sleep_after. Per pane: a command string, null / \"pane\" /
   \"blank\", or an object with shell_command (string or list) or command,
-  start_directory, focus, sleep_before / sleep_after (seconds, 0-3600, slept
+  name (shown as the pane-title badge), start_directory, focus,
+  sleep_before / sleep_after (seconds, 0-3600, slept
   inside the pane - the build never waits). Relative start_directory values
   join onto the parent's. Layouts: even-horizontal even-vertical
   main-horizontal main-vertical tiled.
@@ -336,7 +338,7 @@ function workspace_create() {
 
   ## one jq pass flattens the config into tagged rows, in build order:
   ##   W <name> <folder> <layout> <focus pane, 1-based, 0 = none>
-  ##   P <command> <folder> <sleep_before> <sleep_after>   (one per pane)
+  ##   P <command> <folder> <sleep_before> <sleep_after> <pane name>   (one per pane)
   ## a window with no "panes" becomes a single P row from its own
   ## command / sleep_* keys. Pane entries follow tmuxp: a string is the command,
   ## null / "pane" / "blank" is an empty shell, an object carries
@@ -376,13 +378,14 @@ function workspace_create() {
                   pcmd,
                   (pobj | .start_directory // .folder // ""),
                   (pobj | .sleep_before | secs),
-                  (pobj | .sleep_after | secs)
+                  (pobj | .sleep_after | secs),
+                  (pobj | .name // "" | tostring)
                 ] | row) )'
 
-  local index=0 failed=false tag f1 f2 f3 f4
+  local index=0 failed=false tag f1 f2 f3 f4 f5
   local win_name="" win_folder="" win_layout="" win_focus=0 win_id="" pane_no=0
   local pane_folder body quoted new_id
-  while IFS=$'\x1f' read -r tag f1 f2 f3 f4; do
+  while IFS=$'\x1f' read -r tag f1 f2 f3 f4 f5; do
     if [ "$tag" = "W" ]; then
       _workspace_finish_window "$win_id" "$win_layout" "$win_focus"
       index=$((index + 1))
@@ -430,6 +433,11 @@ function workspace_create() {
       }
       win_id="$new_id"
     fi
+    ## "name" on a pane object becomes its @pane_name - the purple badge in the
+    ## pane title (tmux.config). The pane just created is the window's active
+    ## one (split-window without -d focuses it; a new window has only it), so
+    ## the window id is enough of a target.
+    [ -z "$f5" ] || tmux set -p -t "$win_id" @pane_name "$f5"
     pane_no=$((pane_no + 1))
   done < <(jq -r "$jq_rows" "$config_file")
   is_truthy "$failed" || _workspace_finish_window "$win_id" "$win_layout" "$win_focus"
@@ -533,7 +541,7 @@ function workspace_sample_json() {
   "windows": [
     { "name": "shell", "focus": true, "layout": "even-horizontal",
       "panes": [
-        { "shell_command": "git status --short --branch", "focus": true },
+        { "name": "status", "shell_command": "git status --short --branch", "focus": true },
         { "shell_command": "git log --oneline -5", "sleep_before": 2 }
       ] },
     { "name": "logs", "command": "git log --oneline --graph --decorate -20" }
