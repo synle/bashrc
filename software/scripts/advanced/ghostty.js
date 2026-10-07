@@ -267,8 +267,8 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     mouse-shift-capture = false
     copy-on-select = false
     confirm-close-surface = false
-    window-padding-x = 6
-    window-padding-y = 6
+    window-padding-x = 3
+    window-padding-y = 3
     # Even padding on both sides of a split, regardless of split orientation.
     window-padding-balance = true
     window-save-state = always
