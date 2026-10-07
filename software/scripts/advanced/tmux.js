@@ -236,10 +236,22 @@ async function writeTmuxCopyShim() {
       # Bridge tmux copy-mode to the profile's copy() function.
       # tmux runs this through \`sh -c\` with no profile loaded, so source it here.
       # --raw keeps the selection byte-exact (unwrap would reflow it).
+      # --trim (scrollback captures only) strips trailing spaces on every line
+      # and drops blank lines at the start and end - capture-pane pads each
+      # line to the pane width and returns the empty screen rows below the
+      # prompt. Blank lines in the middle are kept. A copy-mode selection is
+      # passed without --trim, so what you selected is what you get.
       # shellcheck disable=SC1090,SC1091
       source "$HOME/.bash_syle" > /dev/null 2>&1 || true
+      function _sy_filter() {
+        if [ "$1" = "--trim" ]; then
+          awk '{ sub(/[ \\t]+$/, "") } NF { if (seen) for (i = 0; i < gap; i++) print ""; gap = 0; seen = 1; print; next } { gap++ }'
+        else
+          command cat
+        fi
+      }
       if type copy > /dev/null 2>&1; then
-        copy --raw
+        _sy_filter "$1" | copy --raw
       else
         # No profile clipboard on this host. Drain stdin so the pipe never
         # blocks - tmux has already set its own buffer and emitted OSC 52,
