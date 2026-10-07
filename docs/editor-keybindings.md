@@ -286,8 +286,8 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 | `OS_KEY+]`         | Next tab (alt)         |        ❌        |  ⚠️  |   ❌    |
 | `F2`               | Rename tab             |        ✅        |  ⚠️  |   ✅    |
 | `OS_KEY+F2`        | Rename tab             |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+shift+F2`  | Rename tmux session    |        ❌        |  ✅  |   ❌    |
-| `ctrl+shift+F2`    | Rename tmux session    |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+shift+F2`  | Rename tmux pane       |        ❌        |  ✅  |   ❌    |
+| `ctrl+shift+F2`    | Rename tmux pane       |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+;`         | Rename tab (alt)       |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+m`         | Tab / session switcher |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+p`         | Key palette            |        ❌        |  ✅  |   ❌    |
@@ -434,8 +434,8 @@ what `OS_KEY+<key>` does** — `y` `d` `'` `[` `]` `,` `.` `/` `m` `g` `\` `F2` 
 | `ctrl+b` then `.`          | ⚠️ Next window (stock: move window — use the `prefix+:` prompt)                                                  |
 | `ctrl+b` then `r`          | ⚠️ Rename the current window (stock: `refresh-client`)                                                           |
 | `ctrl+b` then `F2`         | Rename the current window, matches `F2` / `OS_KEY+F2`                                                            |
-| `ctrl+b` then `shift+F2`   | ⚠️ Rename the session, matches `OS_KEY+shift+F2` / `ctrl+shift+F2` (stock `$`, now pane 4)                       |
-| `ctrl+b` then `F6`         | Rename the session — prefix only; bare `F6` stays with OpenCode's `session_rename`                               |
+| `ctrl+b` then `shift+F2`   | Rename the current pane (split), matches `OS_KEY+shift+F2` / `ctrl+shift+F2` — shown after the pane number       |
+| `ctrl+b` then `F6`         | ⚠️ Rename the session — the only session chord (stock `$`, now pane 4); bare `F6` stays with OpenCode            |
 | `ctrl+b` then `c`          | ⚠️ Create a new window (opens in the current pane's folder)                                                      |
 | `ctrl+b` then `n`          | ⚠️ Create a new window, alias of `c` (stock: next window — now `.`)                                              |
 | `ctrl+b` then `/`          | ⚠️ Create a new window, matches `OS_KEY+/` (stock: describe-key)                                                 |
@@ -456,7 +456,7 @@ what `OS_KEY+<key>` does** — `y` `d` `'` `[` `]` `,` `.` `/` `m` `g` `\` `F2` 
 
 `ctrl+b` then `shift+1-9` replaces six stock prefix keys, each still reachable another way:
 `!` break-pane (`OS_KEY+0`), `#` list-buffers (`ctrl+b` then `=`), `$` rename-session
-(`OS_KEY+shift+F2`, `ctrl+shift+F2`, `ctrl+b` then `shift+F2`), `%` split left/right (`OS_KEY+d`, `ctrl+b` then `v`),
+(`ctrl+b` then `F6`), `%` split left/right (`OS_KEY+d`, `ctrl+b` then `v`),
 `&` kill-window (`OS_KEY+q`), `(` previous session (`OS_KEY+m` switcher).
 
 Copy mode is pinned to vi keys (`setw -g mode-keys vi`) so `g`/`G`/`/` behave as listed —
