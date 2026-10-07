@@ -323,6 +323,7 @@ when nothing follows within `escape-time`. If it does not fire, use `OS_KEY+,/.`
 | `OS_KEY+arrow`       | Navigate panes              |        ✅        |          ✅           |   ✅    |
 | `OS_KEY+shift+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+alt+arrow) |   ✅    |
 | `OS_KEY+0`           | Break split into own window |        ❌        |          ✅           |   ❌    |
+| `OS_KEY+shift+1-9`   | Focus pane by number        |        ❌        |          ✅           |   ❌    |
 | `OS_KEY+z`           | Toggle split zoom (alt)     |        ❌        |          ✅           |   ❌    |
 | `OS_KEY+\`           | Toggle UI (tab bar)         |        ✅        |          ❌           |   ✅    |
 | `OS_KEY+shift+\`     | Toggle split zoom           |        ❌        |          ✅           |   ✅    |
@@ -344,6 +345,29 @@ border drag also works (`mouse on`).
 at the end of the `OS_KEY+1-9` row because `base-index 1` means there is no window 0, so
 the key is otherwise dead. The inverse has no binding — run `join-pane -s <window>` from
 the `prefix+:` prompt.
+
+`OS_KEY+shift+1-9` focuses the pane whose number shows in its title bar
+(`pane-base-index 1`, current window only; a missing pane is a no-op). On a US layout the
+chord reaches tmux as the shifted character (`M-!` … `M-(`); tmux also binds the
+extended-keys spelling `M-S-1-9`. Other keyboard layouts shift digits to different
+characters — use `ctrl+b` then `q` and the digit there.
+
+**ctrl twins.** Ghostty and Windows Terminal re-send a few `ctrl` chords as the matching
+`alt` chord (`ESC <key>`), so the tmux bindings also answer to `ctrl` — needed because a
+terminal otherwise encodes `ctrl+digit` as a legacy control byte tmux cannot match.
+
+| Key                 | tmux action        | Windows Terminal | Ghostty |
+| ------------------- | ------------------ | :--------------: | :-----: |
+| `ctrl+1-9`          | Window by index    |        ✅        |   ✅    |
+| `ctrl+shift+1-9`    | Pane by number     |        ✅        |   ✅    |
+| `ctrl+,` / `ctrl+.` | Prev / next window |        ✅        |   ✅    |
+| `ctrl+'`            | Split top/bottom   |        ✅        |   ✅    |
+
+Deliberately **not** twinned, because each is a control character apps depend on:
+`ctrl+m` (Enter), `ctrl+[` (ESC), `ctrl+d` (EOF), `ctrl+\` (SIGQUIT), `ctrl+x` (readline
+prefix, nano exit), `ctrl+/` (readline undo), `ctrl+]` (telnet/ssh escape). In Windows
+Terminal the twins override `ctrl+,` (open settings) and `ctrl+shift+1-9` (new tab with
+profile N). Outside tmux, bash reads `ESC <digit>` as a digit-argument, same as `alt+<digit>`.
 
 ### Text & Search
 
@@ -396,27 +420,40 @@ relocated them because `OS_KEY+arrow` is split navigation here.
 The `OS_KEY` tables above are the custom `alt+`-prefixed bindings from `advanced/tmux.config`.
 These are the stock **prefix chords** — press `ctrl+b`, release, then the key. Most are tmux
 defaults, so they keep working in any tmux, including one running a config this repo did not
-write. The exceptions are marked ⚠️ below: `c` inherits the current pane's path, `,` / `.`
-/ `n` / `r` are rebound away from their stock actions, and both resize steps are widened.
+write. The exceptions are marked ⚠️ below. **Rule of thumb: `ctrl+b` then `<key>` does
+what `OS_KEY+<key>` does** — `y` `d` `'` `[` `]` `,` `.` `/` `m` `g` `\` `F2` and
+`shift+1-9` all mirror their `alt` twin, so one set of keys works either way.
 
 | Chord                      | Action                                                                                                           |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `ctrl+b` then `[`          | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit)                                   |
+| `ctrl+b` then `g`          | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit); matches `OS_KEY+g`               |
+| `ctrl+b` then `[` / `]`    | ⚠️ Previous / next window, matches `OS_KEY+[/]` (stock: copy mode — now `g`; paste-buffer — `prefix+:` prompt)   |
 | `ctrl+b` then `,`          | ⚠️ Previous window (stock: rename window — now `r`)                                                              |
 | `ctrl+b` then `.`          | ⚠️ Next window (stock: move window — use the `prefix+:` prompt)                                                  |
 | `ctrl+b` then `r`          | ⚠️ Rename the current window (stock: `refresh-client`)                                                           |
+| `ctrl+b` then `F2`         | Rename the current window, matches `F2` / `OS_KEY+F2` — `shift+F2` too                                           |
 | `ctrl+b` then `c`          | ⚠️ Create a new window (opens in the current pane's folder)                                                      |
 | `ctrl+b` then `n`          | ⚠️ Create a new window, alias of `c` (stock: next window — now `.`)                                              |
+| `ctrl+b` then `/`          | ⚠️ Create a new window, matches `OS_KEY+/` (stock: describe-key)                                                 |
 | `ctrl+b` then `w`          | Interactive window/session switcher (`choose-tree`)                                                              |
+| `ctrl+b` then `m`          | ⚠️ Same switcher as `OS_KEY+m` (stock: mark pane — `select-pane -m` on the `prefix+:` prompt)                    |
 | `ctrl+b` then `tab`        | Same switcher as `w` — `tab` is unbound in stock tmux, so this is an addition                                    |
 | `ctrl+b` then `x`          | Close / kill the current pane (confirms first)                                                                   |
 | `ctrl+b` then `p`          | Previous window                                                                                                  |
 | `ctrl+b` then `arrow`      | Focus the split in that direction (`select-pane`)                                                                |
 | `ctrl+b` then `alt+arrow`  | ⚠️ Resize the split by 10 (stock 5) — hold `ctrl+b`, tap repeatedly                                              |
 | `ctrl+b` then `ctrl+arrow` | ⚠️ Resize the split by 10 (stock 1)                                                                              |
-| `ctrl+b` then `y`          | Copy the whole visible pane to the clipboard                                                                     |
+| `ctrl+b` then `y`          | ⚠️ Copy the whole scrollback to the clipboard, matches `OS_KEY+y` (was: visible screen only)                     |
 | `ctrl+b` then `u`          | Pick URLs from the pane scrollback (fzf) and open them in the browser — also `alt+u` / `alt+b` (option on macOS) |
+| `ctrl+b` then `d`          | ⚠️ Split left/right in the current folder, matches `OS_KEY+d` (stock: detach — use `prefix+:` `detach`)          |
 | `ctrl+b` then `'`          | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)                                         |
+| `ctrl+b` then `\`          | Toggle split zoom, matches `OS_KEY+\` (stock `z` still works)                                                    |
+| `ctrl+b` then `shift+1-9`  | ⚠️ Focus pane 1-9 (`!` `@` `#` … `(`) — replaces stock `!` `#` `$` `%` `&` `(`, see below                        |
+
+`ctrl+b` then `shift+1-9` replaces six stock prefix keys, each still reachable another way:
+`!` break-pane (`OS_KEY+0`), `#` list-buffers (`ctrl+b` then `=`), `$` rename-session
+(`prefix+:` then `rename-session`), `%` split left/right (`OS_KEY+d`, `ctrl+b` then `v`),
+`&` kill-window (`OS_KEY+q`), `(` previous session (`OS_KEY+m` switcher).
 
 Copy mode is pinned to vi keys (`setw -g mode-keys vi`) so `g`/`G`/`/` behave as listed —
 without it tmux picks emacs keys whenever `$EDITOR` is not vim-like. `mode-keys vi` alone

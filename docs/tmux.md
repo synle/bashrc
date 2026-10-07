@@ -29,10 +29,57 @@ prefix (`ws`, `wst`) is **create**, the primary verb — which is what frees `ws
 `wsls`, not `wsl`, because `wsl` is the Windows Subsystem for Linux launcher and sits on
 `PATH` under MinGW / Git Bash.
 
-The shipped versions use the **simple schema** (one window per entry, no panes) and depend
-only on `tmux` + `jq`. The pane-capable `workspace_tmuxp` and the Node converter further
-down are documented here but deliberately not installed — reach for real `tmuxp` when you
-need panes and layouts.
+The shipped `workspace_create` reads a **tmuxp subset** in JSON and depends only on
+`tmux` + `jq`:
+
+| Level   | Keys                                                                                                                         |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| session | `session` (`session_name`), `start_directory` (`folder`), `active_window`, `windows[]`                                       |
+| window  | `name` (`window_name`), `command`, `start_directory`, `layout`, `focus`, `panes[]`, `sleep_before/after`                     |
+| pane    | command string, `null` / `"pane"` / `"blank"`, or `{ shell_command \| command, start_directory, focus, sleep_before/after }` |
+
+```json
+{
+  "session": "my_project_session",
+  "start_directory": "~/git/my_project",
+  "windows": [
+    { "name": "jobs", "command": "./sync.sh", "sleep_before": 90 },
+    {
+      "name": "dev",
+      "layout": "even-horizontal",
+      "focus": true,
+      "panes": [
+        { "shell_command": ["cd src", "vim"], "focus": true },
+        { "command": "npm test", "start_directory": "web", "sleep_before": 5 },
+        "pane"
+      ]
+    }
+  ]
+}
+```
+
+- **`start_directory`** works at all three levels. Relative values join onto the parent
+  (`"web"` under `~/git/my_project` → `~/git/my_project/web`), `~` is `$HOME`, empty
+  inherits, and the session falls back to `$PWD`.
+- **`panes[]`**: a window without it is one pane running `command`. `shell_command` lists
+  join with `; ` into one pane — splitting needs one `panes` entry per pane.
+- **`layout`** is allowlisted to `even-horizontal`, `even-vertical`, `main-horizontal`,
+  `main-vertical`, `tiled`; anything else is warned about and skipped. It is re-applied
+  after every split, so a long pane list never runs out of room.
+- **`focus: true`** picks the selected window and, inside a window, the selected pane
+  (default: first window, first pane).
+- **`sleep_before` / `sleep_after`**: whole seconds clamped to 0–3600, slept **inside the
+  pane** around its command (`sleep_before` prints a countdown line first). Unlike tmuxp,
+  which sleeps in the loader, the build never waits. On a window, they apply only when it
+  has no `panes`.
+- Not supported: YAML, `before_script`, `shell_command_before`, `environment`, `options`,
+  `window_index`, `suppress_history`, `enter`. Reach for real `tmuxp` for those.
+
+`workspace_sample_json` writes a starter `<stamp>.json` plus an executable `<stamp>.sh`
+that inlines the same config as a `workspace_create - "$@" << 'JSON_EOF'` heredoc.
+
+The older pane-capable `workspace_tmuxp` and the Node converter further down are kept as
+design history; they are not installed.
 
 Configs live in `$WORKSPACE_CONFIG_FOLDER`, which is `$SY_ROOT_FOLDER/workspaces_tmux` —
 i.e. `~/_extra/workspaces_tmux`. `$SY_ROOT_FOLDER` is declared once in
@@ -633,8 +680,9 @@ Resolution order, first hit wins:
 - **The selection is made by window ID read back from tmux**, not by `<session>:<n>`. Window
   indexes depend on `base-index` (this repo's `tmux.config` sets it to `1`), and the config
   knows nothing about that setting.
-- Panes are out of scope: `focus` on a pane is a real tmuxp feature this simple mode does not
-  implement — reach for real `tmuxp` when panes matter.
+- Pane `focus: true` selects that pane inside its window (first pane otherwise); without an
+  explicit `select-pane` the last split would stay active. Once attached,
+  `shift+alt+1-9` (`shift+option` on macOS) jumps to the pane with that title-bar number.
 
 ### `workspace_tmuxp` — parse tmuxp's schema with no tmuxp
 

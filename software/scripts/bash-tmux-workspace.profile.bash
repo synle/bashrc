@@ -3,20 +3,36 @@
 # --- tmux Workspaces ---
 # build, snapshot, and tear down named tmux sessions from a small JSON file.
 #
-# schema (the "simple mode" - one window per entry, no panes, no tmuxp):
+# schema (a tmuxp subset - JSON only, tmuxp is NOT required):
 #   {
 #     "session": "my_project_session",
-#     "folder": "~/git/my_project",
+#     "start_directory": "~/git/my_project",
 #     "active_window": 2,
 #     "windows": [
 #       { "name": "shell",  "command": "git status --short --branch" },
-#       { "name": "logs",   "command": "tail -f logs/app.log", "folder": "/var/log" }
+#       { "name": "logs",   "command": "tail -f logs/app.log", "start_directory": "/var/log",
+#         "sleep_before": 30 },
+#       { "name": "split",  "layout": "even-horizontal", "focus": true,
+#         "panes": [
+#           { "shell_command": ["cd src", "vim"], "focus": true },
+#           { "command": "npm test", "start_directory": "web", "sleep_before": 5 },
+#           "pane"
+#         ] }
 #     ]
 #   }
 #
-# folder is optional at both levels: window wins, then session, then $PWD.
+# start_directory (alias folder) works at session, window, and pane level: a
+# relative value joins onto its parent, ~ is $HOME, empty inherits, and the
+# session itself falls back to $PWD.
+# panes follow tmuxp: a string is the command, null / "pane" / "blank" is an
+# empty shell, an object takes shell_command (string or list) or command. A
+# window without panes is one pane running its own command.
+# layout: even-horizontal | even-vertical | main-horizontal | main-vertical | tiled.
+# sleep_before / sleep_after: whole seconds (0-3600) slept INSIDE the pane around
+# its command - on a pane, or on a window that has no panes. The build never waits.
 # the selected window follows tmuxp: a window carrying "focus": true wins, else
-# the 1-based "active_window" at the top, else the first window.
+# the 1-based "active_window" at the top, else the first window. Inside a window
+# the pane carrying "focus": true is selected, else the first pane.
 # a per-project launcher is a heredoc plus one call - see docs/tmux.md. Either
 # spool the config to a file, or hand it to workspace_create on stdin with "-":
 #   function my_workspace() {
@@ -39,8 +55,8 @@
 #   }
 #
 # jq does the parsing (installed by every _full-setup.sh); tmuxp is NOT required.
-# docs/tmux.md carries the reasoning, the tmuxp comparison, and the pane-capable
-# variants that did not make the cut here.
+# docs/tmux.md carries the full key table, the tmuxp comparison, and the older
+# design variants kept as history.
 #
 # --- Temp workspaces ---
 # For a single throwaway command that should outlive the shell that started it,
@@ -166,6 +182,63 @@ function _workspace_resolve_config() {
   return 1
 }
 
+# resolve a config folder against its parent, tmuxp style. $1 = parent (already
+# absolute), $2 = the folder from the config. Echoes the result.
+## empty -> the parent; leading ~ -> $HOME; absolute -> as-is; anything else is
+## joined onto the parent, so a window "start_directory": "log" under a session
+## at /var lands in /var/log, and a pane's relative folder hangs off its window
+function _workspace_join_folder() {
+  local parent="$1" folder="$2"
+  folder=${folder/#\~/$HOME}
+  case "$folder" in
+  '') echo "$parent" ;;
+  /*) echo "$folder" ;;
+  *) echo "${parent%/}/$folder" ;;
+  esac
+}
+
+# build the shell text one pane runs. $1 = command, $2 = sleep_before seconds,
+# $3 = sleep_after seconds (both already validated digits or empty by jq).
+# Echoes the text, or nothing when there is nothing to run (plain shell).
+## the sleeps run INSIDE the pane, so a delayed pane never holds up the build of
+## the rest of the session (tmuxp sleeps in the loader and blocks it)
+function _workspace_pane_body() {
+  local cmd="$1" before="$2" after="$3" body=""
+  if [ -n "$before" ] && [ "$before" != "0" ]; then
+    body="echo 'workspace: starting in $before seconds'; sleep $before"
+  fi
+  if [ -n "$cmd" ]; then
+    body="${body:+$body; }$cmd"
+  fi
+  if [ -n "$after" ] && [ "$after" != "0" ]; then
+    body="${body:+$body; }sleep $after"
+  fi
+  echo "$body"
+}
+
+# apply a finished window's layout and pane focus. $1 = window id (empty = no
+# window yet, a no-op), $2 = layout, $3 = 1-based pane to focus (0 = first).
+## layout is allowlisted to tmux's five presets - anything else is warned about
+## and skipped rather than passed to tmux. Without an explicit select-pane the
+## LAST split stays active, which is never what a launcher wants.
+function _workspace_finish_window() {
+  local win_id="$1" layout="$2" focus="$3" target
+  [ -n "$win_id" ] || return 0
+  case "$layout" in
+  '') ;;
+  even-horizontal | even-vertical | main-horizontal | main-vertical | tiled)
+    tmux select-layout -t "$win_id" "$layout" > /dev/null 2>&1
+    ;;
+  *) echo "workspace_create: unknown layout '$layout' ignored" >&2 ;;
+  esac
+  case "$focus" in
+  '' | *[!0-9]* | 0) focus=1 ;;
+  esac
+  target=$(tmux list-panes -t "$win_id" -F '#{pane_id}' 2> /dev/null | sed -n "${focus}p")
+  [ -n "$target" ] || target=$(tmux list-panes -t "$win_id" -F '#{pane_id}' 2> /dev/null | sed -n 1p)
+  [ -z "$target" ] || tmux select-pane -t "$target" > /dev/null 2>&1
+}
+
 # build a tmux session from a JSON config, or attach when it already exists
 function workspace_create() {
   if is_help_arg "${1:-}"; then
@@ -177,6 +250,13 @@ function workspace_create() {
   Selected window: a window with \"focus\": true (tmuxp's spelling) wins,
   otherwise the 1-based \"active_window\" at the top level, otherwise the first
   window. An out-of-range or non-numeric value falls back to the first.
+  Per window: name, command, start_directory (alias folder), layout, panes[],
+  sleep_before / sleep_after. Per pane: a command string, null / \"pane\" /
+  \"blank\", or an object with shell_command (string or list) or command,
+  start_directory, focus, sleep_before / sleep_after (seconds, 0-3600, slept
+  inside the pane - the build never waits). Relative start_directory values
+  join onto the parent's. Layouts: even-horizontal even-vertical
+  main-horizontal main-vertical tiled.
   Flags:
     --force    kill the existing session and rebuild it, skipping the prompt
     --detach   build the session and return instead of attaching, for scripts
@@ -252,40 +332,116 @@ function workspace_create() {
 
   local root
   root=$(jq -r '.folder // .start_directory // empty' "$config_file")
-  root=${root/#\~/$HOME}
+  root=$(_workspace_join_folder "$PWD" "$root")
 
-  local index=0 name cmd folder quoted
-  while IFS=$'\t' read -r name cmd folder; do
-    [ -n "$name" ] || name="win$index"
-    folder=${folder/#\~/$HOME}
-    [ -n "$folder" ] || folder="$root"
-    [ -n "$folder" ] || folder="$PWD"
+  ## one jq pass flattens the config into tagged rows, in build order:
+  ##   W <name> <folder> <layout> <focus pane, 1-based, 0 = none>
+  ##   P <command> <folder> <sleep_before> <sleep_after>   (one per pane)
+  ## a window with no "panes" becomes a single P row from its own
+  ## command / sleep_* keys. Pane entries follow tmuxp: a string is the command,
+  ## null / "pane" / "blank" is an empty shell, an object carries
+  ## shell_command (string or list, joined with "; ") or command.
+  ## fields are split on \x1f, NOT a tab: `read` treats tab as whitespace and
+  ## squashes a run of them, so an empty field would shift the rest left.
+  ## sleeps are whole seconds clamped to [0, 3600]; anything else is dropped.
+  local jq_rows='
+    def pobj: if type == "object" then . else {} end;
+    def pcmd:
+      if type == "string" then (if . == "pane" or . == "blank" then "" else . end)
+      elif type == "object" then
+        ((.shell_command // .command // "")
+          | if type == "array" then
+              [ .[] | select(. != null)
+                | if type == "object" then (.cmd // "") else tostring end
+                | select(. != "") ] | join("; ")
+            elif type == "string" then .
+            else "" end)
+      else "" end;
+    def secs:
+      (if type == "string" then (tonumber? // null) else . end)
+      | if type == "number" and . >= 0 then ([., 3600] | min | floor | tostring) else "" end;
+    def row: map(tostring | gsub("\u001f"; " ") | gsub("\n"; "; ")) | join("\u001f");
+    .windows[]? | . as $w
+    | (if (($w.panes | type) == "array") and (($w.panes | length) > 0)
+       then $w.panes
+       else [ { command: ($w.command // ""), sleep_before: $w.sleep_before, sleep_after: $w.sleep_after } ]
+       end) as $p
+    | ( ([ "W",
+           ($w.name // $w.window_name // ""),
+           ($w.folder // $w.start_directory // ""),
+           ($w.layout // ""),
+           ([ $p | to_entries[] | select((.value | pobj | .focus // false) | tostring == "true") | .key + 1 ][0] // 0)
+         ] | row),
+        ($p[] | [ "P",
+                  pcmd,
+                  (pobj | .start_directory // .folder // ""),
+                  (pobj | .sleep_before | secs),
+                  (pobj | .sleep_after | secs)
+                ] | row) )'
+
+  local index=0 failed=false tag f1 f2 f3 f4
+  local win_name="" win_folder="" win_layout="" win_focus=0 win_id="" pane_no=0
+  local pane_folder body quoted new_id
+  while IFS=$'\x1f' read -r tag f1 f2 f3 f4; do
+    if [ "$tag" = "W" ]; then
+      _workspace_finish_window "$win_id" "$win_layout" "$win_focus"
+      index=$((index + 1))
+      win_name="${f1:-win$index}"
+      win_folder=$(_workspace_join_folder "$root" "$f2")
+      win_layout="$f3"
+      win_focus="$f4"
+      win_id=""
+      pane_no=0
+      continue
+    fi
+
+    pane_folder=$(_workspace_join_folder "$win_folder" "$f2")
+    body=$(_workspace_pane_body "$f1" "$f3" "$f4")
 
     ## printf %q keeps quotes/apostrophes in the command intact - tmux hands the
     ## string to sh, so an unescaped "it's" would end the quoting early
-    if [ -n "$cmd" ]; then
-      quoted=$(printf '%q' "$cmd; exec bash")
+    if [ -n "$body" ]; then
+      quoted=$(printf '%q' "$body; exec bash")
       quoted="bash -ic $quoted"
     else
       quoted=""
     fi
 
-    if [ "$index" -eq 0 ]; then
-      tmux new-session -d -s "$session" -n "$name" -c "$folder" ${quoted:+"$quoted"} || {
-        [ -z "$tmp_config" ] || command rm -f "$tmp_config"
-        return 1
+    ## -P -F prints the new window/pane id, so later splits and the layout
+    ## target it by id - never by index, which depends on base-index
+    if [ "$pane_no" -gt 0 ]; then
+      tmux split-window -t "$win_id" -c "$pane_folder" ${quoted:+"$quoted"} || {
+        failed=true
+        break
       }
+      ## re-layout after every split: a deep stack of halvings runs out of room
+      ## ("no space for new pane") long before an evened-out layout does
+      [ -z "$win_layout" ] || tmux select-layout -t "$win_id" "$win_layout" > /dev/null 2>&1
+    elif [ "$index" -eq 1 ]; then
+      new_id=$(tmux new-session -d -P -F '#{window_id}' -s "$session" -n "$win_name" -c "$pane_folder" ${quoted:+"$quoted"}) || {
+        failed=true
+        break
+      }
+      win_id="$new_id"
     else
-      tmux new-window -t "=$session:" -n "$name" -c "$folder" ${quoted:+"$quoted"} || {
-        [ -z "$tmp_config" ] || command rm -f "$tmp_config"
-        return 1
+      new_id=$(tmux new-window -d -P -F '#{window_id}' -t "=$session:" -n "$win_name" -c "$pane_folder" ${quoted:+"$quoted"}) || {
+        failed=true
+        break
       }
+      win_id="$new_id"
     fi
-    index=$((index + 1))
-  done < <(jq -r '.windows[]? | [(.name // .window_name // ""), (.command // ""), (.folder // .start_directory // "")] | @tsv' "$config_file")
+    pane_no=$((pane_no + 1))
+  done < <(jq -r "$jq_rows" "$config_file")
+  is_truthy "$failed" || _workspace_finish_window "$win_id" "$win_layout" "$win_focus"
 
-  if [ "$index" -eq 0 ]; then
-    echo "workspace_create: no windows defined in $config_file" >&2
+  if is_truthy "$failed" || [ "$index" -eq 0 ]; then
+    if is_truthy "$failed"; then
+      ## a half-built session would be attached to on the next run as if it
+      ## were whole - drop it so a rerun builds from scratch
+      tmux kill-session -t "=$session" 2> /dev/null
+    else
+      echo "workspace_create: no windows defined in $config_file" >&2
+    fi
     [ -z "$tmp_config" ] || command rm -f "$tmp_config"
     return 1
   fi
@@ -366,16 +522,20 @@ function workspace_sample_json() {
 
   ## commands are deliberately boring and always present: a sample that assumes
   ## an editor or package manager fails on the machine you are trying it on.
-  ## two windows, the first one focused - panes are not part of the schema.
+  ## two windows, the first one focused and split into two side-by-side panes.
   ## read -d '' keeps the heredoc at top level (bash 3.2 breaks on a heredoc
   ## nested inside $( ... )); it returns non-zero at EOF, hence || true
   local json
   IFS= read -r -d '' json << JSON_EOF || true
 {
   "session": "my_project_session_$stamp",
-  "folder": "$PWD",
+  "start_directory": "$PWD",
   "windows": [
-    { "name": "shell", "command": "git status --short --branch", "focus": true },
+    { "name": "shell", "focus": true, "layout": "even-horizontal",
+      "panes": [
+        { "shell_command": "git status --short --branch", "focus": true },
+        { "shell_command": "git log --oneline -5", "sleep_before": 2 }
+      ] },
     { "name": "logs", "command": "git log --oneline --graph --decorate -20" }
   ]
 }

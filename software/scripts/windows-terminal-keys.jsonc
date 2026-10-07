@@ -176,4 +176,32 @@
   { "command": "find", "keys": "alt+shift+f" },
   { "command": "selectAll", "keys": "alt+shift+a" },
   { "command": { "action": "newWindow" }, "keys": "alt+n" },
+  // tmux ctrl twins: ctrl+<key> re-sent as alt+<key> (ESC <key>) so tmux's alt
+  // chords also answer to ctrl - ctrl+1-9 = tmux window N, ctrl+shift+1-9 = pane
+  // N, ctrl+, / ctrl+. = prev / next window, ctrl+' = split. Mirrors
+  // advanced/ghostty-keys.common.jsonc. Overrides two WT defaults: ctrl+,
+  // (openSettings - the settings UI stays in the tab dropdown) and
+  // ctrl+shift+1-9 (new tab with profile N). Never twinned: ctrl+m / [ / d / \
+  // / x / / / ] - each is a control character apps rely on.
+  { "command": { "action": "sendInput", "input": "\u001b1" }, "keys": "ctrl+1" },
+  { "command": { "action": "sendInput", "input": "\u001b2" }, "keys": "ctrl+2" },
+  { "command": { "action": "sendInput", "input": "\u001b3" }, "keys": "ctrl+3" },
+  { "command": { "action": "sendInput", "input": "\u001b4" }, "keys": "ctrl+4" },
+  { "command": { "action": "sendInput", "input": "\u001b5" }, "keys": "ctrl+5" },
+  { "command": { "action": "sendInput", "input": "\u001b6" }, "keys": "ctrl+6" },
+  { "command": { "action": "sendInput", "input": "\u001b7" }, "keys": "ctrl+7" },
+  { "command": { "action": "sendInput", "input": "\u001b8" }, "keys": "ctrl+8" },
+  { "command": { "action": "sendInput", "input": "\u001b9" }, "keys": "ctrl+9" },
+  { "command": { "action": "sendInput", "input": "\u001b!" }, "keys": "ctrl+shift+1" },
+  { "command": { "action": "sendInput", "input": "\u001b@" }, "keys": "ctrl+shift+2" },
+  { "command": { "action": "sendInput", "input": "\u001b#" }, "keys": "ctrl+shift+3" },
+  { "command": { "action": "sendInput", "input": "\u001b$" }, "keys": "ctrl+shift+4" },
+  { "command": { "action": "sendInput", "input": "\u001b%" }, "keys": "ctrl+shift+5" },
+  { "command": { "action": "sendInput", "input": "\u001b^" }, "keys": "ctrl+shift+6" },
+  { "command": { "action": "sendInput", "input": "\u001b&" }, "keys": "ctrl+shift+7" },
+  { "command": { "action": "sendInput", "input": "\u001b*" }, "keys": "ctrl+shift+8" },
+  { "command": { "action": "sendInput", "input": "\u001b(" }, "keys": "ctrl+shift+9" },
+  { "command": { "action": "sendInput", "input": "\u001b," }, "keys": "ctrl+," },
+  { "command": { "action": "sendInput", "input": "\u001b." }, "keys": "ctrl+." },
+  { "command": { "action": "sendInput", "input": "\u001b'" }, "keys": "ctrl+'" },
 ]
