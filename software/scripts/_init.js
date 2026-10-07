@@ -77,6 +77,8 @@ ${LINE_BREAK_HASH}
     # define safe_source for non-login shells that skip .bash_profile
     function safe_source() { if ! bash -n "$1" 2>/dev/null; then echo "[Warning] source $1 failed (syntax error)" >&2; return 1; fi; . "$1"; }
     ${entryPointSourceFiles.map((file) => 'safe_source "' + file + '"').join("\n")}
+    # optional per-machine work overlays: ~/.bash_work_<name>, name = [A-Za-z0-9_-]+, sourced in glob (name) order
+    for _sy_work_file in "\$HOME"/.bash_work_*; do case "\${_sy_work_file##*/.bash_work_}" in "" | *[!A-Za-z0-9_-]*) continue ;; esac; [ -f "\$_sy_work_file" ] && safe_source "\$_sy_work_file"; done; unset _sy_work_file
   `);
 
   // bootstrap .bash_profile (login shells on all platforms) — sources .bashrc
