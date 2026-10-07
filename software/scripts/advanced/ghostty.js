@@ -221,7 +221,10 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     #
     #   no-cursor    - shell must not override our \`cursor-style = block\` with a
     #                  bar/beam in vim/zsh insert mode.
-    #   sudo         - askpass integration so GUI sudo prompts work.
+    #   no-sudo      - Ghostty's integration defines its own \`sudo\` function AFTER
+    #                  sourcing ~/.bashrc, clobbering our password-alert wrapper in
+    #                  bash-command-wrappers.profile.bash. Its only job is
+    #                  \`--preserve-env=TERMINFO\`, which our wrapper replicates.
     #   no-title     - with title ON, Ghostty's auto-injected integration overrides
     #                  the PROMPT_COMMAND-driven OSC 0 title (set in
     #                  software/bootstrap/profile-advanced.sh) and tabs show the
@@ -233,7 +236,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     #                  connect, so full keys/colors work there too (added 1.2.0).
     #   path         - put ghostty's own bin dir on PATH (default-on; explicit here).
     shell-integration = detect
-    shell-integration-features = no-cursor,sudo,no-title,ssh-env,ssh-terminfo,path
+    shell-integration-features = no-cursor,no-sudo,no-title,ssh-env,ssh-terminfo,path
     # New tabs/splits/windows open in the same cwd as the active pane.
     working-directory = inherit
 
@@ -250,6 +253,11 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # focused. Requires shell integration (enabled above) to know where a command
     # starts/ends. Default is \`never\`; added in 1.3.0.
     notify-on-command-finish = unfocused
+    # Bell (BEL / \\a) alerts. Default is \`no-border\`; \`border\` outlines the alerted
+    # pane until it is focused or typed into. SUDO_PROMPT rings the bell (see
+    # bash-command-wrappers.profile.bash), so a pane waiting on a password gets
+    # a border + 🔔 title + dock bounce when unfocused. Added 1.2.0 (1.2.1 macOS).
+    bell-features = no-system,no-audio,attention,title,border
     # Keep the Ghostty default (false) so Shift bypasses a mouse-grabbing app.
     # This is what makes OSC 8 links clickable inside tmux: with tmux 'mouse on',
     # every plain click is forwarded to tmux, so Ghostty never detects or opens a

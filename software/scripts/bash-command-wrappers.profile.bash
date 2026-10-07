@@ -7,6 +7,16 @@
 # su            — Wrapper: no args opens root shell preserving $PATH (sudo -E bash),
 #                 with args falls back to regular su
 #
+# --- sudo password alert ---
+# SUDO_PROMPT   — Red banner + bell (BEL) on every sudo password prompt. The bell
+#                 drives terminal alerts (Ghostty bell-features border/attention,
+#                 Windows Terminal bellStyle, tmux bell flag).
+# sudo          — (DISABLED, commented out) Wrapper: when a password is actually needed (cached credential
+#                 expired) on a TTY, tints the pane background red (OSC 11) while
+#                 `sudo -v` asks, then restores it (OSC 111) before running the
+#                 command. Also preserves TERMINFO, replacing Ghostty's own sudo
+#                 shell-integration wrapper (disabled via no-sudo in ghostty.js).
+#
 # --- SQLite ---
 # sqlite        — Wrapper: delegates to the binary _sqlite_bin resolves
 #                 (sqlite3, falling back to sqlite). Resolver and the
@@ -92,6 +102,47 @@ function su() {
     command su "$@"
   fi
 }
+
+################################################################################
+# --- sudo password alert ---
+################################################################################
+# Bell + white-on-red banner whenever sudo asks for a password. %p = target user.
+export SUDO_PROMPT=$'\a\e[1;97;41m SUDO PASSWORD for %p \e[0m '
+
+# DISABLED: wrapper kept for reference. Uncomment to re-enable the red pane
+# flash. While disabled, sudo runs unwrapped (no TERMINFO preservation).
+# sudo: tint pane red while a password is pending, preserve TERMINFO.
+#   Pre-authenticates with `sudo -v` only when `sudo -n true` fails (password
+#   needed) and stdin/stderr are TTYs, so cached credentials and piped/scripted
+#   use never flash. OSC 11 sets the background, OSC 111 resets it to the
+#   terminal's configured default.
+#   Caveat: with sudoers timestamp_timeout=0 the command prompts a second time.
+#   Args: passed through to the real sudo.
+#   Returns: sudo's exit status (or `sudo -v`'s when authentication fails).
+# function sudo() {
+#   local arg is_edit=0
+#   for arg in "$@"; do
+#     case "$arg" in
+#       -e | --edit) is_edit=1 ;;
+#     esac
+#   done
+#
+#   if [ -t 0 ] && [ -t 2 ] && ! command sudo -n true 2> /dev/null; then
+#     printf '\e]11;#5a0000\a' >&2
+#     command sudo -v
+#     local auth_status=$?
+#     printf '\e]111\a' >&2
+#     ((auth_status)) && return "$auth_status"
+#   fi
+#
+#   # Mirrors Ghostty's sudo integration: keep TERMINFO so xterm-ghostty works
+#   # under sudo; sudoedit flags reject --preserve-env, so skip them there.
+#   if [ -n "${TERMINFO:-}" ] && ((!is_edit)); then
+#     command sudo --preserve-env=TERMINFO "$@"
+#   else
+#     command sudo "$@"
+#   fi
+# }
 
 ################################################################################
 # --- SQLite ---
