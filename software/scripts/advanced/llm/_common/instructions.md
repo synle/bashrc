@@ -165,6 +165,7 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 - **Read it in full before your first branch, commit, push, PR, or review action of a session**, and follow it as written.
 - Highest-cost rules: PR body fills repo's `pull_request_template.md` if present, no stacked PRs, squash merge only, never work a PR branch in the primary checkout, never hand-build a PR URL or write a bare `#<number>`, never enable `--auto` on a PR you didn't author.
+- Worktree deps (section "Worktree dependencies" there): share global caches and runtimes; give each worktree its own `node_modules` / `.venv` / build output — copy-on-write clone then reconcile against its lockfile; never symlink them across worktrees.
 - Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
 
 ## Plans & Wrap-Ups

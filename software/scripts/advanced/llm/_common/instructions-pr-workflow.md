@@ -78,6 +78,40 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
 - **Never end a turn with a dispatched job in flight** — a parent that stops first freezes the child's status at "running" forever. Await every job dispatched in a turn, land the final report, close each round before the next. A run hitting its deadline finishes its last round rather than issuing one it can't await.
 - **Watch/review is clock-bounded, not pass-counted** — a fixed budget, read-only probes on a short interval, a full pass whenever the fingerprint moves, a periodic keepalive pass, and one final pass before the deadline. Inbound work never interrupts a pass in flight (mark dirty, finish to the safe point, re-run at the head of the queue); never count your own writes. Ends on deadline, all-PRs-terminal, an enumerated stop-and-ask, or GitHub/model service unreachable across a short retry window. Every stop writes resumable PR-memory state. Intervals live in the command sources — never restate a number here.
 
+## Worktree dependencies
+
+Goal: a fresh worktree reaches a working install and build without re-downloading packages, re-installing a language runtime, or sharing state that lets one branch break another. Every ecosystem splits into the same three layers; apply the layer's rule, not a per-language trick.
+
+| Layer               | Examples                                                                                                     | Rule                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| 1. Global cache     | `~/.cache/uv`, `uv python` installs, pnpm store, `~/.cargo/registry`, `GOMODCACHE`, `~/.gradle/caches`, gems | Share — content-addressed, concurrency-safe; most tools do by default |
+| 2. Per-worktree env | `node_modules`, `.venv`, `vendor/bundle`                                                                     | Own copy per worktree — copy-on-write clone or cache-backed install   |
+| 3. Build output     | `target/`, `dist/`, `build/`, `.next/`, project `.gradle/`, test caches                                      | Never shared — speed up with a compiler/build cache instead           |
+
+- **Never symlink a layer-2 or layer-3 folder between worktrees.** Bundlers and Node resolve the real path, so imports escape into another checkout; an install in one worktree rewrites every other one's tree; an editable Python install points at whichever worktree built the venv, so tests silently import another branch's code; concurrent builds corrupt a shared `target/` or `dist/`.
+- **Seed, then reconcile.** Cheapest correct seed for a layer-2 folder is a copy-on-write clone from the primary checkout (`cp -cR` on APFS; `cp --reflink=auto -R` on btrfs/XFS (unverified per filesystem)), followed by the ecosystem's install against **this worktree's** lockfile. The clone saves downloads; the reconcile makes it correct. No clone available → plain cache-backed install, never a full copy of a large tree.
+- **Skip the reconcile only when it is provably a no-op**: lockfile byte-identical to the seed's source (`cmp -s`) AND the env holds no absolute paths. A Python venv always holds them (shebangs, `pyvenv.cfg`, editable `.pth`), so a cloned `.venv` is always reconciled — or rebuilt, which `uv` makes near-instant from cache.
+- **Install commands by ecosystem** (prefer offline/cache-first forms):
+
+  | Lockfile            | Reconcile                                                      | Build-cache speedup               |
+  | ------------------- | -------------------------------------------------------------- | --------------------------------- |
+  | `pnpm-lock.yaml`    | `pnpm install --frozen-lockfile --prefer-offline`              | the repo's task cache (turbo, nx) |
+  | `package-lock.json` | `npm ci --prefer-offline` (wipes `node_modules` — no seed)     | —                                 |
+  | `yarn.lock`         | `yarn install --frozen-lockfile --prefer-offline`              | —                                 |
+  | `uv.lock`           | `uv sync --frozen`                                             | —                                 |
+  | `requirements*.txt` | `uv venv` + `uv pip sync <file>`                               | —                                 |
+  | `Cargo.lock`        | `cargo fetch --locked`                                         | `RUSTC_WRAPPER=sccache`           |
+  | `go.sum`            | `go mod download` (module + build caches already global)       | —                                 |
+  | `Gemfile.lock`      | `bundle install`                                               | —                                 |
+  | Gradle wrapper      | the repo's own Gradle task; venvs it manages stay per worktree | `org.gradle.caching=true`         |
+  | C/C++               | —                                                              | `ccache`                          |
+
+- **Reuse the runtime, never rebuild it.** Python interpreters come from `uv python install <ver>` (once per machine); Node from the version manager already present (corepack, volta, nvm, fnm); Rust toolchains from `rustup`. Never compile or download an interpreter per worktree.
+- **Never point several worktrees at one `CARGO_TARGET_DIR`** (or any shared build output) — they serialize on its lock and invalidate each other's fingerprints. Share compiled work through `sccache` / `ccache` / the build tool's cache, which key by content.
+- **Monorepos reconcile at every lockfile root**, not just the worktree root.
+- **A repo or machine helper wins.** If the repo documents a bootstrap command or a dependency-seeding helper is on PATH, run it instead of these steps; never hand-roll what it already does.
+- **Diagnose by path.** An import, binary, or stack frame resolving into another worktree's path means a shared or stale env — delete that env folder **in this worktree only** and re-run the seed/reconcile; never patch paths by hand, never delete the primary checkout's copy.
+
 ## Merging and cleanup
 
 - **Squash merge only** — `gh pr merge --squash`, one PR / one commit. Never merge commits or rebase merges; never squash local dev history.
