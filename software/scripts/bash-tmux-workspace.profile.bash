@@ -331,7 +331,7 @@ function workspace_create() {
   _workspace_attach_unless_detached "$detach" "$session"
 }
 
-# write a sample config named <datetime>.json, session name carrying the same stamp
+# write a sample config named <datetime>.json plus a <datetime>.sh launcher inlining it
 function workspace_sample_json() {
   if is_help_arg "${1:-}"; then
     echo "workspace_sample_json: write a starter workspace config named <datetime>.json
@@ -341,6 +341,8 @@ function workspace_sample_json() {
   Notes:
     writes into \$PWD unless given a folder, and prints the path it wrote so the
     result can be piped straight into workspace_create
+    also writes an executable <stem>.sh beside it - the same config inlined as a
+    'workspace_create - \"\$@\" << JSON_EOF' heredoc, run it as ./<stem>.sh [--force]
   Examples:
     workspace_sample_json                            # writes \$PWD/<datetime>.json, prints that path
     workspace_sample_json $WORKSPACE_CONFIG_FOLDER   # writes <datetime>.json into that folder instead
@@ -363,21 +365,22 @@ function workspace_sample_json() {
   stamp=$(date +%Y-%m-%d_%H-%M-%S)
 
   ## commands are deliberately boring and always present: a sample that assumes
-  ## an editor or package manager fails on the machine you are trying it on
+  ## an editor or package manager fails on the machine you are trying it on.
+  ## two windows, the first one focused - panes are not part of the schema.
+  ## read -d '' keeps the heredoc at top level (bash 3.2 breaks on a heredoc
+  ## nested inside $( ... )); it returns non-zero at EOF, hence || true
   local json
-  json=$(
-    command cat << JSON_EOF
+  IFS= read -r -d '' json << JSON_EOF || true
 {
   "session": "my_project_session_$stamp",
   "folder": "$PWD",
   "windows": [
-    { "name": "shell", "command": "git status --short --branch" },
-    { "name": "monitor", "command": "top" },
+    { "name": "shell", "command": "git status --short --branch", "focus": true },
     { "name": "logs", "command": "git log --oneline --graph --decorate -20" }
   ]
 }
 JSON_EOF
-  )
+  json="${json%$'\n'}"
 
   if is_truthy "$to_stdout"; then
     printf '%s\n' "$json"
@@ -397,6 +400,23 @@ JSON_EOF
     ;;
   esac
   printf '%s\n' "$json" > "$target" || return 1
+
+  ## sibling launcher: same config inlined on stdin, no file lookup at run time.
+  ## <stem>.json -> <stem>.sh. Plain bash has no workspace_create, so the
+  ## script loads the profile first when the function is missing.
+  local sh_target="${target%.json}.sh"
+  {
+    printf '%s\n' '#!/usr/bin/env bash' \
+      '# workspace launcher - pass --force / --detach through to workspace_create' \
+      'type workspace_create > /dev/null 2>&1 || . "$HOME/.bash_syle"' \
+      '' \
+      "workspace_create - \"\$@\" << 'JSON_EOF'"
+    printf '%s\n' "$json"
+    printf '%s\n' 'JSON_EOF'
+  } > "$sh_target" || return 1
+  command chmod 755 "$sh_target"
+  echo "workspace_sample_json: launcher written to $sh_target" >&2
+
   echo "$target"
 }
 
