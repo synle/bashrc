@@ -44,6 +44,7 @@ async function doWork() {
   await writeTmuxCopyShim();
   await writeTmuxKeysShim();
   await writeTmuxUrlsShim();
+  await writeTmuxExportShim();
 }
 
 /**
@@ -202,6 +203,56 @@ async function writeTmuxKeysShim() {
           less -R
         fi
       }
+    `,
+  );
+
+  if (!IS_DRY_RUN) {
+    fs.chmodSync(shimPath, 0o755);
+  }
+}
+
+/**
+ * Writes the `sy-tmux-export` shim onto PATH — the right-click "Export
+ * Workspace" item.
+ *
+ * Two modes, so no quoting of user text ever lands in tmux.config:
+ * - `sy-tmux-export <session>` opens a tmux prompt (`export to:`) prefilled
+ *   with `~/tmux_workspace_<stamp>.json`; the user edits it or presses Enter.
+ * - `sy-tmux-export --save <session> <path>` is the prompt's callback: it
+ *   sources the profile (run-shell has none) and calls `workspace_export`,
+ *   which names the saved session after the file and reports via
+ *   `tmux display-message`.
+ *
+ * Side effects: writes and chmods `~/.local/bin/sy-tmux-export`.
+ *
+ * @returns {Promise<void>}
+ */
+async function writeTmuxExportShim() {
+  const shimPath = path.join(BASE_HOMEDIR_LINUX, ".local", "bin", "sy-tmux-export");
+
+  log(">> Updating tmux export shim", shimPath);
+
+  if (!IS_DRY_RUN) {
+    fs.mkdirSync(path.dirname(shimPath), { recursive: true });
+  }
+
+  await writeText(
+    shimPath,
+    code`
+      #!/usr/bin/env bash
+      # Right-click "Export Workspace": prompt for the path, then export.
+      # A path containing a single quote is not supported (it is spliced into
+      # the prompt's callback inside single quotes).
+      if [ "$1" = "--save" ]; then
+        # shellcheck disable=SC1090,SC1091
+        source "$HOME/.bash_syle" > /dev/null 2>&1 || true
+        workspace_export "$2" "$3" > /dev/null
+        exit $?
+      fi
+      session="$1"
+      [ -n "$session" ] || session=$(tmux display-message -p '#{session_name}')
+      default="$HOME/tmux_workspace_$(date +%Y-%m-%d_%H-%M-%S).json"
+      tmux command-prompt -p "export to:" -I "$default" "run-shell \\"$0 --save '$session' '%%'\\""
     `,
   );
 

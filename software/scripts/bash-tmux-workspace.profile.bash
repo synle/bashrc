@@ -751,37 +751,52 @@ function workspace_freeze() {
 ## print to.
 function workspace_export() {
   if is_help_arg "${1:-}"; then
-    echo "workspace_export: save a running tmux session as a workspace JSON in \$HOME
-  Usage: workspace_export [session]
-  Writes \$HOME/tmux_workspace_<YYYY-MM-DD_HH-MM-SS>.json and prints its path.
-  The saved \"session\" is the file name (tmux_workspace_<stamp>), so reopening
-  the export builds a new session next to the original instead of replacing it.
+    echo "workspace_export: save a running tmux session as a workspace JSON
+  Usage: workspace_export [session] [file.json]
+  With no file, writes \$HOME/tmux_workspace_<YYYY-MM-DD_HH-MM-SS>.json.
+  The file name (minus .json) becomes the saved \"session\", so reopening the
+  export builds a new session next to the original instead of replacing it.
+  A leading ~ is expanded, .json is appended when missing, and an existing
+  file is never overwritten. Prints the path it wrote.
   Same capture as workspace_freeze: session, windows, panes, pane names,
   start directories, layout guess, focus, and each pane's command where
   tmux can recover it. Reopen it with workspace_create <path>.
+  The tmux right-click 'Export Workspace' item prompts for this path,
+  prefilled with the default, via ~/.local/bin/sy-tmux-export.
   Examples:
-    workspace_export                         # the session you are in
-    workspace_export my_active_session       # a named session
-    workspace_create \"\$(workspace_export)\" --force   # export, then rebuild it"
+    workspace_export                                   # the session you are in, default path
+    workspace_export my_active_session                 # a named session, default path
+    workspace_export my_active_session ~/api_setup     # -> ~/api_setup.json, session api_setup
+    workspace_create \"\$(workspace_export)\" --force     # export, then rebuild it"
     return 1
   fi
 
-  ## the export's "session" is the file's own name (tmux_workspace_<stamp>), so
-  ## reopening it builds a NEW session beside the original instead of hitting
-  ## the "already exists - kill and rebuild?" path, and the session and file
-  ## are easy to match up.
-  local session="${1:-}" name out json
-  name="tmux_workspace_$(date +%Y-%m-%d_%H-%M-%S)"
-  out="$HOME/$name.json"
-  if [ -e "$out" ]; then
-    echo "workspace_export: $out already exists (two exports in one second?) - try again" >&2
+  local session="${1:-}" out="${2:-}" name json
+  [ -n "$out" ] || out="$HOME/tmux_workspace_$(date +%Y-%m-%d_%H-%M-%S).json"
+  out=${out/#\~/$HOME}
+  case "$out" in *.json) ;; *) out="$out.json" ;; esac
+
+  ## session name = file name without .json. tmux rejects "." and ":" in
+  ## session names, so those become "_".
+  name=$(basename "$out" .json | tr '.:' '__')
+
+  local fail=""
+  if [ -z "$name" ]; then
+    fail="workspace_export: empty file name: $out"
+  elif [ -e "$out" ]; then
+    fail="workspace_export: $out already exists - pick another name"
+  elif [ ! -d "$(dirname "$out")" ]; then
+    fail="workspace_export: folder does not exist: $(dirname "$out")"
+  fi
+  if [ -n "$fail" ]; then
+    echo "$fail" >&2
+    [ -z "${TMUX:-}" ] || tmux display-message "$fail"
     return 1
   fi
+
   json=$(workspace_freeze ${session:+"$session"}) || return 1
-  printf '%s\n' "$json" \
-    | jq --arg name "$name" '.session = $name' \
-      > "$out" || return 1
-  [ -z "${TMUX:-}" ] || tmux display-message "Workspace exported: $out"
+  printf '%s\n' "$json" | jq --arg name "$name" '.session = $name' > "$out" || return 1
+  [ -z "${TMUX:-}" ] || tmux display-message "Workspace exported: $out (session $name)"
   echo "$out"
 }
 
