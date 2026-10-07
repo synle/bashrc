@@ -599,8 +599,12 @@ function workspace_freeze() {
     with no session, freezes the session you are currently in
     with no output file, prints to stdout - nothing is written anywhere
     with an output file, writes it relative to \$PWD and prints the path it wrote
-    tmux only reports the running process NAME, so 'tail -f app.log' freezes as
-    'tail' - fill the arguments back in by hand
+    captures windows, panes (with pane names), start directories, focus, a
+    layout guess, and commands: a pane built by workspace_create gives back its
+    exact command (and sleep_before); any other pane only reports its running
+    process NAME ('tail -f app.log' freezes as 'tail'), and a plain shell's last
+    typed command is not recoverable
+    workspace_export writes the same capture to \$HOME/tmux_workspace_<stamp>.json
   Examples:
     workspace_freeze                                     # current session -> stdout, writes nothing
     workspace_freeze my_active_session                   # that session   -> stdout, writes nothing
@@ -635,19 +639,60 @@ function workspace_freeze() {
     return 1
   fi
 
-  ## one tmux call for the whole session; jq builds the JSON so a window named
-  ## `weird "name"` cannot produce an unparseable file
-  local json
-  json=$(tmux list-windows -t "=$session" -F '#{window_name}	#{pane_current_path}	#{pane_current_command}' \
+  ## one tmux call for the whole session, one row per PANE; jq builds the JSON
+  ## so a window named `weird "name"` cannot produce an unparseable file.
+  ## Fields are split on \x1f (a path or name may contain a tab).
+  ## What each pane's command is recovered from, best first:
+  ##   1. pane_start_command - a pane built by workspace_create started as
+  ##      `bash -ic "<cmd>; exec bash"`, so the original command comes back
+  ##      exactly, and a leading "starting in N seconds; sleep N;" becomes
+  ##      sleep_before: N again. Two escape layers are undone, outer first:
+  ##      tmux's own quoting of the format value (\\ and \"), then printf %q.
+  ##   2. pane_current_command - the running PROCESS NAME only (`tail`, not
+  ##      `tail -f app.log`), unless it is a bare shell.
+  ## A plain shell's last typed command is NOT recoverable: it lives in that
+  ## shell's history, which tmux cannot read.
+  ## Layout is guessed from pane positions: one row -> even-horizontal, one
+  ## column -> even-vertical, else tiled (tmux's exact layout string is not
+  ## something workspace_create accepts).
+  local sep=$'\x1f' json
+  json=$(tmux list-panes -s -t "=$session" -F "#{window_index}${sep}#{window_name}${sep}#{window_active}${sep}#{pane_active}${sep}#{pane_current_path}${sep}#{pane_current_command}${sep}#{pane_start_command}${sep}#{@pane_name}${sep}#{pane_left}${sep}#{pane_top}" \
     | jq -R -s --arg session "$session" '
-        [ split("\n")[] | select(length > 0) | split("\t")
-          | { name: .[0], folder: .[1], command: .[2] } ]
+        def shell: test("^-?(bash|zsh|sh|fish)$");
+        def startcmd:
+          if test("^\"bash -ic ") then
+            .[10:-1] | gsub("\\\\(?<c>.)"; .c) | gsub("\\\\(?<c>.)"; .c) | sub("; exec bash$"; "")
+          else "" end;
+        [ split("\n")[] | select(length > 0) | split("\u001f")
+          | { w: (.[0] | tonumber), wname: .[1], wactive: (.[2] == "1"),
+              active: (.[3] == "1"), folder: .[4], cur: .[5],
+              start: (.[6] | startcmd), pname: .[7],
+              left: (.[8] | tonumber), top: (.[9] | tonumber) }
+          | . + (if (.start | test("^echo .workspace: starting in [0-9]+ seconds.; sleep [0-9]+; "))
+                 then (.start | capture("^echo .workspace: starting in (?<n>[0-9]+) seconds.; sleep [0-9]+; (?<rest>.*)$")
+                       | { sleep_before: (.n | tonumber), cmd: .rest })
+                 elif .start != "" then { cmd: .start }
+                 elif (.cur | shell) then { cmd: "" }
+                 else { cmd: .cur } end) ]
+        | group_by(.w)
         | { session: $session,
-            windows: [ .[] | {
-              name: .name,
-              command: (if (.command | test("^(bash|zsh|sh|fish)$")) then "" else .command end),
-              folder: .folder
-            } | with_entries(select(.value != "")) ] }')
+            start_directory: ((flatten | map(select(.wactive and .active)))[0].folder // .[0][0].folder),
+            windows: [ .[] | . as $ps | {
+              name: $ps[0].wname,
+              start_directory: $ps[0].folder,
+              focus: $ps[0].wactive,
+              layout: (if ($ps | length) == 1 then ""
+                       elif ([$ps[].top] | unique | length) == 1 then "even-horizontal"
+                       elif ([$ps[].left] | unique | length) == 1 then "even-vertical"
+                       else "tiled" end),
+              panes: [ $ps[] | {
+                name: .pname,
+                command: .cmd,
+                start_directory: (if .folder == $ps[0].folder then "" else .folder end),
+                sleep_before: .sleep_before,
+                focus: (.active and ($ps | length) > 1)
+              } | with_entries(select(.value != "" and .value != null and .value != false)) ]
+            } | with_entries(select(.value != "" and .value != false)) ] }')
 
   if [ -z "$json" ]; then
     echo "workspace_freeze: captured nothing from $session" >&2
@@ -664,6 +709,33 @@ function workspace_freeze() {
     return 1
   fi
   printf '%s\n' "$json" > "$out" || return 1
+  echo "$out"
+}
+
+# export the current (or named) session to ~/tmux_workspace_<stamp>.json
+## thin wrapper over workspace_freeze with a fixed, never-colliding default
+## path - what the tmux right-click "Export Workspace" item runs. Inside tmux it
+## also flashes the path in the status line, since a menu has no terminal to
+## print to.
+function workspace_export() {
+  if is_help_arg "${1:-}"; then
+    echo "workspace_export: save a running tmux session as a workspace JSON in \$HOME
+  Usage: workspace_export [session]
+  Writes \$HOME/tmux_workspace_<YYYY-MM-DD_HH-MM-SS>.json and prints its path.
+  Same capture as workspace_freeze: session, windows, panes, pane names,
+  start directories, layout guess, focus, and each pane's command where
+  tmux can recover it. Reopen it with workspace_create <path>.
+  Examples:
+    workspace_export                         # the session you are in
+    workspace_export my_active_session       # a named session
+    workspace_create \"\$(workspace_export)\" --force   # export, then rebuild it"
+    return 1
+  fi
+
+  local session="${1:-}" out
+  out="$HOME/tmux_workspace_$(date +%Y-%m-%d_%H-%M-%S).json"
+  workspace_freeze ${session:+"$session"} "$out" > /dev/null || return 1
+  [ -z "${TMUX:-}" ] || tmux display-message "Workspace exported: $out"
   echo "$out"
 }
 

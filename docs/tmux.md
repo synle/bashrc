@@ -10,18 +10,19 @@ The workspace functions described below ship for real in
 `software/scripts/bash-tmux-workspace.profile.bash`, sourced into `~/.bash_syle` by a
 `# SOURCE` marker in `software/bootstrap/profile-advanced.sh`:
 
-| Function                | Alias  | Does                                                       |
-| ----------------------- | ------ | ---------------------------------------------------------- |
-| `workspace_create`      | `ws`   | Build a session from a JSON config, or attach if it exists |
-| `workspace_open`        | `wso`  | Attach to a running session, or pick one from a list       |
-| `workspace_sample_json` | `wssj` | Write a starter config named `<datetime>.json`             |
-| `workspace_freeze`      | `wsf`  | Snapshot a running session back into a config              |
-| `workspace_list`        | `wsls` | List sessions with window counts                           |
-| `workspace_close`       | `wsc`  | Kill one session by exact name                             |
-| `workspace_close_all`   | `wsca` | Kill every session, after confirming                       |
-| `workspace_temp_create` | `wst`  | Run one throwaway command in the shared temp session       |
-| `workspace_temp_open`   | `wsto` | Attach to the shared temp session                          |
-| `workspace_temp_close`  | `wstc` | Kill every temp session                                    |
+| Function                | Alias  | Does                                                         |
+| ----------------------- | ------ | ------------------------------------------------------------ |
+| `workspace_create`      | `ws`   | Build a session from a JSON config, or attach if it exists   |
+| `workspace_open`        | `wso`  | Attach to a running session, or pick one from a list         |
+| `workspace_sample_json` | `wssj` | Write a starter config named `<datetime>.json`               |
+| `workspace_freeze`      | `wsf`  | Snapshot a running session back into a config                |
+| `workspace_export`      |        | Freeze to `~/tmux_workspace_<stamp>.json` (right-click menu) |
+| `workspace_list`        | `wsls` | List sessions with window counts                             |
+| `workspace_close`       | `wsc`  | Kill one session by exact name                               |
+| `workspace_close_all`   | `wsca` | Kill every session, after confirming                         |
+| `workspace_temp_create` | `wst`  | Run one throwaway command in the shared temp session         |
+| `workspace_temp_open`   | `wsto` | Attach to the shared temp session                            |
+| `workspace_temp_close`  | `wstc` | Kill every temp session                                      |
 
 Aliases are the first letter of each word after `workspace`, with two carve-outs. The bare
 prefix (`ws`, `wst`) is **create**, the primary verb — which is what frees `wsc` for
@@ -901,6 +902,23 @@ Notes:
   the JSON.
 
 ### `workspace_freeze` — the cheap knockoff of `tmuxp freeze`
+
+**Shipped behavior** (the code below is the earlier design, kept as history): the installed
+`workspace_freeze` captures every pane — pane names (`@pane_name`), start directories,
+window/pane focus, and a layout guess (one row → `even-horizontal`, one column →
+`even-vertical`, else `tiled`). Commands come back in two grades:
+
+- **Exact** for panes `workspace_create` built. tmux keeps each pane's start command
+  (`pane_start_command`), which is `bash -ic "<cmd>; exec bash"`; both escape layers (tmux's
+  quoting, then `printf %q`) are undone, and the `starting in N seconds; sleep N;` prefix
+  turns back into `sleep_before: N`. Quotes and backslashes round-trip intact.
+- **Process name only** for any other pane (`tail`, not `tail -f app.log`). A plain shell's
+  last typed command lives in its own history, which tmux cannot read, so it is omitted.
+
+`workspace_export [session]` writes the same capture to
+`~/tmux_workspace_<YYYY-MM-DD_HH-MM-SS>.json`; it is what the right-click **Export
+Workspace** item runs. Verified round trip: build → export → `workspace_create` the export →
+freeze again gives an identical file.
 
 `tmuxp freeze -o my_project.yaml` snapshots a live session back into a config. Same idea
 here, JSON out, no Python:

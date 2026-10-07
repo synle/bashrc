@@ -500,6 +500,7 @@ item's letter works as a key while the menu is open.
 | Split      | Vertical Split `v` (`OS_KEY+d`), Horizontal Split `h` (`OS_KEY+'`), Break Pane to New Tab `b` (`OS_KEY+0`)                                   |
 | Arrange    | Swap Up `u`, Swap Down `d`, Zoom `z`                                                                                                         |
 | Scrollback | Find in Scrollback `f` (`OS_KEY+f`), Copy Mode (vim keys) `g` (`OS_KEY+g`), Copy All Scrollback `y` (`OS_KEY+y`), Open URLs `o` (`OS_KEY+u`) |
+| Workspace  | Export Workspace `e` — `workspace_export`, see below                                                                                         |
 
 When the app in the pane owns the mouse (vim, htop) the click goes to the app; hold
 `OS_KEY` while right-clicking to force the menu.
@@ -511,11 +512,16 @@ When the app in the pane owns the mouse (vim, htop) the click goes to the app; h
 | New         | New Tab `n`, New Tab (2 Vertical Split) `v`, New Tab (2 Horizontal Split) `h` — always added last                 |
 | Tab         | Rename Tab `t`, Move Left `l`, Move Right `r`                                                                     |
 | Active Pane | Find in Scrollback `f`, Copy Mode (vim keys) `g`, Copy Scrollback `y`, Open URLs `o` — on the tab's focused split |
+| Workspace   | Export Workspace `e`                                                                                              |
 | Close       | Close Tab `T` — confirms first                                                                                    |
 
 Split names follow the table above: **vertical** = side by side, **horizontal** = top /
 bottom. Every scrollback copy (`OS_KEY+y`, `ctrl+b` then `y`, the menu items) trims trailing
 spaces and blank lines at the start and end; a copy-mode selection is copied byte-exact.
+
+**Export Workspace** saves the whole session to `~/tmux_workspace_<YYYY-MM-DD_HH-MM-SS>.json`
+and flashes the path; reopen it with `workspace_create <path>`. See `workspace_freeze` in
+[`docs/tmux.md`](./tmux.md) for what is captured.
 
 **Pane names.** `OS_KEY+shift+F2`, `ctrl+shift+F2`, `ctrl+b` then `shift+F2`, or Rename Pane
 Split set the pane option `@pane_name`, shown as a purple badge after `T<n>` in the pane
