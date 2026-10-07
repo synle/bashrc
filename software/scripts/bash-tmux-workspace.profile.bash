@@ -245,31 +245,63 @@ function workspace_create() {
   if is_help_arg "${1:-}"; then
     echo "workspace_create: build or attach a tmux session described by a JSON file
   Usage: workspace_create <name|path.json|-> [--force] [--detach]
-  When the session already exists you are asked whether to kill and rebuild it;
-  answering no (the default) attaches to the running session instead.
-  Reading '-' takes the config on stdin, so a launcher needs no temp file.
-  Selected window: a window with \"focus\": true (tmuxp's spelling) wins,
-  otherwise the 1-based \"active_window\" at the top level, otherwise the first
-  window. An out-of-range or non-numeric value falls back to the first.
-  Per window: name, command, start_directory (alias folder), layout, panes[],
-  sleep_before / sleep_after. Per pane: a command string, null / \"pane\" /
-  \"blank\", or an object with shell_command (string or list) or command,
-  name (shown as the pane-title badge), start_directory, focus,
-  sleep_before / sleep_after (seconds, 0-3600, slept
-  inside the pane - the build never waits). Relative start_directory values
-  join onto the parent's. Layouts: even-horizontal even-vertical
-  main-horizontal main-vertical tiled.
-  Flags:
-    --force    kill the existing session and rebuild it, skipping the prompt
-    --detach   build the session and return instead of attaching, for scripts
-  Lookup order for <name>:
+
+  Ways to call it:
+    workspace_create my_project.json         # a file path (relative or absolute)
+    workspace_create my_project              # a bare name, found via the lookup order
+    workspace_create ~/tmux_workspace_2026-10-07_16-05-39.json   # reopen an export
+    workspace_create - < my_project.json     # config on stdin - no file lookup
+    workspace_create - \"\$@\" << 'JSON_EOF'   # inline heredoc, the launcher form
+      { \"session\": \"my_project\", \"windows\": [ ... ] }
+    JSON_EOF
+    ./my_project.sh --force                  # launcher written by workspace_sample_json
+  Lookup order for a bare <name> (first hit wins):
     <name>  <name>.json  \$PWD/<name>.json  $WORKSPACE_CONFIG_FOLDER/<name>.json
+
+  Flags (anywhere on the line - the first non-flag argument is the config):
+    --force    if the session exists, kill it and rebuild - no prompt
+    --detach   build (or find) the session and return instead of attaching
+
+  When the session already exists (matched by the config's \"session\" name,
+  exactly - 'api' never matches 'api_staging'), NO second session is created:
+    interactive, answer no / Enter   attach to the RUNNING session as-is -
+                                     nothing is rebuilt, no command re-runs
+    interactive, answer yes          kill it (and everything running in it),
+                                     then rebuild from the config
+    --force                          kill and rebuild, no prompt
+    no terminal (script / cron)      treated as no: attach, or return with --detach
+  To run two copies side by side, change \"session\" in the config.
+
+  Config keys (a tmuxp subset, JSON only):
+    session level: session (alias session_name), start_directory (alias folder),
+      active_window (1-based), windows[]
+    window level: name (alias window_name), command, start_directory, layout,
+      focus, panes[], sleep_before / sleep_after (used when there are no panes)
+    pane entries: a command string; null / \"pane\" / \"blank\" for an empty
+      shell; or an object with shell_command (string or list) or command,
+      name (shown as the pane-title badge), start_directory, focus,
+      sleep_before / sleep_after
+  Rules:
+    start_directory: relative values join onto the parent's, ~ is \$HOME, empty
+      inherits; the session falls back to \$PWD
+    layout: even-horizontal even-vertical main-horizontal main-vertical tiled
+    sleep_before / sleep_after: whole seconds 0-3600, slept INSIDE the pane -
+      the build never waits
+    selected window: \"focus\": true wins, else active_window, else the first;
+      inside a window the pane with \"focus\": true, else the first pane
+
+  Related:
+    workspace_temp_create <cmd>   one command in a fixed shared temp session -
+                                  no config file; same exists / --force rules
+    workspace_export [session]    save a running session to
+                                  \$HOME/tmux_workspace_<stamp>.json for reopening
+    workspace_freeze, workspace_sample_json, workspace_open, workspace_list
+
   Examples:
-    workspace_create my_project.json                # build from ./my_project.json, then attach
-    workspace_create my_project                     # same file, found via the lookup order above
-    workspace_create my_project --force             # kill the running session and rebuild, no prompt
-    workspace_create my_project --force --detach    # rebuild but stay in this shell - the script form
-    workspace_create - --force < my_project.json    # config on stdin, no file lookup at all
+    workspace_create my_project                     # build, then attach
+    workspace_create my_project --force             # rebuild the running session, no prompt
+    workspace_create my_project --force --detach    # rebuild but stay in this shell
+    workspace_create \"\$(workspace_export)\" --force   # snapshot this session, rebuild from it
     workspace_sample_json && workspace_create \$(ls -t *.json | head -1)   # scaffold, then build it"
     return 1
   fi
@@ -722,6 +754,8 @@ function workspace_export() {
     echo "workspace_export: save a running tmux session as a workspace JSON in \$HOME
   Usage: workspace_export [session]
   Writes \$HOME/tmux_workspace_<YYYY-MM-DD_HH-MM-SS>.json and prints its path.
+  The saved \"session\" is the file name (tmux_workspace_<stamp>), so reopening
+  the export builds a new session next to the original instead of replacing it.
   Same capture as workspace_freeze: session, windows, panes, pane names,
   start directories, layout guess, focus, and each pane's command where
   tmux can recover it. Reopen it with workspace_create <path>.
@@ -732,9 +766,21 @@ function workspace_export() {
     return 1
   fi
 
-  local session="${1:-}" out
-  out="$HOME/tmux_workspace_$(date +%Y-%m-%d_%H-%M-%S).json"
-  workspace_freeze ${session:+"$session"} "$out" > /dev/null || return 1
+  ## the export's "session" is the file's own name (tmux_workspace_<stamp>), so
+  ## reopening it builds a NEW session beside the original instead of hitting
+  ## the "already exists - kill and rebuild?" path, and the session and file
+  ## are easy to match up.
+  local session="${1:-}" name out json
+  name="tmux_workspace_$(date +%Y-%m-%d_%H-%M-%S)"
+  out="$HOME/$name.json"
+  if [ -e "$out" ]; then
+    echo "workspace_export: $out already exists (two exports in one second?) - try again" >&2
+    return 1
+  fi
+  json=$(workspace_freeze ${session:+"$session"}) || return 1
+  printf '%s\n' "$json" \
+    | jq --arg name "$name" '.session = $name' \
+      > "$out" || return 1
   [ -z "${TMUX:-}" ] || tmux display-message "Workspace exported: $out"
   echo "$out"
 }

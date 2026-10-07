@@ -917,7 +917,9 @@ window/pane focus, and a layout guess (one row → `even-horizontal`, one column
 
 `workspace_export [session]` writes the same capture to
 `~/tmux_workspace_<YYYY-MM-DD_HH-MM-SS>.json`; it is what the right-click **Export
-Workspace** item runs. Verified round trip: build → export → `workspace_create` the export →
+Workspace** item runs. The exported `"session"` is set to the file's own name
+(`tmux_workspace_<stamp>`), so reopening an export builds a new session beside the original
+instead of prompting to kill and rebuild it. Verified round trip: build → export → `workspace_create` the export →
 freeze again gives an identical file.
 
 `tmuxp freeze -o my_project.yaml` snapshots a live session back into a config. Same idea
