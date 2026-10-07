@@ -1,7 +1,7 @@
 /** Installs tmux plugin manager (tpm) and writes tmux configuration. */
 
 /**
- * @type {Object<string, string|number>} Tunable values substituted into
+ * @type {Object<string, string|number>} Tunable values and shared fragments substituted into
  * `tmux.config` at write time. The config file carries `<NAME>` placeholders;
  * every entry here replaces its matching token, so a number like the pane
  * resize step is declared once here instead of repeated across eight `bind`
@@ -13,6 +13,9 @@ const TMUX_CONFIG = {
   // stock steps are 5 and 1, both too small to cross a wide pane without a
   // long key repeat.
   RESIZE_PANE_CELLS: 10,
+  // Right-click pane menu items, shared by the MouseDown3Border and
+  // MouseDown3Pane bindings so the two menus can never drift apart.
+  PANE_MENU_ITEMS: String.raw`"Rename Session" s { command-prompt -p "session name:" -I "#S" "rename-session '%%'" } "Rename Tab" t { command-prompt -p "window name:" -I "#W" "rename-window '%%'" } "Rename Pane Split" p { command-prompt -p "pane name:" -I "#{@pane_name}" "set -p @pane_name '%%'" } "" "Close Session" S { confirm-before -p "close session #S and ALL its windows? (y/n)" kill-session } "Close Tab" T { confirm-before -p "close window T#I and all its panes? (y/n)" kill-window } "Close Pane Split" P { confirm-before -p "close pane #{pane_index}? (y/n)" kill-pane } "" "Vertical Split" v { split-window -h -c "#{pane_current_path}" } "Horizontal Split" h { split-window -v -c "#{pane_current_path}" } "#{?#{>:#{window_panes},1},,-}Break Pane to New Tab" b { break-pane } "" "#{?#{>:#{window_panes},1},,-}Swap Up" u { swap-pane -U } "#{?#{>:#{window_panes},1},,-}Swap Down" d { swap-pane -D } "#{?#{>:#{window_panes},1},,-}#{?window_zoomed_flag,Unzoom,Zoom}" z { resize-pane -Z } "" "Find in Scrollback" f { copy-mode ; send-keys / } "Copy Mode (vim keys)" g { copy-mode } "Copy All Scrollback" y { run "tmux capture-pane -p -J -S - -t #{pane_id} | $HOME/.local/bin/sy-tmux-copy --trim" ; display "Scrollback copied to clipboard" } "Open URLs" o { display-popup -E -w 80% -h 60% -T " open url " "$HOME/.local/bin/sy-tmux-urls #{pane_id}" } "" "Export Workspace" e { run "$HOME/.local/bin/sy-tmux-export '#{session_name}'" }`,
 };
 
 /**
