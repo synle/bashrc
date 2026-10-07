@@ -788,6 +788,13 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
     `getSharedLLMInstructionFilePaths()` forces it to the end
     (`LLM_PERSONA_INSTRUCTION_FILE`). Mid-list, the rule prose after it drowns the voice.
 
+**User-authored path-keyed blocks refresh on every deploy.** After upserting the managed
+block, each CLI setup runs `refreshPathKeyedBlocks()` (`llm-common.js`): any
+`<!-- BEGIN <label> | <path> -->` … `<!-- END … -->` block **already in** the target file
+gets the current bytes of `<path>` (`~/` / `$HOME/` expanded). Never adds a block — no
+marker, no change (why `CLAUDE.md` stays lean). Skips `synle/bashrc |` keys. Missing, empty,
+outside-home, credential-shaped source, or duplicate markers → old body kept, error logged.
+
 After any corpus change, deploy + verify:
 
 ```bash

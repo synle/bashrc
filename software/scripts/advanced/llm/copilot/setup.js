@@ -493,7 +493,9 @@ async function _doCopilotInstructionsWork(targetDir) {
   // insertMode: "prepend" creates the block at the top when copilot-instructions.md is
   // brand new or the markers are missing — so the persona directive is the first thing
   // the model reads, matching Claude and opencode.
-  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "prepend").trim() + "\n";
+  // Then refresh any user-authored `<!-- BEGIN <label> | <path> -->` block already in the file.
+  const merged =
+    refreshPathKeyedBlocks(replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "prepend")).trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

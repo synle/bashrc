@@ -641,3 +641,76 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
     }
   });
 });
+
+describe("refreshPathKeyedBlocks", () => {
+  /** @type {string} Temp home holding block sources for each test. */
+  let home;
+  beforeEach(() => {
+    home = fs.mkdtempSync(path.join(os.tmpdir(), "pathkeyed-"));
+  });
+
+  /**
+   * Builds a file holding one path-keyed block.
+   * @param {string} key - `<label> | <path>` marker key.
+   * @param {string} body - Current block body.
+   * @returns {string} File content.
+   */
+  function withBlock(key, body) {
+    return `top\n<!-- BEGIN ${key} -->\n${body}\n<!-- END ${key} -->\nbottom\n`;
+  }
+
+  it("replaces the block body with the source file's current content", () => {
+    fs.writeFileSync(path.join(home, "ctx.md"), "new rules\n");
+    const out = llm.refreshPathKeyedBlocks(withBlock("Mine | ~/ctx.md", "old rules"), home);
+    expect(out).toBe(withBlock("Mine | ~/ctx.md", "new rules"));
+  });
+
+  it("expands $HOME/ the same as ~/", () => {
+    fs.writeFileSync(path.join(home, "ctx.md"), "new rules");
+    expect(llm.refreshPathKeyedBlocks(withBlock("Mine | $HOME/ctx.md", "old"), home)).toBe(withBlock("Mine | $HOME/ctx.md", "new rules"));
+  });
+
+  it("keeps the old body when the source file is empty", () => {
+    fs.writeFileSync(path.join(home, "ctx.md"), "  \n");
+    const input = withBlock("Mine | ~/ctx.md", "old rules");
+    expect(llm.refreshPathKeyedBlocks(input, home)).toBe(input);
+  });
+
+  it("keeps the old body when the source file is missing", () => {
+    const input = withBlock("Mine | ~/absent.md", "old rules");
+    expect(llm.refreshPathKeyedBlocks(input, home)).toBe(input);
+  });
+
+  it("never adds a block that is not already in the file", () => {
+    fs.writeFileSync(path.join(home, "ctx.md"), "new rules");
+    expect(llm.refreshPathKeyedBlocks("no markers here\n", home)).toBe("no markers here\n");
+  });
+
+  it("skips repo-owned synle/bashrc keys", () => {
+    const input = withBlock("synle/bashrc | software/x.md", "managed");
+    expect(llm.refreshPathKeyedBlocks(input, home)).toBe(input);
+  });
+
+  it("refuses a source outside the home folder", () => {
+    const input = withBlock("Mine | /etc/hosts", "old rules");
+    expect(llm.refreshPathKeyedBlocks(input, home)).toBe(input);
+  });
+
+  it("refuses a credential-shaped source", () => {
+    fs.writeFileSync(path.join(home, ".env"), "TOKEN=replace-me");
+    const input = withBlock("Mine | ~/.env", "old rules");
+    expect(llm.refreshPathKeyedBlocks(input, home)).toBe(input);
+  });
+
+  it("leaves duplicated markers untouched", () => {
+    fs.writeFileSync(path.join(home, "ctx.md"), "new rules");
+    const input = withBlock("Mine | ~/ctx.md", "a") + withBlock("Mine | ~/ctx.md", "b");
+    expect(llm.refreshPathKeyedBlocks(input, home)).toBe(input);
+  });
+
+  it("is idempotent on a second run", () => {
+    fs.writeFileSync(path.join(home, "ctx.md"), "new rules");
+    const once = llm.refreshPathKeyedBlocks(withBlock("Mine | ~/ctx.md", "old"), home);
+    expect(llm.refreshPathKeyedBlocks(once, home)).toBe(once);
+  });
+});

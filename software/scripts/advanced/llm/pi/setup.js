@@ -191,7 +191,9 @@ async function _doPiInstructionsWork() {
 
   // Upsert the managed block. insertMode "append" creates it when AGENTS.md is
   // brand new or the markers are missing.
-  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+  // Then refresh any user-authored `<!-- BEGIN <label> | <path> -->` block already in the file.
+  const merged =
+    refreshPathKeyedBlocks(replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append")).trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

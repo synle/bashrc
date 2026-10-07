@@ -255,7 +255,9 @@ async function _doInstructionsWork(targetDir) {
 
   // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when CLAUDE.md is brand new or the markers are missing.
-  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+  // Then refresh any user-authored `<!-- BEGIN <label> | <path> -->` block already in the file.
+  const merged =
+    refreshPathKeyedBlocks(replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append")).trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

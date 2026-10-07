@@ -1314,6 +1314,83 @@ async function getLLMCustomInstructions() {
   ].join("\n");
 }
 
+// --- Path-Keyed Block Refresh ---
+
+/**
+ * Regex for one path-keyed marker line: `<!-- BEGIN <label> | <path> -->`. Group 1 is
+ * the whole key (`<label> | <path>`), group 2 the path.
+ * @type {RegExp}
+ */
+const LLM_PATH_KEYED_BEGIN_REGEX = /^<!-- BEGIN ((?:[^|\n]+?) \| ([^\n]+?)) -->$/gm;
+
+/**
+ * Path fragments never inlined into an instructions file, even when a marker names them.
+ * Matching blocks keep their old content and log an error (Secret Handling).
+ * @type {RegExp}
+ */
+const LLM_PATH_KEYED_SECRET_REGEX =
+  /(^|\/)(\.env[^/]*|\.ssh|\.aws|\.gnupg|kubeconfig|id_[^/]*|[^/]*credential[^/]*|[^/]*\.pem|[^/]*\.key)(\/|$)/i;
+
+/**
+ * Refreshes every user-authored path-keyed block already present in an instructions file.
+ * A block is `<!-- BEGIN <label> | <path> -->` … `<!-- END <label> | <path> -->`; its body
+ * becomes the current contents of `<path>` (`~/` and `$HOME/` expand to `homeFolder`).
+ *
+ * Only blocks already in the file are touched — nothing is ever added, so a CLI file
+ * without a custom marker (e.g. `CLAUDE.md`) stays exactly as it was. Repo-owned keys
+ * (`synle/bashrc | …`) are skipped; their setup step owns them. A block is left
+ * unchanged, with an error logged, when its source is missing, empty, outside
+ * `homeFolder`, credential-shaped, or its markers are not exactly one BEGIN + one END.
+ *
+ * @param {string} text - Full instructions file content.
+ * @param {string} [homeFolder=BASE_HOMEDIR_LINUX] - Folder `~/` and `$HOME/` expand to; sources must live under it.
+ * @returns {string} Content with every refreshable block replaced; unchanged when none are.
+ */
+function refreshPathKeyedBlocks(text, homeFolder = BASE_HOMEDIR_LINUX) {
+  /** @type {string} Resolved home with a trailing separator, for containment checks. */
+  const homePrefix = path.resolve(homeFolder) + path.sep;
+  let result = text;
+  for (const match of text.matchAll(LLM_PATH_KEYED_BEGIN_REGEX)) {
+    const [, key, rawPath] = match;
+    if (key.startsWith("synle/bashrc |")) continue;
+
+    const begin = `<!-- BEGIN ${key} -->`;
+    const end = `<!-- END ${key} -->`;
+    if (result.split(begin).length !== 2 || result.split(end).length !== 2) {
+      log(`ERROR: path-keyed block "${key}" needs exactly one BEGIN and one END marker; left unchanged`);
+      continue;
+    }
+
+    /** @type {string} Source path with `~/` / `$HOME/` expanded. */
+    const sourcePath = path.resolve(rawPath.trim().replace(/^(~|\$HOME)(?=\/)/, homeFolder));
+    if (!sourcePath.startsWith(homePrefix) || LLM_PATH_KEYED_SECRET_REGEX.test(sourcePath)) {
+      log(`ERROR: path-keyed block "${key}" source is outside home or credential-shaped; left unchanged`);
+      continue;
+    }
+
+    let body = "";
+    try {
+      body = fs.readFileSync(fs.realpathSync(sourcePath), "utf-8").trim();
+    } catch (error) {
+      log(`ERROR: path-keyed block "${key}" source unreadable (${error.code || error.message}); left unchanged`);
+      continue;
+    }
+    if (!body) {
+      log(`ERROR: path-keyed block "${key}" source is empty; left unchanged`);
+      continue;
+    }
+
+    const beginIdx = result.indexOf(begin);
+    const endIdx = result.indexOf(end);
+    if (endIdx < beginIdx) {
+      log(`ERROR: path-keyed block "${key}" END precedes BEGIN; left unchanged`);
+      continue;
+    }
+    result = `${result.slice(0, beginIdx)}${begin}\n${body}\n${result.slice(endIdx)}`;
+  }
+  return result;
+}
+
 // --- Shared Command Registry (deployed as slash commands / skills per CLI) ---
 
 /**
