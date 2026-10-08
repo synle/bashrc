@@ -5,6 +5,8 @@
   // --- Editor Behavior ---
   "hard_tabs": false, // Use spaces instead of tabs for indentation. Values: true (tabs), false (spaces)
   "soft_wrap": "editor_width", // Wrap lines at preferred_line_length. Values: "none", "editor_width", "preferred_line_length"
+  // Wrapped continuation lines keep the source line's indent, so long bash/JS stays readable (Zed 1.23+).
+  "soft_wrap_indent": "same", // Values: "none", "same", "extra_one", "extra_two"
   "auto_indent_on_paste": true, // Auto-indent pasted code to match surrounding context. Values: true, false
   "linked_edits": true, // Rename matching HTML/JSX tags when editing one. Values: true, false
   "multi_cursor_modifier": "cmd_or_ctrl", // Key for adding cursors via click. Values: "alt", "cmd_or_ctrl"
@@ -34,6 +36,12 @@
 
   // --- UI ---
   "cursor_blink": false, // Disable cursor blink animation. Values: true, false
+  "cursor_animation": { "enabled": true }, // Smooth cursor movement animation (Zed 1.20+). Values: { enabled: true|false }
+  // Show the git branch in the window title — tells worktree windows apart (Zed 1.20+).
+  // Variables: projectName, fileName, filePath, relativePath, fileStem, remoteName, remoteHost, appName, branch, separator
+  "window_title_format": "${projectName}${separator}${branch}${separator}${relativePath}",
+  // Focus a buffer already open in another pane instead of opening a duplicate tab (Zed 1.19+). Values: true, false
+  "reveal_if_open": true,
   "minimap": { "show": "never" }, // Disable the code minimap sidebar. Values: true, false
   "scrollbar": { "show": "auto" }, // Scrollbar visibility. Values: "auto", "system", "always", "never"
   "gutter": {
@@ -68,7 +76,10 @@
 
   // --- Dock positions (override Zed defaults: project_panel="right", agent="left") ---
   // Match VS Code / Sublime convention: file tree on the LEFT, agent/AI on the RIGHT.
-  "project_panel": { "dock": "left" }, // File tree dock side. Values: "left", "right"
+  "project_panel": {
+    "dock": "left", // File tree dock side. Values: "left", "right"
+    "folder_indicator": "both", // Show disclosure chevron and folder icon together (Zed 1.19+). Values: "icon", "chevron", "both"
+  },
   "outline_panel": { "dock": "left" }, // Symbol outline dock side — pair with the file tree. Values: "left", "right"
   "agent": {
     "dock": "right", // Agent / AI panel dock side. Values: "left", "right", "bottom"
