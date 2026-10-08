@@ -253,6 +253,10 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # focused. Requires shell integration (enabled above) to know where a command
     # starts/ends. Default is \`never\`; added in 1.3.0.
     notify-on-command-finish = unfocused
+    # Ring the bell AND post a desktop notification (default is \`bell,no-notify\`).
+    notify-on-command-finish-action = bell,notify
+    # Only for commands running 30s+ (default 5s notifies on every short build).
+    notify-on-command-finish-after = 30s
     # Bell (BEL / \\a) alerts. Default is \`no-border\`; \`border\` outlines the alerted
     # pane until it is focused or typed into. SUDO_PROMPT rings the bell (see
     # bash-command-wrappers.profile.bash), so a pane waiting on a password gets

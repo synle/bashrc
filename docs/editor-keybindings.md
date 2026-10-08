@@ -203,16 +203,23 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Editor UI
 
-| Key                   | Action            | VS Code | Subl Text | Subl Merge | Zed | Vim |
-| --------------------- | ----------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+\`            | Toggle left dock  |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+shift+\`      | Toggle right dock |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
-| `ctrl+shift+OS_KEY+\` | Toggle soft wrap  |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+shift+enter`  | Toggle soft wrap  |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
-| `ctrl+shift+enter`    | Toggle soft wrap  |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
-| `` ctrl+` ``          | Toggle terminal   |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
-| `F5`                  | Refresh / revert  |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `F11`                 | Fullscreen        |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+| Key                   | Action                               | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| --------------------- | ------------------------------------ | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+\`            | Toggle left dock                     |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+\`      | Toggle right dock                    |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `ctrl+shift+OS_KEY+\` | Toggle soft wrap                     |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+enter`  | Toggle soft wrap                     |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `ctrl+shift+enter`    | Toggle soft wrap                     |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `ctrl+shift+tab`      | Toggle markdown preview (`.md` only) |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `` ctrl+` ``          | Toggle terminal                      |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `F5`                  | Refresh / revert                     |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `F11`                 | Fullscreen                           |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+
+`ctrl+shift+tab` is scoped to markdown so it keeps its default tab switching everywhere else.
+VS Code swaps preview ↔ source in place (`markdown.showPreview` / `markdown.showSource`).
+Zed opens `markdown::OpenPreview`; from the preview, `pane::GoBack` returns to the source
+(Zed has no "show source" action). Sublime has no in-editor preview — MarkdownPreview
+renders to the browser and the source stays active.
 
 ### Splits (editors)
 
@@ -373,19 +380,20 @@ profile N). Outside tmux, bash reads `ESC <digit>` as a digit-argument, same as 
 
 ### Text & Search
 
-| Key              | Action                    | Windows Terminal | tmux | Ghostty |
-| ---------------- | ------------------------- | :--------------: | :--: | :-----: |
-| `OS_KEY+c`       | Copy                      |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+v`       | Paste                     |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+f`       | Find                      |        ✅        |  ✅  |   ✅    |
-| `OS_KEY+g`       | Copy mode                 |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+y`       | Copy whole scrollback     |        ❌        |  ✅  |   ✅    |
-| `OS_KEY+a`       | Select all                |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+shift+c` | Copy (escape hatch)       |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+shift+v` | Paste (escape hatch)      |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+shift+f` | Find (escape hatch)       |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+shift+a` | Select all (escape hatch) |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+shift+g` | Copy mode (escape hatch)  |        ❌        |  ✅  |   ❌    |
+| Key                   | Action                    | Windows Terminal | tmux | Ghostty |
+| --------------------- | ------------------------- | :--------------: | :--: | :-----: |
+| `OS_KEY+c`            | Copy                      |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+v`            | Paste                     |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+f`            | Find                      |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+g`            | Copy mode                 |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+y`            | Copy whole scrollback     |        ❌        |  ✅  |   ✅    |
+| `OS_KEY+a`            | Select all                |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+c`      | Copy (escape hatch)       |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+v`      | Paste (escape hatch)      |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+f`      | Find (escape hatch)       |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+a`      | Select all (escape hatch) |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+g`      | Copy mode (escape hatch)  |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+ctrl+shift+c` | Copy as plain text        |        ❌        |  ❌  |   ✅    |
 
 The `OS_KEY+shift+` rows are an escape hatch: same action as the plain chord, for when an
 app inside the terminal (tmux, vim, readline — `OS_KEY` is `alt` off macOS) takes the plain

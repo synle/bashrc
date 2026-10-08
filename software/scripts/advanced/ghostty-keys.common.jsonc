@@ -75,6 +75,9 @@
   { "key": "OS_KEY+shift+v", "action": "paste_from_clipboard" },
   { "key": "OS_KEY+shift+a", "action": "select_all" },
   { "key": "OS_KEY+shift+f", "action": "start_search" },
+  // Plain-text-only copy, for when the `:mixed` HTML flavor (Ghostty 1.3.0's
+  // default copy format) pastes badly into an editor or form field.
+  { "key": "OS_KEY+ctrl+shift+c", "action": "copy_to_clipboard:plain" },
   // OS_KEY+y sends ESC y (= alt+y), which tmux binds to "copy the whole
   // scrollback". Needed on macOS where cmd never reaches tmux; on Linux
   // OS_KEY is alt, so this just re-sends the same chord. Outside tmux bash

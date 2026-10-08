@@ -118,6 +118,16 @@
     ],
   },
   { "key": "ctrl+shift+OS_KEY+f", "command": "lsp_format_document" },
+  // markdown preview — unified cross-editor chord ctrl+shift+tab (matches VS Code/Zed).
+  // Sublime has no in-editor preview, so MarkdownPreview renders to the browser and the
+  // source stays the active view (nothing to toggle back to). Scoped to markdown so
+  // ctrl+shift+tab keeps its default view-stack switching everywhere else.
+  {
+    "key": "ctrl+shift+tab",
+    "command": "markdown_preview",
+    "args": { "target": "browser", "parser": "markdown" },
+    "context": [{ "key": "selector", "operator": "equal", "operand": "text.html.markdown" }],
+  },
   {
     "key": "OS_KEY+shift+f",
     "command": "show_panel",

@@ -239,4 +239,20 @@
       "OS_KEY-d": "pane::SplitRight",
     },
   },
+  // toggle markdown preview <-> source (matches VS Code/Sublime ctrl+shift+tab).
+  // Zed has no "show source" action, so the preview side uses pane::GoBack, which
+  // returns to the editor the preview was opened from. Scoped so ctrl+shift+tab keeps
+  // its default tab switching everywhere else.
+  {
+    "context": "Editor && extension == md",
+    "bindings": {
+      "ctrl-shift-tab": "markdown::OpenPreview",
+    },
+  },
+  {
+    "context": "MarkdownPreview",
+    "bindings": {
+      "ctrl-shift-tab": "pane::GoBack",
+    },
+  },
 ]

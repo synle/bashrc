@@ -6,6 +6,7 @@
   "remember_open_files": false, // Don't reopen files from previous session on startup. Values: true, false
   "gpu_window_buffer": true, // Use GPU buffer for the window — smoother rendering. Values: true, false, "auto"
   "index_workers": 2, // Limit indexing threads to 2 — prevents CPU hogging while still enabling Goto Symbol. Values: integer (0 disables indexing)
+  "reload_file_in_background": true, // Reload files changed on disk in the background (dev build 4198+; older builds ignore unknown keys). Values: true, false
 
   // --- Typography & Rendering ---
   "font_options": ["gray_antialias", "subpixel_antialias"], // Font rendering hints. Values: "bold", "italic", "gray_antialias", "subpixel_antialias", "no_antialias", "no_bold", "no_italic"

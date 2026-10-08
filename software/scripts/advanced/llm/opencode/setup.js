@@ -49,11 +49,13 @@ const COPILOT_MODEL_CONFIGS = {
 /**
  * Stream timeouts, in milliseconds, applied to every provider's `options`. Without
  * these a dead SSE stream waits forever, which is indistinguishable from a hang;
- * with them the request aborts and `opencode-auto-continue` can retry. 3 minutes is
- * loose enough for a cold Ollama model load over LAN.
+ * with them the request aborts and `opencode-auto-continue` can retry. Pinned to
+ * 5 minutes for both, matching the upstream default raised in opencode v1.18.27:
+ * long enough for slow reasoning models and a cold Ollama load over LAN, and pinned
+ * explicitly so older opencode builds (no default) still get a finite timeout.
  * @type {{ chunkTimeout: number, headerTimeout: number }}
  */
-const PROVIDER_STREAM_TIMEOUTS = { chunkTimeout: 180000, headerTimeout: 60000 };
+const PROVIDER_STREAM_TIMEOUTS = { chunkTimeout: 300000, headerTimeout: 300000 };
 
 /**
  * Model used for cheap side tasks (session titles, summaries, compaction). Keeping

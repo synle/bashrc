@@ -262,4 +262,16 @@
     "key": "ctrl+shift+enter",
     "command": "editor.action.toggleWordWrap",
   },
+  // toggle markdown preview <-> source in place (matches Zed/Sublime ctrl+shift+tab).
+  // Scoped by `when` so ctrl+shift+tab keeps its default editor switching elsewhere.
+  {
+    "key": "ctrl+shift+tab",
+    "command": "markdown.showPreview",
+    "when": "editorLangId == markdown && editorTextFocus",
+  },
+  {
+    "key": "ctrl+shift+tab",
+    "command": "markdown.showSource",
+    "when": "activeWebviewPanelId == 'markdown.preview'",
+  },
 ]

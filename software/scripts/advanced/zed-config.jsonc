@@ -42,6 +42,11 @@
   "window_title_format": "${projectName}${separator}${branch}${separator}${relativePath}",
   // Focus a buffer already open in another pane instead of opening a duplicate tab (Zed 1.19+). Values: true, false
   "reveal_if_open": true,
+  // New windows open an empty untitled buffer instead of the Launchpad (Zed 1.20+). Values: "launchpad", "empty_tab"
+  "on_new_window": "empty_tab",
+  // Open .md files in the normal editor, not the rendered preview (Zed 1.20+; pinned to the
+  // default for clarity). ctrl-shift-tab toggles the preview (zed-keys.common.jsonc). Values: true, false
+  "markdown_preview": { "open_markdown_files_in_preview": false },
   "minimap": { "show": "never" }, // Disable the code minimap sidebar. Values: true, false
   "scrollbar": { "show": "auto" }, // Scrollbar visibility. Values: "auto", "system", "always", "never"
   "gutter": {

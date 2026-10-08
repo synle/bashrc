@@ -315,6 +315,13 @@ const COPILOT_MANAGED_SETTINGS = {
   // nobody reads outside an active bug hunt. Raise it back to "all" by hand
   // for a debugging session. tradeoff: less post-hoc detail. risk: low.
   logLevel: "warning",
+  // Group tool activity into expandable work summaries instead of a line per
+  // tool call — long agent runs stay scannable. tradeoff: one expand to see raw
+  // tool output. risk: none.
+  transcriptView: "concise",
+  // No random command tip on every launch. tradeoff: miss new-feature tips.
+  // risk: none.
+  showTipsOnStartup: false,
   // Adversarial planning agent. `rubberDuck` makes `/rubber-duck` available to
   // argue against a plan before it is executed — worth having for architecture,
   // workflow, and migration design, where the expensive mistake is committed
