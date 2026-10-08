@@ -602,12 +602,14 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 ### Splits & Navigation
 
-| Key                            | Action           |
-| ------------------------------ | ---------------- |
-| `ctrl+d`, `,d`, `,5`           | Vertical split   |
-| `,'`, `,s`                     | Horizontal split |
-| `ctrl+x`, `ctrl+q`, `,w`, `,x` | Close split      |
-| `ctrl+arrow`, `,arrow`         | Navigate splits  |
+| Key                            | Action                               |
+| ------------------------------ | ------------------------------------ |
+| `ctrl+d`, `,d`                 | Vertical split                       |
+| `,'`, `,s`                     | Horizontal split                     |
+| `ctrl+x`, `ctrl+q`, `,w`, `,x` | Close split                          |
+| `ctrl+arrow`, `,arrow`         | Navigate splits                      |
+| `,1` … `,9`                    | Go to Nth buffer tab (tabline order) |
+| `,[` / `,]`                    | Previous / next buffer tab           |
 
 ### Toggles (normal mode)
 

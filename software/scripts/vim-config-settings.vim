@@ -175,20 +175,34 @@ nnoremap <silent> <C-g> <C-b>
 " no <Leader> mappings exist here — set mapleader elsewhere before adding any.
 nnoremap <Bslash> :set number! norelativenumber<CR>
 
-" ,z to toggle soft wrap (same as } and visual-mode Tab). [ / ] stay vim's
+" ,i / ,<Space> / ,| (shift+\) to toggle whitespace visualization (invisibles).
+" ,<S-Bslash> covers terminals using the kitty keyboard protocol, which can report
+" shift+\ as a shifted \ instead of a literal |. Defined BEFORE ,<Bslash> below so
+" the wrap toggle wins if vim files <S-Bslash> under a simplified ,\ form.
+nnoremap <silent> ,i :set list!<CR>
+nnoremap <silent> ,<Space> :set list!<CR>
+nnoremap <silent> ,<Bar> :set list!<CR>
+nnoremap <silent> ,<S-Bslash> :set list!<CR>
+
+" ,z / ,\ to toggle soft wrap (same as }). [ / ] stay vim's
 " bracket prefixes so ]c / [c (signify hunk jumps) and [[ / ]] keep working.
 nnoremap <silent> ,z :set wrap!<CR>
+nnoremap <silent> ,<Bslash> :set wrap!<CR>
 
-" ,i to toggle whitespace visualization (invisibles)
-nnoremap <silent> ,i :set list!<CR>
+" ,[ / ,] for previous / next buffer tab (pairs with ,1..,9).
+nnoremap <silent> ,[ :bprevious<CR>
+nnoremap <silent> ,] :bnext<CR>
 
 " } (shift+]) to toggle soft wrap — matches VS Code/Sublime/Zed's
 " ctrl+shift+OS_KEY+\ chord conceptually (one-key wrap toggle).
 " Overrides vim's default `}` (jump to next paragraph end).
 nnoremap } :set wrap!<CR>
 
-" Tab in visual mode toggles soft wrap and keeps the selection.
-xnoremap <Tab> <Esc>:set wrap!<CR>gv
+" Tab / Shift+Tab in visual mode indent / dedent and keep the selection, so
+" repeated presses keep shifting — VS Code/Sublime parity. Replaces the old
+" visual-mode Tab wrap toggle; ,z / ,\ / } still toggle wrap.
+xnoremap <Tab> >gv
+xnoremap <S-Tab> <gv
 
 " ctrl+shift+enter (all OSes) / cmd+shift+enter (MacVim) also toggle soft wrap,
 " matching VS Code/Sublime/Zed/text-server. GUI vim and terminals that report
@@ -227,12 +241,17 @@ nnoremap <C-q> :q<CR>
 " Ctrl-d to open a vertical split
 nnoremap <C-d> :vsplit<CR>
 
-" Splits match tmux (tmux.config): ,d / ,5 side-by-side (vertical), ,' / ,s stacked (horizontal).
+" Splits match tmux (tmux.config): ,d side-by-side (vertical), ,' / ,s stacked (horizontal).
+" ,5 is not a split here — ,1..,9 jump to buffer tabs (see below).
 " ,v is clipboard image/text paste, not a split.
 nnoremap <silent> ,d :vsplit<CR>
-nnoremap <silent> ,5 :vsplit<CR>
 nnoremap <silent> ,' :split<CR>
 nnoremap <silent> ,s :split<CR>
+
+" ,1..,9 jump to the Nth buffer tab in the lightline-bufferline tabline (left to right).
+for s:i in range(1, 9)
+  execute printf('nmap <silent> ,%d <Plug>lightline#bufferline#go(%d)', s:i, s:i)
+endfor
 
 " ,w / ,x to close the current split
 nnoremap <silent> ,w <c-w>q
