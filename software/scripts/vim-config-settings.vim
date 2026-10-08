@@ -171,9 +171,9 @@ nnoremap <silent> <C-g> <C-b>
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Toggle
 """""""""""""""""""""""""""""""""""""""""""""""""
-" \ to toggle line numbers (absolute current line + relative others). Binding \ shadows vim's default <Leader>;
+" \ to toggle absolute line numbers (relative numbers stay off). Binding \ shadows vim's default <Leader>;
 " no <Leader> mappings exist here — set mapleader elsewhere before adding any.
-nnoremap <Bslash> :set number! relativenumber!<CR>
+nnoremap <Bslash> :set number! norelativenumber<CR>
 
 " ,z to toggle soft wrap (same as } and visual-mode Tab). [ / ] stay vim's
 " bracket prefixes so ]c / [c (signify hunk jumps) and [[ / ]] keep working.
@@ -227,21 +227,26 @@ nnoremap <C-q> :q<CR>
 " Ctrl-d to open a vertical split
 nnoremap <C-d> :vsplit<CR>
 
-" ,v / ,5 for vertical split, ,s / ,d for horizontal split
-nnoremap <silent> ,v :vsplit<CR>
+" Splits match tmux (tmux.config): ,d / ,5 side-by-side (vertical), ,' / ,s stacked (horizontal).
+" ,v is clipboard image/text paste, not a split.
+nnoremap <silent> ,d :vsplit<CR>
 nnoremap <silent> ,5 :vsplit<CR>
+nnoremap <silent> ,' :split<CR>
 nnoremap <silent> ,s :split<CR>
-nnoremap <silent> ,d :split<CR>
 
 " ,w / ,x to close the current split
 nnoremap <silent> ,w <c-w>q
 nnoremap <silent> ,x <c-w>q
 
-" Ctrl+Arrow keys to navigate between splits
+" Ctrl+Arrow or ,Arrow to navigate between splits
 nnoremap <silent> <C-Right> <c-w>l
 nnoremap <silent> <C-Left> <c-w>h
 nnoremap <silent> <C-Up> <c-w>k
 nnoremap <silent> <C-Down> <c-w>j
+nnoremap <silent> ,<Right> <c-w>l
+nnoremap <silent> ,<Left> <c-w>h
+nnoremap <silent> ,<Up> <c-w>k
+nnoremap <silent> ,<Down> <c-w>j
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — FZF / Search
@@ -326,7 +331,7 @@ nnoremap <silent> ,n :nohlsearch<CR>
 
 " Tab is a second ',' prefix in normal mode: Tab g == ,g, Tab v == ,v, and so on.
 " Recursive nmap so the inserted ',' joins the next typed key. Normal mode only —
-" visual-mode Tab stays the soft-wrap toggle. Trade-off: terminals send Tab and
+" visual-mode Tab / Shift+Tab indent / dedent instead. Trade-off: terminals send Tab and
 " Ctrl-I as the same byte, so Ctrl-I (jumplist forward) is gone; Ctrl-O still works.
 nmap <Tab> ,
 
@@ -336,6 +341,9 @@ nmap <Tab> ,
 "   ,l (visual) one cursor per selected line (Sublime cmd+shift+l)
 "   ctrl+n      plugin default: add the next match (Sublime OS_KEY+d)
 " Esc leaves multi-cursor mode. Set before the plugin loads (vimrc runs first).
+" VM_leader moves the plugin's own prefix off its default '\\' so the '\' line-number
+" toggle fires instantly instead of entering (and exiting) Visual-Multi.
+let g:VM_leader = ',m'
 let g:VM_maps = {}
 let g:VM_maps['Select All'] = ',g'
 let g:VM_maps['Visual All'] = ',g'
@@ -358,12 +366,101 @@ vnoremap K :m '<-2<CR>gv=gv
 " ,c to copy to system clipboard (whole buffer, or the selection in visual mode)
 " ,p to replace the entire buffer with the system clipboard.
 " Uses vim's clipboard register; falls back to pbcopy/pbpaste on vim built without +clipboard.
+" ,c also falls back to clip.exe (WSL) / wl-copy (Wayland) / xclip (X11) — ,p has no fallback there.
+" ,c reports "Copied to clipboard (N lines) - <file>" instead of vim's 'N lines yanked into "+'.
 if has("clipboard")
-  nnoremap <silent> ,c :%y +<CR>
-  vnoremap <silent> ,c "+y
+  let s:clipboard_copy_cmd = ''
+elseif executable("pbcopy")
+  let s:clipboard_copy_cmd = 'pbcopy'
+elseif executable("clip.exe")
+  let s:clipboard_copy_cmd = 'clip.exe'
+elseif executable("wl-copy") && !empty($WAYLAND_DISPLAY)
+  let s:clipboard_copy_cmd = 'wl-copy'
+elseif executable("xclip")
+  let s:clipboard_copy_cmd = 'xclip -selection clipboard'
+endif
+
+" Copy the whole buffer (a:visual = 0) or the last visual selection (a:visual = 1)
+" to the system clipboard, then echo a friendly summary.
+function! s:CopyToClipboard(visual) abort
+  let l:first = a:visual ? line("'<") : 1
+  let l:last = a:visual ? line("'>") : line('$')
+  let l:count = l:last - l:first + 1
+  if empty(s:clipboard_copy_cmd)
+    if a:visual
+      " gv"+y keeps a charwise / blockwise selection exact.
+      silent normal! gv"+y
+    else
+      silent %yank +
+    endif
+  else
+    " External tools get whole lines, same as the old ':w !pbcopy'.
+    call system(s:clipboard_copy_cmd, getline(l:first, l:last))
+    if v:shell_error
+      echohl ErrorMsg | echo 'Copy to clipboard failed (' . s:clipboard_copy_cmd . ')' | echohl None
+      return
+    endif
+  endif
+  let l:name = expand('%:p:~')
+  redraw
+  echo 'Copied to clipboard (' . l:count . (l:count == 1 ? ' line' : ' lines') . ')' . (empty(l:name) ? '' : ' - ' . l:name)
+endfunction
+
+if exists('s:clipboard_copy_cmd')
+  nnoremap <silent> ,c :call <SID>CopyToClipboard(0)<CR>
+  vnoremap <silent> ,c :<C-u>call <SID>CopyToClipboard(1)<CR>
+endif
+if has("clipboard")
   nnoremap <silent> ,p :%d _ \| put + \| 1d _<CR>
 elseif executable("pbcopy")
-  nnoremap <silent> ,c :%w !pbcopy<CR>
-  vnoremap <silent> ,c :w !pbcopy<CR>
   nnoremap <silent> ,p :%d \| r !pbpaste \| 1d<CR>
+endif
+
+" Ctrl+V (insert mode) / ,v (normal mode) = paste clipboard image or text.
+" Image -> saved by ~/.local/bin/save_clipboard_image (clipboard-image.js), "@<path>" inserted
+" (opencode / copilot file-reference syntax, for prompts edited via Ctrl+G).
+" No image -> normal text paste. Vim's literal-insert stays on Ctrl+Q.
+" Absolute path: vim launched from an AI CLI may not have ~/.local/bin on PATH.
+" Mapped only when the tool exists, so native Windows vim keeps stock Ctrl+V.
+" Windows Terminal likely intercepts Ctrl+V before vim sees it.
+let s:save_clipboard_image = expand('~/.local/bin/save_clipboard_image')
+function! s:PasteClipboardImageOrText() abort
+  let l:line = line('.')
+  let l:path = trim(system(shellescape(s:save_clipboard_image)))
+  let l:status = v:shell_error
+  if l:status == 0 && !empty(l:path)
+    execute "normal! a@" . l:path . " "
+    redraw | echo 'Pasted image from clipboard on line ' . l:line . ' - ' . fnamemodify(l:path, ':~')
+    return
+  endif
+  " 1 = no image, fall through to text. Anything else = tool broken, say so.
+  if l:status != 1
+    echohl ErrorMsg | echo 'save_clipboard_image failed (exit ' . l:status . '): ' . l:path | echohl None
+    return
+  endif
+  if has('clipboard')
+    let l:text = getreg('+')
+  elseif executable('pbpaste')
+    let l:text = system('pbpaste')
+  elseif executable('powershell.exe')
+    let l:text = substitute(system('powershell.exe -NoProfile -Command Get-Clipboard'), '\r', '', 'g')
+  else
+    let l:text = ''
+  endif
+  if empty(l:text)
+    echohl WarningMsg | echo 'Clipboard is empty' | echohl None
+    return
+  endif
+  if has('clipboard')
+    normal! "+p
+  else
+    execute "normal! a" . l:text
+  endif
+  " A trailing newline ends the last line; it does not start a new one.
+  let l:count = len(split(substitute(l:text, '\n$', '', ''), '\n', 1))
+  redraw | echo 'Pasted from clipboard (' . l:count . (l:count == 1 ? ' line' : ' lines') . ') on line ' . l:line
+endfunction
+if executable(s:save_clipboard_image)
+  inoremap <silent> <C-v> <C-o>:call <SID>PasteClipboardImageOrText()<CR>
+  nnoremap <silent> ,v :call <SID>PasteClipboardImageOrText()<CR>
 endif

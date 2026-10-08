@@ -604,10 +604,10 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 | Key                            | Action           |
 | ------------------------------ | ---------------- |
-| `ctrl+d`, `,v`, `,5`           | Vertical split   |
-| `,s`, `,d`                     | Horizontal split |
+| `ctrl+d`, `,d`, `,5`           | Vertical split   |
+| `,'`, `,s`                     | Horizontal split |
 | `ctrl+x`, `ctrl+q`, `,w`, `,x` | Close split      |
-| `ctrl+arrow`                   | Navigate splits  |
+| `ctrl+arrow`, `,arrow`         | Navigate splits  |
 
 ### Toggles (normal mode)
 
@@ -616,9 +616,9 @@ Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these si
 | Key                                             | Action                                                                            |
 | ----------------------------------------------- | --------------------------------------------------------------------------------- |
 | `\`                                             | Toggle line numbers                                                               |
-| `,i`                                            | Toggle whitespace markers (invisibles)                                            |
-| `,z` / `}`                                      | Toggle soft wrap (`set wrap!`)                                                    |
-| `Tab` (visual mode)                             | Toggle soft wrap, keep selection                                                  |
+| `,i` / `,space` / `,\|`                         | Toggle whitespace markers (invisibles)                                            |
+| `,z` / `,\` / `}`                               | Toggle soft wrap (`set wrap!`)                                                    |
+| `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)                         |
 | `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |
 | `,g`                                            | Multi-cursor: select all matches of word (vim-visual-multi, like `OS_KEY+ctrl+g`) |
 | `,l` (visual mode)                              | Multi-cursor: one cursor per selected line (like `OS_KEY+shift+l`)                |
@@ -632,6 +632,20 @@ Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these si
 | `,f`           | Ripgrep search    |
 | `,b`           | Buffer list       |
 | `,r`           | Recent files      |
+
+### Clipboard
+
+| Key                     | Action                                                                 |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `,c`                    | Copy buffer (or selection) to system clipboard                         |
+| `,p`                    | Replace buffer with system clipboard                                   |
+| `ctrl+v` (insert), `,v` | Paste clipboard image as `@<path>` (saved to Desktop), else paste text |
+| `ctrl+q` (insert)       | Insert next key literally (vim's stock `ctrl+v`)                       |
+
+`ctrl+v` image paste exists for prompts edited in vim via an AI CLI's `ctrl+g`: the image is
+saved by `~/.local/bin/save_clipboard_image` (`software/scripts/clipboard-image.js`) and its
+path inserted. Mapped only when that tool exists. Windows Terminal likely takes `ctrl+v`
+before vim sees it, so there it stays the terminal's text paste.
 
 ---
 
