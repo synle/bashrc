@@ -1,4 +1,4 @@
-// AUTO-GENERATED - DO NOT EDIT [2026-10-08]
+// AUTO-GENERATED - DO NOT EDIT [2026-10-09]
 // 
 // Preferences Key Bindings
 // ################################################################################
@@ -241,6 +241,23 @@
     "command": "lsp_format_document",
     "keys": [
       "ctrl+shift+super+f"
+    ]
+  },
+  {
+    "command": "markdown_preview",
+    "args": {
+      "target": "browser",
+      "parser": "markdown"
+    },
+    "context": [
+      {
+        "key": "selector",
+        "operator": "equal",
+        "operand": "text.html.markdown"
+      }
+    ],
+    "keys": [
+      "ctrl+shift+tab"
     ]
   },
   {

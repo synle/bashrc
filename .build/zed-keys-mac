@@ -1,4 +1,4 @@
-// AUTO-GENERATED - DO NOT EDIT [2026-10-08]
+// AUTO-GENERATED - DO NOT EDIT [2026-10-09]
 // 
 // Zed keymap.json (macOS)
 // ################################################################################
@@ -163,6 +163,18 @@
       "cmd-up": "terminal::ScrollPageUp",
       "cmd-down": "terminal::ScrollPageDown",
       "cmd-d": "pane::SplitRight"
+    }
+  },
+  {
+    "context": "Editor && extension == md",
+    "bindings": {
+      "ctrl-shift-tab": "markdown::OpenPreview"
+    }
+  },
+  {
+    "context": "MarkdownPreview",
+    "bindings": {
+      "ctrl-shift-tab": "pane::GoBack"
     }
   },
   {

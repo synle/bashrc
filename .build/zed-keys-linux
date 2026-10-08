@@ -1,4 +1,4 @@
-// AUTO-GENERATED - DO NOT EDIT [2026-10-08]
+// AUTO-GENERATED - DO NOT EDIT [2026-10-09]
 // 
 // Zed keymap.json (Linux/Windows)
 // ################################################################################
@@ -162,6 +162,18 @@
       "alt-up": "terminal::ScrollPageUp",
       "alt-down": "terminal::ScrollPageDown",
       "alt-d": "pane::SplitRight"
+    }
+  },
+  {
+    "context": "Editor && extension == md",
+    "bindings": {
+      "ctrl-shift-tab": "markdown::OpenPreview"
+    }
+  },
+  {
+    "context": "MarkdownPreview",
+    "bindings": {
+      "ctrl-shift-tab": "pane::GoBack"
     }
   },
   {

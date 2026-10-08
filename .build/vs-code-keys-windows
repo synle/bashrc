@@ -1,4 +1,4 @@
-// AUTO-GENERATED - DO NOT EDIT [2026-10-08]
+// AUTO-GENERATED - DO NOT EDIT [2026-10-09]
 // 
 // VS Code keybindings.json (Windows/Linux)
 // ################################################################################
@@ -315,6 +315,16 @@
   {
     "key": "ctrl+shift+enter",
     "command": "editor.action.toggleWordWrap"
+  },
+  {
+    "key": "ctrl+shift+tab",
+    "command": "markdown.showPreview",
+    "when": "editorLangId == markdown && editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+tab",
+    "command": "markdown.showSource",
+    "when": "activeWebviewPanelId == 'markdown.preview'"
   },
   {
     "key": "alt+shift+p",

@@ -107,7 +107,10 @@ function su() {
 # --- sudo password alert ---
 ################################################################################
 # Bell + white-on-red banner whenever sudo asks for a password. %p = target user.
-export SUDO_PROMPT=$'\a\e[1;97;41m SUDO PASSWORD for %p \e[0m '
+# Truecolor (38;2 / 48;2), not ANSI 97/41: the terminal theme remaps palette slots
+# to a muted red and off-white, which washed the banner out. Pure #ffffff on
+# #a50000 is ~8:1 contrast (WCAG AAA) regardless of theme.
+export SUDO_PROMPT=$'\a\e[1;38;2;255;255;255;48;2;165;0;0m SUDO PASSWORD for %p \e[0m '
 
 # DISABLED: wrapper kept for reference. Uncomment to re-enable the red pane
 # flash. While disabled, sudo runs unwrapped (no TERMINFO preservation).

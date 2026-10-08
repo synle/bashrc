@@ -1,4 +1,4 @@
-// AUTO-GENERATED - DO NOT EDIT [2026-10-08]
+// AUTO-GENERATED - DO NOT EDIT [2026-10-09]
 // 
 // Preferences Settings
 // ################################################################################
@@ -11,6 +11,7 @@
   "remember_open_files": false,
   "gpu_window_buffer": true,
   "index_workers": 2,
+  "reload_file_in_background": true,
   "font_options": [
     "gray_antialias",
     "subpixel_antialias",

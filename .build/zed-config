@@ -1,4 +1,4 @@
-// AUTO-GENERATED - DO NOT EDIT [2026-10-08]
+// AUTO-GENERATED - DO NOT EDIT [2026-10-09]
 // 
 // Zed settings.json
 // ################################################################################
@@ -41,6 +41,10 @@
   },
   "window_title_format": "${projectName}${separator}${branch}${separator}${relativePath}",
   "reveal_if_open": true,
+  "on_new_window": "empty_tab",
+  "markdown_preview": {
+    "open_markdown_files_in_preview": false
+  },
   "minimap": {
     "show": "never"
   },

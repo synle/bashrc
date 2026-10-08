@@ -76,6 +76,10 @@ mouse-hide-while-typing = true
 # focused. Requires shell integration (enabled above) to know where a command
 # starts/ends. Default is `never`; added in 1.3.0.
 notify-on-command-finish = unfocused
+# Ring the bell AND post a desktop notification (default is `bell,no-notify`).
+notify-on-command-finish-action = bell,notify
+# Only for commands running 30s+ (default 5s notifies on every short build).
+notify-on-command-finish-after = 30s
 # Bell (BEL / \a) alerts. Default is `no-border`; `border` outlines the alerted
 # pane until it is focused or typed into. SUDO_PROMPT rings the bell (see
 # bash-command-wrappers.profile.bash), so a pane waiting on a password gets
@@ -205,6 +209,7 @@ keybind = cmd+shift+c=copy_to_clipboard:mixed
 keybind = cmd+shift+v=paste_from_clipboard
 keybind = cmd+shift+a=select_all
 keybind = cmd+shift+f=start_search
+keybind = cmd+ctrl+shift+c=copy_to_clipboard:plain
 keybind = cmd+y=text:\x1by
 keybind = ctrl+1=text:\x1b1
 keybind = ctrl+2=text:\x1b2
