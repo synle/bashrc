@@ -502,8 +502,11 @@ item's letter works as a key while the menu is open.
 | Scrollback | Find in Scrollback `f` (`OS_KEY+f`), Copy Mode (vim keys) `g` (`OS_KEY+g`), Copy All Scrollback `y` (`OS_KEY+y`), Open URLs `o` (`OS_KEY+u`) |
 | Workspace  | Export Workspace `e` — `workspace_export`, see below                                                                                         |
 
-When the app in the pane owns the mouse (vim, htop) the click goes to the app; hold
-`OS_KEY` while right-clicking to force the menu.
+When the app in the pane owns the mouse (vim, htop, copilot, opencode) the click goes to
+the app; hold `OS_KEY` (option on macOS, alt on Windows) or `ctrl` while right-clicking to
+force the menu. Shift+click never reaches tmux (the terminal keeps it for selection) and
+cmd is not forwarded. A one-pane window's title row is not clickable — tmux drops clicks
+there; right-click its status-bar tab instead.
 
 **Tab** — right-click a tab in the status bar:
 
