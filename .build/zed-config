@@ -10,6 +10,7 @@
   },
   "hard_tabs": false,
   "soft_wrap": "editor_width",
+  "soft_wrap_indent": "same",
   "auto_indent_on_paste": true,
   "linked_edits": true,
   "multi_cursor_modifier": "cmd_or_ctrl",
@@ -35,6 +36,11 @@
   },
   "use_smartcase_search": true,
   "cursor_blink": false,
+  "cursor_animation": {
+    "enabled": true
+  },
+  "window_title_format": "${projectName}${separator}${branch}${separator}${relativePath}",
+  "reveal_if_open": true,
   "minimap": {
     "show": "never"
   },
@@ -70,7 +76,8 @@
   "max_tabs": 10,
   "restore_on_startup": "none",
   "project_panel": {
-    "dock": "left"
+    "dock": "left",
+    "folder_indicator": "both"
   },
   "outline_panel": {
     "dock": "left"

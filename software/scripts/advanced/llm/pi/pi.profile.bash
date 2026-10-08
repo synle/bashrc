@@ -26,11 +26,11 @@ function pi() {
   command pi "$@"
 }
 
-# pi_edit_config: open the ~/.pi/agent/ config dir (settings.json, models.json, AGENTS.md) in the editor
-function pi_edit_config() {
+# pi_edit: open the ~/.pi/agent/ config dir (settings.json, models.json, AGENTS.md) in the editor
+function pi_edit() {
   if is_help_arg "${1:-}"; then
-    echo "pi_edit_config: open ~/.pi/agent/ in the editor via view_file
-  Usage: pi_edit_config
+    echo "pi_edit: open ~/.pi/agent/ in the editor via view_file
+  Usage: pi_edit
 
 Opens the whole ~/.pi/agent/ config dir so settings.json, models.json, and
 AGENTS.md are all reachable in the same session.
@@ -55,4 +55,34 @@ scans by default and exposes as /skill:<name> commands."
     return 0
   fi
   view_file "$HOME/.pi/agent"
+}
+
+# pi_edit_rule_global: open the global pi rules file (~/.pi/agent/AGENTS.md) in the editor
+function pi_edit_rule_global() {
+  if is_help_arg "${1:-}"; then
+    echo "pi_edit_rule_global: open the global pi rules file in the editor via view_file
+  Usage: pi_edit_rule_global
+
+Opens ~/.pi/agent/AGENTS.md — the user-level instructions loaded into every session.
+The managed block is generated from
+software/scripts/advanced/llm/_common/instructions.md; edit that source for
+changes that survive a re-run. See also: pi_edit (whole folder),
+pi_edit_config (settings file)."
+    return 0
+  fi
+  view_file "$HOME/.pi/agent/AGENTS.md"
+}
+
+# pi_edit_config: open the main pi settings file (~/.pi/agent/settings.json) in the editor
+function pi_edit_config() {
+  if is_help_arg "${1:-}"; then
+    echo "pi_edit_config: open the main pi settings file in the editor via view_file
+  Usage: pi_edit_config
+
+Opens ~/.pi/agent/settings.json. Managed defaults are seeded by pi/setup.js; edit that
+script for changes that survive a re-run. See also: pi_edit (whole
+folder), pi_edit_rule_global (global rules file)."
+    return 0
+  fi
+  view_file "$HOME/.pi/agent/settings.json"
 }

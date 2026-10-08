@@ -28,11 +28,11 @@ function opencode() {
 
 alias op='opencode'
 
-# opencode_edit_config: open the ~/.config/opencode/ config dir (opencode.json, tui.json, AGENTS.md, commands/) in the editor
-function opencode_edit_config() {
+# opencode_edit: open the ~/.config/opencode/ config dir (opencode.json, tui.json, AGENTS.md, commands/) in the editor
+function opencode_edit() {
   if is_help_arg "${1:-}"; then
-    echo "opencode_edit_config: open ~/.config/opencode/ in the editor via view_file
-  Usage: opencode_edit_config
+    echo "opencode_edit: open ~/.config/opencode/ in the editor via view_file
+  Usage: opencode_edit
 
 Opens the whole ~/.config/opencode/ config dir so opencode.json, tui.json,
 AGENTS.md, and commands/ are all reachable in the same session.
@@ -62,6 +62,36 @@ Related files NOT inside the dir:
     return 0
   fi
   view_file "$HOME/.config/opencode"
+}
+
+# opencode_edit_rule_global: open the global opencode rules file (~/.config/opencode/AGENTS.md) in the editor
+function opencode_edit_rule_global() {
+  if is_help_arg "${1:-}"; then
+    echo "opencode_edit_rule_global: open the global opencode rules file in the editor via view_file
+  Usage: opencode_edit_rule_global
+
+Opens ~/.config/opencode/AGENTS.md — the user-level instructions loaded into every session.
+The managed block is generated from
+software/scripts/advanced/llm/_common/instructions.md; edit that source for
+changes that survive a re-run. See also: opencode_edit (whole folder),
+opencode_edit_config (settings file)."
+    return 0
+  fi
+  view_file "$HOME/.config/opencode/AGENTS.md"
+}
+
+# opencode_edit_config: open the main opencode settings file (~/.config/opencode/opencode.json) in the editor
+function opencode_edit_config() {
+  if is_help_arg "${1:-}"; then
+    echo "opencode_edit_config: open the main opencode settings file in the editor via view_file
+  Usage: opencode_edit_config
+
+Opens ~/.config/opencode/opencode.json. Managed defaults are seeded by opencode/setup.js; edit that
+script for changes that survive a re-run. See also: opencode_edit (whole
+folder), opencode_edit_rule_global (global rules file)."
+    return 0
+  fi
+  view_file "$HOME/.config/opencode/opencode.json"
 }
 
 # _opencode_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from opencode's SQLite store

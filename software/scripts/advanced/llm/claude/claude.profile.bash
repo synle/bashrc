@@ -313,11 +313,11 @@ function claude() {
 # declared only in software/metadata/ip-address.config.
 alias cl='claude_with_ip_address'
 
-# claude_edit_config: open ~/.claude.json AND the ~/.claude/ config dir in the editor
-function claude_edit_config() {
+# claude_edit: open ~/.claude.json AND the ~/.claude/ config dir in the editor
+function claude_edit() {
   if is_help_arg "${1:-}"; then
-    echo "claude_edit_config: open ~/.claude.json + ~/.claude/ in the editor via view_file
-  Usage: claude_edit_config
+    echo "claude_edit: open ~/.claude.json + ~/.claude/ in the editor via view_file
+  Usage: claude_edit
 
 ~/.claude.json is Claude Code's top-level state file (recent project paths,
 MCP server registrations, OAuth token state, per-project settings). This is the
@@ -338,6 +338,36 @@ Files inside ~/.claude/ worth knowing about:
   fi
   view_file "$HOME/.claude.json"
   view_file "$HOME/.claude"
+}
+
+# claude_edit_rule_global: open the global claude rules file (~/.claude/CLAUDE.md) in the editor
+function claude_edit_rule_global() {
+  if is_help_arg "${1:-}"; then
+    echo "claude_edit_rule_global: open the global claude rules file in the editor via view_file
+  Usage: claude_edit_rule_global
+
+Opens ~/.claude/CLAUDE.md — the user-level instructions loaded into every session.
+The managed block is generated from
+software/scripts/advanced/llm/_common/instructions.md; edit that source for
+changes that survive a re-run. See also: claude_edit (whole folder),
+claude_edit_config (settings file)."
+    return 0
+  fi
+  view_file "$HOME/.claude/CLAUDE.md"
+}
+
+# claude_edit_config: open the main claude settings file (~/.claude/settings.json) in the editor
+function claude_edit_config() {
+  if is_help_arg "${1:-}"; then
+    echo "claude_edit_config: open the main claude settings file in the editor via view_file
+  Usage: claude_edit_config
+
+Opens ~/.claude/settings.json. Managed defaults are seeded by claude/setup.js; edit that
+script for changes that survive a re-run. See also: claude_edit (whole
+folder), claude_edit_rule_global (global rules file)."
+    return 0
+  fi
+  view_file "$HOME/.claude/settings.json"
 }
 
 # _claude_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from Claude Code's JSONL sessions

@@ -76,11 +76,11 @@ function copilot() {
 }
 alias co='copilot'
 
-# copilot_edit_config: open the ~/.copilot/ config dir (settings, copilot-instructions.md, mcp-config) in the editor
-function copilot_edit_config() {
+# copilot_edit: open the ~/.copilot/ config dir (settings, copilot-instructions.md, mcp-config) in the editor
+function copilot_edit() {
   if is_help_arg "${1:-}"; then
-    echo "copilot_edit_config: open ~/.copilot/ in the editor via view_file
-  Usage: copilot_edit_config
+    echo "copilot_edit: open ~/.copilot/ in the editor via view_file
+  Usage: copilot_edit
 
 Opens the whole ~/.copilot/ config dir so settings.json, copilot-instructions.md, and
 mcp-config.json are all reachable in the same session.
@@ -106,6 +106,36 @@ in the binary. Wrapper-layer parity lives here in copilot.profile.bash."
     return 0
   fi
   view_file "$HOME/.copilot"
+}
+
+# copilot_edit_rule_global: open the global copilot rules file (~/.copilot/copilot-instructions.md) in the editor
+function copilot_edit_rule_global() {
+  if is_help_arg "${1:-}"; then
+    echo "copilot_edit_rule_global: open the global copilot rules file in the editor via view_file
+  Usage: copilot_edit_rule_global
+
+Opens ~/.copilot/copilot-instructions.md — the user-level instructions loaded into every session.
+The managed block is generated from
+software/scripts/advanced/llm/_common/instructions.md; edit that source for
+changes that survive a re-run. See also: copilot_edit (whole folder),
+copilot_edit_config (settings file)."
+    return 0
+  fi
+  view_file "$HOME/.copilot/copilot-instructions.md"
+}
+
+# copilot_edit_config: open the main copilot settings file (~/.copilot/settings.json) in the editor
+function copilot_edit_config() {
+  if is_help_arg "${1:-}"; then
+    echo "copilot_edit_config: open the main copilot settings file in the editor via view_file
+  Usage: copilot_edit_config
+
+Opens ~/.copilot/settings.json. Managed defaults are seeded by copilot/setup.js; edit that
+script for changes that survive a re-run. See also: copilot_edit (whole
+folder), copilot_edit_rule_global (global rules file)."
+    return 0
+  fi
+  view_file "$HOME/.copilot/settings.json"
 }
 
 # _copilot_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from Copilot CLI's SQLite store

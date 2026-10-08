@@ -54,11 +54,11 @@ function gemini() {
 
 alias gem="gemini"
 
-# gemini_edit_config: open the ~/.gemini/ config dir (settings, keybindings, GEMINI.md) in the editor
-function gemini_edit_config() {
+# gemini_edit: open the ~/.gemini/ config dir (settings, keybindings, GEMINI.md) in the editor
+function gemini_edit() {
   if is_help_arg "${1:-}"; then
-    echo "gemini_edit_config: open ~/.gemini/ in the editor via view_file
-  Usage: gemini_edit_config
+    echo "gemini_edit: open ~/.gemini/ in the editor via view_file
+  Usage: gemini_edit
 
 Opens the whole ~/.gemini/ config dir so settings.json, keybindings.json, and
 GEMINI.md are all reachable in the same session.
@@ -76,6 +76,36 @@ Files inside ~/.gemini/ worth knowing about:
     return 0
   fi
   view_file "$HOME/.gemini"
+}
+
+# gemini_edit_rule_global: open the global gemini rules file (~/.gemini/GEMINI.md) in the editor
+function gemini_edit_rule_global() {
+  if is_help_arg "${1:-}"; then
+    echo "gemini_edit_rule_global: open the global gemini rules file in the editor via view_file
+  Usage: gemini_edit_rule_global
+
+Opens ~/.gemini/GEMINI.md — the user-level instructions loaded into every session.
+The managed block is generated from
+software/scripts/advanced/llm/_common/instructions.md; edit that source for
+changes that survive a re-run. See also: gemini_edit (whole folder),
+gemini_edit_config (settings file)."
+    return 0
+  fi
+  view_file "$HOME/.gemini/GEMINI.md"
+}
+
+# gemini_edit_config: open the main gemini settings file (~/.gemini/settings.json) in the editor
+function gemini_edit_config() {
+  if is_help_arg "${1:-}"; then
+    echo "gemini_edit_config: open the main gemini settings file in the editor via view_file
+  Usage: gemini_edit_config
+
+Opens ~/.gemini/settings.json. Managed defaults are seeded by gemini/setup.js; edit that
+script for changes that survive a re-run. See also: gemini_edit (whole
+folder), gemini_edit_rule_global (global rules file)."
+    return 0
+  fi
+  view_file "$HOME/.gemini/settings.json"
 }
 
 # _gemini_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from Gemini CLI's session JSONs
