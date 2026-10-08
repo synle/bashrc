@@ -57,6 +57,14 @@ async function doWork() {
     const lspSettingsPath = path.join(targetPath, "Packages/User/LSP.sublime-settings");
     await backupConfigFile(lspSettingsPath);
     await writeJson(lspSettingsPath, { lsp_format_on_save: true });
+
+    // lsp_utils.sublime-settings — force the bundled Node runtime. Default order is
+    // ["system", "local"], and "system" resolves the login-shell PATH node (e.g. a pinned
+    // Volta/corp node 16) which passes the LSP-* package's loose version check but crashes
+    // newer servers (bash-language-server 5.x needs node >= 20; exit code 1 on start).
+    const lspUtilsSettingsPath = path.join(targetPath, "Packages/User/lsp_utils.sublime-settings");
+    await backupConfigFile(lspUtilsSettingsPath);
+    await writeJson(lspUtilsSettingsPath, { nodejs_runtime: ["local"] });
   } else {
     log(">>> sublime-lsp: Sublime Text config dir not found — skipping local deploy");
   }
