@@ -30,7 +30,9 @@ async function doWork() {
       Host *
         # --- CONNECTION MULTIPLEXING (The Speed King) ---
         ControlMaster auto
-        ControlPath ~/.ssh/sockets/%r@%h-%p
+        # %C = fixed-length hash of local host, remote host, port, and user. The old
+        # %r@%h-%p form could exceed macOS's 104-char Unix socket path limit.
+        ControlPath ~/.ssh/sockets/%C
         ControlPersist 30m
 
         # --- PACKET & TIMEOUT MANAGEMENT ---
@@ -46,6 +48,15 @@ async function doWork() {
         User ${REPO_USER_NAME}
         IdentityFile ~/.ssh/id_rsa
         ForwardAgent yes
+        # Trust a new host on first connect, but still fail loudly on a changed key.
+        StrictHostKeyChecking accept-new
+        # Learn a server's rotated host keys after a successful login.
+        UpdateHostKeys yes
+        # Load the key into the agent after the first passphrase prompt.
+        AddKeysToAgent yes
+        # macOS-only option; IgnoreUnknown keeps Linux ssh from rejecting it.
+        IgnoreUnknown UseKeychain
+        UseKeychain yes
 
         # --- LATENCY REDUCTION ---
         CheckHostIP no # Skip DNS lookups on the client side
