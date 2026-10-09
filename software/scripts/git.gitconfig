@@ -28,7 +28,9 @@ workers = 0 # Parallel file checkout (auto-detect CPU)
 [fetch]
 writeCommitGraph = true # Keeps the commit graph updated on fetch
 prune = true # Drop remote-tracking branches deleted on the remote
-pruneTags = true # Drop local tags deleted on the remote
+# No fetch.pruneTags: it adds a non-forced refs/tags/* refspec, so a remote tag CI
+# force-moves (the rolling `binary-cache` release) fails every fetch with
+# "would clobber existing tag". Stale tags are pruned by clean-merged-branches-and-tags.
 
 [init]
 defaultBranch = main # Use 'main' as default branch name

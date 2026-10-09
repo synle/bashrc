@@ -11,14 +11,15 @@ name = Sy Le
 [core]
 autocrlf = input
 editor = vim
-pager = less -R # explicit raw ANSI pass-through (fixes Git for Windows bundled less)
 excludesFile = ~/.gitignore_global
 fsmonitor = true # Background daemon for status speed
 untrackedCache = true # Caches untracked files
 commitGraph = true # Speeds up log/history traversal
 preloadIndex = true # Multi-threaded index scanning
+# core.pager is injected here by git.js (delta when installed, else `less -R`) so it
+# is set exactly once — a second value makes `git config --get core.pager` error.
 # BEGIN GIT_EXTRA_CORE_CONFIGS
-
+pager = less -R
 # END GIT_EXTRA_CORE_CONFIGS
 [feature]
 manyFiles = true # Grouped performance features
@@ -31,6 +32,10 @@ workers = 0 # Parallel file checkout (auto-detect CPU)
 
 [fetch]
 writeCommitGraph = true # Keeps the commit graph updated on fetch
+prune = true # Drop remote-tracking branches deleted on the remote
+# No fetch.pruneTags: it adds a non-forced refs/tags/* refspec, so a remote tag CI
+# force-moves (the rolling `binary-cache` release) fails every fetch with
+# "would clobber existing tag". Stale tags are pruned by clean-merged-branches-and-tags.
 
 [init]
 defaultBranch = main # Use 'main' as default branch name
@@ -50,6 +55,9 @@ autoSetupRemote = true # Auto-track remote branch on first push
 tool = vimdiff
 prompt = false
 algorithm = histogram # Better diff output than default myers
+colorMoved = default # Color moved lines distinctly instead of delete + add
+colorMovedWS = allow-indentation-change # Still count re-indented moves as moves
+mnemonicPrefix = true # i/ (index) w/ (worktree) c/ (commit) instead of a/ b/
 
 [merge]
 tool = vimdiff
@@ -63,6 +71,10 @@ updateRefs = true # Auto-update stacked branch refs during rebase
 
 [rerere]
 enabled = true # Reuse recorded conflict resolutions
+autoUpdate = true # Stage a replayed resolution automatically
+
+[help]
+autocorrect = prompt # Suggest the intended command on a typo and ask before running it
 
 [transfer]
 fsckObjects = true # Validate objects on push/fetch to catch corruption
