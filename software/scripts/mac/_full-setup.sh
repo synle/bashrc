@@ -403,6 +403,13 @@ installBrewPackageInBackground stern
 # --- Cloud CLIs ---
 installBrewPackageInBackground awscli    # `aws` — AWS CLI v2
 # Upstream moved azure-cli from homebrew/core to homebrew/cask.
+# TODO(2027-01): remove this one-time migration once every machine has run it.
+# Drops a leftover azure-cli formula so the cask below doesn't collide over `az`.
+# Runs synchronously here, before the background queue installs the cask.
+if ! ((IS_CI)) && _brewPackageInstalled "$_BREW_INSTALLED_FORMULAE" azure-cli; then
+  echo ">> azure-cli >> Migrating formula to cask >> removing formula"
+  brew uninstall --formula azure-cli < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1
+fi
 installBrewPackageInBackground --cask azure-cli # `az` — Microsoft Azure CLI
 # Upstream renamed this cask to `gcloud-cli`; `brew install --cask google-cloud-sdk` still
 # resolves through brew's rename map, but the *installed* name is gcloud-cli — which is why
