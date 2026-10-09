@@ -57,7 +57,7 @@ Run `/sy-sync-and-clean-repos` from `$ROOT`. That skill fans out `/sy-sync-and-c
 
 Print one **Maintenance Summary** block:
 
-- **Phase 1** — PRs closed (full `github.com/<owner>/<repo>/pull/<n>` links), PRs skipped with reason, PRs that errored.
+- **Phase 1** — PRs closed (full `https://github.com/<owner>/<repo>/pull/<n>` links), PRs skipped with reason, PRs that errored.
 - **Phase 2** — per repo: default branch, branches deleted, worktree records pruned, branches merged cleanly, branches that needed conflict resolution, branches skipped (no upstream / already current), stash pop status.
 - **Errors / warnings** — anything either phase surfaced, named per repo or per PR.
 - **Follow-ups** — remote branches left behind by closed PRs (deliberately not deleted; `git push origin --delete <branch>` when you're sure), and any repo left on a non-default branch.
