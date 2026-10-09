@@ -28,8 +28,10 @@ async function doWork() {
     # make: use GNU Make (gmake) for .ONESHELL support (macOS ships Make 3.81)
     if type -P gmake &> /dev/null; then alias make='gmake'; fi
 
-    # update: OS package manager update/upgrade only
-    alias update='brew update && brew upgrade && brew cleanup'
+    # update: OS package manager update/upgrade only. \`command brew\` bypasses the
+    # brew wrapper (snip), which swallows interactive Y/N prompts and hangs the run.
+    # --greedy also upgrades casks that self-update (auto_updates / version :latest).
+    alias update='command brew update && command brew upgrade --greedy && command brew cleanup'
 
     # unquarantine: clear the macOS Gatekeeper quarantine attribute on demand
     #
