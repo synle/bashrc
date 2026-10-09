@@ -8,6 +8,15 @@ name = Sy Le
 # BEGIN GIT_USER_EMAIL
 ; email = test_email@gmail.com #update this email
 # END GIT_USER_EMAIL
+# ---- Personal identity override (generated from $REPO_OWNER by git.js) ----
+# BEGIN GIT_PERSONAL_IDENTITY
+[includeIf "hasconfig:remote.*.url:https://github.com/synle/**"]
+path = ~/.gitconfig-personal
+[includeIf "hasconfig:remote.*.url:git@github*:synle/**"]
+path = ~/.gitconfig-personal
+[includeIf "hasconfig:remote.*.url:ssh://git@github*/synle/**"]
+path = ~/.gitconfig-personal
+# END GIT_PERSONAL_IDENTITY
 [core]
 autocrlf = input
 editor = vim

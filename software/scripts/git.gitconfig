@@ -4,17 +4,8 @@
 name = Sy Le
 # BEGIN/END - GIT_USER_EMAIL
 
-# ---- Personal identity override ----
-# Repos whose remote is under github.com/synle commit as the personal email,
-# regardless of the default user.email above. Must stay after [user] so it wins.
-# hasconfig:remote.*.url needs git 2.36+; older git ignores the condition.
-[includeIf "hasconfig:remote.*.url:https://github.com/synle/**"]
-path = ~/.gitconfig-synle
-# github* also matches SSH host aliases such as github-personal (from ~/.ssh/config).
-[includeIf "hasconfig:remote.*.url:git@github*:synle/**"]
-path = ~/.gitconfig-synle
-[includeIf "hasconfig:remote.*.url:ssh://git@github*/synle/**"]
-path = ~/.gitconfig-synle
+# ---- Personal identity override (generated from $REPO_OWNER by git.js) ----
+# BEGIN/END - GIT_PERSONAL_IDENTITY
 
 [core]
 autocrlf = input

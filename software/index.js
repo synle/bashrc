@@ -420,6 +420,8 @@ const FNM_DIR = getRuntimeOption("FNM_DIR");
 const FNM_DEFAULT_NODE_PATH = getRuntimeOption("FNM_DEFAULT_NODE_PATH");
 /** @type {string} Base URL for fetching raw files from the repo (e.g. GitHub raw content URL) */
 const BASH_PROFILE_CODE_REPO_RAW_URL = getRuntimeOption("BASH_PROFILE_CODE_REPO_RAW_URL");
+/** @type {string} GitHub owner of this repo and of personal repos (e.g. "synle"), set in common-env.sh */
+const REPO_OWNER = getRuntimeOption("REPO_OWNER");
 /** @type {string} GitHub repo identifier in "owner/repo" format */
 const REPO_PATH_IDENTIFIER = getRuntimeOption("REPO_PATH_IDENTIFIER");
 /** @type {string} Git branch name to fetch remote content from */

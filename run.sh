@@ -43,10 +43,11 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | b965b6fa6364293989b0567afb932a8d | 13.1 KB
+# software/bootstrap/common-env.sh | 84df16908b24bd41b412e83b16d529f6 | 13.1 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
-export REPO_PATH_IDENTIFIER="synle/bashrc"
+export REPO_OWNER="synle" # GitHub owner of this repo and of personal repos
+export REPO_PATH_IDENTIFIER="$REPO_OWNER/bashrc"
 export REPO_BRANCH_NAME="main"
 export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"
@@ -798,6 +799,7 @@ export is_system_desktop='$is_system_desktop'
 export is_system_gpu='$is_system_gpu'
 export system_gpu_vram_mib='$system_gpu_vram_mib'
 
+export REPO_OWNER='$REPO_OWNER'
 export REPO_PATH_IDENTIFIER='$REPO_PATH_IDENTIFIER'
 export REPO_BRANCH_NAME='$REPO_BRANCH_NAME'
 export BASH_PROFILE_CODE_REPO_RAW_URL='$BASH_PROFILE_CODE_REPO_RAW_URL'

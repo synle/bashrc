@@ -2,7 +2,8 @@
 
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
-export REPO_PATH_IDENTIFIER="synle/bashrc"
+export REPO_OWNER="synle" # GitHub owner of this repo and of personal repos
+export REPO_PATH_IDENTIFIER="$REPO_OWNER/bashrc"
 export REPO_BRANCH_NAME="main"
 export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"

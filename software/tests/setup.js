@@ -153,6 +153,7 @@ const sandbox = {
       BASH_SYLE_PATH: "/mock/home/.bash_syle",
       BASH_SYLE_COMMON_PATH: "/mock/home/.bash_syle_common",
       BASH_PROFILE_CODE_REPO_RAW_URL: "https://github.com/test/bashrc/blob/HEAD/",
+      REPO_OWNER: "test",
       REPO_PATH_IDENTIFIER: "test/bashrc",
       REPO_BRANCH_NAME: "master",
       BASHRC_TEMP_ROOT_DIR: "/tmp/test/bashrc",
