@@ -62,8 +62,14 @@ _SUDOERS_DROPIN=/etc/sudoers.d/bashrc-sudo
 _SUDOERS_TIMEOUT_MINUTES=10
 # Compare the whole rendered file, not just the timeout line — a host that already has the
 # old timeout-only drop-in must still be upgraded to pick up `!tty_tickets`.
+# badpass_message replaces sudo's plain "Sorry, try again." with a truecolor banner (black
+# on bright yellow, ~14:1 contrast) so a failed attempt reads apart from the red
+# SUDO_PROMPT banner (bash-command-wrappers.profile.bash). The ESC bytes are literal in
+# the file; `visudo -c` accepts them inside the quoted string (checked on sudo 1.9.17p2).
+_SUDOERS_ESC=$'\033'
 _SUDOERS_CONTENT="Defaults timestamp_timeout=$_SUDOERS_TIMEOUT_MINUTES
-Defaults !tty_tickets"
+Defaults !tty_tickets
+Defaults badpass_message=\"${_SUDOERS_ESC}[1;38;2;0;0;0;48;2;255;214;10m WRONG PASSWORD - try again ${_SUDOERS_ESC}[0m\""
 if [ "$(sudo cat "$_SUDOERS_DROPIN" 2> /dev/null)" != "$_SUDOERS_CONTENT" ]; then
   echo -n ">> sudo timestamp_timeout=$_SUDOERS_TIMEOUT_MINUTES minutes, shared across ttys >> "
   _sudoers_tmp="$BASHRC_TEMP_DIR/bashrc-sudo.sudoers"

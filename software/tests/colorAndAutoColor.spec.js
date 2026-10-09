@@ -17,7 +17,7 @@ function getColorCode(text) {
 
 // Known ANSI codes from index.js color helpers
 const CODES = {
-  bgRed: "41;97;1m",
+  bgRed: "1;38;2;255;255;255;48;2;165;0;0m",
   bgYellow: "43;30m",
   bgOrange: "48;5;208;30m",
   bgCyan: "46;30m",

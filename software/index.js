@@ -5441,7 +5441,10 @@ const LOG_COLORS = {
   cyan: "36m",
   dim: "2m",
   red: "1;31m",
-  bgRed: "41;97;1m",
+  // Truecolor, not ANSI 41/97: terminal themes remap those palette slots to a
+  // muted red + off-white (washed out). #ffffff on #a50000 is ~8:1 contrast on any
+  // theme — same pair as the SUDO_PROMPT banner in bash-command-wrappers.profile.bash.
+  bgRed: "1;38;2;255;255;255;48;2;165;0;0m",
   bgYellow: "43;30m",
   bgCyan: "46;30m",
   bgMagenta: "45;97;1m",
