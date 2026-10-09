@@ -277,6 +277,7 @@ function _log_progress_step() {
 # Stashes ALL changes (staged + unstaged + untracked) first as a safety backup so nothing is lost
 # (recover with `git stash list` / `git stash pop`). Deletes untracked *.rej patch rejects; leaves
 # every other untracked working-tree file alone. Also sweeps nested .DS_Store Finder junk.
+# Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity).
 # Also deletes stale local branches (squash-merged PRs), branches fully merged into the default
 # branch, local tags that no longer exist on origin, and prunes and removes merged/gone worktrees.
 # With --force / -f, every worktree is removed instead, skipping the dirty/merged checks.
@@ -289,6 +290,7 @@ function clean() {
     - Recover from stash with: git stash list  |  git stash pop
     - Deletes untracked *.rej files (failed 'git apply' hunk rejects); keeps all other untracked files
     - Deletes nested .DS_Store files (macOS Finder junk)
+    - Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity)
     - Also deletes stale local branches (squash-merged PRs), merged branches, stale local tags, and prunes and removes merged/gone worktrees
     - --force / -f: ALSO remove EVERY worktree, skipping the dirty/merged checks (uncommitted work in those worktrees is lost)"
     return 1
@@ -301,7 +303,7 @@ function clean() {
     ;;
   esac
 
-  local total_steps=15
+  local total_steps=16
   _PROGRESS_STEP=0
 
   # Safe stash first: capture staged + unstaged + untracked so nothing is lost.
@@ -351,6 +353,11 @@ function clean() {
     command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -exec rm -f {} + 2> /dev/null
     echo "  -> removed $ds_store_count .DS_Store file(s)"
   fi
+
+  # Match the last 50 commit author emails against the emails on file and pin the repo-local
+  # user.email to the match, so commits here keep the identity this repo already uses.
+  _log_progress_step "$total_steps" "Syncing local git identity from recent commits"
+  git fix-identity
 
   _log_progress_step "$total_steps" "Fetching origin"
   git clean-and-fetch
