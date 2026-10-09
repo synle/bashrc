@@ -7,15 +7,23 @@ echo '>> Setting macOS Defaults'
 ################################################################################
 # --- Screenshots ---
 ################################################################################
-defaults write com.apple.screencapture location ~/Desktop/_screenshots
+defaults write com.apple.screencapture location "$HOME/Desktop/_screenshots"
 defaults write com.apple.screencapture disable-shadow -bool true  # Removes the drop shadow from screenshot images
 defaults write com.apple.screencapture show-thumbnail -bool false # Skips the floating thumbnail after a screenshot
+defaults write com.apple.screencapture include-date -bool true    # Keeps the date/time stamp in screenshot file names so they sort chronologically
 
 ################################################################################
 # --- VS Code Symlink ---
 ################################################################################
+# Linked into $HOME/.local/bin (user-owned, on PATH) — /usr/local/bin may not exist on Apple Silicon.
 echo '>> Setting up VS Code symlink for mac'
-ln -s "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2> /dev/null
+_vscode_cli="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+if [ -x "$_vscode_cli" ]; then
+  safe_mkdir "$HOME/.local/bin"
+  ln -sfn "$_vscode_cli" "$HOME/.local/bin/code"
+else
+  echo ">> Skipped VS Code symlink: $_vscode_cli not found"
+fi
 
 ################################################################################
 # --- Window Animations ---
@@ -44,6 +52,8 @@ defaults write com.apple.finder _FXSortFoldersFirst -bool true             # Kee
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"        # Defaults new folders to list view
 defaults write NSGlobalDomain NSToolbarTitleViewRolloverDelay -float 0     # No delay when hovering the toolbar title
 defaults write com.apple.finder _FXEnableColumnAutoSizing -bool true       # Auto-resizes columns to fit content
+defaults write com.apple.finder ShowStatusBar -bool true                   # Shows the status bar (item count, free space) at the bottom of Finder windows
+defaults write com.apple.finder FXRemoveOldTrashItems -bool true           # Auto-deletes Trash items older than 30 days (macOS fixed window, not configurable)
 
 ################################################################################
 # --- Dock & Mission Control ---
@@ -70,7 +80,7 @@ echo '>> Applying Desktop & Stage Manager tweaks'
 defaults write com.apple.WindowManager GloballyEnabled -bool false                  # Disables Stage Manager
 defaults write com.apple.WindowManager EnableStandardClickToShowDesktop -bool false # Click wallpaper shows desktop only in Stage Manager (not always)
 defaults write com.apple.WindowManager StandardHideWidgets -bool true               # Disables iPhone widgets (reduces cross-device rendering overhead)
-defaults write com.apple.dashboard mcx-disabled -bool true                          # Disables dashboard (if still present on older macOS)
+defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false         # Removes the gaps between windows tiled via drag-to-edge / Window > Move & Resize (Sequoia+)
 
 ################################################################################
 # --- Accessibility > Display (WindowServer CPU reduction) ---
@@ -138,8 +148,8 @@ defaults write -g com.apple.trackpad.scaling -float 3 # Sets trackpad tracking s
 # --- Key Repeat Speed ---
 ################################################################################
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false # Disables the press-and-hold accent character popup so keys repeat on hold instead
-defaults delete NSGlobalDomain KeyRepeat 2> /dev/null              # Resets key repeat rate to system default (fastest possible after disabling press-and-hold)
-defaults delete NSGlobalDomain InitialKeyRepeat 2> /dev/null       # Resets initial key repeat delay to system default (shortest delay before repeat starts)
+defaults write NSGlobalDomain KeyRepeat -int 2                     # Repeat rate while a key is held: 2 = 30ms per repeat (fastest the System Settings slider allows)
+defaults write NSGlobalDomain InitialKeyRepeat -int 15             # Delay before repeat starts: 15 = 225ms (shortest the System Settings slider allows)
 
 ################################################################################
 # --- Misc Performance ---
@@ -158,6 +168,7 @@ defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false  
 #   To revert: defaults write com.apple.CrashReporter DialogType -string "crashreport"
 defaults write com.apple.CrashReporter DialogType -string "none"             # Silences the crash reporter popup when an app crashes (crashes still logged to Console)
 defaults write com.apple.assistant.support "Assistant Enabled" -bool false   # Disables Siri completely, freeing background CPU, memory, and network usage
+defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false  # New documents save to local disk by default instead of iCloud Drive
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true  # Save dialogs open in full expanded view showing the file browser by default
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true # Same as above for newer macOS versions that use a separate preference key
 defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true     # Print dialogs open in full expanded view showing all options by default
@@ -168,7 +179,6 @@ defaults write com.apple.menuextra.clock FlashDateSeparators -bool true      # F
 defaults write com.apple.ActivityMonitor UpdatePeriod -int 3                 # Activity Monitor refreshes every 3 seconds
 defaults write com.apple.Terminal FocusFollowsMouse -bool true               # Focus follows the mouse cursor to any Terminal window
 defaults write com.apple.ImageCapture disableHotPlug -bool true              # Stops Photos/Image Capture from auto-opening when plugging in a device (iPhone, camera, SD card)
-ulimit -n 65536                                                              # Raises the max open file descriptors from 256 to 65536 (prevents Electron apps from running out of fds)
 
 ################################################################################
 # --- Microsoft AutoUpdate (MAU) ---
@@ -188,8 +198,10 @@ defaults write com.microsoft.autoupdate2 SendAllTelemetryEnabled -bool false    
 ################################################################################
 # --- Restart Affected Services ---
 ################################################################################
+# Only restart shell UI processes. Never Terminal/Mail/Safari: killing Terminal kills
+# the session running this script, and the others drop the user's open work.
 echo '>> Restarting affected services'
-for app in "Dock" "Finder" "Mail" "Safari" "SystemUIServer" "Terminal" "Activity Monitor"; do
+for app in "Dock" "Finder" "SystemUIServer"; do
   killall "$app" > /dev/null 2>&1
 done
 echo '>> macOS tweaks applied'

@@ -4,6 +4,10 @@ async function doWork() {
     # Suppress bash legacy warning in Catalina+
     export BASH_SILENCE_DEPRECATION_WARNING=1
 
+    # Raise the open-file soft limit from macOS's default 256 for this shell and its
+    # children (node, watchers, dev servers). Capped by the hard limit; errors ignored.
+    ulimit -n 65536 2> /dev/null || true
+
     ##########################################################
     # Mac-Only Aliases
     ##########################################################
