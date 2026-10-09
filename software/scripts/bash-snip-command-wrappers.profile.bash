@@ -63,8 +63,10 @@ _SNIP_WRAP_COMMANDS=(
   # --- Containers / cloud / infra (Tier 2, minus git) ---
   docker docker-compose kubectl helm skopeo
   terraform tofu ansible-playbook aws gcloud sops
-  # --- VCS-ish / misc (Tier 2, minus git) ---
-  gh jj gt yadm jira shopify ollama brew
+  # --- VCS-ish / misc (Tier 2, minus git and brew) ---
+  # brew is excluded: snip's output filter swallows brew's interactive Y/N
+  # prompts (cask quit/overwrite, sudo), so `brew upgrade` looks hung.
+  gh jj gt yadm jira shopify ollama
 )
 
 # _snip_require_binary <cmd>: fail with a clear message when <cmd>'s real binary
