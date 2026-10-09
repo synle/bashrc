@@ -533,9 +533,11 @@ function blame_view() {
 #   - No-arg / pipe / clipboard → /tmp/marked-<rand>-clipboard.html
 #   - One arg                   → /tmp/marked-<rand>-<basename>.html
 #   - Two args                  → second arg verbatim
+# Successful stdout is only the output path; failures stay on stderr.
 # Notes:
 #   - Uses `npx -y` so the install prompt is auto-confirmed, and `< /dev/null`
 #     so marked never blocks reading from a tty.
+#   - npm warnings are hidden; errors remain visible.
 #   - The random suffix comes from `mktemp -u` so the path is unique per run
 #     and avoids clobbering older renders in /tmp.
 function marked() {
@@ -550,7 +552,9 @@ function marked() {
   Notes:
     - <rand> is the 6-char suffix from mktemp; the date prefix sorts renders chronologically in /tmp.
     - npx is invoked with -y so the install prompt is auto-confirmed.
-    - Stdin is closed via </dev/null so marked never tries to read from a tty."
+    - npm warnings are hidden, but errors remain visible.
+    - Stdin is closed via </dev/null so marked never tries to read from a tty.
+    - Successful stdout contains only the generated HTML path."
     return
   fi
 
@@ -592,14 +596,14 @@ function marked() {
     fi
   fi
 
-  npx -y marked@latest -i "$input" -o "$output" < /dev/null
+  npm_config_loglevel=error npx -y marked@latest -i "$input" -o "$output" < /dev/null
   local rc=$?
   ((input_is_temp)) && rm -f "$input"
   if [ "$rc" -ne 0 ]; then
     echo "marked: npx exited with $rc" >&2
     return "$rc"
   fi
-  echo "marked: wrote $output"
+  printf '%s\n' "$output"
 }
 alias md=marked
 

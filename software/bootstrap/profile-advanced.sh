@@ -1823,13 +1823,17 @@ function dexec_bash() {
 ################################################################################
 # --- Open (cross-platform) ---
 ################################################################################
+# open: render local Markdown to HTML, then open the target in the system app.
 function open() {
   if is_help_arg "${1:-}"; then
-    echo "open: open a file or folder in the default system app
-  Usage: open [file|dir]"
+    echo "open: open a file or folder in the default system app (local .md files render to HTML)
+  Usage: open [file|folder|URL]"
     return 0
   fi
   local target="${1:-.}"
+  if [ -f "$target" ] && [[ "$target" == *.md ]]; then
+    target="$(marked "$target")" || return $?
+  fi
   print_action_summary "$target" open
 
   if ((is_os_mac)); then

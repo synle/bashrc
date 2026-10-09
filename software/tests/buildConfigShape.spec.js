@@ -150,6 +150,7 @@ describe("build config shape - objects", () => {
         "mini_diff",
         "open_externally_patterns",
         "preview_on_click",
+        "reload_file_in_background",
         "remember_open_files",
         "rulers",
         "scroll_speed",
@@ -212,6 +213,7 @@ describe("build config shape - objects", () => {
         "mini_diff",
         "open_externally_patterns",
         "preview_on_click",
+        "reload_file_in_background",
         "remember_open_files",
         "rulers",
         "scroll_speed",
@@ -589,6 +591,7 @@ describe("build config shape - objects", () => {
         "buffer_font_size",
         "buffer_font_weight",
         "colorize_brackets",
+        "cursor_animation",
         "cursor_blink",
         "diagnostics",
         "disable_ai",
@@ -607,15 +610,18 @@ describe("build config shape - objects", () => {
         "languages",
         "linked_edits",
         "lsp_document_colors",
+        "markdown_preview",
         "max_tabs",
         "minimap",
         "multi_cursor_modifier",
+        "on_new_window",
         "outline_panel",
         "preferred_line_length",
         "prettier",
         "project_panel",
         "remove_trailing_whitespace_on_save",
         "restore_on_startup",
+        "reveal_if_open",
         "scrollbar",
         "search",
         "session",
@@ -623,6 +629,7 @@ describe("build config shape - objects", () => {
         "show_whitespaces",
         "show_wrap_guides",
         "soft_wrap",
+        "soft_wrap_indent",
         "sticky_scroll",
         "tab_size",
         "tabs",
@@ -634,6 +641,7 @@ describe("build config shape - objects", () => {
         "unnecessary_code_fade",
         "use_smartcase_search",
         "vim_mode",
+        "window_title_format",
         "wrap_guides",
       ]
     `);
@@ -694,7 +702,7 @@ describe("build config shape - arrays", () => {
       return;
     }
     const shape = readBuildArrayShape("sublime-text-keys-mac");
-    expect(shape.length).toMatchInlineSnapshot(`43`);
+    expect(shape.length).toMatchInlineSnapshot(`44`);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
         "command",
@@ -791,7 +799,7 @@ describe("build config shape - arrays", () => {
       return;
     }
     const shape = readBuildArrayShape("zed-keys-linux");
-    expect(shape.length).toMatchInlineSnapshot(`3`);
+    expect(shape.length).toMatchInlineSnapshot(`5`);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
         "bindings",
