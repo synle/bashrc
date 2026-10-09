@@ -451,7 +451,7 @@ describe("list_prs — output shape", () => {
   it("prints title then URL, two lines, and keeps STDOUT free of progress noise", () => {
     const { stdout, stderr } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
     const lines = stdout.split("\n").filter(Boolean);
-    expect(lines[0]).toBe("⏳ syle/retry-token-refresh : Retry token refresh on 401");
+    expect(lines[0]).toBe("⏳ syle/retry-token-refresh · Retry token refresh on 401");
     expect(lines[1]).toBe("https://github.com/acme/api/pull/1");
     expect(lines).toHaveLength(2);
     expect(stdout).not.toContain(">>>");
@@ -473,7 +473,7 @@ describe("list_prs — output shape", () => {
 
   it("prints a [draft] tag on the title line", () => {
     const { stdout } = runCli(["--me=1"], [pullRequest({ isDraft: true, checks: [PASSING_CHECK] })]);
-    expect(stdout).toContain("🛑 [draft] syle/retry-token-refresh : Retry token refresh on 401");
+    expect(stdout).toContain("🛑 [draft] syle/retry-token-refresh · Retry token refresh on 401");
   });
 
   it("prints the head branch between the tags and the title, and never on the URL line", () => {
@@ -482,7 +482,7 @@ describe("list_prs — output shape", () => {
     const lines = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)])
       .stdout.split("\n")
       .filter(Boolean);
-    expect(lines[0]).toBe("⏳ syle/retry-token-refresh : Retry token refresh on 401");
+    expect(lines[0]).toBe("⏳ syle/retry-token-refresh · Retry token refresh on 401");
     expect(lines[1]).toBe("https://github.com/acme/api/pull/1");
     expect(runCli(["--me=1", "--links"], [pullRequest(AWAITING_REVIEW)]).stdout).not.toContain("syle/retry-token-refresh");
   });
@@ -634,14 +634,14 @@ describe("list_prs — reason icons and auto-merge", () => {
       [pullRequest({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } })],
     );
     const lines = stdout.split("\n").filter(Boolean);
-    expect(lines[0]).toBe("⏳ [auto-merge] syle/retry-token-refresh : Retry token refresh on 401");
+    expect(lines[0]).toBe("⏳ [auto-merge] syle/retry-token-refresh · Retry token refresh on 401");
   });
 
   it("leaves the auto-merge tag off a disarmed PR", () => {
     const lines = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)])
       .stdout.split("\n")
       .filter(Boolean);
-    expect(lines[0]).toBe("⏳ syle/retry-token-refresh : Retry token refresh on 401");
+    expect(lines[0]).toBe("⏳ syle/retry-token-refresh · Retry token refresh on 401");
     expect(lines[0]).not.toContain("auto-merge");
   });
 
@@ -662,12 +662,12 @@ describe("list_prs — reason icons and auto-merge", () => {
     const running = runCli(["--me=1", "--all"], [pullRequest({ checks: [RUNNING_CHECK], reviewDecision: "APPROVED" })])
       .stdout.split("\n")
       .filter(Boolean)[0];
-    expect(running).toBe("🔨 syle/retry-token-refresh : Retry token refresh on 401…");
+    expect(running).toBe("🔨 syle/retry-token-refresh · Retry token refresh on 401…");
 
     const settled = runCli(["--me=1", "--all"], [pullRequest(READY_TO_MERGE)])
       .stdout.split("\n")
       .filter(Boolean)[0];
-    expect(settled).toBe("🚀 syle/retry-token-refresh : Retry token refresh on 401");
+    expect(settled).toBe("🚀 syle/retry-token-refresh · Retry token refresh on 401");
     expect(settled).not.toContain("…");
   });
 
@@ -689,7 +689,7 @@ describe("list_prs — reason icons and auto-merge", () => {
     const line = runCli(["--me=1", "--all"], [pullRequest(both)])
       .stdout.split("\n")
       .filter(Boolean)[0];
-    expect(line).toBe("🔨 [auto-merge] syle/retry-token-refresh : Retry token refresh on 401…");
+    expect(line).toBe("🔨 [auto-merge] syle/retry-token-refresh · Retry token refresh on 401…");
   });
   it("never decorates the URL line — callers parse it", () => {
     const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
