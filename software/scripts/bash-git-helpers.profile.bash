@@ -310,13 +310,13 @@ function clean() {
   # If working tree is already clean (or an in-progress op blocks stash), this is a no-op.
   local stash_msg
   stash_msg="clean backup $(command date +%Y-%m-%d_%H:%M:%S)"
-  _log_progress_step "$total_steps" "Stashing all changes as '$stash_msg'"
+  _log_progress_step "$total_steps" "💾 Stashing all changes as '$stash_msg'"
   git stash push --include-untracked --message "$stash_msg" > /dev/null 2>&1
   echo "  -> recover with: git stash list  |  git stash pop"
 
   # Soft abort: cancel in-progress merge/rebase/cherry-pick/am WITHOUT 'git clean -fd',
   # so any untracked working-tree files that did not make it into the stash are preserved.
-  _log_progress_step "$total_steps" "Aborting in-progress merge/rebase/cherry-pick/am"
+  _log_progress_step "$total_steps" "🛑 Aborting in-progress merge/rebase/cherry-pick/am"
   command rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD 2> /dev/null
   git merge --abort 2> /dev/null
   git rebase --abort 2> /dev/null
@@ -326,7 +326,7 @@ function clean() {
   # Sweep the *.rej hunk rejects a failed 'git apply' / 'patch' leaves behind. They are untracked
   # and gitignored, so they survive every reset below and quietly rot next to the file they failed
   # on. Safe to delete unconditionally: the stash above already captured them.
-  _log_progress_step "$total_steps" "Removing *.rej patch rejects"
+  _log_progress_step "$total_steps" "🗑️ Removing *.rej patch rejects"
   local repo_root
   repo_root=$(git rev-parse --show-toplevel 2> /dev/null) || repo_root="$PWD"
   local rej_files
@@ -344,7 +344,7 @@ function clean() {
   # Sweep macOS Finder junk (.DS_Store) nested anywhere in the repo. Untracked and usually
   # gitignored, so it survives every reset below. Safe to delete unconditionally: the stash
   # above already captured it. .git and node_modules are pruned, same as the *.rej sweep.
-  _log_progress_step "$total_steps" "Removing .DS_Store files"
+  _log_progress_step "$total_steps" "🗑️ Removing .DS_Store files"
   local ds_store_count
   ds_store_count=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -print 2> /dev/null | command grep -c .)
   if [ "${ds_store_count:-0}" -eq 0 ]; then
@@ -356,16 +356,16 @@ function clean() {
 
   # Match the last 50 commit author emails against the emails on file and pin the repo-local
   # user.email to the match, so commits here keep the identity this repo already uses.
-  _log_progress_step "$total_steps" "Syncing local git identity from recent commits"
+  _log_progress_step "$total_steps" "🔧 Syncing local git identity from recent commits"
   git fix-identity
 
-  _log_progress_step "$total_steps" "Fetching origin"
+  _log_progress_step "$total_steps" "⬇️ Fetching origin"
   git clean-and-fetch
 
-  _log_progress_step "$total_steps" "Garbage-collecting (if >14d)"
+  _log_progress_step "$total_steps" "🧹 Garbage-collecting (if >14d)"
   git gc-if-stale
 
-  _log_progress_step "$total_steps" "Resolving default branch"
+  _log_progress_step "$total_steps" "🔧 Resolving default branch"
   local default_branch
   default_branch=$(_get_default_branch) || return 1
   echo "  -> default branch: $default_branch"
@@ -376,38 +376,38 @@ function clean() {
 
   # Back up current branch to a temp branch
   local temp_branch="temp/$(command date +%Y%m%d-%H%M%S)"
-  _log_progress_step "$total_steps" "Backing up to $temp_branch"
+  _log_progress_step "$total_steps" "💾 Backing up to $temp_branch"
   git checkout -b "$temp_branch" > /dev/null 2>&1
 
-  _log_progress_step "$total_steps" "Deleting local '$default_branch'"
+  _log_progress_step "$total_steps" "🗑️ Deleting local '$default_branch'"
   git del "$default_branch" > /dev/null 2>&1
 
-  _log_progress_step "$total_steps" "Checking out '$default_branch'"
+  _log_progress_step "$total_steps" "🔀 Checking out '$default_branch'"
   git checkout "$default_branch" > /dev/null 2>&1
 
-  _log_progress_step "$total_steps" "Rebasing onto 'origin/$default_branch'"
+  _log_progress_step "$total_steps" "🔀 Rebasing onto 'origin/$default_branch'"
   git rebase "origin/$default_branch" > /dev/null 2>&1
 
-  _log_progress_step "$total_steps" "Deleting $temp_branch"
+  _log_progress_step "$total_steps" "🗑️ Deleting $temp_branch"
   git del "$temp_branch" > /dev/null 2>&1
 
-  _log_progress_step "$total_steps" "Deleting branches with gone upstream"
+  _log_progress_step "$total_steps" "🗑️ Deleting branches with gone upstream"
   git clean-stale-branches
 
-  _log_progress_step "$total_steps" "Deleting merged branches and pruned tags"
+  _log_progress_step "$total_steps" "🗑️ Deleting merged branches and pruned tags"
   git clean-merged-branches-and-tags
 
   if ((force_worktrees)); then
-    _log_progress_step "$total_steps" "Removing ALL worktrees (--force)"
+    _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
     git worktree prune
     worktree_clean --force
   else
-    _log_progress_step "$total_steps" "Cleaning merged/gone worktrees"
+    _log_progress_step "$total_steps" "🗑️ Cleaning merged/gone worktrees"
     git clean-worktree
     worktree_clean
   fi
 
-  echo "# ---- Reset to origin/$default_branch (100% done) ----"
+  echo "# ---- ✅ Reset to origin/$default_branch (100% done) ----"
   git lastd
 }
 

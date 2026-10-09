@@ -47,8 +47,9 @@
  *   trailing … (the one state that resolves itself while you read), and an
  *   armed auto-merge a dim `[auto-merge]` rather than a tenth glyph. Every
  *   text marker prints without color too, so a pipe loses tone, never a fact.
- *   The head branch prefixes the title in cyan, as `<branch> [N] · <title>` (`[N]` = unresolved
- *   review threads, omitted at 0) — the
+ *   Unresolved review threads print right after the icon as a bold red `[N]`
+ *   (omitted at 0). The head branch prefixes the title in cyan, as
+ *   `<branch> · <title>` — the
  *   handle every local command takes, and render-only (JSON keeps `title`
  *   clean and carries `headRefName` on its own).
  *   The URL line stays bare — callers parse it.
@@ -915,6 +916,10 @@ function render(rows, opts, color, showAuthors = false, me = ``) {
     // every text part prints either way, so a piped render loses tone, never a fact.
     const paint = (text, style) => (color ? `${style}${text}${ANSI.reset}${titleColorFor(row.signal)}` : text);
     const parts = [row.reasonIcon];
+    // Unresolved review-thread count sits right after the icon as `[N]` in bold red, so
+    // comments still owed a reply are the first thing read, without --verbose. Bold
+    // bright red (not plain red) so it stays legible on an already-red blocked title.
+    if (row.openThreads > 0) parts.push(paint(`[${row.openThreads}]`, ANSI.blockedTag));
     if (row.reasonTag) parts.push(paint(row.reasonTag, BLOCKED_TAGS.has(row.reasonTag) ? ANSI.blockedTag : ANSI.dim));
     if (row.autoMerge) parts.push(paint(AUTO_MERGE_TAG, ANSI.dim));
     // Who wrote it, but only when the listing can hold more than one person — in a
@@ -924,11 +929,7 @@ function render(rows, opts, color, showAuthors = false, me = ``) {
     // command wants (worktree, checkout, log) and it is the only field that says WHERE
     // the work lives. Cyan + a ` · ` separator so it reads as a prefix on the title
     // rather than as part of it, and so a title starting with punctuation stays legible.
-    // Unresolved review-thread count rides just before the separator as `[N]`, so the
-    // number of comments still owed a reply is visible without --verbose.
-    const threads = row.openThreads > 0 ? ` ${paint(`[${row.openThreads}]`, ANSI.yellow || ANSI.dim)}` : ``;
-    if (row.headRefName) parts.push(`${paint(row.headRefName, ANSI.cyan)}${threads} ·`);
-    else if (threads) parts.push(`${threads.trim()} ·`);
+    if (row.headRefName) parts.push(`${paint(row.headRefName, ANSI.cyan)} ·`);
     parts.push(row.title);
 
     const running = row.runningChecks > 0 ? (color ? `${ANSI.magenta}${RUNNING_SUFFIX}${ANSI.reset}` : RUNNING_SUFFIX) : ``;
