@@ -39,13 +39,19 @@ function _getNumberedAliasSnippet() {
  * Builds the full git config content from a template, injecting email, core configs, and numbered aliases.
  * @param {object} options - Configuration options.
  * @param {string} options.email - The git user email to inject.
- * @param {string} [options.extraCoreConfigs] - Additional git core config entries.
+ * @param {string} [options.extraCoreConfigs] - Additional git core config entries. Defaults to
+ *   `pager = less -R` — the template carries no pager line, so this is the only place
+ *   `core.pager` is set (a second value makes `git config --get core.pager` error).
  * @param {boolean} [options.addDefaultCommitTemplate] - Whether to add a default commit template.
+ * @param {boolean} [options.isDeltaEnabled] - Add delta-only settings (`interactive.diffFilter`).
+ *   Leave false for the `.build/` artifact and the Windows host config, where delta may be
+ *   missing and a missing filter binary breaks `git add -p`.
  * @returns {Promise<string>} The rendered git config content.
  */
-async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate }) {
+async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate, isDeltaEnabled }) {
   email = email || "";
-  extraCoreConfigs = extraCoreConfigs || "";
+  // explicit raw ANSI pass-through (fixes Git for Windows bundled less)
+  extraCoreConfigs = extraCoreConfigs || "pager = less -R";
 
   let templateGitConfig = await readText`software/scripts/git.gitconfig`;
 
@@ -54,6 +60,14 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
     templateGitConfig = appendTextBlock(templateGitConfig, "GIT_EXTRA_CORE_CONFIGS", extraCoreConfigs);
     templateGitConfig = appendTextBlock(templateGitConfig, "GIT_NUMBERED_ALIASES", _getNumberedAliasSnippet());
     templateGitConfig = templateGitConfig.trim();
+
+    if (isDeltaEnabled === true) {
+      // `git add -p` hunks get the same delta highlighting as `git diff`.
+      templateGitConfig += `
+[interactive]
+  diffFilter = delta --color-only
+    `;
+    }
 
     if (addDefaultCommitTemplate === true) {
       const GIT_DEFAULT_MESSAGE_PATH = `${BASE_HOMEDIR_LINUX}/.gitmessage`;
@@ -148,7 +162,8 @@ async function doWork() {
   // figure out the name
   const oldConfig = await readText`${configMain}`;
   const email = _extractEmail(oldConfig);
-  const gitPager = hasBinary("delta") ? "delta" : "less -R";
+  const isDeltaEnabled = hasBinary("delta");
+  const gitPager = isDeltaEnabled ? "delta" : "less -R";
 
   log(`>>> Installing git Aliases and Configs for Main OS`, email, configMain);
 
@@ -177,6 +192,7 @@ async function doWork() {
         pager = ${gitPager}
       `,
       addDefaultCommitTemplate: true,
+      isDeltaEnabled,
     }),
   );
 
