@@ -66,6 +66,16 @@ function _bootstrap_decky_loader_plugins_themes() {
 	curl -fsSL "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/2cc576a7f60751306d690268e227df626e59d3733680ced753de4c116629a9cc.zip" \
 		-o "$DECKY_PLUGINS_FOLDER/volume-boost.zip"
 
+	# Decky Plugin - AutoFlatpaks (decky-autoflatpaks)
+	echo ">>> Downloading AutoFlatpaks to $DECKY_PLUGINS_FOLDER/decky-autoflatpaks.zip"
+	curl -fsSL "https://github.com/jurassicplayer/decky-autoflatpaks/releases/download/v1.6.8/decky-autoflatpaks.zip" \
+		-o "$DECKY_PLUGINS_FOLDER/decky-autoflatpaks.zip"
+
+	# Decky Plugin - HueSync
+	echo ">>> Downloading HueSync to $DECKY_PLUGINS_FOLDER/huesync.zip"
+	curl -fsSL "https://github.com/honjow/HueSync/releases/download/v3.9.0/huesync.zip" \
+		-o "$DECKY_PLUGINS_FOLDER/huesync.zip"
+
 	# Install Decky plugins (requires Decky Loader installed first)
 	if [ -d "$HOME/homebrew/plugins" ]; then
 		echo ">>> Installing Decky plugins into $HOME/homebrew/plugins/"
