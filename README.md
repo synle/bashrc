@@ -115,6 +115,12 @@ fi
 
 <!-- END software/bootstrap/setup.sh -->
 
+### Option C - via git and make
+
+```bash
+tmp=$(mktemp -d) && cd "$tmp" && git clone --depth 1 https://github.com/synle/bashrc.git && cd bashrc && bash run.sh --files=url-porter,skippy-ff,terminator
+```
+
 ## Usage
 
 ```bash
