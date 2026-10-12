@@ -9,7 +9,7 @@ DESKTOP_FOLDER="$HOME/Desktop"
 DECKY_PLUGINS_FOLDER="$DESKTOP_FOLDER/decky_plugins"
 CSS_LOADER_THEMES_FOLDER="$DECKY_PLUGINS_FOLDER/css_loader_themes"
 APPS_FOLDER="$HOME/Apps"
-mkdir -p "$DESKTOP_FOLDER" "$DECKY_PLUGINS_FOLDER" "$CSS_LOADER_THEMES_FOLDER" "$APPS_FOLDER"
+mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
 
 # --- EmuDeck ---
 echo ">>> Downloading EmuDeck installer to $DESKTOP_FOLDER/"
@@ -18,6 +18,13 @@ chmod +x "$DESKTOP_FOLDER/EmuDeck.desktop"
 
 # --- Decky Loader + plugins + CSS Loader themes ---
 function _bootstrap_decky_loader_plugins_themes() {
+	# Wipe any prior staging so stale downloads or renamed plugins never linger
+	if [ -n "${DECKY_PLUGINS_FOLDER:-}" ] && [ "$DECKY_PLUGINS_FOLDER" != "/" ]; then
+		echo ">>> Cleaning up old $DECKY_PLUGINS_FOLDER/"
+		rm -rf "$DECKY_PLUGINS_FOLDER"
+	fi
+	mkdir -p "$DECKY_PLUGINS_FOLDER" "$CSS_LOADER_THEMES_FOLDER"
+
 	# Decky Loader installer
 	echo ">>> Downloading Decky Loader installer to $HOME/decky_loader_installer.sh (run it from Konsole)"
 	curl -fsSL "https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_release.sh" \
