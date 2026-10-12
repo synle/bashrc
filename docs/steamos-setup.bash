@@ -92,12 +92,14 @@ function _bootstrap_decky_loader_plugins_themes() {
 	# themeId -> https://api.deckthemes.com/themes/<id> -> blob id -> https://api.deckthemes.com/blobs/<blob>
 	CSS_LOADER_THEMES=(
 		"Round:c6844008-a809-41f6-b140-7aa76f2a62ad"
-		"Art Hero:994360e7-cfca-46d3-9337-80d28ad169ba"
 		"Clean Gameview:a9776f60-2724-4ff0-824b-e1f82a04688e"
 		"Centered Home:865407ae-fb14-4db7-b123-61f6995ed757"
 		"No Home Text:0e8a208f-136f-4f26-b0e1-344bcd186ed9"
-		"No Recent Text:95c4e310-0770-4e1f-9f9d-cbe444e9bb17"
+		"No Home Recent Text:95c4e310-0770-4e1f-9f9d-cbe444e9bb17"
 		"Obsidian:f16cf40d-7ccc-4981-95bf-77b28e8d101e"
+		"Faster Transition Animations:921a7ec8-b355-4799-b23f-73f4b9c713b8"
+		"Mini Carousel:4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b"
+		"No Home Edge Fade:2dab90ab-2cf3-480f-adce-f6c67caadd67"
 	)
 	for entry in "${CSS_LOADER_THEMES[@]}"; do
 		theme_name="${entry%%:*}"
