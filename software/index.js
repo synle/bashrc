@@ -1424,6 +1424,7 @@ const hasChromiumBrowser = resolveOsKey({
   linux: () =>
     pathExists("/usr/bin", /^google-chrome$/) ||
     pathExists("/usr/bin", /^brave-browser$/) ||
+    pathExists("/usr/bin", /^brave/) ||
     pathExists("/usr/bin", /^microsoft-edge$/) ||
     pathExists("/usr/bin", /^chromium$/) ||
     pathExists("/usr/bin", /^chromium-browser$/),
