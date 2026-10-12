@@ -88,14 +88,15 @@ Self-extracting bash script bundling `run.sh` + `software/` as a base64 payload.
 Download once, then pass any `run.sh` flag:
 
 ```bash
-tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp"
+tmp=$(mktemp -d) && cd "$tmp" && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o run.sh
 
-bash "$tmp" --setup                 # full setup (deps + profile)
-bash "$tmp" --preset=heavyweight    # everything
-bash "$tmp" --preset=lightweight    # minimal
-bash "$tmp"                         # profile refresh only
-bash "$tmp" --files=git.js          # one script
-bash "$tmp" --dryrun --setup        # preview, no writes
+bash run.sh --setup                          # full setup (deps + profile)
+bash run.sh --preset=heavyweight             # everything
+bash run.sh --preset=lightweight             # minimal
+bash run.sh                                  # profile refresh only
+bash run.sh --files=git.js                   # one script
+bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack,vim-plug     # a few scripts
+bash run.sh --dryrun --setup                 # preview, no writes
 ```
 
 Downloading first avoids a harmless `curl: (56)` pipe-close noise you'd get from piping straight into bash. Extracts to `$TMPDIR/synle-bashrc-installer-$$/` (override: `BASHRC_INSTALLER_DIR=...`; keep: `BASHRC_INSTALLER_KEEP=1`). Build locally with `make build_installer` → `.build/install-bashrc.sh` (~1 MB).
@@ -118,7 +119,7 @@ fi
 ### Option C - via git and make
 
 ```bash
-tmp=$(mktemp -d) && cd "$tmp" && git clone --depth 1 https://github.com/synle/bashrc.git && cd bashrc && bash run.sh --files=url-porter,skippy-ff,terminator
+tmp=$(mktemp -d) && cd "$tmp" && git clone --depth 1 https://github.com/synle/bashrc.git && cd bashrc && bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack,vim-plug
 ```
 
 ## Usage

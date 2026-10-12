@@ -1548,8 +1548,8 @@ function LinuxNotesDom({ osFlag }) {
 function SteamOSNotesDom() {
   return (
     <>
-      <TargetSystemOSWarningDom targetDomString="is_os_steamos" />
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <TargetSystemOSWarningDom targetDomString="is_os_steamos" />
       <DynamicTextArea path="/docs/steamos-setup.bash" />
       <DynamicTextArea path="/docs/linux/README.md" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
