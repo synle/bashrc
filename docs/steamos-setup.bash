@@ -3,8 +3,6 @@
 # steamos-setup.bash - SteamOS / Steam Deck post-install helpers
 # Run from Desktop Mode (Konsole). Re-running overwrites existing downloads.
 
-set -euo pipefail
-
 DESKTOP_FOLDER="$HOME/Desktop"
 DECKY_PLUGINS_FOLDER="$DESKTOP_FOLDER/decky_plugins"
 CSS_LOADER_THEMES_FOLDER="$DECKY_PLUGINS_FOLDER/css_loader_themes"
