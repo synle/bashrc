@@ -44,3 +44,11 @@ named `<theme>_<themeId>.zip`, where `<themeId>` is the DeckThemes theme id.
 | `decky_css_loader/Faster_Transition_Animations_921a7ec8-b355-4799-b23f-73f4b9c713b8.zip` | Faster Transition Animations (Sims) | https://deckthemes.com/themes/view?themeId=921a7ec8-b355-4799-b23f-73f4b9c713b8 |
 | `decky_css_loader/Mini_Carousel_4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b.zip` | Mini Carousel (levi) | https://deckthemes.com/themes/view?themeId=4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b |
 | `decky_css_loader/No_Home_Edge_Fade_2dab90ab-2cf3-480f-adce-f6c67caadd67.zip` | No Home Edge Fade (Sims) | https://deckthemes.com/themes/view?themeId=2dab90ab-2cf3-480f-adce-f6c67caadd67 |
+
+## Misc — repo root
+
+Files vendored at the repo root of `assets/steamos/`.
+
+| File in this repo | What it is | Saved to on the Deck |
+| --- | --- | --- |
+| `sponsporblock.json` | SponsorBlock extension settings export (server, categories, bar colors) | `~/Desktop/sponsporblock.json` |

@@ -23,6 +23,11 @@ echo ">>> Downloading EmuDeck installer to $DESKTOP_FOLDER/"
 curl -fsSL "https://www.emudeck.com/EmuDeck.desktop" -o "$DESKTOP_FOLDER/EmuDeck.desktop"
 chmod +x "$DESKTOP_FOLDER/EmuDeck.desktop"
 
+# --- SponsorBlock config (vendor-verified export for the YouTube blocker) ---
+echo ">>> Downloading SponsorBlock config to $DESKTOP_FOLDER/sponsporblock.json"
+curl -fsSL "https://raw.githubusercontent.com/synle/bashrc/HEAD/assets/steamos/sponsporblock.json" \
+	-o "$DESKTOP_FOLDER/sponsporblock.json"
+
 # --- Decky Loader + plugins + CSS Loader themes ---
 function _bootstrap_decky_loader_plugins_themes() {
 	# Wipe any prior staging so stale downloads or renamed plugins never linger
