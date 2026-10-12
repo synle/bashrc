@@ -3,6 +3,15 @@
 # steamos-setup.bash - SteamOS / Steam Deck post-install helpers
 # Run from Desktop Mode (Konsole). Re-running overwrites existing downloads.
 
+# System upgrade (pacman -Syu / paru -Syu) is opt-in: it takes a long time and
+# touches the whole system, so default to skipping and just print the commands.
+printf ">>> Run system upgrade (sudo pacman -Syu / paru -Syu)? [y/N] "
+read -r upgrade_choice
+case "$upgrade_choice" in
+	y|Y|yes|YES) DO_SYSTEM_UPGRADE=1 ;;
+	*) DO_SYSTEM_UPGRADE=0 ;;
+esac
+
 DESKTOP_FOLDER="$HOME/Desktop"
 DECKY_PLUGINS_FOLDER="$DESKTOP_FOLDER/decky_plugins"
 CSS_LOADER_THEMES_FOLDER="$DECKY_PLUGINS_FOLDER/css_loader_themes"
@@ -29,50 +38,27 @@ function _bootstrap_decky_loader_plugins_themes() {
 		-o "$HOME/decky_loader_installer.sh"
 	chmod +x "$HOME/decky_loader_installer.sh"
 
-	# Decky Plugin - Lossless Scaling (decky-lsfg-vk)
-	echo ">>> Downloading Decky LSFG-VK to $DECKY_PLUGINS_FOLDER/Decky.LSFG-VK.zip"
-	curl -fsSL "https://github.com/xXJSONDeruloXx/decky-lsfg-vk/releases/download/v0.14.4/Decky.LSFG-VK.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/Decky.LSFG-VK.zip"
+	# Decky plugin and CSS Loader theme zips are vendored in this repo under
+	# assets/steamos/ so the helper never depends on third-party release URLs.
+	# See assets/steamos/README.md for the upstream author and repo of each file.
+	DECKY_ASSETS_BASE="https://raw.githubusercontent.com/synle/bashrc/HEAD/assets/steamos"
 
-	# Decky Plugin - HLTB for Deck
-	echo ">>> Downloading HLTB for Deck to $DECKY_PLUGINS_FOLDER/hltb-for-deck.zip"
-	curl -fsSL "https://github.com/hulkrelax/hltb-for-deck/releases/latest/download/hltb-for-deck.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/hltb-for-deck.zip"
-
-	# Decky Plugin - SteamGridDB
-	echo ">>> Downloading SteamGridDB to $DECKY_PLUGINS_FOLDER/SteamGridDB.zip"
-	curl -fsSL "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/e84f5b1f111af8862b06218479491fbf61036e1bfd9f16f93f9901e9b9ebc5e0.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/SteamGridDB.zip"
-
-	# Decky Plugin - CSS Loader (SDH-CssLoader)
-	echo ">>> Downloading CSS Loader to $DECKY_PLUGINS_FOLDER/SDH-CSSLoader-Decky.zip"
-	curl -fsSL "https://github.com/suchmememanyskill/SDH-CssLoader/releases/latest/download/SDH-CSSLoader-Decky.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/SDH-CSSLoader-Decky.zip"
-
-	# Decky Plugin - ProtonDB Badges
-	echo ">>> Downloading ProtonDB Badges to $DECKY_PLUGINS_FOLDER/protondb-decky.zip"
-	curl -fsSL "https://github.com/OMGDuke/protondb-decky/releases/latest/download/protondb-decky.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/protondb-decky.zip"
-
-	# Decky Plugin - EmuDecky
-	echo ">>> Downloading EmuDecky to $DECKY_PLUGINS_FOLDER/EmuDecky.zip"
-	curl -fsSL "https://github.com/EmuDeck/EmuDecky/releases/latest/download/EmuDecky.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/EmuDecky.zip"
-
-	# Decky Plugin - Volume Boost
-	echo ">>> Downloading Volume Boost to $DECKY_PLUGINS_FOLDER/volume-boost.zip"
-	curl -fsSL "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/2cc576a7f60751306d690268e227df626e59d3733680ced753de4c116629a9cc.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/volume-boost.zip"
-
-	# Decky Plugin - AutoFlatpaks (decky-autoflatpaks)
-	echo ">>> Downloading AutoFlatpaks to $DECKY_PLUGINS_FOLDER/decky-autoflatpaks.zip"
-	curl -fsSL "https://github.com/jurassicplayer/decky-autoflatpaks/releases/download/v1.6.8/decky-autoflatpaks.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/decky-autoflatpaks.zip"
-
-	# Decky Plugin - HueSync
-	echo ">>> Downloading HueSync to $DECKY_PLUGINS_FOLDER/huesync.zip"
-	curl -fsSL "https://github.com/honjow/HueSync/releases/download/v3.9.0/huesync.zip" \
-		-o "$DECKY_PLUGINS_FOLDER/huesync.zip"
+	# Decky plugins -> $DECKY_PLUGINS_FOLDER
+	DECKY_PLUGINS=(
+		"xXJSONDeruloXx_decky-lsfg-vk_v0.14.4.zip"
+		"hulkrelax_hltb-for-deck.zip"
+		"SteamGridDB_decky-steamgriddb.zip"
+		"suchmememanyskill_SDH-CssLoader.zip"
+		"OMGDuke_protondb-decky.zip"
+		"EmuDeck_EmuDecky.zip"
+		"saumya-banthia_volume-boost.zip"
+		"jurassicplayer_decky-autoflatpaks_v1.6.8.zip"
+		"honjow_HueSync_v3.9.0.zip"
+	)
+	for asset in "${DECKY_PLUGINS[@]}"; do
+		echo ">>> Downloading $asset to $DECKY_PLUGINS_FOLDER/"
+		curl -fsSL "$DECKY_ASSETS_BASE/decky_plugin/$asset" -o "$DECKY_PLUGINS_FOLDER/$asset"
+	done
 
 	# Install Decky plugins (requires Decky Loader installed first)
 	if [ -d "$HOME/homebrew/plugins" ]; then
@@ -86,26 +72,21 @@ function _bootstrap_decky_loader_plugins_themes() {
 		echo ">>> then re-run this script to auto-install them."
 	fi
 
-	# CSS Loader Themes (from the DeckThemes store: https://deckthemes.com/)
-	# themeId -> https://api.deckthemes.com/themes/<id> -> blob id -> https://api.deckthemes.com/blobs/<blob>
+	# CSS Loader Themes (vendored from the DeckThemes store: https://deckthemes.com/)
 	CSS_LOADER_THEMES=(
-		"Round:c6844008-a809-41f6-b140-7aa76f2a62ad"
-		"Clean Gameview:a9776f60-2724-4ff0-824b-e1f82a04688e"
-		"Centered Home:865407ae-fb14-4db7-b123-61f6995ed757"
-		"No Home Text:0e8a208f-136f-4f26-b0e1-344bcd186ed9"
-		"No Home Recent Text:95c4e310-0770-4e1f-9f9d-cbe444e9bb17"
-		"Obsidian:f16cf40d-7ccc-4981-95bf-77b28e8d101e"
-		"Faster Transition Animations:921a7ec8-b355-4799-b23f-73f4b9c713b8"
-		"Mini Carousel:4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b"
-		"No Home Edge Fade:2dab90ab-2cf3-480f-adce-f6c67caadd67"
+		"Round_c6844008-a809-41f6-b140-7aa76f2a62ad.zip"
+		"Clean_Gameview_a9776f60-2724-4ff0-824b-e1f82a04688e.zip"
+		"Centered_Home_865407ae-fb14-4db7-b123-61f6995ed757.zip"
+		"No_Home_Text_0e8a208f-136f-4f26-b0e1-344bcd186ed9.zip"
+		"No_Home_Recent_Text_95c4e310-0770-4e1f-9f9d-cbe444e9bb17.zip"
+		"Obsidian_f16cf40d-7ccc-4981-95bf-77b28e8d101e.zip"
+		"Faster_Transition_Animations_921a7ec8-b355-4799-b23f-73f4b9c713b8.zip"
+		"Mini_Carousel_4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b.zip"
+		"No_Home_Edge_Fade_2dab90ab-2cf3-480f-adce-f6c67caadd67.zip"
 	)
-	for entry in "${CSS_LOADER_THEMES[@]}"; do
-		theme_name="${entry%%:*}"
-		theme_id="${entry##*:}"
-		theme_slug=$(printf '%s' "$theme_name" | tr ' ' '_')
-		theme_blob=$(curl -fsSL "https://api.deckthemes.com/themes/$theme_id" | python3 -c 'import json,sys; print(json.load(sys.stdin)["download"]["id"])')
-		echo ">>> Downloading CSS Loader theme $theme_name to $CSS_LOADER_THEMES_FOLDER/$theme_slug.zip"
-		curl -fsSL "https://api.deckthemes.com/blobs/$theme_blob" -o "$CSS_LOADER_THEMES_FOLDER/$theme_slug.zip"
+	for asset in "${CSS_LOADER_THEMES[@]}"; do
+		echo ">>> Downloading CSS Loader theme $asset to $CSS_LOADER_THEMES_FOLDER/"
+		curl -fsSL "$DECKY_ASSETS_BASE/decky_css_loader/$asset" -o "$CSS_LOADER_THEMES_FOLDER/$asset"
 	done
 
 	# Install CSS Loader themes (requires CSS Loader plugin installed first)
@@ -137,8 +118,13 @@ chmod +x "$APPS_FOLDER/ProtonUp-Qt.AppImage"
 
 # --- Brave, vim, tmux + system packages (pacman) ---
 if type -P pacman >/dev/null; then
-	echo ">>> Installing Brave, vim, tmux; updating system and installing flatpak"
-	sudo pacman -Syu --noconfirm
+	echo ">>> Installing Brave, vim, tmux and flatpak"
+	if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
+		echo ">>> Updating system (pacman -Syu)"
+		sudo pacman -Syu --noconfirm
+	else
+		echo ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
+	fi
 	sudo pacman -S --needed --noconfirm brave-bin vim tmux flatpak fuse2
 	flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 	flatpak update -y
@@ -153,8 +139,12 @@ rm -rf "$tmp"
 popd
 
 if type -P paru >/dev/null && grep -q '^ID=cachyos' /etc/os-release 2>/dev/null; then
-	echo ">>> CachyOS with paru detected - updating AUR packages"
-	paru -Syu --noconfirm
+	if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
+		echo ">>> CachyOS with paru detected - updating AUR packages"
+		paru -Syu --noconfirm
+	else
+		echo ">>> Skipped AUR upgrade: paru -Syu --noconfirm"
+	fi
 fi
 
 echo ">>> Done. Launch each .desktop file from Desktop Mode to start installation."
