@@ -10,8 +10,11 @@ const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const SETUP_PATH = path.join(ROOT_DIR, "software/scripts/steamos/setup.bash");
 const setupSource = fs.readFileSync(SETUP_PATH, "utf-8");
 const installerSource = setupSource
-  .split("# Install SteamTinkerLaunch using its upstream Steam Deck layout when missing.", 2)[1]
-  .split("\nif ! _install_steamtinkerlaunch;", 1)[0];
+  .split("# Install SteamTinkerLaunch runtime dependencies before invoking it.", 2)[1]
+  .split("\nif ! _install_steamtinkerlaunch_dependencies", 1)[0];
+const addShortcutSource = setupSource
+  .split("# Add a native app once per executable path; keep Steam's shortcut file read-only.", 2)[1]
+  .split("\n# Add a Brave site as a Steam tile", 1)[0];
 const sandboxes = [];
 
 /** Creates an isolated home and records it for cleanup. */
@@ -40,6 +43,49 @@ afterEach(() => {
 });
 
 describe("SteamOS setup", () => {
+  it("installs SteamTinkerLaunch dependencies before shortcuts are added", () => {
+    const dependencySetup = setupSource.indexOf("if ! _install_steamtinkerlaunch_dependencies");
+    const firstShortcut = setupSource.indexOf('_add_steam_shortcut "Moonlight"');
+
+    expect(setupSource).toContain("sudo pacman -S --needed --noconfirm xdotool xorg-xwininfo yad");
+    expect(setupSource).toContain("SteamTinkerLaunch requires Yad 7.2 or newer");
+    expect(dependencySetup).toBeGreaterThan(0);
+    expect(dependencySetup).toBeLessThan(firstShortcut);
+  });
+
+  it("verifies SteamTinkerLaunch actually wrote each shortcut", () => {
+    expect(setupSource).toContain('if ! _steam_shortcut_exists path "$executable"; then');
+    expect(setupSource).toContain('if ! _steam_shortcut_exists title "$title"; then');
+    expect(setupSource).toContain("SteamTinkerLaunch returned success but shortcut is absent");
+  });
+
+  it("fails when SteamTinkerLaunch returns success without writing a shortcut", () => {
+    const home = createSandbox();
+    const binFolder = path.join(home, "bin");
+    const executable = path.join(home, "Example.AppImage");
+    fs.mkdirSync(binFolder);
+    fs.writeFileSync(executable, "app\n", { mode: 0o755 });
+    writeCommand(binFolder, "steamtinkerlaunch", "exit 0");
+
+    const result = spawnSync(
+      "/bin/bash",
+      [
+        "-c",
+        `${addShortcutSource}\nfunction _steam_shortcut_exists() { return 1; }\nfunction pgrep() { return 1; }\n_add_steam_shortcut Example "$1"`,
+        "bash",
+        executable,
+      ],
+      {
+        encoding: "utf-8",
+        env: { ...process.env, HOME: home, PATH: `${binFolder}:${process.env.PATH}` },
+      },
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("returned success but shortcut is absent");
+    expect(result.stdout).not.toContain("Steam: added Example");
+  });
+
   it("keeps an existing SteamTinkerLaunch installation untouched", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");

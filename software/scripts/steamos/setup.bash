@@ -308,6 +308,10 @@ function _add_steam_shortcut() {
 		echo ">>> Steam: failed to add $name; check SteamTinkerLaunch output."
 		return 1
 	fi
+  if ! _steam_shortcut_exists path "$executable"; then
+    echo ">>> Steam: failed to add $name; SteamTinkerLaunch returned success but shortcut is absent."
+    return 1
+  fi
 	echo ">>> Steam: added $name. Restart Steam to see it in the library."
 }
 
@@ -352,6 +356,10 @@ function _add_url_steam_shortcut() {
 		echo ">>> Steam: failed to add $title; check SteamTinkerLaunch output."
 		return 1
 	fi
+  if ! _steam_shortcut_exists title "$title"; then
+    echo ">>> Steam: failed to add $title; SteamTinkerLaunch returned success but shortcut is absent."
+    return 1
+  fi
 	echo ">>> Steam: added $title. Restart Steam to see it in the library."
 }
 
@@ -520,6 +528,44 @@ PY
 	echo ">>> Steam: replaced $title; previous shortcuts backed up at $backup"
 }
 
+# Install SteamTinkerLaunch runtime dependencies before invoking it.
+function _install_steamtinkerlaunch_dependencies() {
+  local binary yad_version yad_major yad_minor
+  local -a missing=()
+
+  for binary in xdotool xwininfo yad; do
+    type -P "$binary" > /dev/null || missing+=("$binary")
+  done
+  if [ "${#missing[@]}" -gt 0 ]; then
+    if ! type -P pacman > /dev/null; then
+      echo ">>> SteamTinkerLaunch dependencies missing: ${missing[*]}"
+      return 1
+    fi
+    echo ">>> Installing SteamTinkerLaunch dependencies: xdotool xorg-xwininfo yad"
+    if ! sudo pacman -S --needed --noconfirm xdotool xorg-xwininfo yad; then
+      echo ">>> SteamTinkerLaunch dependency installation failed."
+      return 1
+    fi
+  else
+    echo ">>> SteamTinkerLaunch dependencies already installed"
+  fi
+  for binary in xdotool xwininfo yad; do
+    if ! type -P "$binary" > /dev/null; then
+      echo ">>> SteamTinkerLaunch dependency still missing after installation: $binary"
+      return 1
+    fi
+  done
+	yad_version=$(yad --version 2> /dev/null | awk '{print $1}')
+	yad_major=${yad_version%%.*}
+	yad_minor=${yad_version#*.}
+	yad_minor=${yad_minor%%.*}
+	if [[ "$yad_version" != *.* ]] || [[ ! "$yad_major" =~ ^[0-9]+$ ]] || [[ ! "$yad_minor" =~ ^[0-9]+$ ]] \
+    || [ "$yad_major" -lt 7 ] || { [ "$yad_major" -eq 7 ] && [ "$yad_minor" -lt 2 ]; }; then
+    echo ">>> SteamTinkerLaunch requires Yad 7.2 or newer; found ${yad_version:-unknown}."
+    return 1
+  fi
+}
+
 # Install SteamTinkerLaunch using its upstream Steam Deck layout when missing.
 function _install_steamtinkerlaunch() {
 	local install_folder="$HOME/stl/prefix" launcher="$HOME/.local/bin/steamtinkerlaunch"
@@ -574,7 +620,7 @@ function _install_steamtinkerlaunch() {
 	echo ">>> SteamTinkerLaunch installed: $launcher"
 }
 
-if ! _install_steamtinkerlaunch; then
+if ! _install_steamtinkerlaunch_dependencies || ! _install_steamtinkerlaunch; then
 	echo ">>> Steam shortcuts need SteamTinkerLaunch; fix installation output above and re-run setup."
 fi
 
@@ -626,8 +672,8 @@ fi
 
 # --- Browser Extensions + tmux/vim (via the synle/bashrc installer) ---
 # Installs url-porter + skippy-ff Chrome extensions, plus tmux and vim config.
-tmp=$(mktemp -d) && pushd "$tmp" &&
-	curl -fsSL "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" -o run.sh
+tmp=$(mktemp -d) && pushd "$tmp" \
+  && curl -fsSL "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" -o run.sh
 bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack,vim-plug
 rm -rf "$tmp"
 popd
