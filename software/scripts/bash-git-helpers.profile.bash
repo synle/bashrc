@@ -311,24 +311,24 @@ function clean() {
   local stash_msg
   stash_msg="clean backup $(command date +%Y-%m-%d_%H:%M:%S)"
   _log_progress_step "$total_steps" "💾 Stashing all changes as '$stash_msg'"
-  git stash push --include-untracked --message "$stash_msg" > /dev/null 2>&1
+  git --no-pager stash push --include-untracked --message "$stash_msg" > /dev/null 2>&1
   echo "  -> recover with: git stash list  |  git stash pop"
 
   # Soft abort: cancel in-progress merge/rebase/cherry-pick/am WITHOUT 'git clean -fd',
   # so any untracked working-tree files that did not make it into the stash are preserved.
   _log_progress_step "$total_steps" "🛑 Aborting in-progress merge/rebase/cherry-pick/am"
   command rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD 2> /dev/null
-  git merge --abort 2> /dev/null
-  git rebase --abort 2> /dev/null
-  git cherry-pick --abort 2> /dev/null
-  git am --abort 2> /dev/null
+  git --no-pager merge --abort 2> /dev/null
+  git --no-pager rebase --abort 2> /dev/null
+  git --no-pager cherry-pick --abort 2> /dev/null
+  git --no-pager am --abort 2> /dev/null
 
   # Sweep the *.rej hunk rejects a failed 'git apply' / 'patch' leaves behind. They are untracked
   # and gitignored, so they survive every reset below and quietly rot next to the file they failed
   # on. Safe to delete unconditionally: the stash above already captured them.
   _log_progress_step "$total_steps" "🗑️ Removing *.rej patch rejects"
   local repo_root
-  repo_root=$(git rev-parse --show-toplevel 2> /dev/null) || repo_root="$PWD"
+  repo_root=$(git --no-pager rev-parse --show-toplevel 2> /dev/null) || repo_root="$PWD"
   local rej_files
   rej_files=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '*.rej' -print 2> /dev/null)
   if [ -z "$rej_files" ]; then
@@ -357,13 +357,13 @@ function clean() {
   # Match the last 50 commit author emails against the emails on file and pin the repo-local
   # user.email to the match, so commits here keep the identity this repo already uses.
   _log_progress_step "$total_steps" "🔧 Syncing local git identity from recent commits"
-  git fix-identity
+  git --no-pager fix-identity
 
   _log_progress_step "$total_steps" "⬇️ Fetching origin"
-  git clean-and-fetch
+  git --no-pager clean-and-fetch
 
   _log_progress_step "$total_steps" "🧹 Garbage-collecting (if >14d)"
-  git gc-if-stale
+  git --no-pager gc-if-stale
 
   _log_progress_step "$total_steps" "🔧 Resolving default branch"
   local default_branch
@@ -371,44 +371,44 @@ function clean() {
   echo "  -> default branch: $default_branch"
 
   local current_branch
-  current_branch=$(git branch --show-current)
+  current_branch=$(git --no-pager branch --show-current)
   echo "  -> current branch: $current_branch"
 
   # Back up current branch to a temp branch
   local temp_branch="temp/$(command date +%Y%m%d-%H%M%S)"
   _log_progress_step "$total_steps" "💾 Backing up to $temp_branch"
-  git checkout -b "$temp_branch" > /dev/null 2>&1
+  git --no-pager checkout -b "$temp_branch" > /dev/null 2>&1
 
   _log_progress_step "$total_steps" "🗑️ Deleting local '$default_branch'"
-  git del "$default_branch" > /dev/null 2>&1
+  git --no-pager del "$default_branch" > /dev/null 2>&1
 
   _log_progress_step "$total_steps" "🔀 Checking out '$default_branch'"
-  git checkout "$default_branch" > /dev/null 2>&1
+  git --no-pager checkout "$default_branch" > /dev/null 2>&1
 
   _log_progress_step "$total_steps" "🔀 Rebasing onto 'origin/$default_branch'"
-  git rebase "origin/$default_branch" > /dev/null 2>&1
+  git --no-pager rebase "origin/$default_branch" > /dev/null 2>&1
 
   _log_progress_step "$total_steps" "🗑️ Deleting $temp_branch"
-  git del "$temp_branch" > /dev/null 2>&1
+  git --no-pager del "$temp_branch" > /dev/null 2>&1
 
   _log_progress_step "$total_steps" "🗑️ Deleting branches with gone upstream"
-  git clean-stale-branches
+  git --no-pager clean-stale-branches
 
   _log_progress_step "$total_steps" "🗑️ Deleting merged branches and pruned tags"
-  git clean-merged-branches-and-tags
+  git --no-pager clean-merged-branches-and-tags
 
   if ((force_worktrees)); then
     _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
-    git worktree prune
+    git --no-pager worktree prune
     worktree_clean --force
   else
     _log_progress_step "$total_steps" "🗑️ Cleaning merged/gone worktrees"
-    git clean-worktree
+    git --no-pager clean-worktree
     worktree_clean
   fi
 
   echo "# ---- ✅ Reset to origin/$default_branch (100% done) ----"
-  git lastd
+  git --no-pager lastd
 }
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment
