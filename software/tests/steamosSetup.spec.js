@@ -96,6 +96,48 @@ describe("SteamOS setup", () => {
     expect(dependencySetup).toBeLessThan(firstShortcut);
   });
 
+  it("installs Flatpak Brave before creating its native and URL shortcuts", () => {
+    const flatpakInstall = setupSource.indexOf("if ! flatpak install --user flathub com.brave.Browser; then");
+    const braveShortcut = setupSource.indexOf('_add_steam_shortcut "Brave"');
+    const disneyShortcut = setupSource.indexOf('_add_url_steam_shortcut "Disney+"');
+    const emudeckDownload = setupSource.indexOf('curl -fsSL "https://www.emudeck.com/EmuDeck.desktop"');
+
+    expect(flatpakInstall).toBeGreaterThan(0);
+    expect(flatpakInstall).toBeLessThan(emudeckDownload);
+    expect(braveShortcut).toBeGreaterThan(flatpakInstall);
+    expect(disneyShortcut).toBeGreaterThan(flatpakInstall);
+    expect(setupSource).toContain('"--command=brave" "--file-forwarding" "com.brave.Browser" "@@u" "@@"');
+    expect(setupSource).not.toContain("pacman -S --needed --noconfirm brave-bin");
+    expect(setupSource).not.toContain("flatpak remote-add");
+    expect(setupSource).not.toContain("pacman -S --needed --noconfirm flatpak");
+    expect(setupSource).not.toContain("flatpak list --user --app");
+    expect(setupSource).toContain(
+      '_add_steam_shortcut "Brave" "$BRAVE_FLATPAK_EXECUTABLE" "Browsers,Apps" "$BRAVE_FLATPAK_EXECUTABLE" "/usr/bin/"',
+    );
+    expect(flatpakInstall).toBeLessThan(setupSource.indexOf('_add_url_steam_shortcut "Disney+"'));
+  });
+
+  it("runs the temporary pacman Brave removal helper automatically", () => {
+    expect(setupSource.indexOf("if ! flatpak install --user flathub com.brave.Browser; then")).toBeLessThan(
+      setupSource.indexOf('curl -fsSL "https://www.emudeck.com/EmuDeck.desktop"'),
+    );
+    expect(setupSource).toContain("# TODO: remove this pacman Brave migration block after all Decks use Flatpak Brave.");
+    expect(setupSource).toContain("pacman -Qq brave-bin");
+    expect(setupSource).toContain("sudo pacman -R --noconfirm brave-bin");
+    expect(setupSource).toContain("# END TODO");
+  });
+
+  it("keeps pacman cleanup inline and launches fixed Brave URLs directly in kiosk mode", () => {
+    expect(fs.existsSync(path.join(ROOT_DIR, "assets/steamos/remove-pacman-brave.sh"))).toBe(false);
+    const urlShortcutFunction = setupSource.split("function _add_url_steam_shortcut()", 2)[1].split("\n}\n", 1)[0];
+    expect(urlShortcutFunction).toContain('launchoptions="\\\"run\\\"');
+    expect(urlShortcutFunction).toContain("--kiosk");
+    expect(urlShortcutFunction).toContain('\\"$url\\"');
+    expect(urlShortcutFunction).not.toContain("--app=");
+    expect(urlShortcutFunction).not.toContain("@@u");
+    expect(urlShortcutFunction).not.toContain('"@@"');
+  });
+
   it("downloads the configured Moonlight release version", () => {
     expect(setupSource).toContain('MOONLIGHT_VERSION="6.2.0"');
     expect(setupSource).toContain(
@@ -184,7 +226,7 @@ describe("SteamOS setup", () => {
       { encoding: "utf-8", env: { ...process.env, HOME: home } },
     );
 
-    expect(result.status).toBe(0);
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
     expect(result.stdout).toContain("no user-defined non-Steam shortcuts found; nothing removed");
     expect(fs.readFileSync(shortcutsPath)).toEqual(emptyShortcuts);
     expect(fs.readdirSync(desktopFolder)).toEqual([]);
@@ -255,11 +297,13 @@ describe("SteamOS setup", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     const accountFolder = path.join(home, ".steam/steam/userdata/12345/config");
-    const braveExecutable = path.join(binFolder, "brave");
+    const flatpakExecutable = path.join(binFolder, "flatpak");
     const shortcutsPath = path.join(accountFolder, "shortcuts.vdf");
     fs.mkdirSync(binFolder, { recursive: true });
     fs.mkdirSync(accountFolder, { recursive: true });
-    fs.writeFileSync(braveExecutable, "#!/usr/bin/env bash\nexit 0\n", { mode: 0o755 });
+    fs.writeFileSync(flatpakExecutable, '#!/usr/bin/env bash\nif [ "$1" = "list" ]; then printf "com.brave.Browser\\n"; fi\n', {
+      mode: 0o755,
+    });
     fs.writeFileSync(
       shortcutsPath,
       makeShortcuts([
@@ -276,7 +320,8 @@ describe("SteamOS setup", () => {
         "-c",
         `${addShortcutSource}
 function pgrep() { return 1; }
-_add_url_steam_shortcut Netflix https://www.netflix.com/`,
+function flatpak() { [ "$1" = "list" ] && printf 'com.brave.Browser\\n'; }
+_add_url_steam_shortcut Netflix https://www.netflix.com///`,
       ],
       { encoding: "utf-8", env: { ...process.env, HOME: home, PATH: `${binFolder}:${process.env.PATH}` } },
     );
@@ -285,9 +330,9 @@ _add_url_steam_shortcut Netflix https://www.netflix.com/`,
     expect(readShortcuts(fs.readFileSync(shortcutsPath))).toEqual([
       {
         AppName: "Netflix",
-        Exe: `"${braveExecutable}"`,
-        StartDir: '"./"',
-        LaunchOptions: "--app=https://www.netflix.com/",
+        Exe: '"/usr/bin/flatpak"',
+        StartDir: '"/usr/bin/"',
+        LaunchOptions: '"run" "--command=brave" "com.brave.Browser" "--kiosk" "https://www.netflix.com"',
       },
     ]);
   });
@@ -363,19 +408,20 @@ _add_steam_shortcut Example "$1"`,
       },
     );
 
-    expect(result.status).toBe(0);
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
     expect(fs.existsSync(addedMarker)).toBe(true);
     expect(result.stdout).toContain("Steam: added Example");
   });
 
   it("only runs Decky setup after explicit initial confirmation", () => {
-    const deckyPrompt = setupSource.indexOf(">>> Install Decky Loader, plugins, and CSS Loader themes?");
+    const deckyPrompt = setupSource.indexOf('_prompt "Install Decky Loader, plugins, and CSS Loader themes?"');
     const deckyCall = setupSource.indexOf('if [ "$DO_DECKY_SETUP" -eq 1 ]; then');
-    const upgradePrompt = setupSource.indexOf(">>> Run system upgrade");
+    const upgradePrompt = setupSource.indexOf('_prompt "Run system upgrade');
 
     expect(deckyPrompt).toBeGreaterThan(0);
     expect(deckyPrompt).toBeLessThan(upgradePrompt);
     expect(deckyCall).toBeGreaterThan(deckyPrompt);
+    expect(upgradePrompt).toBeGreaterThan(deckyPrompt);
     expect(setupSource.slice(deckyCall, setupSource.indexOf("# Check local Steam shortcuts"))).toContain(
       "_bootstrap_decky_loader_plugins_themes",
     );

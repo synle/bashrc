@@ -14,11 +14,20 @@ Files are named `<org>_<component>[_v<version>].zip` (plugins) and
 ## Steam shortcuts for apps
 
 Run these steps in Desktop Mode (Konsole). The setup helper downloads Moonlight
-6.2.0 as `~/Apps/Moonlight.AppImage`, downloads `~/Apps/ProtonUp-Qt.AppImage`, and installs Brave
-with pacman. It attempts to add each with `_add_steam_shortcut` and five Brave
-site tiles with `_add_url_steam_shortcut` in
-[`software/scripts/steamos/setup.bash`](../../software/scripts/steamos/setup.bash). Both AppImages and
-Brave are native Linux apps; leave Proton compatibility disabled.
+6.2.0 as `~/Apps/Moonlight.AppImage`, downloads `~/Apps/ProtonUp-Qt.AppImage`,
+installs Brave from Flathub as an early prerequisite, then adds its
+Steam shortcuts after installation. It attempts to add each with
+`_add_steam_shortcut` and five Brave site tiles with `_add_url_steam_shortcut` in
+[`software/scripts/steamos/setup.bash`](../../software/scripts/steamos/setup.bash).
+Leave Proton compatibility disabled.
+
+Brave installs only with `flatpak install --user flathub com.brave.Browser`.
+During the migration, setup automatically removes only pacman package
+`brave-bin` before installing Flatpak Brave. It keeps shared pacman dependencies
+and does not delete Brave profile data. The migration helper is
+[`remove-pacman-brave.sh`](remove-pacman-brave.sh); remove this temporary step
+once Decks no longer have pacman Brave installed. Setup stops if removal fails,
+rather than proceeding with both browser packages installed.
 
 ### Install SteamTinkerLaunch
 
@@ -51,10 +60,10 @@ Steam only.
 At startup, setup checks that Steam is closed. If Steam is open, close it and
 answer **Yes** at the red prompt to recheck; answer **No** to abort. Setup then
 asks whether to clear all non-Steam shortcuts from the active Steam account.
-That prompt defaults to **No**. Answer **Yes** only when you want to remove every
-user-defined shortcut for that account; Steam-installed games and other accounts
-are not changed. All yes/no prompts display in red. If cleanup is requested but
-fails, setup stops before installing or adding anything.
+That prompt defaults to **Yes**. Press **No** to keep existing shortcuts.
+Cleanup removes every user-defined shortcut for that account; Steam-installed
+games and other accounts are not changed. All yes/no prompts display in red. If
+cleanup fails, setup reports it and continues without clearing shortcuts.
 Before clearing, setup saves the original file to
 `~/Desktop/shortcuts.vdf.bak_<date_time>` and writes a matching
 `~/Desktop/shortcuts.vdf.bak_<date_time>.restore.sh`. Output lists every removed
@@ -62,13 +71,23 @@ shortcut name and both exact file paths. To recover, close Steam and run the
 printed `bash ~/Desktop/shortcuts.vdf.bak_<date_time>.restore.sh` command, then
 restart Steam. Keep both files until you confirm the cleared library.
 
+If Flatpak or Brave installation fails, setup reports the issue, skips Brave
+shortcuts, and continues with unrelated SteamOS setup.
+
 The setup helper sets the executable bit only on `*.AppImage` files missing it.
 It reads the local account's `shortcuts.vdf` and matches both app and URL
 shortcuts by their exact Steam name. Re-running setup refreshes the existing
 shortcut's executable path (and, for site tiles, launch URL) instead of adding
 a duplicate; extra same-name entries are removed while other shortcut metadata
-is preserved. Brave tiles use Brave's resolved executable path rather than a
-shell-only command name, so Steam can launch them outside Desktop Mode. Missing
+is preserved. Brave tiles match Steam's Flatpak shortcut fields exactly: target
+`/usr/bin/flatpak` and start in `/usr/bin/`. The plain Brave tile uses Steam's
+generated launch options:
+`"run" "--branch=stable" "--arch=x86_64" "--command=brave" "--file-forwarding" "com.brave.Browser" "@@u" "@@"`.
+URL tiles pass each site URL directly to Brave with `"--kiosk"`;
+they do not use `--app=` or Steam URI-forwarding placeholders. Setup runs
+`flatpak install --user flathub com.brave.Browser` each time and does not probe
+Flatpak's installed-app list before adding tiles.
+Missing
 or ambiguous Steam accounts, unreadable shortcut data, missing
 SteamTinkerLaunch, or a running Steam client cause a logged skip, not a
 duplicate entry. For a missing
@@ -103,7 +122,7 @@ Chromium's `--app=<URL>` switch opens a page in an app-style window.
 Preview Netflix in Desktop Mode:
 
 ```bash
-brave-browser --app=https://www.netflix.com/
+flatpak run --command=brave com.brave.Browser --app=https://www.netflix.com/
 ```
 
 The setup helper adds **Netflix**, **Disney+**, **Prime Video**, **YouTube**, and

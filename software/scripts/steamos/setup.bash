@@ -3,6 +3,12 @@
 # setup.bash - SteamOS / Steam Deck post-install helpers
 # Manual only: not run by default; run from Desktop Mode (Konsole) when needed.
 # Re-running overwrites existing downloads.
+# Required Brave install, run before remaining setup. Use Flatpak's generated Steam fields:
+# flatpak install --user flathub com.brave.Browser
+# Target: /usr/bin/flatpak | Start In: /usr/bin/
+# Generic Launch Options: "run" "--branch=stable" "--arch=x86_64" "--command=brave" "--file-forwarding" "com.brave.Browser" "@@u" "@@"
+# Fixed site URLs open directly in kiosk mode; do not use "--app=" or URI forwarding.
+STEAMOS_SCRIPT_FOLDER="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 # Print a red yes/no prompt. Return 0 for Yes, 1 for No or unavailable terminal.
 # $1: prompt text; $2: optional default (Y or N; defaults to N).
@@ -25,6 +31,7 @@ if ! type -P pgrep >/dev/null; then
 	echo ">>> Steam setup: cannot check whether Steam is running; pgrep is unavailable." >&2
 	exit 1
 fi
+
 while pgrep -x steam >/dev/null 2>&1; do
 	if ! _prompt "Steam is open. Close Steam now, then answer Yes to recheck; No aborts setup." Y; then
 		echo ">>> Steam setup stopped. Close Steam and re-run setup." >&2
@@ -32,7 +39,7 @@ while pgrep -x steam >/dev/null 2>&1; do
 	fi
 done
 
-if _prompt "Clear all user-defined non-Steam shortcuts from the active Steam account?"; then
+if _prompt "Clear all user-defined non-Steam shortcuts from the active Steam account?" Y; then
 	CLEAR_USER_STEAM_SHORTCUTS=1
 else
 	CLEAR_USER_STEAM_SHORTCUTS=0
@@ -44,20 +51,43 @@ else
 	DO_DECKY_SETUP=0
 fi
 
-# System upgrade (pacman -Syu / paru -Syu) is opt-in: it takes a long time and
-# touches the whole system, so default to skipping and just print the commands.
 DESKTOP_FOLDER="$HOME/Desktop"
 DECKY_PLUGINS_FOLDER="$DESKTOP_FOLDER/decky_plugins"
 CSS_LOADER_THEMES_FOLDER="$DECKY_PLUGINS_FOLDER/css_loader_themes"
 APPS_FOLDER="$HOME/Apps"
 mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
 
-# System upgrade (pacman -Syu / paru -Syu) is opt-in: it takes a long time and
-# touches the whole system, so default to skipping and just print the commands.
 if _prompt "Run system upgrade (sudo pacman -Syu / paru -Syu)?"; then
 	DO_SYSTEM_UPGRADE=1
 else
 	DO_SYSTEM_UPGRADE=0
+fi
+
+# Flatpak Brave is required before downloads and Steam shortcut setup.
+function _install_flatpak_brave_prerequisite() {
+	if ! type -P flatpak >/dev/null; then
+		echo ">>> Brave prerequisite failed: flatpak command is unavailable." >&2
+		return 1
+	fi
+	# TODO: remove this pacman Brave migration block after all Decks use Flatpak Brave.
+	if type -P pacman >/dev/null && pacman -Qq brave-bin >/dev/null 2>&1; then
+		echo ">>> Removing pacman brave-bin; preserving shared dependencies and user profile data."
+		if ! sudo pacman -R --noconfirm brave-bin; then
+			echo ">>> Brave migration failed; continuing with Flatpak Brave install." >&2
+		fi
+	fi
+	# END TODO
+	if ! flatpak install --user flathub com.brave.Browser; then
+		echo ">>> Brave prerequisite failed: could not install com.brave.Browser." >&2
+		return 1
+	fi
+}
+
+BRAVE_FLATPAK_READY=0
+if _install_flatpak_brave_prerequisite; then
+	BRAVE_FLATPAK_READY=1
+else
+	echo ">>> Flatpak Brave setup failed; continuing with the remaining SteamOS setup." >&2
 fi
 
 # --- EmuDeck ---
@@ -361,7 +391,10 @@ PY
 }
 
 if [ "$CLEAR_USER_STEAM_SHORTCUTS" -eq 1 ]; then
-	_clear_user_steam_shortcuts "$HOME/Desktop" || exit 1
+	if ! _clear_user_steam_shortcuts "$HOME/Desktop"; then
+		echo ">>> Steam shortcut cleanup failed; continuing without clearing shortcuts." >&2
+		CLEAR_USER_STEAM_SHORTCUTS=0
+	fi
 fi
 
 decky_setup_failed=0
@@ -692,7 +725,7 @@ PY
 # $4: optional registered exepath (defaults to $2); $5: optional start directory.
 # Returns nonzero when shortcut inspection or registration fails.
 function _add_steam_shortcut() {
-	local name="$1" executable="$2" collections="${3:-}" registered_exepath="${4:-$2}" startdir="${5:-}" status
+	local name="$1" executable="$2" collections="${3:-}" registered_exepath="${4:-$2}" startdir="${5:-}" launchoptions="${6:-}" status
 	local -a shortcut_args=()
 
 	echo "[DEBUG] Steam add: $name; executable $executable; registered $registered_exepath; collections ${collections:-none}"
@@ -715,7 +748,7 @@ function _add_steam_shortcut() {
 			echo ">>> Steam: skipping $name; exit Steam before updating shortcuts, then re-run setup."
 			return 1
 		fi
-		_steam_shortcut_update_by_name "$name" "$registered_exepath" "$startdir" ""
+		_steam_shortcut_update_by_name "$name" "$registered_exepath" "$startdir" "$launchoptions"
 		return $?
 	fi
 	if [ "$status" -ne 1 ]; then
@@ -733,6 +766,9 @@ function _add_steam_shortcut() {
 	echo "[DEBUG] Steam add: $name prerequisites passed; invoking SteamTinkerLaunch"
 	if [ -n "$startdir" ]; then
 		shortcut_args+=("--startdir=$startdir")
+	fi
+	if [ -n "$launchoptions" ]; then
+		shortcut_args+=("--launchoptions=$launchoptions")
 	fi
 	if [ -n "$collections" ]; then
 		echo ">>> Steam: adding $name ($registered_exepath) to collections: $collections"
@@ -752,20 +788,25 @@ function _add_steam_shortcut() {
 }
 
 # Add or refresh a Brave site as a Steam tile, deduplicating by exact shortcut title.
-# $1: Steam title; $2: HTTPS URL. Returns nonzero if inspection or registration fails.
+# $1: Steam title; $2: HTTPS URL. Trailing slashes are stripped before adding `--app=` to avoid Steam URL-forwarding artifacts.
+# Returns nonzero if inspection or registration fails.
 function _add_url_steam_shortcut() {
-	local title="$1" url="$2" brave_executable status
+	local title="$1" url="$2" flatpak_executable launchoptions status
 
 	echo "[DEBUG] Steam URL add: $title; checking existing title"
 	if [ -z "$title" ] || [[ "$url" != https://* ]]; then
 		echo ">>> Steam: skipping URL shortcut; title and HTTPS URL required."
 		return 1
 	fi
-	brave_executable=$(type -P brave || type -P brave-browser)
-	if [ -z "$brave_executable" ]; then
-		echo ">>> Steam: skipping $title; Brave executable not found."
+	while [[ "$url" == */ ]]; do
+		url=${url%/}
+	done
+	flatpak_executable=$(type -P flatpak)
+	if [ -z "$flatpak_executable" ]; then
+		echo ">>> Steam: skipping $title; flatpak executable not found."
 		return 1
 	fi
+	launchoptions="\"run\" \"--command=brave\" \"com.brave.Browser\" \"--kiosk\" \"$url\""
 	_steam_shortcut_exists title "$title"
 	status=$?
 	echo "[DEBUG] Steam URL add: $title title lookup status $status"
@@ -774,7 +815,7 @@ function _add_url_steam_shortcut() {
 			echo ">>> Steam: skipping $title; exit Steam before updating shortcuts, then re-run setup."
 			return 1
 		fi
-		_steam_shortcut_update_by_name "$title" "$brave_executable" "./" "--app=$url"
+		_steam_shortcut_update_by_name "$title" "/usr/bin/flatpak" "/usr/bin/" "$launchoptions"
 		return $?
 	fi
 	if [ "$status" -ne 1 ]; then
@@ -789,10 +830,10 @@ function _add_url_steam_shortcut() {
 		echo ">>> Steam: skipping $title; exit Steam before adding shortcuts, then re-run setup."
 		return 1
 	fi
-	echo "[DEBUG] Steam URL add: $title prerequisites passed; Brave $brave_executable"
+	echo "[DEBUG] Steam URL add: $title prerequisites passed; Flatpak $flatpak_executable"
 	echo ">>> Steam: adding $title in Brave ($url) to collections: Streaming,Apps"
-	if ! _steamtinkerlaunch_add --appname="$title" --exepath="$brave_executable" --startdir="./" \
-		--launchoptions="--app=$url" --tags="Streaming,Apps"; then
+	if ! _steamtinkerlaunch_add --appname="$title" --exepath="/usr/bin/flatpak" --startdir="/usr/bin/" \
+		--launchoptions="$launchoptions" --tags="Streaming,Apps"; then
 		echo ">>> Steam: failed to add $title; check SteamTinkerLaunch output."
 		return 1
 	fi
@@ -803,7 +844,7 @@ function _add_url_steam_shortcut() {
 	echo ">>> Steam: added $title. Restart Steam to see it in the library."
 }
 
-# Replace all shortcuts with an exact title, then add the Brave URL shortcut.
+# Replace all shortcuts with an exact title, then add the Brave Flatpak URL shortcut.
 # $1: Steam title; $2: HTTPS URL. Not called during automatic setup.
 # Backs up shortcuts.vdf and restores it if SteamTinkerLaunch fails to add.
 function _upsert_url_steam_shortcut() {
@@ -816,10 +857,6 @@ function _upsert_url_steam_shortcut() {
 	fi
 	if ! type -P steamtinkerlaunch >/dev/null; then
 		echo ">>> Steam: skipping $title; SteamTinkerLaunch not installed."
-		return 1
-	fi
-	if ! type -P brave-browser >/dev/null && ! type -P brave >/dev/null; then
-		echo ">>> Steam: skipping $title; Brave not installed."
 		return 1
 	fi
 	if pgrep -x steam >/dev/null 2>&1; then
@@ -1086,32 +1123,35 @@ fi
 # --- ES-DE Emulation Station (installed by EmuDeck) ---
 _add_steam_shortcut "ES-DE Emulation Station" "/home/deck/Applications/ES-DE.AppImage"
 
-# --- Brave, vim, tmux + system packages (pacman) ---
+# --- Brave dependencies ---
 if type -P pacman >/dev/null; then
-	echo ">>> Installing Brave, vim, tmux and flatpak"
+	echo ">>> Installing vim, tmux and fuse2"
 	if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
 		echo ">>> Updating system (pacman -Syu)"
 		sudo pacman -Syu --noconfirm
 	else
 		echo ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
 	fi
-	if sudo pacman -S --needed --noconfirm brave-bin vim tmux flatpak fuse2; then
-		BRAVE_EXECUTABLE=$(type -P brave || type -P brave-browser)
-		if [ -n "$BRAVE_EXECUTABLE" ]; then
-			_add_steam_shortcut "Brave" "$BRAVE_EXECUTABLE" "Browsers,Apps" "$BRAVE_EXECUTABLE" "./"
-			_add_url_steam_shortcut "Netflix" "https://www.netflix.com/"
-			_add_url_steam_shortcut "Disney+" "https://www.disneyplus.com/"
-			_add_url_steam_shortcut "Prime Video" "https://www.primevideo.com/"
-			_add_url_steam_shortcut "YouTube" "https://www.youtube.com/"
-			_add_url_steam_shortcut "Plex" "https://app.plex.tv/desktop/"
-		else
-			echo ">>> Steam: skipping Brave; brave-bin executable not found after package install."
-		fi
+	if sudo pacman -S --needed --noconfirm vim tmux fuse2; then
+		flatpak update -y
 	else
-		echo ">>> Steam: skipping Brave; pacman installation failed."
+		echo ">>> Steam: vim/tmux/fuse2 package installation failed; continuing."
 	fi
-	flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-	flatpak update -y
+fi
+
+# --- Brave and URL shortcuts (Flatpak prerequisite installed at startup) ---
+BRAVE_FLATPAK_EXECUTABLE=$(type -P flatpak)
+if [ "$BRAVE_FLATPAK_READY" -eq 1 ] && [ -n "$BRAVE_FLATPAK_EXECUTABLE" ]; then
+	BRAVE_FLATPAK_EXECUTABLE=/usr/bin/flatpak
+	BRAVE_FLATPAK_OPTIONS='"run" "--branch=stable" "--arch=x86_64" "--command=brave" "--file-forwarding" "com.brave.Browser" "@@u" "@@"'
+	_add_steam_shortcut "Brave" "$BRAVE_FLATPAK_EXECUTABLE" "Browsers,Apps" "$BRAVE_FLATPAK_EXECUTABLE" "/usr/bin/" "$BRAVE_FLATPAK_OPTIONS"
+	_add_url_steam_shortcut "Netflix" "https://www.netflix.com/"
+	_add_url_steam_shortcut "Disney+" "https://www.disneyplus.com/"
+	_add_url_steam_shortcut "Prime Video" "https://www.primevideo.com/"
+	_add_url_steam_shortcut "YouTube" "https://www.youtube.com/"
+	_add_url_steam_shortcut "Plex" "https://app.plex.tv/desktop/"
+else
+	echo ">>> Steam: Brave shortcuts skipped; Flatpak Brave prerequisite is missing. Continuing setup." >&2
 fi
 
 # --- Browser Extensions + tmux/vim (via the synle/bashrc installer) ---
