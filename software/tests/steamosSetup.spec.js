@@ -12,9 +12,7 @@ const setupSource = fs.readFileSync(SETUP_PATH, "utf-8");
 const installerSource = setupSource
   .split("# Install SteamTinkerLaunch runtime dependencies before invoking it.", 2)[1]
   .split("\nif ! _install_steamtinkerlaunch_dependencies", 1)[0];
-const addShortcutSource = setupSource
-  .split("# Add a native app once per executable path; keep Steam's shortcut file read-only.", 2)[1]
-  .split("\n# Add a Brave site as a Steam tile", 1)[0];
+const addShortcutSource = setupSource.split("# --- Steam shortcuts ---", 2)[1].split("\n# Add a Brave site as a Steam tile", 1)[0];
 const sandboxes = [];
 
 /** Creates an isolated home and records it for cleanup. */
@@ -62,8 +60,10 @@ describe("SteamOS setup", () => {
   it("fails when SteamTinkerLaunch returns success without writing a shortcut", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
+    const accountFolder = path.join(home, ".steam/steam/userdata/12345/config");
     const executable = path.join(home, "Example.AppImage");
     fs.mkdirSync(binFolder);
+    fs.mkdirSync(accountFolder, { recursive: true });
     fs.writeFileSync(executable, "app\n", { mode: 0o755 });
     writeCommand(binFolder, "steamtinkerlaunch", "exit 0");
 
@@ -84,6 +84,43 @@ describe("SteamOS setup", () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain("returned success but shortcut is absent");
     expect(result.stdout).not.toContain("Steam: added Example");
+  });
+
+  it("passes the verified Steam account paths to SteamTinkerLaunch", () => {
+    const home = createSandbox();
+    const binFolder = path.join(home, "bin");
+    const accountFolder = path.join(home, ".steam/steam/userdata/12345");
+    const executable = path.join(home, "Example.AppImage");
+    const addedMarker = path.join(home, "shortcut-added");
+    fs.mkdirSync(binFolder);
+    fs.mkdirSync(path.join(accountFolder, "config"), { recursive: true });
+    fs.writeFileSync(executable, "app\n", { mode: 0o755 });
+    writeCommand(
+      binFolder,
+      "steamtinkerlaunch",
+      `[ "SUSDA"="HOME/.steam/steam/userdata" ] || exit 2
+[ "STUIDPATH"="HOME/.steam/steam/userdata/12345" ] || exit 3
+[ "$STEAMUSERID" = "12345" ] || exit 4
+touch "$HOME/shortcut-added"`,
+    );
+
+    const result = spawnSync(
+      "/bin/bash",
+      [
+        "-c",
+        `${addShortcutSource}\nfunction _steam_shortcut_exists() { [ -e "$HOME/shortcut-added" ]; }\nfunction pgrep() { return 1; }\n_add_steam_shortcut Example "$1"`,
+        "bash",
+        executable,
+      ],
+      {
+        encoding: "utf-8",
+        env: { ...process.env, HOME: home, PATH: `binFolder:{process.env.PATH}` },
+      },
+    );
+
+    expect(result.status).toBe(0);
+    expect(fs.existsSync(addedMarker)).toBe(true);
+    expect(result.stdout).toContain("Steam: added Example");
   });
 
   it("keeps an existing SteamTinkerLaunch installation untouched", () => {

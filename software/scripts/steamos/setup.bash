@@ -259,6 +259,20 @@ except (OSError, UnicodeError, ValueError) as error:
 PY
 }
 
+# Run SteamTinkerLaunch against the same Steam account verified by this setup.
+# Arguments: SteamTinkerLaunch addnonsteamgame options. Returns its exit status.
+function _steamtinkerlaunch_add() {
+	local shortcuts account_folder steam_userdata
+
+	if ! shortcuts=$(_steam_shortcuts_file); then
+		return 1
+	fi
+	account_folder=${shortcuts%/config/shortcuts.vdf}
+	steam_userdata=${account_folder%/*}
+	SUSDA="steamuserdata"STUIDPATH="account_folder" STEAMUSERID="${account_folder##*/}" \
+		steamtinkerlaunch addnonsteamgame "$@"
+}
+
 # Add a native app once per executable path; keep Steam's shortcut file read-only.
 # $1: label; $2: absolute executable; $3: optional comma-separated Steam collections.
 # Returns nonzero when shortcut inspection or registration fails.
@@ -704,7 +718,6 @@ fi
 
 if [ "$decky_setup_failed" -eq 1 ]; then
 	echo ">>> Decky setup failed earlier; review its output and re-run this script after fixing it."
-	exit 1
 fi
 echo ">>> Done. Launch each .desktop file from Desktop Mode to start installation."
 echo ">>> AppImages live in $APPS_FOLDER/ - run them directly."
