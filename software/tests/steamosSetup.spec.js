@@ -98,8 +98,8 @@ describe("SteamOS setup", () => {
     writeCommand(
       binFolder,
       "steamtinkerlaunch",
-      `[ "SUSDA"="HOME/.steam/steam/userdata" ] || exit 2
-[ "STUIDPATH"="HOME/.steam/steam/userdata/12345" ] || exit 3
+      `[ "$SUSDA" = "$HOME/.steam/steam/userdata" ] || exit 2
+[ "$STUIDPATH" = "$HOME/.steam/steam/userdata/12345" ] || exit 3
 [ "$STEAMUSERID" = "12345" ] || exit 4
 touch "$HOME/shortcut-added"`,
     );
@@ -114,13 +114,32 @@ touch "$HOME/shortcut-added"`,
       ],
       {
         encoding: "utf-8",
-        env: { ...process.env, HOME: home, PATH: `binFolder:{process.env.PATH}` },
+        env: { ...process.env, HOME: home, PATH: `${binFolder}:${process.env.PATH}` },
       },
     );
 
     expect(result.status).toBe(0);
     expect(fs.existsSync(addedMarker)).toBe(true);
     expect(result.stdout).toContain("Steam: added Example");
+  });
+
+  it("only runs Decky setup after explicit initial confirmation", () => {
+    const deckyPrompt = setupSource.indexOf(">>> Install Decky Loader, plugins, and CSS Loader themes?");
+    const deckyCall = setupSource.indexOf('if [ "$DO_DECKY_SETUP" -eq 1 ]; then');
+    const upgradePrompt = setupSource.indexOf(">>> Run system upgrade");
+
+    expect(deckyPrompt).toBeGreaterThan(0);
+    expect(deckyPrompt).toBeLessThan(upgradePrompt);
+    expect(deckyCall).toBeGreaterThan(deckyPrompt);
+    expect(setupSource.slice(deckyCall, setupSource.indexOf("# --- Steam shortcuts ---"))).toContain(
+      "_bootstrap_decky_loader_plugins_themes",
+    );
+  });
+
+  it("waits for explicit confirmation before finishing", () => {
+    expect(setupSource).toContain('until [[ "$finish_choice" =~ ^([yY]|[yY][eE][sS])$ ]]');
+    expect(setupSource).toContain(">>> Finish and exit setup? Type yes to exit:");
+    expect(setupSource).toContain("if ! read -r finish_choice; then");
   });
 
   it("keeps an existing SteamTinkerLaunch installation untouched", () => {

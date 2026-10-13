@@ -4,12 +4,19 @@
 # Manual only: not run by default; run from Desktop Mode (Konsole) when needed.
 # Re-running overwrites existing downloads.
 
+printf ">>> Install Decky Loader, plugins, and CSS Loader themes? [y/N] "
+read -r decky_choice
+case "$decky_choice" in
+	y | Y | yes | YES) DO_DECKY_SETUP=1 ;;
+	*) DO_DECKY_SETUP=0 ;;
+esac
+
 # System upgrade (pacman -Syu / paru -Syu) is opt-in: it takes a long time and
 # touches the whole system, so default to skipping and just print the commands.
 printf ">>> Run system upgrade (sudo pacman -Syu / paru -Syu)? [y/N] "
 read -r upgrade_choice
 case "$upgrade_choice" in
-	y|Y|yes|YES) DO_SYSTEM_UPGRADE=1 ;;
+	y | Y | yes | YES) DO_SYSTEM_UPGRADE=1 ;;
 	*) DO_SYSTEM_UPGRADE=0 ;;
 esac
 
@@ -135,9 +142,13 @@ function _bootstrap_decky_loader_plugins_themes() {
 	fi
 }
 decky_setup_failed=0
-if ! _bootstrap_decky_loader_plugins_themes; then
-	decky_setup_failed=1
-	echo ">>> Decky setup failed; continuing with independent SteamOS steps."
+if [ "$DO_DECKY_SETUP" -eq 1 ]; then
+	if ! _bootstrap_decky_loader_plugins_themes; then
+		decky_setup_failed=1
+		echo ">>> Decky setup failed; continuing with independent SteamOS steps."
+	fi
+else
+	echo ">>> Skipping Decky Loader setup."
 fi
 
 # --- Steam shortcuts ---
@@ -269,7 +280,7 @@ function _steamtinkerlaunch_add() {
 	fi
 	account_folder=${shortcuts%/config/shortcuts.vdf}
 	steam_userdata=${account_folder%/*}
-	SUSDA="steamuserdata"STUIDPATH="account_folder" STEAMUSERID="${account_folder##*/}" \
+	SUSDA="$steam_userdata" STUIDPATH="$account_folder" STEAMUSERID="${account_folder##*/}" \
 		steamtinkerlaunch addnonsteamgame "$@"
 }
 
@@ -318,7 +329,7 @@ function _add_steam_shortcut() {
 	else
 		echo ">>> Steam: adding $name ($executable) without collections"
 	fi
-	if ! steamtinkerlaunch addnonsteamgame --appname="$name" --exepath="$executable" "${shortcut_args[@]}"; then
+	if ! _steamtinkerlaunch_add --appname="$name" --exepath="$executable" "${shortcut_args[@]}"; then
 		echo ">>> Steam: failed to add $name; check SteamTinkerLaunch output."
 		return 1
 	fi
@@ -365,7 +376,7 @@ function _add_url_steam_shortcut() {
 	fi
 	echo "[DEBUG] Steam URL add: $title prerequisites passed; Brave $brave_executable"
 	echo ">>> Steam: adding $title in Brave ($url) to collections: Streaming,Apps"
-	if ! steamtinkerlaunch addnonsteamgame --appname="$title" --exepath="$brave_executable" \
+	if ! _steamtinkerlaunch_add --appname="$title" --exepath="$brave_executable" \
 		--launchoptions="--app=$url" --tags="Streaming,Apps"; then
 		echo ">>> Steam: failed to add $title; check SteamTinkerLaunch output."
 		return 1
@@ -721,3 +732,10 @@ if [ "$decky_setup_failed" -eq 1 ]; then
 fi
 echo ">>> Done. Launch each .desktop file from Desktop Mode to start installation."
 echo ">>> AppImages live in $APPS_FOLDER/ - run them directly."
+finish_choice=""
+until [[ "$finish_choice" =~ ^([yY]|[yY][eE][sS])$ ]]; do
+	printf ">>> Finish and exit setup? Type yes to exit: "
+	if ! read -r finish_choice; then
+		sleep 1
+	fi
+done
