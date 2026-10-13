@@ -1,7 +1,7 @@
 # assets/steamos
 
 Vendored SteamOS / Steam Deck post-install assets used by
-[`docs/steamos-setup.bash`](../../docs/steamos-setup.bash).
+[`software/scripts/steamos/setup.bash`](../../software/scripts/steamos/setup.bash).
 
 The zips are mirrored here so the setup helper downloads from this repo instead
 of third-party release URLs that can move, get renamed, or disappear. Credit for
@@ -10,6 +10,116 @@ upstream repo and page each file came from.
 
 Files are named `<org>_<component>[_v<version>].zip` (plugins) and
 `<theme>_<themeId>.zip` (CSS Loader themes).
+
+## Steam shortcuts for apps
+
+Run these steps in Desktop Mode (Konsole). The setup helper downloads
+`~/Apps/Moonlight.AppImage` and `~/Apps/ProtonUp-Qt.AppImage`, and installs Brave
+with pacman. It attempts to add each with `_add_steam_shortcut` and five Brave
+site tiles with `_add_url_steam_shortcut` in
+[`software/scripts/steamos/setup.bash`](../../software/scripts/steamos/setup.bash). Both AppImages and
+Brave are native Linux apps; leave Proton compatibility disabled.
+
+### Install SteamTinkerLaunch
+
+The setup helper downloads ProtonUp-Qt, but does not install SteamTinkerLaunch.
+Check whether SteamTinkerLaunch is already available:
+
+```bash
+type -P steamtinkerlaunch
+```
+
+If this prints no path, open ProtonUp-Qt in Desktop Mode:
+
+```bash
+"$HOME/Apps/ProtonUp-Qt.AppImage"
+```
+
+Select the Steam installation, choose **Add version**, and install
+**SteamTinkerLaunch**. For the latest Git version, ProtonUp-Qt's **About →
+Advanced Mode** enables that option. Restart Steam and reopen Konsole, then
+check `type -P steamtinkerlaunch` again. The upstream
+[installation guide](https://github.com/sonic2kk/steamtinkerlaunch/wiki/Installation#protonup-qt)
+documents this method and PATH setup. Do not install the SteamTinkerLaunch
+Flatpak for the Deck's native Steam client; upstream documents it for Flatpak
+Steam only.
+
+### Inspect, add, and organize shortcuts
+
+The setup helper sets the executable bit only on `*.AppImage` files missing it.
+It reads the local account's `shortcuts.vdf` to match the full `Exe` path for
+app shortcuts; an existing app shortcut is skipped even if its name differs.
+URL shortcuts instead match the exact Steam title. Missing or ambiguous
+Steam accounts, unreadable shortcut data, missing SteamTinkerLaunch, or a
+running Steam client cause a logged skip, not a duplicate entry. For a missing
+shortcut, close Steam and re-run setup after fixing the reported condition;
+restart Steam after new shortcuts are added. The default collections are
+`Streaming,Apps` (Moonlight and site tiles), `Utilities,Apps` (ProtonUp-Qt), and
+`Browsers,Apps` (Brave).
+
+For manual inspection, list existing non-Steam games:
+
+```bash
+steamtinkerlaunch list non-steam
+```
+
+This list shows name, AppID, and containing folder, not the full executable;
+for manual checks, use **Properties → Target** in Steam. SteamTinkerLaunch's
+[shortcut guide](https://github.com/sonic2kk/steamtinkerlaunch/wiki/Add-Non-Steam-Game)
+documents `list non-steam`, `--exepath`, and comma-separated `--tags` for new
+shortcuts. To change collections on an existing shortcut, edit them in Steam
+instead of adding another copy.
+
+To remove unwanted shortcuts, identify each entry with
+`steamtinkerlaunch list non-steam`, then remove that specific entry from Steam's
+**Non-Steam** library.
+Removing a shortcut does not remove its AppImage. Do not delete or replace
+`shortcuts.vdf` by hand: it contains other shortcuts too, and Steam can
+overwrite edits made while it runs.
+
+### Dedicated Brave site windows
+
+Chromium's `--app=<URL>` switch opens a page in an app-style window.
+Preview Netflix in Desktop Mode:
+
+```bash
+brave-browser --app=https://www.netflix.com/
+```
+
+The setup helper adds **Netflix**, **Disney+**, **Prime Video**, **YouTube**, and
+**Plex** as separate Steam tiles using `_add_url_steam_shortcut <title> <url>`.
+Plex opens `https://app.plex.tv/desktop/`. Each tile launches Brave with
+`--app=<url>` and checks `AppName` for an exact title match, so the Brave
+browser shortcut does not block site tiles. An existing title is skipped even
+if it points to a different URL; inspect **Properties → Launch Options** to
+resolve that case. Add another site by adding a call with a distinct title and
+HTTPS URL to the setup script. Close Steam and re-run setup if registration was
+skipped; restart Steam to see new tiles.
+
+For a deliberate replacement, `_upsert_url_steam_shortcut <title> <url>` is
+available but not called by setup. With Steam closed, it backs up the local
+`shortcuts.vdf`, removes all shortcuts with that exact title, and re-adds the
+site tile; a failed add restores the backup. The original backup stays beside
+`shortcuts.vdf`. This can replace a manually configured shortcut with the same
+name, so inspect the title before invoking it.
+
+Site sign-in, playback, and DRM support depend on Brave and the streaming
+service; verify in Desktop Mode before relying on Gaming Mode.
+
+### Host PC shortcuts appearing through Remote Play
+
+Non-Steam apps added on another PC can appear as streamable entries on the Deck.
+These are not necessarily Deck-local shortcuts: do not remove Deck shortcuts or
+edit `shortcuts.vdf` to clear remote entries. A [Steam client bug
+report](https://github.com/ValveSoftware/steam-for-linux/issues/13141) describes
+host shortcuts appearing on other devices, sometimes even with Remote Play
+disabled; reports there say hiding or removing entries may not keep them gone.
+No reliable filter for *only* remote non-Steam shortcuts is confirmed.
+
+As a temporary workaround, exit Steam on the host PC, then restart Steam on
+the Deck. Users in the bug report found the remote entries disappear until the
+clients reconnect or restart. While host Steam is closed, Remote Play from that
+PC is unavailable. Keep host shortcuts if you still use them there.
 
 ## Decky Loader plugins — `decky_plugin/`
 

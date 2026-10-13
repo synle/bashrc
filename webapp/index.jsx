@@ -1541,7 +1541,7 @@ function LinuxNotesDom({ osFlag }) {
 
 /**
  * SteamOS / Steam Deck setup notes page. Renders the standard Linux setup content
- * plus the Steam Deck-specific `steamos-setup.bash` helper that downloads Decky Loader,
+ * plus the Steam Deck-specific `software/scripts/steamos/setup.bash` helper that downloads Decky Loader,
  * Decky Lossless Scaling (lsfg-vk), and EmuDeck installers to ~/Desktop/.
  * @returns {React.ReactElement} The SteamOS setup notes section.
  */
@@ -1550,7 +1550,7 @@ function SteamOSNotesDom() {
     <>
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <TargetSystemOSWarningDom targetDomString="is_os_steamos" />
-      <DynamicTextArea path="/docs/steamos-setup.bash" />
+      <DynamicTextArea path="/software/scripts/steamos/setup.bash" />
       <DynamicTextArea path="/docs/linux/README.md" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
