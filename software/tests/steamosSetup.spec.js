@@ -86,7 +86,7 @@ describe("SteamOS setup", () => {
     expect(result.stdout).not.toContain("Steam: added Example");
   });
 
-  it("passes the verified Steam account paths to SteamTinkerLaunch", () => {
+  it("configures the verified Steam account before SteamTinkerLaunch resets its environment", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     const accountFolder = path.join(home, ".steam/steam/userdata/12345");
@@ -98,9 +98,9 @@ describe("SteamOS setup", () => {
     writeCommand(
       binFolder,
       "steamtinkerlaunch",
-      `[ "$SUSDA" = "$HOME/.steam/steam/userdata" ] || exit 2
-[ "$STUIDPATH" = "$HOME/.steam/steam/userdata/12345" ] || exit 3
-[ "$STEAMUSERID" = "12345" ] || exit 4
+      `unset SUSDA STUIDPATH STEAMUSERID
+grep -Fx 'STEAMUSERID="12345"' "$HOME/.config/steamtinkerlaunch/global.conf" || exit 2
+[ -e "$HOME/path-cache-invalidated" ] || exit 3
 touch "$HOME/shortcut-added"`,
     );
 
@@ -108,7 +108,17 @@ touch "$HOME/shortcut-added"`,
       "/bin/bash",
       [
         "-c",
-        `${addShortcutSource}\nfunction _steam_shortcut_exists() { [ -e "$HOME/shortcut-added" ]; }\nfunction pgrep() { return 1; }\n_add_steam_shortcut Example "$1"`,
+        `${addShortcutSource}
+function _steam_shortcut_exists() { [ -e "$HOME/shortcut-added" ]; }
+function pgrep() { return 1; }
+function rm() {
+  if [ "$1" = "-f" ] && [ "$2" = "/dev/shm/steamtinkerlaunch/steampaths.txt" ]; then
+    touch "$HOME/path-cache-invalidated"
+    return 0
+  fi
+  command rm "$@"
+}
+_add_steam_shortcut Example "$1"`,
         "bash",
         executable,
       ],

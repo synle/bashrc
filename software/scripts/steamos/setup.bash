@@ -270,18 +270,49 @@ except (OSError, UnicodeError, ValueError) as error:
 PY
 }
 
+# Configure SteamTinkerLaunch to regenerate its path cache for the verified account.
+# $1: numeric Steam account ID. Returns nonzero when its config cannot be updated safely.
+function _configure_steamtinkerlaunch_account() {
+	local account_id="$1" config_folder global_config staged_config
+
+	if [[ ! "$account_id" =~ ^[0-9]+$ ]]; then
+		echo ">>> Steam: refusing invalid Steam account ID: $account_id" >&2
+		return 1
+	fi
+	config_folder="${XDG_CONFIG_HOME:-$HOME/.config}/steamtinkerlaunch"
+	global_config="$config_folder/global.conf"
+	if [ -e "$global_config" ] && { [ -L "$global_config" ] || [ ! -f "$global_config" ]; }; then
+		echo ">>> Steam: SteamTinkerLaunch config is not a regular file: $global_config" >&2
+		return 1
+	fi
+	mkdir -p "$config_folder" || return 1
+	if ! grep -Fxq "STEAMUSERID=\"$account_id\"" "$global_config" 2> /dev/null; then
+		if [ -f "$global_config" ]; then
+			[ -f "$global_config.bak_original" ] || cp -p "$global_config" "$global_config.bak_original" || return 1
+			cp -p "$global_config" "$global_config.bak_latest" || return 1
+		fi
+		staged_config=$(mktemp "$config_folder/.global.conf.XXXXXX") || return 1
+		if [ -f "$global_config" ]; then
+			grep -v '^STEAMUSERID=' "$global_config" > "$staged_config" || true
+		fi
+		printf 'STEAMUSERID="%s"\n' "$account_id" >> "$staged_config"
+		mv "$staged_config" "$global_config" || return 1
+	fi
+	rm -f "/dev/shm/steamtinkerlaunch/steampaths.txt"
+}
+
 # Run SteamTinkerLaunch against the same Steam account verified by this setup.
 # Arguments: SteamTinkerLaunch addnonsteamgame options. Returns its exit status.
 function _steamtinkerlaunch_add() {
-	local shortcuts account_folder steam_userdata
+	local shortcuts account_folder account_id
 
 	if ! shortcuts=$(_steam_shortcuts_file); then
 		return 1
 	fi
 	account_folder=${shortcuts%/config/shortcuts.vdf}
-	steam_userdata=${account_folder%/*}
-	SUSDA="$steam_userdata" STUIDPATH="$account_folder" STEAMUSERID="${account_folder##*/}" \
-		steamtinkerlaunch addnonsteamgame "$@"
+	account_id=${account_folder##*/}
+	_configure_steamtinkerlaunch_account "$account_id" || return 1
+	steamtinkerlaunch addnonsteamgame "$@"
 }
 
 # Add a native app once per executable path; keep Steam's shortcut file read-only.
