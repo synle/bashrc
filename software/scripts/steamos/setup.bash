@@ -1149,7 +1149,8 @@ if [ "$BRAVE_FLATPAK_READY" -eq 1 ] && [ -n "$BRAVE_FLATPAK_EXECUTABLE" ]; then
 	_add_url_steam_shortcut "Disney+" "https://www.disneyplus.com/"
 	_add_url_steam_shortcut "Prime Video" "https://www.primevideo.com/"
 	_add_url_steam_shortcut "YouTube" "https://www.youtube.com/"
-	_add_url_steam_shortcut "Plex" "https://app.plex.tv/desktop/"
+	_add_url_steam_shortcut "Plex" "http://192.168.1.45:32400/web/index.html/"
+	_add_url_steam_shortcut "Fav" "https://synle.github.io/fav/"
 else
 	echo ">>> Steam: Brave shortcuts skipped; Flatpak Brave prerequisite is missing. Continuing setup." >&2
 fi
