@@ -36,7 +36,7 @@
 
   // --- UI ---
   "cursor_blink": false, // Disable cursor blink animation. Values: true, false
-  "cursor_animation": { "enabled": true }, // Smooth cursor movement animation (Zed 1.20+). Values: { enabled: true|false }
+  "cursor_animation": { "enabled": false }, // Disable smooth cursor movement animation (Zed 1.20+). Values: { enabled: true|false }
   // Show the git branch in the window title — tells worktree windows apart (Zed 1.20+).
   // Variables: projectName, fileName, filePath, relativePath, fileStem, remoteName, remoteHost, appName, branch, separator
   "window_title_format": "${projectName}${separator}${branch}${separator}${relativePath}",

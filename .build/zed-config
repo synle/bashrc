@@ -37,7 +37,7 @@
   "use_smartcase_search": true,
   "cursor_blink": false,
   "cursor_animation": {
-    "enabled": true
+    "enabled": false
   },
   "window_title_format": "${projectName}${separator}${branch}${separator}${relativePath}",
   "reveal_if_open": true,

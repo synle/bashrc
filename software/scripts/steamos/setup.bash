@@ -4,27 +4,61 @@
 # Manual only: not run by default; run from Desktop Mode (Konsole) when needed.
 # Re-running overwrites existing downloads.
 
-printf ">>> Install Decky Loader, plugins, and CSS Loader themes? [y/N] "
-read -r decky_choice
-case "$decky_choice" in
-	y | Y | yes | YES) DO_DECKY_SETUP=1 ;;
-	*) DO_DECKY_SETUP=0 ;;
-esac
+# Print a red yes/no prompt. Return 0 for Yes, 1 for No or unavailable terminal.
+# $1: prompt text; $2: optional default (Y or N; defaults to N).
+function _prompt() {
+	local prompt="$1" default="${2:-N}" reply="" hint="[y/N]"
+	case "$default" in [Yy]*) hint="[Y/n]" ;; esac
+	(: < /dev/tty) 2>/dev/null || return 1
+	printf '\033[0;31m>>> %s %s \033[0m' "$prompt" "$hint" > /dev/tty
+	read -r reply < /dev/tty || return 1
+	case "$reply" in
+		[Yy] | [Yy][Ee][Ss]) return 0 ;;
+		[Nn] | [Nn][Oo]) return 1 ;;
+		"") case "$default" in [Yy]*) return 0 ;; esac ;;
+	esac
+	return 1
+}
+
+# Steam must be fully closed before setup changes its shortcut database.
+if ! type -P pgrep >/dev/null; then
+	echo ">>> Steam setup: cannot check whether Steam is running; pgrep is unavailable." >&2
+	exit 1
+fi
+while pgrep -x steam >/dev/null 2>&1; do
+	if ! _prompt "Steam is open. Close Steam now, then answer Yes to recheck; No aborts setup." Y; then
+		echo ">>> Steam setup stopped. Close Steam and re-run setup." >&2
+		exit 1
+	fi
+done
+
+if _prompt "Clear all user-defined non-Steam shortcuts from the active Steam account?"; then
+	CLEAR_USER_STEAM_SHORTCUTS=1
+else
+	CLEAR_USER_STEAM_SHORTCUTS=0
+fi
+
+if _prompt "Install Decky Loader, plugins, and CSS Loader themes?"; then
+	DO_DECKY_SETUP=1
+else
+	DO_DECKY_SETUP=0
+fi
 
 # System upgrade (pacman -Syu / paru -Syu) is opt-in: it takes a long time and
 # touches the whole system, so default to skipping and just print the commands.
-printf ">>> Run system upgrade (sudo pacman -Syu / paru -Syu)? [y/N] "
-read -r upgrade_choice
-case "$upgrade_choice" in
-	y | Y | yes | YES) DO_SYSTEM_UPGRADE=1 ;;
-	*) DO_SYSTEM_UPGRADE=0 ;;
-esac
-
 DESKTOP_FOLDER="$HOME/Desktop"
 DECKY_PLUGINS_FOLDER="$DESKTOP_FOLDER/decky_plugins"
 CSS_LOADER_THEMES_FOLDER="$DECKY_PLUGINS_FOLDER/css_loader_themes"
 APPS_FOLDER="$HOME/Apps"
 mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
+
+# System upgrade (pacman -Syu / paru -Syu) is opt-in: it takes a long time and
+# touches the whole system, so default to skipping and just print the commands.
+if _prompt "Run system upgrade (sudo pacman -Syu / paru -Syu)?"; then
+	DO_SYSTEM_UPGRADE=1
+else
+	DO_SYSTEM_UPGRADE=0
+fi
 
 # --- EmuDeck ---
 echo ">>> Downloading EmuDeck installer to $DESKTOP_FOLDER/"
@@ -141,16 +175,6 @@ function _bootstrap_decky_loader_plugins_themes() {
 		echo ">>> then re-run this script to auto-install them."
 	fi
 }
-decky_setup_failed=0
-if [ "$DO_DECKY_SETUP" -eq 1 ]; then
-	if ! _bootstrap_decky_loader_plugins_themes; then
-		decky_setup_failed=1
-		echo ">>> Decky setup failed; continuing with independent SteamOS steps."
-	fi
-else
-	echo ">>> Skipping Decky Loader setup."
-fi
-
 # --- Steam shortcuts ---
 # Locate the single local Steam account's shortcut file.
 # Prints path; returns nonzero if the account cannot be identified safely.
@@ -176,6 +200,179 @@ function _steam_shortcuts_file() {
 	echo "[DEBUG] Steam shortcuts: account ${accounts[0]##*/}; userdata $steam_userdata" >&2
 	printf '%s\n' "${accounts[0]}/config/shortcuts.vdf"
 }
+
+# Remove every non-Steam shortcut for the active account after backing up its VDF.
+# Prints removed names and an exact restore command; refuses to run while Steam is open.
+function _clear_user_steam_shortcuts() {
+	local shortcuts desktop_folder="${1:-$HOME/Desktop}"
+	if pgrep -x steam >/dev/null 2>&1; then
+		echo ">>> Steam cleanup: close Steam completely before clearing shortcuts." >&2
+		return 1
+	fi
+	if ! shortcuts=$(_steam_shortcuts_file); then
+		return 1
+	fi
+	if [ -L "$shortcuts" ] || { [ -e "$shortcuts" ] && [ ! -f "$shortcuts" ]; }; then
+		echo ">>> Steam cleanup: refusing non-regular shortcuts file: $shortcuts" >&2
+		return 1
+	fi
+	if [ ! -e "$shortcuts" ]; then
+		echo ">>> Steam cleanup: no user-defined non-Steam shortcuts found; nothing removed."
+		return 0
+	fi
+	mkdir -p "$desktop_folder" || return 1
+	python3 - "$shortcuts" "$desktop_folder" <<'PY'
+import json
+import os
+import shlex
+import stat
+import sys
+import tempfile
+from datetime import datetime
+
+path, desktop_folder = sys.argv[1:]
+
+def parse(data):
+    offset = 0
+
+    def read(size):
+        nonlocal offset
+        if offset + size > len(data):
+            raise ValueError("truncated VDF")
+        value = data[offset:offset + size]
+        offset += size
+        return value
+
+    def string():
+        nonlocal offset
+        end = data.find(b"\0", offset)
+        if end < 0:
+            raise ValueError("unterminated VDF string")
+        value = data[offset:end].decode("utf-8")
+        offset = end + 1
+        return value
+
+    def fields():
+        nonlocal offset
+        result = {}
+        while True:
+            kind = read(1)[0]
+            if kind == 8:
+                return result
+            key = string()
+            if key in result:
+                raise ValueError("duplicate VDF field")
+            if kind == 0:
+                value = fields()
+            elif kind == 1:
+                value = string()
+            elif kind == 5:
+                start = offset
+                end = start
+                while end + 1 < len(data) and data[end:end + 2] != b"\0\0":
+                    end += 2
+                if end + 1 >= len(data):
+                    raise ValueError("unterminated VDF wide string")
+                value = data[start:end].decode("utf-16-le")
+                offset = end + 2
+            elif kind in (2, 3, 4, 6):
+                value = read(4)
+            elif kind in (7, 9, 10):
+                value = read(8)
+            else:
+                raise ValueError(f"unsupported VDF field type: {kind}")
+            result[key] = value
+
+    root = fields()
+    if offset != len(data) or set(root) != {"shortcuts"} or not isinstance(root["shortcuts"], dict):
+        raise ValueError("invalid shortcuts.vdf root")
+    shortcuts = root["shortcuts"]
+    names = []
+    for key, shortcut in shortcuts.items():
+        if not key.isdigit() or not isinstance(shortcut, dict):
+            raise ValueError("invalid shortcut entry")
+        name = shortcut.get("AppName", shortcut.get("appname", ""))
+        if not isinstance(name, str):
+            raise ValueError("invalid shortcut name")
+        names.append(name or "(unnamed shortcut)")
+    return names
+
+try:
+    with open(path, "rb") as source:
+        original = source.read()
+    names = parse(original)
+    if not names:
+        print(">>> Steam cleanup: no user-defined non-Steam shortcuts found; nothing removed.")
+        sys.exit(0)
+    if os.path.islink(path):
+        raise ValueError("shortcuts.vdf became a symlink")
+    with open(path, "rb") as current:
+        if current.read() != original:
+            raise ValueError("shortcuts changed during cleanup")
+    mode = stat.S_IMODE(os.stat(path).st_mode)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    backup = os.path.join(desktop_folder, f"shortcuts.vdf.bak_{timestamp}")
+    backup_fd = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+    with os.fdopen(backup_fd, "wb") as output:
+        output.write(original)
+        output.flush()
+        os.fsync(output.fileno())
+    os.chmod(backup, mode)
+    restore_script = backup + ".restore.sh"
+    restore_contents = (
+        "#!/usr/bin/env bash\n"
+        "# Restore Steam non-Steam shortcuts. Exit Steam before running this file.\n"
+        "set -e\n"
+        "if pgrep -x steam >/dev/null 2>&1; then\n"
+        '  echo ">>> Steam is running. Exit Steam completely, then re-run this restore script." >&2\n'
+        "  exit 1\n"
+        "fi\n"
+        f"cp -- {shlex.quote(backup)} {shlex.quote(path)}\n"
+        'echo ">>> Restored Steam shortcuts. Restart Steam to reload the library."\n'
+    )
+    restore_fd = os.open(restore_script, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o700)
+    with os.fdopen(restore_fd, "w", encoding="utf-8") as output:
+        output.write(restore_contents)
+        output.flush()
+        os.fsync(output.fileno())
+    folder = os.path.dirname(path)
+    staged_fd, staged = tempfile.mkstemp(prefix=".shortcuts-clear-", dir=folder)
+    try:
+        with os.fdopen(staged_fd, "wb") as output:
+            output.write(b"\0shortcuts\0\x08\x08")
+            output.flush()
+            os.fsync(output.fileno())
+        os.chmod(staged, mode)
+        os.replace(staged, path)
+    finally:
+        if os.path.exists(staged):
+            os.unlink(staged)
+    print(f">>> Steam cleanup: removed {len(names)} non-Steam shortcut(s) from {path}:")
+    for name in names:
+        print(f"  - {json.dumps(name, ensure_ascii=False)}")
+    print(f">>> Steam cleanup backup: {backup}")
+    print(f">>> Restore instructions: {restore_script}")
+    print(f">>> To restore: close Steam, then run: bash {restore_script}")
+    print(">>> Restart Steam after restoring the backup.")
+except (OSError, UnicodeError, ValueError) as error:
+    print(f">>> Steam cleanup: could not clear shortcuts: {error}", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+if [ "$CLEAR_USER_STEAM_SHORTCUTS" -eq 1 ]; then
+	_clear_user_steam_shortcuts "$HOME/Desktop" || exit 1
+fi
+
+decky_setup_failed=0
+if [ "$DO_DECKY_SETUP" -eq 1 ]; then
+	if ! _bootstrap_decky_loader_plugins_themes; then
+		decky_setup_failed=1
+		echo ">>> Decky setup failed; continuing with independent SteamOS steps."
+	fi
+else
+	echo ">>> Skipping Decky Loader setup."
+fi
 
 # Check local Steam shortcuts by exact executable or title without modifying them.
 # $1: "path" or "title"; $2: exact value. Returns 0 for found, 1 for absent, 2 on error.
@@ -301,10 +498,19 @@ function _configure_steamtinkerlaunch_account() {
 	rm -f "/dev/shm/steamtinkerlaunch/steampaths.txt"
 }
 
-# Run SteamTinkerLaunch against the same Steam account verified by this setup.
-# Arguments: SteamTinkerLaunch addnonsteamgame options. Returns its exit status.
+# Run SteamTinkerLaunch for the verified account after checking executable exists.
+# Arguments: addnonsteamgame options including --exepath=<executable>. Returns nonzero if invalid or command fails.
 function _steamtinkerlaunch_add() {
-	local shortcuts account_folder account_id
+	local shortcuts account_folder account_id argument executable_path=""
+	for argument in "$@"; do
+		case "$argument" in
+			--exepath=*) executable_path=${argument#--exepath=} ;;
+		esac
+	done
+	if [ -z "$executable_path" ] || [ ! -x "$executable_path" ]; then
+		echo ">>> Steam: binary or AppImage path not found or not present: ${executable_path:-<missing --exepath>}" >&2
+		return 1
+	fi
 
 	if ! shortcuts=$(_steam_shortcuts_file); then
 		return 1
@@ -498,7 +704,7 @@ function _add_steam_shortcut() {
 		fi
 	fi
 	if [ ! -x "$executable" ]; then
-		echo ">>> Steam: skipping $name; executable missing or not runnable: $executable"
+		echo ">>> Steam: binary or AppImage path not found or not present: $executable"
 		return 1
 	fi
 	_steam_shortcut_exists title "$name"
@@ -859,8 +1065,9 @@ if ! _install_steamtinkerlaunch_dependencies || ! _install_steamtinkerlaunch; th
 fi
 
 # --- Moonlight (AppImage) ---
+MOONLIGHT_VERSION="6.2.0"
 echo ">>> Downloading Moonlight AppImage to $APPS_FOLDER/Moonlight.AppImage"
-if curl -fsSL "https://github.com/moonlight-stream/moonlight-qt/releases/download/v6.1.0/Moonlight-6.1.0-x86_64.AppImage" \
+if curl -fsSL "https://github.com/moonlight-stream/moonlight-qt/releases/download/v$MOONLIGHT_VERSION/Moonlight-$MOONLIGHT_VERSION-x86_64.AppImage" \
 	-o "$APPS_FOLDER/Moonlight.AppImage"; then
 	_add_steam_shortcut "Moonlight" "$APPS_FOLDER/Moonlight.AppImage" "Streaming,Apps"
 else
@@ -875,6 +1082,9 @@ if curl -fsSL "https://github.com/DavidoTek/ProtonUp-Qt/releases/download/v2.16.
 else
 	echo ">>> Steam: skipping ProtonUp-Qt; AppImage download failed."
 fi
+
+# --- ES-DE Emulation Station (installed by EmuDeck) ---
+_add_steam_shortcut "ES-DE Emulation Station" "/home/deck/Applications/ES-DE.AppImage"
 
 # --- Brave, vim, tmux + system packages (pacman) ---
 if type -P pacman >/dev/null; then
@@ -942,9 +1152,6 @@ fi
 echo ">>> Done. Launch each .desktop file from Desktop Mode to start installation."
 echo ">>> AppImages live in $APPS_FOLDER/ - run them directly."
 finish_choice=""
-until [[ "$finish_choice" =~ ^([yY]|[yY][eE][sS])$ ]]; do
-	printf ">>> Finish and exit setup? Type yes to exit: "
-	if ! read -r finish_choice; then
-		sleep 1
-	fi
+until _prompt "Finish and exit setup?"; do
+	:
 done

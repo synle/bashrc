@@ -13,8 +13,8 @@ Files are named `<org>_<component>[_v<version>].zip` (plugins) and
 
 ## Steam shortcuts for apps
 
-Run these steps in Desktop Mode (Konsole). The setup helper downloads
-`~/Apps/Moonlight.AppImage` and `~/Apps/ProtonUp-Qt.AppImage`, and installs Brave
+Run these steps in Desktop Mode (Konsole). The setup helper downloads Moonlight
+6.2.0 as `~/Apps/Moonlight.AppImage`, downloads `~/Apps/ProtonUp-Qt.AppImage`, and installs Brave
 with pacman. It attempts to add each with `_add_steam_shortcut` and five Brave
 site tiles with `_add_url_steam_shortcut` in
 [`software/scripts/steamos/setup.bash`](../../software/scripts/steamos/setup.bash). Both AppImages and
@@ -47,6 +47,20 @@ Flatpak for the Deck's native Steam client; upstream documents it for Flatpak
 Steam only.
 
 ### Inspect, add, and organize shortcuts
+
+At startup, setup checks that Steam is closed. If Steam is open, close it and
+answer **Yes** at the red prompt to recheck; answer **No** to abort. Setup then
+asks whether to clear all non-Steam shortcuts from the active Steam account.
+That prompt defaults to **No**. Answer **Yes** only when you want to remove every
+user-defined shortcut for that account; Steam-installed games and other accounts
+are not changed. All yes/no prompts display in red. If cleanup is requested but
+fails, setup stops before installing or adding anything.
+Before clearing, setup saves the original file to
+`~/Desktop/shortcuts.vdf.bak_<date_time>` and writes a matching
+`~/Desktop/shortcuts.vdf.bak_<date_time>.restore.sh`. Output lists every removed
+shortcut name and both exact file paths. To recover, close Steam and run the
+printed `bash ~/Desktop/shortcuts.vdf.bak_<date_time>.restore.sh` command, then
+restart Steam. Keep both files until you confirm the cleared library.
 
 The setup helper sets the executable bit only on `*.AppImage` files missing it.
 It reads the local account's `shortcuts.vdf` and matches both app and URL

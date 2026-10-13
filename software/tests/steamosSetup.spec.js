@@ -15,6 +15,7 @@ const installerSource = setupSource
 const addShortcutSource = setupSource
   .split("# --- Steam shortcuts ---", 2)[1]
   .split("\n# Install SteamTinkerLaunch runtime dependencies before invoking it.", 1)[0];
+const shortcutCleanupSource = setupSource.split("# --- Steam shortcuts ---", 2)[1].split("\ndecky_setup_failed=0", 1)[0];
 const sandboxes = [];
 
 /** Creates an isolated home and records it for cleanup. */
@@ -95,10 +96,127 @@ describe("SteamOS setup", () => {
     expect(dependencySetup).toBeLessThan(firstShortcut);
   });
 
+  it("downloads the configured Moonlight release version", () => {
+    expect(setupSource).toContain('MOONLIGHT_VERSION="6.2.0"');
+    expect(setupSource).toContain(
+      '"https://github.com/moonlight-stream/moonlight-qt/releases/download/v$MOONLIGHT_VERSION/Moonlight-$MOONLIGHT_VERSION-x86_64.AppImage"',
+    );
+  });
+
+  it("backs up and clears active-account shortcuts and creates a working restore script", () => {
+    const home = createSandbox();
+    const shortcutsPath = path.join(home, ".steam/steam/userdata/12345/config/shortcuts.vdf");
+    const desktopFolder = path.join(home, "Desktop");
+    fs.mkdirSync(path.dirname(shortcutsPath), { recursive: true });
+    fs.mkdirSync(desktopFolder);
+    const original = makeShortcuts([
+      { name: "Old Moonlight", fields: { Exe: '"/old/moonlight"' } },
+      { name: "Custom Tool", fields: { Exe: '"/custom/tool"' } },
+    ]);
+    fs.writeFileSync(shortcutsPath, original);
+
+    const result = spawnSync(
+      "/bin/bash",
+      ["-c", `${shortcutCleanupSource}\nfunction pgrep() { return 1; }\n_clear_user_steam_shortcuts "$HOME/Desktop"`],
+      { encoding: "utf-8", env: { ...process.env, HOME: home } },
+    );
+
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    expect(result.stdout).toContain("removed 2 non-Steam shortcut(s)");
+    expect(result.stdout).toContain('  - "Old Moonlight"');
+    expect(result.stdout).toContain('  - "Custom Tool"');
+    const backupPath = result.stdout.match(/Steam cleanup backup: (.+)/)?.[1];
+    const restoreScript = result.stdout.match(/Restore instructions: (.+)/)?.[1];
+    expect(backupPath).toMatch(new RegExp(`^${desktopFolder}/shortcuts\\.vdf\\.bak_\\d{8}_\\d{6}_\\d{6}$`));
+    expect(restoreScript).toBe(`${backupPath}.restore.sh`);
+    expect(fs.readFileSync(backupPath)).toEqual(original);
+    expect(readShortcuts(fs.readFileSync(shortcutsPath))).toEqual([]);
+    expect(fs.readFileSync(restoreScript, "utf-8")).toContain("cp -- ");
+    expect(fs.readFileSync(restoreScript, "utf-8")).toContain(backupPath);
+    expect(fs.readFileSync(restoreScript, "utf-8")).toContain(shortcutsPath);
+
+    fs.writeFileSync(shortcutsPath, makeShortcuts([{ name: "New shortcut", fields: { Exe: '"/new"' } }]));
+    const binFolder = path.join(home, "bin");
+    fs.mkdirSync(binFolder);
+    writeCommand(binFolder, "pgrep", "exit 1");
+    const restore = spawnSync("/bin/bash", [restoreScript], {
+      encoding: "utf-8",
+      env: { ...process.env, HOME: home, PATH: `${binFolder}:${process.env.PATH}` },
+    });
+
+    expect(restore.status, `${restore.stdout}\n${restore.stderr}`).toBe(0);
+    expect(fs.readFileSync(shortcutsPath)).toEqual(original);
+  });
+
+  it("does not clear shortcuts while Steam is running", () => {
+    const home = createSandbox();
+    const shortcutsPath = path.join(home, ".steam/steam/userdata/12345/config/shortcuts.vdf");
+    const desktopFolder = path.join(home, "Desktop");
+    fs.mkdirSync(path.dirname(shortcutsPath), { recursive: true });
+    fs.mkdirSync(desktopFolder);
+    const original = makeShortcuts([{ name: "Keep me", fields: { Exe: '"/keep"' } }]);
+    fs.writeFileSync(shortcutsPath, original);
+
+    const result = spawnSync(
+      "/bin/bash",
+      ["-c", `${shortcutCleanupSource}\nfunction pgrep() { return 0; }\n_clear_user_steam_shortcuts "$HOME/Desktop"`],
+      { encoding: "utf-8", env: { ...process.env, HOME: home } },
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("close Steam completely before clearing shortcuts");
+    expect(fs.readFileSync(shortcutsPath)).toEqual(original);
+    expect(fs.readdirSync(desktopFolder)).toEqual([]);
+  });
+
+  it("leaves an empty shortcuts file unchanged and creates no recovery files", () => {
+    const home = createSandbox();
+    const shortcutsPath = path.join(home, ".steam/steam/userdata/12345/config/shortcuts.vdf");
+    const desktopFolder = path.join(home, "Desktop");
+    const emptyShortcuts = Buffer.from([0, ...Buffer.from("shortcuts\0"), 8, 8]);
+    fs.mkdirSync(path.dirname(shortcutsPath), { recursive: true });
+    fs.mkdirSync(desktopFolder);
+    fs.writeFileSync(shortcutsPath, emptyShortcuts);
+
+    const result = spawnSync(
+      "/bin/bash",
+      ["-c", `${shortcutCleanupSource}\nfunction pgrep() { return 1; }\n_clear_user_steam_shortcuts "$HOME/Desktop"`],
+      { encoding: "utf-8", env: { ...process.env, HOME: home } },
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("no user-defined non-Steam shortcuts found; nothing removed");
+    expect(fs.readFileSync(shortcutsPath)).toEqual(emptyShortcuts);
+    expect(fs.readdirSync(desktopFolder)).toEqual([]);
+  });
+
   it("verifies SteamTinkerLaunch actually wrote each shortcut", () => {
     expect(setupSource).toContain('if ! _steam_shortcut_exists path "$registered_exepath"; then');
     expect(setupSource).toContain('if ! _steam_shortcut_exists title "$title"; then');
     expect(setupSource).toContain("SteamTinkerLaunch returned success but shortcut is absent");
+  });
+
+  it("rejects missing Steam executable paths before invoking SteamTinkerLaunch", () => {
+    const home = createSandbox();
+    const invokedPath = path.join(home, "steamtinkerlaunch-invoked");
+    const result = spawnSync(
+      "/bin/bash",
+      [
+        "-c",
+        `${addShortcutSource}\nfunction steamtinkerlaunch() { touch "$HOME/steamtinkerlaunch-invoked"; }\n_steamtinkerlaunch_add --appname=Missing --exepath="$1"`,
+        "bash",
+        path.join(home, "Applications/Missing.AppImage"),
+      ],
+      { encoding: "utf-8", env: { ...process.env, HOME: home } },
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("binary or AppImage path not found or not present");
+    expect(fs.existsSync(invokedPath)).toBe(false);
+  });
+
+  it("registers the EmuDeck-installed ES-DE AppImage under the requested Steam name", () => {
+    expect(setupSource).toContain('_add_steam_shortcut "ES-DE Emulation Station" "/home/deck/Applications/ES-DE.AppImage"');
   });
 
   it("updates an existing app shortcut by name and removes same-name duplicates", () => {
@@ -258,15 +376,13 @@ _add_steam_shortcut Example "$1"`,
     expect(deckyPrompt).toBeGreaterThan(0);
     expect(deckyPrompt).toBeLessThan(upgradePrompt);
     expect(deckyCall).toBeGreaterThan(deckyPrompt);
-    expect(setupSource.slice(deckyCall, setupSource.indexOf("# --- Steam shortcuts ---"))).toContain(
+    expect(setupSource.slice(deckyCall, setupSource.indexOf("# Check local Steam shortcuts"))).toContain(
       "_bootstrap_decky_loader_plugins_themes",
     );
   });
 
   it("waits for explicit confirmation before finishing", () => {
-    expect(setupSource).toContain('until [[ "$finish_choice" =~ ^([yY]|[yY][eE][sS])$ ]]');
-    expect(setupSource).toContain(">>> Finish and exit setup? Type yes to exit:");
-    expect(setupSource).toContain("if ! read -r finish_choice; then");
+    expect(setupSource).toContain('until _prompt "Finish and exit setup?"; do');
   });
 
   it("keeps an existing SteamTinkerLaunch installation untouched", () => {
