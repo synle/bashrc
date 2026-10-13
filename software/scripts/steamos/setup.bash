@@ -134,7 +134,11 @@ function _bootstrap_decky_loader_plugins_themes() {
 		echo ">>> then re-run this script to auto-install them."
 	fi
 }
-_bootstrap_decky_loader_plugins_themes || exit 1
+decky_setup_failed=0
+if ! _bootstrap_decky_loader_plugins_themes; then
+	decky_setup_failed=1
+	echo ">>> Decky setup failed; continuing with independent SteamOS steps."
+fi
 
 # --- Steam shortcuts ---
 # Locate the single local Steam account's shortcut file.
@@ -595,5 +599,9 @@ if [ -f "$LIMINE_CONF" ]; then
 	' "$LIMINE_CONF" | sudo tee "$LIMINE_CONF.tmp" > /dev/null && sudo mv "$LIMINE_CONF.tmp" "$LIMINE_CONF"
 fi
 
+if [ "$decky_setup_failed" -eq 1 ]; then
+	echo ">>> Decky setup failed earlier; review its output and re-run this script after fixing it."
+	exit 1
+fi
 echo ">>> Done. Launch each .desktop file from Desktop Mode to start installation."
 echo ">>> AppImages live in $APPS_FOLDER/ - run them directly."
