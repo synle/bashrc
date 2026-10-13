@@ -152,5 +152,27 @@ if type -P paru >/dev/null && grep -q '^ID=cachyos' /etc/os-release 2>/dev/null;
 	fi
 fi
 
+# --- Limine bootloader: set menu timeout to 2 + quiet boot ---
+LIMINE_CONF="/boot/limine.conf"
+if [ -f "$LIMINE_CONF" ]; then
+	echo ">>> Limine config found: $LIMINE_CONF"
+
+	# Replace any 'timeout: <anything>' with 'timeout: 2'
+	if grep -q '^[[:space:]]*timeout:' "$LIMINE_CONF"; then
+		echo ">>> Limine: setting timeout to 2"
+		sudo awk '{ if (!done && $0 ~ /^[[:space:]]*timeout:/) { print "timeout: 2"; done = 1 } else print }' \
+			"$LIMINE_CONF" | sudo tee "$LIMINE_CONF.tmp" > /dev/null && sudo mv "$LIMINE_CONF.tmp" "$LIMINE_CONF"
+	else
+		echo ">>> Limine: adding timeout: 2"
+		printf 'timeout: 2\n' | sudo tee -a "$LIMINE_CONF" > /dev/null
+	fi
+
+	# Add 'quiet: yes' only if no line starting with 'quiet:' exists
+	if ! grep -q '^[[:space:]]*quiet:' "$LIMINE_CONF"; then
+		echo ">>> Limine: adding quiet: yes"
+		printf 'quiet: yes\n' | sudo tee -a "$LIMINE_CONF" > /dev/null
+	fi
+fi
+
 echo ">>> Done. Launch each .desktop file from Desktop Mode to start installation."
 echo ">>> AppImages live in $APPS_FOLDER/ - run them directly."
