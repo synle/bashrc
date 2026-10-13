@@ -22,14 +22,16 @@ Brave are native Linux apps; leave Proton compatibility disabled.
 
 ### Install SteamTinkerLaunch
 
-The setup helper downloads ProtonUp-Qt, but does not install SteamTinkerLaunch.
-Check whether SteamTinkerLaunch is already available:
+The setup helper installs the latest SteamTinkerLaunch Git version into
+`~/stl/prefix`, initializes it, registers it as a Steam compatibility tool, and
+links its command into `~/.local/bin`. Existing installations on `PATH`, including
+ones managed by ProtonUp-Qt, stay untouched. Check the active command with:
 
 ```bash
 type -P steamtinkerlaunch
 ```
 
-If this prints no path, open ProtonUp-Qt in Desktop Mode:
+If automatic installation fails, open ProtonUp-Qt in Desktop Mode:
 
 ```bash
 "$HOME/Apps/ProtonUp-Qt.AppImage"

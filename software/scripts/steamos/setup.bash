@@ -520,6 +520,64 @@ PY
 	echo ">>> Steam: replaced $title; previous shortcuts backed up at $backup"
 }
 
+# Install SteamTinkerLaunch using its upstream Steam Deck layout when missing.
+function _install_steamtinkerlaunch() {
+	local install_folder="$HOME/stl/prefix" launcher="$HOME/.local/bin/steamtinkerlaunch"
+	local staging_folder extracted_folders
+
+	if type -P steamtinkerlaunch > /dev/null; then
+		echo ">>> SteamTinkerLaunch already installed: $(type -P steamtinkerlaunch)"
+		return 0
+	fi
+	if [ ! -x "$install_folder/steamtinkerlaunch" ]; then
+		if [ -e "$install_folder" ]; then
+			echo ">>> SteamTinkerLaunch install incomplete at $install_folder; move it aside and re-run setup."
+			return 1
+		fi
+		staging_folder=$(mktemp -d) || return 1
+		echo ">>> Installing SteamTinkerLaunch to $install_folder"
+		if ! curl -fsSL "https://github.com/sonic2kk/steamtinkerlaunch/archive/refs/heads/master.tar.gz" \
+			-o "$staging_folder/steamtinkerlaunch.tar.gz" \
+			|| ! tar -xzf "$staging_folder/steamtinkerlaunch.tar.gz" -C "$staging_folder"; then
+			echo ">>> SteamTinkerLaunch download or extraction failed."
+			rm -rf "$staging_folder"
+			return 1
+		fi
+		extracted_folders=("$staging_folder"/steamtinkerlaunch-*)
+		if [ "${#extracted_folders[@]}" -ne 1 ] || [ ! -d "${extracted_folders[0]}" ]; then
+			echo ">>> SteamTinkerLaunch archive had an unexpected layout."
+			rm -rf "$staging_folder"
+			return 1
+		fi
+		mkdir -p "$HOME/stl"
+		mv "${extracted_folders[0]}" "$install_folder"
+		rm -rf "$staging_folder"
+		chmod +x "$install_folder/steamtinkerlaunch"
+		if ! (cd "$install_folder" && ./steamtinkerlaunch); then
+			echo ">>> SteamTinkerLaunch initial setup failed."
+			rm -rf "$install_folder"
+			return 1
+		fi
+		if ! (cd "$install_folder" && ./steamtinkerlaunch compat add); then
+			echo ">>> SteamTinkerLaunch compatibility-tool registration failed."
+			rm -rf "$install_folder"
+			return 1
+		fi
+	fi
+	mkdir -p "$HOME/.local/bin"
+	if [ -e "$launcher" ] && [ "$(readlink "$launcher" 2> /dev/null)" != "$install_folder/steamtinkerlaunch" ]; then
+		echo ">>> SteamTinkerLaunch launcher already exists and is not managed by this setup: $launcher"
+		return 1
+	fi
+	ln -sfn "$install_folder/steamtinkerlaunch" "$launcher"
+	export PATH="$HOME/.local/bin:$PATH"
+	echo ">>> SteamTinkerLaunch installed: $launcher"
+}
+
+if ! _install_steamtinkerlaunch; then
+	echo ">>> Steam shortcuts need SteamTinkerLaunch; fix installation output above and re-run setup."
+fi
+
 # --- Moonlight (AppImage) ---
 echo ">>> Downloading Moonlight AppImage to $APPS_FOLDER/Moonlight.AppImage"
 if curl -fsSL "https://github.com/moonlight-stream/moonlight-qt/releases/download/v6.1.0/Moonlight-6.1.0-x86_64.AppImage" \
@@ -584,14 +642,13 @@ if type -P paru >/dev/null && grep -q '^ID=cachyos' /etc/os-release 2>/dev/null;
 fi
 
 # --- Limine bootloader: set menu timeout + quiet boot ---
-readonly _LIMINE_BOOT_TIMEOUT=2
 LIMINE_CONF="/boot/limine.conf"
 if [ -f "$LIMINE_CONF" ]; then
 	echo ">>> Limine config found: $LIMINE_CONF"
 
 	# Normalize quiet boot directly below the first timeout entry.
-	echo ">>> Limine: setting timeout to $_LIMINE_BOOT_TIMEOUT with quiet boot"
-	sudo awk -v timeout="$_LIMINE_BOOT_TIMEOUT" '
+	echo ">>> Limine: setting timeout to 2 with quiet boot"
+	sudo awk -v timeout=2 '
 		/^[[:space:]]*quiet:/ { next }
 		!done && /^[[:space:]]*timeout:/ { print "timeout: " timeout; print "quiet: yes"; done = 1; next }
 		{ print }
