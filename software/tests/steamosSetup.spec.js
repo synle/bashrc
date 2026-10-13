@@ -12,7 +12,9 @@ const setupSource = fs.readFileSync(SETUP_PATH, "utf-8");
 const installerSource = setupSource
   .split("# Install SteamTinkerLaunch runtime dependencies before invoking it.", 2)[1]
   .split("\nif ! _install_steamtinkerlaunch_dependencies", 1)[0];
-const addShortcutSource = setupSource.split("# --- Steam shortcuts ---", 2)[1].split("\n# Add a Brave site as a Steam tile", 1)[0];
+const addShortcutSource = setupSource
+  .split("# --- Steam shortcuts ---", 2)[1]
+  .split("\n# Install SteamTinkerLaunch runtime dependencies before invoking it.", 1)[0];
 const sandboxes = [];
 
 /** Creates an isolated home and records it for cleanup. */
@@ -36,6 +38,48 @@ function writeCommand(binFolder, name, body) {
   fs.writeFileSync(path.join(binFolder, name), `#!/usr/bin/env bash\n${body}\n`, { mode: 0o755 });
 }
 
+/** Encodes Steam string fields and app shortcuts into a compact shortcuts.vdf fixture. */
+function makeShortcuts(entries) {
+  const string = (value) => Buffer.concat([Buffer.from(value, "utf-8"), Buffer.from([0])]);
+  const field = (name, value) => Buffer.concat([Buffer.from([1]), string(name), string(value)]);
+  const shortcuts = [Buffer.from([0]), string("shortcuts")];
+
+  for (const [index, entry] of entries.entries()) {
+    shortcuts.push(Buffer.from([0]), string(String(index)), field("AppName", entry.name));
+    for (const [key, value] of Object.entries(entry.fields)) shortcuts.push(field(key, value));
+    shortcuts.push(Buffer.from([8]));
+  }
+  shortcuts.push(Buffer.from([8, 8]));
+  return Buffer.concat(shortcuts);
+}
+
+/** Reads string fields from Steam shortcut objects in a shortcuts.vdf fixture. */
+function readShortcuts(data) {
+  let offset = 11;
+  const readString = () => {
+    const end = data.indexOf(0, offset);
+    const value = data.toString("utf-8", offset, end);
+    offset = end + 1;
+    return value;
+  };
+  const shortcuts = [];
+
+  while (data[offset] !== 8) {
+    offset += 1;
+    readString();
+    const fields = {};
+    while (data[offset] !== 8) {
+      const type = data[offset++];
+      const name = readString();
+      fields[name] = type === 1 ? readString() : null;
+      if (type !== 1) throw new Error(`Unexpected fixture field type ${type}`);
+    }
+    offset += 1;
+    shortcuts.push(fields);
+  }
+  return shortcuts;
+}
+
 afterEach(() => {
   for (const sandbox of sandboxes.splice(0)) fs.rmSync(sandbox, { recursive: true, force: true });
 });
@@ -55,6 +99,79 @@ describe("SteamOS setup", () => {
     expect(setupSource).toContain('if ! _steam_shortcut_exists path "$registered_exepath"; then');
     expect(setupSource).toContain('if ! _steam_shortcut_exists title "$title"; then');
     expect(setupSource).toContain("SteamTinkerLaunch returned success but shortcut is absent");
+  });
+
+  it("updates an existing app shortcut by name and removes same-name duplicates", () => {
+    const home = createSandbox();
+    const shortcutsPath = path.join(home, ".steam/steam/userdata/12345/config/shortcuts.vdf");
+    fs.mkdirSync(path.dirname(shortcutsPath), { recursive: true });
+    fs.writeFileSync(
+      shortcutsPath,
+      makeShortcuts([
+        { name: "Moonlight", fields: { Exe: '"/old/Moonlight.AppImage"', StartDir: '"/old"', LaunchOptions: "--old" } },
+        { name: "Other App", fields: { Exe: '"/other/app"' } },
+        { name: "Moonlight", fields: { Exe: '"/duplicate/Moonlight.AppImage"' } },
+      ]),
+    );
+    const newExecutable = path.join(home, "Apps/Moonlight.AppImage");
+    fs.mkdirSync(path.dirname(newExecutable), { recursive: true });
+    fs.writeFileSync(newExecutable, "app\n", { mode: 0o755 });
+
+    const result = spawnSync(
+      "/bin/bash",
+      ["-c", `${addShortcutSource}\nfunction pgrep() { return 1; }\n_add_steam_shortcut Moonlight "$1"`, "bash", newExecutable],
+      { encoding: "utf-8", env: { ...process.env, HOME: home } },
+    );
+
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    const shortcuts = readShortcuts(fs.readFileSync(shortcutsPath));
+    expect(shortcuts).toHaveLength(2);
+    expect(shortcuts.find((shortcut) => shortcut.AppName === "Moonlight")).toMatchObject({
+      Exe: `"${newExecutable}"`,
+      StartDir: '"/old"',
+      LaunchOptions: "--old",
+    });
+  });
+
+  it("registers and refreshes Brave site tiles with absolute Brave path and current URL", () => {
+    const home = createSandbox();
+    const binFolder = path.join(home, "bin");
+    const accountFolder = path.join(home, ".steam/steam/userdata/12345/config");
+    const braveExecutable = path.join(binFolder, "brave");
+    const shortcutsPath = path.join(accountFolder, "shortcuts.vdf");
+    fs.mkdirSync(binFolder, { recursive: true });
+    fs.mkdirSync(accountFolder, { recursive: true });
+    fs.writeFileSync(braveExecutable, "#!/usr/bin/env bash\nexit 0\n", { mode: 0o755 });
+    fs.writeFileSync(
+      shortcutsPath,
+      makeShortcuts([
+        {
+          name: "Netflix",
+          fields: { Exe: '"brave"', StartDir: '"./"', LaunchOptions: "--app=https://old.example/" },
+        },
+      ]),
+    );
+
+    const result = spawnSync(
+      "/bin/bash",
+      [
+        "-c",
+        `${addShortcutSource}
+function pgrep() { return 1; }
+_add_url_steam_shortcut Netflix https://www.netflix.com/`,
+      ],
+      { encoding: "utf-8", env: { ...process.env, HOME: home, PATH: `${binFolder}:${process.env.PATH}` } },
+    );
+
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    expect(readShortcuts(fs.readFileSync(shortcutsPath))).toEqual([
+      {
+        AppName: "Netflix",
+        Exe: `"${braveExecutable}"`,
+        StartDir: '"./"',
+        LaunchOptions: "--app=https://www.netflix.com/",
+      },
+    ]);
   });
 
   it("fails when SteamTinkerLaunch returns success without writing a shortcut", () => {

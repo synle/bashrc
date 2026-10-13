@@ -49,13 +49,17 @@ Steam only.
 ### Inspect, add, and organize shortcuts
 
 The setup helper sets the executable bit only on `*.AppImage` files missing it.
-It reads the local account's `shortcuts.vdf` to match the full `Exe` path for
-app shortcuts; an existing app shortcut is skipped even if its name differs.
-URL shortcuts instead match the exact Steam title. Missing or ambiguous
-Steam accounts, unreadable shortcut data, missing SteamTinkerLaunch, or a
-running Steam client cause a logged skip, not a duplicate entry. For a missing
+It reads the local account's `shortcuts.vdf` and matches both app and URL
+shortcuts by their exact Steam name. Re-running setup refreshes the existing
+shortcut's executable path (and, for site tiles, launch URL) instead of adding
+a duplicate; extra same-name entries are removed while other shortcut metadata
+is preserved. Brave tiles use Brave's resolved executable path rather than a
+shell-only command name, so Steam can launch them outside Desktop Mode. Missing
+or ambiguous Steam accounts, unreadable shortcut data, missing
+SteamTinkerLaunch, or a running Steam client cause a logged skip, not a
+duplicate entry. For a missing
 shortcut, close Steam and re-run setup after fixing the reported condition;
-restart Steam after new shortcuts are added. The default collections are
+restart Steam after shortcuts are added or updated. The default collections are
 `Streaming,Apps` (Moonlight and site tiles), `Utilities,Apps` (ProtonUp-Qt), and
 `Browsers,Apps` (Brave).
 
@@ -92,11 +96,10 @@ The setup helper adds **Netflix**, **Disney+**, **Prime Video**, **YouTube**, an
 **Plex** as separate Steam tiles using `_add_url_steam_shortcut <title> <url>`.
 Plex opens `https://app.plex.tv/desktop/`. Each tile launches Brave with
 `--app=<url>` and checks `AppName` for an exact title match, so the Brave
-browser shortcut does not block site tiles. An existing title is skipped even
-if it points to a different URL; inspect **Properties → Launch Options** to
-resolve that case. Add another site by adding a call with a distinct title and
-HTTPS URL to the setup script. Close Steam and re-run setup if registration was
-skipped; restart Steam to see new tiles.
+browser shortcut does not block site tiles. Re-running setup updates a tile's
+URL when its title already exists. Add another site by adding a call with a
+distinct title and HTTPS URL to the setup script. Close Steam and re-run setup
+if registration was skipped; restart Steam to see updated tiles.
 
 For a deliberate replacement, `_upsert_url_steam_shortcut <title> <url>` is
 available but not called by setup. With Steam closed, it backs up the local
@@ -106,7 +109,7 @@ site tile; a failed add restores the backup. The original backup stays beside
 name, so inspect the title before invoking it.
 
 Site sign-in, playback, and DRM support depend on Brave and the streaming
-service; verify in Desktop Mode before relying on Gaming Mode.
+service. Verify each tile in Desktop Mode and Gaming Mode on the Deck.
 
 ### Host PC shortcuts appearing through Remote Play
 

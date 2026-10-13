@@ -315,7 +315,173 @@ function _steamtinkerlaunch_add() {
 	steamtinkerlaunch addnonsteamgame "$@"
 }
 
-# Add a native app once per executable path; keep Steam's shortcut file read-only.
+# Update one same-name shortcut while preserving unrelated Steam metadata.
+# Arguments: title, executable, start directory, launch options. Returns nonzero on unsafe update.
+function _steam_shortcut_update_by_name() {
+	local title="$1" executable="$2" startdir="${3:-}" launchoptions="${4:-}" shortcuts
+	if ! shortcuts=$(_steam_shortcuts_file) || [ -L "$shortcuts" ] || [ ! -f "$shortcuts" ]; then
+		echo ">>> Steam: cannot update $title; regular shortcuts.vdf required." >&2
+		return 1
+	fi
+	python3 - "$shortcuts" "$title" "$executable" "$startdir" "$launchoptions" <<'PY'
+import os
+import stat
+import sys
+import tempfile
+
+path, title, executable, startdir, launchoptions = sys.argv[1:]
+updates = {"Exe": f'"{executable}"'}
+if startdir:
+    updates["StartDir"] = f'"{startdir}"'
+if launchoptions:
+    updates["LaunchOptions"] = launchoptions
+
+def parse(data):
+    offset = 0
+
+    def read(size):
+        nonlocal offset
+        if offset + size > len(data):
+            raise ValueError("truncated VDF")
+        value = data[offset:offset + size]
+        offset += size
+        return value
+
+    def string():
+        nonlocal offset
+        end = data.find(b"\0", offset)
+        if end < 0:
+            raise ValueError("unterminated VDF string")
+        value = data[offset:end].decode("utf-8")
+        start = offset
+        offset = end + 1
+        return value, start, end
+
+    def fields():
+        nonlocal offset
+        result = {}
+        while True:
+            kind = read(1)[0]
+            if kind == 8:
+                return result, offset - 1
+            key, _, _ = string()
+            if key in result:
+                raise ValueError("duplicate VDF field")
+            if kind == 0:
+                value, end = fields()
+                result[key] = {"kind": kind, "value": value, "end": end}
+            elif kind == 1:
+                value, start, end = string()
+                result[key] = {"kind": kind, "value": value, "start": start, "end": end}
+            elif kind == 5:
+                end = offset
+                while end + 1 < len(data) and data[end:end + 2] != b"\0\0":
+                    end += 2
+                if end + 1 >= len(data):
+                    raise ValueError("unterminated VDF wide string")
+                value = data[offset:end].decode("utf-16-le")
+                offset = end + 2
+                result[key] = {"kind": kind, "value": value}
+            elif kind in (2, 3, 4, 6):
+                result[key] = {"kind": kind, "value": read(4)}
+            elif kind in (7, 9, 10):
+                result[key] = {"kind": kind, "value": read(8)}
+            else:
+                raise ValueError(f"unsupported VDF field type: {kind}")
+
+    if read(1) != b"\0" or string()[0] != "shortcuts":
+        raise ValueError("unexpected VDF root")
+    entries = []
+    while offset < len(data) and data[offset] != 8:
+        start = offset
+        if read(1) != b"\0":
+            raise ValueError("unexpected shortcut entry type")
+        key, _, _ = string()
+        shortcut_fields, end = fields()
+        name = shortcut_fields.get("AppName", shortcut_fields.get("appname", {})).get("value", "")
+        if not key.isdigit() or not isinstance(name, str):
+            raise ValueError("invalid shortcut entry")
+        entries.append({"name": name, "start": start, "end": offset, "fields_end": end, "fields": shortcut_fields})
+    if read(2) != b"\x08\x08" or offset != len(data):
+        raise ValueError("invalid VDF terminator")
+    return entries
+
+try:
+    with open(path, "rb") as source:
+        original = source.read()
+    entries = parse(original)
+    matches = [entry for entry in entries if entry["name"] == title]
+    if not matches:
+        raise ValueError("shortcut name disappeared before update")
+    chosen = matches[0]
+    already_current = len(matches) == 1
+    for key, value in updates.items():
+        field_name = next((name for name in chosen["fields"] if name.lower() == key.lower()), key)
+        field = chosen["fields"].get(field_name)
+        if field is None or field["kind"] != 1 or field["value"] != value:
+            already_current = False
+    if already_current:
+        print(f">>> Steam: {title} already current.")
+        sys.exit(0)
+    if os.path.islink(path):
+        raise ValueError("shortcuts.vdf became a symlink")
+    with open(path, "rb") as source:
+        if source.read() != original:
+            raise ValueError("shortcuts changed during update")
+    result = bytearray(b"\0shortcuts\0")
+    index = 0
+    for entry in entries:
+        if entry["name"] == title and entry is not chosen:
+            continue
+        raw = bytearray(original[entry["start"]:entry["end"]])
+        prefix_end = original.find(b"\0", entry["start"] + 1) + 1
+        if entry is chosen:
+            inserted = bytearray()
+            edits = []
+            for key, value in updates.items():
+                field_name = next((name for name in entry["fields"] if name.lower() == key.lower()), key)
+                field = entry["fields"].get(field_name)
+                if field is None:
+                    inserted.extend(b"\x01" + field_name.encode() + b"\0" + value.encode() + b"\0")
+                elif field["kind"] != 1:
+                    raise ValueError(f"{key} is not a string field")
+                else:
+                    edits.append((field["start"] - entry["start"], field["end"] - entry["start"], value.encode()))
+            for start, end, value in sorted(edits, reverse=True):
+                raw[start:end] = value
+            if inserted:
+                raw[entry["fields_end"] - entry["start"]:entry["fields_end"] - entry["start"]] = inserted
+        old_prefix = original[entry["start"]:prefix_end]
+        result.extend(b"\0" + str(index).encode() + b"\0" + raw[len(old_prefix):])
+        index += 1
+    result.extend(b"\x08\x08")
+    parse(result)
+    mode = stat.S_IMODE(os.stat(path).st_mode)
+    backup_fd, backup = tempfile.mkstemp(prefix="shortcuts.vdf.backup.", dir=os.path.dirname(path))
+    with os.fdopen(backup_fd, "wb") as backup_file:
+        backup_file.write(original)
+        backup_file.flush()
+        os.fsync(backup_file.fileno())
+    os.chmod(backup, mode)
+    fd, staged = tempfile.mkstemp(prefix=".shortcuts-update-", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "wb") as output:
+            output.write(result)
+            output.flush()
+            os.fsync(output.fileno())
+        os.chmod(staged, mode)
+        os.replace(staged, path)
+    finally:
+        if os.path.exists(staged):
+            os.unlink(staged)
+    print(f">>> Steam: updated {title}; removed {len(matches) - 1} same-name duplicate(s). Backup: {backup}")
+except (OSError, UnicodeError, ValueError) as error:
+    print(f">>> Steam: could not update {title}: {error}", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+# Add or refresh a native app shortcut by app name.
 # $1: label; $2: absolute executable; $3: optional comma-separated Steam collections.
 # $4: optional registered exepath (defaults to $2); $5: optional start directory.
 # Returns nonzero when shortcut inspection or registration fails.
@@ -335,12 +501,16 @@ function _add_steam_shortcut() {
 		echo ">>> Steam: skipping $name; executable missing or not runnable: $executable"
 		return 1
 	fi
-	_steam_shortcut_exists path "$registered_exepath"
+	_steam_shortcut_exists title "$name"
 	status=$?
-	echo "[DEBUG] Steam add: $name path lookup status $status"
+	echo "[DEBUG] Steam add: $name title lookup status $status"
 	if [ "$status" -eq 0 ]; then
-		echo ">>> Steam: $name already registered at $executable; skipping."
-		return 0
+		if pgrep -x steam >/dev/null 2>&1; then
+			echo ">>> Steam: skipping $name; exit Steam before updating shortcuts, then re-run setup."
+			return 1
+		fi
+		_steam_shortcut_update_by_name "$name" "$registered_exepath" "$startdir" ""
+		return $?
 	fi
 	if [ "$status" -ne 1 ]; then
 		echo ">>> Steam: skipping $name; cannot safely check existing shortcuts."
@@ -375,7 +545,7 @@ function _add_steam_shortcut() {
 	echo ">>> Steam: added $name. Restart Steam to see it in the library."
 }
 
-# Add a Brave site as a Steam tile, deduplicating by exact shortcut title.
+# Add or refresh a Brave site as a Steam tile, deduplicating by exact shortcut title.
 # $1: Steam title; $2: HTTPS URL. Returns nonzero if inspection or registration fails.
 function _add_url_steam_shortcut() {
 	local title="$1" url="$2" brave_executable status
@@ -385,20 +555,24 @@ function _add_url_steam_shortcut() {
 		echo ">>> Steam: skipping URL shortcut; title and HTTPS URL required."
 		return 1
 	fi
+	brave_executable=$(type -P brave || type -P brave-browser)
+	if [ -z "$brave_executable" ]; then
+		echo ">>> Steam: skipping $title; Brave executable not found."
+		return 1
+	fi
 	_steam_shortcut_exists title "$title"
 	status=$?
 	echo "[DEBUG] Steam URL add: $title title lookup status $status"
 	if [ "$status" -eq 0 ]; then
-		echo ">>> Steam: $title already exists; skipping URL shortcut."
-		return 0
+		if pgrep -x steam >/dev/null 2>&1; then
+			echo ">>> Steam: skipping $title; exit Steam before updating shortcuts, then re-run setup."
+			return 1
+		fi
+		_steam_shortcut_update_by_name "$title" "$brave_executable" "./" "--app=$url"
+		return $?
 	fi
 	if [ "$status" -ne 1 ]; then
 		echo ">>> Steam: skipping $title; cannot safely check existing shortcuts."
-		return 1
-	fi
-	brave_executable=$(type -P brave || type -P brave-browser)
-	if [ -z "$brave_executable" ]; then
-		echo ">>> Steam: skipping $title; Brave executable not found."
 		return 1
 	fi
 	if ! type -P steamtinkerlaunch >/dev/null; then
@@ -411,7 +585,7 @@ function _add_url_steam_shortcut() {
 	fi
 	echo "[DEBUG] Steam URL add: $title prerequisites passed; Brave $brave_executable"
 	echo ">>> Steam: adding $title in Brave ($url) to collections: Streaming,Apps"
-	if ! _steamtinkerlaunch_add --appname="$title" --exepath="brave" --startdir="./" \
+	if ! _steamtinkerlaunch_add --appname="$title" --exepath="$brave_executable" --startdir="./" \
 		--launchoptions="--app=$url" --tags="Streaming,Apps"; then
 		echo ">>> Steam: failed to add $title; check SteamTinkerLaunch output."
 		return 1
@@ -714,7 +888,7 @@ if type -P pacman >/dev/null; then
 	if sudo pacman -S --needed --noconfirm brave-bin vim tmux flatpak fuse2; then
 		BRAVE_EXECUTABLE=$(type -P brave || type -P brave-browser)
 		if [ -n "$BRAVE_EXECUTABLE" ]; then
-			_add_steam_shortcut "Brave" "$BRAVE_EXECUTABLE" "Browsers,Apps" "brave" "./"
+			_add_steam_shortcut "Brave" "$BRAVE_EXECUTABLE" "Browsers,Apps" "$BRAVE_EXECUTABLE" "./"
 			_add_url_steam_shortcut "Netflix" "https://www.netflix.com/"
 			_add_url_steam_shortcut "Disney+" "https://www.disneyplus.com/"
 			_add_url_steam_shortcut "Prime Video" "https://www.primevideo.com/"
