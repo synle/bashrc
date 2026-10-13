@@ -52,7 +52,7 @@ describe("SteamOS setup", () => {
   });
 
   it("verifies SteamTinkerLaunch actually wrote each shortcut", () => {
-    expect(setupSource).toContain('if ! _steam_shortcut_exists path "$executable"; then');
+    expect(setupSource).toContain('if ! _steam_shortcut_exists path "$registered_exepath"; then');
     expect(setupSource).toContain('if ! _steam_shortcut_exists title "$title"; then');
     expect(setupSource).toContain("SteamTinkerLaunch returned success but shortcut is absent");
   });

@@ -463,8 +463,18 @@ describe("vs code theme", () => {
 
 describe("windows terminal theme", () => {
   const source = "software/scripts/windows-terminal.js";
+  const keybindingsSource = "software/scripts/windows-terminal-keys.jsonc";
 
   it("should keep every marker bound to COLOR_MAP", () => expectMarkersBound(source));
+
+  it("should keep Windows Terminal keybinding overrides for ctrl+v and shift+enter", () => {
+    const contents = fs.readFileSync(keybindingsSource, "utf-8");
+    expect(contents).toContain('"id": "unbound"');
+    expect(contents).toContain('"keys": "ctrl+v"');
+    expect(contents).toContain('"id": "User.sendInput.ShiftEnterCustom"');
+    expect(contents).toContain('"input": "\\u001b[13;2u"');
+    expect(contents).toContain('"keys": "shift+enter"');
+  });
 
   for (const theme of ["dark", "light"]) {
     it(`should keep the ${theme} ANSI ramp visible and monotonic`, () => {

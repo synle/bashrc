@@ -15,6 +15,10 @@
     "keys": "alt+v",
   },
   {
+    "id": "unbound",
+    "keys": "ctrl+v",
+  },
+  {
     "command": "nextTab",
     "keys": "alt+shift+]",
   },
@@ -204,4 +208,12 @@
   { "command": { "action": "sendInput", "input": "\u001b," }, "keys": "ctrl+," },
   { "command": { "action": "sendInput", "input": "\u001b." }, "keys": "ctrl+." },
   { "command": { "action": "sendInput", "input": "\u001b'" }, "keys": "ctrl+'" },
+  {
+    "command": {
+      "action": "sendInput",
+      "input": "\u001b[13;2u",
+    },
+    "id": "User.sendInput.ShiftEnterCustom",
+    "keys": "shift+enter",
+  },
 ]

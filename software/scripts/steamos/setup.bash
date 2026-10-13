@@ -317,12 +317,13 @@ function _steamtinkerlaunch_add() {
 
 # Add a native app once per executable path; keep Steam's shortcut file read-only.
 # $1: label; $2: absolute executable; $3: optional comma-separated Steam collections.
+# $4: optional registered exepath (defaults to $2); $5: optional start directory.
 # Returns nonzero when shortcut inspection or registration fails.
 function _add_steam_shortcut() {
-	local name="$1" executable="$2" collections="${3:-}" status
+	local name="$1" executable="$2" collections="${3:-}" registered_exepath="${4:-$2}" startdir="${5:-}" status
 	local -a shortcut_args=()
 
-	echo "[DEBUG] Steam add: $name; executable $executable; collections ${collections:-none}"
+	echo "[DEBUG] Steam add: $name; executable $executable; registered $registered_exepath; collections ${collections:-none}"
 	if [[ "$executable" == *.AppImage ]] && [ -f "$executable" ] && [ ! -x "$executable" ]; then
 		echo ">>> Steam: making $name AppImage executable: $executable"
 		if ! chmod +x "$executable"; then
@@ -334,7 +335,7 @@ function _add_steam_shortcut() {
 		echo ">>> Steam: skipping $name; executable missing or not runnable: $executable"
 		return 1
 	fi
-	_steam_shortcut_exists path "$executable"
+	_steam_shortcut_exists path "$registered_exepath"
 	status=$?
 	echo "[DEBUG] Steam add: $name path lookup status $status"
 	if [ "$status" -eq 0 ]; then
@@ -354,17 +355,20 @@ function _add_steam_shortcut() {
 		return 1
 	fi
 	echo "[DEBUG] Steam add: $name prerequisites passed; invoking SteamTinkerLaunch"
+	if [ -n "$startdir" ]; then
+		shortcut_args+=("--startdir=$startdir")
+	fi
 	if [ -n "$collections" ]; then
-		echo ">>> Steam: adding $name ($executable) to collections: $collections"
+		echo ">>> Steam: adding $name ($registered_exepath) to collections: $collections"
 		shortcut_args+=("--tags=$collections")
 	else
-		echo ">>> Steam: adding $name ($executable) without collections"
+		echo ">>> Steam: adding $name ($registered_exepath) without collections"
 	fi
-	if ! _steamtinkerlaunch_add --appname="$name" --exepath="$executable" "${shortcut_args[@]}"; then
+	if ! _steamtinkerlaunch_add --appname="$name" --exepath="$registered_exepath" "${shortcut_args[@]}"; then
 		echo ">>> Steam: failed to add $name; check SteamTinkerLaunch output."
 		return 1
 	fi
-  if ! _steam_shortcut_exists path "$executable"; then
+  if ! _steam_shortcut_exists path "$registered_exepath"; then
     echo ">>> Steam: failed to add $name; SteamTinkerLaunch returned success but shortcut is absent."
     return 1
   fi
@@ -392,7 +396,7 @@ function _add_url_steam_shortcut() {
 		echo ">>> Steam: skipping $title; cannot safely check existing shortcuts."
 		return 1
 	fi
-	brave_executable=$(type -P brave-browser || type -P brave)
+	brave_executable=$(type -P brave || type -P brave-browser)
 	if [ -z "$brave_executable" ]; then
 		echo ">>> Steam: skipping $title; Brave executable not found."
 		return 1
@@ -407,7 +411,7 @@ function _add_url_steam_shortcut() {
 	fi
 	echo "[DEBUG] Steam URL add: $title prerequisites passed; Brave $brave_executable"
 	echo ">>> Steam: adding $title in Brave ($url) to collections: Streaming,Apps"
-	if ! _steamtinkerlaunch_add --appname="$title" --exepath="$brave_executable" \
+	if ! _steamtinkerlaunch_add --appname="$title" --exepath="brave" --startdir="./" \
 		--launchoptions="--app=$url" --tags="Streaming,Apps"; then
 		echo ">>> Steam: failed to add $title; check SteamTinkerLaunch output."
 		return 1
@@ -708,9 +712,9 @@ if type -P pacman >/dev/null; then
 		echo ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
 	fi
 	if sudo pacman -S --needed --noconfirm brave-bin vim tmux flatpak fuse2; then
-		BRAVE_EXECUTABLE=$(type -P brave-browser || type -P brave)
+		BRAVE_EXECUTABLE=$(type -P brave || type -P brave-browser)
 		if [ -n "$BRAVE_EXECUTABLE" ]; then
-			_add_steam_shortcut "Brave" "$BRAVE_EXECUTABLE" "Browsers,Apps"
+			_add_steam_shortcut "Brave" "$BRAVE_EXECUTABLE" "Browsers,Apps" "brave" "./"
 			_add_url_steam_shortcut "Netflix" "https://www.netflix.com/"
 			_add_url_steam_shortcut "Disney+" "https://www.disneyplus.com/"
 			_add_url_steam_shortcut "Prime Video" "https://www.primevideo.com/"

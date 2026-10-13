@@ -657,6 +657,19 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     }
 }
 
+if (Get-Command opencode -ErrorAction SilentlyContinue) {
+    # opencode.json / tui.json stay owned by software/scripts/advanced/llm/opencode/setup.js.
+    $opencodeConfigDir = Join-Path (Join-Path $env:USERPROFILE ".config") "opencode"
+    if (-not (Test-Path $opencodeConfigDir)) {
+        New-Item -Path $opencodeConfigDir -ItemType Directory -Force | Out-Null
+        Write-Host "  Created: $opencodeConfigDir" -ForegroundColor Green
+    } else {
+        Write-Host "  Skipped: $opencodeConfigDir already exists" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "  Skipped: opencode not found on PATH" -ForegroundColor Yellow
+}
+
 
 
 ################################################################################
