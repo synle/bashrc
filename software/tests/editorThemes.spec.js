@@ -472,6 +472,7 @@ describe("windows terminal theme", () => {
     expect(contents).toContain('"id": "unbound"');
     expect(contents).toContain('"keys": "ctrl+v"');
     expect(contents).toContain('{ "command": "tabSearch", "keys": "alt+p" }');
+    expect(contents).toContain('{ "command": "quakeMode", "keys": "alt+escape" }');
     expect(contents).toContain('"id": "User.sendInput.ShiftEnterCustom"');
     expect(contents).toContain('"input": "\\u001b[13;2u"');
     expect(contents).toContain('"keys": "shift+enter"');

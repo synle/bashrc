@@ -1,6 +1,7 @@
 [
   { "command": "commandPalette", "keys": "alt+shift+p" },
   { "command": "tabSearch", "keys": "alt+p" },
+  { "command": "quakeMode", "keys": "alt+escape" },
   {
     "command": {
       "action": "toggleFocusMode",

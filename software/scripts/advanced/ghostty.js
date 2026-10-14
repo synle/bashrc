@@ -171,8 +171,6 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
         # Renamed key: was \`background-blur-radius\`. Still accepted as a compat
         # alias; \`background-blur\` takes the same radius in px.
         background-blur = 20
-        # No quick terminal: cmd+grave_accent is deliberately left unbound so
-        # macOS's own "cycle windows of this app" gesture keeps working.
       `
     : "";
 

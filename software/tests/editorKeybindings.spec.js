@@ -8,6 +8,7 @@
 
 import { describe, it, expect } from "vitest";
 import fs from "fs";
+import { fileSystem, getIndexFunction, loadScriptHelpers } from "./setup.js";
 
 // --- JSONC helpers ----------------------------------------------------------
 
@@ -225,5 +226,37 @@ describe("Zed keybindings — no duplicate keys", () => {
     const noContext = keybindings.find((e) => !e.context);
     expect(noContext).toBeDefined();
     expect(noContext.bindings["OS_KEY-shift-r"]).toBe("workspace::ReloadActiveItem");
+  });
+});
+
+// --- Terminal emulator keybindings -----------------------------------------
+
+describe("Terminal emulator quick-terminal keybindings", () => {
+  loadScriptHelpers("software/scripts/advanced/ghostty.js");
+
+  it("resolves Ghostty quick terminal to cmd on macOS and alt on Linux", async () => {
+    fileSystem["software/scripts/advanced/ghostty-keys.common.jsonc"] = fs.readFileSync(
+      "software/scripts/advanced/ghostty-keys.common.jsonc",
+      "utf-8",
+    );
+    const getKeyBindings = getIndexFunction("_getKeyBindings");
+    const macBindings = await getKeyBindings(true);
+    const linuxBindings = await getKeyBindings(false);
+
+    expect(macBindings.find((binding) => binding.action === "toggle_quick_terminal")).toEqual({
+      keys: ["global:cmd+escape"],
+      action: "toggle_quick_terminal",
+    });
+    expect(linuxBindings.find((binding) => binding.action === "toggle_quick_terminal")).toEqual({
+      keys: ["global:alt+escape"],
+      action: "toggle_quick_terminal",
+    });
+  });
+
+  it("maps Windows Terminal Quake mode to alt+escape", () => {
+    const bindings = readJsonc("software/scripts/windows-terminal-keys.jsonc");
+    const quakeMode = bindings.find((binding) => binding.command === "quakeMode");
+
+    expect(quakeMode).toEqual({ command: "quakeMode", keys: "alt+escape" });
   });
 });

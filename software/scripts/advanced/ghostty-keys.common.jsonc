@@ -26,6 +26,7 @@
   // ---- Window ----
   { "key": "OS_KEY+n", "action": "new_window" },
   { "key": "OS_KEY+q", "action": "quit" },
+  { "key": "global:OS_KEY+escape", "action": "toggle_quick_terminal" },
 
   // ---- Splits ----
   { "key": "OS_KEY+d", "action": "new_split:right" },
