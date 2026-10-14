@@ -26,7 +26,17 @@ Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
 Set-PSReadLineKeyHandler -Key Ctrl+a -Function BeginningOfLine
 Set-PSReadLineKeyHandler -Key Ctrl+e -Function EndOfLine
 Set-PSReadLineKeyHandler -Key Ctrl+. -Function YankLastArg
+Set-PSReadLineKeyHandler -Key Ctrl+w -Function BackwardKillWord
 Set-PSReadLineKeyHandler -Chord "Escape, Backspace" -Function BackwardDeleteWord
+
+Set-PSReadLineOption -PredictionViewStyle ListView   # dropdown suggestions
+Set-PSReadLineOption -Colors @{ InlinePrediction = '#6c7086' }  # making suggestions subtle and easy to read without clashing with your main text
+Set-PSReadLineOption -BellStyle None  # Disables the annoying terminal beep sound
+
+# filtering secrets out of history
+Set-PSReadLineOption -AddToHistoryHandler {
+  param($line) return ($line -notmatch 'password|token|secret|apikey')
+}
 
 # history (matches bash profile-core.sh HISTSIZE/HISTCONTROL)
 $MaximumHistoryCount = 32767                                          # max allowed in Windows PowerShell 5.x — matches HISTSIZE
@@ -95,7 +105,6 @@ Set-Alias .. cdup
 Set-Alias v vim
 Set-Alias n node
 Set-Alias y yarn
-Set-Alias which type
 
 # Editor path candidates (single source of truth)
 $_sublPaths = @(
@@ -281,29 +290,22 @@ function gogit(){
   cd git
 }
 
-function ls() {
-  Get-ChildItem -Force %args
-}
+function ls { Get-ChildItem -Force @args }
 
 function ll() {
   ls  $args
 }
 
-function grep() {
-  Get-ChildItem -Recurse | Where-Object { $_.PSIsContainer -eq $false -and $_.FullName -notmatch '\\node_modules\\' }  | Select-String -Pattern "$args"
+function grep {
+  param([Parameter(Mandatory)][string]$Pattern, [string]$Path = ".")
+  Get-ChildItem $Path -Recurse -File -Exclude *.exe,*.dll |
+    Where-Object { $_.FullName -notmatch '\\(node_modules|\.git)\\' } |
+    Select-String -Pattern $Pattern
 }
 
 function tail {
-  param (
-      [string]$FilePath
-  )
-
-  if (-Not (Test-Path $FilePath)) {
-    Write-Host "File does not exist: $FilePath"
-    return
-  }
-
-  Get-Content $FilePath -Wait
+  param([string]$Path, [int]$n = 10, [switch]$f)
+  Get-Content $Path -Tail $n -Wait:$f
 }
 
 function vim() {
@@ -331,9 +333,7 @@ function find() {
   Get-ChildItem -Recurse $args
 }
 
-function touch() {
-  New-Item -ItemType File $args
-}
+function touch($f) { if (Test-Path $f) { (Get-Item $f).LastWriteTime = Get-Date } else { New-Item -ItemType File $f | Out-Null } }
 
 ### For the prompt
 function parseGitBranch() {
