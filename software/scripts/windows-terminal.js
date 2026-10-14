@@ -131,7 +131,7 @@ async function doWork() {
     copyFormatting: false,
 
     // tabs
-    useTabSwitcher: false,
+    tabSwitcherMode: "disabled",
     tabWidthMode: "equal",
     confirmCloseAllTabs: true,
 
@@ -149,7 +149,6 @@ async function doWork() {
     initialCols: 80,
     initialRows: 30,
     initialPosition: "5,5",
-    rowsToScroll: 5,
 
     // performance
     disableAnimations: true,
@@ -171,29 +170,22 @@ async function doWork() {
   });
 
   /**
-   * Apply profile defaults, sort/hide profiles, and resolve the default profile.
+   * Apply profile defaults and resolve the default profile.
    * Mutates and returns the passed-in settings object.
    * @param {object} settings Settings object produced by `buildSettings`.
    * @returns {object} The mutated settings object.
    */
   const applyProfileDefaults = (settings) => {
     const allProfiles = settings.profiles?.list || settings.profiles || [];
+    const profiles = _prioritizeWindowsTerminalProfiles(allProfiles);
+
     settings.profiles = {
       defaults: defaultProfileStyles,
-      list: allProfiles
-        .map((profile) => {
-          delete profile.colorScheme;
-          profile.hidden = ![/PowerShell/i, /Ubuntu/i].some((re) => profile.name?.match(re));
-          return profile;
-        })
-        .sort((a, b) => {
-          const rank = (p) => (/Ubuntu/i.test(p.name) ? 0 : /PowerShell/i.test(p.name) ? 1 : 2);
-          return rank(a) - rank(b);
-        }),
+      list: profiles,
     };
 
-    // set default profile to first WSL distro (Debian or Ubuntu)
-    const wslProfile = allProfiles.find((p) => [/Debian/i, /Ubuntu/i].some((re) => p.name?.match(re)));
+    // Prefer first WSL distribution as default; preserve first profile otherwise.
+    const wslProfile = profiles.find(_isWindowsTerminalWslProfile);
     settings.defaultProfile = wslProfile ? wslProfile.guid : allProfiles[0]?.guid;
 
     delete settings.actions;
@@ -228,6 +220,49 @@ async function doWork() {
 
   await backupConfigFile(targetPath);
   writeJson(targetPath, newSettings);
+}
+
+/**
+ * Show WSL profiles and PowerShell first; hide other profiles only when WSL profiles exist.
+ * @param {Array<object>} profiles - Profiles from Windows Terminal settings.
+ * @returns {Array<object>} New profile list with settings color schemes cleared and hidden flags set.
+ */
+function _prioritizeWindowsTerminalProfiles(profiles) {
+  const hasWslProfile = profiles.some(_isWindowsTerminalWslProfile);
+  const prioritizedProfiles = profiles.map((profile) => {
+    const prioritizedProfile = { ...profile, hidden: true };
+    delete prioritizedProfile.colorScheme;
+    if (_isWindowsTerminalWslProfile(profile) || /PowerShell/i.test(profile.name || "")) prioritizedProfile.hidden = false;
+    return prioritizedProfile;
+  });
+
+  // Without a WSL profile, keep every profile available instead of hiding everything but PowerShell.
+  if (!hasWslProfile) prioritizedProfiles.forEach((profile) => (profile.hidden = false));
+
+  return prioritizedProfiles.sort((a, b) => _getWindowsTerminalProfileRank(a) - _getWindowsTerminalProfileRank(b));
+}
+
+/**
+ * Identify Ubuntu/Debian profiles by name and other WSL distros by their dynamic profile source.
+ * @param {object} profile - Windows Terminal profile.
+ * @returns {boolean} Whether profile represents a WSL distribution.
+ */
+function _isWindowsTerminalWslProfile(profile) {
+  return (
+    [/Ubuntu/i, /Debian/i].some((re) => re.test(profile.name || "")) || ["Microsoft.WSL", "Windows.Terminal.Wsl"].includes(profile.source)
+  );
+}
+
+/**
+ * Rank Ubuntu/Debian, other WSL, PowerShell, and remaining profiles in that order.
+ * @param {object} profile - Windows Terminal profile.
+ * @returns {number} Sort rank: Ubuntu/Debian 0, other WSL 1, PowerShell 2, other 3.
+ */
+function _getWindowsTerminalProfileRank(profile) {
+  if (/Ubuntu|Debian/i.test(profile.name || "")) return 0;
+  if (_isWindowsTerminalWslProfile(profile)) return 1;
+  if (/PowerShell/i.test(profile.name || "")) return 2;
+  return 3;
 }
 
 /**

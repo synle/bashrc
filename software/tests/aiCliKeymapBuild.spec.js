@@ -21,12 +21,9 @@
  * expected output obvious in the PR review.
  *
  * Both platforms are covered:
- *   - isOsMac = true   → OS_KEY resolves to the tool's mac modifier
- *                         (`meta` for Claude/Copilot, `cmd` for Gemini,
- *                          `super` for OpenCode)
- *   - isOsMac = false  → OS_KEY resolves to `alt` (Windows/Linux);
- *                         the `*-keys.windows.jsonc` supplement (where it
- *                         exists) is concatenated on top of the common set
+ *   - Mac/Linux use common keybindings, with tool-specific modifier syntax
+ *   - Windows uses `alt` for OpenCode's primary OS modifier
+ *   - Other tools' `*-keys.windows.jsonc` supplements merge on top of common set
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
@@ -76,6 +73,7 @@ beforeEach(async () => {
   preloadJsoncFromDisk("software/scripts/advanced/llm/gemini/gemini-keys.common.jsonc");
   preloadJsoncFromDisk("software/scripts/advanced/llm/gemini/gemini-keys.windows.jsonc");
   preloadJsoncFromDisk("software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc");
+  preloadJsoncFromDisk("software/scripts/advanced/llm/opencode/opencode-keys.windows.jsonc");
 
   // Claude + Copilot's `_getKeyConfig` / `_getCopilotKeyConfig` helpers read
   // pre-populated module-level vars (the live `_doKeysWork` orchestrator
@@ -290,7 +288,7 @@ describe("AI CLI keymap build — OpenCode", () => {
   const OPENCODE_EXPECTED = {
     leader: "ctrl+o",
     editor_open: "ctrl+g,ctrl+x",
-    messages_first: "ctrl+alt+shift+g,home",
+    messages_first: "ctrl+alt+shift+g",
     input_newline: "shift+return,ctrl+return,alt+return,ctrl+j",
     input_line_home: "ctrl+a,home",
     input_line_end: "ctrl+e,end",
@@ -307,14 +305,26 @@ describe("AI CLI keymap build — OpenCode", () => {
     sidebar_toggle: "ctrl+\\,super+\\",
   };
 
-  it("produces the expected keybinds map for macOS", async () => {
-    const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(true);
-    expect(keybinds).toEqual(OPENCODE_EXPECTED);
-  });
-
-  it("produces the expected keybinds map for Windows/Linux", async () => {
+  it("keeps common keybinds on non-Windows platforms", async () => {
     const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(false);
     expect(keybinds).toEqual(OPENCODE_EXPECTED);
+    expect(JSON.stringify(keybinds)).toContain("super+");
+  });
+
+  it("replaces super chords with alt on Windows without duplicate aliases", async () => {
+    const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(true);
+    expect(keybinds).toEqual({
+      ...OPENCODE_EXPECTED,
+      input_buffer_home: "ctrl+home,alt+home",
+      input_buffer_end: "ctrl+end,alt+end",
+      session_compact: "ctrl+l,alt+l,<leader>c",
+      input_undo: "alt+z,ctrl+-",
+      command_list: "ctrl+p",
+      sidebar_toggle: "ctrl+\\,alt+\\",
+    });
+    expect(JSON.stringify(keybinds)).not.toContain("super+");
+    const chords = Object.values(keybinds).flatMap((value) => value.split(","));
+    expect(new Set(chords).size, "Windows keymap should not bind a chord to multiple commands").toBe(chords.length);
   });
 });
 
@@ -367,11 +377,9 @@ describe("AI CLI keymap parity — HOME → BOL, END → EOL across all 4 tools"
     }
   });
 
-  it("OpenCode: input_line_home includes both ctrl+a and home; input_line_end includes both ctrl+e and end", async () => {
-    for (const isOsMac of [true, false]) {
-      const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(isOsMac);
-      expect(keybinds.input_line_home.split(","), `OpenCode (mac=${isOsMac}): input_line_home chord set`).toEqual(["ctrl+a", "home"]);
-      expect(keybinds.input_line_end.split(","), `OpenCode (mac=${isOsMac}): input_line_end chord set`).toEqual(["ctrl+e", "end"]);
-    }
+  it("OpenCode: input_line_home includes ctrl+a and home; input_line_end includes ctrl+e and end", async () => {
+    const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(false);
+    expect(keybinds.input_line_home.split(",")).toEqual(["ctrl+a", "home"]);
+    expect(keybinds.input_line_end.split(",")).toEqual(["ctrl+e", "end"]);
   });
 });

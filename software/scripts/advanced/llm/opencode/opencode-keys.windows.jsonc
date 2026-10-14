@@ -1,0 +1,15 @@
+// OpenCode Windows-only keybindings.
+// Replace common `super` chords with `alt` to match the repo's Windows OS_KEY
+// convention. These values replace each command's common chord list, so no
+// `super` aliases or duplicate bindings remain on Windows. `alt+p` stays
+// reserved for Windows Terminal tab search, so OpenCode keeps only `ctrl+p`.
+{
+  "keybinds": {
+    "input_buffer_home": "ctrl+home,alt+home",
+    "input_buffer_end": "ctrl+end,alt+end",
+    "session_compact": "ctrl+l,alt+l,<leader>c",
+    "input_undo": "alt+z,ctrl+-",
+    "command_list": "ctrl+p",
+    "sidebar_toggle": "ctrl+\\,alt+\\",
+  },
+}

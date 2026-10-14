@@ -366,19 +366,21 @@ async function _writeOpencodeTuiConfig() {
 }
 
 /**
- * Loads opencode-keys.common.jsonc and returns the keybinds map as-is.
- * All chords use "super" directly (opencode's cross-platform term for the
- * primary OS modifier — Cmd on macOS, Super/Windows key on Linux), so no
- * OS-specific substitution is needed.
+ * Loads common OpenCode keybindings and applies Windows-only overrides when
+ * needed. Windows uses `alt` instead of the common `super` primary modifier.
  *
- * @param {boolean} [_isOsMac] - Ignored; kept for backward compat with tests.
+ * @param {boolean} [isOsWindows=is_os_windows] - Whether to use Windows keybindings.
  * @returns {Promise<Record<string, any>>} Resolved keybinds map (empty object if file missing).
  */
-async function _loadOpencodeKeybinds(_isOsMac) {
+async function _loadOpencodeKeybinds(isOsWindows = is_os_windows) {
   /** @type {{ keybinds?: Record<string, any> } | null} */
   const raw = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
   if (!raw || !raw.keybinds) return {};
-  return { ...raw.keybinds };
+  if (!isOsWindows) return { ...raw.keybinds };
+
+  /** @type {{ keybinds?: Record<string, any> } | null} */
+  const windows = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.windows.jsonc`;
+  return { ...raw.keybinds, ...windows?.keybinds };
 }
 
 /**

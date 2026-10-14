@@ -1,10 +1,11 @@
 [
   { "command": "commandPalette", "keys": "alt+shift+p" },
+  { "command": "tabSearch", "keys": "alt+p" },
   {
     "command": {
       "action": "toggleFocusMode",
     },
-    "keys": "alt+\\",
+    "keys": "alt+shift+\\",
   },
   {
     "command": "copy",

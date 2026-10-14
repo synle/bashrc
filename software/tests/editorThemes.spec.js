@@ -471,6 +471,7 @@ describe("windows terminal theme", () => {
     const contents = fs.readFileSync(keybindingsSource, "utf-8");
     expect(contents).toContain('"id": "unbound"');
     expect(contents).toContain('"keys": "ctrl+v"');
+    expect(contents).toContain('{ "command": "tabSearch", "keys": "alt+p" }');
     expect(contents).toContain('"id": "User.sendInput.ShiftEnterCustom"');
     expect(contents).toContain('"input": "\\u001b[13;2u"');
     expect(contents).toContain('"keys": "shift+enter"');

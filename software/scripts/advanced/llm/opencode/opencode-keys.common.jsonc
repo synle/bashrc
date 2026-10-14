@@ -16,9 +16,9 @@
 //       credits chords that are explicitly listed in our key files; no
 //       "happens to align with upstream default" entries.
 //
-// Opencode uses "super" as its cross-platform term for the primary OS
-// modifier (Cmd on macOS, Super/Windows key on Linux). All chords use
-// "super" directly — no OS-specific substitution needed.
+// OpenCode uses "super" as its primary OS modifier (Cmd on macOS, Super key
+// on Linux). The Windows-only companion replaces these chords with "alt" to
+// match the rest of this repo's Windows keybindings.
 //
 // Direct mirror of software/scripts/advanced/llm/claude/claude-keys.common.jsonc:
 //
@@ -52,7 +52,9 @@
 //   messages_copy     ctrl+y               — copy last assistant message
 //                                            (bash-readline yank chord).
 //   command_list      ctrl+p,super+p       — command palette (super+p matches
-//                                            Sublime / VS Code / Zed).
+//                                            Sublime / VS Code / Zed). Windows
+//                                            keeps ctrl+p because Windows
+//                                            Terminal owns alt+p.
 //   session_rename    f6                   — moved off f2 so f2 is free for
 //                                            future bindings.
 //   history_previous  up,ctrl+r            — recall previous prompt. Upstream
@@ -63,15 +65,14 @@
 //                                            history_previous is the nearest
 //                                            analog. ctrl+r is free because
 //                                            session_rename moved to f6.
-//   messages_first    ctrl+alt+shift+g,home
+//   messages_first    ctrl+alt+shift+g
 //                                          — moved off the upstream default
 //                                            "ctrl+g,home" so ctrl+g is free
 //                                            for editor_open (the chord that
 //                                            Claude, Copilot CLI, and Gemini
 //                                            CLI all ship as their
-//                                            external-editor default). Chord
-//                                            shape mirrors the upstream
-//                                            messages_last ("ctrl+alt+g,end").
+//                                            external-editor default). Bare
+//                                            HOME belongs to input_line_home.
 //
 // Leader move:
 //   The default leader is ctrl+x — which collides with the bash-readline
@@ -106,10 +107,9 @@
     // editor_open is <leader>e, which keeps working as ctrl+o e.
     "editor_open": "ctrl+g,ctrl+x",
     // Free ctrl+g for editor_open: opencode's upstream default binds
-    // messages_first to "ctrl+g,home". We keep the physical HOME chord and
-    // move the ctrl chord to ctrl+alt+shift+g, mirroring the shape of the
-    // upstream messages_last chord ("ctrl+alt+g,end").
-    "messages_first": "ctrl+alt+shift+g,home",
+    // messages_first to "ctrl+g,home". Bare HOME belongs to input_line_home,
+    // so move only the ctrl chord to ctrl+alt+shift+g.
+    "messages_first": "ctrl+alt+shift+g",
     // Newline in input. Claude binds shift+enter / ctrl+enter. We list
     // every chord explicitly (no reliance on opencode default) plus
     // alt+return / ctrl+j which opencode upstream historically shipped.
