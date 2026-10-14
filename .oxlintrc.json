@@ -103,6 +103,7 @@
         "parseBoolean": "readonly",
         "getWindowUserBaseDir": "readonly",
         "toWindowsPath": "readonly",
+        "hidePaths": "readonly",
         "getDesktopPath": "readonly",
         "resolveOsKey": "readonly",
         "is_os_mac": "readonly",

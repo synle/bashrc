@@ -2896,6 +2896,37 @@ function toWindowsPath(wslPath) {
 }
 
 /**
+ * Sets or removes the native hidden attribute for paths on Windows/WSL and macOS.
+ * Linux has no portable hidden attribute, so this helper leaves paths unchanged there.
+ * @param {string|string[]} items - One path or a list of paths to update
+ * @param {boolean} [hidden=true] - Whether paths should be hidden or visible
+ * @param {boolean} [shouldHandleRecursion=false] - Whether Windows should also update descendants
+ * @returns {Promise<void>} Resolves after the platform operation completes
+ */
+async function hidePaths(items, hidden = true, shouldHandleRecursion = false) {
+  const paths = [].concat(items).filter((item) => typeof item === "string" && item.length > 0);
+  if (paths.length === 0) return;
+
+  if (global.is_os_windows && global.is_os_wsl) {
+    const encodedPaths = paths.map((item) => Buffer.from(toWindowsPath(item), "utf16le").toString("base64"));
+    const pathArray = encodedPaths.map((item) => `([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${item}')))`).join(", ");
+    const recurseValue = shouldHandleRecursion ? "$true" : "$false";
+    const hiddenValue = hidden ? "$true" : "$false";
+    const powershellScript = `$paths = @(${pathArray}); foreach ($item in $paths) { if (Test-Path -LiteralPath $item) { $targets = @(Get-Item -LiteralPath $item -Force); if (${recurseValue} -and $targets[0].PSIsContainer) { $targets += Get-ChildItem -LiteralPath $item -Force -Recurse }; foreach ($target in $targets) { if (${hiddenValue}) { $target.Attributes = $target.Attributes -bor [IO.FileAttributes]::Hidden } else { $target.Attributes = $target.Attributes -band (-bnot [IO.FileAttributes]::Hidden) } } } }`;
+    const encodedScript = Buffer.from(powershellScript, "utf16le").toString("base64");
+    execBashSync(`powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encodedScript}`);
+    return;
+  }
+
+  if (!global.is_os_mac) return;
+
+  const flag = hidden ? "hidden" : "nohidden";
+  const quotedPaths = paths.map((item) => `'${item.replace(/'/g, "'\\''")}'`).join(" ");
+  const recurseFlag = shouldHandleRecursion ? "-R " : "";
+  execBashSync(`chflags ${recurseFlag}${flag} ${quotedPaths}`);
+}
+
+/**
  * Returns the Windows AppData\Roaming directory path under WSL for the current user.
  * @returns {string} The path to {WindowsUserHome}/AppData/Roaming
  */

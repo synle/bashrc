@@ -1,8 +1,17 @@
 /** Tests for platform-specific path utilities and text block internals. */
 import { describe, it, expect } from "vitest";
-import { getIndexFunction, getIndexConstant, mockFsExistence } from "./setup.js";
+import {
+  getIndexFunction,
+  getIndexConstant,
+  mockFsExistence,
+  mockFsDirEntries,
+  mockExecCommands,
+  setSandboxGlobal,
+  loadScriptHelpers,
+} from "./setup.js";
 
 const toWindowsPath = getIndexFunction("toWindowsPath");
+const hidePaths = getIndexFunction("hidePaths");
 const getCustomTweaksPath = getIndexFunction("getCustomTweaksPath");
 const getEtcHostsPath = getIndexFunction("getEtcHostsPath");
 const getOsxApplicationSupportCodeUserPath = getIndexFunction("getOsxApplicationSupportCodeUserPath");
@@ -38,6 +47,94 @@ describe("toWindowsPath", () => {
 
   it("should handle deep nested paths", () => {
     expect(toWindowsPath("/mnt/c/Program Files/App/bin/tool.exe")).toBe("C:\\Program Files\\App\\bin\\tool.exe");
+  });
+});
+
+// ---- hidePaths ----
+
+describe("hidePaths", () => {
+  it("uses PowerShell Hidden attributes for non-recursive Windows paths", async () => {
+    setSandboxGlobal("is_os_windows", true);
+    setSandboxGlobal("is_os_wsl", true);
+    await hidePaths("/mnt/c/Users/Sy Le/.aws", true);
+
+    expect(mockExecCommands).toHaveLength(1);
+    expect(mockExecCommands[0]).toContain("powershell.exe -NoProfile -NonInteractive -EncodedCommand");
+    const powershellScript = Buffer.from(mockExecCommands[0].split("-EncodedCommand ")[1], "base64").toString("utf16le");
+    const encodedWindowsPath = Buffer.from("C:\\Users\\Sy Le\\.aws", "utf16le").toString("base64");
+    expect(powershellScript).toContain(encodedWindowsPath);
+    expect(powershellScript).toContain("$false");
+  });
+
+  it("makes Windows paths visible and includes descendants only when requested", async () => {
+    setSandboxGlobal("is_os_windows", true);
+    setSandboxGlobal("is_os_wsl", true);
+    await hidePaths(["/mnt/c/Users/Sy Le/.aws"], false, true);
+
+    const powershellScript = Buffer.from(mockExecCommands[0].split("-EncodedCommand ")[1], "base64").toString("utf16le");
+    expect(powershellScript).toContain("$true");
+    expect(powershellScript).toContain("-bnot [IO.FileAttributes]::Hidden");
+    expect(powershellScript).toContain("Get-ChildItem -LiteralPath $item -Force -Recurse");
+  });
+
+  it("uses chflags on macOS and does nothing on Linux", async () => {
+    setSandboxGlobal("is_os_windows", false);
+    setSandboxGlobal("is_os_wsl", false);
+    setSandboxGlobal("is_os_mac", true);
+    await hidePaths("/Users/test/.aws", false);
+    expect(mockExecCommands).toEqual(["chflags nohidden '/Users/test/.aws'"]);
+
+    mockExecCommands.length = 0;
+    setSandboxGlobal("is_os_mac", false);
+    await hidePaths("/home/test/.aws");
+    expect(mockExecCommands).toEqual([]);
+  });
+
+  it("does not invoke Windows PowerShell outside WSL", async () => {
+    setSandboxGlobal("is_os_mac", false);
+    setSandboxGlobal("is_os_windows", true);
+    setSandboxGlobal("is_os_wsl", false);
+    await hidePaths("/mnt/c/Users/Sy Le/.aws");
+    expect(mockExecCommands).toEqual([]);
+  });
+
+  it("hides only matching top-level Windows home entries", async () => {
+    const home = "/mnt/c/Users/Sy Le";
+    const entry = (name, isDirectory) => ({ name, isDirectory: () => isDirectory, isFile: () => !isDirectory });
+    mockFsDirEntries[home] = [
+      entry(".aws", true),
+      entry(".claude", true),
+      entry("Links", true),
+      entry("Saved Games", true),
+      entry("Searches", true),
+      entry("Documents", true),
+      entry(".wslconfig.bak_original", false),
+      entry(".gitconfig", false),
+      entry(".bash_history", false),
+      entry("visible.txt", false),
+    ];
+    setSandboxGlobal("is_os_wsl", true);
+    let hidePathsCall;
+    loadScriptHelpers("software/scripts/windows/hide-user-home-items.js");
+    setSandboxGlobal("getWindowUserBaseDir", () => home);
+    setSandboxGlobal("hidePaths", (...args) => (hidePathsCall = args));
+
+    await getIndexFunction("doWork")();
+
+    expect(hidePathsCall).toEqual([
+      [
+        `${home}/.aws`,
+        `${home}/.claude`,
+        `${home}/Links`,
+        `${home}/Saved Games`,
+        `${home}/Searches`,
+        `${home}/.wslconfig.bak_original`,
+        `${home}/.gitconfig`,
+        `${home}/.bash_history`,
+      ],
+      true,
+      false,
+    ]);
   });
 });
 

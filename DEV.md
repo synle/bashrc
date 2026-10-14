@@ -150,7 +150,9 @@ logic (see AGENTS.md §2, Golden rules).
   `findFileRecursive` — all take `{ type: file|folder|exec|any }`. **Platform paths:**
   `getWindowUserBaseDir`, `getWindowAppDataRoaming/LocalUserPath`, `toWindowsPath`,
   `getDesktopPath`, `getEtcHostsPath`, `getCustomTweaksPath`,
-  `getOsxApplicationSupportCodeUserPath`, `resolveOsKey`.
+  `getOsxApplicationSupportCodeUserPath`, `resolveOsKey`. **Visibility:**
+  `hidePaths(items, hidden = true, shouldHandleRecursion = false)` uses Windows Hidden
+  attributes on WSL and `chflags` on macOS; Linux is a no-op.
 - **Install/download:** `downloadAsset(s)`, `downloadAssetWithFallback` (GitHub release →
   `binary-cache`), `downloadAndInstallBinary`, `installMacDmg`, `clearMacQuarantine`,
   `installWindowsSetupExe`, `installLinuxUniversalAppImage`, `installBrowserExtension`,

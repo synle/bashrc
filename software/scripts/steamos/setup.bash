@@ -886,7 +886,7 @@ function _upsert_url_steam_shortcut() {
     return 1
   fi
   echo ">>> Steam: backing up shortcuts to $backup; replacing entries titled $title"
-  if ! python3 - "$shortcuts" "$backup" "$title" << 'PY'
+  if ! python3 - "$shortcuts" "$backup" "$title" << 'PY'; then
 import os
 import stat
 import sys
@@ -992,7 +992,6 @@ except (OSError, UnicodeError, ValueError) as error:
     print(f">>> Steam: could not replace {title}: {error}", file=sys.stderr)
     sys.exit(1)
 PY
-  then
     echo ">>> Steam: $title unchanged; backup at $backup"
     return 1
   fi

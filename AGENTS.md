@@ -540,7 +540,8 @@ golden rule 3). The names you reach for daily: `readText` / `code` / `json`,
 `writeText` / `writeConfigToFile` / `writeBuildArtifact`, `backupConfigFile`, `findPath`,
 `downloadAsset`, `registerWithBashSyleProfile`, `registerPlatformTweaks`,
 `exitIfNotTargetOs` / `exitIfNoGui`, `isForceRefreshStale`, `execBash`, `hasBinary`,
-`log`, `emitBash`, `getRuntimeOption`.
+`log`, `emitBash`, `getRuntimeOption`, `hidePaths` (Windows Hidden attributes on WSL,
+macOS `chflags`, Linux no-op).
 
 `tsc --declaration --allowJs` emits the full typed API into `software/types/`
 (`make format_jsdocs`) — read that when unsure of a signature.

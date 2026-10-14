@@ -28,7 +28,7 @@
 #                          not worth it on either form factor.
 #   OLLAMA_LOAD_TIMEOUT    stall detector during model load; the 5m default is
 #                          tight for a large model on a cold page cache.
-if ((! is_work_profile)); then
+if ((!is_work_profile)); then
   export OLLAMA_FLASH_ATTENTION=1
   export OLLAMA_KV_CACHE_TYPE=q8_0
   export OLLAMA_LOAD_TIMEOUT=10m

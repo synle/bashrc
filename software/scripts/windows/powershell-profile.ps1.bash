@@ -95,6 +95,7 @@ Set-Alias .. cdup
 Set-Alias v vim
 Set-Alias n node
 Set-Alias y yarn
+Set-Alias which type
 
 # Editor path candidates (single source of truth)
 $_sublPaths = @(
