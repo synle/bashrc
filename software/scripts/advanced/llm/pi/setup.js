@@ -200,6 +200,26 @@ async function _doPiInstructionsWork() {
 }
 
 /**
+ * Deploys a Pi extension that appends the persona reminder before every agent turn.
+ * @returns {Promise<void>}
+ */
+async function _doPiPersonaExtensionWork() {
+  const targetPath = path.join(PI_AGENT_DIR, "extensions", "sy-persona-reminder.js");
+  const content = `/** Keeps user-facing Pi replies aligned with the shared response persona. */
+export default function (pi) {
+  pi.on("before_agent_start", (event) => {
+    const PERSONA_REMINDER = ${JSON.stringify(LLM_PERSONA_REMINDER)};
+    const guidelines = event.systemPromptOptions.promptGuidelines;
+    if (!guidelines.includes(PERSONA_REMINDER)) guidelines.push(PERSONA_REMINDER);
+  });
+}
+`;
+
+  await mkdir(path.dirname(targetPath));
+  await writeText(targetPath, content);
+}
+
+/**
  * Orchestrates pi setup: settings, Ollama providers, shared instructions, and
  * shared skills. Skips entirely when pi is not installed.
  * @returns {Promise<void>}
@@ -225,6 +245,7 @@ async function doWork() {
   // when unchanged.
   await deploySharedLLMInstructions();
   await _doPiInstructionsWork();
+  await _doPiPersonaExtensionWork();
 
   // Skills are written once to $LLM_ROOT_FOLDER/skills and symlinked into
   // ~/.agents/skills, which pi scans by default — no pi-local copy or slot.

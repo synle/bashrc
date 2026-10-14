@@ -165,11 +165,7 @@ const PERSONAL_GIT_EMAIL = "lenguyensy@gmail.com";
  * @returns {string} Git config text with one includeIf block per remote URL form.
  */
 function _getPersonalIdentityIncludes() {
-  return [
-    `https://github.com/${REPO_OWNER}/**`,
-    `git@github*:${REPO_OWNER}/**`,
-    `ssh://git@github*/${REPO_OWNER}/**`,
-  ]
+  return [`https://github.com/${REPO_OWNER}/**`, `git@github*:${REPO_OWNER}/**`, `ssh://git@github*/${REPO_OWNER}/**`]
     .map((pattern) => `[includeIf "hasconfig:remote.*.url:${pattern}"]\npath = ~/${PERSONAL_GIT_CONFIG_FILE_NAME}`)
     .join("\n");
 }

@@ -401,7 +401,7 @@ installBrewPackageInBackground kubectx # provides kubectx + kubens
 installBrewPackageInBackground stern
 
 # --- Cloud CLIs ---
-installBrewPackageInBackground awscli    # `aws` — AWS CLI v2
+installBrewPackageInBackground awscli # `aws` — AWS CLI v2
 # Upstream moved azure-cli from homebrew/core to homebrew/cask.
 installBrewPackageInBackground --cask azure-cli # `az` — Microsoft Azure CLI
 # Upstream renamed this cask to `gcloud-cli`; `brew install --cask google-cloud-sdk` still

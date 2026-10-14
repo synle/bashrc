@@ -774,6 +774,42 @@ async function readLLMDocSource(sourcePath) {
  * @type {string}
  */
 const LLM_SHARED_INSTRUCTIONS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "instructions");
+/** @type {string} Shared hook helper folder for CLI-specific injected context. */
+const LLM_SHARED_HOOKS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "hooks");
+/** @type {string} Reminder appended before user-facing replies in supported CLIs. */
+const LLM_PERSONA_REMINDER =
+  "Reply to the user in Caveman Speak. Progress updates, status reports, task summaries, and task_complete messages are user replies, not external deliverables. Preserve facts and technical details; only prose style changes.";
+/** @type {string} Source for the shared hook output helper. */
+const LLM_PERSONA_HOOK_HELPER_SOURCE = "software/scripts/advanced/llm/_common/persona-reminder-hook.common.js";
+/** @type {string} Deployed hook output helper path. */
+const LLM_PERSONA_HOOK_HELPER_PATH = path.join(LLM_SHARED_HOOKS_FOLDER, "persona-reminder-hook.js");
+
+/**
+ * Adds one hook entry to a settings object's event array without replacing user hooks.
+ * Exact duplicate entries are ignored so setup remains idempotent.
+ * @param {Record<string, any>} settings - Parsed CLI settings object to update.
+ * @param {string} eventName - Hook event key supported by the target CLI.
+ * @param {Record<string, any>} entry - Hook entry to append.
+ * @returns {boolean} True when hook event array was valid and updated or already contained entry.
+ */
+function mergeLLMHookEntry(settings, eventName, entry) {
+  if (!settings.hooks) settings.hooks = {};
+  if (typeof settings.hooks !== "object" || Array.isArray(settings.hooks)) {
+    log(`>> LLM hook merge skipped — settings.hooks is not an object (${eventName})`);
+    return false;
+  }
+
+  const entries = settings.hooks[eventName] === undefined ? [] : settings.hooks[eventName];
+  if (!Array.isArray(entries)) {
+    log(`>> LLM hook merge skipped — hooks.${eventName} is not an array`);
+    return false;
+  }
+
+  const serializedEntry = JSON.stringify(entry);
+  if (!entries.some((candidate) => JSON.stringify(candidate) === serializedEntry)) entries.push(entry);
+  settings.hooks[eventName] = entries;
+  return true;
+}
 
 /**
  * Plan artifacts and their sidecars (`<repo>-<feature>.md`, `.diff`, `.rfc.md`),
@@ -1051,6 +1087,7 @@ async function deploySharedLLMInstructions() {
   warnAboutLegacyLLMFolders();
 
   fs.mkdirSync(LLM_SHARED_INSTRUCTIONS_FOLDER, { recursive: true });
+  fs.mkdirSync(LLM_SHARED_HOOKS_FOLDER, { recursive: true });
   fs.mkdirSync(LLM_SHARED_PLANS_FOLDER, { recursive: true });
   fs.mkdirSync(LLM_SHARED_PR_REVIEWS_FOLDER, { recursive: true });
   fs.mkdirSync(LLM_SHARED_PR_BABYSITS_FOLDER, { recursive: true });
@@ -1075,6 +1112,8 @@ async function deploySharedLLMInstructions() {
 
     await writeText(path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, targetName), wrapped);
   }
+
+  await writeText(LLM_PERSONA_HOOK_HELPER_PATH, await readText`${LLM_PERSONA_HOOK_HELPER_SOURCE}`);
 
   linkSharedLLMInstructions();
 

@@ -149,7 +149,13 @@ const SPLIT_EXPECTATIONS = {
     heading: "# Persona — Caveman Speak",
     sections: [],
     inlined: true,
-    leads: ["**No self-reference.**", "**Hold persona every turn.**", "**Never caveman-ify:**"],
+    leads: [
+      "**No self-reference.**",
+      "**Hold persona every turn.**",
+      "Progress updates, status reports, PR state lists, task summaries, and `task_complete` final messages are replies to the user",
+      "**Never caveman-ify:**",
+      "Both PRs wait on approval. Backend auto-merge armed.",
+    ],
   },
 };
 
@@ -192,6 +198,26 @@ function loadLlmCommon() {
 }
 
 const llm = loadLlmCommon();
+
+describe("shared CLI hook merge", () => {
+  it("preserves existing event hooks and adds managed reminder only once", () => {
+    const userHook = { hooks: [{ type: "command", command: "user-hook" }] };
+    const managedHook = { hooks: [{ type: "command", command: "persona-hook" }] };
+    const settings = { hooks: { UserPromptSubmit: [userHook] } };
+
+    expect(llm.mergeLLMHookEntry(settings, "UserPromptSubmit", managedHook)).toBe(true);
+    expect(llm.mergeLLMHookEntry(settings, "UserPromptSubmit", managedHook)).toBe(true);
+
+    expect(settings.hooks.UserPromptSubmit).toEqual([userHook, managedHook]);
+  });
+
+  it("rejects malformed event lists without replacing user data", () => {
+    const settings = { hooks: { BeforeAgent: { command: "user-hook" } } };
+
+    expect(llm.mergeLLMHookEntry(settings, "BeforeAgent", { command: "persona-hook" })).toBe(false);
+    expect(settings.hooks.BeforeAgent).toEqual({ command: "user-hook" });
+  });
+});
 
 /**
  * Every on-demand instruction file, discovered from the deploy registry.
@@ -629,6 +655,7 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
       "software/scripts/advanced/llm/copilot/setup.js",
       "software/scripts/advanced/llm/gemini/setup.js",
       "software/scripts/advanced/llm/opencode/setup.js",
+      "software/scripts/advanced/llm/pi/setup.js",
     ];
 
     for (const file of readerFiles) {

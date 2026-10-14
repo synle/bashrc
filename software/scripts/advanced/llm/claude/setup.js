@@ -176,6 +176,16 @@ async function _doSettingsWork(targetDir) {
   // merge: managed settings are applied as defaults, existing user overrides are preserved
   const merged = { ...CLAUDE_MANAGED_SETTINGS, ...existing };
 
+  mergeLLMHookEntry(merged, "UserPromptSubmit", {
+    hooks: [
+      {
+        type: "command",
+        command: process.execPath,
+        args: [LLM_PERSONA_HOOK_HELPER_PATH, "claude", LLM_PERSONA_REMINDER],
+      },
+    ],
+  });
+
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);
 }

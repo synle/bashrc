@@ -600,6 +600,42 @@ async function _doCopilotTweaksWork(targetDir) {
 }
 
 /**
+ * Adds a user-level session-start hook that refreshes persona context on each Copilot session.
+ * Copilot command hooks cannot inject context on every prompt through the config-file API.
+ * @param {string} targetDir - Path to the ~/.copilot directory.
+ * @returns {Promise<void>}
+ */
+async function _doCopilotPersonaHookWork(targetDir) {
+  const hooksDir = path.join(targetDir, "hooks");
+  const targetPath = path.join(hooksDir, "sy-persona-reminder.json");
+  const entry = {
+    type: "command",
+    exec: process.execPath,
+    args: [LLM_PERSONA_HOOK_HELPER_PATH, "copilot", LLM_PERSONA_REMINDER],
+  };
+  let settings = { version: 1, hooks: {} };
+
+  await mkdir(hooksDir);
+  if (fs.existsSync(targetPath)) {
+    try {
+      settings = JSON.parse(fs.readFileSync(targetPath, "utf-8"));
+      if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+        log(">> Copilot persona hook skipped — existing hook file is not an object:", targetPath);
+        return;
+      }
+      settings.version = 1;
+    } catch (error) {
+      log(">> Copilot persona hook skipped — existing hook file is invalid JSON:", error.message);
+      return;
+    }
+  }
+
+  if (!mergeLLMHookEntry(settings, "sessionStart", entry)) return;
+  await backupConfigFile(targetPath);
+  await writeJson(targetPath, settings);
+}
+
+/**
  * Orchestrates GitHub Copilot CLI user-level setup: settings defaults +
  * shared engineering-principles instructions block + `/sy-*` skills. Skips
  * entirely when the `copilot` binary is not installed (treat as a no-op rather
@@ -629,6 +665,7 @@ async function doWork() {
   await deploySharedLLMInstructions();
   await _doCopilotInstructionsWork(targetDir);
   await _doCopilotTweaksWork(targetDir);
+  await _doCopilotPersonaHookWork(targetDir);
   // Skills live once in $LLM_ROOT_FOLDER/skills and are symlinked into ~/.copilot/skills
   // by the shared deploy — Copilot reads no other skill path.
   await deploySharedLLMSkills();

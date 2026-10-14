@@ -57,6 +57,13 @@ bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
 | **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ✅ skills — `~/.gemini/skills/sy-*` → `~/_extra/ai_llm/skills/`  | ❌ no agent surface in v0.55.1     | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  | ✅ additive into `~/.gemini/settings.json::mcpServers`    |
 | **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ skills + `/sy-*` commands, both → `~/_extra/ai_llm/skills/`   | ✅ `~/.config/opencode/agent/*.md` | ✅ inline `keybinds` in `~/.config/opencode/tui.json`            | ✅ inline in `opencode.json`  | ✅ inline `mcp` in `opencode.json` (translated shape)     |
 
+### Per-turn persona reminders
+
+- Claude Code, Gemini CLI, and Pi receive a short persona reminder before every user-driven agent turn through their documented prompt hooks.
+- Copilot CLI receives reminder context at session start and resume. Its user-level command hooks cannot inject context on every prompt; `userPromptTransformed` mutation is supported only by SDK hooks.
+- OpenCode's documented plugin API has no verified user-prompt context injection event. It relies on the always-loaded instructions and last-loaded persona file.
+- All reminders point to the same rule: chat progress, status, and completion messages are user replies; only external deliverables are exempt.
+
 Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today.
 
 When upstream Copilot ships a keymap config or a `~/.copilot/commands/` slot,

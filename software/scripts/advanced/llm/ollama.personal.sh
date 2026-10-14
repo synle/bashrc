@@ -33,7 +33,7 @@ if ((is_os_android_termux)); then
 fi
 
 # No GPU → nothing worth serving locally (is_system_gpu from common-env.sh).
-if ((!is_system_gpu)); then
+if ((! is_system_gpu)); then
   echo ">>> Skipped ollama: no GPU detected"
   exit 0
 fi
