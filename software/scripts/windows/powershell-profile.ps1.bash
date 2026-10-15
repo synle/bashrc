@@ -30,8 +30,16 @@ Set-PSReadLineKeyHandler -Key Ctrl+w -Function BackwardKillWord
 Set-PSReadLineKeyHandler -Key Alt+d -Function KillWord
 Set-PSReadLineKeyHandler -Chord "Escape, Backspace" -Function BackwardDeleteWord
 
-Set-PSReadLineOption -PredictionViewStyle ListView # Show history predictions in a selectable list.
-# Set-PSReadLineOption -Colors @{ InlinePrediction = '#6c7086' } # Keep inline suggestions subtle. # Need to figure out why this failed
+# Enable list predictions only when installed PSReadLine version supports them.
+$psReadLineOptionCommand = Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue
+if ($psReadLineOptionCommand -and $psReadLineOptionCommand.Parameters.ContainsKey("PredictionViewStyle")) {
+  Set-PSReadLineOption -PredictionViewStyle ListView
+}
+# Set subtle inline prediction color only when this PSReadLine exposes that color slot.
+$psReadLineOptions = Get-PSReadLineOption -ErrorAction SilentlyContinue
+if ($psReadLineOptions -and $psReadLineOptions.PSObject.Properties["InlinePredictionColor"]) {
+  Set-PSReadLineOption -Colors @{ InlinePrediction = '#6c7086' }
+}
 Set-PSReadLineOption -BellStyle None # Disable the terminal bell.
 
 # Reject likely credentials before PSReadLine stores commands in history.
