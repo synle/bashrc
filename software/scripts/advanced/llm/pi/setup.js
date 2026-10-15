@@ -17,12 +17,13 @@
  *                             directly to Pi's system prompt on every run,
  *                             reinforcing the caveman response style separately
  *                             from the long AGENTS.md corpus.
- *   ~/.pi/agent/settings.json — merge of managed defaults (`quietStartup`,
- *                             `terminal.imageWidthCells`, `terminal.showTerminalProgress`,
- *                             `terminal.hyperlinks`, `autocompleteMaxVisible`,
- *                             `images.blockImages`, `collapseChangelog`,
- *                             `enableInstallTelemetry`, `hideThinkingBlock`) into the
- *                             user's settings; only managed keys are touched.
+ *   ~/.pi/agent/settings.json — merge of managed defaults (`defaultTools`,
+ *                             `quietStartup`, `terminal.imageWidthCells`,
+ *                             `terminal.showTerminalProgress`, `terminal.hyperlinks`,
+ *                             `autocompleteMaxVisible`, `images.blockImages`,
+ *                             `collapseChangelog`, `enableInstallTelemetry`,
+ *                             `hideThinkingBlock`) into the user's settings; only
+ *                             managed keys are touched.
  *   ~/.pi/agent/models.json — discovered Ollama providers merged under
  *                             `providers`. GitHub Copilot is a built-in
  *                             subscription provider reached via `/login`, NOT a
@@ -71,16 +72,18 @@ const PI_PERSONA_SYSTEM_PROMPT_APPEND = `\n\nIMPORTANT: Keep every user-facing r
  * Managed keys merged into ~/.pi/agent/settings.json. Only these keys are
  * written; every other user setting is preserved.
  *
- * These defaults match current local preferences: quiet startup, wider inline
- * images, terminal progress shown, forced terminal hyperlinks, more visible
- * autocomplete rows, outbound image sending left enabled, condensed
- * changelogs, install telemetry disabled, and thinking blocks hidden. No
- * provider or model is pinned here — Pi keeps its own automatic startup
- * selection unless the user already chose something on disk.
+ * These defaults match current local preferences: grep/find/ls available at
+ * startup, quiet startup, wider inline images, terminal progress shown,
+ * forced terminal hyperlinks, more visible autocomplete rows, outbound image
+ * sending left enabled, condensed changelogs, install telemetry disabled,
+ * and thinking blocks hidden. No provider or model is pinned here — Pi keeps
+ * its own automatic startup selection unless the user already chose something
+ * on disk.
  *
  * @type {Record<string, any>}
  */
 const PI_MANAGED_SETTINGS = {
+  defaultTools: ["+grep", "+find", "+ls"],
   quietStartup: true,
   terminal: {
     imageWidthCells: 120,

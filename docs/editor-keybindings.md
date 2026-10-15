@@ -604,7 +604,8 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `alt+z`          | Undo          |   ✅   |
 | `alt+shift+z`    | Redo          |   ✅   |
 | `alt+y`          | Redo          |   ✅   |
-| `alt+s`          | Save          |   ✅   |
+| `alt+s`, `,s`    | Save          |   ✅   |
+| `,w`             | Save and quit |   ✅   |
 | `alt+w`          | Close buffer  |   ✅   |
 | `alt+l`          | Select line   |   ✅   |
 | `alt+backspace`  | Delete to BOL |   ✅   |
@@ -623,8 +624,8 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | Key                            | Action                               |
 | ------------------------------ | ------------------------------------ |
 | `ctrl+d`, `,d`                 | Vertical split                       |
-| `,'`, `,s`                     | Horizontal split                     |
-| `ctrl+x`, `ctrl+q`, `,w`, `,x` | Close split                          |
+| `,'`                            | Horizontal split                     |
+| `ctrl+x`, `ctrl+q`, `,q`, `,x` | Close split                          |
 | `ctrl+arrow`, `,arrow`         | Navigate splits                      |
 | `,1` … `,9`                    | Go to Nth buffer tab (tabline order) |
 | `,[` / `,]`                    | Previous / next buffer tab           |

@@ -38,11 +38,11 @@ AGENTS.md, and APPEND_SYSTEM.md are all reachable in the same session.
 Files inside ~/.pi/agent/ worth knowing about:
   settings.json   - global settings: defaultProvider/defaultModel, theme,
                     compaction, skills/prompts/extensions resource paths.
-                    Managed defaults (quiet startup, 120-cell images,
-                    terminal progress on, hyperlinks forced on, autocomplete
-                    10 rows, image sending allowed, changelog collapse on,
-                    install telemetry off, thinking blocks hidden) are seeded
-                    by pi/setup.js. Schema: https://pi.dev/docs.
+                    Managed defaults (grep/find/ls tools, quiet startup,
+                    120-cell images, terminal progress on, hyperlinks forced
+                    on, autocomplete 10 rows, image sending allowed, changelog
+                    collapse on, install telemetry off, thinking blocks hidden)
+                    are seeded by pi/setup.js. Schema: https://pi.dev/docs.
   models.json     - custom provider/model definitions (local Ollama hosts,
                     discovered and merged in by pi/setup.js). GitHub Copilot is
                     a built-in subscription provider reached via /login, not a

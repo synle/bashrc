@@ -241,20 +241,21 @@ nnoremap <C-q> :q<CR>
 " Ctrl-d to open a vertical split
 nnoremap <C-d> :vsplit<CR>
 
-" Splits match tmux (tmux.config): ,d side-by-side (vertical), ,' / ,s stacked (horizontal).
-" ,5 is not a split here — ,1..,9 jump to buffer tabs (see below).
+" Splits match tmux (tmux.config): ,d side-by-side (vertical), ,' stacked (horizontal).
+" ,s saves the current buffer. ,5 is not a split here — ,1..,9 jump to buffer tabs (see below).
 " ,v is clipboard image/text paste, not a split.
 nnoremap <silent> ,d :vsplit<CR>
 nnoremap <silent> ,' :split<CR>
-nnoremap <silent> ,s :split<CR>
+nnoremap <silent> ,s :w<CR>
 
 " ,1..,9 jump to the Nth buffer tab in the lightline-bufferline tabline (left to right).
 for s:i in range(1, 9)
   execute printf('nmap <silent> ,%d <Plug>lightline#bufferline#go(%d)', s:i, s:i)
 endfor
 
-" ,w / ,x to close the current split
-nnoremap <silent> ,w <c-w>q
+" ,w saves and quits; ,q / ,x close the current split
+nnoremap <silent> ,w :wq<CR>
+nnoremap <silent> ,q <c-w>q
 nnoremap <silent> ,x <c-w>q
 
 " Ctrl+Arrow or ,Arrow to navigate between splits
