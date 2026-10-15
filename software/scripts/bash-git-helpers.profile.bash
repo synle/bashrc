@@ -391,24 +391,28 @@ function clean() {
   _log_progress_step "$total_steps" "🗑️ Deleting $temp_branch"
   git --no-pager del "$temp_branch" > /dev/null 2>&1
 
-  _log_progress_step "$total_steps" "🗑️ Deleting branches with gone upstream"
-  git --no-pager clean-stale-branches
+  # These independent cleanup operations can be slow. Keep them sequential with each other
+  # to avoid racing Git's shared refs/worktree metadata, but let clean return immediately.
+  (
+    _log_progress_step "$total_steps" "🗑️ Deleting branches with gone upstream"
+    git --no-pager clean-stale-branches
 
-  _log_progress_step "$total_steps" "🗑️ Deleting merged branches and pruned tags"
-  git --no-pager clean-merged-branches-and-tags
+    _log_progress_step "$total_steps" "🗑️ Deleting merged branches and pruned tags"
+    git --no-pager clean-merged-branches-and-tags
 
-  if ((force_worktrees)); then
-    _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
-    git --no-pager worktree prune
-    worktree_clean --force
-  else
-    _log_progress_step "$total_steps" "🗑️ Cleaning merged/gone worktrees"
-    git --no-pager clean-worktree
-    worktree_clean
-  fi
+    if ((force_worktrees)); then
+      _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
+      git --no-pager worktree prune
+      worktree_clean --force
+    else
+      _log_progress_step "$total_steps" "🗑️ Cleaning merged/gone worktrees"
+      git --no-pager clean-worktree
+      worktree_clean
+    fi
 
-  echo "# ---- ✅ Reset to origin/$default_branch (100% done) ----"
-  git --no-pager lastd
+    echo "# ---- ✅ Reset to origin/$default_branch (100% done) ----"
+    git --no-pager lastd
+  ) &
 }
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment
