@@ -26,26 +26,31 @@ function pi() {
   command pi "$@"
 }
 
-# pi_edit: open the ~/.pi/agent/ config dir (settings.json, models.json, AGENTS.md) in the editor
+# pi_edit: open the ~/.pi/agent/ config dir (settings.json, models.json, AGENTS.md, APPEND_SYSTEM.md) in the editor
 function pi_edit() {
   if is_help_arg "${1:-}"; then
     echo "pi_edit: open ~/.pi/agent/ in the editor via view_file
   Usage: pi_edit
 
-Opens the whole ~/.pi/agent/ config dir so settings.json, models.json, and
-AGENTS.md are all reachable in the same session.
+Opens the whole ~/.pi/agent/ config dir so settings.json, models.json,
+AGENTS.md, and APPEND_SYSTEM.md are all reachable in the same session.
 
 Files inside ~/.pi/agent/ worth knowing about:
   settings.json   - global settings: defaultProvider/defaultModel, theme,
                     compaction, skills/prompts/extensions resource paths.
-                    Managed defaults (github-copilot provider) are seeded by
-                    pi/setup.js. Schema: https://pi.dev/docs.
+                    Managed defaults (quiet startup, 120-cell images,
+                    terminal progress on, hyperlinks forced on, autocomplete
+                    10 rows, image sending allowed, changelog collapse on,
+                    install telemetry off, thinking blocks hidden) are seeded
+                    by pi/setup.js. Schema: https://pi.dev/docs.
   models.json     - custom provider/model definitions (local Ollama hosts,
                     discovered and merged in by pi/setup.js). GitHub Copilot is
                     a built-in subscription provider reached via /login, not a
                     models.json entry.
   AGENTS.md       - user-level engineering rules (sourced from
                     software/scripts/advanced/llm/_common/instructions.md).
+  APPEND_SYSTEM.md - short tail-position system-prompt reminder that
+                    reinforces caveman reply style every run.
   auth.json       - provider credential store (OAuth tokens from /login),
                     0600. Not opened here.
 

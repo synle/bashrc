@@ -1,6 +1,6 @@
 /**
  * Configures the pi coding agent (https://pi.dev): user-level engineering
- * instructions, a github-copilot default provider, and any reachable local
+ * instructions, managed display/privacy defaults, and any reachable local
  * Ollama providers.
  *
  * Pi is a minimal harness — no MCP, no sub-agents — so this setup is
@@ -13,9 +13,16 @@
  *                             load are loaded here too. Managed block is upserted
  *                             between BEGIN/END markers; user content outside is
  *                             preserved.
- *   ~/.pi/agent/settings.json — merge of managed defaults (github-copilot
- *                             default provider) into the user's settings; only
- *                             managed keys are touched.
+ *   ~/.pi/agent/APPEND_SYSTEM.md — short tail-position persona reminder added
+ *                             directly to Pi's system prompt on every run,
+ *                             reinforcing the caveman response style separately
+ *                             from the long AGENTS.md corpus.
+ *   ~/.pi/agent/settings.json — merge of managed defaults (`quietStartup`,
+ *                             `terminal.imageWidthCells`, `terminal.showTerminalProgress`,
+ *                             `terminal.hyperlinks`, `autocompleteMaxVisible`,
+ *                             `images.blockImages`, `collapseChangelog`,
+ *                             `enableInstallTelemetry`, `hideThinkingBlock`) into the
+ *                             user's settings; only managed keys are touched.
  *   ~/.pi/agent/models.json — discovered Ollama providers merged under
  *                             `providers`. GitHub Copilot is a built-in
  *                             subscription provider reached via `/login`, NOT a
@@ -33,28 +40,60 @@
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
 /**
- * Pi provider id for the built-in GitHub Copilot subscription. Verified against
- * `pi auth check --provider github-copilot --json`, which echoes the normalized
- * provider id back. Reached via `/login` → GitHub Copilot; no models.json entry.
+ * Short persona reminder appended through ~/.pi/agent/APPEND_SYSTEM.md.
+ * Tail placement matters: Pi appends this directly to the system prompt after
+ * its larger instruction corpus, which keeps the response style more salient.
  * @type {string}
  */
-const PI_COPILOT_PROVIDER_ID = LLM_COPILOT_PROVIDER_ID;
+const PI_APPEND_SYSTEM_CONTENT = `Reply in Caveman Speak.
+
+Use short, blunt sentences.
+Keep all technical facts.
+Do not drop warnings, evidence, or exact values.
+Do not write normal prose first and caveman recap after.
+Resume caveman style after code blocks or tool output.
+`;
+
+/**
+ * Full per-turn persona reminder appended by the Pi extension. Stronger than a
+ * prompt-guideline nudge alone: the extension can inject this at the end of the
+ * live system prompt every agent turn, even after reloads or context shifts.
+ * @type {string}
+ */
+const PI_PERSONA_SYSTEM_PROMPT_APPEND = `\n\nIMPORTANT: Keep every user-facing reply in Caveman Speak.
+- Use short, blunt sentences.
+- Keep all technical facts.
+- Do not drop warnings, evidence, or exact values.
+- Do not write normal prose first and caveman recap after.
+- Resume caveman style after code blocks or tool output.\n`;
 
 /**
  * Managed keys merged into ~/.pi/agent/settings.json. Only these keys are
  * written; every other user setting is preserved.
  *
- * `defaultProvider` starts pi on github-copilot to match the copilot-first
- * posture of the other AI CLIs in this repo. No `defaultModel` is pinned: the
- * exact copilot model catalog depends on what the account has enabled, so pi
- * shows the `/model` picker instead of failing on an unavailable id.
+ * These defaults match current local preferences: quiet startup, wider inline
+ * images, terminal progress shown, forced terminal hyperlinks, more visible
+ * autocomplete rows, outbound image sending left enabled, condensed
+ * changelogs, install telemetry disabled, and thinking blocks hidden. No
+ * provider or model is pinned here — Pi keeps its own automatic startup
+ * selection unless the user already chose something on disk.
  *
- * When adding a managed setting, also update the settings-intent table in
- * `software/scripts/advanced/llm/llm.md` so cross-CLI parity stays visible.
  * @type {Record<string, any>}
  */
 const PI_MANAGED_SETTINGS = {
-  defaultProvider: PI_COPILOT_PROVIDER_ID,
+  quietStartup: true,
+  terminal: {
+    imageWidthCells: 120,
+    showTerminalProgress: true,
+    hyperlinks: true,
+  },
+  autocompleteMaxVisible: 10,
+  images: {
+    blockImages: false,
+  },
+  collapseChangelog: true,
+  enableInstallTelemetry: false,
+  hideThinkingBlock: true,
 };
 
 /**
@@ -118,7 +157,18 @@ async function _doPiSettingsWork() {
   } catch (e) {}
 
   // Managed keys are defaults: a user value already on disk wins.
-  const merged = { ...PI_MANAGED_SETTINGS, ...existing };
+  const merged = {
+    ...PI_MANAGED_SETTINGS,
+    ...existing,
+    terminal: {
+      ...PI_MANAGED_SETTINGS.terminal,
+      ...(existing.terminal && typeof existing.terminal === "object" ? existing.terminal : {}),
+    },
+    images: {
+      ...PI_MANAGED_SETTINGS.images,
+      ...(existing.images && typeof existing.images === "object" ? existing.images : {}),
+    },
+  };
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);
@@ -200,7 +250,23 @@ async function _doPiInstructionsWork() {
 }
 
 /**
- * Deploys a Pi extension that appends the persona reminder before every agent turn.
+ * Deploys ~/.pi/agent/APPEND_SYSTEM.md, a short tail-position persona reminder
+ * added directly to Pi's system prompt on every run.
+ * @returns {Promise<void>}
+ */
+async function _doPiAppendSystemWork() {
+  const targetPath = path.join(PI_AGENT_DIR, "APPEND_SYSTEM.md");
+
+  log(">> pi Append System:", targetPath);
+
+  await backupConfigFile(targetPath);
+  await writeText(targetPath, PI_APPEND_SYSTEM_CONTENT);
+}
+
+/**
+ * Deploys a Pi extension that reinforces the persona before every agent turn.
+ * It keeps the short prompt-guideline reminder and also appends a stronger
+ * tail-position block to the live system prompt for that run.
  * @returns {Promise<void>}
  */
 async function _doPiPersonaExtensionWork() {
@@ -209,8 +275,14 @@ async function _doPiPersonaExtensionWork() {
 export default function (pi) {
   pi.on("before_agent_start", (event) => {
     const PERSONA_REMINDER = ${JSON.stringify(LLM_PERSONA_REMINDER)};
+    const PERSONA_APPEND = ${JSON.stringify(PI_PERSONA_SYSTEM_PROMPT_APPEND)};
     const guidelines = event.systemPromptOptions.promptGuidelines;
     if (!guidelines.includes(PERSONA_REMINDER)) guidelines.push(PERSONA_REMINDER);
+    return {
+      systemPrompt: event.systemPrompt.includes(PERSONA_APPEND)
+        ? event.systemPrompt
+        : event.systemPrompt + PERSONA_APPEND,
+    };
   });
 }
 `;
@@ -220,8 +292,9 @@ export default function (pi) {
 }
 
 /**
- * Orchestrates pi setup: settings, Ollama providers, shared instructions, and
- * shared skills. Skips entirely when pi is not installed.
+ * Orchestrates pi setup: settings, Ollama providers, shared instructions,
+ * APPEND_SYSTEM persona reinforcement, and shared skills. Skips entirely when
+ * pi is not installed.
  * @returns {Promise<void>}
  */
 async function doWork() {
@@ -245,6 +318,7 @@ async function doWork() {
   // when unchanged.
   await deploySharedLLMInstructions();
   await _doPiInstructionsWork();
+  await _doPiAppendSystemWork();
   await _doPiPersonaExtensionWork();
 
   // Skills are written once to $LLM_ROOT_FOLDER/skills and symlinked into
