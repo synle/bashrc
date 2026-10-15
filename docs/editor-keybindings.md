@@ -300,6 +300,11 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 | `OS_KEY+m`         | Tab / session switcher          |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+p`         | Key palette                     |        ❌        |  ✅  |   ❌    |
 
+On macOS, Ghostty's `global:cmd+escape` quick-terminal binding requires Ghostty under
+**System Settings → Privacy & Security → Accessibility**. Without that permission,
+Ghostty does not intercept the chord and the terminal receives it as `ESC[27;9~`.
+Enable Ghostty there, then restart Ghostty or reload its config.
+
 ⚠️ `ctrl+1-9` is deliberately **not** bound. A terminal encodes those as legacy control
 characters rather than a distinct chord — `ctrl+1` arrives as a bare `1`, `ctrl+2` as NUL,
 `ctrl+3` as ESC, `ctrl+4` as FS — so tmux has nothing to match, and binding them would
