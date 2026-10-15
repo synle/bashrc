@@ -593,7 +593,7 @@ and dismisses fzf instead of closing the terminal.
 
 ## Vim
 
-Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader combos, `ctrl+key` for splits/search.
+Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader combos, `ctrl+key` for splits/search. Modified buffers show a red filename and `*` in the bottom statusline.
 
 ### Common Shortcuts (matching editors)
 
@@ -606,6 +606,7 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `alt+y`          | Redo          |   ✅   |
 | `alt+s`, `,s`    | Save          |   ✅   |
 | `,w`             | Save and quit |   ✅   |
+| `,q`             | Quit all; discard unsaved changes without prompting |   ✅   |
 | `alt+w`          | Close buffer  |   ✅   |
 | `alt+l`          | Select line   |   ✅   |
 | `alt+backspace`  | Delete to BOL |   ✅   |
@@ -625,7 +626,7 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | ------------------------------ | ------------------------------------ |
 | `ctrl+d`, `,d`                 | Vertical split                       |
 | `,'`                            | Horizontal split                     |
-| `ctrl+x`, `ctrl+q`, `,q`, `,x` | Close split                          |
+| `ctrl+x`, `ctrl+q`, `,x`       | Close split                          |
 | `ctrl+arrow`, `,arrow`         | Navigate splits                      |
 | `,1` … `,9`                    | Go to Nth buffer tab (tabline order) |
 | `,[` / `,]`                    | Previous / next buffer tab           |
