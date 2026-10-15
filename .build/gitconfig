@@ -158,7 +158,7 @@ patch-download = "!f() { git patch-get \"${1:-1}\" && git patch-rename; }; f" # 
 patch-rename = "!f() { r=$(basename \"$(git rev-parse --show-toplevel)\"); d=$(date +%Y_%m_%d_%H_%M); for p in *.patch; do [ -f \"$p\" ] || continue; case \"$p\" in [0-9]*) ;; *) echo \"skip $p\"; continue ;; esac; n=\"${r}-${d}-${p}\"; mv \"$p\" \"$n\"; echo \"$n\"; done; }; f" # Rename .patch files with repo-date prefix (skips already-renamed)
 
 # ---- Branch & Checkout ----
-co = checkout
+co = "!checkout() { command git_checkout \"$@\"; }; checkout" # If branch already lives in another worktree, print a cd block to it instead of failing
 cob = checkout -b # Create and switch to new branch
 cop = checkout -  # checkout previous branch
 theirs = checkout --theirs  -- # choose theirs

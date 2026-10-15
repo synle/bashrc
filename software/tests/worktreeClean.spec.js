@@ -172,7 +172,7 @@ describe("worktree_clean", () => {
           '  echo "gh version test"',
           '  exit 0',
           "fi",
-          'if [ "1"=pr]&&["2" = view ] && [ "$3" = placeholder-branch ]; then',
+          'if [ "$1" = pr ] && [ "$2" = view ] && [ "$3" = placeholder-branch ]; then',
           "  cat <<'JSON'",
           '{"state":"OPEN","url":"https://github.com/acme/widget-store/pull/12","isDraft":true,"title":"WIP: DO NOT MERGE — [widget-store] Placeholder"}',
           "JSON",
@@ -184,7 +184,7 @@ describe("worktree_clean", () => {
       );
       fs.chmodSync(gh, 0o755);
 
-      const result = runCli(parent, [], { PATH: `bin:{process.env.PATH || ""}` });
+      const result = runCli(parent, [], { PATH: `${bin}:${process.env.PATH || ""}` });
 
       expect(result.status).toBe(0);
       expect(fs.existsSync(placeholder)).toBe(true);
