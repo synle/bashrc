@@ -2,13 +2,13 @@
 
 Argument: none. Scope is always PWD, author is always `@me`, format is always `clusters`. For anything else, call `/sy-list-prs` directly.
 
-**Pending = still needs something.** Every open `@me` PR in scope except the fully-green ones (CI passing + approved + no conflicts + zero unresolved threads) — those just need a merge button, which is the same group `/sy-babysit-prs` skips as "already green".
+**Pending = still needs something.** Every open `@me` PR in scope except the fully-green ones (CI passing + approved + no conflicts + zero unresolved threads) — those just need a merge button, which is the same group `/sy-babysit-prs` skips as "already green". Also exclude placeholder drafts still pending implementation: `isDraft == true` and title contains `Placeholder`.
 
 ## Steps
 
 1. **Resolve the PR set exactly the way `/sy-babysit-prs` does** — run `/sy-list-prs clusters pwd`. `/sy-babysit-prs` Step 1a delegates to `/sy-list-prs short pwd`: same scope, same author, so the **same PR set** — only the render format differs (`clusters` here, `short` there). Scope resolution therefore stays identical: repos discovered two levels deep, each resolved to `<owner>/<repo>` via `git remote get-url origin` (never the folder name — see Repo Identification), then one `gh search prs --author=@me --state=open` across them.
 
-2. **Drop group 5, `READY TO MERGE`** — the fully-clear one (CI passing + approved + no conflicts + zero unresolved threads). Keep the other four groups, including the separate `READY TO MERGE (with comments)` group, which still has threads to resolve and so is still pending. Drop it **before** clustering, so a cluster's rank and repo list describe only the work that is actually left; a cluster whose every member was green disappears with them.
+2. **Drop group 5, `READY TO MERGE`, and drop placeholder drafts** — the fully-clear one (CI passing + approved + no conflicts + zero unresolved threads), plus any PR where `isDraft` is true and the title contains `Placeholder`. Keep the other four groups, including the separate `READY TO MERGE (with comments)` group, which still has threads to resolve and so is still pending. Drop them **before** clustering, so a cluster's rank and repo list describe only the work that is actually left; a cluster whose every member was green or placeholder-only disappears with them.
 
 3. **Print the `clusters` render and nothing else** — feature clusters first (most urgent cluster on top), each with its repo list, then the standalone block, numbered `pr1`…`pr<N>` straight through. Every line carries the same four fields in the same order: URL, handle, what the PR does, status.
 
@@ -25,7 +25,7 @@ Argument: none. Scope is always PWD, author is always `@me`, format is always `c
 
 ## Rules
 
-- **Thin wrapper — `/sy-list-prs` owns everything** (discovery, fetch, classification, clustering, sort, `clusters` layout). This command adds only the fixed scope and the pending filter. Layout and clustering-signal changes go in `/sy-list-prs`.
+- **Thin wrapper — `/sy-list-prs` owns everything** (discovery, fetch, classification, clustering, sort, `clusters` layout). This command adds only the fixed scope and the pending filter, including dropping placeholder drafts so its set stays aligned with `/sy-babysit-prs`. Layout and clustering-signal changes go in `/sy-list-prs`.
 - **Never re-implement repo discovery here.** Matching `/sy-babysit-prs` is the entire point: this answers "what would babysit pick up right now?", and the output pastes straight into `/sy-babysit-prs` or `/sy-review-prs` as an explicit PR list — those read the `https://` token off each line and skip the `###` headings.
 - **Grouping is the value; ranking is the order.** The same feature landing in three repos is three PRs one merge order applies to, so they print together with their repo list, and the cluster carrying the most urgent PR prints first. Never re-sort by repo after clustering.
 - **`pr<N>` handles are per-render pointers, not identifiers.** They exist so the next message can say "babysit pr2 and pr4"; they change on every run and are never stored, quoted back later, or written into a PR body.
