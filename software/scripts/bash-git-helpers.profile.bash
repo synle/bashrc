@@ -452,8 +452,10 @@ function clean() {
       git --no-pager worktree prune
       worktree_clean --force
     else
+      # Placeholder drafts are parked pre-implementation and must survive cleanup until
+      # real code lands. Use the standalone cleaner here — it checks GitHub PR state,
+      # including the draft+Placeholder convention, before reaping a clean worktree.
       _log_progress_step "$total_steps" "🗑️ Cleaning merged/gone worktrees"
-      git --no-pager clean-worktree
       worktree_clean
     fi
 

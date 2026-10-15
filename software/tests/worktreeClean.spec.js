@@ -71,13 +71,14 @@ function createActiveWorktree(repoRoot, worktreePath, branch) {
  * Run the real CLI from a selected current working folder.
  * @param {string} cwd
  * @param {string[]} [args]
+ * @param {NodeJS.ProcessEnv} [extraEnv]
  * @returns {{status: number, stdout: string, stderr: string}}
  */
-function runCli(cwd, args = []) {
+function runCli(cwd, args = [], extraEnv = {}) {
   const result = spawnSync(process.execPath, [CLI_PATH, ...args], {
     cwd,
     encoding: "utf-8",
-    env: { ...process.env, NO_COLOR: "1" },
+    env: { ...process.env, NO_COLOR: "1", ...extraEnv },
     stdio: ["ignore", "pipe", "pipe"],
   });
   return {
@@ -147,6 +148,48 @@ describe("worktree_clean", () => {
       expect(fs.existsSync(merged)).toBe(true);
       expect(result.stdout).toContain(`🧪 WOULD REMOVE`);
       expect(result.stdout).toContain(`would remove 1`);
+    } finally {
+      fs.rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps placeholder draft worktrees even when gh is available", () => {
+    const parent = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-clean-placeholder-"));
+    const repo = path.join(parent, "repo");
+    const placeholder = path.join(parent, "placeholder");
+    const bin = path.join(parent, "bin");
+    const gh = path.join(bin, "gh");
+
+    try {
+      initRepo(repo);
+      createActiveWorktree(repo, placeholder, "placeholder-branch");
+      fs.mkdirSync(bin, { recursive: true });
+      fs.writeFileSync(
+        gh,
+        [
+          "#!/usr/bin/env bash",
+          'if [ "$1" = --version ]; then',
+          '  echo "gh version test"',
+          '  exit 0',
+          "fi",
+          'if [ "1"=pr]&&["2" = view ] && [ "$3" = placeholder-branch ]; then',
+          "  cat <<'JSON'",
+          '{"state":"OPEN","url":"https://github.com/acme/widget-store/pull/12","isDraft":true,"title":"WIP: DO NOT MERGE — [widget-store] Placeholder"}',
+          "JSON",
+          '  exit 0',
+          "fi",
+          'echo "unexpected gh args: $*" >&2',
+          "exit 1",
+        ].join("\n"),
+      );
+      fs.chmodSync(gh, 0o755);
+
+      const result = runCli(parent, [], { PATH: `bin:{process.env.PATH || ""}` });
+
+      expect(result.status).toBe(0);
+      expect(fs.existsSync(placeholder)).toBe(true);
+      expect(result.stdout).toContain(`placeholder draft pending implementation`);
+      expect(result.stdout).toContain(`kept 2`);
     } finally {
       fs.rmSync(parent, { recursive: true, force: true });
     }

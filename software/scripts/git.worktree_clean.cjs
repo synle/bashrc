@@ -307,24 +307,38 @@ function branchIsMerged(repoRoot, branch, defaultRef) {
 }
 
 /**
- * Check whether GitHub reports a branch's pull request as merged.
+ * Check whether GitHub reports a branch's pull request state and placeholder markers.
  * @param {string} repoRoot
  * @param {string|null} branch
  * @param {boolean} ghAvailable
- * @returns {{state: string, url: string}|null}
+ * @returns {{state: string, url: string, isDraft: boolean, title: string}|null}
  */
 function pullRequestState(repoRoot, branch, ghAvailable) {
   if (!ghAvailable || !branch) return null;
   const branchName = branch.replace(/^refs\/heads\//, ``);
-  const result = runCommand(`gh`, [`pr`, `view`, branchName, `--json`, `state,url`], repoRoot);
+  const result = runCommand(`gh`, [`pr`, `view`, branchName, `--json`, `state,url,isDraft,title`], repoRoot);
   if (result.status !== 0) return null;
 
   try {
     const parsed = JSON.parse(result.stdout);
-    return { state: parsed.state || ``, url: parsed.url || `` };
+    return {
+      state: parsed.state || ``,
+      url: parsed.url || ``,
+      isDraft: parsed.isDraft === true,
+      title: parsed.title || ``,
+    };
   } catch {
     return null;
   }
+}
+
+/**
+ * Detect the parked pre-implementation placeholder PR state.
+ * @param {{state: string, url: string, isDraft: boolean, title: string}|null} pullRequest
+ * @returns {boolean}
+ */
+function isPlaceholderDraft(pullRequest) {
+  return Boolean(pullRequest && pullRequest.state === `OPEN` && pullRequest.isDraft && /placeholder/i.test(pullRequest.title));
 }
 
 /**
@@ -350,11 +364,15 @@ function cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailabl
   if (dirty === null) return { remove: false, reason: `could not read worktree status` };
   if (dirty) return { remove: false, reason: `uncommitted changes` };
 
+  const pullRequest = pullRequestState(repoRoot, worktree.branch, ghAvailable);
+  if (isPlaceholderDraft(pullRequest)) {
+    return { remove: false, reason: `placeholder draft pending implementation${pullRequest.url ? ` · ${pullRequest.url}` : ``}` };
+  }
+
   if (branchIsMerged(repoRoot, worktree.branch, defaultRef)) {
     return { remove: true, reason: `branch merged into ${defaultRef || `default branch`}` };
   }
 
-  const pullRequest = pullRequestState(repoRoot, worktree.branch, ghAvailable);
   if (pullRequest && pullRequest.state === `MERGED`) {
     return { remove: true, reason: `PR merged${pullRequest.url ? ` · ${pullRequest.url}` : ``}` };
   }

@@ -19,4 +19,9 @@ describe("clean git commands", () => {
     expect(executedGitLines.length).toBeGreaterThan(0);
     expect(commandsWithoutNoPager).toEqual([]);
   });
+
+  it("routes non-force worktree cleanup through the standalone cleaner only", () => {
+    expect(cleanSource).toContain('      worktree_clean');
+    expect(cleanSource).not.toContain('      git --no-pager clean-worktree');
+  });
 });
