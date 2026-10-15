@@ -168,6 +168,9 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
         # is the current cross-platform key.
         fullscreen = non-native-visible-menu
         quit-after-last-window-closed = true
+        # Disable quake/quick-terminal enter+exit animation. Ghostty docs say 0
+        # disables it completely; option is macOS-only.
+        quick-terminal-animation-duration = 0
         # Renamed key: was \`background-blur-radius\`. Still accepted as a compat
         # alias; \`background-blur\` takes the same radius in px.
         background-blur = 20

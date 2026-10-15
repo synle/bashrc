@@ -40,8 +40,13 @@ call s:ApplyCustomHighlights()
 """""""""""""""""""""""""""""""""""""""""""""""""
 filetype plugin indent on                                           " Re-enable filetype detection + ftplugins + indent rules after plugin manager init
 " lightline: codedark theme (ships with vim-code-dark) + open buffers as tabs via lightline-bufferline
+" Modified buffers show a red filename and * using CodeDark's ErrorMsg foreground.
 let g:lightline = {
   \ 'colorscheme': 'codedark',
+  \ 'active': { 'left': [ [ 'mode', 'paste' ], [ 'readonly', 'filename' ] ] },
+  \ 'component': {
+  \   'filename': '%{%&modified ? "%#ErrorMsg#%t *%*" : "%t"%}',
+  \ },
   \ 'tabline': { 'left': [ [ 'buffers' ] ], 'right': [ [] ] },
   \ 'component_expand': { 'buffers': 'lightline#bufferline#buffers' },
   \ 'component_type': { 'buffers': 'tabsel' },
@@ -135,6 +140,7 @@ if has("termguicolors")
 endif
 set linebreak                 " Soft wrap breaks at word boundaries, not mid-word
 set breakindent               " Wrapped continuation lines keep the line's indent
+set fileformat=unix           " Save files with Unix LF line endings by default
 set showmatch                 " Briefly jump to matching bracket when inserting one
 set wildmenu                  " Show autocomplete menu for commands (Tab in command mode)
 set wildmode=longest:full,full " Complete to longest common string first, then cycle through matches
@@ -253,9 +259,9 @@ for s:i in range(1, 9)
   execute printf('nmap <silent> ,%d <Plug>lightline#bufferline#go(%d)', s:i, s:i)
 endfor
 
-" ,w saves and quits; ,q / ,x close the current split
+" ,w saves and quits; ,q quits all without saving; ,x closes the current split
 nnoremap <silent> ,w :wq<CR>
-nnoremap <silent> ,q <c-w>q
+nnoremap <silent> ,q :qa!<CR>
 nnoremap <silent> ,x <c-w>q
 
 " Ctrl+Arrow or ,Arrow to navigate between splits
