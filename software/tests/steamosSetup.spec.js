@@ -404,7 +404,7 @@ _add_steam_shortcut Example "$1"`,
       ],
       {
         encoding: "utf-8",
-        env: { ...process.env, HOME: home, PATH: `${binFolder}:${process.env.PATH}` },
+        env: { ...process.env, HOME: home, XDG_CONFIG_HOME: path.join(home, ".config"), PATH: `${binFolder}:${process.env.PATH}` },
       },
     );
 

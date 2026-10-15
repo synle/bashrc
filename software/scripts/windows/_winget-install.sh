@@ -237,6 +237,7 @@ winget_packages=(
   "KDE.Krita"
   "PuTTY.PuTTY"
   "Rufus.Rufus"
+  "SumatraPDF.SumatraPDF"
   "Ultimaker.Cura"
   "Valve.Steam"
   "VideoLAN.VLC"

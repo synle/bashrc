@@ -115,7 +115,7 @@ describe("hidePaths", () => {
     ];
     setSandboxGlobal("is_os_wsl", true);
     let hidePathsCall;
-    loadScriptHelpers("software/scripts/windows/hide-user-home-items.js");
+    loadScriptHelpers("software/scripts/windows/windows-hide-user-home-items.js");
     setSandboxGlobal("getWindowUserBaseDir", () => home);
     setSandboxGlobal("hidePaths", (...args) => (hidePathsCall = args));
 

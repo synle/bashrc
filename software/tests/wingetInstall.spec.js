@@ -112,6 +112,7 @@ describe("winget installer", () => {
     const result = runInstaller();
     expect(result.status).toBe(0);
     expect(result.installs).toContain("Python.Python.3.12");
+    expect(result.installs).toContain("SumatraPDF.SumatraPDF");
     expect(result.stampExists).toBe(true);
   });
 

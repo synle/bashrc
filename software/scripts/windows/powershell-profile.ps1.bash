@@ -45,7 +45,9 @@ $MaximumHistoryCount = 32767                                          # max allo
 Set-PSReadLineOption -MaximumHistoryCount 32767                       # max allowed in Windows PowerShell 5.x — matches HISTFILESIZE
 Set-PSReadLineOption -HistoryNoDuplicates                             # no duplicates — matches erasedups
 Set-PSReadLineOption -HistorySearchCursorMovesToEnd                   # cursor jumps to end after history search
-try { Set-PSReadLineOption -PredictionSource History } catch {}       # inline suggestions as you type from history (PSReadLine 2.2+)
+if ($psReadLineOptionCommand -and $psReadLineOptionCommand.Parameters.ContainsKey("PredictionSource")) {
+  Set-PSReadLineOption -PredictionSource History # Offer inline suggestions from history.
+}
 Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward   # up/down arrow search — like bash reverse-search
 Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 

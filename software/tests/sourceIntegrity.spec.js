@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOFTWARE_DIR = path.join(ROOT_DIR, "software");
+/** @type {Set<string>} Intentional cross-platform command name shared by PowerShell and bash. */
+const INTENTIONAL_COLLAPSED_FUNCTION_NAMES = new Set(["killport"]);
 
 /**
  * Why this file exists.
@@ -141,7 +143,7 @@ describe("transport corruption", () => {
     const probes = new Map();
     for (const name of names) {
       const collapsed = name.replace(/_/g, "");
-      if (collapsed.length >= 8) probes.set(collapsed, name);
+      if (collapsed.length >= 8 && !INTENTIONAL_COLLAPSED_FUNCTION_NAMES.has(collapsed)) probes.set(collapsed, name);
     }
     return probes;
   }
@@ -164,7 +166,7 @@ describe("transport corruption", () => {
       lines.forEach((line, index) => {
         for (const [collapsed, original] of PROBES) {
           if (new RegExp(`\\b${collapsed}\\b`).test(line)) {
-            found.push(`path.relative(ROOTDIR,file):{index + 1} "collapsed"(shouldbe"{original}")`);
+            found.push(`${path.relative(ROOT_DIR, file)}:${index + 1} "${collapsed}" (should be "${original}")`);
           }
         }
       });
