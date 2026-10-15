@@ -31,7 +31,7 @@ Set-PSReadLineKeyHandler -Key Alt+d -Function KillWord
 Set-PSReadLineKeyHandler -Chord "Escape, Backspace" -Function BackwardDeleteWord
 
 Set-PSReadLineOption -PredictionViewStyle ListView # Show history predictions in a selectable list.
-Set-PSReadLineOption -Colors @{ InlinePrediction = '#6c7086' } # Keep inline suggestions subtle.
+# Set-PSReadLineOption -Colors @{ InlinePrediction = '#6c7086' } # Keep inline suggestions subtle. # Need to figure out why this failed
 Set-PSReadLineOption -BellStyle None # Disable the terminal bell.
 
 # Reject likely credentials before PSReadLine stores commands in history.
