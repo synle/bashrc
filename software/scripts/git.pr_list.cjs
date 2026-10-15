@@ -15,7 +15,8 @@
  *   2. `gh search prs --author=<me> --state=open` to find open PRs.
  *   3. One GraphQL query per PR to enrich it (three at a time).
  *   4. Classifies each PR into a group + a 🔴/🟡/🟢 signal.
- *   5. Prints them oldest-first with WIP entries last, optionally filtered and colored.
+ *   5. Prints them oldest-first with WIP entries last and placeholder drafts after WIP,
+ *      optionally filtered and colored.
  *
  * SCOPE (mutually exclusive, in priority order)
  *   - Explicit `owner/repo` or local-path arguments  → exactly those repos.
@@ -39,7 +40,7 @@
  *   line leads with a reason icon naming WHY the PR sits where it does
  *   (🗣️ changes requested, ⚔️ conflict, 💥 CI failed, 🔨 build running,
  *   ⏳ awaiting review, 🔄 behind base, 💬 ready but threads open, 🚀 ready,
- *   🛑 draft/WIP). Five of those states add a greppable word form after the
+ *   🛑 draft/WIP, ▫ placeholder draft). Six of those states add a greppable word form after the
  *   icon: the three that BLOCK a merge print `[rejected]` / `[conflict]` /
  *   `[ci-failed]` in bold red, and the administrative two print `[behind]` /
  *   `[draft]` dim. Only ever ONE of them — "blocked" is a single answer, and
@@ -205,6 +206,8 @@ function parseArgs(argv) {
 // never for --json / --links (both of which are meant to be machine-consumed).
 // ---------------------------------------------------------------------------
 
+const LINE_BREAK_EQUAL = `=`.repeat(80);
+
 const ANSI = {
   reset: `\x1b[0m`,
   red: `\x1b[31m`,
@@ -221,6 +224,10 @@ const ANSI = {
   // Dim is the opposite job — a non-blocking tag is context, not a finding, and must
   // sit quieter than the title it prefixes.
   dim: `\x1b[2m`,
+  // Placeholder drafts are deliberately quieter than ordinary WIP: they are parked
+  // pre-implementation, so they should sink to the bottom of the page rather than read
+  // like active work.
+  placeholder: `\x1b[2;37m`,
   // Cyan for the head branch. Every other slot is taken — red/yellow/green by the
   // roll-up signal, blue by the URL line, magenta by the running marker — and dim was
   // wrong here: the branch is an address you retype into `git checkout`, not a footnote,
@@ -234,7 +241,8 @@ const ANSI = {
  * @param {"🔴"|"🟡"|"🟢"} signal
  * @returns {string} ANSI color escape.
  */
-function titleColorFor(signal) {
+function titleColorFor(signal, isPlaceholder = false) {
+  if (isPlaceholder) return ANSI.placeholder;
   if (signal === `🔴`) return ANSI.red;
   if (signal === `🟢`) return ANSI.green;
   return ANSI.yellow;
@@ -251,6 +259,18 @@ function titleColorFor(signal) {
 function formatLink(url, color) {
   if (!color) return url;
   return `\x1b]8;;${url}\x1b\\${ANSI.blue}${ANSI.underline}${url}${ANSI.reset}\x1b]8;;\x1b\\`;
+}
+
+/**
+ * Print a standard divider block to STDERR, with an optional blank line after it.
+ * @param {string[]} lines
+ * @param {{trailingBlankLine?: boolean}} [options]
+ * @returns {void}
+ */
+function infoBlock(lines, options = {}) {
+  info(LINE_BREAK_EQUAL);
+  lines.forEach((line) => info(line));
+  if (options.trailingBlankLine) info();
 }
 
 // ---------------------------------------------------------------------------
@@ -431,6 +451,9 @@ const REASON_ICONS = {
   // Green — clear to merge.
   READY: `🚀`,
   READY_WITH_COMMENTS: `💬`,
+  // Not in play. Placeholder drafts are a stricter subset of draft: parked work that is
+  // intentionally pre-implementation, so it gets its own quieter marker and sort rank.
+  PLACEHOLDER: `▫`,
   // Not in play. 🛑 rather than a construction glyph: a draft is not mid-build, it is
   // explicitly "do not merge this", and that is the one thing a stop sign says.
   DRAFT: `🛑`,
@@ -462,6 +485,7 @@ const REASON_TAGS = {
   // Out of date. Not blocked — nothing is wrong, the branch just needs a sync.
   BEHIND_BASE: `[behind]`,
   // Administrative.
+  PLACEHOLDER: `[placeholder]`,
   DRAFT: `[draft]`,
 };
 
@@ -519,6 +543,7 @@ const BLOCKED_TAGS = new Set(BLOCKED_REASON_KEYS.map((key) => REASON_TAGS[key]))
  * all of them. "Blocked" is one answer, never a checklist.
  *
  * @param {Object} state Classified booleans/counters for one PR.
+ * @param {boolean} state.placeholder Placeholder draft pending implementation.
  * @param {boolean} state.draft Draft or WIP-titled.
  * @param {boolean} state.conflicted `mergeable === "CONFLICTING"`.
  * @param {boolean} state.changesRequested `reviewDecision === "CHANGES_REQUESTED"`.
@@ -530,6 +555,7 @@ const BLOCKED_TAGS = new Set(BLOCKED_REASON_KEYS.map((key) => REASON_TAGS[key]))
  * @returns {string} A key of {@link REASON_ICONS}.
  */
 function reasonKeyFor(state) {
+  if (state.placeholder) return `PLACEHOLDER`;
   if (state.draft) return `DRAFT`;
   if (state.changesRequested) return `CHANGES_REQUESTED`;
   if (state.conflicted) return `MERGE_CONFLICT`;
@@ -556,6 +582,7 @@ function reasonKeyFor(state) {
  * @property {string} baseRefName  Target branch.
  * @property {boolean} isDraft
  * @property {boolean} isWip       Title looks like WIP / do-not-merge.
+ * @property {boolean} isPlaceholder Draft placeholder pending implementation.
  * @property {string} group        Classification bucket.
  * @property {"🔴"|"🟡"|"🟢"} signal
  * @property {"🔴"|"🟡"|"🟢"} color  Alias of `signal` (roll-up emoji).
@@ -636,6 +663,7 @@ function classify(raw) {
   let title = rawTitle.replace(/\[([^\]]+)\]\s*/g, (match, inner) => (inner === slug.split(`/`).pop() ? `` : match));
   const wip = isWipTitle(title);
   if (wip) title = normalizeWipTitle(title);
+  const placeholder = draft && /placeholder/i.test(title);
 
   const red = failedCheck !== `` || decision === `CHANGES_REQUESTED` || conflicted;
   const green = failedCheck === `` && running === 0 && decision === `APPROVED` && !conflicted;
@@ -664,6 +692,7 @@ function classify(raw) {
 
   /** @type {string} The one state key naming why this PR sits where it does. */
   const reasonKey = reasonKeyFor({
+    placeholder,
     draft: draft || wip,
     conflicted,
     changesRequested: decision === `CHANGES_REQUESTED`,
@@ -697,6 +726,7 @@ function classify(raw) {
     baseRefName: pr.baseRefName || ``,
     isDraft: draft,
     isWip: wip,
+    isPlaceholder: placeholder,
     group,
     signal,
     color: signal,
@@ -914,7 +944,7 @@ function render(rows, opts, color, showAuthors = false, me = ``) {
     // At most ONE reason tag ever appears: the key is chosen once, so "blocked" is a
     // single answer rather than a checklist. Only styling is conditional on color —
     // every text part prints either way, so a piped render loses tone, never a fact.
-    const paint = (text, style) => (color ? `${style}${text}${ANSI.reset}${titleColorFor(row.signal)}` : text);
+    const paint = (text, style) => (color ? `${style}${text}${ANSI.reset}${titleColorFor(row.signal, row.isPlaceholder)}` : text);
     const parts = [row.reasonIcon];
     // Unresolved review-thread count sits right after the icon as `[N]` in bold red, so
     // comments still owed a reply are the first thing read, without --verbose. Bold
@@ -934,7 +964,7 @@ function render(rows, opts, color, showAuthors = false, me = ``) {
 
     const running = row.runningChecks > 0 ? (color ? `${ANSI.magenta}${RUNNING_SUFFIX}${ANSI.reset}` : RUNNING_SUFFIX) : ``;
     const body = parts.join(` `);
-    const title = color ? `${titleColorFor(row.signal)}${body}${ANSI.reset}${running}` : `${body}${running}`;
+    const title = color ? `${titleColorFor(row.signal, row.isPlaceholder)}${body}${ANSI.reset}${running}` : `${body}${running}`;
 
     const lines = [title, formatLink(row.url, color)];
     if (opts.verbose) {
@@ -1010,7 +1040,7 @@ async function main() {
   // Name the repos rather than counting them: "3 repo(s)" cannot tell you that the
   // one repo you cared about was not among them.
   const scopeLabel = repos.length > 0 ? `${repos.length} repo(s): ${formatRepoList(repos)}` : `all of GitHub`;
-  info(`>>> scanning ${scopeLabel} for open ${describeAudience(opts, author)} PRs`);
+  infoBlock([`>>> scanning ${scopeLabel} for open ${describeAudience(opts, author)} PRs`], { trailingBlankLine: true });
 
   const hits = searchPrs(author, opts.limit, repos);
   if (hits.length === 0) {
@@ -1030,18 +1060,20 @@ async function main() {
 
   // Default view hides the fully-clear group; --all keeps it.
   const filtered = opts.keepReady ? audience : audience.filter((r) => r.group !== `READY TO MERGE`);
-  filtered.sort((a, b) => Number(a.isWip) - Number(b.isWip) || a.createdAt.localeCompare(b.createdAt));
+  const sortRank = (row) => (row.isPlaceholder ? 2 : row.isWip || row.isDraft ? 1 : 0);
+  filtered.sort((a, b) => sortRank(a) - sortRank(b) || a.createdAt.localeCompare(b.createdAt));
 
   const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && !opts.asJson && !opts.linksOnly;
   render(filtered, opts, color, opts.mine !== true, me);
 
   const listedRepos = [...new Set(filtered.map((r) => r.repo))];
-  info(
-    `>>> ${audience.length} open · ${filtered.length} listed · oldest first, WIP last` +
+  const summaryLines = [
+    `>>> ${audience.length} open · ${filtered.length} listed · oldest first, WIP last, Placeholder after WIP` +
       `${mine > 0 ? ` · ${mine} of yours hidden by --me=0` : ``}` +
       `${unreadable > 0 ? ` · ${unreadable} PR(s) could not be fetched` : ``}`,
-  );
-  if (listedRepos.length > 0) info(`>>> listed from ${listedRepos.length} repo(s): ${formatRepoList(listedRepos)}`);
+  ];
+  if (listedRepos.length > 0) summaryLines.push(`>>> listed from ${listedRepos.length} repo(s): ${formatRepoList(listedRepos)}`);
+  infoBlock(summaryLines);
 }
 
 main();

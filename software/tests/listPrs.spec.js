@@ -313,6 +313,14 @@ describe("list_prs — classification", () => {
     expect(rowFor({ title: "WIP: refactor auth", checks: [PASSING_CHECK] }).group).toBe("NOT READY / WIP / DRAFT");
   });
 
+  it("marks a draft placeholder separately from ordinary WIP", () => {
+    const row = rowFor({ isDraft: true, title: "WIP: DO NOT MERGE — [api] Placeholder", checks: [PASSING_CHECK] }, ["--all"]);
+    expect(row.isPlaceholder).toBe(true);
+    expect(row.reasonTag).toBe("[placeholder]");
+    expect(row.reasonIcon).toBe("▫");
+    expect(row.group).toBe("NOT READY / WIP / DRAFT");
+  });
+
   it("detects DNM and normalizes leading WIP markers to one prefix", () => {
     const row = rowFor({
       title: "WIP: DO NOT MERGE — Repoint -default LCD pipeline to stage-only (Phase 2: cutover)",
@@ -442,8 +450,8 @@ describe("list_prs — audience (--me)", () => {
 
   it("names the repos it scanned and the repos it listed from", () => {
     const { stderr } = runCli(["--me=1", "acme/api", "acme/web"], [pullRequest(AWAITING_REVIEW)]);
-    expect(stderr).toContain("acme/api acme/web");
-    expect(stderr).toContain("listed from 1 repo(s): acme/api");
+    expect(stderr).toContain(`${"=".repeat(80)}\n>>> scanning 2 repo(s): acme/api acme/web for open @me PRs\n\n`);
+    expect(stderr).toContain(`${"=".repeat(80)}\n>>> 1 open · 1 listed · oldest first, WIP last, Placeholder after WIP\n>>> listed from 1 repo(s): acme/api\n`);
   });
 });
 
@@ -517,6 +525,24 @@ describe("list_prs — output shape", () => {
     expect(rowsFor([wip, ready]).map((row) => row.number)).toEqual([1, 2]);
   });
 
+  it("places placeholder drafts after ordinary WIP entries", () => {
+    const ready = pullRequest({ ...AWAITING_REVIEW, number: 1, createdAt: "2026-03-01T00:00:00Z" });
+    const wip = pullRequest({
+      ...AWAITING_REVIEW,
+      number: 2,
+      title: "WIP: older migration",
+      createdAt: "2026-01-01T00:00:00Z",
+    });
+    const placeholder = pullRequest({
+      ...AWAITING_REVIEW,
+      number: 3,
+      isDraft: true,
+      title: "WIP: DO NOT MERGE — [api] Placeholder",
+      createdAt: "2025-12-01T00:00:00Z",
+    });
+    expect(rowsFor([placeholder, wip, ready], ["--all"]).map((row) => row.number)).toEqual([1, 2, 3]);
+  });
+
   it("enriches at most three PRs at once", () => {
     const prs = Array.from({ length: 7 }, (_, index) =>
       pullRequest({
@@ -584,6 +610,7 @@ describe("list_prs — reason icons and auto-merge", () => {
     ["🔄", "behind base", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeStateStatus: "BEHIND" }],
     ["🚀", "ready to merge", READY_TO_MERGE],
     ["🛑", "draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true }],
+    ["▫", "placeholder draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true, title: "WIP: Placeholder" }],
   ];
 
   for (const [icon, label, overrides] of CASES) {
@@ -711,6 +738,7 @@ describe("list_prs — reason tags", () => {
     ["[ci-failed]", "💥", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
     ["[behind]", "🔄", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeStateStatus: "BEHIND" }],
     ["[draft]", "🛑", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true }],
+    ["[placeholder]", "▫", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true, title: "WIP: Placeholder" }],
   ];
 
   for (const [tag, icon, overrides] of TAGGED) {
@@ -738,7 +766,7 @@ describe("list_prs — reason tags", () => {
       const line = runCli(["--me=1", "--all"], [pullRequest(overrides)])
         .stdout.split("\n")
         .filter(Boolean)[0];
-      expect(line).not.toMatch(/\[(rejected|conflict|ci-failed|behind|draft)\]/);
+      expect(line).not.toMatch(/\[(rejected|conflict|ci-failed|behind|draft|placeholder)\]/);
     });
   }
 
@@ -777,13 +805,18 @@ describe("list_prs — reason tags", () => {
     expect(blocked).toContain("CHANGES_REQUESTED");
     expect(blocked).toContain("MERGE_CONFLICT");
     expect(blocked).toContain("CI_FAILED");
-    // [behind] and [draft] are deliberately NOT blocking — nothing is wrong with them.
+    // [behind], [draft], and [placeholder] are deliberately NOT blocking — nothing is wrong with them.
     expect(CLI_SOURCE.slice(CLI_SOURCE.indexOf("const BLOCKED_REASON_KEYS"), CLI_SOURCE.indexOf("BLOCKED_TAGS"))).not.toContain(
       "BEHIND_BASE",
+    );
+    expect(CLI_SOURCE.slice(CLI_SOURCE.indexOf("const BLOCKED_REASON_KEYS"), CLI_SOURCE.indexOf("BLOCKED_TAGS"))).not.toContain(
+      "PLACEHOLDER",
     );
     // Bold + bright, not plain red — weight is what survives red-on-red.
     expect(CLI_SOURCE).toContain("blockedTag: `\\x1b[1;91m`");
     expect(CLI_SOURCE).toContain("dim: `\\x1b[2m`");
+    expect(CLI_SOURCE).toContain("placeholder: `\\x1b[2;37m`");
+    expect(CLI_SOURCE).toContain("if (isPlaceholder) return ANSI.placeholder;");
   });
 });
 
