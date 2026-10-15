@@ -15,15 +15,20 @@ async function doWork() {
 
       MainWindowBackground = #282a36
       EscToExit = false
-      ReuseInstance = false
+      # Open documents in the existing Sumatra PDF process.
+      ReuseInstance = true
       UseSysColors = false
       RestoreSession = true
       TabWidth = 300
+      # Keep the table-of-contents labels compact.
+      TreeFontSize = 11
 
       FixedPageUI [
         TextColor = #f8f8f2
         BackgroundColor = #21222c
         SelectionColor = #44475a
+        # Match the dark Dracula backdrop when Sumatra renders page gradients.
+        GradientColors = #282a36
         WindowMargin = 2 4 2 4
         PageSpacing = 4 4
       ]

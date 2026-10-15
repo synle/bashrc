@@ -19,7 +19,7 @@
 # tab autocomplete
 Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
 
-# keybindings
+# PSReadLine keybindings and interactive behavior.
 # Import-Module PSReadLine
 # Get-PSReadLineKeyHandler
 # https://github.com/PowerShell/PSReadLine
@@ -27,15 +27,17 @@ Set-PSReadLineKeyHandler -Key Ctrl+a -Function BeginningOfLine
 Set-PSReadLineKeyHandler -Key Ctrl+e -Function EndOfLine
 Set-PSReadLineKeyHandler -Key Ctrl+. -Function YankLastArg
 Set-PSReadLineKeyHandler -Key Ctrl+w -Function BackwardKillWord
+Set-PSReadLineKeyHandler -Key Alt+d -Function KillWord
 Set-PSReadLineKeyHandler -Chord "Escape, Backspace" -Function BackwardDeleteWord
 
-Set-PSReadLineOption -PredictionViewStyle ListView   # dropdown suggestions
-Set-PSReadLineOption -Colors @{ InlinePrediction = '#6c7086' }  # making suggestions subtle and easy to read without clashing with your main text
-Set-PSReadLineOption -BellStyle None  # Disables the annoying terminal beep sound
+Set-PSReadLineOption -PredictionViewStyle ListView # Show history predictions in a selectable list.
+Set-PSReadLineOption -Colors @{ InlinePrediction = '#6c7086' } # Keep inline suggestions subtle.
+Set-PSReadLineOption -BellStyle None # Disable the terminal bell.
 
-# filtering secrets out of history
+# Reject likely credentials before PSReadLine stores commands in history.
 Set-PSReadLineOption -AddToHistoryHandler {
-  param($line) return ($line -notmatch 'password|token|secret|apikey')
+  param($line)
+  return ($line -notmatch '(?i)(password|token|secret|api.?key)')
 }
 
 # history (matches bash profile-core.sh HISTSIZE/HISTCONTROL)
@@ -47,8 +49,8 @@ try { Set-PSReadLineOption -PredictionSource History } catch {}       # inline s
 Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward   # up/down arrow search — like bash reverse-search
 Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 
-# PATH reconstruction — desired order, merged with current PATH, existence-checked, deduped
-# (matches bash-path-candidate.profile.bash approach)
+# Put preferred tools first, retain other valid PATH entries, and remove duplicates.
+# Full-path normalization handles casing and trailing separators without turning C:\ into C:.
 $_pathCandidates = @(
   # ---- system ----
   "C:\Program Files\Eclipse Adoptium\jdk-21.0.10.7-hotspot\bin",
@@ -84,17 +86,38 @@ $_pathCandidates = @(
   "$env:USERPROFILE\.claude\bin",
   "$env:USERPROFILE\.local\bin"
 )
-# merge candidates (priority) + current PATH entries, filter existing, dedupe case-insensitively
+# Merge preferred candidates with existing entries; preserve first occurrence and priority.
 $_seen = @{}
 $_newPath = @()
 foreach ($_p in ($_pathCandidates + ($env:Path -split ';'))) {
-  $_norm = $_p.TrimEnd('\').ToLower()
-  if ($_norm -and -not $_seen.ContainsKey($_norm) -and (Test-Path $_p)) {
+  if (-not $_p -or -not $_p.Trim()) { continue }
+  try {
+    $_fullPath = [System.IO.Path]::GetFullPath($_p.Trim())
+  } catch {
+    continue
+  }
+  $_root = [System.IO.Path]::GetPathRoot($_fullPath)
+  $_norm = if ($_fullPath.Length -gt $_root.Length) { $_fullPath.TrimEnd('\', '/') } else { $_root }
+  if (-not $_seen.ContainsKey($_norm) -and (Test-Path -LiteralPath $_norm)) {
     $_seen[$_norm] = $true
-    $_newPath += $_p.TrimEnd('\')
+    $_newPath += $_norm
   }
 }
 $env:Path = $_newPath -join ';'
+
+# Cache the active local IPv4 address so prompt rendering does not query adapters each time.
+$script:_networkAddressCache = $null
+$script:_networkAddressCacheTime = [DateTime]::MinValue
+# Look up the first usable local IPv4 address at most once every five minutes.
+function Get-CachedNetworkAddress {
+  if ((Get-Date) - $script:_networkAddressCacheTime -ge [TimeSpan]::FromMinutes(5)) {
+    $script:_networkAddressCache = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+      Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.IPAddress -notlike "169.254.*" -and $_.PrefixOrigin -in @("Dhcp", "Manual") } |
+      Select-Object -First 1 -ExpandProperty IPAddress
+    $script:_networkAddressCacheTime = Get-Date
+  }
+  return $script:_networkAddressCache
+}
 
 # Aliases
 Set-Alias g git
@@ -200,9 +223,7 @@ function code-server {
 
   $address = $env:CODE_SERVER_ADDRESS
   if (-not $address) {
-    $ip = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-      Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.IPAddress -notlike "169.254.*" -and $_.PrefixOrigin -in @("Dhcp", "Manual") } |
-      Select-Object -First 1 -ExpandProperty IPAddress
+    $ip = Get-CachedNetworkAddress
     if (-not $ip) { $ip = "<your-host-ip>" }
     $address = "http://" + $ip + ":" + $portNumber
   }
@@ -284,16 +305,69 @@ function paste {
 }
 Set-Alias bashPS "Invoke-Expression" # bashPS (paste)
 
-# functions
+# Jump up two directory levels.
+function ..2 { Set-Location ../.. }
+# Jump up three directory levels.
+function ..3 { Set-Location ../../.. }
+# Reload the current PowerShell profile into this session.
+function update { . $PROFILE }
+# List listening TCP connections, ordered by local port.
+function ports { Get-NetTCPConnection -State Listen | Sort-Object LocalPort }
+# Stop every process that owns the specified local TCP port.
+# Port: TCP port number from 1 through 65535. Side effect: terminates owning processes.
+function killport {
+  param([Parameter(Mandatory)][ValidateRange(1, 65535)][int]$Port)
+  Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty OwningProcess -Unique |
+    Where-Object { $_ -gt 0 } |
+    ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+}
+# Return the public IP address reported by ipify.
+function myip { Invoke-RestMethod https://api.ipify.org }
+# Return the SHA-256 digest for each supplied file.
+# Path: one or more file paths. Output: SHA-256 hash strings; missing files raise an error.
+function sha {
+  param([Parameter(Mandatory, ValueFromRemainingArguments)][string[]]$Path)
+  (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+}
+# Extract an archive into the current working directory.
+# Path: archive file path. Side effect: extracts archive entries into current directory.
+function unzip {
+  param([Parameter(Mandatory)][string]$Path)
+  Expand-Archive -LiteralPath $Path -DestinationPath (Get-Location).Path
+}
+
 function gogit(){
   d:
   cd git
 }
 
-function ls { Get-ChildItem -Force @args }
+# List files including hidden entries, forwarding supported Get-ChildItem options by splatting.
+function ls {
+  param(
+    [Parameter(Position = 0)][string[]]$Path,
+    [string]$Filter,
+    [string[]]$Include,
+    [string[]]$Exclude,
+    [int]$Depth,
+    [switch]$Directory,
+    [switch]$File,
+    [switch]$Hidden,
+    [switch]$Name,
+    [switch]$Recurse
+  )
+  $getChildItemParameters = @{ Force = $true }
+  foreach ($parameterName in @("Path", "Filter", "Include", "Exclude", "Depth", "Directory", "File", "Hidden", "Name", "Recurse")) {
+    if ($PSBoundParameters.ContainsKey($parameterName)) {
+      $getChildItemParameters[$parameterName] = $PSBoundParameters[$parameterName]
+    }
+  }
+  Get-ChildItem @getChildItemParameters
+}
 
+# List all entries with the long-format view.
 function ll() {
-  ls  $args
+  ls @args
 }
 
 function grep {
@@ -333,26 +407,60 @@ function find() {
   Get-ChildItem -Recurse $args
 }
 
-function touch($f) { if (Test-Path $f) { (Get-Item $f).LastWriteTime = Get-Date } else { New-Item -ItemType File $f | Out-Null } }
+# Create missing files or update existing files' modification times.
+function touch {
+  param([Parameter(Mandatory, ValueFromRemainingArguments)][string[]]$Path)
+  foreach ($p in $Path) {
+    if (Test-Path -LiteralPath $p) {
+      $item = Get-Item -LiteralPath $p -ErrorAction Stop
+      $item.LastWriteTime = Get-Date
+    } else {
+      New-Item -ItemType File -Path $p -Force -ErrorAction Stop | Out-Null
+    }
+  }
+}
+
+# Cache expensive completion results briefly, scoped by command and working directory.
+$script:_completionCache = @{}
+# Key: command and working-directory identity. GetValues: deferred producer. Output: cached values.
+# Side effect: retains results for 30 seconds; producer errors propagate to the caller.
+function Get-CachedCompletionValues {
+  param([Parameter(Mandatory)][string]$Key, [Parameter(Mandatory)][scriptblock]$GetValues)
+  $now = Get-Date
+  foreach ($cachedKey in @($script:_completionCache.Keys)) {
+    if ($script:_completionCache[$cachedKey].ExpiresAt -le $now) {
+      $script:_completionCache.Remove($cachedKey)
+    }
+  }
+  if ($script:_completionCache.ContainsKey($Key)) {
+    return $script:_completionCache[$Key].Values
+  }
+  $values = @(& $GetValues)
+  $script:_completionCache[$Key] = @{
+    Values = $values
+    ExpiresAt = $now.AddSeconds(30)
+  }
+  return $values
+}
 
 ### For the prompt
-function parseGitBranch() {
-  try {
-    $branch = git rev-parse --abbrev-ref HEAD
+# Return current repository root, including when called from nested folders or worktrees.
+# Output: Git worktree root path, or no output when current folder is outside a repository.
+function Get-GitRoot {
+  git rev-parse --show-toplevel 2>$null
+}
 
-    if ($branch -eq "HEAD") {
-      # we're probably in detached HEAD state, so print the SHA
-      $branch = git rev-parse --short HEAD
-      Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
-    }
-    else {
-      # we're on an actual branch, so print it
-      Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
-    }
-  } catch {
-    # we'll end up here if we're in a newly initiated git repo
+# Display current branch or detached commit in the fallback prompt.
+function parseGitBranch {
+  $branch = git rev-parse --abbrev-ref HEAD 2>$null
+  if ($LASTEXITCODE -ne 0) {
     Write-Host -NoNewline " [no branches yet]" -ForegroundColor "yellow"
+    return
   }
+  if ($branch -eq "HEAD") {
+    $branch = git rev-parse --short HEAD 2>$null
+  }
+  Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
 }
 
 # truncates deep paths, keeping first and last parts full (matches bash shorter_pwd_path)
@@ -375,8 +483,8 @@ function shorterTimestamp() {
 if (Get-Command starship -ErrorAction SilentlyContinue) {
   Invoke-Expression (&starship init powershell)
 
-  # wrap starship's prompt to populate env vars before each render
-  # (matches bash _starship_preexec — starship reads these via env_var modules)
+  # Populate Starship environment modules without running custom Git commands;
+  # Starship's native Git modules provide repository status and branch information.
   $global:_original_starship_prompt = $function:prompt
   function global:prompt {
     $now = Get-Date
@@ -384,8 +492,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
     $env:STARSHIP_LOCAL_TIME = $now.ToString("hh:mm:sstt")
     $env:STARSHIP_UTC_TIME = $utc.ToString("hh:mm:sstt")
     $env:STARSHIP_SHORT_PWD = shorterPwdPath
-    # IP address: grab first IPv4 from active adapters
-    $env:STARSHIP_IP_ADDR = (Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty IPAddress) -join ","
+    $env:STARSHIP_IP_ADDR = Get-CachedNetworkAddress
     $env:STARSHIP_BASH_VER = "PS"
     & $global:_original_starship_prompt
   }
@@ -401,7 +508,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
     Write-Host " $(whoami)" -NoNewline -ForegroundColor "green"
     Write-Host "`n" -NoNewline
 
-    if (Test-Path .git) {
+    if (Get-GitRoot) {
       Write-Host $path -NoNewline -ForegroundColor "yellow"
       parseGitBranch
     }
@@ -481,8 +588,12 @@ function _Register-SpecCompleter {
         }
       } elseif ($t -eq '__gradle_tasks__') {
         if ((Test-Path build.gradle) -or (Test-Path build.gradle.kts)) {
-          if (Test-Path .\gradlew.bat) { $expanded += (& .\gradlew.bat tasks --all --quiet 2>$null | ForEach-Object { if ($_ -match '^([a-zA-Z0-9:_-]+)') { $Matches[1] } }) }
-          elseif (Get-Command gradle -ErrorAction SilentlyContinue) { $expanded += (gradle tasks --all --quiet 2>$null | ForEach-Object { if ($_ -match '^([a-zA-Z0-9:_-]+)') { $Matches[1] } }) }
+          $gradleCacheKey = "gradle:$((Get-Location).Path)"
+          $gradleTasks = Get-CachedCompletionValues -Key $gradleCacheKey -GetValues {
+            if (Test-Path .\gradlew.bat) { & .\gradlew.bat tasks --all --quiet 2>$null | ForEach-Object { if ($_ -match '^([a-zA-Z0-9:_-]+)') { $Matches[1] } } }
+            elseif (Get-Command gradle -ErrorAction SilentlyContinue) { gradle tasks --all --quiet 2>$null | ForEach-Object { if ($_ -match '^([a-zA-Z0-9:_-]+)') { $Matches[1] } } }
+          }.GetNewClosure()
+          $expanded += $gradleTasks
         }
       } elseif ($t -eq '__composer_scripts__') {
         if (Test-Path composer.json) { $expanded += (node -e "try{console.log(Object.keys(require('./composer.json').scripts).join('\n'))}catch(e){}" 2>$null) }
@@ -505,13 +616,25 @@ function _Register-SpecCompleter {
         $expanded += (Get-ChildItem -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
       } elseif ($t -eq '__nested_text_files__') {
         $binaryExts = @('.7z','.a','.aac','.apk','.avi','.bmp','.bz2','.class','.db','.dds','.deb','.dll','.dmg','.doc','.docx','.dylib','.eot','.exe','.flac','.flv','.gif','.gz','.heic','.ico','.idb','.jar','.jpeg','.jpg','.lib','.mkv','.mov','.mp3','.mp4','.msi','.ncb','.o','.obj','.ogg','.pdb','.pdf','.png','.ppt','.pptx','.psd','.rar','.rpm','.sdf','.so','.sqlite','.svg','.swf','.tar','.tga','.tiff','.ttf','.wasm','.wav','.webp','.wmv','.woff','.woff2','.xls','.xlsx','.xz','.zip')
-        $expanded += (Get-ChildItem -File -Recurse -Depth $MaxNestedDepth -ErrorAction SilentlyContinue | Where-Object { $binaryExts -notcontains $_.Extension } | ForEach-Object { $_.FullName | Resolve-Path -Relative })
+        $cacheKey = "nested-text:$((Get-Location).Path):$MaxNestedDepth"
+        $expanded += Get-CachedCompletionValues -Key $cacheKey -GetValues {
+          Get-ChildItem -File -Recurse -Depth $MaxNestedDepth -ErrorAction SilentlyContinue | Where-Object { $binaryExts -notcontains $_.Extension } | ForEach-Object { $_.FullName | Resolve-Path -Relative }
+        }.GetNewClosure()
       } elseif ($t -eq '__nested_files__') {
-        $expanded += (Get-ChildItem -File -Recurse -Depth $MaxNestedDepth -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName | Resolve-Path -Relative })
+        $cacheKey = "nested-files:$((Get-Location).Path):$MaxNestedDepth"
+        $expanded += Get-CachedCompletionValues -Key $cacheKey -GetValues {
+          Get-ChildItem -File -Recurse -Depth $MaxNestedDepth -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName | Resolve-Path -Relative }
+        }.GetNewClosure()
       } elseif ($t -eq '__nested_folders__') {
-        $expanded += (Get-ChildItem -Directory -Recurse -Depth $MaxNestedDepth -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName | Resolve-Path -Relative })
+        $cacheKey = "nested-folders:$((Get-Location).Path):$MaxNestedDepth"
+        $expanded += Get-CachedCompletionValues -Key $cacheKey -GetValues {
+          Get-ChildItem -Directory -Recurse -Depth $MaxNestedDepth -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName | Resolve-Path -Relative }
+        }.GetNewClosure()
       } elseif ($t -eq '__nested_paths__') {
-        $expanded += (Get-ChildItem -Recurse -Depth $MaxNestedDepth -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName | Resolve-Path -Relative })
+        $cacheKey = "nested-paths:$((Get-Location).Path):$MaxNestedDepth"
+        $expanded += Get-CachedCompletionValues -Key $cacheKey -GetValues {
+          Get-ChildItem -Recurse -Depth $MaxNestedDepth -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName | Resolve-Path -Relative }
+        }.GetNewClosure()
       } elseif ($t -eq '__paths__') {
         $expanded += (Get-ChildItem -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
       } else {
