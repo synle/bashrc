@@ -293,6 +293,9 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     window-theme = auto
     # Suppress the "WxH" overlay during resize — it flickers on fast redraws.
     resize-overlay = never
+    # Default is true. Turn off custom-shader animation loops so any configured
+    # shader only redraws on terminal updates, not on its own timer.
+    custom-shader-animation = false
 
     # ---- Splits (focus visibility) ----
     # Aggressive dimming on unfocused splits so the active pane is obvious in
