@@ -30,6 +30,7 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
   ```
 
   Exception: pushing to default itself always `git pull --rebase` then fast-forward push — never a merge commit on default from local work.
+- **Plain-English "pull latest code" means the merge workflow, not a rebase.** On a non-default working branch, interpret asks like "pull latest code", "pull latest code from master", and "pull latest code from main" as `/sy-merge`: first run the repo-local sync (`/sy-sync-pr-branch` — floor/default first, then any ancestor wave or feature branches root-most down to the immediate parent), then merge `upstream/<default>` LAST when the repo is a fork. On the default branch itself, the exception above still wins.
 
 - **Solo repos** — if `git log --format='%ae' -200 | sort -u` is only you plus known bots (`*[bot]@*`, the LLM noreply addresses), push straight to default; say so. An explicit "open a PR" overrides.
 
