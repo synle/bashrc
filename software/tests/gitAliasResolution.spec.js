@@ -178,6 +178,11 @@ describe("git alias resolution", () => {
     expect(config).toContain('r1-subl = "!git rn-subl 1"');
   });
 
+  it("should route co through the standalone git_checkout wrapper", () => {
+    expect(config).toContain('co = "!checkout() { command git_checkout \\"$@\\"; }; checkout"');
+    expect(config).not.toContain("\nco = checkout\n");
+  });
+
   it("should quote every command substitution used as a command argument", () => {
     // Windows (`C:\Users\First Last\...`) and macOS (`~/My Drive/...`) repo paths contain
     // spaces. In argument position an unquoted `$(...)` word-splits into two arguments; in
