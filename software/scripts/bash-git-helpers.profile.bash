@@ -273,6 +273,67 @@ function _log_progress_step() {
   echo_and_set_terminal_title "Step $_PROGRESS_STEP/$total ($((_PROGRESS_STEP * 100 / total))%) : $*"
 }
 
+# _clean_background_tail <total_steps> <repo_root> <force_worktrees> <default_branch> - run
+# clean's slow follow-up work as one backgrounded function call so interactive shells report a
+# short job line instead of re-printing the whole inline subshell body when the cleanup finishes.
+# Keep output live on stdout/stderr so progress lands line by line instead of as a buffered dump.
+function _clean_background_tail() {
+  local total_steps="$1"
+  local repo_root="$2"
+  local force_worktrees="$3"
+  local default_branch="$4"
+
+  # Sweep the *.rej hunk rejects a failed 'git apply' / 'patch' leaves behind. They are
+  # untracked and gitignored, so they survive every reset below and quietly rot next to the
+  # file they failed on. Search from repo_root so nested folders get cleaned too.
+  _log_progress_step "$total_steps" "🗑️ Removing *.rej patch rejects"
+  local rej_files
+  rej_files=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '*.rej' -print 2> /dev/null)
+  if [ -z "$rej_files" ]; then
+    echo "  -> no *.rej files found"
+  else
+    echo "$rej_files" | while IFS= read -r rej_file; do
+      command rm -f "$rej_file"
+      echo "  -> removed $rej_file"
+    done
+    echo "  -> removed $(echo "$rej_files" | command grep -c .) *.rej file(s)"
+  fi
+
+  # Sweep macOS Finder junk (.DS_Store) nested anywhere in the repo. Untracked and usually
+  # gitignored, so it survives every reset below. Search from repo_root so nested folders get
+  # cleaned too. .git and node_modules are pruned, same as the *.rej sweep.
+  _log_progress_step "$total_steps" "🗑️ Removing .DS_Store files"
+  local ds_store_count
+  ds_store_count=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -print 2> /dev/null | command grep -c .)
+  if [ "${ds_store_count:-0}" -eq 0 ]; then
+    echo "  -> no .DS_Store files found"
+  else
+    command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -exec rm -f {} + 2> /dev/null
+    echo "  -> removed $ds_store_count .DS_Store file(s)"
+  fi
+
+  _log_progress_step "$total_steps" "🗑️ Deleting branches with gone upstream"
+  git --no-pager clean-stale-branches
+
+  _log_progress_step "$total_steps" "🗑️ Deleting merged branches and pruned tags"
+  git --no-pager clean-merged-branches-and-tags
+
+  if ((force_worktrees)); then
+    _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
+    git --no-pager worktree prune
+    worktree_clean --force
+  else
+    # Placeholder drafts are parked pre-implementation and must survive cleanup until
+    # real code lands. Use the standalone cleaner here — it checks GitHub PR state,
+    # including the draft+Placeholder convention, before reaping a clean worktree.
+    _log_progress_step "$total_steps" "🗑️ Cleaning merged/gone worktrees"
+    worktree_clean
+  fi
+
+  echo "# ---- ✅ Reset to origin/$default_branch (100% done) ----"
+  git --no-pager lastd
+}
+
 # Safely resets the current branch to origin's default branch.
 # Stashes ALL changes (staged + unstaged + untracked) first as a safety backup so nothing is lost
 # (recover with `git stash list` / `git stash pop`). Deletes untracked *.rej patch rejects; leaves
@@ -366,114 +427,11 @@ function clean() {
   _log_progress_step "$total_steps" "🗑️ Deleting $temp_branch"
   git --no-pager del "$temp_branch" > /dev/null 2>&1
 
-  # These cleanup operations are independent from the foreground branch reset. Move them into
-  # the existing background tail so clean hands control back sooner, but still keep the Git
-  # metadata cleanup sequential with itself to avoid racing refs/worktree state.
-  (
-    local rej_cleanup_log=""
-    local ds_store_cleanup_log=""
-    local rej_cleanup_pid=""
-    local ds_store_cleanup_pid=""
-
-    # Sweep the *.rej hunk rejects a failed 'git apply' / 'patch' leaves behind. They are
-    # untracked and gitignored, so they survive every reset below and quietly rot next to the
-    # file they failed on. Search from repo_root so nested folders get cleaned too.
-    _log_progress_step "$total_steps" "🗑️ Removing *.rej patch rejects"
-    rej_cleanup_log=$(mktemp "/tmp/clean-rej-XXXXXX" 2> /dev/null || mktemp) || rej_cleanup_log=""
-    if [ -n "$rej_cleanup_log" ]; then
-      (
-        local rej_files
-        rej_files=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '*.rej' -print 2> /dev/null)
-        if [ -z "$rej_files" ]; then
-          echo "  -> no *.rej files found"
-        else
-          echo "$rej_files" | while IFS= read -r rej_file; do
-            command rm -f "$rej_file"
-            echo "  -> removed $rej_file"
-          done
-          echo "  -> removed $(echo "$rej_files" | command grep -c .) *.rej file(s)"
-        fi
-      ) > "$rej_cleanup_log" 2>&1 &
-    else
-      (
-        local rej_files
-        rej_files=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '*.rej' -print 2> /dev/null)
-        if [ -z "$rej_files" ]; then
-          echo "  -> no *.rej files found"
-        else
-          echo "$rej_files" | while IFS= read -r rej_file; do
-            command rm -f "$rej_file"
-            echo "  -> removed $rej_file"
-          done
-          echo "  -> removed $(echo "$rej_files" | command grep -c .) *.rej file(s)"
-        fi
-      ) &
-    fi
-    rej_cleanup_pid=$!
-
-    # Sweep macOS Finder junk (.DS_Store) nested anywhere in the repo. Untracked and usually
-    # gitignored, so it survives every reset below. Search from repo_root so nested folders get
-    # cleaned too. .git and node_modules are pruned, same as the *.rej sweep.
-    _log_progress_step "$total_steps" "🗑️ Removing .DS_Store files"
-    ds_store_cleanup_log=$(mktemp "/tmp/clean-ds-store-XXXXXX" 2> /dev/null || mktemp) || ds_store_cleanup_log=""
-    if [ -n "$ds_store_cleanup_log" ]; then
-      (
-        local ds_store_count
-        ds_store_count=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -print 2> /dev/null | command grep -c .)
-        if [ "${ds_store_count:-0}" -eq 0 ]; then
-          echo "  -> no .DS_Store files found"
-        else
-          command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -exec rm -f {} + 2> /dev/null
-          echo "  -> removed $ds_store_count .DS_Store file(s)"
-        fi
-      ) > "$ds_store_cleanup_log" 2>&1 &
-    else
-      (
-        local ds_store_count
-        ds_store_count=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -print 2> /dev/null | command grep -c .)
-        if [ "${ds_store_count:-0}" -eq 0 ]; then
-          echo "  -> no .DS_Store files found"
-        else
-          command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -exec rm -f {} + 2> /dev/null
-          echo "  -> removed $ds_store_count .DS_Store file(s)"
-        fi
-      ) &
-    fi
-    ds_store_cleanup_pid=$!
-
-    _log_progress_step "$total_steps" "🗑️ Deleting branches with gone upstream"
-    git --no-pager clean-stale-branches
-
-    _log_progress_step "$total_steps" "🗑️ Deleting merged branches and pruned tags"
-    git --no-pager clean-merged-branches-and-tags
-
-    if ((force_worktrees)); then
-      _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
-      git --no-pager worktree prune
-      worktree_clean --force
-    else
-      # Placeholder drafts are parked pre-implementation and must survive cleanup until
-      # real code lands. Use the standalone cleaner here — it checks GitHub PR state,
-      # including the draft+Placeholder convention, before reaping a clean worktree.
-      _log_progress_step "$total_steps" "🗑️ Cleaning merged/gone worktrees"
-      worktree_clean
-    fi
-
-    wait "$rej_cleanup_pid" 2> /dev/null
-    if [ -n "$rej_cleanup_log" ] && [ -f "$rej_cleanup_log" ]; then
-      command cat "$rej_cleanup_log"
-      command rm -f "$rej_cleanup_log"
-    fi
-
-    wait "$ds_store_cleanup_pid" 2> /dev/null
-    if [ -n "$ds_store_cleanup_log" ] && [ -f "$ds_store_cleanup_log" ]; then
-      command cat "$ds_store_cleanup_log"
-      command rm -f "$ds_store_cleanup_log"
-    fi
-
-    echo "# ---- ✅ Reset to origin/$default_branch (100% done) ----"
-    git --no-pager lastd
-  ) &
+  # These cleanup operations are independent from the foreground branch reset. Offload the
+  # slow tail as one backgrounded function call so interactive shells show one short job line
+  # when it finishes, instead of dumping the whole inline subshell body back at the prompt.
+  echo "  -> background cleanup offloaded; progress continues below"
+  _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch" &
 }
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment
