@@ -272,10 +272,10 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     mouse-shift-capture = false
     copy-on-select = false
     confirm-close-surface = false
-    window-padding-x = 3
-    window-padding-y = 3
+    # window-padding-x = 3
+    # window-padding-y = 3
     # Even padding on both sides of a split, regardless of split orientation.
-    window-padding-balance = true
+    # window-padding-balance = true
     window-save-state = always
     # Slightly translucent background. Pairs with macOS background-blur
     # (set in the mac-only block); on Linux it relies on the compositor.
@@ -287,7 +287,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     background-opacity-cells = true
     # Extend the edge cell's background into the window padding, so a colored TUI
     # doesn't leave a 6px default-colored border on all four sides.
-    window-padding-color = extend
+    # window-padding-color = extend
     # Match the window chrome / titlebar to the OS appearance instead of forcing
     # a single theme variant.
     window-theme = auto
