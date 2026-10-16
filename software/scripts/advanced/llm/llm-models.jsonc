@@ -6,11 +6,11 @@
 // Cards report a bit under marketing size (24 GB -> 24576, 16 GB -> 16376,
 // 8 GB -> 8192 MiB), so each cut sits below. "tiny" has no floor: it is also the
 // fallback when VRAM is unreadable (system_gpu_vram_mib = 0).
-// Each tier lists exactly one { tag, role } per role: agent, vision, autocomplete.
+// Each tier lists at least one { tag, role } per role: agent, vision, autocomplete.
 // Autocomplete tags must be `-base` (FIM tokens exist only in base checkpoints).
 // Sizes are download size (sum of registry manifest layers); resident VRAM runs
-// higher once the KV cache is allocated. large: GLM-4.7-Flash and Gemma 4 26B are
-// ~19 GB each and cannot co-reside in 32 GB, so Ollama swaps them by workload.
+// higher once the KV cache is allocated. Large-tier models exceed 32 GB together, so
+// Ollama swaps them by workload.
 // medium: gpt-oss:20b (~13.8 GB) and Gemma 4 12B (~7.6 GB) likewise swap on 16 GB.
 [
   {
@@ -18,9 +18,10 @@
     "minVramMib": 24000,
     "description": "24 GB+ (RTX 3090 / 4090 / 5090)",
     "models": [
-      { "tag": "glm-4.7-flash:q4_K_M", "role": "agent" }, // 30B MoE (3B active), ~19.0 GB | ollama.com/library/glm-4.7-flash:q4_K_M
-      { "tag": "gemma4:26b", "role": "vision" }, // 26B, ~18.6 GB | ollama.com/library/gemma4:26b
-      { "tag": "qwen2.5-coder:3b-base", "role": "autocomplete" }, // 3B, ~1.9 GB | ollama.com/library/qwen2.5-coder:3b-base
+      { "tag": "glm-4.7-flash", "role": "agent" }, // 30B-A3B, default Q4_K_M, ~19 GB | ollama.com/library/glm-4.7-flash
+      { "tag": "qwen2.5-coder:32b", "role": "agent" }, // 32.8B, default Q4_K_M, ~20 GB | ollama.com/library/qwen2.5-coder:32b
+      { "tag": "gemma4:26b", "role": "vision" }, // 25.2B-A3.8B, default Q4_K_M, ~19 GB | ollama.com/library/gemma4:26b
+      { "tag": "qwen2.5-coder:3b-base", "role": "autocomplete" }, // 3.09B, default Q4_K_M, ~1.9 GB | ollama.com/library/qwen2.5-coder:3b-base
     ],
   },
   {

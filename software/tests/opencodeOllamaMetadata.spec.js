@@ -8,9 +8,9 @@ beforeAll(() => {
 });
 
 describe("OpenCode Ollama metadata", () => {
-  it("pulls GLM-4.7-Flash, Gemma 4 26B, and the 3B FIM model on a 24 GB card", () => {
+  it("pulls the requested default models on a 24 GB card", () => {
     const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
-    expect(getOllamaModelsForVram(24576)).toEqual(["glm-4.7-flash:q4_K_M", "gemma4:26b", "qwen2.5-coder:3b-base"]);
+    expect(getOllamaModelsForVram(24576)).toEqual(["glm-4.7-flash", "qwen2.5-coder:32b", "gemma4:26b", "qwen2.5-coder:3b-base"]);
   });
 
   it("pulls the medium tier on a 16 GB card", () => {
@@ -38,19 +38,19 @@ describe("OpenCode Ollama metadata", () => {
     expect(getOllamaModelsForVram(6144)).toEqual(["qwen2.5-coder:3b", "gemma3:4b", "qwen2.5-coder:1.5b-base"]);
   });
 
-  it("prefers GLM-4.7-Flash q4_K_M for the local coding agent", () => {
+  it("prefers GLM-4.7-Flash for the local coding agent", () => {
     const buildOpencodeConfig = getIndexFunction("_buildOpencodeConfig");
     const config = buildOpencodeConfig([
       {
         id: "ollama-local",
         name: "Ollama - 127.0.0.1:11434",
         baseURL: "http://127.0.0.1:11434/v1",
-        models: [{ name: "qwen3-coder:30b-a3b-q4_K_M" }, { name: "glm-4.7-flash:q4_K_M" }],
+        models: [{ name: "qwen3-coder:30b-a3b-q4_K_M" }, { name: "glm-4.7-flash" }],
       },
     ]);
 
-    expect(config.agent.local.model).toBe("ol-local/glm-4.7-flash:q4_K_M");
-    expect(config.provider["ol-local"].models["glm-4.7-flash:q4_K_M"]).not.toHaveProperty("limit");
+    expect(config.agent.local.model).toBe("ol-local/glm-4.7-flash");
+    expect(config.provider["ol-local"].models["glm-4.7-flash"]).not.toHaveProperty("limit");
   });
 
   it("shows the short host name, model, and Ollama address without duplicate labels", () => {

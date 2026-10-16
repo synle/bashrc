@@ -538,12 +538,26 @@ Copilot CLI has no `commands/` slot at all, so `/skill-name` is not reachable th
 ## Part 3 — Ollama models
 
 The model inventory is [`llm-models.jsonc`](llm-models.jsonc), inlined as `OLLAMA_MODELS_BY_VRAM` in [`llm-common.js`](llm-common.js) —
-the single source of truth. Each VRAM tier lists one `{ tag, role }` per role (agent,
+the single source of truth. Each VRAM tier lists one or more `{ tag, role }` entries per role (agent,
 vision, autocomplete); `AUTOCOMPLETE_MODELS` and `LLM_LOCAL_AGENT_MODELS` are derived
 from it. [`ollama.personal.sh`](ollama.personal.sh) installs the binary (native Linux only);
 [`ollama-models.personal.js`](ollama-models.personal.js) pulls the tier matching `system_gpu_vram_mib`
 (detected in `software/bootstrap/common-env.sh`) through the daemon's HTTP API, in the
 background. This section covers only how the discoverers pick a host.
+
+The 24 GB+ tier pulls these plain model tags:
+
+```bash
+ollama pull glm-4.7-flash          # 30B-A3B, default Q4_K_M, ~19 GB
+ollama pull qwen2.5-coder:32b      # 32.8B, default Q4_K_M, ~20 GB
+ollama pull qwen2.5-coder:3b-base  # 3.09B, default Q4_K_M, ~1.9 GB
+ollama pull gemma4:26b             # 25.2B-A3.8B, default Q4_K_M, ~19 GB
+```
+
+Ollama selects the registry's default quantization when no quantization suffix is
+specified; current defaults above are Q4_K_M. Sizes are approximate download sizes and
+can change with upstream tags. The three large models exceed 32 GB together, so Ollama
+loads them by workload rather than keeping them all resident at once.
 
 ### Host priority
 
