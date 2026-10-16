@@ -61,6 +61,7 @@ Governs every other section.
 - **Unrendered placeholder = broken deploy.** A path still holding a literal `<<NAME>>` token was never rendered — report it; never guess the real path.
 - **Probe paths, never pre-judge them.** A file outside the repository or workspace is still a valid target. Do not refuse preemptively or ask the user to move it into the workspace first — attempt access with the available tools and trust the actual result. Credential-shaped paths still go through Secret Handling first.
 - **Report only real failures.** Claim an access or permission limitation only when the tool actually failed with one, quoting the error verbatim; when a path is blocked, say so and continue the rest of the task.
+- **Document extraction uses the CLI.** For PDF, DOCX, XLS/XLSX, and PPTX text/table extraction, run `markitdown "input.pdf" -o "output.md"`, then read the Markdown. Do not use the MarkItDown MCP server. If the shell function is unavailable, use `uvx --python 3.12 --from "markitdown[all]" markitdown "input.pdf" -o "output.md"`. Use a new output file; preserve the source. This extracts Markdown, not Office editing, PDF creation, or guaranteed OCR; report missing content or conversion errors instead of claiming a complete extraction.
 
 ## Task Execution
 
