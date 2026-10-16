@@ -342,10 +342,11 @@ function _clean_background_tail() {
 # Also deletes stale local branches (squash-merged PRs), branches fully merged into the default
 # branch, local tags that no longer exist on origin, and prunes and removes merged/gone worktrees.
 # With --force / -f, every worktree is removed instead, skipping the dirty/merged checks.
+# With --background / -b, the slow tail returns early and keeps printing progress below the prompt.
 function clean() {
   if is_help_arg "${1:-}"; then
     echo "clean: safely reset current branch to origin's default branch
-  Usage: clean [--force|-f]
+  Usage: clean [--force|-f] [--background|-b]
   Notes:
     - Stashes ALL changes (staged + unstaged + untracked) first as a safety backup
     - Recover from stash with: git stash list  |  git stash pop
@@ -353,16 +354,24 @@ function clean() {
     - Deletes nested .DS_Store files (macOS Finder junk)
     - Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity)
     - Also deletes stale local branches (squash-merged PRs), merged branches, stale local tags, and prunes and removes merged/gone worktrees
-    - --force / -f: ALSO remove EVERY worktree, skipping the dirty/merged checks (uncommitted work in those worktrees is lost)"
+    - --force / -f: ALSO remove EVERY worktree, skipping the dirty/merged checks (uncommitted work in those worktrees is lost)
+    - --background / -b: return after the branch reset and let steps 12-16 keep printing below the prompt"
     return 1
   fi
 
   local force_worktrees=0
-  case "${1:-}" in
-  --force | -f)
-    force_worktrees=1
-    ;;
-  esac
+  local background_tail=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+    --force | -f)
+      force_worktrees=1
+      ;;
+    --background | -b)
+      background_tail=1
+      ;;
+    esac
+    shift
+  done
 
   local total_steps=16
   _PROGRESS_STEP=0
@@ -384,9 +393,9 @@ function clean() {
   git --no-pager cherry-pick --abort 2> /dev/null
   git --no-pager am --abort 2> /dev/null
 
-  # Repo-root anchor for nested cleanup sweeps. The slow file walks run later in clean's
-  # background tail so the foreground reset reaches origin sooner, but still traverse the
-  # full repo tree from the top instead of only the current folder.
+  # Repo-root anchor for nested cleanup sweeps. The slow file walks happen through the
+  # shared tail helper so they still traverse the full repo tree from the top instead of
+  # only the current folder.
   local repo_root
   repo_root=$(git --no-pager rev-parse --show-toplevel 2> /dev/null) || repo_root="$PWD"
 
@@ -427,11 +436,16 @@ function clean() {
   _log_progress_step "$total_steps" "🗑️ Deleting $temp_branch"
   git --no-pager del "$temp_branch" > /dev/null 2>&1
 
-  # These cleanup operations are independent from the foreground branch reset. Offload the
-  # slow tail as one backgrounded function call so interactive shells show one short job line
-  # when it finishes, instead of dumping the whole inline subshell body back at the prompt.
-  echo "  -> background cleanup offloaded; progress continues below"
-  _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch" &
+  # These cleanup operations are independent from the branch reset, but callers normally expect
+  # clean() to finish before the next command starts. Run the tail in the foreground by default
+  # so progress stays linear; keep --background as an explicit opt-in for fire-and-forget use.
+  if ((background_tail)); then
+    echo "  -> background cleanup offloaded; progress continues below"
+    _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch" &
+    return 0
+  fi
+
+  _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch"
 }
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment

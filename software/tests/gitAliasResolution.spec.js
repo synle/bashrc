@@ -183,6 +183,12 @@ describe("git alias resolution", () => {
     expect(config).not.toContain("\nco = checkout\n");
   });
 
+  it("should disable auth prompts in clean-and-fetch", () => {
+    expect(config).toContain(
+      "clean-and-fetch = \"!git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && GIT_TERMINAL_PROMPT=0 git fetch --all --prune 2>/dev/null\"",
+    );
+  });
+
   it("should quote every command substitution used as a command argument", () => {
     // Windows (`C:\Users\First Last\...`) and macOS (`~/My Drive/...`) repo paths contain
     // spaces. In argument position an unquoted `$(...)` word-splits into two arguments; in
