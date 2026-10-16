@@ -533,6 +533,11 @@ there; right-click its status-bar tab instead.
 | Workspace   | Export Workspace `e`                                                                                              |
 | Close       | Close Tab `T` — confirms first                                                                                    |
 
+Middle-click on a status-bar tab closes that clicked tab immediately, browser-style. It only
+fires on the tab strip (`MouseDown2Status`), not inside panes. With one tab this config hides
+the status bar, so there is normally nothing to click; if you force the bar visible, the bind
+is a no-op instead of killing the whole session.
+
 Split names follow the table above: **vertical** = side by side, **horizontal** = top /
 bottom. Every scrollback copy (`OS_KEY+y`, `ctrl+b` then `y`, the menu items) trims trailing
 spaces and blank lines at the start and end; a copy-mode selection is copied byte-exact.
