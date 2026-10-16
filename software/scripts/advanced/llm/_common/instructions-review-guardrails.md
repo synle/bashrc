@@ -13,6 +13,8 @@ Honesty from the main instructions governs this file too.
 
 - **Concrete failure or question.** A finding names the input or state, traces the reachable bad behavior, checks surrounding guards, and gives one correction. If that path cannot be constructed, ask a question instead of asserting a defect.
 - **Review expected absences.** Before reading hunks, list artifacts the intent should require — migration, test, logging, rollback, docs, config — then investigate missing ones. A file absent from the diff can carry the highest-risk regression.
+- **Review one concern per sweep.** Check correctness across the affected files, then security, then design and simplification; keep mechanical checks separate. A focused pass must still trace connected code, not treat each file as an isolated checklist.
+- **Paired operations are one contract.** When changing acquire/release, encode/decode, setup/teardown, subscribe/unsubscribe, or another paired operation, read its partner even outside the diff and check success and error paths. Compare constraints held in different layers too — a validator's bound must fit the stored field and its encoding.
 - **Removed guards have history.** Before approving a deleted or weakened guard, `git log -L` its lines; an introducing commit citing a bug, CVE, or incident makes the removal a regression until the author shows the cause is gone.
 - **Hunt deletable complexity.** Beyond defects, flag reinvented stdlib, single-implementation abstractions, and unused flexibility — one line each: location, cut, replacement.
 - **Self-review from a fresh context.** Review your own diff in a fresh subagent given only the diff, touched files, and rules — or, with none available, judge only from re-read files, never from memory of writing them.
@@ -38,6 +40,7 @@ Honesty from the main instructions governs this file too.
   write, reject unknowns, bound numerics, enforce one persisted value per scope+key,
   and use symmetric read/write resolution. Safety controls fail closed outside
   explicit development mode.
+- **Agent guardrails live outside the prompt.** Enforce tool/resource permissions and run time, action, and spend caps in credentials or runtime code; instruction text and delimiters are guidance, not enforcement. Test hostile retrieved instructions and runaway loops against those controls, including a stop mechanism that needs no model cooperation. Record where each claimed control is enforced and which check proves it.
 - **Caches key every varying input.** Include every value that can change the result,
   especially tenant, user, locale, authorization scope, and version. Name acceptable
   staleness, invalidation, and stampede behavior before adding a cache.

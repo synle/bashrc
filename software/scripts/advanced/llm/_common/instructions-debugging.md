@@ -31,6 +31,7 @@ Honesty from the main instructions governs this file too.
 
 - Fix the cause. Symptom-fix smells: a `try/except` around the failing call, a null check bolted onto the crash site, a retry around a nondeterministic operation, a `sleep` in a race, a loosened assertion — each turns a loud bug silent. Ask "why did this reach main?" and fix at _that_ level, plus sibling call sites with the same defect.
 - Prove the fix is load-bearing, three checks all required: re-run the **original** failing command (not the shrunk repro) and show output; revert only the fix, confirm the failure returns, re-apply; run the targeted suite for collateral damage.
+- Match proof to the failed surface. UI fixes need the real interaction plus console and network inspection; persistence fixes need a write followed by readback through the owner's normal read path or reload; race fixes need concurrent attempts with the permitted success count and final invariant asserted. Report an unavailable surface check as a gap, never substitute an isolated unit pass for it.
 - Ship a regression test, per Test Quality's both-directions check. Name it after the defect's cause, not the ticket. If an existing test should have caught this and didn't, say why.
 - Never round an unexplained remainder up to "fixed". A bug that stopped reproducing without an understood cause is reported as that.
 - Explain every observed symptom from the cause. An unexplained warning, count, or downstream failure is a separate finding or proof the root cause is incomplete; never fold it into the headline fix.

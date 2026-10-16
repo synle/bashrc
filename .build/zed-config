@@ -346,6 +346,7 @@
     "*.sublime-workspace",
     "*.suo",
     "*.swp",
+    "*.bak_original",
     ".eslintcache",
     "*.stylelintcache",
     "*.tsbuildinfo",
