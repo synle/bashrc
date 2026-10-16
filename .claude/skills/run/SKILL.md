@@ -11,9 +11,9 @@ The user's query is: `$ARGUMENTS` — if that placeholder arrives unexpanded or 
 
 ## Rules
 
-- Only match scripts that are runnable via `run.sh --files=`. Per AGENTS.md, these are files in `software/scripts/` with `.js` or `.sh` extensions.
+- Select executable `.js`/`.sh` scripts under `software/scripts/`. This convenience workflow excludes lifecycle scripts below; explicit lifecycle runs required by repo validation remain valid outside it.
 - **Exclude** these non-runnable files:
-  - Files with `_` prefix (`_init.js`, `_only.js`, `_only.sh`, `_full-setup.sh`, `_full-setup.ps1.bash`)
+  - Files with `_` prefix (`_init.js`, `_only.js`, `_only.sh`, `_full-setup.sh`)
   - Files with `~` prefix (`~cleanup.js`, `~wrapup.sh`)
   - Anything in `software/bootstrap/`
   - Anything in `software/tools/`
@@ -35,8 +35,6 @@ The user's query is: `$ARGUMENTS` — if that placeholder arrives unexpanded or 
 
 The `--files=` value should use paths relative to `software/scripts/` (e.g. `fzf.js`, `mac/brew.sh`, `git.js`), comma-separated for multiple scripts.
 
-Always run the command after resolving all matches -- don't just print it.
-
 ## Safety
 
 Never:
@@ -44,7 +42,7 @@ Never:
 - guess at an ambiguous match — list the candidates and ask
 - invent a `--files=` value for a script that does not exist on disk
 - add `--setup`, `--force`, `--force-refresh`, or `--remove` unless the request asked for it; those install, reinstall, or uninstall software on the machine
-- run an excluded file (`_`-prefixed, `~`-prefixed, or outside `software/scripts/`) — those are not addressable by `--files=` and will fail or misbehave
+- select lifecycle/helper files through fuzzy convenience matching; use explicit repo-documented commands for lifecycle validation
 - report success on a non-zero exit
 
 ## Verification

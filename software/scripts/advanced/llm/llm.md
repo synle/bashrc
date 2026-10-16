@@ -131,42 +131,44 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
-### Using the MarkItDown MCP server
+### Using the MarkItDown CLI
 
-Microsoft's [`markitdown-mcp`](https://github.com/microsoft/markitdown) ships in the shared registry (`_common/mcp-servers.jsonc`) and deploys to all four CLIs. It converts binary / office documents into Markdown the agent can read: **PDF, DOCX, XLSX, PPTX, images, audio, HTML, CSV, JSON, ZIP**, and more.
+Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) converts documents
+such as PDF, DOCX, XLSX, and PPTX into Markdown. The advanced Bash profile defines
+`markitdown` only when a `uvx` executable is on PATH. It runs
+`uvx --python 3.12 --from "markitdown[all]" markitdown` on demand, using an isolated
+tool environment. Python 3.12 matches `advanced/uv.venv-python.sh`; uv caches the
+dependencies after the first invocation.
 
-- **Runtime**: launched on demand as
-  `uvx --with "mcp>=1.19,<2" markitdown-mcp` (STDIO). `uv` is installed cross-OS
-  by `software/scripts/advanced/uv.sh`; the **first** call downloads the package
-  - its parsers (pdfminer, pandas, pillow, …) and caches them under `~/.cache/uv`
-    — later calls are instant. No separate install step. The `--with "mcp>=1.19,<2"`
-    floor is a required workaround: the published `markitdown-mcp` (0.0.1a4) pins
-    `mcp~=1.8.0`, and that old MCP SDK crashes the server (exit 1) on the
-    `server/discover` probe that Copilot / OpenCode send during the handshake —
-    surfacing as _"MCP server process exited before completing the MCP initialize
-    handshake"_. A newer SDK answers that probe gracefully; drop the flag once
-    markitdown-mcp stops pinning `mcp~=1.8.0`.
-- **Tool exposed**: `convert_to_markdown(uri)`, where `uri` is a `file:`,
-  `http:`, `https:`, or `data:` URI.
-- **How to invoke** — just ask the agent in plain language; it picks the tool
-  and passes the path:
-  - `"Convert ~/Downloads/report.pdf to markdown"`
-  - `"Read the tables in ./budget.xlsx"`
-  - `"Summarize this deck: /abs/path/slides.pptx"`
-  - Relative paths work, but an absolute `file://` URI is the most reliable —
-    e.g. `file:///Users/me/Downloads/report.pdf`.
-- **Local-only by default**: images and PDFs are parsed locally; image content
-  yields EXIF/metadata only unless a vision LLM client is wired into MarkItDown
-  (not configured here), so nothing leaves the machine.
-- **Verify it's wired up** (per CLI, after a setup run):
-  - Claude / Gemini → `mcpServers.markitdown` in `~/.claude/settings.json` /
-    `~/.gemini/settings.json`
-  - Copilot → `mcpServers.markitdown` in `~/.copilot/mcp-config.json`
-  - OpenCode → `mcp.markitdown` in `~/.config/opencode/opencode.json`
-    (translated `{ type: "local", command: ["uvx", "--with", "mcp>=1.19,<2", "markitdown-mcp"] }` shape)
-- **Redeploy after edits**:
-  `bash run.sh --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"`
-  (or `bash run.sh --preset=llm`).
+```bash
+markitdown "input.docx" -o "output.md"
+markitdown "input.docx" "output.md"
+markitdown "input.pdf" # Markdown on stdout
+markitdown --help
+```
+
+Exactly two non-option arguments select the input/output shorthand. Other arguments
+are forwarded unchanged to the CLI. Conversion reads the source and writes Markdown;
+it does not edit Office files or create PDFs. Optional cloud conversion flags and
+plugins retain their upstream behavior.
+
+Agents whose shells do not load the advanced profile (including sessions with
+`CLAUDECODE=1`) should invoke the underlying command directly:
+
+```bash
+uvx --python 3.12 --from "markitdown[all]" markitdown "input.docx" -o "output.md"
+```
+
+The shared MCP registry no longer includes MarkItDown. Existing installations use
+additive config merges, so remove only the old `markitdown` entry from these maps
+after checking it still launches `markitdown-mcp`:
+
+- `~/.claude/settings.json`: `mcpServers.markitdown`
+- `~/.copilot/mcp-config.json`: `mcpServers.markitdown`
+- `~/.gemini/settings.json`: `mcpServers.markitdown`
+- `~/.config/opencode/opencode.json`: `mcp.markitdown`
+
+Preserve the remaining configuration and restart the affected CLI after cleanup.
 
 ### Using the Playwright MCP server
 

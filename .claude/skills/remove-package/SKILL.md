@@ -33,9 +33,11 @@ Remove `installXxxPackage <name>` lines from all platform `_full-setup.sh` files
 
 Check for distro-specific package name variants (e.g. `fd` vs `fd-find`, winget IDs like `sharkdp.fd`).
 
-### 3. Remove script file (if exists)
+### 3. Identify scripts and defer deletion
 
-Delete the script from `software/scripts/`:
+Read any `undoWork()` before deletion. Identify scripts now, complete Steps 4–10, then perform the requested local undo and script deletion in Step 11. Do not rerun installation between these steps.
+
+Record applicable scripts under `software/scripts/`:
 
 - `.js` script (e.g. `software/scripts/<name>.js`)
 - `.sh` script (e.g. `software/scripts/<name>.sh`)
@@ -86,22 +88,21 @@ Delete or update any tests in `software/tests/` that reference the removed scrip
 rg -n '<name>' software/tests/
 ```
 
-### 10. Remove asset file (if exists)
+### 10. Audit assets
 
-Delete `assets/<name>.md` if one exists.
+Report package-owned assets that may be obsolete. `assets/` is owner-managed and protected; do not delete it under this workflow.
 
 ### 11. Uninstall locally, then validate
 
-If the script had an `undoWork()`, run the removal path against your own machine before deleting the file (do this **before** step 3, or from a stash):
+After Steps 4–10, run the normal undo path only if local uninstall was requested and `undoWork()` exists:
 
 ```bash
 bash run.sh --remove --files="<name>.js"
 ```
 
-Then the full gate:
+Then delete the scripts recorded in Step 3 and run the full gate:
 
 ```bash
-make format
 make validate
 ```
 
@@ -113,7 +114,7 @@ Never:
 
 - delete a file before the reference search in Step 1 has been read in full — a leftover profile block or autocomplete spec entry fails at shell startup, far from this change
 - remove a binary from `ci-binaries.json` by hand-editing the generated `action.yml` block — edit the JSON and run `make format_ci_binaries`
-- uninstall from the local machine before the repo change is complete, so a re-run cannot quietly reinstall it
+- uninstall unless requested, or rerun installation between preparing repo removals and executing the preserved undo path
 - widen a delete past the package being removed — a shared helper, PATH entry, or preset that other tools also use stays
 - edit a protected path per AGENTS.md section 3 (`.build/`, owner-managed `software/metadata/` files, `assets/`)
 

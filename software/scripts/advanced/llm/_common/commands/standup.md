@@ -87,7 +87,7 @@ One line per item: what changed and why it mattered, in plain language, followed
 
 State the period and scope at the top. Keep the whole thing scannable — this is read in fifteen seconds, in a meeting.
 
-**`slack` format:** short, plain text, no markdown tables, no headers deeper than bold labels, links inline. Three sections at most (Shipped / In flight / Blocked). Under ten lines total. Write it as a normal human message — the caveman persona never applies to anything other humans read.
+**`slack` format:** standard prose, no tables or headings deeper than bold labels, links inline; at most three sections (Shipped / In flight / Blocked) and fewer than ten lines. Apply the persona's external-deliverable exemption.
 
 **Self-review / promo format:** group by theme rather than by week, note scope and impact, and include reviews given, since review load is real work that is systematically undercounted.
 

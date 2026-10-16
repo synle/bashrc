@@ -1,4 +1,4 @@
-[Sy] Stress-test a plan, design, or decision. Calibrated grilling — one question at a time, with recommended answers. Not hostile debate; calibrated pressure until plan is clear and defensible.
+[Sy] Stress-test a plan, design, or decision with calibrated pressure, one question at a time and a recommended answer, until the plan is clear and defensible.
 
 Argument: $ARGUMENTS (optional — topic to grill. If empty, asks what to grill.)
 

@@ -100,7 +100,7 @@ Each JSON row carries `url repo number title author createdAt updatedAt ageDays 
 
 **`autoMerge` says whether GitHub will merge it without you.** True when `autoMergeRequest.enabledAt` is set; `autoMergeMethod` carries `SQUASH` / `MERGE` / `REBASE`. It changes what a human should do with a row — an armed 🟡 needs no babysitting, the same row unarmed is waiting on someone to come back and click. The CLI renders it as a **dim `[auto-merge]` tag after the reason tag, never an icon**: GitHub landing the PR itself is a property of the row, not a tenth reason it is stuck, so it must not compete with the reason column for the same glance. `status` carries an `AUTO-MERGE (<method>)` token either way.
 
-**Every text marker survives losing color; only the tone is conditional.** `[rejected]`, `[behind]`, `[auto-merge]`, and the `…` all print under `--links`, a pipe, `NO_COLOR`, and a redirect. Those renders lose bold / dim / magenta but never a fact — which is the whole reason these are words and punctuation rather than styling.
+**Every text marker survives losing color; only the tone is conditional.** Human-readable piped, redirected, and `NO_COLOR` output keeps tags and `…` without styling. URL-only `--links` output remains undecorated, as the next rule requires.
 
 **Icons go on the title line only — never on a URL line.** The two-line human render is `<reasonIcon> [<reasonTag>] [auto-merge] <headRefName> : <title>[…]` then the bare URL, and `--links` is unchanged. Same rule as `short` below: consumers read URL lines, so decorating them breaks every caller.
 
@@ -480,7 +480,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 **Pulse block grouping**: one bold group line — `**<label>** — slot <N> · <n> PRs · <repo>, <repo>, … — <description>` — then that group's sentences beneath it, then a blank line before the next group. Same fields, same order as the table heading, minus the `###` and the 🌊.
 
-**One table per group**, in group order, each under its heading, each repeating the three-column header row. Never merge two groups into one table and never split a group across two. Within a group, rows keep the normal pingpong sort (below).
+**One table per group**, under its heading and repeating the four-column header below. Keep groups intact and use the within-group sort.
 
 **Sort within a group:** `🔴` first, then `🟡`, then `🟢`, then `❓`; within one color, `Δ` rows come before `🆕` before `▫️`; ties broken by repo name then PR number. Red work reads first because that is the row a human has to act on, and moved work reads before parked work because that is the row that changed since they last looked. Sorting is **within** a group only — a red PR never jumps out of its feature set to the top of the board, because Group ordering already leads with the group holding the most urgent member.
 
@@ -605,7 +605,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **`🔍 WATCHING` means the PR is being served cheaply, not that it was dropped.** This PR is externally blocked, so the dispatcher released its worker slot and is polling the state fingerprint itself (`/sy-babysit-prs` Step 4b, `/sy-review-prs` Step 5b). The row is **not terminal** — it keeps its pass counter and its next-check ETA, the pulse keeps running, and a worker is dispatched the instant the fingerprint moves. Its clock reads `blocked on <what> · probe <N> · next check <HH:MM>`: what it is waiting on, how many probes it has spent there, and when the next one lands. Never render it as `⏸️ WAITING` (which claims a dispatched job is asleep) or as `⏭️ SKIPPED` (which claims nobody is coming back).
 
-  **`🙋 NEEDS_USER` is a pause in this run, never a state on GitHub.** A worker handed the PR back with a stop-and-ask, so the dispatcher stopped scheduling passes for it and is showing the question instead (`/sy-babysit-prs` Step 4d, `/sy-review-prs`). Nothing was labelled, blocked, or commented on the PR itself — it may still be green, approved, and mergeable to everyone else. The clock carries what is needed, when it was asked, and the verdict the last revalidation reached (`current` / `changed` / `conflicted` / `stale_unknown`); a `cleared` one is not rendered at all, because that PR went back into the rotation. Never render it as `⚠️ ESCALATED` (a job that stopped on its own error) or `⏭️ SKIPPED` (nobody is coming back).
+  **`🙋 NEEDS_USER` is a pause in this run, never a state on GitHub.** Pause only the blocked decision; retain probes and keepalive revalidation passes per the dispatcher's rules. Show the question, ask time, and latest verdict (`current` / `changed` / `conflicted` / `stale_unknown`); `cleared` returns to normal scheduling. Make no GitHub scheduler-state writes. Do not render this pause as `⚠️ ESCALATED` or terminal `⏭️ SKIPPED`.
 
   **A merged or closed PR is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
 

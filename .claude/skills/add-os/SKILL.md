@@ -11,7 +11,7 @@ Onboard a new operating system to this dotfiles repo. The OS name is `$ARGUMENTS
 
 ### 1. Add the OS detection flag in `run.sh`
 
-**Detection lives in `run.sh`, not `common-env.sh`** — `common-env.sh` only carries the flag _list_. Add the flag to the `# --- OS Detection ---` section of `run.sh` (around lines 310-330), using the `_detect_os` helper. Never hand-roll a `command grep /etc/os-release` — `_detect_os` already does that, plus `$OSTYPE`, `/proc/version`, path, binary, and env probes.
+Detection lives in `run.sh`; `common-env.sh` owns the flag list. Read `_detect_os` and the current detection block before adding the flag; reuse its probes.
 
 ```bash
 is_os_<name>=0 && _detect_os --name "<distro-id>, <id_like>" --bin "<pkg-manager>" --path "/marker/path" && is_os_<name>=1
@@ -105,74 +105,15 @@ async function doWork() {
 
 #### `_full-setup.sh` (required if OS has a package manager)
 
-Installs system packages. Only runs with `--setup` flag. Structure:
-
-```bash
-# software/scripts/<name>/_full-setup.sh
-# <Platform Name> dependencies
-
-echo ">> Begin setting up dependencies/<name>/deps.sh"
-sudo -v
-
-# ---- Speed Optimizations ----
-# Cache installed packages upfront to avoid per-package lookups
-_PKG_INSTALLED=$(<command to list installed packages>)
-
-# ---- Package Manager Functions ----
-function install<Manager>Package() {
-  echo -n ">> $@ >> Installing with <Manager> >> "
-  if echo "$_PKG_INSTALLED" | grep -qxF "$1"; then
-    echo "Skipped"
-  elif sudo <install-command> $@ &> /dev/null; then
-    echo "Success"
-  else
-    echo "Error"
-  fi
-}
-
-# ---- Update / Upgrade ----
-function updatePackageIndex() {
-  <package-index-refresh-command>
-}
-
-function upgradeAndCleanPackages() {
-  <upgrade-and-cleanup-commands>
-}
-
-if is_bash_syle_stale; then
-  echo '>> Updating package index'
-  updatePackageIndex
-  echo '>> Upgrading packages'
-  upgradeAndCleanPackages
-fi
-
-# ---- Core: Build Tools ----
-install<Manager>Package git
-install<Manager>Package curl
-install<Manager>Package make
-
-# ---- Core: Shell Utilities ----
-install<Manager>Package bat
-install<Manager>Package fd-find
-install<Manager>Package tree
-install<Manager>Package tldr
-install<Manager>Package jq
-install<Manager>Package ripgrep
-install<Manager>Package fzf
-install<Manager>Package tmux
-install<Manager>Package vim
-
-# ---- Core: Network Tools ----
-install<Manager>Package wget
-install<Manager>Package openssh-client
-```
+Installs system packages only with `--setup`. Adapt the closest current `_full-setup.sh`, retaining its shebang, helper include, stale-refresh guard, package groups, and foreground/background semantics. Verify each package name; the live sibling and CI binary registry supply the package inventory, not a copied template.
 
 **Conventions:**
 
 - Use `function` keyword: `function installXxxPackage() {`
 - 3-state messaging: "Skipped" / "Success" / "Error"
 - Cache installed packages in a variable at the top (e.g. `_APT_INSTALLED`, `_PACMAN_INSTALLED`, `_RPM_INSTALLED`)
-- Group packages under `# ---- Category ----` sub-section headers
+- Group packages under `# --- Category ---` section headers
+- Quote `"$@"` and redirect package-manager calls with `< /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1` as AGENTS.md requires.
 - Check if package names differ on this distro (e.g. `fd` vs `fd-find`, `ripgrep` vs `rg`)
 - Optionally add background install queue for non-essential packages (see ubuntu `_full-setup.sh` for pattern)
 
@@ -190,30 +131,7 @@ Add a `# BEGIN/END` marker in the OS-specific tweaks section (alphabetically amo
 
 ### 6. Add CI build (optional but recommended)
 
-Add a new parallel build job in `.github/workflows/build-main.yml` Phase 2. Follow the existing pattern:
-
-```yaml
-build-<name>:
-  needs: [prep]
-  if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.test_only) }}
-  runs-on: ubuntu-latest
-  container: <docker-image>:latest
-  continue-on-error: true
-  outputs:
-    duration: ${{ steps.ci-build.outputs.duration }}
-  steps:
-    - name: Install dependencies
-      run: <install git, curl, make, node via package manager>
-    - uses: actions/checkout@v4
-    - uses: ./.github/actions/ci-setup
-    - uses: ./.github/actions/ci-apply-patches
-      with:
-        patches: prep-patch
-    - uses: ./.github/actions/ci-build
-      id: ci-build
-      with:
-        artifact-name: build-<name>
-```
+Adapt a current Phase 2 build job in `.github/workflows/build-main.yml`: prep dependency, runner/container, bootstrap dependencies, checkout, setup, prep-patch application, shared CI build, artifact name, and duration output. Preserve the workflow's failure policy; use pinned action SHAs and image digests per Risky Changes rather than floating template versions.
 
 Also wire the new build into Phase 3 (publish -- merge artifacts), Phase 5 (test -- download artifacts + copy snapshots), and the summary job.
 
@@ -241,7 +159,6 @@ bash run.sh --files="<name>/_init.js"     # second run must be a clean no-op (id
 Then:
 
 ```bash
-make format
 make validate
 ```
 

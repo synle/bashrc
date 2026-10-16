@@ -1228,6 +1228,26 @@ alias pytest-single="python -m pytest -vvl -k"
 alias flake="flake8"
 alias flake8="python -m flake8"
 
+# --- Document Conversion ---
+if type -P uvx > /dev/null 2>&1; then
+  # markitdown: convert documents to Markdown with optional output file.
+  # Accepts native CLI arguments or INPUT OUTPUT; returns uvx's exit status.
+  # Downloads isolated tool dependencies on first use; writes stdout or OUTPUT.
+  function markitdown() {
+    if is_help_arg "${1:-}"; then
+      echo "markitdown: convert documents to Markdown with optional output file
+  Usage: markitdown INPUT [-o OUTPUT | OUTPUT] [OPTIONS]
+  Without OUTPUT, writes Markdown to stdout.
+  Uses uvx with Python 3.12 and markitdown[all]."
+      return 0
+    fi
+    if [ "$#" -eq 2 ] && [[ "$1" != -* && "$2" != -* ]]; then
+      set -- "$1" -o "$2"
+    fi
+    command uvx --python 3.12 --from "markitdown[all]" markitdown "$@"
+  }
+fi
+
 # --- Aliases: Git ---
 alias stash="git stash"
 alias pop="git stash pop"

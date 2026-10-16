@@ -30,22 +30,22 @@ function _get_default_branch() { echo master; }
 function _log_progress_step() { shift; echo "$*"; }
 function worktree_clean() { sleep 0.05; echo TAIL_WORKTREE; }
 function git() {
-  if [ "${'$'}1" = "--no-pager" ]; then
+  if [ "${"$"}1" = "--no-pager" ]; then
     shift
   fi
 
-  case "${'$'}1" in
+  case "${"$"}1" in
   stash | merge | rebase | cherry-pick | am | fix-identity | clean-and-fetch | gc-if-stale | checkout | del)
     return 0
     ;;
   rev-parse)
-    if [ "${'$'}2" = "--show-toplevel" ]; then
+    if [ "${"$"}2" = "--show-toplevel" ]; then
       pwd
     fi
     return 0
     ;;
   branch)
-    if [ "${'$'}2" = "--show-current" ]; then
+    if [ "${"$"}2" = "--show-current" ]; then
       echo master
     fi
     return 0

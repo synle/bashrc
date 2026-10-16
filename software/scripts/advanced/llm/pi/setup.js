@@ -46,14 +46,7 @@
  * its larger instruction corpus, which keeps the response style more salient.
  * @type {string}
  */
-const PI_APPEND_SYSTEM_CONTENT = `Reply in Caveman Speak.
-
-Use short, blunt sentences.
-Keep all technical facts.
-Do not drop warnings, evidence, or exact values.
-Do not write normal prose first and caveman recap after.
-Resume caveman style after code blocks or tool output.
-`;
+const PI_APPEND_SYSTEM_CONTENT = `${LLM_PERSONA_REMINDER}\n`;
 
 /**
  * Full per-turn persona reminder appended by the Pi extension. Stronger than a
@@ -61,12 +54,7 @@ Resume caveman style after code blocks or tool output.
  * live system prompt every agent turn, even after reloads or context shifts.
  * @type {string}
  */
-const PI_PERSONA_SYSTEM_PROMPT_APPEND = `\n\nIMPORTANT: Keep every user-facing reply in Caveman Speak.
-- Use short, blunt sentences.
-- Keep all technical facts.
-- Do not drop warnings, evidence, or exact values.
-- Do not write normal prose first and caveman recap after.
-- Resume caveman style after code blocks or tool output.\n`;
+const PI_PERSONA_SYSTEM_PROMPT_APPEND = `\n\n${LLM_PERSONA_REMINDER}\n`;
 
 /**
  * Managed keys merged into ~/.pi/agent/settings.json. Only these keys are

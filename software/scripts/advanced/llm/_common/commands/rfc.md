@@ -111,7 +111,7 @@ Target decision date: <YYYY-MM-DD or TBD>
 ### Decision And Review Log
 ```
 
-Keep main body under roughly three rendered pages before appendix. Cut repetition first; move useful depth to appendix. Prefer one diagram over several paragraphs, but never add a decorative diagram.
+Keep the main body under roughly three rendered pages. Cut repetition; move useful depth to the appendix. Add diagrams only when they clarify the decision.
 
 ### 5. Self-review and hand off
 

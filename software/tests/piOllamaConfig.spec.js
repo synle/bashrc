@@ -14,11 +14,7 @@ describe("Pi Ollama provider refresh", () => {
     fileSystem[PI_MODELS_PATH] = JSON.stringify({
       providers: {
         "ollama-sy-omen45l": {
-          models: [
-            { id: "gemma4:26b" },
-            { id: "qwen2.5-coder:3b-base" },
-            { id: "glm-4.7-flash:q4_K_M" },
-          ],
+          models: [{ id: "gemma4:26b" }, { id: "qwen2.5-coder:3b-base" }, { id: "glm-4.7-flash:q4_K_M" }],
         },
         "custom-local": { models: [{ id: "manual-model" }] },
       },

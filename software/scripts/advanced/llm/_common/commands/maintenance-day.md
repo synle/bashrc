@@ -47,7 +47,7 @@ Run `/sy-close-stale-prs $ARGUMENTS` and let it own the whole loop — candidate
 
 ### Phase 2 — Repo cleanup
 
-Run `/sy-sync-and-clean-repos` from `$ROOT`. That skill fans out `/sy-sync-and-clean-repo` across every repo it discovers (fetch + prune, drop `[gone]` branches, prune worktree records, fast-forward the default, merge the default into every other local branch, resolve conflicts, push where an upstream exists).
+Run the multi-repo sync-and-clean workflow from `$ROOT`; it owns per-repo sequencing, cleanup guards, merges, and permitted pushes. Preserve its report for Phase 3.
 
 - **Do not** run `git fetch` / `git merge` / `git branch -D` yourself here. Cleanup is human-in-the-loop on conflicts and stays sequential inside that skill.
 - A repo that fails (diverged default, unresolvable conflict, detached HEAD) is reported and skipped — it does not abort the remaining repos.

@@ -33,7 +33,7 @@ This is a thin orchestrator. It owns **no** git logic of its own — it discover
 ## Rules
 
 - **Delegate, never re-implement.** Every destructive action belongs to `/sy-sync-and-clean-repo`. This command's only job is discovery, sequencing, and the consolidated report.
-- **Phones run in order.** A repo that fails (diverged default, unresolvable conflict, detached HEAD) is reported and skipped — it does not abort the remaining repos.
+- **Repos run in order.** Report and skip a failed repo (diverged default, unresolved conflict, detached HEAD); continue the remaining repos.
 - **No branch deletion on the remote.** Inherited from the per-repo skill.
 - **Never force-push, never rebase a shared branch, never `git gc --aggressive`.** Inherited from the per-repo skill.
 - **One `$ROOT` per invocation.** To clean up a different tree, `cd` there and rerun rather than passing multiple roots.

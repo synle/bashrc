@@ -32,6 +32,7 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
   ```
 
   Exception: pushing to default itself always `git pull --rebase` then fast-forward push — never a merge commit on default from local work.
+
 - **Plain-English "pull latest code" means the merge workflow, not a rebase.** On a non-default working branch, interpret asks like "pull latest code", "pull latest code from master", and "pull latest code from main" as `/sy-merge`: first run the repo-local sync (`/sy-sync-pr-branch` — floor/default first, then any ancestor wave or feature branches root-most down to the immediate parent), then merge `upstream/<default>` LAST when the repo is a fork. On the default branch itself, the exception above still wins.
 
 - **Solo repos** — if `git log --format='%ae' -200 | sort -u` is only you plus known bots (`*[bot]@*`, the LLM noreply addresses), push straight to default; say so. An explicit "open a PR" overrides.
@@ -84,7 +85,7 @@ when referencing one. Epistemic Honesty from the main instructions governs here 
 
 ## Worktree dependencies
 
-Goal: a fresh worktree reaches a working install and build without re-downloading packages, re-installing a language runtime, or sharing state that lets one branch break another. Every ecosystem splits into the same three layers; apply the layer's rule, not a per-language trick.
+Share caches and runtimes, isolate environments and output. Apply these three layers across ecosystems:
 
 | Layer               | Examples                                                                                                     | Rule                                                                  |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
@@ -98,7 +99,7 @@ Goal: a fresh worktree reaches a working install and build without re-downloadin
 - **Turn on the build tool's content-keyed cache** (Gradle build cache, `sccache` / `ccache`, turbo/nx local cache) so rebuilds across worktrees reuse compiled work without sharing build output.
 - **Give each worktree its own ports.** Derive dev-server, debugger, and test-service ports per worktree, never the tool default — two agents on one default port collide, or one silently talks to the other's server.
 - **Install only when the task runs code.** A worktree used only for docs, review, or reading needs no dependency install or build; install on first need for tests, a build, or execution.
-- **Install from the warm cache; don't clone by default.** Default for a layer-2 folder is the ecosystem's offline/cache-first install against **this worktree's** lockfile — no downloads once the global cache is warm. A copy-on-write clone (`cp -cR` on APFS) is not free: it still creates a metadata entry per file, so on a large many-small-files tree (`node_modules`) it measured ~3× slower than a cache-backed install, and still needs the install afterwards to be correct. Clone only where a before/after timing on that repo shows it wins; never a full non-CoW copy of a large tree.
+- **Install from the warm cache; don't clone by default.** Reconcile layer-2 environments against this worktree's lockfile using cache-first installs. Clone only when a repo-specific before/after measurement proves a win and reconciliation still runs; never fully copy a large tree. Copy-on-write still pays per-file metadata cost.
 - **Never clone an env holding absolute paths.** A Python venv (shebangs, `pyvenv.cfg`, editable `.pth`) and any tool-managed venv point back at the worktree that built them — a clone imports the other checkout's code and tests pass against the wrong source. Build it fresh per worktree; ruled out on correctness, not speed.
 - **Expect a cold first run.** The first install in a fresh worktree can pay a one-off cost (build daemon start, first cache fill) several times the steady state; judge an approach on the second fresh worktree, not the first.
 - **Prove isolation after install.** Resolve one project import or binary and confirm it points inside this worktree, not the primary checkout.
@@ -159,7 +160,7 @@ Goal: a fresh worktree reaches a working install and build without re-downloadin
   ```
 
 - **Empty means empty** — no whitespace tweak, bumped comment, or touch-and-revert; a dummy edit pollutes review/blame and can trip path filters. Say what it is in the subject so a scanner sees it changes nothing. **Confirm the branch first** — this runs on the PR's own branch, never default (an empty commit on default is noise no squash collapses).
-- **Fresh approval is the known price, not a bug to engineer around.** Under `require_last_push_approval: true` any commit makes you the latest pusher and needs a new approval; budget for the ping. On an already-green, already-approved PR that isn't actually stuck, don't push at all.
+- **Fresh approval is the known price, not a bug to engineer around.** Under `require_last_push_approval: true`, a new push needs another approval. Budget for it; do not push an already-green, approved PR unless it is actually stuck.
 - **A genuinely red Actions job is a different problem** — `gh run rerun <id> --failed` re-runs only the failed jobs, far cheaper than a push.
 
 ## Links and references

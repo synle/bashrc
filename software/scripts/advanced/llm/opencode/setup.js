@@ -712,21 +712,35 @@ async function _doOpencodeInstructionsWork() {
 }
 
 /**
- * Writes ~/.config/opencode/opencode.json with dynamically-discovered Ollama providers
- * plus a static github-copilot provider entry, then writes the TUI config + AGENTS.md,
- * then mirrors all Claude Code slash commands AND global Claude agent skills into the
- * opencode commands dir as symlinks. Also relinks the credential store
- * (`~/.local/share/opencode/auth.json` -> `~/.auth-opencode.json`) so provider logins
- * survive the uninstall/reinstall in `install.sh`.
- *
- * Provider discovery: `getOllamaProviderInputs()` (in llm-common.js) probes every
- * `OLLAMA_REMOTE` host from ip-address.config and `127.0.0.1` on port `OLLAMA_PORT`
- * (`/api/tags`) and returns ONLY hosts
- * that responded with at least one model. No hardcoded model list — every reachable host
- * contributes whatever it advertises. When zero hosts respond, the Ollama provider entries
- * are omitted (github-copilot is still written either way).
- *
- * Skips entirely when opencode is not installed.
+ * Deploys a local plugin that refreshes chat-style context before model calls and compaction.
+ * Uses only documented context arrays; performs no network or permission changes.
+ * @returns {Promise<void>} Resolves after writing the managed plugin.
+ */
+async function _doOpencodePersonaPluginWork() {
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/plugins/sy-persona-reminder.js");
+  const content = `/** Reinforces chat style while preserving policy and artifact prose. */
+export default async function () {
+  const reminder = ${JSON.stringify(LLM_PERSONA_REMINDER)};
+  return {
+    "experimental.chat.system.transform": async (_input, output) => {
+      output.system = output.system.filter((entry) => entry !== reminder);
+      output.system.push(reminder);
+    },
+    "experimental.session.compacting": async (_input, output) => {
+      if (!output.context.includes(reminder)) output.context.push(reminder);
+    },
+  };
+}
+`;
+  await mkdir(path.dirname(targetPath));
+  await writeText(targetPath, content);
+}
+
+/**
+ * Configures installed OpenCode: discovered providers, MCP, TUI, instructions,
+ * persona plugin, command/skill links, agents, and the existing auth-store link.
+ * Omits Ollama providers when discovery returns none; skips if OpenCode is absent.
+ * @returns {Promise<void>} Resolves after deploying managed configuration.
  */
 async function doWork() {
   if (!(await isBinaryFound("opencode"))) {
@@ -769,6 +783,7 @@ async function doWork() {
   await _writeOpencodeTuiConfig();
 
   await _doOpencodeInstructionsWork();
+  await _doOpencodePersonaPluginWork();
 
   await _syncOpencodeCommandSymlinks();
 

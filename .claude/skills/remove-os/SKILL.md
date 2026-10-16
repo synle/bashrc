@@ -20,7 +20,7 @@ rg -n '<name>' software/scripts/ software/tests/ .github/
 
 ### 2. Remove the OS detection flag from `run.sh`
 
-**Detection lives in `run.sh`, not `common-env.sh`.** Delete the `is_os_<name>=0 && _detect_os ... && is_os_<name>=1` line from the `# --- OS Detection ---` section (around lines 310-330).
+Delete the flag's detection from `run.sh`'s OS Detection section; `common-env.sh` owns the list, not these probes.
 
 If the removed flag appeared in the `is_os_ubuntu` catch-all guard, drop it from that condition too:
 
@@ -43,13 +43,7 @@ grep -n ALL_OS_FLAGS run.sh software/bootstrap/common-env.sh   # both lines must
 git rm -r software/scripts/<name>/
 ```
 
-That folder holds:
-
-- `_init.js` — platform init
-- `_only.js` — platform tweaks
-- `_only.sh` — shell tweaks (if exists)
-- `_full-setup.sh` — package dependencies (if exists)
-- Any other OS-specific scripts in the folder
+Inspect tracked, untracked, and ignored contents before removal; preserve local work and follow Destructive Commands for unrecoverable files.
 
 ### 5. Remove platform tweaks marker from `software/bootstrap/profile-advanced.sh`
 
@@ -103,7 +97,6 @@ npx vitest run --config vitest.config.js software/tests/osDetection.spec.js soft
 ### 11. Validate
 
 ```bash
-make format
 make validate
 ```
 
@@ -132,6 +125,6 @@ Before declaring success, confirm and report:
 
 ## Notes
 
-- `.build/profile_bashrc_<name>.sh` files are generated artifacts (gitignored) -- they will stop being generated once the OS is removed. The corresponding `bashrc-profile__profile_bashrc_<name>.sh` asset on the `binary-cache` release on `synle/bashrc` will go stale; delete it manually via `gh release delete-asset binary-cache bashrc-profile__profile_bashrc_<name>.sh --repo synle/bashrc --yes` if you want a clean cache.
+- Generated profiles stop rebuilding after removal. Report stale rolling-release assets separately; remote asset deletion requires explicit scope and approval.
 - `software/metadata/script-list.config` is auto-generated -- it will drop the OS scripts on the next `make format_script_indexes`.
 - If other OSes depend on this one (e.g. `steamos` depends on `arch_linux` detection), update those detection rules accordingly.

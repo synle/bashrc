@@ -9,56 +9,33 @@ Add a new CLI tool or package to this dotfiles repo. The package is `$ARGUMENTS`
 
 ## Steps
 
-### 1. Determine install method (priority order)
+### 1. Determine install method
 
-1. **OS package manager** (preferred) -- add `installXxxPackage <name>` to each platform's `_full-setup.sh` AND the Windows winget list:
-   - `software/scripts/mac/_full-setup.sh` -> `installBrewPackage <name>`
-   - `software/scripts/ubuntu/_full-setup.sh` -> `installAptPackage <name>`
-   - `software/scripts/redhat/_full-setup.sh` -> `installDnfPackage <name>`
-   - `software/scripts/arch_linux/_full-setup.sh` -> `installPacmanPackage <name>`
-   - `software/scripts/steamos/_full-setup.sh` -> `installPacmanPackage <name>`
-   - `software/scripts/chromeos/_full-setup.sh` -> `installAptPackage <name>`
-   - `software/scripts/windows/_winget-install.sh` -> add the winget ID to the `winget_packages=( ... )` array under the matching `# ---- Category ----` comment. Look up the correct winget ID with `winget search <name>`. (Single canonical list — `_full-setup.ps1.bash` no longer carries a duplicate; it only handles WSL bootstrap and msstore-only items.)
-   - Place the new line alphabetically within the existing package group under the appropriate `# ---- Category ----` sub-section header.
-   - **Resolve the real package name per ecosystem before writing the line** — names drift (`fd` vs `fd-find`, `ripgrep` vs `rg`):
+Follow AGENTS.md's installer priority: official `curl -fsSL` installer first, package-manager fallback, and the explicit LLM CLI exception. Read a current sibling before creating a script; install documented dependencies first. For platform packages, update the applicable `_full-setup.sh` files and Windows winget list:
 
-     ```bash
-     brew search --formula <name>                  # mac
-     apt-cache search --names-only '^<name>'       # ubuntu / chromeos
-     dnf search <name>                             # redhat
-     pacman -Ss '^<name>$'                         # arch / steamos
-     winget search <name>                          # windows (copy the exact ID column)
-     ```
+- `software/scripts/mac/_full-setup.sh` -> `installBrewPackage <name>`
+- `software/scripts/ubuntu/_full-setup.sh` -> `installAptPackage <name>`
+- `software/scripts/redhat/_full-setup.sh` -> `installDnfPackage <name>`
+- `software/scripts/arch_linux/_full-setup.sh` -> `installPacmanPackage <name>`
+- `software/scripts/steamos/_full-setup.sh` -> `installPacmanPackage <name>`
+- `software/scripts/chromeos/_full-setup.sh` -> `installAptPackage <name>` - `software/scripts/windows/_winget-install.sh` -> add the verified winget ID to `winget_packages` under the matching `# --- Category ---` section; do not duplicate that list elsewhere. - Place entries alphabetically within the relevant package group.
+- **Resolve the real package name per ecosystem before writing the line** — names drift (`fd` vs `fd-find`, `ripgrep` vs `rg`):
 
-   - **All platforms must stay in sync.** If a tool has a winget equivalent, it must be added to Windows too.
+  ```bash
+  brew search --formula <name>                  # mac
+  apt-cache search --names-only '^<name>'       # ubuntu / chromeos
+  dnf search <name>                             # redhat
+  pacman -Ss '^<name>$'                         # arch / steamos
+  winget search <name>                          # windows (copy the exact ID column)
+  ```
 
-2. **curl/bash installer** (fallback) -- create a `.sh` script in `software/scripts/advanced/` following the pattern in `uv.sh` or `starship.sh`. Use `curl -fsSL <url> | bash`. Install any documented required dependencies first.
+- **All platforms must stay in sync.** If a tool has a winget equivalent, it must be added to Windows too.
 
-3. **Windows-only tools** -- if the tool only has a Windows binary (no Unix equivalent), create `software/scripts/windows/<name>-windows.js` using `downloadWindowsApp()` or add the winget ID to `winget_packages` in `software/scripts/windows/_winget-install.sh`.
+For Windows-only tools, use the winget list or a current Windows download helper verified in DEV.md and source.
 
 ### 2. Handle binary name mismatches
 
-If the binary name differs across platforms (e.g. `bat` on mac/arch vs `batcat` on debian/ubuntu), create a **wrapper function** in `software/bootstrap/profile-core.sh` that normalizes the name. Follow the existing `batcat()` pattern:
-
-```bash
-################################################################################
-# ---- <Tool> Setup ----
-# <brief explanation of name differences>
-################################################################################
-function <wrapper_name>() {
-  if type -P <name_variant_1> &> /dev/null; then
-    command <name_variant_1> "$@"
-  elif type -P <name_variant_2> &> /dev/null; then
-    command <name_variant_2> "$@"
-  else
-    # fallback or error
-    echo "<tool> is not installed" >&2
-    return 1
-  fi
-}
-```
-
-Then optionally add an alias (e.g. `alias cat='batcat'`) in the aliases section of `profile-core.sh`.
+Use `ensure_binary_alias <canonical>` in `common-functions.bash`; extend its mapping and call it from the relevant Linux setup. Do not duplicate platform-name dispatch at each caller. Add an optional user alias only when requested or required by the tool's integration.
 
 ### 3. PATH entry (if the tool installs to a non-standard location)
 
@@ -84,7 +61,7 @@ For static flag lists that you want to reuse across multiple subcommands in the 
 
 ### 6. CI binary verification
 
-**Edit `software/metadata/ci-binaries.json`, never `.github/actions/ci-build/action.yml`.** The `# BEGIN ci-binary-checks` block in `action.yml` is generated from that JSON by `software/tools/build-include.js` — hand-editing it gets overwritten on the next `make format`.
+Edit `software/metadata/ci-binaries.json`; `generate-ci-binary-list.js` generates the `action.yml` block via `make format_ci_binaries`.
 
 Add the binary to the `required` array (build fails if missing) or the `warn` array (warning only). Plain string when `<name> --version` works; object form when the version probe differs:
 
@@ -141,8 +118,7 @@ bash run.sh --dryrun --setup
 Then the full gate:
 
 ```bash
-make format          # required if you touched BEGIN/END markers, ci-binaries.json, or JSDoc
-make validate
+make validate        # includes formatting and regeneration; run once after final edits
 ```
 
 If you created or modified files in `software/scripts/`, write or update unit tests in `software/tests/`.
@@ -158,7 +134,7 @@ Never:
 - register a duplicate `configKey` — pass a `subKey` when one platform needs several blocks
 - edit a protected path per AGENTS.md section 3
 
-If the tool ships under different binary names across distros, resolve that with `ensure_binary_alias` rather than branching at each call site.
+Stop and ask if installer provenance, package identity, or supported-platform scope cannot be verified.
 
 ## Verification
 

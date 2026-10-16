@@ -11,7 +11,7 @@ Argument: $ARGUMENTS (optional — a PR number/URL, a commit range like `main..H
 
 ## Hard rules
 
-- **Coverage percentage is a smoke detector, not a goal** (see the Test Quality rules). This command finds _untested behavior_, not uncovered lines. A file at 95% with its only error path uncovered is a worse risk than a file at 60% whose happy and error paths are both solid.
+- **Coverage percentage is a smoke detector, not a goal** (Test Quality). Rank untested behavior by failure impact, not file percentage.
 - **Never write a test purely to move the number.** A test asserting that a getter returns what was set is coverage theater — it costs maintenance forever and defends nothing.
 - **Every test written here must be able to fail.** Verify it: break the code it covers, watch the test go red, restore. A test never seen red proves nothing (see the Test Quality rules).
 - **Report gaps you chose not to fill.** A silent skip reads as "covered".
@@ -75,8 +75,6 @@ Error paths are the systematic blind spot: happy paths get written first and tes
 ### 4. Report the gap analysis before writing anything
 
 For each gap: file, function, what specifically is untested (branch / error path / boundary), the priority, and one line on the failure it would allow. Then state which you will cover and which you are deliberately skipping, with reasons.
-
-This ordering matters — the analysis is useful on its own, and it lets the reader redirect before any test is written.
 
 ### 5. Write the tests
 

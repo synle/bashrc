@@ -451,7 +451,9 @@ describe("list_prs — audience (--me)", () => {
   it("names the repos it scanned and the repos it listed from", () => {
     const { stderr } = runCli(["--me=1", "acme/api", "acme/web"], [pullRequest(AWAITING_REVIEW)]);
     expect(stderr).toContain(`${"=".repeat(80)}\n>>> scanning 2 repo(s): acme/api acme/web for open @me PRs\n\n`);
-    expect(stderr).toContain(`${"=".repeat(80)}\n>>> 1 open · 1 listed · oldest first, WIP last, Placeholder after WIP\n>>> listed from 1 repo(s): acme/api\n`);
+    expect(stderr).toContain(
+      `${"=".repeat(80)}\n>>> 1 open · 1 listed · oldest first, WIP last, Placeholder after WIP\n>>> listed from 1 repo(s): acme/api\n`,
+    );
   });
 });
 

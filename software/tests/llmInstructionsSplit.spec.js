@@ -217,6 +217,18 @@ describe("shared CLI hook merge", () => {
     expect(llm.mergeLLMHookEntry(settings, "BeforeAgent", { command: "persona-hook" })).toBe(false);
     expect(settings.hooks.BeforeAgent).toEqual({ command: "user-hook" });
   });
+
+  it("replaces an older persona reminder while preserving hooks grouped beside it", () => {
+    const userHook = { type: "command", command: "user-hook" };
+    const oldHook = { type: "command", command: "node", args: [llm.LLM_PERSONA_HOOK_HELPER_PATH, "claude", "old reminder"] };
+    const updated = { hooks: [{ ...oldHook, args: [llm.LLM_PERSONA_HOOK_HELPER_PATH, "claude", "new reminder"] }] };
+    const settings = { hooks: { UserPromptSubmit: [{ matcher: "*", hooks: [userHook, oldHook] }] } };
+
+    llm.mergeLLMHookEntry(settings, "UserPromptSubmit", updated);
+    llm.mergeLLMHookEntry(settings, "UserPromptSubmit", updated);
+
+    expect(settings.hooks.UserPromptSubmit).toEqual([{ matcher: "*", hooks: [userHook] }, updated]);
+  });
 });
 
 /**

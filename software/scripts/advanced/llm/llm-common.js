@@ -794,7 +794,7 @@ const LLM_SHARED_INSTRUCTIONS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "instru
 const LLM_SHARED_HOOKS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "hooks");
 /** @type {string} Reminder appended before user-facing replies in supported CLIs. */
 const LLM_PERSONA_REMINDER =
-  "Reply to the user in Caveman Speak. Progress updates, status reports, task summaries, and task_complete messages are user replies, not external deliverables. Preserve facts and technical details; only prose style changes.";
+  "Before sending, rewrite every non-exempt user-facing sentence in Caveman Speak, starting with the first sentence. Commentary, status reports, summaries, and task_complete replies count. Resume after tools, compaction, and exempt passages. Keep instructions and skills, code, payloads, and external deliverables in precise standard prose; preserve facts, uncertainty, safety, and exact values.";
 /** @type {string} Source for the shared hook output helper. */
 const LLM_PERSONA_HOOK_HELPER_SOURCE = "software/scripts/advanced/llm/_common/persona-reminder-hook.common.js";
 /** @type {string} Deployed hook output helper path. */
@@ -802,10 +802,11 @@ const LLM_PERSONA_HOOK_HELPER_PATH = path.join(LLM_SHARED_HOOKS_FOLDER, "persona
 
 /**
  * Adds one hook entry to a settings object's event array without replacing user hooks.
- * Exact duplicate entries are ignored so setup remains idempotent.
+ * Replaces older managed persona hooks, preserves grouped user hooks, and ignores exact duplicates.
+ * Mutates only the selected settings hook array; logs and returns false for malformed containers.
  * @param {Record<string, any>} settings - Parsed CLI settings object to update.
  * @param {string} eventName - Hook event key supported by the target CLI.
- * @param {Record<string, any>} entry - Hook entry to append.
+ * @param {Record<string, any>} entry - Hook entry to upsert.
  * @returns {boolean} True when hook event array was valid and updated or already contained entry.
  */
 function mergeLLMHookEntry(settings, eventName, entry) {
@@ -821,9 +822,23 @@ function mergeLLMHookEntry(settings, eventName, entry) {
     return false;
   }
 
+  // Managed persona hooks retain their identity when reminder wording changes.
+  // Replace that entry rather than accumulating one hook per deployed revision.
+  const isPersonaEntry = JSON.stringify(entry).includes(LLM_PERSONA_HOOK_HELPER_PATH);
+  const retainedEntries = [];
+  for (const candidate of entries) {
+    if (!isPersonaEntry || !JSON.stringify(candidate).includes(LLM_PERSONA_HOOK_HELPER_PATH)) {
+      retainedEntries.push(candidate);
+      continue;
+    }
+    if (Array.isArray(candidate?.hooks)) {
+      const hooks = candidate.hooks.filter((hook) => !JSON.stringify(hook).includes(LLM_PERSONA_HOOK_HELPER_PATH));
+      if (hooks.length > 0) retainedEntries.push({ ...candidate, hooks });
+    }
+  }
   const serializedEntry = JSON.stringify(entry);
-  if (!entries.some((candidate) => JSON.stringify(candidate) === serializedEntry)) entries.push(entry);
-  settings.hooks[eventName] = entries;
+  if (!retainedEntries.some((candidate) => JSON.stringify(candidate) === serializedEntry)) retainedEntries.push(entry);
+  settings.hooks[eventName] = retainedEntries;
   return true;
 }
 

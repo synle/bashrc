@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This is the user-facing "bring my branch up to date" command. It does NOT invent a second branch-sync implementation. Repo-local sync still belongs to `/sy-sync-pr-branch`, which resolves the floor, walks ancestor PRs, merges in the right order, handles conflicts, and runs the migration and pre-push gates. This command adds one thing on top: if the repo is a fork with an `upstream` remote, merge that remote's default branch too, and do it LAST.
+Delegate repo-local sync to the branch-syncing workflow, then merge a distinct `upstream` remote's default branch last. That workflow owns floor/ancestor resolution, conflicts, migration checks, and push gates.
 
 Use when the user asks in plain English to pull or merge the latest code into a non-default working branch. For full PR babysitting, use `/sy-babysit-pr` instead.
 
@@ -43,6 +43,7 @@ Use when the user asks in plain English to pull or merge the latest code into a 
 ## Safety
 
 Never:
+
 - never rebase (`git rebase`, `git pull --rebase`, `gh pr update-branch --rebase`, interactive rebase);
 - never hand-roll repo-local sync logic that `/sy-sync-pr-branch` already owns;
 - never merge `upstream` first — upstream comes LAST in this command's workflow;
@@ -55,6 +56,7 @@ Stop and ask when conflict resolution or migration repair needs judgment you do 
 ## Verification
 
 Show evidence for all three layers:
+
 - repo-local sync result block from `/sy-sync-pr-branch`;
 - whether `upstream` existed and which repo it resolved to;
 - upstream merge outcome (`already up to date`, merged SHA/branch, or conflicts resolved).

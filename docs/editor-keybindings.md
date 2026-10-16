@@ -602,19 +602,19 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 ### Common Shortcuts (matching editors)
 
-| Key              | Action        | Status |
-| ---------------- | ------------- | :----: |
-| `alt+up/down`    | Page up/down  |   ✅   |
-| `alt+left/right` | Home / end    |   ✅   |
-| `alt+z`          | Undo          |   ✅   |
-| `alt+shift+z`    | Redo          |   ✅   |
-| `alt+y`          | Redo          |   ✅   |
-| `alt+s`, `,s`    | Save          |   ✅   |
-| `,w`             | Save and quit |   ✅   |
+| Key              | Action                                              | Status |
+| ---------------- | --------------------------------------------------- | :----: |
+| `alt+up/down`    | Page up/down                                        |   ✅   |
+| `alt+left/right` | Home / end                                          |   ✅   |
+| `alt+z`          | Undo                                                |   ✅   |
+| `alt+shift+z`    | Redo                                                |   ✅   |
+| `alt+y`          | Redo                                                |   ✅   |
+| `alt+s`, `,s`    | Save                                                |   ✅   |
+| `,w`             | Save and quit                                       |   ✅   |
 | `,q`             | Quit all; discard unsaved changes without prompting |   ✅   |
-| `alt+w`          | Close buffer  |   ✅   |
-| `alt+l`          | Select line   |   ✅   |
-| `alt+backspace`  | Delete to BOL |   ✅   |
+| `alt+w`          | Close buffer                                        |   ✅   |
+| `alt+l`          | Select line                                         |   ✅   |
+| `alt+backspace`  | Delete to BOL                                       |   ✅   |
 
 ### Read Mode (vim -R / less)
 
@@ -627,14 +627,14 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 ### Splits & Navigation
 
-| Key                            | Action                               |
-| ------------------------------ | ------------------------------------ |
-| `ctrl+d`, `,d`                 | Vertical split                       |
-| `,'`                            | Horizontal split                     |
-| `ctrl+x`, `ctrl+q`, `,x`       | Close split                          |
-| `ctrl+arrow`, `,arrow`         | Navigate splits                      |
-| `,1` … `,9`                    | Go to Nth buffer tab (tabline order) |
-| `,[` / `,]`                    | Previous / next buffer tab           |
+| Key                      | Action                               |
+| ------------------------ | ------------------------------------ |
+| `ctrl+d`, `,d`           | Vertical split                       |
+| `,'`                     | Horizontal split                     |
+| `ctrl+x`, `ctrl+q`, `,x` | Close split                          |
+| `ctrl+arrow`, `,arrow`   | Navigate splits                      |
+| `,1` … `,9`              | Go to Nth buffer tab (tabline order) |
+| `,[` / `,]`              | Previous / next buffer tab           |
 
 ### Toggles (normal mode)
 

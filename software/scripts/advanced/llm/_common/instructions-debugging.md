@@ -1,11 +1,7 @@
 # Debugging Discipline
 
-Companion to the always-loaded engineering principles. Governs reproducing,
-isolating, and fixing a defect — read before the first fix attempt on anything
-broken, then follow as written.
-
-Picks up where the Validation Cadence feedback ladder drops you. `/sy-debug` runs
-this as a phased loop.
+Read before the first fix attempt. This governs reproduction, isolation, and proof;
+Validation Cadence governs check scope. The debugging skill sequences this workflow.
 
 Rules are named, not numbered — quote the name when referencing one. Epistemic
 Honesty from the main instructions governs this file too.
@@ -18,7 +14,7 @@ Honesty from the main instructions governs this file too.
 
 ## Isolate one variable at a time
 
-- One hypothesis, one change, one observation. State the hypothesis **and what would disprove it** first, change one thing, observe, revert if it did not prove out. Changing five things and seeing green teaches nothing.
+- One hypothesis, one change, one observation. State the hypothesis **and what would disprove it**, change one thing, observe, and revert if it did not prove out.
 - List a few ranked candidates before testing any — single-hypothesis generation anchors on the first plausible idea. Each must name its disproof ("if X is the cause, changing Y kills the bug"); a candidate with no prediction is a vibe, so sharpen or drop it. Then test one at a time.
 - Bisect; don't stare. Binary-search the cheapest axis — history (`git bisect run <cmd>` with the minimal repro), code path (log the _value_ at the midpoint, not "got here"), input, or one config/dependency toggle from a known-good baseline.
 - Find the divergence point. State one expected value or behavior at a named code location, then bisect until two adjacent observations show right before and wrong after. Observe values; never infer them from code whose behavior is already disproving your model.

@@ -9,8 +9,10 @@
 3. Run `git status` to check for uncommitted changes and `git log` to understand the commits on this branch.
 
 3a. **Decide whether this is placeholder mode or ordinary WIP mode.** Compare the branch to the default branch after Step 4 resolves it.
-   - `git rev-list --count "origin/$DEF..HEAD"` returns `0` **and** `git diff --quiet "origin/$DEF...HEAD"` succeeds → this branch has no commits and no diff yet. This is **placeholder mode**: create one empty commit so GitHub has something to open a PR from, then create a minimal DRAFT placeholder PR and return the link before implementation starts.
-   - Otherwise → this is ordinary WIP mode with real work already present; continue with the normal diff-driven title/body flow below.
+
+- `git rev-list --count "origin/$DEF..HEAD"` returns `0` **and** `git diff --quiet "origin/$DEF...HEAD"` succeeds → this branch has no commits and no diff yet. This is **placeholder mode**: create one empty commit so GitHub has something to open a PR from, then create a minimal DRAFT placeholder PR and return the link before implementation starts.
+- Otherwise → this is ordinary WIP mode with real work already present; continue with the normal diff-driven title/body flow below.
+
 4. **Resolve the base branch — it is always the repo's default branch, never a sibling.**
 
    ```bash
@@ -44,24 +46,26 @@
 
        ```md
        ## Summary
+
        - Placeholder draft PR opened before implementation starts.
        - Real diff and details land in later pushes.
 
        ## Test plan
+
        -
        ```
    - **Ordinary WIP mode** → Title format: `WIP: DO NOT MERGE — [<repo>] <concise description of changes>` — bare repo name, org / owner dropped (`[widget-store] ...`, never `[acme/widget-store] ...`). The WIP prefix stays outermost so the stop signal reads first.
    - **Template found → the body is that template, filled in** (see the rule named above). This is a WIP, so unfinished sections say `TODO — still wiring up X` rather than being deleted or fabricated, and most checklist boxes correctly stay unticked.
    - **No template outside placeholder mode → default body:** a `## Summary` section with bullet points and a `## Test plan` section.
-   - **Blocked on an earlier wave (Step 4c) → add a `## Blocked on` section**, template or not, listing every PR this one waits for as a full `https://github.com/<owner>/<repo>/pull/<n>` URL with a half-line saying what it provides (`— adds the nullable \`org_id\` column`). Close it with one line stating the consequence: `"CI stays red until these land; this branch does not contain them."` That section is doing three jobs at once — it tells a human why a red WIP is fine, it is the reference that marks this PR non-standalone so automerge stays deferred, and it is what a later pass re-reads to decide the PR can be promoted.
-7a. Write the complete WIP body to an explicit temporary Markdown file with the file-editing tool (for example, `/tmp/pr-body.md`) and review that file. Do not create it with a shell heredoc, shell variable, `echo`, `printf`, or command substitution; do not put body text in the shell command.
+   - **Blocked on an earlier wave (Step 4c) → add a `## Blocked on` section**, template or not, listing every PR this one waits for as a full `https://github.com/<owner>/<repo>/pull/<n>` URL with a half-line saying what it provides (`— adds the nullable \`org_id\` column`). Close it with one line stating the consequence: `"CI stays red until these land; this branch does not contain them."`That section is doing three jobs at once — it tells a human why a red WIP is fine, it is the reference that marks this PR non-standalone so automerge stays deferred, and it is what a later pass re-reads to decide the PR can be promoted.
+7a. Write the complete WIP body to an explicit temporary Markdown file with the file-editing tool (for example,`/tmp/pr-body.md`) and review that file. Do not create it with a shell heredoc, shell variable, `echo`, `printf`, or command substitution; do not put body text in the shell command.
 8. Push the branch if needed: `git push -u origin <branch>`
 9. Create the PR with the file-backed body.
    - **Placeholder mode** → `gh pr create --draft --base "$DEF" --title "WIP: DO NOT MERGE — [<repo>] Placeholder" --body-file /tmp/pr-body.md`
    - **Ordinary WIP mode** → `gh pr create --base "$DEF" --title "WIP: DO NOT MERGE — [<repo>] ..." --body-file /tmp/pr-body.md`
    - In both cases, **`--base` is always passed explicitly and is always the default branch** — never another feature branch or another open PR's head. Never use `--body` or interpolate body contents into this command.
 10. Return the PR URL immediately, and say implementation starts after this link is shared.
-   10a. **Seed owned-PR memory.** Under `<<LLM_ROOT_FOLDER>>/pr_babysits/`, find an existing `<repo>_<number>_*.md`; otherwise create `<repo>_<number>_<slug>.md`, lowercasing repo/title components and collapsing runs outside `[a-z0-9]` to `_`. Record a short TLDR, PR URL, branch/head SHA, WIP creation result/time, current status, and empty `## Progress`, `## Open Items`, `## State`, and `## Final Snapshot` sections. This file persists across runs and becomes `/sy-babysit-pr`'s canonical memory; never create a worktree-adjacent journal.
+    10a. **Seed owned-PR memory.** Under `<<LLM_ROOT_FOLDER>>/pr_babysits/`, find an existing `<repo>_<number>_*.md`; otherwise create `<repo>_<number>_<slug>.md`, lowercasing repo/title components and collapsing runs outside `[a-z0-9]` to `_`. Record a short TLDR, PR URL, branch/head SHA, WIP creation result/time, current status, and empty `## Progress`, `## Open Items`, `## State`, and `## Final Snapshot` sections. This file persists across runs and becomes `/sy-babysit-pr`'s canonical memory; never create a worktree-adjacent journal.
 11. **Placeholder mode follow-through:** once real implementation lands, push the code, run `gh pr ready <number>`, drop the `WIP` / `Placeholder` title markers, and rewrite the body so it matches the implemented diff before asking for review.
 12. **Ordinary WIP mode only:** ask the user: "Do you want me to babysit this PR until CI passes? (yes/no)"
 
@@ -73,7 +77,7 @@
 
 - Ordinary WIP mode creates a **regular PR**; placeholder-before-implementation mode creates a **draft PR**.
 - **Placeholder PRs before implementation are first-class use of this command.** On a fresh feature branch with no commits and no diff, make one empty placeholder commit, push it, open a draft PR whose title contains `Placeholder`, return the link, and only then start coding.
-- **PR body always comes from a reviewed file.** Use the file-editing tool to create the body file, pass it with `--body-file`, capture the result, and delete it immediately after the request whether creation succeeds or fails. Never use inline `--body`, shell interpolation, or shell heredocs for Markdown bodies. Follow the shared temporary-file rule for every later comment, reply, review, or API payload.
+- **PR body always comes from a reviewed file.** Apply shared Payloads for creation and all later GitHub writes: reviewed file, file-backed request, captured result, immediate cleanup.
 - **Never open a stacked PR.** `--base` is always the repo's default branch, passed explicitly, never another feature branch or another open PR's head. A branch whose diff carries a sibling's commits is a stack in the making — stop and re-cut it (Step 4a); never retarget `--base` to make the diff look right. If the work cannot be split into pieces that each stand alone against the default branch, ship it as **one** PR. See the "Every PR branches off the default branch" and "Split by slice, never by layer" rules.
 - Always use the title prefix `WIP: DO NOT MERGE —` followed by `[<repo>] ` and a concise description. Placeholder mode additionally MUST include `Placeholder` in the title.
 - **Sibling PRs collide on files, not just on bases (Step 4b).** The no-stack pre-flight only catches a shared _ancestor_; two perfectly independent PRs editing the same file still conflict. A WIP is the cheapest possible moment to fix that, since nothing has been reviewed yet and reshaping costs nothing — check the file lists against your other open PRs and design the overlap out per the "Make slices disjoint with new files, not with discipline" rule. Advisory, never a blocker.

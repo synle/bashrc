@@ -61,7 +61,7 @@ gh run list --repo <owner/repo> --branch <default> --status success --limit 5 --
 git --no-pager log --oneline <last-green-sha>..<first-red-sha>
 ```
 
-- **One commit in the range** — that is the cause. Read its diff.
+- **One commit in the range** — the leading suspect, not proof. Read its diff and confirm the failure against that SHA; environment changes can coincide with it.
 - **Several commits** — read them newest-first for one whose diff plausibly touches the failing area, then confirm by reproducing locally against that specific SHA. Do not accept a plausible-looking commit without confirming (see the Debugging Discipline rules on one hypothesis at a time).
 - **Zero repo commits in the range** — nothing in the code changed, so the cause is environmental: Step 5.
 
@@ -72,7 +72,8 @@ In a dedicated worktree, never the primary checkout (see the worktree rules):
 ```bash
 WT="$(worktree_create ci-triage)"   # $HOME/.worktrees/<owner>/<repo>/ci_triage
 git fetch origin
-git -C "$WT" reset --hard <first-red-sha>
+git -C "$WT" status --short
+git -C "$WT" switch --detach <first-red-sha>  # only after confirming the worktree is clean
 ```
 
 A specific SHA is the one case `worktree_create` does not cover — it takes a branch, not a commit — so create the branch worktree first, then reset inside that worktree. The layout stays identical either way.

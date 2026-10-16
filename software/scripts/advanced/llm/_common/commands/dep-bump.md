@@ -11,15 +11,12 @@ Argument: $ARGUMENTS (optional — a package name, a list, `outdated` to survey 
 
 ## Hard rules
 
-These restate the Risky Changes dependency rule; the workflow below just sequences them.
+Apply Risky Changes for runtime major/minor changelogs, local verification, and exact production pins. Patch/dev-only changelogs may be skipped; the class table below specifies checks. Record every new deprecation in the PR body. Lockfile-only refreshes skip the bump-specific review, not repo-required validation.
 
-- **Read the changelog and link it in the PR body** for any major or minor bump on a runtime dependency. Not the diff — the changelog, where the authors say what they broke.
-- **Run the full local test suite before pushing.** CI is a second opinion, not first signal; a dependency change can break things the touched-area suite never exercises.
-- **Pin exact versions on production dependencies.** No `^`, `~`, or `>=` on anything you ship, unless the repo's committed lockfile already guarantees the resolution and the repo's convention is ranges.
-- **Note every new deprecation warning in the PR body.** Today's warning is next major's breakage, and the moment it appears is the cheapest moment to record it.
-- Patch bumps and dev-only dependencies may skip the changelog and local-suite steps. Lockfile-only refreshes skip entirely.
-
-Two additions that make the above workable:
+- **Read the changelog and link it in the PR body** — Step 3 applies Risky Changes to every intervening version.
+- **Run the full local test suite before pushing.** Use the class table and Step 6; repo-required gates still apply.
+- **Pin exact versions on production dependencies.** Apply Risky Changes; a lockfile is not an exception to its pinning requirement.
+- **Note every new deprecation warning in the PR body.** Capture warnings in Step 6.
 
 - **One dependency per commit** whenever a bump is major, or minor on a runtime dep. Batching six upgrades into one commit means the revert is all-or-nothing and the bisect is useless. Batch only patch-level and dev-only bumps.
 - **Never upgrade to fix a bug you have not diagnosed.** "Maybe the new version fixes it" is a guess wearing a version number, and it swaps one unknown for a much larger one. Diagnose first (see the Debugging Discipline rules), then upgrade if the changelog says so.
@@ -108,7 +105,7 @@ Commit the lockfile with the manifest, always, in the same commit. Apply the mig
 
 ### 6. Verify locally, in this order
 
-1. Install cleanly from scratch — delete `node_modules` / the venv / the module cache and reinstall, so a stale artifact cannot mask a resolution failure.
+1. Verify a clean install in an isolated environment using the repo's lockfile and shared cache. Do not delete global caches or an existing environment to manufacture a clean run; follow Worktree dependencies and Destructive Commands.
 2. Build.
 3. Type-check.
 4. **Full test suite**, not the targeted one.

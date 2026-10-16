@@ -12,7 +12,7 @@ Do **not** use this to rewrite a rules file someone maintains. This fills a hole
 
 ## Hard rules
 
-- **Every claim traces to a file.** These docs become the instructions every future agent follows, so a wrong line here is a defect multiplier — it produces confidently wrong work forever, in every session, and nobody rereads it to check. Do not write a convention because it is common in the ecosystem; write it because this repo does it. (See the Epistemic Honesty rules.)
+- **Every claim traces to a file.** Derive conventions from this repo's evidence, not ecosystem habits; apply Epistemic Honesty to every generated instruction.
 - **Describe what the repo does, not what it should do.** Aspirational rules ("we use conventional commits") that the history contradicts are worse than silence. If a convention is inconsistent, say so and give the dominant form with its rough ratio — "~80% of commits use `type: subject`, the rest are freeform".
 - **Mark inferences as inferences.** A convention with two examples is a guess; label it `(inferred from 2 occurrences — confirm)`. Collect these into a `## Confirm these` section at the bottom for the owner to resolve.
 - **Never fabricate a command.** Every command in `DEV.md` must exist in `package.json` scripts, the `Makefile`, `pyproject.toml`, `Cargo.toml`, the CI workflow, or an existing README. Run the ones that are safe and read-only (`--help`, `--version`, a lint, a type-check) and note which you actually ran versus which you copied from config.

@@ -1,12 +1,7 @@
 # Test Quality
 
-Companion to the always-loaded engineering principles. Governs whether a test is
-worth the green checkmark it prints — read before writing, reviewing, or trusting
-a test suite, then follow as written.
-
-Validation Cadence governs _when_ tests run; this governs whether they are worth
-running at all. A green suite of bad tests converts "untested" into "believed
-tested" — worse than knowing nothing.
+Read before writing, reviewing, or trusting tests. This governs test quality;
+Validation Cadence governs when and at what scope to run them.
 
 Rules are named, not numbered — quote the name when referencing one. Epistemic
 Honesty from the main instructions governs this file too.
@@ -18,7 +13,7 @@ Honesty from the main instructions governs this file too.
 - A test that passes before the fix is not a regression test. Verify both directions: fail against unfixed code, pass against the fix. Same for a bug you cannot yet reproduce — write the failing test first.
 - A red test must fail for the intended behavior, not an import error, typo, or uncollected file. Read the failure before writing production code; a green test that the runner never collected proves nothing.
 - Assert values, not the absence of an explosion. `expect(parse(x)).toEqual({...})` earns its keep; `expect(() => parse(x)).not.toThrow()` passes on `undefined` or the wrong answer. Same for over-loose matchers — `toBeTruthy()` where `3` is correct, `any(String)` on one correct value, a status check with no body assertion. Loosen only nondeterministic fields.
-- A green suite is not consumer coverage. It proves the callers someone already wrote a test for still pass, in the repos it runs in — never that a UI, another service, a job, or a script reading the same field survived. Removing or renaming anything a caller reads is audited against those consumers directly (see the removal rules in the Risky Changes section of the always-loaded instructions), and a consumer that degrades silently rather than failing — read-only fallback, disabled control, blank panel, `undefined` permission check — is invisible to every assertion in this repo.
+- A green suite is not consumer coverage. Apply the downstream audit in Risky Changes before removing or renaming anything a caller reads; local tests cannot prove cross-service or runtime consumers survive, especially silent degradation.
 - Don't mock what you don't own. Mocking a third-party client freezes your _belief_ about its contract, so tests stay green through the upgrade that breaks production. Wrap it in a thin adapter you own, mock the adapter, cover the real thing in one integration test. Same for fixtures of someone else's API response — record from the real API, re-record on upgrade.
 - A mocked boundary asserts what was sent into it — payload, idempotency key — not only the effect of its canned response.
 - Rejection tests assert the full absence of effects. Check unchanged state, no persisted write, and no emitted event or external action wherever the rejected operation could produce them; an error response alone does not prove rejection was atomic.

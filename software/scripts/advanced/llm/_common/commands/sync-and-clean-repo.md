@@ -8,7 +8,7 @@ Argument: $ARGUMENTS (optional — a target repo path or owner/repo. Defaults to
 - Before starting work in a repo, so you branch from an up-to-date default.
 - Part of a larger cleanup (see `/sy-sync-and-clean-repos` for multi-repo).
 
-This skill owns **all** destructive git actions for a single repo. Other commands delegate to this rather than hand-rolling `git fetch`, `git merge`, or `git branch -D`.
+This skill owns single-repo maintenance sequencing. Shared PR instructions own safety, branch-syncing owns PR sync, and cleanup aliases own deletion checks.
 
 ## Invocation contract
 
@@ -24,7 +24,7 @@ This skill owns **all** destructive git actions for a single repo. Other command
 
 2. **Fetch + prune.** `git fetch --all --prune` — updates all remote-tracking branches and removes refs for branches deleted on the remote.
 
-3. **Drop `[gone]` local branches.** `git branch -vv | grep '\[gone\]' | awk '{print $1}' | xargs -r git branch -D`. Only local branches whose upstream ref no longer exists on the remote. Never touches the default branch or the current branch.
+3. **Drop `[gone]` local branches.** Follow shared Merging and cleanup: inspect candidates and run `git clean-stale-branches`, not a hand-built `branch -D` pipeline. Preserve default/current branches and unpushed work; a missing upstream alone does not prove commits recoverable. Follow Destructive Commands for any unrecoverable candidate.
 
 4. **Prune worktree records.** `git worktree prune` — removes stale administrative entries for worktrees that were deleted without `git worktree remove`.
 

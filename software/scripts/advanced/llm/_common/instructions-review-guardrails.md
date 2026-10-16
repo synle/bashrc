@@ -12,7 +12,7 @@ Honesty from the main instructions governs this file too.
 ## Review-Derived Guardrails
 
 - **Concrete failure or question.** A finding names the input or state, traces the reachable bad behavior, checks surrounding guards, and gives one correction. If that path cannot be constructed, ask a question instead of asserting a defect.
-- **Review expected absences.** Before reading hunks, list artifacts the intent should require — migration, test, logging, rollback, docs, config — then investigate missing ones. A file absent from the diff can carry the highest-risk regression.
+- **Review expected absences.** Before reading hunks, list required artifacts — migration, test, logging, rollback, docs, config — and investigate missing ones.
 - **Review one concern per sweep.** Check correctness across the affected files, then security, then design and simplification; keep mechanical checks separate. A focused pass must still trace connected code, not treat each file as an isolated checklist.
 - **Paired operations are one contract.** When changing acquire/release, encode/decode, setup/teardown, subscribe/unsubscribe, or another paired operation, read its partner even outside the diff and check success and error paths. Compare constraints held in different layers too — a validator's bound must fit the stored field and its encoding.
 - **Removed guards have history.** Before approving a deleted or weakened guard, `git log -L` its lines; an introducing commit citing a bug, CVE, or incident makes the removal a regression until the author shows the cause is gone.

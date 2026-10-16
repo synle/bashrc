@@ -1,11 +1,7 @@
 # Readability & Design
 
-Companion to the always-loaded engineering principles. Governs the shape of code
-a human then has to read — naming, control flow, visibility, layer boundaries.
-Read before writing or reviewing code, then follow as written.
-
-Scope Discipline governs which lines you touch; this governs what those lines
-look like once you do.
+Read before writing or reviewing code. This governs naming, control flow,
+visibility, and layer boundaries; Scope Discipline governs which lines to touch.
 
 Rules are named, not numbered — quote the name when referencing one. Epistemic
 Honesty from the main instructions governs this file too.
@@ -13,7 +9,7 @@ Honesty from the main instructions governs this file too.
 ## Naming & shape
 
 - Name the magic value. Extract a recurring or meaningful literal into a descriptive constant or enum; a spec value (HTTP 200, a protocol magic byte, a standard-defined retry cap) becomes a named constant even when used once. A self-explanatory one-off stays inline — a `const` wrapping `i + 1` or `"/"` is clutter, not clarity. Test: would a reader ask "why this number?" If yes, name it.
-- Flatten the nest — early return, early continue. Handle errors and edge cases first with guard clauses that return, so the happy path runs unindented down the left margin. Invert a condition and exit rather than wrap the whole body in one `if`; never grow the arrow past two levels of `if`/`else` when an early exit collapses it. Deep nesting is the smell, inversion is the fix, not a comment apologizing for it.
+- Flatten the nest — early return, early continue. Handle errors and edge cases with guard clauses, leaving the happy path unindented. Invert conditions instead of wrapping whole bodies; keep `if`/`else` nesting within two levels when an early exit can flatten it.
 - Enum over boolean parameter. A call reading `f(true, false)` says nothing at the call site and cannot grow a third state; a named enum (`Mode.Retry`, `Sort.Descending`) is self-documenting and extends without churning every caller. Applies wherever the language has enums — a string-literal union or a small constant set is the fallback where it does not. One well-named boolean on an obvious toggle is fine; two or more positional booleans is the anti-pattern.
 - Comment the what and the why, never the how. A short block comment says what a block does and why it exists — the code shows how, so a comment restating mechanics rots on the next edit. An example input/output or a small ASCII diagram beats a paragraph for a system, a state machine, or a data layout. Add or reflow a comment only on code you wrote or changed this edit; leave untouched code's comments alone (Scope Discipline).
 

@@ -8,7 +8,7 @@ Argument: $ARGUMENTS (optional — `<days>` threshold, `<owner>/<repo>` scope, `
 - End-of-quarter cleanup to keep the dashboard signal-to-noise high.
 - Onboarding a new repo and finding a long tail of forgotten branches with open PRs.
 
-For a single PR you want to abandon, just use `gh pr close <n> --comment "..."` directly. This skill is for the multi-PR cleanup case.
+For a single PR, use the normal close operation with the shared file-backed Payloads rule. This skill handles multi-PR cleanup.
 
 ## Steps
 
@@ -42,7 +42,7 @@ For a single PR you want to abandon, just use `gh pr close <n> --comment "..."` 
    ```
    Closing this PR — no activity for <N> days.
 
-   If this work is still relevant, reopen with `gh pr reopen <n>` or open a fresh PR rebased on the current default branch. Branch will be left on the remote; delete with `git push origin --delete <headRefName>` when ready.
+    If this work is still relevant, reopen with `gh pr reopen <n>` or open a fresh PR from the current default branch. The remote branch remains available for recovery; deleting it is a separate decision.
    ```
 
    Substitute `<N>` with the actual `staleDays`, `<n>` with the PR number, `<headRefName>` with the branch name.

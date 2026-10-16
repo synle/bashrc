@@ -129,10 +129,7 @@ async function doWork() {
   const defaultModel = getOllamaDefaultModel(providers);
   if (defaultModel) {
     if (!OLLAMA_MODEL_TAG_PATTERN.test(defaultModel)) throw new Error("ollama: refusing unsafe default model tag");
-    registerWithBashSyleProfile(
-      "ollama default model",
-      `export OLLAMA_DEFAULT_MODEL="\${OLLAMA_DEFAULT_MODEL:-${defaultModel}}"`,
-    );
+    registerWithBashSyleProfile("ollama default model", `export OLLAMA_DEFAULT_MODEL="\${OLLAMA_DEFAULT_MODEL:-${defaultModel}}"`);
   } else {
     removeFromBashSyleProfile("ollama default model");
     log(">> ollama default model: removing registration — no reachable host serves a model");

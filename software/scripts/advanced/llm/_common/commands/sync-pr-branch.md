@@ -112,7 +112,7 @@ A delegated run never creates or removes a worktree, never touches the caller's 
 
 ## Rules
 
-- **This is the only place branch syncing is implemented.** Any Sy command needing a branch up to date calls `/sy-sync-pr-branch` and consumes its result block — never its own `git merge origin/<base>`, ancestor walk, or conflict resolver. Two implementations of the same merge always diverge; that is exactly the drift that let stacked PRs sync against main only.
+- **This is the only place branch syncing is implemented.** Callers delegate the ancestor walk, merge/conflict handling, migration check, and push gate here, then consume the result block.
 - **Merge, never rebase.** `git pull --rebase`, `git rebase`, `gh pr update-branch --rebase`, and interactive rebase on a PR branch are all forbidden — rebasing rewrites pushed history and forces `--force-with-lease` on the next push.
 - **A stacked branch syncs from its whole ancestor chain, floor first, immediate parent last (Steps 3 / 6).** Merging only the default branch leaves a child missing everything its parent pushed; merging only the parent leaves the stack behind the default branch. Re-resolve the chain on every invocation. Depth cap 10 hops; a repeat is a cycle and stops the walk.
 - **The floor is whatever the walk stops on — not always the default branch.** A long-lived non-default line (release / integration branch) with no open PR is itself the floor, and the default branch is **not** merged into it. A deleted base means the parent landed and GitHub retargeted; a parent PR closed without merging is an orphaned base — flag it, skip it as a source, keep going.

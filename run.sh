@@ -766,7 +766,7 @@ declare -f _detect_gui_flags >> "$BASH_SYLE_COMMON_PATH"
 
 ollama_default_server_ip=""
 code_server_remote_hosts=""
-if ((!is_work_profile)); then
+if ((! is_work_profile)); then
   ollama_default_server_ip=$(get_ollama_default_server_ip)
   code_server_remote_hosts=$(get_code_server_hosts)
 fi

@@ -1,8 +1,8 @@
-[Sy] List my pending pull requests in the git repos at or below the current folder, grouped by feature and numbered `pr1`, `pr2`, … so a feature spanning several repos reads side by side. Same PR set `/sy-babysit-prs` and `/sy-review-prs` pick up with no arguments.
+[Sy] List my pending pull requests under the current folder, grouped by feature and numbered `pr1`, `pr2`, …; exclude fully clear PRs and placeholder drafts.
 
 Argument: none. Scope is always PWD, author is always `@me`, format is always `clusters`. For anything else, call `/sy-list-prs` directly.
 
-**Pending = still needs something.** Every open `@me` PR in scope except the fully-green ones (CI passing + approved + no conflicts + zero unresolved threads) — those just need a merge button, which is the same group `/sy-babysit-prs` skips as "already green". Also exclude placeholder drafts still pending implementation: `isDraft == true` and title contains `Placeholder`.
+**Pending = still needs something.** Keep open `@me` PRs except fully clear ones (passing CI, approved, no conflicts, zero unresolved threads) and placeholder drafts (`isDraft == true`, title contains `Placeholder`). Babysitting still enrolls fully clear PRs for watching; this pending view deliberately filters them.
 
 ## Steps
 

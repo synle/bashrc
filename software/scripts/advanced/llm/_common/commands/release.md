@@ -1,6 +1,6 @@
 [Sy] Trigger a release. Defaults to OFFICIAL from the default branch; routes to BETA only on explicit signal (`beta` keyword, validated SHA, or non-default branch).
 
-There is exactly ONE release slash command: `/sy-release`. The old per-channel aliases (`/sy-release-{stable,official,main,master,beta}`) were retired 2026-05-13 — `$ARGUMENTS` carries the channel decision now.
+One release command accepts channel intent through `$ARGUMENTS`; do not create per-channel aliases.
 
 Free-form phrasing such as "release", "release from main", "ship a release", "cut a release", "release official", "release stable", "release prod" — all map to the OFFICIAL path. Only an explicit `beta` keyword, a validated SHA, or a non-default branch name routes to BETA.
 

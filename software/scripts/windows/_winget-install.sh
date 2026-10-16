@@ -269,7 +269,7 @@ winget_packages=(
   "SSHFS-Win.SSHFS-Win"
 )
 
-if ((!is_work_profile)); then
+if ((! is_work_profile)); then
   winget_packages+=("Ollama.Ollama")
 fi
 

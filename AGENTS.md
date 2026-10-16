@@ -672,6 +672,9 @@ One `SKILL.md` is read by four CLIs — write to the open Agent Skills lowest co
   `## Rules` / `## Notes` / `## Artifacts` / `## Reference: …` may sit between them.
   Missing `## Safety` = destructive steps guarded by nothing.
 - **Invariants bluntly stated; verification demands quoted command output**, never paraphrase.
+- **Policy prose stays precise.** Write rules, instructions, skills, prompts, and
+  agent definitions in concise standard English. The chat persona applies to user
+  replies, not these artifacts; retain conditions, ordering, exceptions, and exact values.
 - **Split into `references/` / `scripts/` only on genuine weight or third reuse** (YAGNI).
 - **Hard size limits:** `name` ≤64 chars; `description` ≤1024 chars with no `<` or `>` (placeholders never belong there); `SKILL.md` body under 500 lines — past that, split.
 
@@ -791,6 +794,13 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
     `instructions: [...]`: the `~` prefix sorts after every letter, and
     `getSharedLLMInstructionFilePaths()` forces it to the end
     (`LLM_PERSONA_INSTRUCTION_FILE`). Mid-list, the rule prose after it drowns the voice.
+
+Persona reinforcement uses `LLM_PERSONA_REMINDER` in `llm-common.js`. CLI hooks and
+Pi's prompt extension consume that single reminder. OpenCode setup deploys
+`plugins/sy-persona-reminder.js`: its system-transform hook moves one reminder to
+the tail before model requests, and its compaction hook preserves the reminder in
+summary context. Restart OpenCode after deployment; existing sessions retain loaded
+configuration. These cues improve persistence, not guaranteed model compliance.
 
 **User-authored path-keyed blocks refresh on every deploy.** After upserting the managed
 block, each CLI setup runs `refreshPathKeyedBlocks()` (`llm-common.js`): any

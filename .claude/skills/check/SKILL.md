@@ -5,7 +5,7 @@ description: Verify that every change made in the current session is still prese
 
 ## Purpose
 
-Verify that all recent changes from this conversation are still present in the codebase. Use this after a merge, rebase, force-push, or when a linter/hook may have reverted work.
+Verify session changes survived the operation and recover only missing hunks.
 
 ## Steps
 
@@ -15,14 +15,14 @@ Run these in parallel:
 
 ```bash
 git status -sb                                  # uncommitted changes / merge conflicts / ahead-behind
-git log --oneline -10                           # recent commits
+git --no-pager log --oneline -10                # recent commits
 git --no-pager diff                             # unstaged changes
 git --no-pager diff --cached                    # staged changes
-git reflog -15                                  # what actually happened (merge, rebase, reset, amend)
+git --no-pager reflog -15                        # actual operations and prior tips
 git stash list                                  # work a hook or skill may have parked
 ```
 
-`git reflog` is the load-bearing one — it names the operation (`merge`, `rebase -i (finish)`, `reset --hard`, `commit (amend)`) that could have dropped work, and gives you the pre-operation SHA to diff against.
+Use the reflog to identify the operation and pre-operation SHA; do not infer either from a changed status list.
 
 ### 2. Check for merge conflicts
 
@@ -46,7 +46,7 @@ git --no-pager log -p -1 -- <file>                      # last commit that touch
 git --no-pager log --oneline -5 -- <file>               # did a later commit overwrite it?
 ```
 
-For each file: read its current content and confirm the expected change is still present. A PostToolUse formatter hook is the most common silent reverter — `git log --oneline -5 -- <file>` shows whether a `chore: format` style commit landed on top.
+Read each current file and compare expected hunks with the verified pre-operation version, including legitimate later edits.
 
 ### 4. Restore missing changes
 
@@ -56,14 +56,13 @@ If any changes were lost (reverted by a hook, overwritten by a merge, or dropped
 2. Recover the known-good version rather than retyping it from memory:
 
    ```bash
-   git reflog -30                                        # find the SHA from before the loss
+    git --no-pager reflog -30                             # locate the known-good tip
    git --no-pager show <good-sha>:<path>                 # inspect the good version
-   git checkout <good-sha> -- <path>                     # restore one whole file
    git stash list && git stash show -p stash@{0}         # if the work was stashed, not committed
-   git fsck --lost-found                                 # last resort: dangling commits/blobs
+    git fsck --no-reflogs --unreachable                   # last resort: locate unreachable objects
    ```
 
-3. If only part of the file regressed, re-apply the missing hunks with Edit instead of `git checkout` — a whole-file restore would revert legitimate later changes too.
+3. Reapply only missing hunks from verified content. Preserve all legitimate later changes; never restore a whole file over them.
 4. Confirm the restore:
 
    ```bash

@@ -9,13 +9,13 @@ Argument: $ARGUMENTS (optional — the bug: a failing test name, an error string
 - A previous "fix" landed and the bug came back — or the fix worked and nobody can say why.
 - A failure reproduces on one machine / OS / CI runner but not another.
 
-Do **not** use this for: a compile error with an obvious one-line cause (just fix it), a feature request wearing a bug costume, or a known-flaky test (fix the flake's root cause, which is its own bug hunt).
+For an obvious one-line compile error, use its failing command as the reproduction and make the scoped fix. Feature requests belong in implementation work; flakes still require root-cause investigation.
 
 ## Hard rules
 
-- **No fix without a reproduction.** A change made against a symptom you cannot trigger on demand is a guess, and a guess that turns the symptom green is worse than no fix — it hides the real defect behind a coincidence. If it cannot be reproduced, the deliverable of this command is a reproduction, not a patch.
-- **One hypothesis, one change, one observation.** Changing five things and seeing green teaches nothing: you now have five suspects, four pieces of dead code, and no idea which mattered. Revert every change that did not prove out.
-- **Read the FIRST failure, not the last.** Test runners, compilers, and CI logs cascade — failures 2..N are usually consequences of failure 1. Scroll up. The last line of output is the least informative line in it.
+- **No fix without a reproduction.** If no reproducible failure is found, deliver evidence and reproduction gaps rather than a speculative patch.
+- **One hypothesis, one change, one observation.** Revert changes whose predicted effect is disproved.
+- **Read the FIRST failure, not the last.** Read the complete first error and stack before downstream summaries.
 - **Instrument, don't stare.** When two hypotheses are equally plausible, the next action is a log line, a breakpoint, or a `git bisect` — not more reading.
 - **Never report a fix without re-running the original repro command and showing its output.** "Should work now" is not a result.
 - **Every claim carries its evidence.** Cite `file:line` or paste the command output. A command you did not run produced no output — never narrate a result you did not observe.

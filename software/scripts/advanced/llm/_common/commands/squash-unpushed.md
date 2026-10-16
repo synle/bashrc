@@ -59,13 +59,13 @@ Single-repo, foreground, one shot — no background agent, no multi-pass loop.
 
 7. **Verify and report.**
    - `git log --oneline "${BASE}..HEAD"` must now show **exactly one** commit; `git status` must be clean (same tree as before — a squash never changes file contents).
-   - Report: the new commit SHA and subject, how many commits were combined, the base it was reset to, and the recovery hint — `"If this isn't what you wanted, restore the old history with: git reset --hard ${PRE}"`.
+   - Report the new SHA/subject, combined commit count, base, and saved `PRE` SHA. Recovery starts by preserving current work and inspecting that tip; do not recommend a hard reset that could discard subsequent edits.
    - **Do not push.** State that the squash is local and the branch is ready to push when the user chooses to.
 
 ## Rules
 
 - **Unpushed history only — never rewrite what is on the remote.** The base is `@{upstream}` when the branch tracks a remote, otherwise the merge-base with the default branch. If any commit in the range is already on a remote branch, stop. No force-push, no `--force-with-lease`, no interactive rebase — a soft reset plus one commit is the whole mechanism.
-- **A soft reset never loses file content.** `git reset --soft <base>` keeps every change staged; the tree is byte-identical before and after. The only thing that changes is how many commits carry it. Always print the `git reset --hard <PRE>` recovery line so the pre-squash history is one command away.
+- **A soft reset never loses file content.** `git reset --soft <base>` preserves the staged tree. Record the old tip for recovery and verify identical tree content after committing; preserve later edits before any history repair.
 - **Stop and ask, don't guess**, on: a dirty working tree, a merge commit in the range, a detached HEAD, fewer than two unpushed commits, or any range commit found on a remote. None of these are safe to power through.
 - **Message shape matches every other commit here** — one-line imperative subject, blank line, description body explaining what and why (read the diff first, per the commit-message rule). Preserve and de-duplicate `Co-Authored-By:` trailers from the squashed commits. Write the message to a temp file and commit with `-F`; never pass it inline.
 - **Confirm before rewriting** unless the user pre-approved with `yes` / `-y` / `auto`. Show the commits and the proposed message first.

@@ -9,7 +9,7 @@ Turn a request into a written plan, execute that plan, commit the result, and le
 
 The task is: `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the task described in the request instead.
 
-Use this when the change spans multiple files or steps and the reasoning is worth keeping. For a one-line fix, skip it and just make the edit.
+Use for multi-step work worth recording; skip trivial edits.
 
 ## Artifacts
 
@@ -18,11 +18,9 @@ Use this when the change spans multiple files or steps and the reasoning is wort
 | `~/_extra/ai_llm/plans/<repo>-<feature>.md`   | The plan — TLDR, goal, decisions, per-file change table, risks, validation, wrap-up |
 | `~/_extra/ai_llm/plans/<repo>-<feature>.diff` | Unified diff of exactly what the commit(s) changed                                  |
 
-`<repo>` is the repo name from `git remote get-url origin`, never the folder name (see Repo Identification). **The single `-` after the repo is the separator, so `<feature>` is snake_case** — `bashrc-llm_instructions.md`, `widget-store-fix_auth_retry.md`. Repo names carry their own hyphens, so keeping the feature on underscores is what makes the boundary readable at a glance. Kebab-case it when reusing it as the branch `<group-slug>`. No date and no `plan-` prefix — the mtime already carries the date, and a baked-in one goes stale the first time the plan is revised. A full rewrite gets a `_v<N>` suffix (`bashrc-llm_instructions_v2.md`) and leaves the earlier file alone.
+Follow Plans & Wrap-Ups for remote-derived repo name, snake_case feature, flat placement, `_v<N>` rewrites, and stem-linked sidecars. Use kebab-case only when deriving a branch group slug.
 
-Anything else the task produces is a **sidecar sharing the plan's stem** — `<repo>-<feature>.<name>.<ext>`, `<name>` snake_case like the feature: the diff above, an RFC as `<repo>-<feature>.rfc.md`, a helper script as `widget-store-fix_auth_retry.migrate_local_db.sh`, likewise any CSV, JSON, or SQL dump. The stem is the only thing tying a generated file to the work that generated it, so never write one to a bare name.
-
-**Artifacts live outside every repo, flat in one folder** — `mkdir -p "$HOME/_extra/ai_llm/plans"` before the first write, and never create a subfolder under it: no per-repo folder, no `scripts/` folder, no date folder. The repo name is in the filename, so `ls` is the whole inventory and `ls <repo>-*` is the per-repo one. Nothing lands in the working tree, so there is no `.gitignore` entry to maintain, nothing to accidentally commit, and no untracked noise in `git status`. Full rationale in the rules file (see Plans & Wrap-Ups). If the user explicitly wants a plan tracked in the repo, copy it in and `git add` it in a clearly-labeled follow-up commit — never silently.
+Verify the shared plans folder before writing. A user-requested tracked copy belongs in a clearly labelled follow-up commit, never an implicit move into the checkout.
 
 ## Steps
 
@@ -38,6 +36,7 @@ Anything else the task produces is a **sidecar sharing the plan's stem** — `<r
 Sections, in order:
 
 - **TLDR** — two or three plain sentences at the very top: what changes and why, understandable with zero context. No file paths, no jargon.
+- **Impact** — benefit, rough effort, and cost of inaction, immediately after TLDR.
 - **Goal** — what the user asked, restated concretely. Number each ask if there were several.
 - **Decisions** — every judgment call you made that the user didn't specify: naming, approach, alternatives rejected and why. This is the section that earns the file's existence.
 - **Changes** — what happens, grouped by ask, with enough detail to review without reading the diff.
@@ -47,7 +46,7 @@ Sections, in order:
 
 `## Wrap-Up` is appended later, in Step 6 — don't write it up front.
 
-Apply Scope Discipline (YAGNI) here, not after: state rungs 1-6 out loud before adding any new file, class, dependency, or abstraction.
+Apply Scope Discipline before adding a new file, class, dependency, or abstraction; explain why earlier rungs fail when reaching new implementation.
 
 ### 3. Confirm before executing
 
