@@ -1,0 +1,54 @@
+/** Verifies Pi refreshes generated Ollama models while preserving user providers. */
+import { beforeAll, describe, expect, it } from "vitest";
+import { fileSystem, getIndexFunction, loadScriptHelpers, mockFsExistence } from "./setup.js";
+
+const PI_MODELS_PATH = "/mock/home/.pi/agent/models.json";
+
+beforeAll(() => {
+  loadScriptHelpers("software/scripts/advanced/llm/pi/setup.js");
+});
+
+describe("Pi Ollama provider refresh", () => {
+  it("removes models no longer reported by Ollama and keeps user-managed providers", async () => {
+    mockFsExistence[PI_MODELS_PATH] = true;
+    fileSystem[PI_MODELS_PATH] = JSON.stringify({
+      providers: {
+        "ollama-sy-omen45l": {
+          models: [
+            { id: "gemma4:26b" },
+            { id: "qwen2.5-coder:3b-base" },
+            { id: "glm-4.7-flash:q4_K_M" },
+          ],
+        },
+        "custom-local": { models: [{ id: "manual-model" }] },
+      },
+    });
+
+    await getIndexFunction("_doPiModelsWork")([
+      {
+        id: "ollama-sy-omen45l",
+        name: "Sy-omen45l - 192.168.1.45:11434",
+        baseURL: "http://192.168.1.45:11434/v1",
+        models: [{ name: "gemma4:26b" }, { name: "qwen2.5-coder:3b-base" }],
+      },
+    ]);
+
+    const result = JSON.parse(fileSystem[PI_MODELS_PATH]);
+    expect(result.providers["ollama-sy-omen45l"].models.map((model) => model.id)).toEqual(["gemma4:26b", "qwen2.5-coder:3b-base"]);
+    expect(result.providers["custom-local"].models).toEqual([{ id: "manual-model" }]);
+  });
+
+  it("removes generated Ollama providers when no models are currently discovered", async () => {
+    mockFsExistence[PI_MODELS_PATH] = true;
+    fileSystem[PI_MODELS_PATH] = JSON.stringify({
+      providers: {
+        "ollama-sy-omen45l": { models: [{ id: "glm-4.7-flash:q4_K_M" }] },
+        "custom-local": { models: [{ id: "manual-model" }] },
+      },
+    });
+
+    await getIndexFunction("_doPiModelsWork")([]);
+
+    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers).toEqual({ "custom-local": { models: [{ id: "manual-model" }] } });
+  });
+});

@@ -267,6 +267,32 @@ describe("getOllamaProviderInputs > tagged host discovery", () => {
   });
 });
 
+describe("getOllamaDefaultModel", () => {
+  it("chooses a model reported by the default reachable host when preferred models are absent", () => {
+    const sandbox = loadLlmCommon(null);
+    expect(
+      sandbox.getOllamaDefaultModel([
+        {
+          id: "ollama-my-desktop-1",
+          models: [{ name: "llamacpp:96b29057eca088c7d2707398bfb2eadabd7ac1100d2520da41ca9dcdf67a77d7" }, { name: "gemma4:26b" }],
+        },
+        { id: "ollama-local", models: [{ name: "qwen2.5-coder:3b" }] },
+      ]),
+    ).toBe("llamacpp:96b29057eca088c7d2707398bfb2eadabd7ac1100d2520da41ca9dcdf67a77d7");
+  });
+
+  it("prefers configured agent models only when the default host actually serves them", () => {
+    const sandbox = loadLlmCommon(null);
+    expect(sandbox.getOllamaDefaultModel([{ id: "ollama-local", models: [{ name: "gemma4:26b" }, { name: "glm-4.7-flash:q4_K_M" }] }])).toBe(
+      "glm-4.7-flash:q4_K_M",
+    );
+  });
+
+  it("returns null when no Ollama model is currently registered", () => {
+    expect(loadLlmCommon(null).getOllamaDefaultModel([])).toBeNull();
+  });
+});
+
 describe("getAutocompleteProvider > tagged host discovery", () => {
   it("prefers localhost when it has a preferred model", async () => {
     const sandbox = loadLlmCommon(null, {

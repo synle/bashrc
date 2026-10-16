@@ -681,6 +681,7 @@ const EDITOR_CONFIGS = {
     "*.sublime-workspace", // Sublime Text workspace state
     "*.suo", // Visual Studio user options
     "*.swp", // Vim swap file
+    "*.bak_original", // Original config backups written by backupConfigFile()
 
     // Lint/build caches
     ".eslintcache", // ESLint cache
@@ -918,6 +919,7 @@ const EDITOR_CONFIGS = {
     "\\.so$",
     "\\.swo$", // vim swap file (companion to .swp)
     "\\.swp$", // vim swap file
+    "\\.bak_original$", // Original config backups written by backupConfigFile()
     "\\.wasm$",
   ],
   /**
@@ -4410,7 +4412,9 @@ function _describeRESTErrorBody(body) {
  * when available (Node 18+), else `curl` via execBash. Behavior shared with every GET
  * caller (see {@link _readTextFromURL}): single transport selection, a
  * {@link _URL_FETCH_TIMEOUT_MS} timeout, GitHub token only for api.github.com, rate-limit
- * detection. GET-only: the 5 min disk cache. Non-GET: `data` is sent as a JSON body.
+ * detection. GET-only: the 5 min disk cache, except Ollama's live `/api/tags`
+ * inventory, which must prove current reachability and installed models.
+ * Non-GET: `data` is sent as a JSON body.
  *
  * Never throws on network/HTTP failure — returns "" and logs one line naming the method,
  * full URL (including port), and the reason: timeout / errno / `HTTP <status>` plus the
@@ -4427,8 +4431,9 @@ async function makeRESTAPI(url, method = "GET", data = null) {
   const verb = String(method || "GET").toUpperCase();
   if (!/^[A-Z]+$/.test(verb)) throw new Error(`Invalid HTTP method: ${method}`);
   const isGet = verb === "GET";
+  const useCache = isGet && !/^https?:\/\/[^/]+\/api\/tags\/?(?:\?.*)?$/.test(url);
   const bodyText = data === null || data === undefined ? null : JSON.stringify(data);
-  if (isGet) {
+  if (useCache) {
     const cached = _readUrlCache(url);
     if (cached !== null) return cached.trim();
   }
@@ -4500,7 +4505,7 @@ async function makeRESTAPI(url, method = "GET", data = null) {
     log(`[Warning] makeRESTAPI ${label} failed: ${reason} ${detail}`);
   }
   const trimmed = result.trim();
-  if (isGet && trimmed) _writeUrlCache(url, trimmed);
+  if (useCache && trimmed) _writeUrlCache(url, trimmed);
   return trimmed;
 }
 

@@ -1,6 +1,6 @@
 /** Tests for _readTextFromURL / makeRESTAPI — fetch success, HTTP failure + error body, rate limit, and URL/method validation. */
 import { describe, it, expect, beforeEach } from "vitest";
-import { getIndexFunction, setSandboxGlobal } from "./setup.js";
+import { fileSystem, getIndexFunction, mockFsExistence, setSandboxGlobal } from "./setup.js";
 
 const _readTextFromURL = getIndexFunction("_readTextFromURL");
 const makeRESTAPI = getIndexFunction("makeRESTAPI");
@@ -84,6 +84,24 @@ describe("makeRESTAPI", () => {
     expect(call.options.method).toBe("POST");
     expect(call.options.body).toBe('{"model":"acme:1b","stream":false}');
     expect(call.options.headers["Content-Type"]).toBe("application/json");
+  });
+
+  it("ignores cached Ollama inventory after a model was removed", async () => {
+    const url = "http://192.0.2.45:11434/api/tags";
+    const cachePath = getIndexFunction("_urlCachePath")(url);
+    fileSystem[cachePath] = '{"models":[{"name":"glm-4.7-flash:q4_K_M"}]}';
+    mockFsExistence[cachePath] = true;
+    setSandboxGlobal("fetch", async () => fakeResponse(200, '{"models":[{"name":"gemma4:26b"}]}'));
+    expect(await makeRESTAPI(url)).toBe('{"models":[{"name":"gemma4:26b"}]}');
+  });
+
+  it("does not register a cached inventory when the Ollama host is offline", async () => {
+    const url = "http://192.0.2.45:11434/api/tags";
+    const cachePath = getIndexFunction("_urlCachePath")(url);
+    fileSystem[cachePath] = '{"models":[{"name":"glm-4.7-flash:q4_K_M"}]}';
+    mockFsExistence[cachePath] = true;
+    setSandboxGlobal("fetch", async () => fakeResponse(503, "offline"));
+    expect(await makeRESTAPI(url)).toBe("");
   });
 
   it("returns an empty string on HTTP 500 with a JSON error body", async () => {

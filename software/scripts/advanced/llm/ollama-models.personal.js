@@ -19,18 +19,6 @@ const OLLAMA_MODELS_API_URL = `http://127.0.0.1:${OLLAMA_PORT}`;
 const OLLAMA_MODEL_TAG_PATTERN = /^[A-Za-z0-9._/-]+(:[A-Za-z0-9._-]+)?$/;
 
 /**
- * Default agent model for the default Ollama server: the first `agent` model of the
- * largest tier in OLLAMA_MODELS_BY_VRAM.
- * @returns {string} Model tag.
- * @throws {Error} When the largest tier has no agent model.
- */
-function _getOllamaDefaultAgentModel() {
-  const agent = OLLAMA_MODELS_BY_VRAM[0].models.find((m) => m.role === "agent");
-  if (!agent) throw new Error(`ollama: tier '${OLLAMA_MODELS_BY_VRAM[0].id}' has no agent model`);
-  return agent.tag;
-}
-
-/**
  * Skips hosts that must not pull: CI, dry runs, Termux, and GPU-less boxes.
  * @throws {ScriptSkipError} When this host should not pull models.
  */
@@ -129,18 +117,26 @@ function _spawnOllamaBackgroundPull(tags, logPath) {
 }
 
 /**
- * Registers the OLLAMA_DEFAULT_MODEL profile block (personal profiles), then
- * resolves this host's VRAM tier from `system_gpu_vram_mib` and starts background
+ * Registers a currently-served OLLAMA_DEFAULT_MODEL profile block (personal profiles),
+ * then resolves this host's VRAM tier from `system_gpu_vram_mib` and starts background
  * pulls for every tier model the daemon does not already have. Side effect: spawns
  * one detached `node` puller (fire-and-forget) that appends to `$BASHRC_TEMP_DIR/ollama-pull.log`.
  * @returns {Promise<void>}
  * @throws {ScriptSkipError} When the host is gated out or the daemon is unreachable.
  */
 async function doWork() {
-  registerWithBashSyleProfile(
-    "ollama default model",
-    `export OLLAMA_DEFAULT_MODEL="\${OLLAMA_DEFAULT_MODEL:-${_getOllamaDefaultAgentModel()}}"`,
-  );
+  const providers = await getOllamaProviderInputs();
+  const defaultModel = getOllamaDefaultModel(providers);
+  if (defaultModel) {
+    if (!OLLAMA_MODEL_TAG_PATTERN.test(defaultModel)) throw new Error("ollama: refusing unsafe default model tag");
+    registerWithBashSyleProfile(
+      "ollama default model",
+      `export OLLAMA_DEFAULT_MODEL="\${OLLAMA_DEFAULT_MODEL:-${defaultModel}}"`,
+    );
+  } else {
+    removeFromBashSyleProfile("ollama default model");
+    log(">> ollama default model: removing registration — no reachable host serves a model");
+  }
 
   _exitIfOllamaModelPullUnsupported();
 

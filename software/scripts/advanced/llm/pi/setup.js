@@ -178,8 +178,8 @@ async function _doPiSettingsWork() {
 }
 
 /**
- * Additively merges discovered Ollama providers into ~/.pi/agent/models.json
- * under `providers`, preserving any provider the user hand-added. Skips entirely
+ * Replaces discovered Ollama providers in ~/.pi/agent/models.json under `providers`,
+ * preserving non-Ollama providers the user hand-added. Skips entirely
  * when no Ollama host is reachable and no models.json exists yet, so a headless /
  * copilot-only box gets no empty file.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providerInputs - Discovered reachable Ollama hosts.
@@ -210,9 +210,11 @@ async function _doPiModelsWork(providerInputs) {
   /** @type {Record<string, any>} Existing providers block, defaulted to empty. */
   const existingProviders = existing.providers && typeof existing.providers === "object" ? existing.providers : {};
 
-  // Existing first so discovered providers override by id on collision; a
-  // user-added provider under a different id is preserved untouched.
-  existing.providers = { ...existingProviders, ...discovered };
+  // `ollama-*` is reserved for providers generated from ip-address.config. Rebuild
+  // that namespace from current discovery so removed models and unavailable hosts
+  // do not remain selectable; keep unrelated user providers intact.
+  const userProviders = Object.fromEntries(Object.entries(existingProviders).filter(([id]) => !id.startsWith("ollama-")));
+  existing.providers = { ...userProviders, ...discovered };
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, existing);

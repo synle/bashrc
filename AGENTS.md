@@ -390,6 +390,9 @@ Profile registration is buffered: `registerProfileBlock` /
 - Zed keymaps use `-`, not `+` (`alt-q`).
 - `EDITOR_CONFIGS` in `software/index.js` is the single source for ignored folders and
   binary file extensions.
+- Original config backups (`*.bak_original`) belong in editor and fuzzy-picker
+  ignored files. Ollama `/api/tags` requests bypass the URL disk cache so provider
+  registration always checks live host inventory.
 - Makefile uses `.ONESHELL`; escape shell `$` as `$$`. A target's helper script matches
   its name (`format_jsdocs` → `software/tools/format-jsdocs.js`).
 - `install.sh` is the single source for GitHub Codespaces setup; codespace aliases live

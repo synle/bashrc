@@ -331,6 +331,22 @@ async function getOllamaProviderInputs() {
   return providers;
 }
 
+/**
+ * Chooses a model actually exposed by the default reachable Ollama provider.
+ * Preferred agent models win when installed; otherwise the host's first model is
+ * used, so a newly-installed or custom Ollama model remains usable by shell tools.
+ * @param {Array<{id: string, models: Array<{name: string}>}>} providers - Discovered Ollama providers, default host first.
+ * @returns {string|null} A model tag served by the default provider, or null when none are available.
+ */
+function getOllamaDefaultModel(providers) {
+  const defaultProvider = providers[0];
+  const modelNames = (defaultProvider?.models || []).map((model) => model && model.name).filter((name) => typeof name === "string" && name);
+  if (modelNames.length === 0) return null;
+
+  const preferred = _getOllamaTierModels("agent", "largestFirst");
+  return preferred.find((tag) => modelNames.includes(tag)) || modelNames[0];
+}
+
 // --- Editor Autocomplete Provider Discovery ---
 
 /**

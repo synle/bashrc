@@ -133,6 +133,7 @@ describe("constants", () => {
     expect(EDITOR_CONFIGS.fontFamily).toBeTruthy();
     expect(EDITOR_CONFIGS.fontSize).toBeGreaterThan(0);
     expect(EDITOR_CONFIGS.tabSize).toBeGreaterThan(0);
+    expect(EDITOR_CONFIGS.ignoredFiles).toContain("*.bak_original");
   });
 
   it("should have ignoredFoldersRegex as compilable regex strings with canonical entries", () => {
@@ -154,7 +155,7 @@ describe("constants", () => {
       expect(typeof p).toBe("string");
       expect(() => new RegExp(p), `failed to compile: ${p}`).not.toThrow();
     }
-    for (const r of ["\\.DS_Store$", "Thumbs\\.db$", "\\.exe$", "\\.dll$", "\\.so$", "\\.pyc$"]) {
+    for (const r of ["\\.DS_Store$", "Thumbs\\.db$", "\\.exe$", "\\.dll$", "\\.so$", "\\.pyc$", "\\.bak_original$"]) {
       expect(EDITOR_CONFIGS.ignoredFilesRegex, `missing required: ${r}`).toContain(r);
     }
   });
