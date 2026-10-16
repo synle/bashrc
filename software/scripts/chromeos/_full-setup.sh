@@ -197,9 +197,6 @@ if ((is_gui)); then
   installAptPackageInBackground ghostty
   installAptPackageInBackground vlc
 
-  # TODO: remove me — terminator uninstall (we migrated to ghostty); drop this block once every host has rolled through.
-  sudo apt-get remove -y terminator < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
-
   # ---- display-dj dependencies (DDC monitor control) ----
   installAptPackageInBackground ddcutil
   installAptPackageInBackground i2c-tools

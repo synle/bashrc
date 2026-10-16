@@ -69,14 +69,6 @@ function _install_flatpak_brave_prerequisite() {
     echo ">>> Brave prerequisite failed: flatpak command is unavailable." >&2
     return 1
   fi
-  # TODO: remove this pacman Brave migration block after all Decks use Flatpak Brave.
-  if type -P pacman > /dev/null && pacman -Qq brave-bin > /dev/null 2>&1; then
-    echo ">>> Removing pacman brave-bin; preserving shared dependencies and user profile data."
-    if ! sudo pacman -R --noconfirm brave-bin; then
-      echo ">>> Brave migration failed; continuing with Flatpak Brave install." >&2
-    fi
-  fi
-  # END TODO
   if ! flatpak install --user flathub com.brave.Browser; then
     echo ">>> Brave prerequisite failed: could not install com.brave.Browser." >&2
     return 1
@@ -1159,7 +1151,7 @@ fi
 # Installs url-porter + skippy-ff Chrome extensions, plus tmux and vim config.
 tmp=$(mktemp -d) && pushd "$tmp" \
   && curl -fsSL "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" -o run.sh
-bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack,vim-plug
+bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
 rm -rf "$tmp"
 popd
 

@@ -223,9 +223,6 @@ if ((is_gui)); then
   installDnfPackageInBackground ghostty
   installDnfPackageInBackground vlc
 
-  # TODO: remove me — terminator uninstall (we migrated to ghostty); drop this block once every host has rolled through.
-  sudo dnf remove -y terminator < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
-
   # ---- display-dj dependencies (DDC monitor control) ----
   installDnfPackageInBackground ddcutil
   installDnfPackageInBackground i2c-tools

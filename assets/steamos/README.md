@@ -22,12 +22,6 @@ Steam shortcuts after installation. It attempts to add each with
 Leave Proton compatibility disabled.
 
 Brave installs only with `flatpak install --user flathub com.brave.Browser`.
-During the migration, setup automatically removes only pacman package
-`brave-bin` before installing Flatpak Brave. It keeps shared pacman dependencies
-and does not delete Brave profile data. The migration helper is
-[`remove-pacman-brave.sh`](remove-pacman-brave.sh); remove this temporary step
-once Decks no longer have pacman Brave installed. Setup stops if removal fails,
-rather than proceeding with both browser packages installed.
 
 ### Install SteamTinkerLaunch
 

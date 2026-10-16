@@ -101,7 +101,7 @@ describe("_resolveScriptFile", () => {
   });
 
   it("should return ambiguous error with copy-paste suggestions when partial match has 2+ hits", () => {
-    const allFiles = ["software/scripts/vim-config.js", "software/scripts/vim-plug.sh"];
+    const allFiles = ["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"];
     // bare "vim" gets prefixed to "software/scripts/vim" by the caller; basename "vim"
     // matches both via the partial-regex tier.
     const result = _resolveScriptFile("software/scripts/vim", "vim", allFiles);
@@ -110,7 +110,7 @@ describe("_resolveScriptFile", () => {
     expect(result.description).toContain("Ambiguous");
     expect(result.description).toContain("matched 2");
     expect(result.description).toContain("bash run.sh --files=vim-config.js");
-    expect(result.description).toContain("bash run.sh --files=vim-plug.sh");
+    expect(result.description).toContain("bash run.sh --files=vim-jetpack.sh");
   });
 
   it("should still resolve when partial match yields exactly one hit", () => {

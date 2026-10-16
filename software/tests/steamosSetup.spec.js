@@ -117,14 +117,9 @@ describe("SteamOS setup", () => {
     expect(flatpakInstall).toBeLessThan(setupSource.indexOf('_add_url_steam_shortcut "Disney+"'));
   });
 
-  it("runs the temporary pacman Brave removal helper automatically", () => {
-    expect(setupSource.indexOf("if ! flatpak install --user flathub com.brave.Browser; then")).toBeLessThan(
-      setupSource.indexOf('curl -fsSL "https://www.emudeck.com/EmuDeck.desktop"'),
-    );
-    expect(setupSource).toContain("# TODO: remove this pacman Brave migration block after all Decks use Flatpak Brave.");
-    expect(setupSource).toContain("pacman -Qq brave-bin");
-    expect(setupSource).toContain("sudo pacman -R --noconfirm brave-bin");
-    expect(setupSource).toContain("# END TODO");
+  it("does not run the retired pacman Brave migration", () => {
+    expect(setupSource).not.toContain("pacman -Qq brave-bin");
+    expect(setupSource).not.toContain("pacman -R --noconfirm brave-bin");
   });
 
   it("keeps pacman cleanup inline and launches fixed Brave URLs directly in kiosk mode", () => {

@@ -1578,43 +1578,7 @@ const LLM_SKILL_MARKERS = [LLM_SKILL_MARKER, "Sy Skill - "];
  * @type {string[]} deployed command names, no extension
  */
 const LLM_COMMAND_RETIRED_NAMES = [
-  // TODO(retired-cleanup): drop these once we're confident every dev machine
-  // has re-run `bash run.sh --files=setup.js` at least once after the merge
-  // commit (rule of thumb: 3+ months after the date below). Removing too
-  // early orphans files; periodically prune so this list stays signal-only.
-  "sync-babysit-pr", // merged into /sy-babysit-pr in 119cc9d (2026-04-24)
-  "sync-babysit-prs", // merged into /sy-babysit-prs in 119cc9d (2026-04-24)
-  // 2026-05-11: every Sy-managed command was renamed to a `sy-` prefix
-  // (e.g. /babysit-pr -> /sy-babysit-pr) so they cluster in the `/` menu and
-  // never collide with user-authored or plugin-shipped commands. The OLD
-  // non-prefixed names below are retired — re-running setup.js on any dev
-  // machine that still has these on disk will unlink them.
-  "babysit-pr", // renamed to sy-babysit-pr (2026-05-11)
-  "babysit-prs", // renamed to sy-babysit-prs (2026-05-11)
-  "create-pr", // renamed to sy-create-pr (2026-05-11)
-  "draft-pr", // renamed to sy-draft-pr (2026-05-11)
-  "list-prs", // renamed to sy-list-prs (2026-05-11)
-  "slack-prs", // renamed to sy-slack-prs (2026-05-11)
-  "sync-and-groom-repo", // renamed to sy-sync-and-groom-repo (2026-05-11)
-  "sync-and-groom-repos", // renamed to sy-sync-and-groom-repos (2026-05-11)
-  "release", // renamed to sy-release (2026-05-11)
-  "release-stable", // renamed to sy-release-stable (2026-05-11)
-  "release-official", // renamed to sy-release-official (2026-05-11)
-  "release-main", // renamed to sy-release-main (2026-05-11)
-  "release-master", // renamed to sy-release-master (2026-05-11)
-  "release-beta", // renamed to sy-release-beta (2026-05-11)
-  // 2026-05-13: collapsed every release variant down to a single /sy-release
-  // entry-point. The command body still chooses official vs beta from
-  // $ARGUMENTS — the per-channel aliases were just noise in the picker.
-  // Retire the old names so dev machines holding them clean up on next deploy.
-  "sy-release-stable", // collapsed into sy-release (2026-05-13)
-  "sy-release-official", // collapsed into sy-release (2026-05-13)
-  "sy-release-main", // collapsed into sy-release (2026-05-13)
-  "sy-release-master", // collapsed into sy-release (2026-05-13)
-  "sy-release-beta", // collapsed into sy-release (2026-05-13)
-  // 2026-08-26: renamed the repo-cleanup commands from `groom` to `clean` —
-  // `groom` was hard to recall next to the plainer verb. Retire the old sy-
-  // names so dev machines holding them unlink on the next deploy.
+  // Keep until the 2026-08-26 rename has cleared the three-month and rollout window.
   "sy-sync-and-groom-repo", // renamed to sy-sync-and-clean-repo (2026-08-26)
   "sy-sync-and-groom-repos", // renamed to sy-sync-and-clean-repos (2026-08-26)
 ];

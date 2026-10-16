@@ -480,14 +480,6 @@ else
   installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
 fi
 
-# TODO: remove me — iTerm2 uninstall (we migrated to ghostty); drop this block once every host has rolled through.
-# Gated on the cached cask list: the bare `brew uninstall` costs ~1.1s of brew startup on
-# every run, and on a host that rolled through long ago there is nothing left to uninstall.
-if _brewPackageInstalled "$_BREW_INSTALLED_CASKS" iterm2; then
-  brew uninstall --cask --force iterm2 < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
-  rm -f "$HOME/.iterm2_shell_integration.bash"
-  defaults delete com.googlecode.iterm2 > /dev/null 2>&1 || true
-fi
 installBrewPackageInBackground --cask --app="Postman.app" postman
 installBrewPackageInBackground --cask --app="Sublime Text.app" sublime-text
 installBrewPackageInBackground --cask --app="Sublime Merge.app" sublime-merge

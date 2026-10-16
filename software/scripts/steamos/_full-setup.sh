@@ -224,9 +224,6 @@ if ((is_gui)); then
   installPacmanPackageInBackground ghostty
   installPacmanPackageInBackground vlc
 
-  # TODO: remove me — terminator uninstall (we migrated to ghostty); drop this block once every host has rolled through.
-  sudo pacman -Rns --noconfirm terminator < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
-
   # ---- display-dj dependencies (DDC monitor control) ----
   installPacmanPackageInBackground ddcutil
   installPacmanPackageInBackground i2c-tools

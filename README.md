@@ -95,7 +95,7 @@ bash run.sh --preset=heavyweight             # everything
 bash run.sh --preset=lightweight             # minimal
 bash run.sh                                  # profile refresh only
 bash run.sh --files=git.js                   # one script
-bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack,vim-plug     # a few scripts
+bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack             # a few scripts
 bash run.sh --dryrun --setup                 # preview, no writes
 ```
 
@@ -119,7 +119,7 @@ fi
 ### Option C - via git and make
 
 ```bash
-tmp=$(mktemp -d) && cd "$tmp" && git clone --depth 1 https://github.com/synle/bashrc.git && cd bashrc && bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack,vim-plug
+tmp=$(mktemp -d) && cd "$tmp" && git clone --depth 1 https://github.com/synle/bashrc.git && cd bashrc && bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
 ```
 
 ## Usage
