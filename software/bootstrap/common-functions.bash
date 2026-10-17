@@ -528,7 +528,7 @@ function clean_junk_macosx_files() {
 # Usage:
 #   clean_ds_store "$HOME/.claude"
 function clean_ds_store() {
-  local target="$1"
+  local target="${1:-.}"
   if ! ((is_os_mac)); then
     echo ">> clean_ds_store >> $target >> Skipped (not mac)"
     return 0
