@@ -187,3 +187,43 @@ describe("_npm_install_global freshness gate", () => {
     expect(installed).toBe(true);
   });
 });
+
+describe("npm_uninstall_global", () => {
+  it("removes from the local prefix and Windows host under WSL", () => {
+    const marker = path.join(sandbox, "uninstall-attempted");
+    const fakeCmd = path.join(sandbox, "bin/cmd.exe");
+    fs.writeFileSync(fakeCmd, `#!/bin/bash\nprintf 'windows %s\\n' "$*" >> ${JSON.stringify(marker)}\n`);
+    fs.chmodSync(fakeCmd, 0o755);
+
+    const script = [
+      `HOME=${JSON.stringify(path.join(sandbox, "home"))}`,
+      `PATH=${JSON.stringify(path.join(sandbox, "bin"))}`,
+      `export BASHRC_TEMP_DIR=${JSON.stringify(path.join(sandbox, "tmp"))}`,
+      "is_os_wsl=1",
+      "source " + JSON.stringify(COMMON_FUNCTIONS),
+      `function run_native() { printf 'local %s\\n' "$*" >> ${JSON.stringify(marker)}; }`,
+      `npm_uninstall_global opencode-ai`,
+    ].join("\n");
+    const scriptPath = path.join(sandbox, "uninstall.sh");
+    fs.writeFileSync(scriptPath, script);
+
+    execFileSync("bash", [scriptPath], { encoding: "utf-8" });
+
+    const attempts = fs.readFileSync(marker, "utf-8");
+    expect(attempts).toContain("local npm uninstall -g --prefix");
+    expect(attempts).toContain("opencode-ai");
+    expect(attempts).toContain("windows /c npm uninstall -g opencode-ai");
+  });
+
+  it("rejects an empty package name", () => {
+    const script = [
+      `export BASHRC_TEMP_DIR=${JSON.stringify(path.join(sandbox, "tmp"))}`,
+      "source " + JSON.stringify(COMMON_FUNCTIONS),
+      "npm_uninstall_global ''",
+    ].join("\n");
+    const scriptPath = path.join(sandbox, "empty-uninstall.sh");
+    fs.writeFileSync(scriptPath, script);
+
+    expect(() => execFileSync("bash", [scriptPath], { encoding: "utf-8" })).toThrow();
+  });
+});

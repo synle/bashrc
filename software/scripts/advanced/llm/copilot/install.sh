@@ -10,7 +10,7 @@
 # step for the Windows side. Trade-off: lose the native installer's winget routing;
 # refresh comes from `bash run.sh --force-refresh --files=copilot` instead.
 echo '> Installing GitHub Copilot CLI'
-npm_install_global @github/copilot copilot
+npm_install_global @github/copilot@latest copilot
 
 # Self-update on top of the npm install. `npm_install_global` no-ops when the binary
 # already exists (unless --force-refresh), so a normal run would never pick up point

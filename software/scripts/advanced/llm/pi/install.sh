@@ -12,7 +12,7 @@
 # Package name differs from the binary name, so pass both: the published npm
 # package is `@earendil-works/pi-coding-agent` and it installs the `pi` launcher.
 echo '> Installing pi'
-npm_install_global @earendil-works/pi-coding-agent pi
+npm_install_global @earendil-works/pi-coding-agent@latest pi
 
 # Self-update when pi is already installed. npm_install_global can no-op on a
 # fresh-enough launcher, so this keeps point releases flowing on normal runs

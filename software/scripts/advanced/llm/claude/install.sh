@@ -20,7 +20,7 @@
 # re-download the ~270MB binary on every single run).
 
 echo '> Installing claude'
-npm_install_global @anthropic-ai/claude-code claude
+npm_install_global @anthropic-ai/claude-code@latest claude
 
 # Self-update when Claude is already installed. npm_install_global can no-op on
 # a fresh-enough launcher, so this keeps point releases flowing on normal runs.

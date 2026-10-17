@@ -9,6 +9,7 @@
 # A curl|bash install would only land on the current OS, forcing a separate winget
 # step for the Windows side. See CLAUDE.md "LLM CLIs" exception for the policy.
 echo '> Installing opencode'
+
 # Sweep any legacy / wrong-arch globals from earlier installs before installing
 # the latest package as the canonical command. Silenced because the packages may
 # not be present (npm prints "not installed" warnings otherwise).
@@ -22,6 +23,7 @@ npm uninstall -g opencode-ai > /dev/null 2>&1
 # The freshness gate keys off the package tree. Remove the old stable tree so
 # `opencode-ai@latest` cannot be mistaken for an already-installed v1 package.
 rm -rf "$HOME/.local/lib/node_modules/opencode-ai"
+
 echo -n '>> opencode >> Installing latest as canonical command >> '
 if npm_install_global opencode-ai@latest opencode; then
   echo 'Success'
@@ -29,10 +31,7 @@ else
   echo 'Error (non-fatal)'
 fi
 
-# OpenCode keeps provider metadata in a models.dev-backed cache. Refresh that cache
-# only for an explicit `--refresh=opencode/install.sh` run; normal setup stays offline
-# from this extra request. A catalog refresh cannot expose a model until models.dev
-# publishes it, but it prevents a stale local cache from hiding newly published models.
+# Refresh the model catalog only when explicitly requested.
 if ((IS_REFRESH_MODE)) && has_persistent_binary opencode > /dev/null; then
   echo -n '>> opencode >> Refreshing model catalog >> '
   if opencode models --refresh < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then

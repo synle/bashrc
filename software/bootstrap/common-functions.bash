@@ -357,6 +357,32 @@ function _npm_install_global() {
   fi
 }
 
+# npm_uninstall_global <pkg> - Removes a globally installed npm package from the current system.
+# Uses the same local prefix as npm_install_global and, under WSL, removes the Windows-host
+# global package too. Returns non-zero when either uninstall target fails.
+function npm_uninstall_global() {
+  local pkg="$1"
+  local failed=0
+
+  [ -n "$pkg" ] || return 1
+
+  echo "  >> npm uninstall -g $pkg"
+  if ! (
+    run_native npm uninstall -g --prefix "$HOME/.local" "$pkg"
+  ) < /dev/null > /dev/null 2>&1; then
+    failed=1
+  fi
+
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    echo "  >> npm uninstall -g $pkg (Windows)"
+    if ! cmd.exe /c "npm uninstall -g $pkg" < /dev/null > /dev/null 2>&1; then
+      failed=1
+    fi
+  fi
+
+  return "$failed"
+}
+
 # Public wrapper preserving original name, defaulting always_latest to true
 function npm_install_global() {
   _npm_install_global "$1" "$2" "true"
