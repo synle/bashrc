@@ -110,6 +110,22 @@ const mockFs = {
     delete fileSystem[filePath];
     delete mockFsExistence[filePath];
   },
+  mkdirSync: (folderPath) => {
+    if (mockFsExistence[folderPath]) {
+      const error = new Error(`EEXIST: file already exists, mkdir '${folderPath}'`);
+      error.code = "EEXIST";
+      throw error;
+    }
+    mockFsExistence[folderPath] = { type: "dir", mtimeMs: Date.now() };
+  },
+  rmdirSync: (folderPath) => {
+    if (!mockFsExistence[folderPath]) {
+      const error = new Error(`ENOENT: no such directory, rmdir '${folderPath}'`);
+      error.code = "ENOENT";
+      throw error;
+    }
+    delete mockFsExistence[folderPath];
+  },
   symlinkSync: (src, dest) => {
     mockSymlinkCalls.push({ src, dest });
     if (mockSymlinkError.value) throw mockSymlinkError.value;

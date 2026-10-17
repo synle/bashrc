@@ -53,6 +53,43 @@ async function _fetchInstalledOllamaModels() {
 const OLLAMA_PULL_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 
 /**
+ * Prevents overlapping setup runs from asking one daemon to pull the same tags twice.
+ * @type {string}
+ */
+const OLLAMA_PULL_LOCK_PATH = path.join(BASHRC_TEMP_DIR, "ollama-pull.lock");
+
+/**
+ * Maximum age for a lock left by a terminated puller before a later run may recover it.
+ * @type {number}
+ */
+const OLLAMA_PULL_LOCK_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Claims the pull lock atomically. Directory creation is atomic across WSL and Windows
+ * filesystem mounts, unlike a check-then-write lock file.
+ * @returns {boolean} True when this run owns the lock.
+ */
+function _claimOllamaPullLock() {
+  try {
+    fs.mkdirSync(OLLAMA_PULL_LOCK_PATH);
+    return true;
+  } catch (err) {
+    if (err && err.code !== "EEXIST") throw err;
+    try {
+      const age = Date.now() - fs.statSync(OLLAMA_PULL_LOCK_PATH).mtimeMs;
+      if (age > OLLAMA_PULL_LOCK_MAX_AGE_MS) {
+        fs.rmdirSync(OLLAMA_PULL_LOCK_PATH);
+        fs.mkdirSync(OLLAMA_PULL_LOCK_PATH);
+        return true;
+      }
+    } catch (recoveryErr) {
+      if (recoveryErr && recoveryErr.code !== "ENOENT") throw recoveryErr;
+    }
+    return false;
+  }
+}
+
+/**
  * Builds the self-contained JS program the detached puller runs. It carries the real
  * makeRESTAPI / _describeRESTErrorBody source (Function#toString) plus stubs for the
  * index.js globals they touch: no URL cache, no GitHub token, OLLAMA_PULL_TIMEOUT_MS as
@@ -75,8 +112,7 @@ function _buildOllamaBackgroundPullProgram(tags, logPath) {
     `const TAGS = ${JSON.stringify(tags)};`,
     `function log(...parts) { fs.appendFileSync(LOG_PATH, new Date().toTimeString().slice(0, 8) + " " + parts.join(" ") + "\\n"); }`,
     `const _URL_FETCH_TIMEOUT_MS = ${OLLAMA_PULL_TIMEOUT_MS};`,
-    `const _GITHUB_API_URL_PREFIX = ${JSON.stringify(_GITHUB_API_URL_PREFIX)};`,
-    `let _githubApiRateLimited = false;`,
+    `const LOCK_PATH = ${JSON.stringify(OLLAMA_PULL_LOCK_PATH)};`,
     `function _readUrlCache() { return null; }`,
     `function _writeUrlCache() {}`,
     `function _getGitHubApiToken() { return ""; }`,
@@ -84,6 +120,7 @@ function _buildOllamaBackgroundPullProgram(tags, logPath) {
     _describeRESTErrorBody.toString(),
     makeRESTAPI.toString(),
     `(async () => {`,
+    `  try {`,
     `  const version = await makeRESTAPI(API_URL + "/api/version");`,
     `  log("ollama daemon at " + API_URL + " version: " + (version || "unknown"));`,
     `  await Promise.all(TAGS.map(async (tag) => {`,
@@ -93,6 +130,7 @@ function _buildOllamaBackgroundPullProgram(tags, logPath) {
     `    log((out.includes('"success"') ? "done: " : "FAILED: ") + tag);`,
     `  }));`,
     `  log("all ollama pulls finished");`,
+    `  } finally { try { fs.rmdirSync(LOCK_PATH); } catch (err) { log("lock cleanup failed: " + err.message); } }`,
     `})();`,
   ].join("\n");
 }
@@ -152,6 +190,11 @@ async function doWork() {
     log(`>> ollama model pull: ${tag} already present`);
   }
   if (missing.length === 0) return;
+
+  if (!_claimOllamaPullLock()) {
+    log(">> ollama model pull: another pull is already running; skipping this run");
+    return;
+  }
 
   const logPath = path.join(BASHRC_TEMP_DIR, "ollama-pull.log");
   log(`>> ollama model pull: ${missing.length} model(s) in background: ${missing.join(", ")}`);
