@@ -21,3 +21,17 @@
 
 echo '> Installing claude'
 npm_install_global @anthropic-ai/claude-code claude
+
+# Self-update when Claude is already installed. npm_install_global can no-op on
+# a fresh-enough launcher, so this keeps point releases flowing on normal runs.
+#
+# `claude update` is the documented update command. Pipe `yes` so any
+# confirmation prompt is accepted non-interactively.
+if ! ((IS_CI)) && has_persistent_binary claude > /dev/null; then
+  echo -n '>> claude >> Updating to latest stable >> '
+  if yes | claude update >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+    echo 'Success'
+  else
+    echo 'Error (non-fatal)'
+  fi
+fi

@@ -21,9 +21,9 @@ npm_install_global @github/copilot copilot
 # for @github/copilot. Harmless — the next `--force-refresh` npm install overwrites it.
 #
 # Skipped in CI: the runner installs fresh every build, and Copilot disables its own
-# auto-update under CI anyway. `< /dev/null` keeps it from consuming the bundling
-# heredoc's stdin; the if/else swallows the exit code so a network or registry hiccup
-# can't fail the surrounding bundled install script.
+# auto-update under CI anyway. Pipe `yes` so any confirmation prompt is accepted
+# non-interactively; the if/else swallows the exit code so a network or registry
+# hiccup can't fail the surrounding bundled install script.
 # Node floor: copilot's npm-loader.js resolves its platform binary with
 # `import.meta.resolve`, which only exists from Node 20.6 (and copilot targets 22+). Under
 # an older node the resolve throws, the loader is caught by its own try/catch, and it prints
@@ -35,7 +35,7 @@ _copilot_node_major="$(node -v 2> /dev/null | tr -d 'v' | cut -d. -f1)"
 if ! ((IS_CI)) && has_persistent_binary copilot > /dev/null \
   && [ -n "$_copilot_node_major" ] && [ "$_copilot_node_major" -ge 22 ]; then
   echo -n '>> copilot >> Updating to latest stable >> '
-  if copilot update < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+  if yes | copilot update stable >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo 'Success'
   else
     # Most common failure is a broken install ("GitHub Copilot CLI: no platform package

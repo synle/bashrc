@@ -13,3 +13,18 @@
 # package is `@earendil-works/pi-coding-agent` and it installs the `pi` launcher.
 echo '> Installing pi'
 npm_install_global @earendil-works/pi-coding-agent pi
+
+# Self-update when pi is already installed. npm_install_global can no-op on a
+# fresh-enough launcher, so this keeps point releases flowing on normal runs
+# without requiring --force-refresh.
+#
+# `pi update --self` is the documented self-update path. Pipe `yes` so any
+# confirmation prompt is accepted non-interactively.
+if ! ((IS_CI)) && has_persistent_binary pi > /dev/null; then
+  echo -n '>> pi >> Updating to latest stable >> '
+  if yes | pi update --self >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+    echo 'Success'
+  else
+    echo 'Error (non-fatal)'
+  fi
+fi
