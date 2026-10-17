@@ -19,6 +19,9 @@ echo '> Installing opencode'
 # blast radius and are relinked on every refresh.
 npm uninstall -g opencode-darwin-arm64 > /dev/null 2>&1
 npm uninstall -g opencode-ai > /dev/null 2>&1
+# The freshness gate keys off the package tree. Remove the old stable tree so
+# `opencode-ai@beta` cannot be mistaken for an already-installed v1 package.
+rm -rf "$HOME/.local/lib/node_modules/opencode-ai"
 echo -n '>> opencode >> Installing beta as canonical command >> '
 if npm_install_global opencode-ai@beta opencode; then
   echo 'Success'
