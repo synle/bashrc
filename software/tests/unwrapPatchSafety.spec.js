@@ -143,6 +143,14 @@ describe("raw clipboard path", () => {
     expect(source).not.toMatch(/git patch-view \| copy$/m);
   });
 
+  it("uses a byte locale while generating patches", () => {
+    const gitConfig = fs.readFileSync(path.join(ROOT_DIR, "software/scripts/git.gitconfig"), "utf-8");
+    const clipboardSource = fs.readFileSync(CLIPBOARD_PROFILE, "utf-8");
+
+    expect(gitConfig).toContain("patch-view = \"!f() { LC_ALL=C git --no-pager format-patch");
+    expect(clipboardSource).toContain("  LC_ALL=C awk '/^From [0-9a-f]");
+  });
+
   it("keeps patch transfer out of the dropbox profile entirely", () => {
     // The dropbox profile used to carry a second create/apply pair
     // (_patch_create_and_upload / _patch_view_copy / _patch_download_and_apply)

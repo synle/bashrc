@@ -36,7 +36,7 @@ function loadOpencodeMigrationSandbox(fakeHome) {
 /**
  * Runs the OpenCode installer with package and binary operations stubbed.
  * @param {boolean} refreshMode - Whether the installer runs as an explicit refresh target.
- * @returns {{ stable: string, npm: string, oldPackageRemoved: boolean }} Stubbed command arguments.
+ * @returns {{ stable: string, npm: string }} Stubbed command arguments.
  */
 function runOpencodeInstall(refreshMode) {
   const tempFolder = fs.mkdtempSync(path.join(os.tmpdir(), "opencode-install-"));
@@ -63,7 +63,6 @@ function runOpencodeInstall(refreshMode) {
     return {
       npm: fs.existsSync(npmMarkerPath) ? fs.readFileSync(npmMarkerPath, "utf-8") : "",
       stable: fs.existsSync(path.join(tempFolder, "stable-args")) ? fs.readFileSync(path.join(tempFolder, "stable-args"), "utf-8") : "",
-      oldPackageRemoved: !fs.existsSync(installedPackagePath),
     };
   } finally {
     fs.rmSync(tempFolder, { recursive: true, force: true });
@@ -118,7 +117,6 @@ describe("OpenCode Ollama metadata", () => {
     const npmArgs = runOpencodeInstall(false).npm;
 
     expect(npmArgs.trim()).toBe("opencode-ai@latest opencode");
-    expect(runOpencodeInstall(false).oldPackageRemoved).toBe(true);
   });
 
   it("routes opencode and op to the canonical v2 binary", () => {

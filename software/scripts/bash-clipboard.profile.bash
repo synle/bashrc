@@ -71,7 +71,7 @@ fi
 # produced through `git patch-view` / `patch-get`; this copy exists because git
 # aliases run under sh and cannot call a bash function.
 function _normalize_patch_headers() {
-  awk '/^From [0-9a-f][0-9a-f]* /{h=1}; h && /^MIME-Version: 1\.0$/{next}; h && /^Content-Type: text\/plain;/{next}; h && /^Content-Transfer-Encoding: 8bit$/{next}; h && /^Subject: \[PATCH/ && !/=\?/{i=index($0,"] "); if(i){print substr($0,1,i); print "##########"; print substr($0,i+2); m=1; next}}; h && /^$/{h=0}; m && /^---$/{print "##########"; m=0}; {print}'
+  LC_ALL=C awk '/^From [0-9a-f][0-9a-f]* /{h=1}; h && /^MIME-Version: 1\.0$/{next}; h && /^Content-Type: text\/plain;/{next}; h && /^Content-Transfer-Encoding: 8bit$/{next}; h && /^Subject: \[PATCH/ && !/=\?/{i=index($0,"] "); if(i){print substr($0,1,i); print "##########"; print substr($0,i+2); m=1; next}}; h && /^$/{h=0}; m && /^---$/{print "##########"; m=0}; {print}'
 }
 
 # save stdin to clipboard history folder + native clipboard (if available)

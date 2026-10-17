@@ -94,17 +94,31 @@ function seedInstall({ pkg, bin, launcher }) {
 }
 
 /**
+ * Seed data owned by a self-updating CLI outside its npm package tree.
+ * @param {string} bin - CLI binary name.
+ * @returns {string} Path to the seeded data file.
+ */
+function seedCliData(bin) {
+  const dataPath = path.join(sandbox, "home/.local/share", bin, "session.db");
+  fs.mkdirSync(path.dirname(dataPath), { recursive: true });
+  fs.writeFileSync(dataPath, "session data");
+  return dataPath;
+}
+
+/**
  * Drive `_npm_install_global <pkg> <bin> true` in a hermetic bash subshell with the real
  * `npm install -g` stubbed out, and report whether the gate skipped or let the install run.
  *
  * @param {object} opts
  * @param {string} opts.pkg
  * @param {string} opts.bin
- * @returns {{ stdout: string, skipped: boolean, installed: boolean }}
+ * @param {boolean} [opts.seedData=false]
+ * @returns {{ stdout: string, skipped: boolean, installed: boolean, dataPath: string }}
  */
-function run({ pkg, bin }) {
+function run({ pkg, bin, seedData = false }) {
   const home = path.join(sandbox, "home");
   const marker = path.join(sandbox, "install-attempted");
+  const dataPath = seedData ? seedCliData(bin) : "";
   const script = [
     `HOME=${JSON.stringify(home)}`,
     `PATH=${JSON.stringify(path.join(sandbox, "bin"))}`,
@@ -128,10 +142,18 @@ function run({ pkg, bin }) {
     stdout,
     skipped: />> Skipped \(not stale:/.test(stdout),
     installed: fs.existsSync(marker),
+    dataPath,
   };
 }
 
 describe("_npm_install_global freshness gate", () => {
+  it("preserves CLI-owned data when reinstalling", () => {
+    seedInstall({ pkg: "opencode-ai", bin: { opencode: "bin/opencode" } });
+    const { dataPath } = run({ pkg: "opencode-ai", bin: "opencode", seedData: true });
+
+    expect(fs.readFileSync(dataPath, "utf-8")).toBe("session data");
+  });
+
   it("reinstalls when the launcher was deleted but the package tree survived (claude)", () => {
     // Exactly the broken state claude/install.sh's old unconditional `rm -f ~/.local/bin/claude`
     // produced: fresh node_modules tree, no launcher, so `claude: command not found` forever.

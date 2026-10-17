@@ -294,12 +294,6 @@ function _npm_install_global() {
     rm -f "$HOME/.local/bin/$bin"
   fi
 
-  # Remove standalone install data
-  if [[ -d "$HOME/.local/share/$bin" ]]; then
-    echo "  >> Removing standalone install data: ~/.local/share/$bin"
-    rm -rf "$HOME/.local/share/$bin"
-  fi
-
   echo "  >> npm install -g $pkg ($bin)"
 
   # 1. Current system install / check
