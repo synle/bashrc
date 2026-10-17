@@ -3089,6 +3089,44 @@ async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
 }
 
 /**
+ * Normalizes an application label for comparison with Windows uninstall metadata.
+ * @param {string} label - Application label or Windows DisplayName
+ * @returns {string} Lowercase alphanumeric label with separators removed
+ */
+function _normalizeWindowsAppLabel(label) {
+  return label.replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+/**
+ * Reads the installed version from the per-user and machine-wide Windows uninstall
+ * registries. Missing or unreadable registry data returns null so callers reinstall
+ * rather than trusting an uncertain version.
+ * @param {string} appLabel - Application label used by the installer
+ * @returns {Promise<string|null>} Installed DisplayVersion, or null when not found
+ */
+async function getWindowsInstalledAppVersion(appLabel) {
+  if (!is_os_windows) return null;
+
+  const normalizedLabel = _normalizeWindowsAppLabel(appLabel);
+  const powershellScript = `
+    $wanted = '${normalizedLabel}'
+    $roots = @(
+      'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*',
+      'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*',
+      'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'
+    )
+    foreach ($item in (Get-ItemProperty -Path $roots -ErrorAction SilentlyContinue)) {
+      if ($item.DisplayName -and (($item.DisplayName -replace '[^a-zA-Z0-9]', '').ToLower() -eq $wanted)) {
+        if ($item.DisplayVersion) { $item.DisplayVersion; break }
+      }
+    }
+  `;
+  const encodedScript = Buffer.from(powershellScript, "utf16le").toString("base64");
+  const version = await execBash(`powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encodedScript}`);
+  return /^\d+(\.\d+)+$/.test(version) ? version : null;
+}
+
+/**
  * Parses the [Desktop Entry] section of a .desktop file into key-value pairs.
  * Skips subsequent sections (e.g. [Desktop Action ...]).
  * @param {string} content - Raw .desktop file content
@@ -3437,8 +3475,8 @@ async function isMacInstalledAppArchMismatched(appLabel) {
  *   nothing lingers in `_extra/` after the run.
  * - Linux: the AppImage IS the run target, so it stays in ~/_extra/<app>/.
  *
- * On Mac, the entire pipeline is short-circuited when the installed
- * CFBundleShortVersionString already equals the upstream release version —
+ * On Mac and Windows, the entire pipeline is short-circuited when the installed
+ * application version already equals the upstream release version —
  * unless IS_REFRESH_MODE is set (i.e. `--refresh="<script>"`), which forces
  * the reinstall, or the installed bundle turns out to be built for the wrong
  * CPU arch (an Intel build on Apple Silicon), which no version comparison can
@@ -3478,6 +3516,17 @@ async function downloadAndInstallBinary(repo, getFileName) {
     } else if (installed) {
       log(`>> ${appLabel}: installed ${installed} → upstream ${ver}, upgrading`);
     }
+  }
+
+  // Windows installers are throwaway NSIS payloads, so compare the installed app's
+  // uninstall-registry version before staging or downloading another setup.exe.
+  if (is_os_windows && !IS_REFRESH_MODE && version) {
+    const installed = await getWindowsInstalledAppVersion(appLabel);
+    if (installed === ver) {
+      log(`>> ${appLabel} ${ver} already installed - skipping (pass --refresh="${appLabel}" to force)`);
+      return false;
+    }
+    if (installed) log(`>> ${appLabel}: installed ${installed}  upstream ${ver}, upgrading`);
   }
 
   const legacyExtraPath = await getCustomTweaksPath(appLabel);

@@ -3,6 +3,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { getIndexFunction, mockFsDirEntries, mockExecCommands, setMockExecSyncReturn, setSandboxGlobal } from "./setup.js";
 
 const getMacInstalledAppVersion = getIndexFunction("getMacInstalledAppVersion");
+const getWindowsInstalledAppVersion = getIndexFunction("getWindowsInstalledAppVersion");
+const normalizeWindowsAppLabel = getIndexFunction("_normalizeWindowsAppLabel");
 
 /**
  * is_os_mac is declared `const` on the same JSDoc-prefixed line in index.js, so the
@@ -23,6 +25,13 @@ describe("getMacInstalledAppVersion (non-Mac sandbox)", () => {
 
   it("does not touch the filesystem or shell off-Mac", async () => {
     await getMacInstalledAppVersion("display-dj");
+    expect(mockExecCommands.length).toBe(0);
+  });
+});
+
+describe("getWindowsInstalledAppVersion (non-Windows sandbox)", () => {
+  it("returns null without invoking PowerShell off-Windows", async () => {
+    expect(await getWindowsInstalledAppVersion("display-dj")).toBeNull();
     expect(mockExecCommands.length).toBe(0);
   });
 });
@@ -60,5 +69,13 @@ describe("version-shape filter regex", () => {
     expect(looksLikeVersion("unknown")).toBe(false);
     expect(looksLikeVersion("v1.2.3")).toBe(false); // leading v not accepted — strip before compare
     expect(looksLikeVersion("foo.1.2")).toBe(false);
+  });
+});
+
+describe("Windows app label normalization", () => {
+  it("matches installer labels despite punctuation and spacing", () => {
+    expect(normalizeWindowsAppLabel("Display DJ")).toBe("displaydj");
+    expect(normalizeWindowsAppLabel("display-dj")).toBe("displaydj");
+    expect(normalizeWindowsAppLabel("sqlui_native")).toBe("sqluinative");
   });
 });

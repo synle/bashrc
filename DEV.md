@@ -155,7 +155,7 @@ logic (see AGENTS.md §2, Golden rules).
   attributes on WSL and `chflags` on macOS; Linux is a no-op.
 - **Install/download:** `downloadAsset(s)`, `downloadAssetWithFallback` (GitHub release →
   `binary-cache`), `downloadAndInstallBinary`, `installMacDmg`, `clearMacQuarantine`,
-  `installWindowsSetupExe`, `installLinuxUniversalAppImage`, `installBrowserExtension`,
+  `installWindowsSetupExe`, `getWindowsInstalledAppVersion`, `installLinuxUniversalAppImage`, `installBrowserExtension`,
   `gitClone`, `fetchGitHubReleaseVersion`, `getGitHubRawUrl`.
 - **CPU arch:** `getNativeArch()` (memoized; JS mirror of bash `get_native_arch` — never
   `os.arch()`/`process.arch`, which report `x64` under Rosetta 2 and pick the Intel
