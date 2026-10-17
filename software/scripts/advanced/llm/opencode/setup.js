@@ -129,10 +129,15 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     };
   }
 
-  // Leave model discovery to GitHub Copilot and opencode so new models flow through
-  // without requiring a config refresh.
+  // Keep selected Copilot models visible even when account discovery omits a rollout.
   providers["github-copilot"] = {
     options: { ...PROVIDER_STREAM_TIMEOUTS },
+    models: Object.fromEntries(
+      Object.entries(LLM_COPILOT_MODEL_EXTENSIONS).map(([modelId, config]) => [
+        modelId,
+        config.fast ? { variants: { fast: config.fast } } : {},
+      ]),
+    ),
   };
 
   // Auto-name every model: "<provider_key> / <model_key>" so the model picker in TUI

@@ -24,11 +24,8 @@
  *                             `collapseChangelog`, `enableInstallTelemetry`,
  *                             `hideThinkingBlock`) into the user's settings; only
  *                             managed keys are touched.
- *   ~/.pi/agent/models.json — discovered Ollama providers merged under
- *                             `providers`. GitHub Copilot is a built-in
- *                             subscription provider reached via `/login`, NOT a
- *                             models.json entry, so nothing copilot-shaped is
- *                             written here.
+ *   ~/.pi/agent/models.json — discovered Ollama providers and selected GitHub
+ *                             Copilot model overrides merged under `providers`.
  *
  * Shared `/sy-*` skills need NO wiring here: `deploySharedLLMSkills()` symlinks
  * every skill into `~/.agents/skills/` (a member of LLM_SKILL_LINK_FOLDERS), and
@@ -100,6 +97,18 @@ const PI_OLLAMA_COMPAT = {
 };
 
 /**
+ * Converts the shared Copilot extension registry into Pi's provider model shape.
+ * @returns {Array<{id: string, name: string, headers?: Record<string, string>}>} Pi model entries.
+ */
+function _getPiCopilotModels() {
+  return Object.entries(LLM_COPILOT_MODEL_EXTENSIONS).map(([id, config]) => ({
+    id,
+    name: `GitHub Copilot / ${id}`,
+    ...(config.fast ? { headers: config.fast.headers } : {}),
+  }));
+}
+
+/**
  * Absolute path to pi's global config folder.
  * @type {string} `~/.pi/agent`
  */
@@ -166,7 +175,7 @@ async function _doPiSettingsWork() {
 }
 
 /**
- * Replaces discovered Ollama providers in ~/.pi/agent/models.json under `providers`,
+ * Replaces discovered Ollama providers and refreshes GitHub Copilot models in ~/.pi/agent/models.json under `providers`,
  * preserving non-Ollama providers the user hand-added. Skips entirely
  * when no Ollama host is reachable and no models.json exists yet, so a headless /
  * copilot-only box gets no empty file.
@@ -178,6 +187,9 @@ async function _doPiModelsWork(providerInputs) {
 
   /** @type {Record<string, any>} Providers discovered this run. */
   const discovered = _buildPiOllamaProviders(providerInputs);
+  discovered[LLM_COPILOT_PROVIDER_ID] = {
+    models: _getPiCopilotModels(),
+  };
 
   /** @type {boolean} Whether models.json already exists on disk. */
   const fileExists = fs.existsSync(targetPath);

@@ -499,6 +499,30 @@ async function getAcpAgentInputs() {
 const LLM_COPILOT_PROVIDER_ID = "github-copilot";
 
 /**
+ * GitHub Copilot discovery hides some account-available models from client catalogs.
+ * This shared list is intentionally consumed only by the Pi and OpenCode setup
+ * adapters today. Those adapters extend, rather than replace, each native catalog;
+ * add another consumer only when its provider config preserves native metadata.
+ * @type {Record<string, {fast?: {options: {speed: string}, headers: Record<string, string>}}>}
+ */
+const LLM_COPILOT_MODEL_EXTENSIONS = {
+  "gpt-6.1-sol": {},
+  "gpt-6-astra": {},
+  "gpt-6-luna": {},
+  "claude-fable-5.1": {},
+  "claude-opus-4.8": {
+    fast: {
+      options: { speed: "fast" },
+      headers: { "anthropic-beta": "fast-mode-2026-02-01" },
+    },
+  },
+  "claude-opus-5": {},
+  "claude-opus-5.5": {},
+  "claude-sonnet-5": {},
+  "claude-sonnet-5.5": {},
+};
+
+/**
  * Whether opencode's DEFAULT agent (`build`) gets a PINNED GitHub Copilot model.
  *
  * OFF on purpose. `build` is the agent opencode starts every session on, so a `model`
@@ -589,7 +613,7 @@ const AGENT_TO_MODEL_MAP = {
     opencode: {
       description: "Review code for correctness, regressions, security issues, and missing tests.",
       mode: "subagent",
-      model: `${LLM_COPILOT_PROVIDER_ID}/claude-opus-4.8`,
+      model: `${LLM_COPILOT_PROVIDER_ID}/claude-opus-5.5`,
       permission: { edit: "deny", bash: "allow" },
     },
   },
