@@ -506,20 +506,7 @@ const LLM_COPILOT_PROVIDER_ID = "github-copilot";
  * @type {Record<string, {fast?: {options: {speed: string}, headers: Record<string, string>}}>}
  */
 const LLM_COPILOT_MODEL_EXTENSIONS = {
-  // "gpt-6.1-sol": {},
-  // "gpt-6-astra": {},
-  // "gpt-6-luna": {},
-  // "claude-fable-5.1": {},
-  // "claude-opus-4.8": {
-  //   fast: {
-  //     options: { speed: "fast" },
-  //     headers: { "anthropic-beta": "fast-mode-2026-02-01" },
-  //   },
-  // },
-  // "claude-opus-5": {},
-  // "claude-opus-5.5": {},
-  // "claude-sonnet-5": {},
-  // "claude-sonnet-5.5": {},
+  // Add only models verified available through the GitHub Copilot provider.
 };
 
 /**
@@ -613,7 +600,7 @@ const AGENT_TO_MODEL_MAP = {
     opencode: {
       description: "Review code for correctness, regressions, security issues, and missing tests.",
       mode: "subagent",
-      model: `${LLM_COPILOT_PROVIDER_ID}/claude-opus-5.5`,
+      model: `${LLM_COPILOT_PROVIDER_ID}/claude-opus-4.8`,
       permission: { edit: "deny", bash: "allow" },
     },
   },

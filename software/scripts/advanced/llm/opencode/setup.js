@@ -129,16 +129,18 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     };
   }
 
-  // Keep selected Copilot models visible even when account discovery omits a rollout.
-  providers["github-copilot"] = {
-    options: { ...PROVIDER_STREAM_TIMEOUTS },
-    models: Object.fromEntries(
-      Object.entries(LLM_COPILOT_MODEL_EXTENSIONS).map(([modelId, config]) => [
-        modelId,
-        config.fast ? { variants: { fast: config.fast } } : {},
-      ]),
-    ),
-  };
+  // Keep verified Copilot models visible when account discovery omits a rollout.
+  if (Object.keys(LLM_COPILOT_MODEL_EXTENSIONS).length > 0) {
+    providers["github-copilot"] = {
+      options: { ...PROVIDER_STREAM_TIMEOUTS },
+      models: Object.fromEntries(
+        Object.entries(LLM_COPILOT_MODEL_EXTENSIONS).map(([modelId, config]) => [
+          modelId,
+          config.fast ? { variants: { fast: config.fast } } : {},
+        ]),
+      ),
+    };
+  }
 
   // Auto-name every model: "<provider_key> / <model_key>" so the model picker in TUI
   // shows a human-readable label instead of bare IDs.

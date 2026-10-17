@@ -142,11 +142,12 @@ describe("OpenCode Ollama metadata", () => {
     }
   });
 
-  it("keeps requested GitHub Copilot models visible", () => {
+  it("leaves GitHub Copilot model discovery native when no extension is verified", () => {
     const buildOpencodeConfig = getIndexFunction("_buildOpencodeConfig");
     const config = buildOpencodeConfig([]);
 
-    expect(Object.keys(config.provider["github-copilot"].models)).toEqual(Object.keys(LLM_COPILOT_MODEL_EXTENSIONS));
+    expect(config.provider).not.toHaveProperty("github-copilot");
+    expect(config.agent.review.model).toBe("github-copilot/claude-opus-4.8");
   });
 
   it("pulls the requested default models on a 24 GB card", () => {

@@ -9,17 +9,14 @@ beforeAll(() => {
 });
 
 describe("Pi Ollama provider refresh", () => {
-  it("shares the Copilot model extension list", async () => {
+  it("omits the Copilot override when no extension is verified", async () => {
     mockFsExistence[PI_MODELS_PATH] = true;
     fileSystem[PI_MODELS_PATH] = JSON.stringify({ providers: {} });
 
     await getIndexFunction("_doPiModelsWork")([]);
 
     const result = JSON.parse(fileSystem[PI_MODELS_PATH]);
-    expect(result.providers["github-copilot"].models.map((model) => model.id)).toEqual(Object.keys(LLM_COPILOT_MODEL_EXTENSIONS));
-    expect(result.providers["github-copilot"].models.find((model) => model.id === "claude-opus-4.8").headers).toEqual({
-      "anthropic-beta": "fast-mode-2026-02-01",
-    });
+    expect(result.providers).not.toHaveProperty("github-copilot");
   });
 
   it("removes models no longer reported by Ollama and keeps user-managed providers", async () => {

@@ -187,9 +187,10 @@ async function _doPiModelsWork(providerInputs) {
 
   /** @type {Record<string, any>} Providers discovered this run. */
   const discovered = _buildPiOllamaProviders(providerInputs);
-  discovered[LLM_COPILOT_PROVIDER_ID] = {
-    models: _getPiCopilotModels(),
-  };
+  const copilotModels = _getPiCopilotModels();
+  if (copilotModels.length > 0) {
+    discovered[LLM_COPILOT_PROVIDER_ID] = { models: copilotModels };
+  }
 
   /** @type {boolean} Whether models.json already exists on disk. */
   const fileExists = fs.existsSync(targetPath);
