@@ -82,6 +82,7 @@ const PI_MANAGED_SETTINGS = {
   collapseChangelog: true,
   enableInstallTelemetry: false,
   hideThinkingBlock: true,
+  doubleEscapeAction: "none",
 };
 
 /**
