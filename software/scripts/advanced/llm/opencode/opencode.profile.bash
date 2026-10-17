@@ -28,6 +28,28 @@ function opencode() {
 
 alias op='opencode'
 
+# opencode_2: run the isolated OpenCode 2 beta without replacing OpenCode 1.
+function opencode_2() {
+  if is_help_arg "${1:-}"; then
+    echo "opencode_2: run the isolated OpenCode 2 beta
+  Usage: opencode_2 [args...]
+
+Runs $HOME/.local/opencode-2/bin/opencode. This command is explicitly v2-only;
+the unprefixed opencode and op commands continue to run OpenCode 1."
+    return
+  fi
+
+  local binary="$HOME/.local/opencode-2/bin/opencode"
+  if [ ! -x "$binary" ]; then
+    echo "opencode_2 is not installed; run: bash run.sh --files=advanced/llm/opencode/install.sh" >&2
+    return 1
+  fi
+
+  "$binary" "$@"
+}
+
+alias op_2='opencode_2'
+
 # opencode_edit: open the ~/.config/opencode/ config dir (opencode.json, tui.json, AGENTS.md, commands/) in the editor
 function opencode_edit() {
   if is_help_arg "${1:-}"; then
