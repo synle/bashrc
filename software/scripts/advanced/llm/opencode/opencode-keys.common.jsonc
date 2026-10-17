@@ -83,7 +83,7 @@
 //   All ~30 <leader>X chords keep working — they're just typed as
 //   ctrl+o <key> now instead of ctrl+x <key>.
 //
-// Sidebar-hidden-by-default is NOT supported by opencode v1.14.33:
+// Sidebar-hidden-by-default is not supported by the current OpenCode release:
 //   - The TUI schema (https://opencode.ai/tui.json) has no field for it.
 //   - The opencode SQLite db has no settings table for view state.
 //   - The command-palette "Hide sidebar" command (ctrl+p) is a runtime

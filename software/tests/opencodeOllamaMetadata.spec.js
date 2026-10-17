@@ -3,45 +3,63 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import vm from "vm";
 import { execFileSync } from "child_process";
 import { beforeAll, describe, expect, it } from "vitest";
 import { getIndexFunction, loadScriptHelpers } from "./setup.js";
 
 const OPENCODE_INSTALL_SCRIPT = path.resolve("software/scripts/advanced/llm/opencode/install.sh");
 const OPENCODE_PROFILE = path.resolve("software/scripts/advanced/llm/opencode/opencode.profile.bash");
+const OPENCODE_MIGRATION_SCRIPT = path.resolve("software/scripts/advanced/llm/migrate-opencode-v2.standalone.js");
+
+// TODO: Remove this migration regression test with the standalone migration script.
+
+/**
+ * Loads the migration script with real filesystem operations against a temporary home.
+ * @param {string} fakeHome - Temporary home root for the migration.
+ * @returns {Record<string, any>} Script sandbox containing `doWork`.
+ */
+function loadOpencodeMigrationSandbox(fakeHome) {
+  const source = fs.readFileSync(OPENCODE_MIGRATION_SCRIPT, "utf-8").replace(/^(const|let|var) /gm, "var ");
+  const sandbox = {
+    BASE_HOMEDIR_LINUX: fakeHome,
+    IS_DRY_RUN: false,
+    fs,
+    path,
+    log: () => {},
+    mkdir: async (folder) => fs.mkdirSync(folder, { recursive: true }),
+  };
+  vm.runInNewContext(source, sandbox);
+  return sandbox;
+}
 
 /**
  * Runs the OpenCode installer with package and binary operations stubbed.
  * @param {boolean} refreshMode - Whether the installer runs as an explicit refresh target.
- * @returns {{ stable: string, v2: string, npm: string }} Stubbed command arguments.
+ * @returns {{ stable: string, npm: string }} Stubbed command arguments.
  */
 function runOpencodeInstall(refreshMode) {
   const tempFolder = fs.mkdtempSync(path.join(os.tmpdir(), "opencode-install-"));
-  const stableMarkerPath = path.join(tempFolder, "opencode-args");
-  const v2Prefix = path.join(tempFolder, "home/.local/opencode-2");
-  const v2BinaryPath = path.join(v2Prefix, "bin/opencode");
-  const v2MarkerPath = path.join(tempFolder, "opencode-2-args");
+  const v2BinaryPath = path.join(tempFolder, "home/.local/bin/opencode");
   const npmMarkerPath = path.join(tempFolder, "npm-args");
   fs.mkdirSync(path.dirname(v2BinaryPath), { recursive: true });
-  fs.writeFileSync(v2BinaryPath, `#!/bin/bash\nprintf '%s' "$*" > ${JSON.stringify(v2MarkerPath)}\n`);
+  fs.writeFileSync(v2BinaryPath, "#!/bin/bash\nprintf 'v2:%s\\n' \"$*\"\n");
   fs.chmodSync(v2BinaryPath, 0o755);
   const script = [
     `HOME=${JSON.stringify(path.join(tempFolder, "home"))}`,
     `IS_REFRESH_MODE=${refreshMode ? 1 : 0}`,
     `BASHRC_TEMP_DIR=${JSON.stringify(tempFolder)}`,
-    `function npm() { printf '%s' "$*" > ${JSON.stringify(npmMarkerPath)}; }`,
-    "function npm_install_global() { :; }",
+    `function npm_install_global() { printf '%s %s' "$*" > ${JSON.stringify(npmMarkerPath)}; }`,
     "function has_persistent_binary() { return 0; }",
-    `function opencode() { printf '%s' "$*" > ${JSON.stringify(stableMarkerPath)}; }`,
+    `function opencode() { printf '%s' "$*" > ${JSON.stringify(path.join(tempFolder, "stable-args"))}; }`,
     `source ${JSON.stringify(OPENCODE_INSTALL_SCRIPT)}`,
   ].join("\n");
 
   try {
     execFileSync("/bin/bash", ["-c", script]);
     return {
-      stable: fs.existsSync(stableMarkerPath) ? fs.readFileSync(stableMarkerPath, "utf-8") : "",
-      v2: fs.existsSync(v2MarkerPath) ? fs.readFileSync(v2MarkerPath, "utf-8") : "",
       npm: fs.existsSync(npmMarkerPath) ? fs.readFileSync(npmMarkerPath, "utf-8") : "",
+      stable: fs.existsSync(path.join(tempFolder, "stable-args")) ? fs.readFileSync(path.join(tempFolder, "stable-args"), "utf-8") : "",
     };
   } finally {
     fs.rmSync(tempFolder, { recursive: true, force: true });
@@ -49,21 +67,23 @@ function runOpencodeInstall(refreshMode) {
 }
 
 /**
- * Runs both OpenCode 2 command names against an isolated fixture binary.
- * @returns {string[]} Output from the full and short v2 command names.
+ * Runs the canonical OpenCode command against a fixture v2 binary.
+ * @returns {string[]} Output from the canonical command and alias.
  */
-function runOpencode2Aliases() {
-  const tempFolder = fs.mkdtempSync(path.join(os.tmpdir(), "opencode-2-aliases-"));
-  const binaryPath = path.join(tempFolder, ".local/opencode-2/bin/opencode");
+function runOpencodeAliases() {
+  const tempFolder = fs.mkdtempSync(path.join(os.tmpdir(), "opencode-aliases-"));
+  const binaryPath = path.join(tempFolder, ".local/bin/opencode");
   fs.mkdirSync(path.dirname(binaryPath), { recursive: true });
   fs.writeFileSync(binaryPath, "#!/bin/bash\nprintf 'v2:%s\\n' \"$*\"\n");
   fs.chmodSync(binaryPath, 0o755);
   const script = [
     `HOME=${JSON.stringify(tempFolder)}`,
+    `PATH=${JSON.stringify(path.join(tempFolder, ".local/bin"))}:$PATH`,
     "function is_help_arg() { return 1; }",
+    "function llm_setup_activate() { return 0; }",
     `source ${JSON.stringify(OPENCODE_PROFILE)}`,
-    "opencode_2 --version",
-    "eval 'op_2 --version'",
+    "opencode --version",
+    "eval 'op --version'",
   ].join("\n");
 
   try {
@@ -82,24 +102,39 @@ describe("OpenCode Ollama metadata", () => {
     const result = runOpencodeInstall(true);
 
     expect(result.stable).toBe("models --refresh");
-    expect(result.v2).toBe("models --refresh");
   });
 
   it("does not refresh the upstream model catalog during a normal setup run", () => {
     const result = runOpencodeInstall(false);
 
-    expect(result.stable).toBe("upgrade --method npm");
-    expect(result.v2).toBe("");
+    expect(result.stable).toBe("");
   });
 
-  it("installs OpenCode 2 beta under its isolated prefix", () => {
+  it("installs OpenCode 2 beta as the canonical command", () => {
     const npmArgs = runOpencodeInstall(false).npm;
 
-    expect(npmArgs).toMatch(/^install -g --prefix .*\/home\/\.local\/opencode-2 opencode-ai@beta$/);
+    expect(npmArgs.trim()).toBe("opencode-ai@beta opencode");
   });
 
-  it("routes only opencode_2 and op_2 to the isolated OpenCode 2 binary", () => {
-    expect(runOpencode2Aliases()).toEqual(["v2:--version", "v2:--version"]);
+  it("routes opencode and op to the canonical v2 binary", () => {
+    expect(runOpencodeAliases()).toEqual(["v2:--version", "v2:--version"]);
+  });
+
+  it("migrates the isolated prefix into a backup without touching shared data", async () => {
+    const tempFolder = fs.mkdtempSync(path.join(os.tmpdir(), "opencode-migration-"));
+    const legacyPrefix = path.join(tempFolder, ".local/opencode-2");
+    const canonicalBinary = path.join(tempFolder, ".local/bin/opencode");
+    fs.mkdirSync(legacyPrefix, { recursive: true });
+    fs.mkdirSync(path.dirname(canonicalBinary), { recursive: true });
+    fs.writeFileSync(canonicalBinary, "v2");
+    try {
+      await loadOpencodeMigrationSandbox(tempFolder).doWork();
+      expect(fs.existsSync(legacyPrefix)).toBe(false);
+      expect(fs.readdirSync(path.join(tempFolder, ".local/opencode-migrations"))).toHaveLength(1);
+      expect(fs.readFileSync(canonicalBinary, "utf-8")).toBe("v2");
+    } finally {
+      fs.rmSync(tempFolder, { recursive: true, force: true });
+    }
   });
 
   it("leaves GitHub Copilot model discovery to opencode", () => {

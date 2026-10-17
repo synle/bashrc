@@ -30,7 +30,7 @@
  * Stream timeouts, in milliseconds, applied to every provider's `options`. Without
  * these a dead SSE stream waits forever, which is indistinguishable from a hang;
  * with them the request aborts and `opencode-auto-continue` can retry. Pinned to
- * 5 minutes for both, matching the upstream default raised in opencode v1.18.27:
+ * 5 minutes for both, matching the current upstream default:
  * long enough for slow reasoning models and a cold Ollama load over LAN, and pinned
  * explicitly so older opencode builds (no default) still get a finite timeout.
  * @type {{ chunkTimeout: number, headerTimeout: number }}

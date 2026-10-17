@@ -633,7 +633,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 # Keep this list aligned with the npm_install_global calls in
 # software/scripts/advanced/llm/*/ (claude, copilot, gemini, ollama, opencode).
 $npmAiPackages = @(
-    @{ pkg = "opencode-ai";        bin = "opencode" },  # terminal-based AI coding agent (https://opencode.ai)
+    @{ pkg = "opencode-ai@beta";   bin = "opencode" },  # OpenCode 2 terminal coding agent (https://opencode.ai)
     @{ pkg = "@google/gemini-cli"; bin = "gemini"   }   # Google's AI CLI (https://github.com/google-gemini/gemini-cli)
 )
 

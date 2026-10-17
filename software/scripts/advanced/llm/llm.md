@@ -522,7 +522,7 @@ file can serve both surfaces via a symlink:
 ln -sfn ../../.claude/skills/add-package/SKILL.md .opencode/commands/add-package.md
 ```
 
-That yields `/add-package fzf` as a direct command **and** keeps the skill model-invocable. Verified against `GET /command` + `GET /skill` on opencode `1.14.33` — the same file shows up in both listings.
+That yields `/add-package fzf` as a direct command **and** keeps the skill model-invocable. Verified against `GET /command` + `GET /skill` on OpenCode 2 — the same file shows up in both listings.
 
 | Scope    | Wired by                                                     | Result                                                                    |
 | -------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |

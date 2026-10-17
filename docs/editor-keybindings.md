@@ -680,7 +680,7 @@ before vim sees it, so there it stays the terminal's text paste.
 
 Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub Copilot CLI** (the [official `gh.io/copilot-install` distribution](https://gh.io/copilot-install), not the deprecated `@github/copilot-cli` package), and **Google Gemini CLI**. Where possible the input-layer chords are aligned to Claude's conventions so muscle memory carries across tools.
 
-**OpenCode 2 preview:** `opencode_2` and `op_2` run the isolated OpenCode 2 beta under `~/.local/opencode-2/`. The unprefixed `opencode` and `op` commands remain on OpenCode 1; the preview aliases never call the destructive `opencode upgrade --major` path. OpenCode 2 reads the existing v1 configuration compatibility layer, but no config is converted to v2-only shape while both versions coexist.
+**OpenCode 2 migration:** OpenCode 2 is now the canonical `opencode` and `op` command. Existing `~/.config/opencode/` and `~/.local/share/opencode/` config, sessions, and credentials stay in place because OpenCode 2 reads them through its compatibility layer. Run `bash run.sh --files=migrate-opencode-v2.standalone.js` once to move the old isolated `~/.local/opencode-2/` install into a timestamped `~/.local/opencode-migrations/` backup; remove that migration script after all existing machines complete the move.
 
 **Shared engineering principles:** `software/scripts/advanced/llm/_common/instructions.md` is the single source of truth and gets deployed to `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, and `~/.gemini/GEMINI.md` (one per `setup.js`). OpenCode reads `~/.claude/CLAUDE.md` directly via its global fallback, so it's automatically covered.
 
