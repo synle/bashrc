@@ -8,6 +8,13 @@ beforeAll(() => {
 });
 
 describe("OpenCode Ollama metadata", () => {
+  it("leaves GitHub Copilot model discovery to opencode", () => {
+    const buildOpencodeConfig = getIndexFunction("_buildOpencodeConfig");
+    const config = buildOpencodeConfig([]);
+
+    expect(config.provider["github-copilot"]).not.toHaveProperty("models");
+  });
+
   it("pulls the requested default models on a 24 GB card", () => {
     const getOllamaModelsForVram = getIndexFunction("getOllamaModelsForVram");
     expect(getOllamaModelsForVram(24576)).toEqual(["glm-4.7-flash", "qwen2.5-coder:32b", "gemma4:26b", "qwen2.5-coder:3b-base"]);

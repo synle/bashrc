@@ -27,26 +27,6 @@
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
 /**
- * Per-model configs for known GitHub Copilot models. Keyed by model ID.
- *
- * NO `limit` overrides here, deliberately. `limit.context` is not a token budget —
- * opencode uses it to decide when to compact, so capping a 1M-window model at 64k
- * fires compaction ~16x more often than needed, and each compaction is a silent LLM
- * call that reads as a hang. opencode already knows the real windows from its own
- * model registry (`~/.cache/opencode/models.json`), so these entries carry only the
- * friendly TUI label (filled in by the auto-name loop below).
- * @type {Record<string, object>}
- */
-const COPILOT_MODEL_CONFIGS = {
-  "claude-opus-4.7": {},
-  "claude-opus-4.8": {},
-  "claude-opus-5": {},
-  "gpt-5.5": {},
-  "gpt-5.6-sol": {},
-  "gpt-5.6-terra": {},
-};
-
-/**
  * Stream timeouts, in milliseconds, applied to every provider's `options`. Without
  * these a dead SSE stream waits forever, which is indistinguishable from a hang;
  * with them the request aborts and `opencode-auto-continue` can retry. Pinned to
@@ -149,12 +129,10 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     };
   }
 
-  // GitHub Copilot provider: friendly TUI labels only ("github-copilot / <model>"),
-  // filled in by the auto-name loop below. Context/output limits are deliberately
-  // left to opencode's own model registry — see COPILOT_MODEL_CONFIGS.
+  // Leave model discovery to GitHub Copilot and opencode so new models flow through
+  // without requiring a config refresh.
   providers["github-copilot"] = {
     options: { ...PROVIDER_STREAM_TIMEOUTS },
-    models: COPILOT_MODEL_CONFIGS,
   };
 
   // Auto-name every model: "<provider_key> / <model_key>" so the model picker in TUI
