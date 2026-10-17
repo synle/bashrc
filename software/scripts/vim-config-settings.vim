@@ -151,11 +151,12 @@ augroup TrimTrailingWhitespaceOnSave
   autocmd BufWritePre * if &filetype !=# 'markdown' | TrimTrailingWhitespace | endif
 augroup END
 
-" Whitespace visualization (toggled with ,i)
+" Whitespace visualization (default ON; toggle with \[)
 set listchars=tab:>-          " Show tabs as >---
 set listchars+=space:␣        " Show spaces as ␣
 set listchars+=trail:·        " Show trailing spaces as ·
 set listchars+=eol:¬          " Show end-of-line as ¬
+set list                     " Show whitespace markers by default
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Display & UI
@@ -167,6 +168,7 @@ if has("termguicolors")
 endif
 set linebreak                 " Soft wrap breaks at word boundaries, not mid-word
 set breakindent               " Wrapped continuation lines keep the line's indent
+set wrap                      " Soft wrap on by default
 set fileformat=unix           " Save files with Unix LF line endings by default
 set showmatch                 " Briefly jump to matching bracket when inserting one
 set wildmenu                  " Show autocomplete menu for commands (Tab in command mode)
@@ -184,6 +186,8 @@ set title
 " (e.g., relative file path, modified flag, and application name)
 set titlestring=%t%(\ %M%)%(\ (%{expand(\"%:p:h\")})%)—Vim
 set ruler                     " Show cursor position (line, column) in the status bar
+set number                    " Show line numbers by default
+set norelativenumber          " Keep absolute numbers (no relative numbers)
 
 " Highlight the active cursor line only in the focused window
 augroup CursorLineOnlyInActiveWindow
@@ -212,23 +216,21 @@ nnoremap <silent> <C-g> <C-b>
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Toggle
 """""""""""""""""""""""""""""""""""""""""""""""""
-" \ to toggle absolute line numbers (relative numbers stay off). Binding \ shadows vim's default <Leader>;
-" no <Leader> mappings exist here — set mapleader elsewhere before adding any.
-nnoremap <Bslash> :set number! norelativenumber<CR>
+" Backslash-prefix toggles / actions:
+"   \\       toggle absolute line numbers (relative numbers stay off)
+"   \[       toggle whitespace visualization (invisibles)
+"   \]       toggle soft wrap
+"   \<Space> trim trailing whitespace (whole file)
+"   \s       save file
+" Keep plain '\' free as a prefix so these two-key mappings fire reliably.
+nnoremap <silent> <Bslash><Bslash> :set number! norelativenumber<CR>
+nnoremap <silent> <Bslash>[ :set list!<CR>
+nnoremap <silent> <Bslash>] :set wrap!<CR>
+nnoremap <silent> <Bslash><Space> :TrimTrailingWhitespace<CR>
+nnoremap <silent> <Bslash>s :w<CR>
 
-" ,i / ,<Space> / ,| (shift+\) to toggle whitespace visualization (invisibles).
-" ,<S-Bslash> covers terminals using the kitty keyboard protocol, which can report
-" shift+\ as a shifted \ instead of a literal |. Defined BEFORE ,<Bslash> below so
-" the wrap toggle wins if vim files <S-Bslash> under a simplified ,\ form.
-nnoremap <silent> ,i :set list!<CR>
-nnoremap <silent> ,<Space> :set list!<CR>
-nnoremap <silent> ,<Bar> :set list!<CR>
-nnoremap <silent> ,<S-Bslash> :set list!<CR>
-
-" ,z / ,\ to toggle soft wrap (same as }). [ / ] stay vim's
-" bracket prefixes so ]c / [c (signify hunk jumps) and [[ / ]] keep working.
-nnoremap <silent> ,z :set wrap!<CR>
-nnoremap <silent> ,<Bslash> :set wrap!<CR>
+" ,<Space> also trims trailing whitespace (whole file).
+nnoremap <silent> ,<Space> :TrimTrailingWhitespace<CR>
 
 " ,[ / ,] for previous / next buffer tab (pairs with ,1..,9).
 nnoremap <silent> ,[ :bprevious<CR>
@@ -241,7 +243,7 @@ nnoremap } :set wrap!<CR>
 
 " Tab / Shift+Tab in visual mode indent / dedent and keep the selection, so
 " repeated presses keep shifting — VS Code/Sublime parity. Replaces the old
-" visual-mode Tab wrap toggle; ,z / ,\ / } still toggle wrap.
+" visual-mode Tab wrap toggle; \] / } still toggle wrap.
 xnoremap <Tab> >gv
 xnoremap <S-Tab> <gv
 
@@ -255,8 +257,8 @@ if has("gui_macvim")
   inoremap <D-S-CR> <C-o>:set wrap!<CR>
 endif
 
-" Trim trailing whitespace (whole file): cmd/ctrl/alt + shift + backspace, matching
-" VS Code/Sublime/text-server. Remove duplicate lines (keep first, order kept):
+" Trim trailing whitespace (whole file): ,<Space> or cmd/ctrl/alt + shift + backspace,
+" matching VS Code/Sublime/text-server. Remove duplicate lines (keep first, order kept):
 " cmd/ctrl/alt + shift + delete. Only GUI vim / CSI-u terminals deliver these chords.
 command! -bar TrimTrailingWhitespace let s:view = winsaveview() | keeppatterns %s/\s\+$//e | call winrestview(s:view)
 command! -range=% UniqueLines <line1>,<line2>!awk '\!seen[$0]++'
@@ -403,9 +405,9 @@ nnoremap <silent> ,n :nohlsearch<CR>
 nmap <Tab> ,
 
 " Multi-cursor (vim-visual-multi) — Sublime parity:
-"   ,g          select every match of the word under cursor (Sublime OS_KEY+ctrl+g)
-"   ,g (visual) select every match of the exact selected text (partial words OK)
-"   ,l (visual) one cursor per selected line (Sublime cmd+shift+l)
+"   ,g          select every match of the word under cursor, then enter insert mode
+"   ,g (visual) select every match of the exact selected text, then enter insert mode
+"   ,l (visual) one cursor per selected line, then enter insert mode
 "   ctrl+n      plugin default: add the next match (Sublime OS_KEY+d)
 " Esc leaves multi-cursor mode. Set before the plugin loads (vimrc runs first).
 " VM_leader moves the plugin's own prefix off its default '\\' so the '\' line-number
@@ -418,6 +420,11 @@ let g:VM_maps['Add Cursor Down'] = ''
 let g:VM_maps['Select All'] = ',g'
 let g:VM_maps['Visual All'] = ',g'
 let g:VM_maps['Visual Cursors'] = ',l'
+" Start editing immediately after creating multi-cursors.
+" Use recursive map (nmap/xmap), not *noremap, so <Plug> targets resolve.
+nmap <silent> ,g <Plug>(VM-Select-All)<Plug>(VM-i)
+xmap <silent> ,g <Plug>(VM-Visual-All)<Plug>(VM-i)
+xmap <silent> ,l <Plug>(VM-Visual-Cursors)<Plug>(VM-i)
 
 " Y to yank from cursor to end of line (consistent with D and C)
 nnoremap Y y$
@@ -479,6 +486,15 @@ endfunction
 if exists('s:clipboard_copy_cmd')
   nnoremap <silent> ,c :call <SID>CopyToClipboard(0)<CR>
   vnoremap <silent> ,c :<C-u>call <SID>CopyToClipboard(1)<CR>
+  nnoremap <silent> <Bslash>c :call <SID>CopyToClipboard(0)<CR>
+  vnoremap <silent> <Bslash>c :<C-u>call <SID>CopyToClipboard(1)<CR>
+endif
+if has('clipboard')
+  nnoremap <silent> <Bslash>x "+dd
+  vnoremap <silent> <Bslash>x "+d
+else
+  nnoremap <silent> <Bslash>x dd
+  vnoremap <silent> <Bslash>x d
 endif
 if has("clipboard")
   nnoremap <silent> ,p :%d _ \| put + \| 1d _<CR>
@@ -533,4 +549,5 @@ endfunction
 if executable(s:save_clipboard_image)
   inoremap <silent> <C-v> <C-o>:call <SID>PasteClipboardImageOrText()<CR>
   nnoremap <silent> ,v :call <SID>PasteClipboardImageOrText()<CR>
+  nnoremap <silent> <Bslash>v :call <SID>PasteClipboardImageOrText()<CR>
 endif

@@ -656,13 +656,16 @@ code; terminals that encode it as ordinary Backspace cannot be distinguished by 
 
 ### Toggles (normal mode)
 
-Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these single-key toggles fire in normal mode. `}` overrides vim's default next-paragraph motion; `[` / `]` stay vim's bracket prefixes so `]c` / `[c` (signify hunk jumps) and `[[` / `]]` keep working.
+Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for line numbers, whitespace markers, and soft wrap. `}` still overrides vim's default next-paragraph motion as a one-key soft-wrap toggle.
 
 | Key                                             | Action                                                                            |
 | ----------------------------------------------- | --------------------------------------------------------------------------------- |
-| `\`                                             | Toggle line numbers                                                               |
-| `,i` / `,space` / `,\|`                         | Toggle whitespace markers (invisibles)                                            |
-| `,z` / `,\` / `}`                               | Toggle soft wrap (`set wrap!`)                                                    |
+| `\\`                                           | Toggle line numbers                                                               |
+| `\[`                                            | Toggle whitespace markers (invisibles)                                            |
+| `\]`                                            | Toggle soft wrap (`set wrap!`)                                                    |
+| `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)                              |
+| `\s`                                            | Save file (`:w`)                                                                  |
+| `}`                                              | Toggle soft wrap (`set wrap!`)                                                    |
 | `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)                         |
 | `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |
 | `,g`                                            | Multi-cursor: select all matches of word (vim-visual-multi, like `OS_KEY+ctrl+g`) |
@@ -680,12 +683,13 @@ Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these si
 
 ### Clipboard
 
-| Key                     | Action                                                                 |
-| ----------------------- | ---------------------------------------------------------------------- |
-| `,c`                    | Copy buffer (or selection) to system clipboard                         |
-| `,p`                    | Replace buffer with system clipboard                                   |
-| `ctrl+v` (insert), `,v` | Paste clipboard image as `@<path>` (saved to Desktop), else paste text |
-| `ctrl+q` (insert)       | Insert next key literally (vim's stock `ctrl+v`)                       |
+| Key                             | Action                                                                 |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `,c`, `\c`                     | Copy buffer (or selection) to system clipboard                         |
+| `\x`                           | Cut line/selection (`+clipboard` when available)                       |
+| `,p`                            | Replace buffer with system clipboard                                   |
+| `ctrl+v` (insert), `,v`, `\v`  | Paste clipboard image as `@<path>` (saved to Desktop), else paste text |
+| `ctrl+q` (insert)               | Insert next key literally (vim's stock `ctrl+v`)                       |
 
 `ctrl+v` image paste exists for prompts edited in vim via an AI CLI's `ctrl+g`: the image is
 saved by `~/.local/bin/save_clipboard_image` (`software/scripts/clipboard-image.js`) and its
