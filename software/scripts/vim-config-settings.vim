@@ -43,14 +43,41 @@ filetype plugin indent on                                           " Re-enable 
 " Modified buffers show a red filename and * using CodeDark's ErrorMsg foreground.
 let g:lightline = {
   \ 'colorscheme': 'codedark',
-  \ 'active': { 'left': [ [ 'mode', 'paste' ], [ 'readonly', 'filename' ] ] },
+  \ 'active': {
+  \   'left': [ [ 'mode', 'paste' ], [ 'readonly', 'filename' ] ],
+  \   'right': [ [ 'lineinfo' ], [ 'filetype' ] ],
+  \ },
   \ 'component': {
   \   'filename': '%{%&modified ? "%#ErrorMsg#%t *%*" : "%t"%}',
   \ },
+  \ 'component_function': { 'filetype': 'SyLightlineFiletype' },
+  \ 'component_type': { 'filetype': 'warning', 'buffers': 'tabsel' },
   \ 'tabline': { 'left': [ [ 'buffers' ] ], 'right': [ [] ] },
   \ 'component_expand': { 'buffers': 'lightline#bufferline#buffers' },
-  \ 'component_type': { 'buffers': 'tabsel' },
   \ }
+
+" Show filetype only when Vim detected one; empty filetypes stay hidden.
+function! SyLightlineFiletype() abort
+  return &filetype ==# '' ? '' : &filetype
+endfunction
+
+" Keep distinct codedark backgrounds for Normal, Insert, and Visual mode badges.
+function! SyLightlineSetModeColors() abort
+  if !exists('g:lightline#colorscheme#codedark#palette')
+    return
+  endif
+  let l:palette = g:lightline#colorscheme#codedark#palette
+  let l:palette.normal.left[0] = ['#262626', '#608B4E', 235, 65, 'bold']
+  let l:palette.insert.left[0] = ['#262626', '#569CD6', 235, 75, 'bold']
+  let l:palette.visual.left[0] = ['#262626', '#C586C0', 235, 170, 'bold']
+  call lightline#highlight('normal')
+  call lightline#update()
+endfunction
+
+augroup SyLightlineModeColors
+  autocmd!
+  autocmd VimEnter * call SyLightlineSetModeColors()
+augroup END
 set showtabline=2                                                   " Always show the buffer tabline
 let g:xml_syntax_folding = 1                                        " Enable syntax-based folding for XML files
 let g:signify_sign_change = '~'                                     " gitgutter-style change marker (signify default is !)
@@ -171,6 +198,14 @@ augroup END
 " Ctrl+A / Ctrl+E to jump to beginning / end of line (matches readline/bash)
 nnoremap <silent> <C-a> ^
 nnoremap <silent> <C-e> $
+" Insert mode uses true line start/end, matching readline/bash editor behavior.
+" This intentionally replaces Vim's stock Ctrl-A (insert previously inserted text)
+" and Ctrl-E (scroll the window down one line) commands.
+inoremap <silent> <C-a> <C-o>0
+inoremap <silent> <C-e> <C-o>$
+" Ctrl+W already deletes the previous word natively in insert mode; keep Vim's default.
+" Ctrl+Backspace follows the same action when the terminal sends a distinct <C-BS> code.
+inoremap <silent> <C-BS> <C-w>
 " Ctrl+F pages forward natively; Ctrl+G pages backward (matches less/readline)
 nnoremap <silent> <C-g> <C-b>
 
@@ -264,11 +299,17 @@ nnoremap <silent> ,w :wq<CR>
 nnoremap <silent> ,q :qa!<CR>
 nnoremap <silent> ,x <c-w>q
 
-" Ctrl+Arrow or ,Arrow to navigate between splits
-nnoremap <silent> <C-Right> <c-w>l
-nnoremap <silent> <C-Left> <c-w>h
-nnoremap <silent> <C-Up> <c-w>k
-nnoremap <silent> <C-Down> <c-w>j
+" Ctrl+Arrow for editor-style text navigation; ,Arrow remains split navigation.
+nnoremap <silent> <C-Right> w
+nnoremap <silent> <C-Left> b
+nnoremap <silent> <C-Up> <C-b>
+nnoremap <silent> <C-Down> <C-f>
+inoremap <silent> <C-Right> <C-o>w
+inoremap <silent> <C-Left> <C-o>b
+inoremap <silent> <C-Up> <C-o><C-b>
+inoremap <silent> <C-Down> <C-o><C-f>
+vnoremap <silent> <C-Up> <C-b>
+vnoremap <silent> <C-Down> <C-f>
 nnoremap <silent> ,<Right> <c-w>l
 nnoremap <silent> ,<Left> <c-w>h
 nnoremap <silent> ,<Up> <c-w>k
@@ -371,6 +412,9 @@ nmap <Tab> ,
 " toggle fires instantly instead of entering (and exiting) Visual-Multi.
 let g:VM_leader = ',m'
 let g:VM_maps = {}
+" Free Ctrl+Up/Down for page navigation; Visual-Multi defaults these to cursor creation.
+let g:VM_maps['Add Cursor Up'] = ''
+let g:VM_maps['Add Cursor Down'] = ''
 let g:VM_maps['Select All'] = ',g'
 let g:VM_maps['Visual All'] = ',g'
 let g:VM_maps['Visual Cursors'] = ',l'

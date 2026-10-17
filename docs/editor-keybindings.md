@@ -625,6 +625,22 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `ctrl+f` | Page forward (down) |   ✅   |
 | `ctrl+g` | Page backward (up)  |   ✅   |
 
+### Insert Mode
+
+| Key      | Action              | Status |
+| -------- | ------------------- | :----: |
+| `ctrl+a` | Beginning of line   |   ✅   |
+| `ctrl+e` | End of line         |   ✅   |
+| `ctrl+w` | Delete previous word |   ✅   |
+| `ctrl+backspace` | Delete previous word |   ✅   |
+
+These mappings match readline/bash. They replace Vim's stock insert-mode `ctrl+a`
+(insert previously inserted text) and `ctrl+e` (scroll the window down one line).
+`ctrl+w` needs no replacement because Vim already provides backward-word deletion
+natively in insert mode.
+`ctrl+backspace` maps to the same action when the terminal sends a distinct key
+code; terminals that encode it as ordinary Backspace cannot be distinguished by Vim.
+
 ### Splits & Navigation
 
 | Key                      | Action                               |
@@ -632,7 +648,9 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `ctrl+d`, `,d`           | Vertical split                       |
 | `,'`                     | Horizontal split                     |
 | `ctrl+x`, `ctrl+q`, `,x` | Close split                          |
-| `ctrl+arrow`, `,arrow`   | Navigate splits                      |
+| `ctrl+left/right` (normal and insert) | Previous / next word      |
+| `ctrl+up/down` (normal, insert, visual) | Page up / page down     |
+| `,arrow`                 | Navigate splits                      |
 | `,1` … `,9`              | Go to Nth buffer tab (tabline order) |
 | `,[` / `,]`              | Previous / next buffer tab           |
 

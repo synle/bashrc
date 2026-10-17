@@ -45,7 +45,27 @@ describe("bash-inputrc.js", () => {
 
 describe("vim-config.js", () => {
   it("should write .vimrc to home directory with plugins and settings", async () => {
-    fetchResponses["software/scripts/vim-config-settings.vim"] = "set number\nset tabstop=2";
+    fetchResponses["software/scripts/vim-config-settings.vim"] =
+      "set number\nset tabstop=2\ninoremap <silent> <C-a> <C-o>0\ninoremap <silent> <C-e> <C-o>$\n" +
+      "\" Ctrl+W already deletes the previous word natively in insert mode; keep Vim's default.\n" +
+      "inoremap <silent> <C-BS> <C-w>\n" +
+      "nnoremap <silent> <C-Right> w\n" +
+      "nnoremap <silent> <C-Left> b\n" +
+      "nnoremap <silent> <C-Up> <C-b>\n" +
+      "nnoremap <silent> <C-Down> <C-f>\n" +
+      "inoremap <silent> <C-Right> <C-o>w\n" +
+      "inoremap <silent> <C-Left> <C-o>b\n" +
+      "inoremap <silent> <C-Up> <C-o><C-b>\n" +
+      "inoremap <silent> <C-Down> <C-o><C-f>\n" +
+      "vnoremap <silent> <C-Up> <C-b>\n" +
+      "vnoremap <silent> <C-Down> <C-f>\n" +
+      "let g:lightline = { 'active': { 'right': [ [ 'lineinfo' ], [ 'filetype' ] ] } }\n" +
+      "let g:lightline = { 'component_function': { 'filetype': 'SyLightlineFiletype' } }\n" +
+      "let g:lightline = { 'component_type': { 'filetype': 'warning' } }\n" +
+      "function! SyLightlineFiletype() abort\n" +
+      "function! SyLightlineSetModeColors() abort\n" +
+      "let g:VM_maps['Add Cursor Up'] = ''\n" +
+      "let g:VM_maps['Add Cursor Down'] = ''";
 
     await runScript("software/scripts/vim-config.js");
 
@@ -54,6 +74,27 @@ describe("vim-config.js", () => {
     expect(vimrc).toContain('" vim-jetpack Plugin Manager');
     expect(vimrc).toContain("set number");
     expect(vimrc).toContain("set tabstop=2");
+    expect(vimrc).toContain("inoremap <silent> <C-a> <C-o>0");
+    expect(vimrc).toContain("inoremap <silent> <C-e> <C-o>$");
+    expect(vimrc).toContain("\" Ctrl+W already deletes the previous word natively in insert mode; keep Vim's default.");
+    expect(vimrc).toContain("inoremap <silent> <C-BS> <C-w>");
+    expect(vimrc).toContain("nnoremap <silent> <C-Right> w");
+    expect(vimrc).toContain("nnoremap <silent> <C-Left> b");
+    expect(vimrc).toContain("nnoremap <silent> <C-Up> <C-b>");
+    expect(vimrc).toContain("nnoremap <silent> <C-Down> <C-f>");
+    expect(vimrc).toContain("inoremap <silent> <C-Right> <C-o>w");
+    expect(vimrc).toContain("inoremap <silent> <C-Left> <C-o>b");
+    expect(vimrc).toContain("inoremap <silent> <C-Up> <C-o><C-b>");
+    expect(vimrc).toContain("inoremap <silent> <C-Down> <C-o><C-f>");
+    expect(vimrc).toContain("vnoremap <silent> <C-Up> <C-b>");
+    expect(vimrc).toContain("vnoremap <silent> <C-Down> <C-f>");
+    expect(vimrc).toContain("'right': [ [ 'lineinfo' ], [ 'filetype' ] ]");
+    expect(vimrc).toContain("'component_function': { 'filetype': 'SyLightlineFiletype' }");
+    expect(vimrc).toContain("'component_type': { 'filetype': 'warning' }");
+    expect(vimrc).toContain("function! SyLightlineFiletype() abort");
+    expect(vimrc).toContain("function! SyLightlineSetModeColors() abort");
+    expect(vimrc).toContain("let g:VM_maps['Add Cursor Up'] = ''");
+    expect(vimrc).toContain("let g:VM_maps['Add Cursor Down'] = ''");
   });
 
   it("should write .vimrc with both plugins and settings combined", async () => {
