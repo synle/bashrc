@@ -114,10 +114,10 @@ describe("OpenCode Ollama metadata", () => {
     expect(result.stable).toBe("");
   });
 
-  it("installs OpenCode 2 beta as the canonical command", () => {
+  it("installs the latest OpenCode package as the canonical command", () => {
     const npmArgs = runOpencodeInstall(false).npm;
 
-    expect(npmArgs.trim()).toBe("opencode-ai@beta opencode");
+    expect(npmArgs.trim()).toBe("opencode-ai@latest opencode");
     expect(runOpencodeInstall(false).oldPackageRemoved).toBe(true);
   });
 
@@ -185,7 +185,7 @@ describe("OpenCode Ollama metadata", () => {
     const config = buildOpencodeConfig([
       {
         id: "ollama-local",
-        name: "Ollama - 127.0.0.1:11434",
+        name: "Ollama·127.0.0.1:11434",
         baseURL: "http://127.0.0.1:11434/v1",
         models: [{ name: "qwen3-coder:30b-a3b-q4_K_M" }, { name: "glm-4.7-flash" }],
       },

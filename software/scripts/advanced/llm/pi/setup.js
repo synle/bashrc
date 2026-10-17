@@ -112,7 +112,7 @@ function _getPiCopilotModels() {
  * Absolute path to pi's global config folder.
  * @type {string} `~/.pi/agent`
  */
-const PI_AGENT_DIR = path.join(BASE_HOMEDIR_LINUX, ".pi", "agent");
+const PI_AGENT_DIR = path.join(getLLMConfigHome(), ".pi", "agent");
 
 /**
  * Builds the pi models.json `providers` map from the shared Ollama discovery

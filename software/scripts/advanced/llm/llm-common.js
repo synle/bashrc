@@ -176,6 +176,10 @@ function translateMcpServersForOpencode(servers) {
  */
 const OLLAMA_PORT = 11434;
 
+/** Per-run file shared by LLM setup scripts for Ollama discovery results. */
+const OLLAMA_DISCOVERY_CACHE_PATH =
+  typeof BASHRC_TEMP_DIR === "string" && BASHRC_TEMP_DIR ? path.join(BASHRC_TEMP_DIR, "llm_ollama_models.json") : "";
+
 // --- Ollama Model Inventory (single source of truth) ---
 //
 // EVERY Ollama model tag this repo knows about is named once, in OLLAMA_MODELS_BY_VRAM
@@ -319,16 +323,37 @@ async function getReachableOllamaHosts() {
  *   Empty array if no host is reachable.
  */
 async function getOllamaProviderInputs() {
+  if (OLLAMA_DISCOVERY_CACHE_PATH && fs.existsSync(OLLAMA_DISCOVERY_CACHE_PATH)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(OLLAMA_DISCOVERY_CACHE_PATH, "utf-8"));
+      if (cached?.version === 1 && Array.isArray(cached.providers)) {
+        log(`>> ollama: using cached discovery (${OLLAMA_DISCOVERY_CACHE_PATH})`);
+        return cached.providers;
+      }
+    } catch (err) {
+      log(">> ollama: ignoring invalid discovery cache", err);
+    }
+  }
+
   const providers = (await getReachableOllamaHosts()).map(({ ip, hostname, models }) => ({
     id: `ollama-${hostname}`,
-    name: `${hostname.charAt(0).toUpperCase()}${hostname.slice(1)} - ${ip}:${OLLAMA_PORT}`,
+    name: `${hostname.charAt(0).toUpperCase()}${hostname.slice(1)}·${ip}:${OLLAMA_PORT}`,
     baseURL: `http://${ip}:${OLLAMA_PORT}/v1`,
     models: models.map((name) => ({ name })),
   }));
   for (const p of providers) {
     log(`>> ollama: discovered ${p.models.length} model(s) on ${p.id}: ${p.models.map((m) => m.name).join(", ")}`);
   }
+  if (OLLAMA_DISCOVERY_CACHE_PATH) {
+    fs.mkdirSync(path.dirname(OLLAMA_DISCOVERY_CACHE_PATH), { recursive: true });
+    fs.writeFileSync(OLLAMA_DISCOVERY_CACHE_PATH, JSON.stringify({ version: 1, providers }, null, 2) + "\n");
+  }
   return providers;
+}
+
+/** Returns the Windows user home for WSL setup, or the current home elsewhere. */
+function getLLMConfigHome() {
+  return is_os_windows ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX;
 }
 
 /**

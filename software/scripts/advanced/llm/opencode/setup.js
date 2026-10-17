@@ -281,7 +281,7 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
  * existing keys are preserved.
  */
 async function _writeOpencodeTuiConfig() {
-  const tuiPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/tui.json");
+  const tuiPath = path.join(getLLMConfigHome(), ".config/opencode/tui.json");
   /** @type {Record<string, any>} */
   const existing = (await readJson`${tuiPath}`) || {};
   // Strip invalid legacy top-level fields not in the tui.json schema
@@ -702,7 +702,7 @@ async function _doOpencodeInstructionsWork() {
  * @returns {Promise<void>} Resolves after writing the managed plugin.
  */
 async function _doOpencodePersonaPluginWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/plugins/sy-persona-reminder.js");
+  const targetPath = path.join(getLLMConfigHome(), ".config/opencode/plugins/sy-persona-reminder.js");
   const content = `/** Reinforces chat style while preserving policy and artifact prose. */
 export default async function () {
   const reminder = ${JSON.stringify(LLM_PERSONA_REMINDER)};
@@ -733,7 +733,7 @@ async function doWork() {
     return;
   }
 
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/opencode.json");
+  const targetPath = path.join(getLLMConfigHome(), ".config/opencode/opencode.json");
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
 
