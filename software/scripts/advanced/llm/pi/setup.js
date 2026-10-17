@@ -110,10 +110,13 @@ function _getPiCopilotModels() {
 }
 
 /**
- * Absolute path to pi's global config folder.
- * @type {string} `~/.pi/agent`
+ * Returns pi's global config folder for one LLM config home.
+ * @param {string} configHome - Linux or Windows config home.
+ * @returns {string} Absolute path to the pi agent folder.
  */
-const PI_AGENT_DIR = path.join(getLLMConfigHome(), ".pi", "agent");
+function getPiAgentDir(configHome) {
+  return path.join(configHome, ".pi", "agent");
+}
 
 /**
  * Builds the pi models.json `providers` map from the shared Ollama discovery
@@ -141,13 +144,12 @@ function _buildPiOllamaProviders(providerInputs) {
 }
 
 /**
- * Merges managed defaults into ~/.pi/agent/settings.json, preserving existing
- * user settings. Only keys in PI_MANAGED_SETTINGS are treated as defaults; a
- * user override already on disk wins.
+ * Merges managed defaults into one pi settings.json, preserving existing user settings.
+ * @param {string} agentDir - Target pi agent folder.
  * @returns {Promise<void>}
  */
-async function _doPiSettingsWork() {
-  const targetPath = path.join(PI_AGENT_DIR, "settings.json");
+async function _doPiSettingsWork(agentDir) {
+  const targetPath = path.join(agentDir, "settings.json");
 
   log(">> pi Settings:", targetPath);
 
@@ -176,15 +178,43 @@ async function _doPiSettingsWork() {
 }
 
 /**
- * Replaces discovered Ollama providers and refreshes GitHub Copilot models in ~/.pi/agent/models.json under `providers`,
+ * Merges managed Pi keybindings into one keybindings.json, preserving unrelated user bindings.
+ * @param {string} agentDir - Target pi agent folder.
+ * @returns {Promise<void>}
+ */
+async function _doPiKeybindingsWork(agentDir) {
+  const targetPath = path.join(agentDir, "keybindings.json");
+  const managed = (await readJson`software/scripts/advanced/llm/pi/pi-keys.common.jsonc`) || {};
+
+  if (!managed || typeof managed !== "object" || Array.isArray(managed)) return;
+
+  /** @type {Record<string, any>} Existing user keybindings. */
+  let existing = {};
+  try {
+    existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
+  } catch {}
+
+  const merged = { ...existing, ...managed };
+  await backupConfigFile(targetPath);
+  await writeJson(targetPath, merged);
+}
+
+/**
+ * Replaces discovered Ollama providers and refreshes GitHub Copilot models in one pi models.json under `providers`,
  * preserving non-Ollama providers the user hand-added. Skips entirely
  * when no Ollama host is reachable and no models.json exists yet, so a headless /
  * copilot-only box gets no empty file.
+ * @param {string} agentDir - Target pi agent folder.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providerInputs - Discovered reachable Ollama hosts.
  * @returns {Promise<void>}
  */
-async function _doPiModelsWork(providerInputs) {
-  const targetPath = path.join(PI_AGENT_DIR, "models.json");
+async function _doPiModelsWork(agentDir, providerInputs) {
+  // Keep the historical one-argument helper shape for existing callers and tests.
+  if (Array.isArray(agentDir) && providerInputs === undefined) {
+    providerInputs = agentDir;
+    agentDir = getPiAgentDir(BASE_HOMEDIR_LINUX);
+  }
+  const targetPath = path.join(agentDir, "models.json");
 
   /** @type {Record<string, any>} Providers discovered this run. */
   const discovered = _buildPiOllamaProviders(providerInputs);
@@ -223,13 +253,14 @@ async function _doPiModelsWork(providerInputs) {
 }
 
 /**
- * Deploys the shared engineering principles into ~/.pi/agent/AGENTS.md between
+ * Deploys the shared engineering principles into one pi AGENTS.md between
  * BEGIN/END markers. Mirrors the copilot/gemini/opencode pattern: the managed
  * block is upserted and any user content outside the markers survives re-runs.
+ * @param {string} agentDir - Target pi agent folder.
  * @returns {Promise<void>}
  */
-async function _doPiInstructionsWork() {
-  const targetPath = path.join(PI_AGENT_DIR, "AGENTS.md");
+async function _doPiInstructionsWork(agentDir) {
+  const targetPath = path.join(agentDir, "AGENTS.md");
 
   log(">> pi Instructions:", targetPath);
 
@@ -257,12 +288,13 @@ async function _doPiInstructionsWork() {
 }
 
 /**
- * Deploys ~/.pi/agent/APPEND_SYSTEM.md, a short tail-position persona reminder
+ * Deploys one pi APPEND_SYSTEM.md, a short tail-position persona reminder
  * added directly to Pi's system prompt on every run.
+ * @param {string} agentDir - Target pi agent folder.
  * @returns {Promise<void>}
  */
-async function _doPiAppendSystemWork() {
-  const targetPath = path.join(PI_AGENT_DIR, "APPEND_SYSTEM.md");
+async function _doPiAppendSystemWork(agentDir) {
+  const targetPath = path.join(agentDir, "APPEND_SYSTEM.md");
 
   log(">> pi Append System:", targetPath);
 
@@ -274,10 +306,11 @@ async function _doPiAppendSystemWork() {
  * Deploys a Pi extension that reinforces the persona before every agent turn.
  * It keeps the short prompt-guideline reminder and also appends a stronger
  * tail-position block to the live system prompt for that run.
+ * @param {string} agentDir - Target pi agent folder.
  * @returns {Promise<void>}
  */
-async function _doPiPersonaExtensionWork() {
-  const targetPath = path.join(PI_AGENT_DIR, "extensions", "sy-persona-reminder.js");
+async function _doPiPersonaExtensionWork(agentDir) {
+  const targetPath = path.join(agentDir, "extensions", "sy-persona-reminder.js");
   const content = `/** Keeps user-facing Pi replies aligned with the shared response persona. */
 export default function (pi) {
   pi.on("before_agent_start", (event) => {

@@ -280,15 +280,15 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
  * into earlier versions but are not valid in the tui.json schema. All other
  * existing keys are preserved.
  */
-async function _writeOpencodeTuiConfig() {
-  const tuiPath = path.join(getLLMConfigHome(), ".config/opencode/tui.json");
+async function _writeOpencodeTuiConfig(configHome = getLLMConfigHome(), isWindowsConfig = is_os_windows) {
+  const tuiPath = path.join(configHome, ".config/opencode/tui.json");
   /** @type {Record<string, any>} */
   const existing = (await readJson`${tuiPath}`) || {};
   // Strip invalid legacy top-level fields not in the tui.json schema
   delete existing.title;
   delete existing.animations;
   /** @type {Record<string, any>} */
-  const keybinds = await _loadOpencodeKeybinds();
+  const keybinds = await _loadOpencodeKeybinds(isWindowsConfig);
   /** @type {Record<string, any>} */
   const out = {
     $schema: "https://opencode.ai/tui.json",
@@ -733,12 +733,11 @@ async function doWork() {
     return;
   }
 
-  const targetPath = path.join(getLLMConfigHome(), ".config/opencode/opencode.json");
-  await mkdir(path.dirname(targetPath));
-  await backupConfigFile(targetPath);
+  const configHomes = getLLMConfigHomes();
 
   // First thing after the install step so a data-folder wipe from install.sh is
-  // repaired before anything else touches opencode.
+  // repaired before anything else touches opencode. Auth stays in its existing
+  // Linux-side store and is deliberately not cloned to the second config home.
   await _ensureOpencodeAuthSymlink();
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */

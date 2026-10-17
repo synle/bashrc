@@ -28,10 +28,12 @@ const LLM_COMMON_SOURCE = expandSourceMarkers(fs.readFileSync(path.join(ROOT, "s
  * lives only in `software/metadata/ip-address.config`.
  *
  * @param {{ mcpServers?: Record<string, any> } | null} registryPayload - What `readJson` returns for the registry path.
- * @param {{ remoteIps?: string[], tagsByHost?: Record<string, string[]>, isWorkProfile?: boolean }} [opts] - Discovery stubs.
+ * @param {{ remoteIps?: string[], tagsByHost?: Record<string, string[]>, isWorkProfile?: boolean, isWsl?: boolean, windowsHome?: string }} [opts] - Discovery stubs.
  * @param {string[]} [opts.remoteIps] - OLLAMA_REMOTE host IPs, default first (`[]` = none tagged).
  * @param {Record<string, string[]>} [opts.tagsByHost] - Model names each host's `/api/tags` reports.
  * @param {boolean} [opts.isWorkProfile] - Whether local-model discovery must be disabled.
+ * @param {boolean} [opts.isWsl] - Whether config homes should include the Windows host home.
+ * @param {string} [opts.windowsHome] - Windows host home returned by the path probe.
  * @returns {Record<string, any>} The populated sandbox.
  */
 function loadLlmCommon(registryPayload, opts = {}) {
@@ -46,12 +48,15 @@ function loadLlmCommon(registryPayload, opts = {}) {
   /** @type {Record<string, any>} */
   const sandbox = {
     is_os_mac: false,
+    is_os_windows: false,
+    is_os_wsl: opts.isWsl || false,
     is_work_profile: opts.isWorkProfile || false,
     path,
     // llm-common.js derives every legacy folder from this at top level.
     BASE_HOMEDIR_LINUX: "/tmp/sandbox-home",
     // ...and the current LLM home from the personal root.
     SY_ROOT_FOLDER: "/tmp/sandbox-home/sy",
+    getWindowUserBaseDir: () => opts.windowsHome || "/mnt/c/Users/test",
     // LLM_SHARED_ROOT_FOLDER reads LLM_ROOT_FOLDER directly with no default.
     process: { env: { LLM_ROOT_FOLDER: "/tmp/sandbox-home/sy/ai_llm" } },
     log: () => {},
@@ -78,6 +83,18 @@ function loadLlmCommon(registryPayload, opts = {}) {
   vm.runInNewContext(source, sandbox);
   return sandbox;
 }
+
+describe("getLLMConfigHomes", () => {
+  it("returns one home outside WSL", () => {
+    const sandbox = loadLlmCommon(null, { isWsl: false });
+    expect(sandbox.getLLMConfigHomes()).toEqual(["/tmp/sandbox-home"]);
+  });
+
+  it("returns Linux and Windows homes for WSL", () => {
+    const sandbox = loadLlmCommon(null, { isWsl: true, windowsHome: "/mnt/c/Users/test" });
+    expect(sandbox.getLLMConfigHomes()).toEqual(["/tmp/sandbox-home", "/mnt/c/Users/test"]);
+  });
+});
 
 describe("loadSharedMcpServers", () => {
   it("returns empty map when the registry has no mcpServers entries", async () => {

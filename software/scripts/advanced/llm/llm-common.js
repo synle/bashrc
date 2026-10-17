@@ -357,6 +357,18 @@ function getLLMConfigHome() {
 }
 
 /**
+ * Returns every LLM config home that setup must refresh for the current host.
+ * WSL is both a Linux runtime and a Windows host, so it receives independent
+ * config files in both homes. Auth stores are not included and remain owned by
+ * their existing CLI-specific setup.
+ * @returns {string[]} Config homes to refresh, without duplicates.
+ */
+function getLLMConfigHomes() {
+  if (!is_os_wsl) return [getLLMConfigHome()];
+  return [...new Set([BASE_HOMEDIR_LINUX, getWindowUserBaseDir()])].filter(Boolean);
+}
+
+/**
  * Chooses a model actually exposed by the default reachable Ollama provider.
  * Preferred agent models win when installed; otherwise the host's first model is
  * used, so a newly-installed or custom Ollama model remains usable by shell tools.
