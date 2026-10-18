@@ -606,9 +606,8 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | ---------------- | --------------------------------------------------- | :----: |
 | `alt+up/down`    | Page up/down                                        |   ✅   |
 | `alt+left/right` | Home / end                                          |   ✅   |
-| `alt+z`          | Undo                                                |   ✅   |
-| `alt+shift+z`    | Redo                                                |   ✅   |
-| `alt+y`          | Redo                                                |   ✅   |
+| `alt+z`, `\z`, `,z` | Undo                                             |   ✅   |
+| `alt+shift+z`, `alt+y`, `\y`, `,y` | Redo                                |   ✅   |
 | `alt+s`, `,s`    | Save                                                |   ✅   |
 | `,w`             | Save and quit                                       |   ✅   |
 | `,q`             | Quit all; discard unsaved changes without prompting |   ✅   |
@@ -673,6 +672,8 @@ Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for 
 | `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)                              |
 | `\s`                                            | Save file (`:w`)                                                                  |
 | `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                               |
+| `\z`, `,z`                                      | Undo (`u`) in normal + visual mode                                                |
+| `\y`, `,y`                                      | Redo (`ctrl+r`) in normal + visual mode                                           |
 | `}`                                              | Toggle soft wrap (`set wrap!`)                                                    |
 | `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)                         |
 | `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |

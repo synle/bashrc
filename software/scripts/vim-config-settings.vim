@@ -225,6 +225,8 @@ nnoremap <silent> <C-g> <C-b>
 "   \<Space> trim trailing whitespace (whole file)
 "   \s       save file
 "   \a       select whole file (`ggvG$`)
+"   \z       undo
+"   \y       redo
 " Keep plain '\' free as a prefix so these two-key mappings fire reliably.
 nnoremap <silent> <Bslash><Bslash> :set number! norelativenumber<CR>
 nnoremap <silent> <Bslash>[ :set list!<CR>
@@ -233,12 +235,21 @@ nnoremap <silent> <Bslash><Space> :TrimTrailingWhitespace<CR>
 nnoremap <silent> <Bslash>s :w<CR>
 nnoremap <silent> <Bslash>a ggvG$
 xnoremap <silent> <Bslash>a <Esc>ggvG$
+nnoremap <silent> <Bslash>z u
+xnoremap <silent> <Bslash>z <Esc>u
+nnoremap <silent> <Bslash>y <C-r>
+xnoremap <silent> <Bslash>y <Esc><C-r>
 
 " ,<Space> also trims trailing whitespace (whole file).
 nnoremap <silent> ,<Space> :TrimTrailingWhitespace<CR>
 " ,a selects the whole file (`ggvG$`) in normal and visual mode.
 nnoremap <silent> ,a ggvG$
 xnoremap <silent> ,a <Esc>ggvG$
+" ,z / ,y undo / redo in normal and visual mode.
+nnoremap <silent> ,z u
+xnoremap <silent> ,z <Esc>u
+nnoremap <silent> ,y <C-r>
+xnoremap <silent> ,y <Esc><C-r>
 
 " ,[ / ,] for previous / next buffer tab (pairs with ,1..,9).
 nnoremap <silent> ,[ :bprevious<CR>
