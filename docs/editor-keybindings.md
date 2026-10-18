@@ -668,7 +668,8 @@ Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for 
 | `}`                                              | Toggle soft wrap (`set wrap!`)                                                    |
 | `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)                         |
 | `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |
-| `,g`                                            | Multi-cursor: select all matches of word (vim-visual-multi, like `OS_KEY+ctrl+g`) |
+| `,g`                                            | Multi-cursor: select all matches, case-insensitive                                  |
+| `,G`                                            | Multi-cursor: select all matches, case-sensitive                                    |
 | `,l` (visual mode)                              | Multi-cursor: one cursor per selected line (like `OS_KEY+shift+l`)                |
 | `ctrl+n`                                        | Multi-cursor: add next match (plugin default, like `OS_KEY+d`)                    |
 

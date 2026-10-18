@@ -405,9 +405,10 @@ nnoremap <silent> ,n :nohlsearch<CR>
 nmap <Tab> ,
 
 " Multi-cursor (vim-visual-multi) — Sublime parity:
-"   ,g          select every match of the word under cursor, then enter insert mode
-"   ,g (visual) select every match of the exact selected text, then enter insert mode
-"   ,l (visual) one cursor per selected line, then enter insert mode
+"   ,g          select every match of the word under cursor (case-insensitive)
+"   ,g (visual) select every match of the exact selected text (case-insensitive)
+"   ,G          same as ,g, but case-sensitive
+"   ,l (visual) one cursor per selected line
 "   ctrl+n      plugin default: add the next match (Sublime OS_KEY+d)
 " Esc leaves multi-cursor mode. Set before the plugin loads (vimrc runs first).
 " VM_leader moves the plugin's own prefix off its default '\\' so the '\' line-number
@@ -417,14 +418,22 @@ let g:VM_maps = {}
 " Free Ctrl+Up/Down for page navigation; Visual-Multi defaults these to cursor creation.
 let g:VM_maps['Add Cursor Up'] = ''
 let g:VM_maps['Add Cursor Down'] = ''
-let g:VM_maps['Select All'] = ',g'
-let g:VM_maps['Visual All'] = ',g'
+" Keep ,l as Visual-Multi's normal visual-cursor command. Define ,g and ,G
+" locally so each key chooses its own case behavior without entering Insert mode.
+let g:VM_maps['Select All'] = ''
+let g:VM_maps['Visual All'] = ''
 let g:VM_maps['Visual Cursors'] = ',l'
-" Start editing immediately after creating multi-cursors.
-" Use recursive map (nmap/xmap), not *noremap, so <Plug> targets resolve.
-nmap <silent> ,g <Plug>(VM-Select-All)<Plug>(VM-i)
-xmap <silent> ,g <Plug>(VM-Visual-All)<Plug>(VM-i)
-xmap <silent> ,l <Plug>(VM-Visual-Cursors)<Plug>(VM-i)
+let g:VM_case_setting = 'ignore'
+
+function! s:VmFindAll(case_setting, visual) abort
+  let g:VM_case_setting = a:case_setting
+  call vm#commands#find_all(a:visual, a:visual ? 0 : 1)
+endfunction
+
+nnoremap <silent> ,g :<C-u>call <SID>VmFindAll('ignore', 0)<CR>
+nnoremap <silent> ,G :<C-u>call <SID>VmFindAll('sensitive', 0)<CR>
+xnoremap <silent> ,g y:<C-u>call <SID>VmFindAll('ignore', 1)<CR>
+xnoremap <silent> ,G y:<C-u>call <SID>VmFindAll('sensitive', 1)<CR>
 
 " Y to yank from cursor to end of line (consistent with D and C)
 nnoremap Y y$
