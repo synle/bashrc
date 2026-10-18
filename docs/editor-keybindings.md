@@ -628,8 +628,13 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 | Key      | Action            | Status |
 | -------- | ----------------- | :----: |
-| `ctrl+a` | Beginning of line |   ✅   |
-| `ctrl+e` | End of line       |   ✅   |
+| `ctrl+a`    | Beginning of line                         |   ✅   |
+| `ctrl+e`    | End of line                               |   ✅   |
+| `backspace` | Delete selected text and leave visual mode |   ✅   |
+| `delete`    | Delete selected text and leave visual mode |   ✅   |
+
+Vim maps both keys explicitly because Windows Terminal does not reliably infer
+visual-mode deletion from Vim's insert-mode defaults.
 
 ### Insert Mode
 

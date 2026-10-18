@@ -266,6 +266,12 @@ nnoremap <silent> ,] :bnext<CR>
 " Overrides vim's default `}` (jump to next paragraph end).
 nnoremap } :set wrap!<CR>
 
+" Backspace and Delete remove the visual selection like other editors. Keep
+" both key names explicit because Windows Terminal does not infer visual-mode
+" deletion from Vim's insert-mode defaults.
+xnoremap <BS> d
+xnoremap <Del> d
+
 " Tab / Shift+Tab in visual mode indent / dedent and keep the selection, so
 " repeated presses keep shifting — VS Code/Sublime parity. Replaces the old
 " visual-mode Tab wrap toggle; \] / } still toggle wrap.

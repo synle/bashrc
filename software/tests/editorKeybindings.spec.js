@@ -303,4 +303,9 @@ describe("Vim Visual-Multi case keybindings", () => {
     expect(VIM_SETTINGS).not.toContain("<Plug>(VM-i)");
     expect(VIM_SETTINGS).not.toContain("visual_multi_start");
   });
+
+  it("deletes visual selections with Backspace and Delete", () => {
+    expect(VIM_SETTINGS).toContain("xnoremap <BS> d");
+    expect(VIM_SETTINGS).toContain("xnoremap <Del> d");
+  });
 });
