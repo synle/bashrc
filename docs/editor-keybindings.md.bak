@@ -1,0 +1,885 @@
+# Keybinding Reference
+
+`OS_KEY` = **Cmd** (meta) on macOS, **Alt** on Windows/Linux. Browsers are an exception: they use **Cmd** on macOS and **Ctrl** on Windows/Linux natively.
+
+## Source Files
+
+All repo source files under `software/scripts/` unless noted.
+
+| App               | Repo source files                                                                                                                                                                                                                  | On-disk keybinding path                                                                                                                                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chromium browsers | `advanced/browser-config.js`                                                                                                                                                                                                       | `~/Library/.../Brave-Browser/Default/Preferences` (mac), `~/.config/BraveSoftware/.../Preferences` (linux)                                                                                                                                |
+| VS Code           | `advanced/vs-code-keys.common.jsonc`, `advanced/vs-code-keys.windows.jsonc`                                                                                                                                                        | `~/Library/.../Code/User/keybindings.json` (mac), `~/.config/Code/User/keybindings.json` (linux)                                                                                                                                          |
+| Sublime Text      | `advanced/sublime-text-keys.common.jsonc`, `advanced/sublime-text-keys.windows.jsonc`                                                                                                                                              | `~/Library/.../Sublime Text/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-text/Packages/User/Default.sublime-keymap` (linux)                                                                                      |
+| Sublime Merge     | `advanced/sublime-merge-keys.common.jsonc`, `advanced/sublime-merge-keys.windows.jsonc`                                                                                                                                            | `~/Library/.../Sublime Merge/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-merge/Packages/User/Default.sublime-keymap` (linux)                                                                                    |
+| Zed               | `zed-keys.common.jsonc`                                                                                                                                                                                                            | `~/.config/zed/keymap.json`                                                                                                                                                                                                               |
+| Claude Code       | `advanced/llm/claude/claude-keys.common.jsonc`, `advanced/llm/claude/claude-keys.windows.jsonc`                                                                                                                                    | `~/.claude/keybindings.json`                                                                                                                                                                                                              |
+| OpenCode CLI      | `advanced/llm/opencode/opencode-keys.common.jsonc`, `advanced/llm/opencode/opencode-keys.windows.jsonc` (explicit-match policy; Windows companion replaces `super` chords with `alt`)                                              | `~/.config/opencode/tui.json` (merged under `keybinds` key)                                                                                                                                                                               |
+| Copilot CLI       | `advanced/llm/copilot/copilot-keys.common.jsonc`, `advanced/llm/copilot/copilot-keys.windows.jsonc` (pre-staged — merged into `.build/copilot-keys{,-mac}` but NOT live-deployed; see [Copilot CLI](#ai-cli-assistants) gap below) | _no on-disk keymap yet; chords are hardcoded in the binary. When upstream ships a config knob, the deferred deploy block in `copilot/setup.js` writes the merged result to whatever path upstream documents._                             |
+| Gemini CLI        | `advanced/llm/gemini/gemini-keys.common.jsonc`, `advanced/llm/gemini/gemini-keys.windows.jsonc` (explicit-match policy — every chord mirrored from Claude is listed; no reliance on Gemini upstream defaults)                      | `~/.gemini/keybindings.json`                                                                                                                                                                                                              |
+| Vim               | `vim-config-settings.vim`                                                                                                                                                                                                          | `~/.vimrc`                                                                                                                                                                                                                                |
+| Bash readline     | `bash-keys.profile.bash`                                                                                                                                                                                                           | Sourced into `~/.bash_syle`                                                                                                                                                                                                               |
+| Windows Terminal  | `windows-terminal-keys.jsonc`                                                                                                                                                                                                      | `%LOCALAPPDATA%/Packages/Microsoft.WindowsTerminal_.../LocalState/settings.json` (`alt+escape` summons Quake mode; `alt+p` opens tab search; unbinds `ctrl+v` so opencode sees clipboard images; maps `shift+enter` to CSI-u `ESC[13;2u`) |
+| tmux              | `advanced/tmux.config`                                                                                                                                                                                                             | `~/.tmux.conf`                                                                                                                                                                                                                            |
+| Ghostty           | `advanced/ghostty-keys.common.jsonc`                                                                                                                                                                                               | `~/.config/ghostty/config` (`cmd+escape` quick terminal on macOS; `alt+escape` on Linux)                                                                                                                                                  |
+| Termux (Android)  | `android_termux/termux-config.sh`                                                                                                                                                                                                  | `~/.termux/termux.properties`                                                                                                                                                                                                             |
+
+## Editor-Specific Gotchas
+
+### Zed normalises shifted glyph keys before keymap dispatch
+
+Zed resolves a chord to the **shifted glyph** of the key, not to `shift-<unshifted>`. So a binding written as `shift-cmd-\` is never matched — Zed sees the keypress as `cmd-|` (because `shift+\` produces `|` on a US keyboard) and falls through to whatever default is bound to `cmd-|`. This bit us twice on the `\` family before we figured it out.
+
+**Rule of thumb when binding a shifted-symbol chord in `software/scripts/advanced/zed-keys.common.jsonc`:** write the resulting glyph, not the base key + shift modifier. Same physical chord on the user's keyboard, but the keymap actually wins.
+
+| Physical chord on US keyboard | ❌ Won't match in Zed | ✅ Matches in Zed |
+| ----------------------------- | --------------------- | ----------------- |
+| `cmd+shift+\`                 | `shift-cmd-\`         | `cmd-\|`          |
+| `cmd+shift+ctrl+\`            | `ctrl-shift-cmd-\`    | `ctrl-cmd-\|`     |
+| `cmd+shift+/`                 | `shift-cmd-/`         | `cmd-?`           |
+| `cmd+shift+1`                 | `shift-cmd-1`         | `cmd-!`           |
+| `cmd+shift+,`                 | `shift-cmd-,`         | `cmd-<`           |
+| `cmd+shift+.`                 | `shift-cmd-,`         | `cmd->`           |
+| `cmd+shift+;`                 | `shift-cmd-;`         | `cmd-:`           |
+
+This only applies to **shifted-symbol** chords. Plain letters (e.g. `cmd+shift+s`) work fine with `shift-cmd-s` because `shift+s` doesn't change the resolved key on US layouts. VS Code, Sublime, and Claude Code do not have this normalisation — only Zed.
+
+If a Zed binding silently does nothing or fires a Zed default instead of your action, the first thing to check is whether the chord includes shift over a non-letter key.
+
+---
+
+## Standard Convention
+
+The target keybindings this repo aims for. Each section below shows the convention followed by an implementation matrix. **Empty cells are gaps / TODOs.**
+
+Legend: **✅** = configured by this repo | **☑️** = native (works out of the box) | **⚠️** = blocker (can't be fixed) | **❌** = not applicable / gap
+
+---
+
+## Browsers
+
+On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Linux, Brave is configured to accept **both Ctrl AND Alt** for every accelerator — Ctrl keeps Brave's built-in defaults working (Ctrl+T, Ctrl+W, Ctrl+R, etc.) and Alt is layered on as an addition matching the OS_KEY convention. Chrome/Edge on Windows/Linux use native **Ctrl** shortcuts (no overrides).
+
+Cut / Copy / Paste are intentionally **not** registered through `brave.accelerators`. Brave's textfield-level clipboard handler covers `Ctrl+X/C/V` natively (the universal convention), and binding `Alt+X/C/V` is non-standard. Skipping these IDs lets Brave fall back to its built-in Ctrl-only defaults; bonus: it avoids the omnibox-renderer crash that came from double-binding the same clipboard ID to both Ctrl and Alt.
+
+Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
+
+| Key                                  | Action                                                  | All browsers (MacOS) |         All browsers (Windows/Linux)          |
+| ------------------------------------ | ------------------------------------------------------- | :------------------: | :-------------------------------------------: |
+| `OS_KEY+t`                           | New tab                                                 |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+t`                     | Reopen closed tab                                       |          ☑️          |                      ✅                       |
+| `OS_KEY+1-9`                         | Tab by index                                            |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+[/]`                   | Prev / next tab                                         |          ☑️          |                      ✅                       |
+| `OS_KEY+w`                           | Close tab                                               |          ☑️          |                      ✅                       |
+| `OS_KEY+q`                           | Quit                                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+n`                           | New window                                              |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+n`                     | New incognito window                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+=`                           | Zoom in                                                 |          ☑️          |                      ✅                       |
+| `OS_KEY+-`                           | Zoom out                                                |          ☑️          |                      ✅                       |
+| `OS_KEY+0`                           | Reset zoom (100%)                                       |          ☑️          |                      ✅                       |
+| `OS_KEY+c`                           | Copy (Cmd on mac, Ctrl native on Win/Linux)             |          ☑️          |             ☑️ (textfield-level)              |
+| `OS_KEY+x`                           | Cut (Cmd on mac, Ctrl native on Win/Linux)              |          ☑️          |             ☑️ (textfield-level)              |
+| `OS_KEY+v`                           | Paste (Cmd on mac, Ctrl native on Win/Linux)            |          ☑️          |             ☑️ (textfield-level)              |
+| `OS_KEY+a`                           | Select all                                              |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
+| `OS_KEY+z`                           | Undo                                                    |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
+| `OS_KEY+s`                           | Save (download page)                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+p`                           | Print                                                   |          ☑️          |                      ✅                       |
+| `OS_KEY+f`                           | Find                                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+g`                           | Find next                                               |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+g`                     | Find prev                                               |          ☑️          |                      ✅                       |
+| `OS_KEY+l`                           | Focus address bar                                       |          ☑️          |                      ✅                       |
+| `F2`                                 | Focus address bar (alt)                                 |          ❌          |                      ✅                       |
+| `OS_KEY+r` / `OS_KEY+shift+r` / `F5` | Hard refresh (all chords mapped to bypass-cache reload) |          ☑️          |                      ✅                       |
+| `OS_KEY+o`                           | Open file                                               |          ☑️          |                      ✅                       |
+| `OS_KEY+h`                           | History                                                 |          ☑️          |                      ✅                       |
+| `OS_KEY+d`                           | Bookmark this page                                      |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+i`                     | DevTools                                                |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+b`                     | Bookmark bar toggle                                     |          ☑️          |                      ✅                       |
+| `OS_KEY+left`                        | Back                                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+right`                       | Forward                                                 |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+backspace/delete`      | Clear browsing data                                     |          ☑️          |                      ✅                       |
+| `Alt+Enter`                          | Fullscreen (was F11)                                    |          ❌          |                      ✅                       |
+| `F11`                                | DevTools inspector (was F12)                            |          ❌          |                      ✅                       |
+
+---
+
+## Code Editors
+
+### Tabs & Windows
+
+| Key                | Action               |  VS Code  | Subl Text | Subl Merge |    Zed    |        Vim        |
+| ------------------ | -------------------- | :-------: | :-------: | :--------: | :-------: | :---------------: |
+| `OS_KEY+t`         | New tab              | ✅ (term) |    ❌     |     ❌     | ✅ (term) |        ❌         |
+| `OS_KEY+n`         | New file             |    ✅     |    ✅     |     ❌     |    ✅     |        ❌         |
+| `OS_KEY+o`         | Open file/folder     |    ❌     |    ❌     |     ❌     |    ✅     |        ❌         |
+| `OS_KEY+ctrl+p`    | Recent projects      |    ✅     |    ✅     |     ❌     |    ✅     |        ❌         |
+| `OS_KEY+1-9`       | Tab by index         |    ✅     |    ✅     |     ✅     |    ✅     |        ❌         |
+| `OS_KEY+shift+[/]` | Prev / next tab      |    ✅     |    ✅     |     ✅     |    ✅     |        ❌         |
+| `OS_KEY+w`         | Close tab            |    ✅     |    ✅     |     ✅     |    ✅     |        ✅         |
+| `OS_KEY+q`         | Quit                 |    ✅     |    ✅     |     ✅     |    ✅     |        ❌         |
+| `OS_KEY+shift+n`   | New window           |    ✅     |    ✅     |     ✅     |    ✅     |        ❌         |
+| `F2`               | Rename (symbol/file) |    ✅     |    ❌     |     ❌     |    ✅     | ✅ (paste toggle) |
+
+### Zoom
+
+| Key              | Action             | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ---------------- | ------------------ | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+=`       | Font zoom in       |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+-`       | Font zoom out      |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+0`       | Reset font zoom    |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+shift+=` | Workspace zoom in  |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+-` | Workspace zoom out |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+
+### Text Editing
+
+| Key                                                                       | Action                                                       | VS Code | Subl Text | Subl Merge |       Zed        |       Vim        |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------ | :-----: | :-------: | :--------: | :--------------: | :--------------: |
+| `OS_KEY+c`                                                                | Copy                                                         |   ✅    |    ✅     |     ✅     |        ✅        |        ❌        |
+| `OS_KEY+x`                                                                | Cut                                                          |   ✅    |    ✅     |     ✅     |        ✅        |        ❌        |
+| `OS_KEY+v`                                                                | Paste                                                        |   ✅    |    ✅     |     ✅     |        ✅        |        ❌        |
+| `OS_KEY+a`                                                                | Select all                                                   |   ✅    |    ✅     |     ✅     |        ✅        |        ❌        |
+| `OS_KEY+z`                                                                | Undo                                                         |   ✅    |    ✅     |     ✅     |        ✅        |        ✅        |
+| `OS_KEY+y`                                                                | Redo                                                         |   ✅    |    ✅     |     ✅     |        ✅        |        ✅        |
+| `OS_KEY+shift+z`                                                          | Redo (alt)                                                   |   ✅    |    ✅     |     ✅     |        ✅        |        ✅        |
+| `OS_KEY+s`                                                                | Save                                                         |   ✅    |    ✅     |     ❌     |        ✅        |        ✅        |
+| `OS_KEY+shift+s`                                                          | Save all                                                     |   ✅    |    ✅     |     ❌     |        ✅        |        ❌        |
+| `OS_KEY+l`                                                                | Select line                                                  |   ✅    |    ❌     |     ❌     |        ✅        |        ✅        |
+| `OS_KEY+shift+l`                                                          | Multi-cursor line ends                                       |   ✅    |    ❌     |     ❌     |        ✅        |        ❌        |
+| `OS_KEY+backspace`                                                        | Delete to BOL                                                |   ✅    |    ✅     |     ✅     |        ✅        |        ✅        |
+| `OS_KEY+shift+backspace` / `ctrl+shift+backspace` / `alt+shift+backspace` | Trim trailing whitespace (whole file)                        |   ✅    |    ✅     |     ❌     | ⚠️ <sup>tw</sup> | ✅ <sup>gv</sup> |
+| `OS_KEY+shift+delete` / `ctrl+shift+delete` / `alt+shift+delete`          | Remove duplicate lines (first wins; selection or whole file) |   ✅    |    ✅     |     ❌     |        ✅        | ✅ <sup>gv</sup> |
+
+<sup>tw</sup> Zed ships no trim-trailing-whitespace action (only the `remove_trailing_whitespace_on_save` setting), so the chord is left unbound.
+<sup>gv</sup> Vim exposes `:TrimTrailingWhitespace` / `:UniqueLines`; the chords fire only in GUI vim or terminals that report modified keys (CSI u), and `cmd` only in MacVim.
+
+### Search
+
+| Key              | Action                  | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ---------------- | ----------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+f`       | Find                    |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+shift+f` | Find in files           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+h`       | Find and replace        |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+h` | Replace in files        |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+g`       | Find next               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+g` | Find prev               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+d`       | Select next match       |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+g`  | Select all matches      |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+p`       | Quick open / file       |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+shift+p` | Command palette         |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+;`       | Goto line               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+r`       | Goto symbol             |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+'` | Goto symbol (workspace) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+enter`   | Goto definition         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `shift+enter`    | Find references         |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `ctrl+m`         | Jump to bracket         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+
+### Navigation (cursor movement)
+
+| Key                      | Action                  | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ------------------------ | ----------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+up`              | Page up                 |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+down`            | Page down               |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+left`            | Home (BOL)              |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+right`           | End (EOL)               |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+shift+up`        | Select page up          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+down`      | Select page down        |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+left`      | Select to BOL           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+right`     | Select to EOL           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+up`         | Top of file             |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+down`       | Bottom of file          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+shift+up`   | Top of file (select)    |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+shift+down` | Bottom of file (select) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+
+### Code Editing
+
+| Key                   | Action          | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| --------------------- | --------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+/`            | Toggle comment  |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+[`            | Outdent         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+]`            | Indent          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+,`            | Fold            |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+.`            | Unfold          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `ctrl+shift+OS_KEY+f` | Format document |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+
+### Editor UI
+
+| Key                   | Action                               | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| --------------------- | ------------------------------------ | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+\`            | Toggle left dock                     |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+\`      | Toggle right dock                    |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `ctrl+shift+OS_KEY+\` | Toggle soft wrap                     |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+enter`  | Toggle soft wrap                     |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `ctrl+shift+enter`    | Toggle soft wrap                     |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `ctrl+shift+tab`      | Toggle markdown preview (`.md` only) |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `` ctrl+` ``          | Toggle terminal                      |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `F5`                  | Refresh / revert                     |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `F11`                 | Fullscreen                           |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+
+`ctrl+shift+tab` is scoped to markdown so it keeps its default tab switching everywhere else.
+VS Code swaps preview ↔ source in place (`markdown.showPreview` / `markdown.showSource`).
+Zed opens `markdown::OpenPreview`; from the preview, `pane::GoBack` returns to the source
+(Zed has no "show source" action). Sublime has no in-editor preview — MarkdownPreview
+renders to the browser and the source stays active.
+
+### Splits (editors)
+
+| Key              | Action                 | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ---------------- | ---------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `ctrl+d`         | Split vertical         |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `ctrl+'`         | Split horizontal       |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+d` | Split horizontal (alt) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `ctrl+w`         | Single column / close  |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `ctrl+arrow`     | Navigate splits        |   ❌    |    ❌     |     ❌     | ❌  | ✅  |
+
+### Debugging (VS Code only)
+
+| Key                  | Action         |
+| -------------------- | -------------- |
+| `OS_KEY+'`           | Step over      |
+| `OS_KEY+shift+'`     | Step into      |
+| `OS_KEY+shift+1`     | Explorer panel |
+| `OS_KEY+shift+2`     | Search panel   |
+| `` OS_KEY+shift+` `` | Debug panel    |
+
+### Integrated Terminal (VS Code only)
+
+Bindings that fire only when the integrated terminal has focus (`when: "terminalFocus"`).
+
+| Key          | Action                                                            |
+| ------------ | ----------------------------------------------------------------- |
+| `OS_KEY+t`   | New terminal as editor tab                                        |
+| `OS_KEY+f`   | Find in terminal output                                           |
+| `ctrl+enter` | Insert a newline in TUI prompts (Claude Code etc.) — sends ESC+CR |
+| `` ctrl+` `` | Toggle terminal panel (also works outside terminal focus)         |
+
+### Integrated Terminal (Zed)
+
+`zed.js` auto-mirrors every `OS_KEY+X` editor binding into `context: "Terminal"` so those
+chords still fire while the terminal panel has focus. The mirror is a no-op for chords
+whose action is editor-only (`editor::*` does nothing in a terminal), and it used to
+clobber Zed's real Terminal defaults. These are therefore declared explicitly in
+`zed-keys.common.jsonc` — the mirror skips any chord already present in that context.
+
+| Key              | Action                                      |
+| ---------------- | ------------------------------------------- |
+| `OS_KEY+left`    | Move to line start (sends `\x01`, readline) |
+| `OS_KEY+right`   | Move to line end (sends `\x05`, readline)   |
+| `OS_KEY+up`      | Scroll page up                              |
+| `OS_KEY+down`    | Scroll page down                            |
+| `OS_KEY+d`       | Split right                                 |
+| `OS_KEY+shift+d` | Split down                                  |
+
+---
+
+## Terminal Emulators
+
+### Tabs & Windows
+
+| Key                | Action                          | Windows Terminal | tmux | Ghostty |
+| ------------------ | ------------------------------- | :--------------: | :--: | :-----: |
+| `OS_KEY+t`         | New tab                         |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+1-9`       | Tab by index                    |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+shift+[/]` | Prev / next tab                 |        ✅        |  ⚠️  |   ✅    |
+| `OS_KEY+tab`       | Next tab                        |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+shift+tab` | Prev tab                        |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+w`         | Close pane                      |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+x`         | Close pane (alt)                |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+q`         | Close window                    |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+n`         | New window                      |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+escape`    | Quake / quick terminal (global) |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+/`         | New window (alt)                |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+,`         | Prev tab (alt)                  |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+.`         | Next tab (alt)                  |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+[`         | Prev tab (alt)                  |        ❌        |  ⚠️  |   ❌    |
+| `OS_KEY+]`         | Next tab (alt)                  |        ❌        |  ⚠️  |   ❌    |
+| `F2`               | Rename tab                      |        ✅        |  ⚠️  |   ✅    |
+| `OS_KEY+F2`        | Rename tab                      |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+shift+F2`  | Rename tmux pane                |        ❌        |  ✅  |   ❌    |
+| `ctrl+shift+F2`    | Rename tmux pane                |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+;`         | Rename tab (alt)                |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+m`         | Tab / session switcher          |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+p`         | Key palette                     |        ❌        |  ✅  |   ❌    |
+
+On macOS, Ghostty's `global:cmd+escape` quick-terminal binding requires Ghostty under
+**System Settings → Privacy & Security → Accessibility**. Without that permission,
+Ghostty does not intercept the chord and the terminal receives it as `ESC[27;9~`.
+Enable Ghostty there, then restart Ghostty or reload its config.
+
+⚠️ `ctrl+1-9` is deliberately **not** bound. A terminal encodes those as legacy control
+characters rather than a distinct chord — `ctrl+1` arrives as a bare `1`, `ctrl+2` as NUL,
+`ctrl+3` as ESC, `ctrl+4` as FS — so tmux has nothing to match, and binding them would
+shadow ESC. `set -s extended-keys on` does not help: the terminal never emits the CSI-u
+form. Use `OS_KEY+1-9`.
+
+⚠️ Bare `F2` never reaches tmux under Ghostty, which binds it to its own
+`prompt_tab_title` (`ghostty-keys.common.jsonc`) and consumes it first. Use
+`OS_KEY+F2` inside tmux. Both are bound, so `F2` still works in terminals that leave
+the key alone. On macOS either chord needs _Keyboard → Use F1, F2, etc. keys as
+standard function keys_ enabled, or an added `fn`. `ctrl+b` then `r` renames too and
+needs no function key at all — see the prefix-chord table below.
+
+⚠️ `OS_KEY+shift+[/]` is bound in `advanced/tmux.config` but does **not** fire on
+macOS + Ghostty: `[` and `]` are the CSI and OSC escape-sequence introducers, so tmux
+forwards the raw `ESC {` / `ESC }` to the pane instead of matching the binding. The
+binding is kept for terminals where it does work; `OS_KEY+tab` / `OS_KEY+shift+tab` are
+the pair verified to fire everywhere and are the ones to reach for.
+
+⚠️ `OS_KEY+[/]` (unshifted) is bound the same way, as `M-[` / `M-]`, and is unverified:
+`ESC [` / `ESC ]` are the CSI / OSC introducers, so tmux only treats them as the chord
+when nothing follows within `escape-time`. If it does not fire, use `OS_KEY+,/.`.
+
+### Splits & Panes
+
+| Key                  | Action                      | Windows Terminal |         tmux          | Ghostty |
+| -------------------- | --------------------------- | :--------------: | :-------------------: | :-----: |
+| `OS_KEY+d`           | Split vertical (left/right) |        ✅        |          ✅           |   ✅    |
+| `OS_KEY+shift+d`     | Split horiz (top/bottom)    |        ✅        |          ✅           |   ✅    |
+| `OS_KEY+'`           | Split horiz (alt)           |        ✅        |          ✅           |   ✅    |
+| `OS_KEY+arrow`       | Navigate panes              |        ✅        |          ✅           |   ✅    |
+| `OS_KEY+shift+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+alt+arrow) |   ✅    |
+| `OS_KEY+0`           | Break split into own window |        ❌        |          ✅           |   ❌    |
+| `OS_KEY+shift+1-9`   | Focus pane by number        |        ❌        |          ✅           |   ❌    |
+| `OS_KEY+z`           | Toggle split zoom (alt)     |        ❌        |          ✅           |   ❌    |
+| `OS_KEY+\`           | Toggle UI (tab bar)         |        ❌        |          ❌           |   ✅    |
+| `OS_KEY+shift+\`     | Toggle UI (tab bar)         |        ✅        |          ❌           |   ❌    |
+| `OS_KEY+shift+\`     | Toggle split zoom           |        ❌        |          ✅           |   ✅    |
+| `F11`                | Fullscreen                  |        ✅        |          ✅           |   ✅    |
+
+tmux zoom is a binary toggle (`resize-pane -Z`) — the pane is either full-window or
+back in its layout slot. There are no zoom levels, so there is deliberately no
+zoom-in / zoom-out pair. `OS_KEY+z`, `OS_KEY+shift+\`, and `F11` all toggle the same
+state.
+
+tmux pane resize overrides both stock steps — `prefix+alt+arrow` (stock 5 cells) and
+`prefix+ctrl+arrow` (stock 1 cell) both move the border by **10** cells, so either chord
+travels the same distance and neither needs a long key repeat to cross a wide pane. The
+step is declared once as `RESIZE_PANE_CELLS` in `advanced/tmux.js` and substituted into
+`advanced/tmux.config`. Both are repeatable: hold the prefix once, then tap arrows. Mouse
+border drag also works (`mouse on`).
+
+`OS_KEY+0` breaks the current split into a window of its own (stock `prefix+!`). It sits
+at the end of the `OS_KEY+1-9` row because `base-index 1` means there is no window 0, so
+the key is otherwise dead. The inverse has no binding — run `join-pane -s <window>` from
+the `prefix+:` prompt.
+
+`OS_KEY+shift+1-9` focuses the pane whose number shows in its title bar
+(`pane-base-index 1`, current window only; a missing pane is a no-op). On a US layout the
+chord reaches tmux as the shifted character (`M-!` … `M-(`); tmux also binds the
+extended-keys spelling `M-S-1-9`. Other keyboard layouts shift digits to different
+characters — use `ctrl+b` then `q` and the digit there.
+
+**ctrl twins.** Ghostty and Windows Terminal re-send a few `ctrl` chords as the matching
+`alt` chord (`ESC <key>`), so the tmux bindings also answer to `ctrl` — needed because a
+terminal otherwise encodes `ctrl+digit` as a legacy control byte tmux cannot match.
+
+| Key                 | tmux action        | Windows Terminal | Ghostty |
+| ------------------- | ------------------ | :--------------: | :-----: |
+| `ctrl+1-9`          | Window by index    |        ✅        |   ✅    |
+| `ctrl+shift+1-9`    | Pane by number     |        ✅        |   ✅    |
+| `ctrl+,` / `ctrl+.` | Prev / next window |        ✅        |   ✅    |
+| `ctrl+'`            | Split top/bottom   |        ✅        |   ✅    |
+
+Deliberately **not** twinned, because each is a control character apps depend on:
+`ctrl+m` (Enter), `ctrl+[` (ESC), `ctrl+d` (EOF), `ctrl+\` (SIGQUIT), `ctrl+x` (readline
+prefix, nano exit), `ctrl+/` (readline undo), `ctrl+]` (telnet/ssh escape). In Windows
+Terminal the twins override `ctrl+,` (open settings) and `ctrl+shift+1-9` (new tab with
+profile N). Outside tmux, bash reads `ESC <digit>` as a digit-argument, same as `alt+<digit>`.
+
+### Text & Search
+
+| Key                   | Action                    | Windows Terminal | tmux | Ghostty |
+| --------------------- | ------------------------- | :--------------: | :--: | :-----: |
+| `OS_KEY+c`            | Copy                      |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+v`            | Paste                     |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+f`            | Find                      |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+g`            | Copy mode                 |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+y`            | Copy whole scrollback     |        ❌        |  ✅  |   ✅    |
+| `OS_KEY+a`            | Select all                |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+c`      | Copy (escape hatch)       |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+v`      | Paste (escape hatch)      |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+f`      | Find (escape hatch)       |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+a`      | Select all (escape hatch) |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+shift+g`      | Copy mode (escape hatch)  |        ❌        |  ✅  |   ❌    |
+| `OS_KEY+ctrl+shift+c` | Copy as plain text        |        ❌        |  ❌  |   ✅    |
+
+The `OS_KEY+shift+` rows are an escape hatch: same action as the plain chord, for when an
+app inside the terminal (tmux, vim, readline — `OS_KEY` is `alt` off macOS) takes the plain
+one. In Ghostty they override two defaults: `OS_KEY+shift+f` (`end_search` — `escape` still
+ends search) and `OS_KEY+shift+v` (`paste_from_selection`).
+
+Ghostty's search chords (`OS_KEY+f` start, `OS_KEY+g` / `OS_KEY+shift+g` next / previous,
+`OS_KEY+e` search selection) come from Ghostty's **own defaults** — search shipped in
+Ghostty 1.3.0 — so they are deliberately absent from `ghostty-keys.common.jsonc`. Binding
+them there would only restate a default we already agree with.
+
+### Scrollback (Ghostty)
+
+Prompt jumping needs shell integration, which `ghostty.js` enables via
+`shell-integration = detect`. Ghostty's own defaults put these on `OS_KEY+arrow`; we
+relocated them because `OS_KEY+arrow` is split navigation here.
+
+| Key                 | Action              | Windows Terminal | tmux | Ghostty |
+| ------------------- | ------------------- | :--------------: | :--: | :-----: |
+| `OS_KEY+ctrl+up`    | Jump to prev prompt |        ❌        |  ❌  |   ✅    |
+| `OS_KEY+ctrl+down`  | Jump to next prompt |        ❌        |  ❌  |   ✅    |
+| `OS_KEY+home`/`end` | Scroll top / bottom |        ❌        |  ❌  |   ✅    |
+
+### Zoom
+
+| Key        | Action     | Windows Terminal | tmux | Ghostty |
+| ---------- | ---------- | :--------------: | :--: | :-----: |
+| `OS_KEY+=` | Zoom in    |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+-` | Zoom out   |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+0` | Reset zoom |        ✅        |  ❌  |   ✅    |
+
+### tmux Prefix Chords (`ctrl+b`)
+
+The `OS_KEY` tables above are the custom `alt+`-prefixed bindings from `advanced/tmux.config`.
+These are the stock **prefix chords** — press `ctrl+b`, release, then the key. Most are tmux
+defaults, so they keep working in any tmux, including one running a config this repo did not
+write. The exceptions are marked ⚠️ below. **Rule of thumb: `ctrl+b` then `<key>` does
+what `OS_KEY+<key>` does** — `y` `d` `'` `[` `]` `,` `.` `/` `m` `g` `\` `F2` and
+`shift+1-9` all mirror their `alt` twin, so one set of keys works either way.
+
+| Chord                      | Action                                                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `ctrl+b` then `g`          | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit); matches `OS_KEY+g`               |
+| `ctrl+b` then `[` / `]`    | ⚠️ Previous / next window, matches `OS_KEY+[/]` (stock: copy mode — now `g`; paste-buffer — `prefix+:` prompt)   |
+| `ctrl+b` then `,`          | ⚠️ Previous window (stock: rename window — now `r`)                                                              |
+| `ctrl+b` then `.`          | ⚠️ Next window (stock: move window — use the `prefix+:` prompt)                                                  |
+| `ctrl+b` then `r`          | ⚠️ Rename the current window (stock: `refresh-client`)                                                           |
+| `ctrl+b` then `F2`         | Rename the current window, matches `F2` / `OS_KEY+F2`                                                            |
+| `ctrl+b` then `shift+F2`   | Rename the current pane (split), matches `OS_KEY+shift+F2` / `ctrl+shift+F2` — shown after the pane number       |
+| `ctrl+b` then `F6`         | ⚠️ Rename the session — the only session chord (stock `$`, now pane 4); bare `F6` stays with OpenCode            |
+| `ctrl+b` then `c`          | ⚠️ Create a new window (opens in the current pane's folder)                                                      |
+| `ctrl+b` then `n`          | ⚠️ Create a new window, alias of `c` (stock: next window — now `.`)                                              |
+| `ctrl+b` then `/`          | ⚠️ Create a new window, matches `OS_KEY+/` (stock: describe-key)                                                 |
+| `ctrl+b` then `w`          | Interactive window/session switcher (`choose-tree`)                                                              |
+| `ctrl+b` then `m`          | ⚠️ Same switcher as `OS_KEY+m` (stock: mark pane — `select-pane -m` on the `prefix+:` prompt)                    |
+| `ctrl+b` then `tab`        | Same switcher as `w` — `tab` is unbound in stock tmux, so this is an addition                                    |
+| `ctrl+b` then `x`          | Close / kill the current pane (confirms first)                                                                   |
+| `ctrl+b` then `p`          | Previous window                                                                                                  |
+| `ctrl+b` then `arrow`      | Focus the split in that direction (`select-pane`)                                                                |
+| `ctrl+b` then `alt+arrow`  | ⚠️ Resize the split by 10 (stock 5) — hold `ctrl+b`, tap repeatedly                                              |
+| `ctrl+b` then `ctrl+arrow` | ⚠️ Resize the split by 10 (stock 1)                                                                              |
+| `ctrl+b` then `y`          | ⚠️ Copy the whole scrollback to the clipboard, matches `OS_KEY+y` (was: visible screen only)                     |
+| `ctrl+b` then `u`          | Pick URLs from the pane scrollback (fzf) and open them in the browser — also `alt+u` / `alt+b` (option on macOS) |
+| `ctrl+b` then `d`          | ⚠️ Split left/right in the current folder, matches `OS_KEY+d` (stock: detach — use `prefix+:` `detach`)          |
+| `ctrl+b` then `'`          | Split top/bottom, inheriting the current folder (stock `"` uses `$HOME`)                                         |
+| `ctrl+b` then `\`          | Toggle split zoom, matches `OS_KEY+\` (stock `z` still works)                                                    |
+| `ctrl+b` then `shift+1-9`  | ⚠️ Focus pane 1-9 (`!` `@` `#` … `(`) — replaces stock `!` `#` `$` `%` `&` `(`, see below                        |
+
+`ctrl+b` then `shift+1-9` replaces six stock prefix keys, each still reachable another way:
+`!` break-pane (`OS_KEY+0`), `#` list-buffers (`ctrl+b` then `=`), `$` rename-session
+(`ctrl+b` then `F6`), `%` split left/right (`OS_KEY+d`, `ctrl+b` then `v`),
+`&` kill-window (`OS_KEY+q`), `(` previous session (`OS_KEY+m` switcher).
+
+Copy mode is pinned to vi keys (`setw -g mode-keys vi`) so `g`/`G`/`/` behave as listed —
+without it tmux picks emacs keys whenever `$EDITOR` is not vim-like. `mode-keys vi` alone
+does **not** give vim's selection keys, though: stock tmux binds `space` to start a
+selection, `enter` to copy, and `v` to _rectangle-toggle_. These bindings restore the vim
+mapping inside copy mode:
+
+| Copy-mode key | Action                                       |
+| ------------- | -------------------------------------------- |
+| `v`           | Start a selection (visual)                   |
+| `V`           | Select the whole line                        |
+| `ctrl+v`      | Toggle block (rectangle) selection           |
+| `y`           | Yank the selection to the clipboard and exit |
+| `enter`       | Same as `y`                                  |
+
+Yanking pipes through `~/.local/bin/sy-tmux-copy`, a shim written by `advanced/tmux.js`.
+tmux runs copy targets under `sh -c` with no shell profile, so the profile's `copy()`
+function is not on PATH there — the shim sources the profile first. On a host with no
+clipboard tool at all (headless, ssh), tmux's own OSC 52 sequence carries the selection to
+the outer terminal instead.
+
+These prefix chords cover most day-to-day tmux use and need no mouse. Prefer them over the
+`alt+` chords when a terminal emulator or remote host swallows `alt`.
+
+Workflow patterns built on top of these — scripted workspace sessions, detach/re-attach —
+live in [`docs/tmux.md`](./tmux.md).
+
+### tmux Right-click Menus
+
+`advanced/tmux.config` replaces tmux's stock right-click menus with short custom ones. A
+right-click first focuses what was clicked, so every item acts on that split or tab. Each
+item's letter works as a key while the menu is open.
+
+**Pane** — right-click inside a pane or on its title bar:
+
+| Group      | Items                                                                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rename     | Rename Session `s` (`ctrl+b` then `F6`), Rename Tab `t` (`F2`), Rename Pane Split `p` (`OS_KEY+shift+F2`)                                    |
+| Close      | Close Session `S`, Close Tab `T`, Close Pane Split `P` — each confirms first                                                                 |
+| Split      | Vertical Split `v` (`OS_KEY+d`), Horizontal Split `h` (`OS_KEY+'`), Break Pane to New Tab `b` (`OS_KEY+0`)                                   |
+| Arrange    | Swap Up `u`, Swap Down `d`, Zoom `z`                                                                                                         |
+| Scrollback | Find in Scrollback `f` (`OS_KEY+f`), Copy Mode (vim keys) `g` (`OS_KEY+g`), Copy All Scrollback `y` (`OS_KEY+y`), Open URLs `o` (`OS_KEY+u`) |
+| Workspace  | Export Workspace `e` — `workspace_export`, see below                                                                                         |
+
+When the app in the pane owns the mouse (vim, htop, copilot, opencode) the click goes to
+the app; hold `OS_KEY` (option on macOS, alt on Windows) or `ctrl` while right-clicking to
+force the menu. Shift+click never reaches tmux (the terminal keeps it for selection) and
+cmd is not forwarded. A one-pane window's title row is not clickable — tmux drops clicks
+there; right-click its status-bar tab instead.
+
+**Tab** — right-click a tab in the status bar:
+
+| Group       | Items                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| New         | New Tab `n`, New Tab (2 Vertical Split) `v`, New Tab (2 Horizontal Split) `h` — always added last                 |
+| Tab         | Rename Tab `t`, Move Left `l`, Move Right `r`                                                                     |
+| Active Pane | Find in Scrollback `f`, Copy Mode (vim keys) `g`, Copy Scrollback `y`, Open URLs `o` — on the tab's focused split |
+| Workspace   | Export Workspace `e`                                                                                              |
+| Close       | Close Tab `T` — confirms first                                                                                    |
+
+Middle-click on a status-bar tab closes that clicked tab immediately, browser-style. It only
+fires on the tab strip (`MouseDown2Status`), not inside panes. With one tab this config hides
+the status bar, so there is normally nothing to click; if you force the bar visible, the bind
+is a no-op instead of killing the whole session.
+
+Split names follow the table above: **vertical** = side by side, **horizontal** = top /
+bottom. Every scrollback copy (`OS_KEY+y`, `ctrl+b` then `y`, the menu items) trims trailing
+spaces and blank lines at the start and end; a copy-mode selection is copied byte-exact.
+
+**Export Workspace** saves the whole session to `~/tmux_workspace_<YYYY-MM-DD_HH-MM-SS>.json`
+and flashes the path; reopen it with `workspace_create <path>`. See `workspace_freeze` in
+[`docs/tmux.md`](./tmux.md) for what is captured.
+
+**Pane names.** `OS_KEY+shift+F2`, `ctrl+shift+F2`, `ctrl+b` then `shift+F2`, or Rename Pane
+Split set the pane option `@pane_name`, shown as a purple badge after `T<n>` in the pane
+title; an empty name clears it. A workspace config sets it with `"name"` on a pane object
+(see [`docs/tmux.md`](./tmux.md)).
+
+### Terminal-specific Gaps
+
+| Gap                              | Reason                                                    |
+| -------------------------------- | --------------------------------------------------------- |
+| tmux `OS_KEY+shift+arrow` resize | Doesn't work reliably; uses `prefix+alt+arrow` instead    |
+| tmux copy/paste                  | Uses its own copy mode; `OS_KEY+c/v` not mapped           |
+| tmux zoom                        | Not applicable; controlled by the outer terminal emulator |
+
+### Termux (Android)
+
+Termux is a soft-keyboard terminal, so it does not follow the `OS_KEY` convention at all. It is
+listed separately rather than as a column above because none of the chords line up.
+
+Session shortcuts are left at Termux's built-in hardware-keyboard defaults:
+
+| Key                | Action              |
+| ------------------ | ------------------- |
+| `ctrl+alt+c`       | New session         |
+| `ctrl+alt+n` / `p` | Next / prev session |
+| `ctrl+alt+r`       | Rename session      |
+| `ctrl+alt+1-9`     | Session by index    |
+
+`termux.properties` supports `shortcut.create-session` and friends, but only in the form
+`ctrl + <single char>` — no `alt`. That makes every remap a collision: `ctrl+[` **is** ESC, and
+`ctrl+n` / `ctrl+p` are readline history. So `termux-config.sh` deliberately sets none of them.
+
+The extra-keys row (two rows above the soft keyboard) is remapped instead. Long-press any key for
+its popup value:
+
+| Key        | Long-press     |
+| ---------- | -------------- |
+| `ESC`      | `^C` macro     |
+| `/`        | `~`            |
+| `-`        | `_`            |
+| `HOME`     | `PGUP`         |
+| `END`      | `PGDN`         |
+| `          | `              | `&` |
+| `TAB`      | shift+tab      |
+| `KEYBOARD` | session drawer |
+
+The Android **back button** is remapped to `ESC` (`back-key=escape`) so it exits vim insert mode
+and dismisses fzf instead of closing the terminal.
+
+---
+
+## Vim
+
+Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader combos, `ctrl+key` for splits/search. Modified buffers show a red filename and `*` in the bottom statusline.
+
+### Common Shortcuts (matching editors)
+
+| Key              | Action                                              | Status |
+| ---------------- | --------------------------------------------------- | :----: |
+| `alt+up/down`    | Page up/down                                        |   ✅   |
+| `alt+left/right` | Home / end                                          |   ✅   |
+| `alt+z`, `\z`, `,z` | Undo                                             |   ✅   |
+| `alt+shift+z`, `alt+y`, `\y`, `,y` | Redo                                |   ✅   |
+| `alt+s`, `,s`    | Save                                                |   ✅   |
+| `,w`             | Save and quit                                       |   ✅   |
+| `,q`             | Quit all; discard unsaved changes without prompting |   ✅   |
+| `alt+w`          | Close buffer                                        |   ✅   |
+| `alt+l`          | Select line                                         |   ✅   |
+| `alt+backspace`  | Delete to BOL                                       |   ✅   |
+
+### Read Mode (vim -R / less)
+
+| Key      | Action              | Status |
+| -------- | ------------------- | :----: |
+| `ctrl+a` | Beginning of line   |   ✅   |
+| `ctrl+e` | End of line         |   ✅   |
+| `ctrl+f` | Page forward (down) |   ✅   |
+| `ctrl+g` | Page backward (up)  |   ✅   |
+
+### Visual Mode
+
+| Key      | Action            | Status |
+| -------- | ----------------- | :----: |
+| `ctrl+a` | Beginning of line |   ✅   |
+| `ctrl+e` | End of line       |   ✅   |
+
+### Insert Mode
+
+| Key      | Action              | Status |
+| -------- | ------------------- | :----: |
+| `ctrl+a` | Beginning of line   |   ✅   |
+| `ctrl+e` | End of line         |   ✅   |
+| `ctrl+w` | Delete previous word |   ✅   |
+| `ctrl+backspace` | Delete previous word |   ✅   |
+
+These mappings match readline/bash. They replace Vim's stock insert-mode `ctrl+a`
+(insert previously inserted text) and `ctrl+e` (scroll the window down one line).
+`ctrl+w` needs no replacement because Vim already provides backward-word deletion
+natively in insert mode.
+`ctrl+backspace` maps to the same action when the terminal sends a distinct key
+code; terminals that encode it as ordinary Backspace cannot be distinguished by Vim.
+
+### Splits & Navigation
+
+| Key                      | Action                               |
+| ------------------------ | ------------------------------------ |
+| `ctrl+d`, `,d`           | Vertical split                       |
+| `,'`                     | Horizontal split                     |
+| `ctrl+x`, `ctrl+q`, `,x` | Close split                          |
+| `ctrl+left/right` (normal and insert) | Previous / next word      |
+| `ctrl+up/down` (normal, insert, visual) | Page up / page down     |
+| `,arrow`                 | Navigate splits                      |
+| `,1` … `,9`              | Go to Nth buffer tab (tabline order) |
+| `,[` / `,]`              | Previous / next buffer tab           |
+
+### Toggles (normal mode)
+
+Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for line numbers, whitespace markers, and soft wrap. `}` still overrides vim's default next-paragraph motion as a one-key soft-wrap toggle.
+
+| Key                                             | Action                                                                            |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `\\`                                           | Toggle line numbers                                                               |
+| `\[`                                            | Toggle whitespace markers (invisibles)                                            |
+| `\]`                                            | Toggle soft wrap (`set wrap!`)                                                    |
+| `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)                              |
+| `\s`                                            | Save file (`:w`)                                                                  |
+| `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                               |
+| `\z`, `,z`                                      | Undo (`u`) in normal + visual mode                                                |
+| `\y`, `,y`                                      | Redo (`ctrl+r`) in normal + visual mode                                           |
+| `\F5`, `,F5`                                    | Reload current file from disk (`:edit!`; discards unsaved changes)                |
+| `}`                                              | Toggle soft wrap (`set wrap!`)                                                    |
+| `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)                         |
+| `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |
+| `,g`                                            | Multi-cursor: select all matches, case-insensitive                                  |
+| `,G`                                            | Multi-cursor: select all matches, case-sensitive                                    |
+| `,l` (visual mode)                              | Multi-cursor: one cursor per selected line (like `OS_KEY+shift+l`)                |
+| `ctrl+n`                                        | Multi-cursor: add next match (plugin default, like `OS_KEY+d`)                    |
+
+### FZF / Search
+
+| Key            | Action            |
+| -------------- | ----------------- |
+| `ctrl+t`, `,t` | Fuzzy file finder |
+| `,f`           | Ripgrep search    |
+| `,b`           | Buffer list       |
+| `,r`           | Recent files      |
+
+### Clipboard
+
+| Key                             | Action                                                                 |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `,c`, `\c`                     | Copy buffer (or selection) to system clipboard                         |
+| `\x`                           | Cut line/selection (`+clipboard` when available)                       |
+| `,p`                            | Replace buffer with system clipboard                                   |
+| `ctrl+v` (insert), `,v`, `\v`  | Paste clipboard image as `@<path>` (saved to Desktop), else paste text |
+| `ctrl+q` (insert)               | Insert next key literally (vim's stock `ctrl+v`)                       |
+
+`ctrl+v` image paste exists for prompts edited in vim via an AI CLI's `ctrl+g`: the image is
+saved by `~/.local/bin/save_clipboard_image` (`software/scripts/clipboard-image.js`) and its
+path inserted. Mapped only when that tool exists. Windows Terminal likely takes `ctrl+v`
+before vim sees it, so there it stays the terminal's text paste.
+
+---
+
+## AI CLI Assistants
+
+Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub Copilot CLI** (the [official `gh.io/copilot-install` distribution](https://gh.io/copilot-install), not the deprecated `@github/copilot-cli` package), and **Google Gemini CLI**. Where possible the input-layer chords are aligned to Claude's conventions so muscle memory carries across tools.
+
+**OpenCode 2 migration:** OpenCode 2 is now the canonical `opencode` and `op` command. Existing `~/.config/opencode/` and `~/.local/share/opencode/` config, sessions, and credentials stay in place because OpenCode 2 reads them through its compatibility layer. Run `bash run.sh --files=migrate-opencode-v2.standalone.js` once to move the old isolated `~/.local/opencode-2/` install into a timestamped `~/.local/opencode-migrations/` backup; remove that migration script after all existing machines complete the move.
+
+**Shared engineering principles:** `software/scripts/advanced/llm/_common/instructions.md` is the single source of truth and gets deployed to `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, and `~/.gemini/GEMINI.md` (one per `setup.js`). OpenCode reads `~/.claude/CLAUDE.md` directly via its global fallback, so it's automatically covered.
+
+**OpenCode leader move:** OpenCode's upstream default leader is `ctrl+x`, which we move to `ctrl+o` (`tui.json` → `keybinds.leader`) so `ctrl+x` stays available as `editor_open`'s secondary alias alongside the primary `ctrl+g`. Every `<leader>X` chord still works — just typed as `ctrl+o <key>` (e.g. `ctrl+o e` for the leader-style editor open, `ctrl+o n` for new session, `ctrl+o t` for themes). `ctrl+o` was chosen because it's free in opencode, bash readline, vim, and tmux — no tmux-prefix or XON/XOFF flow-control collisions. OpenCode uses `super` on macOS/Linux and replaces it with `alt` on Windows via `opencode-keys.windows.jsonc`; Windows keeps `ctrl+p` as the command-list shortcut because Windows Terminal uses `alt+p` for tab search.
+
+**`ctrl+g` is the canonical "open `$EDITOR`" chord on all four CLIs.** Claude Code, Copilot CLI, and Gemini CLI all ship `ctrl+g` as their _upstream default_ for external-editor-open (Claude's in-TUI hint literally prints `ctrl+g edit in $EDITOR`; Gemini's bundled `docs/reference/keyboard-shortcuts.md` lists `Ctrl+G` / `Ctrl+Shift+G` for `input.openExternalEditor`). Under the explicit-match policy we bind it explicitly anyway, and keep `ctrl+x` as a second alias so the chord matches bash readline's own "open in `$EDITOR`" binding — and bash now binds **both** `ctrl+g` and `ctrl+x` to `edit-and-execute-command` so the pair is identical in and out of a TUI (see "Bash Readline" below). OpenCode is the one tool whose default differs: `ctrl+g` is `messages_first` there, so `opencode-keys.common.jsonc` remaps `messages_first` to `ctrl+alt+shift+g` to free `ctrl+g` for `editor_open`; bare `home` stays assigned to input line-start.
+
+**Copilot CLI configurability gap:** `copilot help config` (v1.0.48) exposes **no keymap configuration** — every in-app chord is hardcoded in the binary. Parity for Copilot is therefore limited to whatever its defaults happen to ship; any divergence from Claude's convention is a permanent ⚠️ until upstream changes. The only knobs we can set live in the wrapper (`software/scripts/advanced/llm/copilot/copilot.profile.bash`: `--autopilot --allow-all`) and `~/.copilot/settings.json` (model, theme, hooks, etc., all listed in `copilot help config`, seeded by `copilot/setup.js`).
+
+**Explicit-match policy:** Every chord mirrored from Claude's convention is listed **explicitly** in each tool's `*-keys.common.jsonc` (and `.windows.jsonc` where applicable), even if the tool's upstream default already happens to bind it. Rationale: (a) an upstream default flip silently breaks parity — owning the binding in our jsonc means a re-run of `<tool>/setup.js` always converges to the Claude-aligned chord even if the tool changes defaults; (b) each file is auditable in isolation — no need to consult Gemini's bundled JS or opencode's schema docs to know which chords we "have"; (c) the comparison tables below only credit chords that are explicitly in our key files. The previous "happens to align with upstream default" ☑️ entries have been flipped to ✅ now that the chords are explicit.
+
+**Regression coverage:** `software/tests/aiCliKeymapBuild.spec.js` snapshot-tests the build pipeline for all four tools — feeds the real `*-keys.{common,windows}.jsonc` files through each tool's actual `setup.js` merge/format helper (`_getKeyConfig`, `_getCopilotKeyConfig`, `_loadGeminiManagedKeybindings`, `_loadOpencodeKeybinds`) for both mac and Windows/Linux, asserts the merged JSON against an inline expected literal, and additionally enforces the HOME→BOL / END→EOL parity (HOME = Ctrl+A, END = Ctrl+E) across every tool. Any chord edit that changes the merged output (intentionally or otherwise) trips the snapshot.
+
+**Gemini CLI keybindings:** Schema is a flat JSON array of `{ command, key }` objects; prefix `command` with `-` to remove a default binding. Discovered in Gemini bundle `chunk-MODIYMRW.js` (function `loadCustomKeybindings`, ~ line 64732). `gemini-keys.common.jsonc` lists every Claude chord explicitly (app.showFullTodos, input.newline×2, edit.undo, edit.clear on `OS_KEY+l` AND `ctrl+l`, input.openExternalEditor, input.paste, cursor.home×2, cursor.end×2). `gemini-keys.windows.jsonc` is the Windows/Linux-only companion (mirrors `claude-keys.windows.jsonc`) — removes the default `alt+v` paste so `OS_KEY=alt` on Windows/Linux doesn't double-bind paste. `ctrl+l` is forced to `edit.clear` by removing Gemini's default `app.clearScreen` first (via the `"-"` prefix) — TRADEOFF: Gemini loses screen-clear on `ctrl+l` (accepted).
+
+### Input Editing
+
+| Key                                                                                             | Action                    |     Claude     |    OpenCode    |  Copilot CLI   |   Gemini CLI    |
+| ----------------------------------------------------------------------------------------------- | ------------------------- | :------------: | :------------: | :------------: | :-------------: |
+| `shift+enter`, `ctrl+enter`                                                                     | Newline                   |       ✅       |       ✅       |       ⚠️       |       ✅        |
+| `super+z` (Windows: `alt+z`), `ctrl+-`                                                          | Undo input                |       ✅       |       ✅       |       ⚠️       |       ✅        |
+| `super+l`, `ctrl+l`                                                                             | Clear input               |       ✅       | ❌<sup>n</sup> |       ⚠️       | ✅<sup>i</sup>  |
+| `escape` (opencode only)                                                                        | Clear input               |       ❌       | ✅<sup>n</sup> |       ❌       |       ❌        |
+| `ctrl+w`, `ctrl+backspace`                                                                    | Delete previous word     |       ✓       |       ✓       |       ††       |       ✓        |
+| `ctrl+l`, `super+l` (Windows: `alt+l`), `ctrl+o c` (opencode only)                              | Compact / reset chat      |       ❌       | ✅<sup>o</sup> |       ❌       |       ❌        |
+| `ctrl+r` (opencode only)                                                                        | Recall previous prompt    |       ❌       | ✅<sup>k</sup> |       ❌       |       ❌        |
+| `ctrl+v`                                                                                        | Paste image / text        | ✅<sup>b</sup> | ✅<sup>j</sup> |       ⚠️       | ✅<sup>b2</sup> |
+| `home` / `end`, `ctrl+a` / `ctrl+e`                                                             | Home / End (current line) | ✅<sup>c</sup> |       ✅       |       ⚠️       | ✅<sup>c2</sup> |
+| `ctrl+home` / `super+home` (Windows: `alt+home`), `ctrl+end` / `super+end` (Windows: `alt+end`) | Home / End (whole buffer) |       ❌       | ✅<sup>d</sup> |       ⚠️       |       ❌        |
+| `ctrl+g`, `ctrl+x`                                                                              | Open `$EDITOR`            | ✅<sup>l</sup> | ✅<sup>e</sup> | ✅<sup>m</sup> | ✅<sup>l</sup>  |
+
+On Windows, OpenCode uses `alt` in place of `super` for undo, compaction, whole-buffer navigation, and sidebar toggle. It keeps `ctrl+p` for the command list because Windows Terminal reserves `alt+p` for tab search. The Windows Terminal focus-mode shortcut uses `alt+shift+\`, leaving `alt+\` available to OpenCode. `messages_first` no longer uses bare `home`, which belongs to input-line start.
+
+<sup>a</sup> Deprecated — `ctrl+l` is now bound on all four tools. Kept for historical reference only.
+<sup>b</sup> Bound on all platforms via `claude-keys.common.jsonc`; `claude-keys.windows.jsonc` additionally nulls `alt+v` so it doesn't double-fire when `OS_KEY` = `alt` on Windows.
+<sup>b2</sup> Gemini's `input.paste` is text-paste (no image pipeline today). `gemini-keys.common.jsonc` binds `ctrl+v` explicitly; `gemini-keys.windows.jsonc` removes the default `alt+v` paste (mirroring `claude-keys.windows.jsonc`'s `alt+v: null`).
+<sup>c</sup> Claude **null**s all four chords (`ctrl+a`, `ctrl+e`, `home`, `end`) so the underlying terminal readline gets HOME / END — HOME and END are listed explicitly (not just `ctrl+a`/`ctrl+e`) so a future upstream binding for the physical keys can't silently override the readline pass-through. OpenCode binds both the readline chords AND the physical `home`/`end` keys directly via `input_line_home` / `input_line_end`.
+<sup>c2</sup> Gemini has no readline pass-through mode — `cursor.home`/`cursor.end` ARE the cursor-jump actions. `gemini-keys.common.jsonc` binds both `ctrl+a` + `home` to `cursor.home` and both `ctrl+e` + `end` to `cursor.end`, matching Claude's user-visible HOME/END behavior.
+<sup>d</sup> OpenCode's `input_buffer_home` / `input_buffer_end` default to `home`/`end` (which would conflict with the line-home/end binding above); we remap them to `ctrl+home,super+home` / `ctrl+end,super+end` on macOS/Linux and `ctrl+home,alt+home` / `ctrl+end,alt+end` on Windows. Bare `home`/`end` stay on current-line navigation.
+<sup>e</sup> `ctrl+g` is the primary chord (`editor_open`); `ctrl+x` is the secondary alias, free because of the leader move (`ctrl+x` → `ctrl+o`). OpenCode's upstream `ctrl+g` = `messages_first` is remapped to `ctrl+alt+shift+g` to free it; bare `home` stays on current-line start.
+<sup>i</sup> Gemini's `edit.clear` default is `ctrl+c` only (dual-purposes with quit-when-empty). `gemini-keys.common.jsonc` binds `OS_KEY+l` and `ctrl+l` explicitly so it matches Claude's `chat:clearInput`. `ctrl+l` forces over Gemini's default `app.clearScreen` via the `"-"` prefix removal — TRADEOFF: gemini loses screen-clear on `ctrl+l` (user-approved).
+<sup>j</sup> OpenCode's `input_paste` is text-paste (no image pipeline today). `opencode-keys.common.jsonc` binds `ctrl+v` explicitly under the explicit-match policy.
+<sup>k</sup> OpenCode's `history_previous` is `up,ctrl+r` — cycles back through prior prompts (opencode has no incremental reverse-search command; `history_previous` is the nearest analog). Upstream default `ctrl+r` = `session_rename` is reassigned to `f6` so `ctrl+r` is free for history recall.
+<sup>n</sup> OpenCode's `input_clear` is bound to `escape` **only** — the `super+l` / `ctrl+l` l-chords are moved to `session_compact` (see <sup>o</sup>). `escape` mirrors Claude/Copilot muscle memory (where a **double-tap** of escape wipes the input); OpenCode has no double-tap / key-sequence mechanism (the only sequence is the leader key), so exact double-escape parity is impossible — escape is bound as a **single** press instead. OpenCode context-scopes chords, so this coexists with the upstream default `session_interrupt` = `escape` (kept intact): escape clears the input when idle and still interrupts a streaming response. TRADEOFF: single escape is more aggressive than Claude's double-tap, so an accidental escape clears the field; `input_undo` (`super+z` / `ctrl+-`) recovers it. (Claude/Copilot/Gemini keep `super+l`/`ctrl+l` = clear-input; only OpenCode diverges, because its l-chords are repurposed for compaction.)
+<sup>o</sup> On Claude/Copilot the l-chords (`ctrl+l` / `cmd+l`) visually clear the chat transcript. OpenCode has **no** clear-transcript command (only "Clear input field" and "Clear editor context"), so `ctrl+l` and `super+l` route to `session_compact` — it summarizes + condenses the conversation so far, freeing the context window while keeping continuity. The nearest "reset the chat so far" that doesn't drop context. `<leader>c` (opencode's upstream default, typed `ctrl+o c` after the leader move) is kept explicitly so the binding this file writes doesn't drop it.
+<sup>l</sup> `ctrl+g` is the tool's own upstream default for external-editor-open (Claude prints `ctrl+g edit in $EDITOR` in its hint line; Gemini's bundled `docs/reference/keyboard-shortcuts.md` lists `Ctrl+G` / `Ctrl+Shift+G` for `input.openExternalEditor`). Both chords are bound explicitly in `<tool>-keys.common.jsonc` under the explicit-match policy — Claude and Gemini merge user bindings additively, so listing `ctrl+g` alongside `ctrl+x` gives two working chords rather than moving one.
+<sup>m</sup> The one Claude-convention chord Copilot ships natively: `ctrl+g` opens `$EDITOR` in Copilot CLI by default. The `ctrl+x` alias is not reachable (no keymap surface; `ctrl+x` is Copilot's own two-step prefix), so only the `ctrl+g` half is ✅.
+
+### Panels
+
+| Key                                        | Action         |     Claude     |    OpenCode    |  Copilot CLI   |   Gemini CLI   |
+| ------------------------------------------ | -------------- | :------------: | :------------: | :------------: | :------------: |
+| `ctrl+t`                                   | Toggle todos   |       ✅       | ❌<sup>f</sup> | ❌<sup>f</sup> |       ✅       |
+| `ctrl+\,super+\` (Windows: `ctrl+\,alt+\`) | Toggle sidebar | ❌<sup>g</sup> | ✅<sup>g</sup> | ❌<sup>g</sup> | ❌<sup>g</sup> |
+
+<sup>f</sup> No todos panel exists in OpenCode or Copilot CLI. OpenCode's default `ctrl+t` is `variant_cycle` and is kept intact.
+<sup>g</sup> Only OpenCode has a sidebar (sessions / files / MCP pane); `ctrl+\` matches the cross-app sidebar-toggle convention used by Sublime / VS Code / Zed, and `super+\` (macOS/Linux) or `alt+\` (Windows) is the OS-modifier alternate. Windows Terminal uses `alt+shift+\` for focus mode, leaving `alt+\` for OpenCode.
+
+### Copilot Wrapper-Layer Parity
+
+Because Copilot's in-app keymap is unreachable, the equivalents of Claude's chords live at the wrapper / settings layer (`software/scripts/advanced/llm/copilot/copilot.profile.bash` + `~/.copilot/settings.json`):
+
+| Surface        | Claude                                                                                              | Copilot CLI                                                                                                              |
+| -------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Autonomous run | `claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode auto` | `command copilot --autopilot --allow-all` (equivalent to `--allow-all-tools --allow-all-paths --allow-all-urls`)         |
+| Resume         | `claude resume` / `cl r` (wrapper translates to `--resume`)                                         | `copilot --resume` / `copilot --continue` (no wrapper alias yet)                                                         |
+| Default model  | `~/.claude/settings.json` → `model: "claude-opus-4-7[1m]"` (set by `claude/setup.js`)               | `~/.copilot/settings.json` → `model: "<choice>"` (user-managed; not auto-deployed)                                       |
+| Launch alias   | `cl`                                                                                                | `co`                                                                                                                     |
+| In-app chords  | Configurable via `~/.claude/keybindings.json`                                                       | Hardcoded — `shift+tab` for mode cycle (interactive / plan / autopilot), standard readline-ish chords in the input field |
+
+`software/scripts/advanced/llm/copilot/copilot-keys.common.jsonc` and `copilot-keys.windows.jsonc` are pre-staged in the **same** schema as Claude's (array of `{ context, bindings }`, `OS_KEY` placeholders, Windows-only addendum nulls `alt+v`). `copilot/setup.js`'s `_doCopilotKeysWork()` runs the same merge pipeline as `claude/setup.js`'s `_doKeysWork()` — `_mergeCopilotContextGroups` + `_formatCopilotKeybindings` + per-platform `writeBuildArtifact` — and writes `.build/copilot-keys{,-mac}` every CI run, so the merge stays exercised and the chord intent is reviewable. The **live deploy** (`writeJson` to a real config path) is commented out at the bottom of `_doCopilotKeysWork()` and gated behind upstream shipping a keymap surface; when that lands, uncomment that block and point `targetPath` at whatever path upstream documents.
+
+### AI CLI-Specific Gaps
+
+| Gap | Reason |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Copilot CLI — `ctrl+enter` newline | Copilot v1.0.48 has no keymap config. Chord is hardcoded in the binary; cannot be added at the Copilot layer. Workaround inside VS Code's integrated terminal: `ctrl+enter` → `workbench.action.terminal.sendSequence` with `\u001b\r` (ESC+CR) — see `software/scripts/advanced/vs-code-keys.common.jsonc:180-190`. Most Ink-based TUI input libs interpret ESC+CR as `meta+CR` → newline, but Copilot's input library is bundled into a Mach-O binary with no exposed chord vocabulary (verified with `strings | grep -iE "shift\+enter\|ctrl\+enter"` returning zero hits), so even the ESC+CR workaround is unverified for Copilot specifically. |
+| Copilot CLI — `home` / `end` line navigation | Same reason: input-layer chords are hardcoded. Falls back to whatever the binary ships. |
+| Copilot CLI — `ctrl+l` / `OS_KEY+l` clear input | Same reason: input-layer chords are hardcoded. |
+| Copilot CLI — `ctrl+x` open `$EDITOR` alias | Not a functional gap: `ctrl+g` (the canonical open-`$EDITOR` chord across all four CLIs) is already Copilot's hardcoded default, so editor-open works. Only the secondary `ctrl+x` alias is unreachable — `ctrl+x` is Copilot's own two-step prefix (`ctrl+x` → `b` / `o`) and there is no keymap surface to re-home it. |
+| Copilot CLI — user-level slash commands | Copilot's "skills" require a plugin manifest (`copilot plugin install`) — there's no `~/.copilot/commands/*.md` fallthrough like Claude's. Out of scope for `setup.js`; use the Captain `install-plugin-to-copilot` skill or manage plugins manually. |
+| Gemini CLI — user-level slash commands | Gemini's equivalent is the extension system (`gemini extensions install/link`) which requires an extension manifest. No `~/.gemini/commands/*.md` fallthrough. Out of scope for `setup.js`. |
+| OpenCode — sidebar hidden by default | The TUI schema (`https://opencode.ai/tui.json`) has no field for sidebar default state; the SQLite db (`~/.local/share/opencode/opencode.db`) has no settings table for view state. Only runtime toggles exist: `ctrl+\` / `super+\` (macOS/Linux) / `alt+\` (Windows) keybind or `ctrl+p` command palette. |
+| OpenCode / Copilot — `ctrl+t` toggle todos | Neither tool has a todos panel. OpenCode's default `ctrl+t` is `variant_cycle`, left intact. (Gemini's `app.showFullTodos` is native on `ctrl+t`.) |
+
+---
+
+## Bash Readline
+
+| Key                    | Action                      | Linux |       macOS       |
+| ---------------------- | --------------------------- | :---: | :---------------: |
+| `Tab`                  | fzf-tab complete            |  ✅   |        ✅         |
+| `shift+tab`            | Reverse complete            |  ✅   |        ✅         |
+| `ctrl+a` / `ctrl+up`   | Beginning of line           |  ✅   |  ✅ (option+up)   |
+| `ctrl+e` / `ctrl+down` | End of line                 |  ✅   | ✅ (option+down)  |
+| `ctrl+left`            | Word backward               |  ✅   | ✅ (option+left)  |
+| `ctrl+right`           | Word forward                |  ✅   | ✅ (option+right) |
+| `up` / `down`          | History search (prefix)     |  ✅   |        ✅         |
+| `ctrl+r`               | Fzf history search          |  ✅   |        ✅         |
+| `ctrl+t`               | Fuzzy edit (default editor) |  ✅   |        ✅         |
+| `ctrl+y`               | Fuzzy recent files          |  ✅   |        ✅         |
+| `ctrl+p`               | Fuzzy cd                    |  ✅   |        ✅         |
+| `ctrl+b`               | Favorite command picker     |  ✅   |        ✅         |
+| `ctrl+n`               | Git log browser             |  ✅   |        ✅         |
+| `ctrl+g` / `ctrl+x`    | Open in $EDITOR             |  ✅   |        ✅         |
+| `ctrl+l`               | Clear screen + kill input   |  ✅   |        ✅         |
+
+**`ctrl+g` open-in-`$EDITOR` parity:** `ctrl+g` and `ctrl+x` both run readline's
+`edit-and-execute-command`, matching the AI CLI chord pair in the table above — `ctrl+g` is
+the canonical open-`$EDITOR` chord on Claude Code, Copilot CLI, Gemini CLI, and opencode, so
+the same keystroke works whether you're at a bash prompt or inside a TUI. The git log browser
+that previously owned `ctrl+g` moved to `ctrl+n`, whose readline default (`next-history`) was
+already orphaned because `ctrl+p` (`previous-history`) is bound to fuzzy cd. TRADEOFF:
+readline's default `ctrl+g` (`abort`) is given up — low impact, since its main job is
+cancelling an incremental search and `ctrl+r` is bound to fzf, which aborts on `esc` /
+`ctrl+c`. The `glog` alias also still opens the git log browser.
+
+---
+
+## text-server (browser editor)
+
+Source: `software/scripts/text-server.keybindings.cjs` — one `BINDINGS` table plus the dispatcher; `text-server.cjs`
+inlines it into `text-server.html`. Tests: `software/tests/textServerKeybindings.spec.js`.
+
+**`super` is registered as a pair**, since a browser page cannot know which convention the hands expect:
+Cmd **and** Alt on mac, Ctrl **and** Alt on Windows/Linux (`super+d` → `Cmd-D` + `Alt-D` / `Ctrl-D` + `Alt-D`).
+Two exceptions: a chord that already names `ctrl` drops the Ctrl member off mac (`super+ctrl+g` → `Ctrl-Alt-G`),
+and arrows / Backspace drop the OS's native word-motion modifier (Alt on mac, Ctrl elsewhere) so word jump keeps
+working (`super+left` → `Cmd-Left` on mac, `Alt-Left` elsewhere). Editor rows fire only while the editor has focus.
+Browser-reserved chords (`cmd+n`, `cmd+w`, `cmd+t` in Chrome) cannot be intercepted; their Alt member still works.
+
+| Key                                       | Action                                                                                  |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| `super+s`                                 | Snapshot the open file to `<file>.<MM-DD-YYYY_HH-MM>` (skipped under 10 letters/digits) |
+| `super+shift+s`                           | Save pending edits now                                                                  |
+| `super+r` / `f5`                          | Refresh all: file list + open file (the ↻ button; overrides browser reload)             |
+| `super+n`                                 | New file                                                                                |
+| `f2`                                      | Rename the open file                                                                    |
+| `super+shift+[` / `]`                     | Previous / next file in the list, wraps (◀ / ▶ buttons)                                 |
+| `super+c`                                 | With an image open: copy it as PNG (needs https or localhost); otherwise normal copy    |
+| `super+v`                                 | With a picture on the clipboard: save it as `Clipboard.Pasted.<MM-DD-YYYY_HH-MM>.<ext>` |
+| `super+\`                                 | Toggle the file list sidebar                                                            |
+| `ctrl+shift+super+\`                      | Toggle soft wrap                                                                        |
+| `cmd+shift+enter` / `ctrl+shift+enter`    | Toggle soft wrap (alt chords, literal modifiers — no Alt pair)                          |
+| `super+=` / `-` / `0`                     | Editor font zoom in / out / reset (remembered)                                          |
+| `super+shift+f`                           | Find in files: show the sidebar, content search seeded with the selection               |
+| `super+p`                                 | Quick open: show the sidebar, file-name search                                          |
+| `super+f` / `super+h`                     | Find / find and replace (CodeMirror dialog)                                             |
+| `super+g` / `super+shift+g`               | Find next / previous                                                                    |
+| `super+;`                                 | Go to line                                                                              |
+| `ctrl+m`                                  | Jump to matching bracket                                                                |
+| `super+d`                                 | Select next match (adds a cursor; empty selection selects the word first)               |
+| `super+shift+d`                           | Select previous match                                                                   |
+| `super+ctrl+g`                            | Select all matches of the selection / word                                              |
+| `super+l`                                 | Select line                                                                             |
+| `super+shift+l`                           | One cursor per selected line                                                            |
+| `super+a` / `z` / `y` / `shift+z`         | Select all / undo / redo / redo                                                         |
+| `super+backspace`                         | Delete to line start                                                                    |
+| `cmd` / `ctrl` / `alt` `+shift+backspace` | Trim trailing whitespace (whole file)                                                   |
+| `cmd` / `ctrl` / `alt` `+shift+delete`    | Remove duplicate lines (first wins; selection or whole file)                            |
+| `super+/`                                 | Toggle comment                                                                          |
+| `super+[` / `]`                           | Outdent / indent                                                                        |
+| `super+,` / `.`                           | Fold / unfold                                                                           |
+| `super+up` / `down`                       | Page up / down (`+shift` selects)                                                       |
+| `super+left` / `right`                    | Line start / end (`+shift` selects)                                                     |
+| `super+ctrl+up` / `down`                  | Top / bottom of file (`+shift` selects)                                                 |
+
+Not mapped (no equivalent in a single-file browser editor): tabs by index, splits, terminal, debugging,
+format document, goto symbol / definition, right dock, fullscreen.

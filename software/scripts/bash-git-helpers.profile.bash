@@ -481,11 +481,12 @@ function gogit() {
 function clone() {
   if [ -z "${1:-}" ] || is_help_arg "${1:-}"; then
     echo "clone: clone a repo by URL or owner/repo shorthand
-  Usage: clone <url-or-owner/repo>
+  Usage: clone <url-or-owner/repo> [destination_folder] [destination_folder]
   Examples:
     clone git@github.com:synle/bashrc.git
     clone https://github.com/synle/bashrc.git
-    clone synle/bashrc"
+    clone synle/bashrc
+    clone synle/bashrc \"$HOME/git/bashrc\""
     return 1
   fi
 
@@ -528,47 +529,32 @@ function clone() {
   fi
 
   local destination_folder="${2%/}"
-  if [ -z "destinationfolder"]||["destination_folder" = "." ] || [ "$destination_folder" = ".." ]; then
+  if [ -z "$destination_folder" ] || [ "$destination_folder" = "." ] || [ "$destination_folder" = ".." ]; then
     echo "clone: destination_folder must name a new folder"
     return 1
   fi
-  if [ -e "destinationfolder"]||[-L"destination_folder" ]; then
+  if [ -e "$destination_folder" ] || [ -L "$destination_folder" ]; then
     echo "clone: destination already exists: $destination_folder"
     return 1
   fi
 
   local destination_parent="${destination_folder%/*}"
   local destination_name="${destination_folder##*/}"
-  [ "destinationparent"="destination_folder" ] && destination_parent="."
+  [ "$destination_parent" = "$destination_folder" ] && destination_parent="."
   if [ ! -d "$destination_parent" ]; then
     echo "clone: destination parent does not exist: $destination_parent"
     return 1
   fi
 
   local destination_path
-  destination_path="(cd"destination_parent" && pwd)/$destination_name"
-  if ! git clone1 "cloneurl""destination_folder"; then
+  destination_path="(cd "$destination_parent" && pwd)/$destination_name"
+  if ! git clone "$clone_url" "$destination_folder"; then
     echo "clone: clone failed: $clone_url"
     return 1
   fi
   echo "Cloned repository: $destination_path"
 }
-
-# cd to Downloads directory (tries multiple paths in order)
-function godownload() {
-  if is_help_arg "${1:-}"; then
-    echo "godownload: cd to the Downloads folder
-  Usage: godownload [subfolder]
-  Tries \$HOME/Downloads, /mnt/d/Downloads, and on WSL the Windows user Downloads folder."
-    return 0
-  fi
-  local candidates=(
-    "$HOME/Downloads"
-    "/mnt/d/Downloads"
-  )
-  # on WSL, try to resolve the Windows user Downloads folder via wslpath
   if type -P wslpath &> /dev/null; then
-    local win_home
     win_home="$(wslpath "$(cmd.exe /C 'echo %USERPROFILE%' 2> /dev/null | tr -d '\r')" 2> /dev/null)"
     if [ -n "$win_home" ]; then
       candidates+=("$win_home/Downloads")

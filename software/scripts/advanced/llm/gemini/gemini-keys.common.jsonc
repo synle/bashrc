@@ -75,6 +75,10 @@
   // chat:imagePaste (Claude's chord; Gemini's command is input.paste)
   { "command": "input.paste", "key": "ctrl+v" },
 
+  // readline word deletion parity
+  { "command": "edit.deleteWordLeft", "key": "ctrl+w" },
+  { "command": "edit.deleteWordLeft", "key": "ctrl+backspace" },
+
   // cursor.home — Claude nulls ctrl+a so readline gets HOME; on Gemini we
   // bind both ctrl+a and the physical home key to cursor.home so the
   // user-visible behavior matches (HOME jumps to line start).

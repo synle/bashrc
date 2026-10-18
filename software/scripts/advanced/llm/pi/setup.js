@@ -342,24 +342,25 @@ async function doWork() {
     log(">> Skipped pi: not installed");
     return;
   }
+  const piAgentDir = getPiAgentDir(getLLMConfigHome());
 
   log(">> Configuring pi:", PI_AGENT_DIR);
 
-  await mkdir(PI_AGENT_DIR);
+  await mkdir(piAgentDir);
 
-  await _doPiSettingsWork();
+  await _doPiSettingsWork(piAgentDir);
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
   const providerInputs = await getOllamaProviderInputs();
-  await _doPiModelsWork(providerInputs);
+  await _doPiModelsWork(piAgentDir, providerInputs);
 
   // Shared on-demand instruction files must exist before the always-loaded
   // AGENTS.md block that points at them. Safe from every CLI — writeText no-ops
   // when unchanged.
   await deploySharedLLMInstructions();
-  await _doPiInstructionsWork();
-  await _doPiAppendSystemWork();
-  await _doPiPersonaExtensionWork();
+  await _doPiInstructionsWork(piAgentDir);
+  await _doPiAppendSystemWork(piAgentDir);
+  await _doPiPersonaExtensionWork(piAgentDir);
 
   // Skills are written once to $LLM_ROOT_FOLDER/skills and symlinked into
   // ~/.agents/skills, which pi scans by default — no pi-local copy or slot.
