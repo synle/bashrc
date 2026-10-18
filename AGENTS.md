@@ -643,6 +643,7 @@ slash commands.
 | `/check`                | Verifying session changes survived a merge/rebase/hook                                        |
 | `/plan-and-commit`      | Multi-file change worth recording — writes `~/_extra/ai_llm/plans/bashrc-<feature>.{md,diff}` |
 | `/refresh-llm-guidance` | Distilling upstream agent guidance into this repo's context and local skills                  |
+| `/refresh-steamos-decky-plugins` | Checking and refreshing vendored SteamOS Decky plugin archives and metadata             |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
 invisible to every loader. Folder name is kebab-case and must equal the frontmatter

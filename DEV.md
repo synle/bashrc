@@ -21,6 +21,31 @@ curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc
 
 See `software/tools/build-installer.js`.
 
+## Refreshing SteamOS Decky Plugins
+
+Decky plugin archives are vendored under `assets/steamos/decky_plugin/` and downloaded by
+`software/scripts/steamos/setup.bash`. The source table and refresh procedure live in
+[`assets/steamos/README.md`](assets/steamos/README.md). Use the repo skill for a checked
+refresh:
+
+```text
+refresh-steamos-decky-plugins
+```
+
+The refresh must query each GitHub release or Decky store record, download candidates to a
+temporary folder, compare SHA-256 checksums, validate `plugin.json` and archive contents,
+then update the archive, setup list, and README together. Store metadata is not an archive;
+if the store artifact URL cannot be verified, leave that plugin unchanged and report the
+missing step.
+
+After a refresh, run:
+
+```bash
+bash -n software/scripts/steamos/setup.bash
+npx vitest run --config vitest.config.js software/tests/steamosSetup.spec.js
+git diff --check
+```
+
 ## Running a Subset
 
 `run.sh` takes narrow `--files=` and broad `--preset=`; both fuzzy-match case-insensitively (1 hit auto-resolves, more print suggestions).

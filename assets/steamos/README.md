@@ -170,6 +170,32 @@ PC is unavailable. Keep host shortcuts if you still use them there.
 SteamGridDB and Volume Boost are served from the Decky store CDN
 (`cdn.tzatzikiweeb.moe`); their upstream repos are listed above for attribution.
 
+### Refresh procedure
+
+Use the repo-local `refresh-steamos-decky-plugins` skill for a full refresh. It keeps
+`setup.bash`, this table, and the vendored ZIPs synchronized.
+
+1. Read this table and `software/scripts/steamos/setup.bash` to establish the plugin scope.
+2. Query each GitHub repository's latest release with:
+   `curl -fsSL https://api.github.com/repos/OWNER/REPO/releases/latest | jq .`
+3. For store-backed plugins, query the Decky store with:
+   `curl -fsSL --get --data-urlencode "query=PLUGIN_NAME" https://plugins.deckbrew.xyz/plugins | jq .`
+   Treat `versions[0]` as the latest listed store version only after checking its name,
+   creation time, and hash.
+4. Download candidates to a temporary folder. Never overwrite a tracked ZIP first.
+5. Compare `shasum -a 256`, then run `unzip -t` and inspect the top-level folder,
+   `plugin.json`, package metadata when present, and the plugin entry point.
+6. Replace only verified changed archives. Update versioned filenames in both the setup
+   array and this table. Keep repository attribution URLs and record the store source,
+   release tag, or verification date when useful.
+7. Verify every ZIP appears once in this table and once in the setup array, then run:
+   `bash -n software/scripts/steamos/setup.bash`,
+   `npx vitest run --config vitest.config.js software/tests/steamosSetup.spec.js`, and
+   `git diff --check`.
+
+Store metadata alone does not prove an installable archive. If no verified artifact URL is
+available, leave that plugin unchanged and report its store version and hash for follow-up.
+
 ## CSS Loader themes — `decky_css_loader/`
 
 Themes come from the [DeckThemes](https://deckthemes.com/) store. Each file is
