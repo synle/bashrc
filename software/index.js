@@ -5649,6 +5649,69 @@ function _resolveScriptFile(file, originalFile, allRepoFiles) {
 }
 
 /**
+ * Expands explicit `*` suffix selectors in script lists.
+ *
+ * Any entry ending with `*` is treated as a basename prefix match inside its folder
+ * scope, and expands to every matching script path in `allRepoFiles`.
+ *
+ * Examples:
+ * - `vim*` → `software/scripts/vim-config.js`, `software/scripts/vim-jetpack.sh`
+ * - `advanced/git*` → every `software/scripts/advanced/git...` script
+ *
+ * Entries that do not end with `*` are passed through unchanged. Wildcards with no
+ * prefix (`*`) or no matches are left unchanged so the existing not-found flow still
+ * reports a clear error.
+ *
+ * @param {string[]} softwareFiles - Caller-supplied script entries
+ * @param {string[]} allRepoFiles - Full repository script list for wildcard matching
+ * @returns {string[]} Script entries with wildcard selectors expanded and deduplicated
+ */
+function _expandWildcardScriptFiles(softwareFiles, allRepoFiles) {
+  const seen = new Set();
+  const expanded = [];
+
+  /**
+   * Pushes a script entry once, preserving first-seen order.
+   * @param {string} file - Script file entry to append
+   */
+  function pushUnique(file) {
+    if (!file || seen.has(file)) return;
+    seen.add(file);
+    expanded.push(file);
+  }
+
+  for (const entry of softwareFiles) {
+    const raw = (entry || "").trim();
+    if (!raw.endsWith("*")) {
+      pushUnique(raw);
+      continue;
+    }
+
+    const token = raw.slice(0, -1).trim();
+    if (!token) {
+      pushUnique(raw);
+      continue;
+    }
+
+    const probe = token.startsWith("software/") ? token : `software/scripts/${token}`;
+    const inputFolder = path.dirname(probe);
+    const inputBasePrefix = path.basename(probe).toLowerCase();
+
+    const matches = allRepoFiles.filter((f) => f.startsWith(inputFolder) && path.basename(f).toLowerCase().startsWith(inputBasePrefix));
+
+    if (matches.length === 0) {
+      pushUnique(raw);
+      continue;
+    }
+
+    for (const match of matches) pushUnique(match);
+    log(`>> Expanded wildcard "${raw}" to matches.lengthscript{matches.length === 1 ? "" : "s"}.`);
+  }
+
+  return expanded;
+}
+
+/**
  * Script-first / preset-fallback resolution for plain bare CLI args.
  *
  * For each entry in `softwareFiles` that came from a plain bare arg (no `--files=` flag,
@@ -6256,6 +6319,10 @@ async function _doWorkTestFiles() {
   let softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
     .filter((s) => !!s);
+
+  // ---- Explicit wildcard expansion (`vim*`) ----
+  // Expand before bare-arg preset fallback so wildcard hits stay on the script path.
+  softwareFiles = _expandWildcardScriptFiles(softwareFiles, allRepoFiles);
 
   // ---- Bare-arg preset fallback ----
   // For each entry that came from a plain bare arg (no --files=, no @ prefix), if it

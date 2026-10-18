@@ -6,6 +6,7 @@ import { getIndexFunction, getIndexConstant, mockFsExistence, setSandboxGlobal }
 
 const _getBundleRunnerType = getIndexFunction("_getBundleRunnerType");
 const _resolveScriptFile = getIndexFunction("_resolveScriptFile");
+const _expandWildcardScriptFiles = getIndexFunction("_expandWildcardScriptFiles");
 const _filterByOsFolders = getIndexFunction("_filterByOsFolders");
 const getAllRepoSoftwareFiles = getIndexFunction("getAllRepoSoftwareFiles");
 const _printScriptProcessingResultsDirect = getIndexFunction("_printScriptProcessingResultsDirect");
@@ -118,6 +119,54 @@ describe("_resolveScriptFile", () => {
     const result = _resolveScriptFile("software/scripts/vim", "vim", allFiles);
     expect(result.fileExists).toBe(true);
     expect(result.resolvedFile).toBe("software/scripts/vim-config.js");
+  });
+});
+
+// ---- _expandWildcardScriptFiles ----
+
+describe("_expandWildcardScriptFiles", () => {
+  it("should expand a trailing wildcard into all matching scripts", () => {
+    const allFiles = ["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh", "software/scripts/git.js"];
+
+    const result = _expandWildcardScriptFiles(["vim*"], allFiles);
+
+    expect(result).toEqual(["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"]);
+  });
+
+  it("should leave unmatched wildcard entries unchanged", () => {
+    const allFiles = ["software/scripts/git.js"];
+    const result = _expandWildcardScriptFiles(["nope*"], allFiles);
+    expect(result).toEqual(["nope*"]);
+  });
+
+  it("should dedupe overlapping wildcard and explicit entries", () => {
+    const allFiles = ["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"];
+    const result = _expandWildcardScriptFiles(["vim*", "software/scripts/vim-config.js"], allFiles);
+    expect(result).toEqual(["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"]);
+  });
+});
+
+// ---- _expandWildcardScriptFiles ----
+
+describe("_expandWildcardScriptFiles", () => {
+  it("should expand a trailing wildcard into all matching scripts", () => {
+    const allFiles = ["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh", "software/scripts/git.js"];
+
+    const result = _expandWildcardScriptFiles(["vim*"], allFiles);
+
+    expect(result).toEqual(["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"]);
+  });
+
+  it("should leave unmatched wildcard entries unchanged", () => {
+    const allFiles = ["software/scripts/git.js"];
+    const result = _expandWildcardScriptFiles(["nope*"], allFiles);
+    expect(result).toEqual(["nope*"]);
+  });
+
+  it("should dedupe overlapping wildcard and explicit entries", () => {
+    const allFiles = ["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"];
+    const result = _expandWildcardScriptFiles(["vim*", "software/scripts/vim-config.js"], allFiles);
+    expect(result).toEqual(["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"]);
   });
 });
 
