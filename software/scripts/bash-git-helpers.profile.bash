@@ -273,6 +273,41 @@ function _log_progress_step() {
   echo_and_set_terminal_title "Step $_PROGRESS_STEP/$total ($((_PROGRESS_STEP * 100 / total))%) : $*"
 }
 
+# _clean_claude_worktrees <repo_root> - remove empty Claude worktree folders.
+# A folder is eligible only when every child is an empty regular file or directory; symlinks
+# and special files keep the folder in place. This keeps non-empty agent state safe.
+function _clean_claude_worktrees() {
+  local repo_root="$1"
+  local candidate
+  local removed=0
+  local unsafe
+  local nonempty
+
+  for candidate in "$repo_root"/.claude/worktree*; do
+    [ -d "$candidate" ] || continue
+
+    if command find "$candidate" -prune -mtime +90 -print 2> /dev/null | command grep -q .; then
+      echo "  -> warning: Claude worktree folder is older than 3 months; keeping $candidate"
+      continue
+    fi
+
+    unsafe=$(command find "$candidate" \( -type l -o \( ! -type d ! -type f \) \) -print -quit 2> /dev/null)
+    [ -z "$unsafe" ] || continue
+    nonempty=$(command find "$candidate" -type f ! -size 0c -print -quit 2> /dev/null)
+    [ -z "$nonempty" ] || continue
+
+    command rm -rf "$candidate"
+    removed=$((removed + 1))
+    echo "  -> removed empty Claude worktree folder $candidate"
+  done
+
+  if [ "$removed" -eq 0 ]; then
+    echo "  -> no empty Claude worktree folders found"
+  else
+    echo "  -> removed $removed empty Claude worktree folder(s)"
+  fi
+}
+
 # _clean_background_tail <total_steps> <repo_root> <force_worktrees> <default_branch> - run
 # clean's slow follow-up work as one backgrounded function call so interactive shells report a
 # short job line instead of re-printing the whole inline subshell body when the cleanup finishes.
@@ -311,6 +346,9 @@ function _clean_background_tail() {
     command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -exec rm -f {} + 2> /dev/null
     echo "  -> removed $ds_store_count .DS_Store file(s)"
   fi
+
+  _log_progress_step "$total_steps" "🗑️ Removing empty Claude worktree folders"
+  _clean_claude_worktrees "$repo_root"
 
   _log_progress_step "$total_steps" "🗑️ Deleting branches with gone upstream"
   git --no-pager clean-stale-branches
@@ -373,7 +411,7 @@ function clean() {
     shift
   done
 
-  local total_steps=16
+  local total_steps=17
   _PROGRESS_STEP=0
 
   # Safe stash first: capture staged + unstaged + untracked so nothing is lost.
