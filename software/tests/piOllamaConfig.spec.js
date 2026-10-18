@@ -1,11 +1,21 @@
 /** Verifies Pi refreshes generated Ollama models while preserving user providers. */
 import { beforeAll, describe, expect, it } from "vitest";
+import fs from "fs";
+import path from "path";
 import { fileSystem, getIndexFunction, loadScriptHelpers, mockFsExistence } from "./setup.js";
 
 const PI_MODELS_PATH = "/mock/home/.pi/agent/models.json";
+const PI_SETUP_SOURCE = fs.readFileSync(path.resolve("software/scripts/advanced/llm/pi/setup.js"), "utf-8");
 
 beforeAll(() => {
   loadScriptHelpers("software/scripts/advanced/llm/pi/setup.js");
+});
+
+describe("Pi setup wiring", () => {
+  it("logs the computed pi agent folder instead of an omitted variable", () => {
+    expect(PI_SETUP_SOURCE).toContain('log(">> Configuring pi:", piAgentDir);');
+    expect(PI_SETUP_SOURCE).not.toContain('log(">> Configuring pi:", PI_AGENT_DIR);');
+  });
 });
 
 describe("Pi Ollama provider refresh", () => {

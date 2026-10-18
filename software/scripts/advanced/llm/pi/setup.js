@@ -344,7 +344,7 @@ async function doWork() {
   }
   const piAgentDir = getPiAgentDir(getLLMConfigHome());
 
-  log(">> Configuring pi:", PI_AGENT_DIR);
+  log(">> Configuring pi:", piAgentDir);
 
   await mkdir(piAgentDir);
 
