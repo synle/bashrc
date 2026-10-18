@@ -260,3 +260,47 @@ describe("Terminal emulator quick-terminal keybindings", () => {
     expect(quakeMode).toEqual({ command: "quakeMode", keys: "alt+escape" });
   });
 });
+
+// --- Vim Visual-Multi keybindings ------------------------------------------
+
+const VIM_SETTINGS = fs.readFileSync("software/scripts/vim-config-settings.vim", "utf-8");
+const MULTI_CURSOR_SAMPLE = `Alpha river stone
+alpha morning light
+ALPHA winter cloud
+The quick brown fox waits
+The QUICK brown fox runs
+quick brown fox sleeps
+Blue lantern near window
+Blue lantern near window
+BluE lantern near window
+blue lantern under bridge
+BLUE lantern beside river
+BLUE lantern beside river
+Blue lantern near window
+Mango trees bend slowly
+mango leaves fall softly
+MANGO seeds wait below
+Echo echo ECHO in the canyon
+small signal, Small signal, SMALL signal
+Case testing makes patterns visible
+case testing shows lowercase matches
+C`;
+
+describe("Vim Visual-Multi case keybindings", () => {
+  it("keeps the supplied sample's case-sensitive match counts distinct", () => {
+    expect(MULTI_CURSOR_SAMPLE.match(/alpha/gi)).toHaveLength(3);
+    expect(MULTI_CURSOR_SAMPLE.match(/alpha/g)).toHaveLength(1);
+    expect(MULTI_CURSOR_SAMPLE.match(/blue lantern/gi)).toHaveLength(7);
+    expect(MULTI_CURSOR_SAMPLE.match(/blue lantern/g)).toHaveLength(1);
+  });
+
+  it("maps comma-g and comma-G to explicit case modes without auto-Insert", () => {
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> ,g :<C-u>call <SID>VmFindAll('ignore', 0)<CR>");
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> ,G :<C-u>call <SID>VmFindAll('sensitive', 0)<CR>");
+    expect(VIM_SETTINGS).toContain("xnoremap <silent> ,g y:<C-u>call <SID>VmFindAll('ignore', 1)<CR>");
+    expect(VIM_SETTINGS).toContain("xnoremap <silent> ,G y:<C-u>call <SID>VmFindAll('sensitive', 1)<CR>");
+    expect(VIM_SETTINGS).toContain("let g:VM_maps['Visual Cursors'] = ',l'");
+    expect(VIM_SETTINGS).not.toContain("<Plug>(VM-i)");
+    expect(VIM_SETTINGS).not.toContain("visual_multi_start");
+  });
+});
