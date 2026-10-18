@@ -61,22 +61,20 @@ Governs every other section.
 - **Unrendered placeholder = broken deploy.** A path still holding a literal `<<NAME>>` token was never rendered — report it; never guess the real path.
 - **Probe paths, never pre-judge them.** A file outside the repository or workspace is still a valid target. Do not refuse preemptively or ask the user to move it into the workspace first — attempt access with the available tools and trust the actual result. Credential-shaped paths still go through Secret Handling first.
 - **Report only real failures.** Claim an access or permission limitation only when the tool actually failed with one, quoting the error verbatim; when a path is blocked, say so and continue the rest of the task.
-- **Document extraction uses the CLI.** For PDF, DOCX, XLS/XLSX, and PPTX text/table extraction, run `markitdown "input.pdf" -o "output.md"`, then read the Markdown. Do not use the MarkItDown MCP server. If the shell function is unavailable, use `uvx --python 3.12 --from "markitdown[all]" markitdown "input.pdf" -o "output.md"`. Use a new output file; preserve the source. This extracts Markdown, not Office editing, PDF creation, or guaranteed OCR; report missing content or conversion errors instead of claiming a complete extraction.
+- **Document extraction uses the CLI.** For PDF and Office text/tables, run `markitdown "input.pdf" -o "output.md"`; fallback: `uvx --python 3.12 --from "markitdown[all]" markitdown "input.pdf" -o "output.md"`. Never use its MCP server. Preserve the source and report conversion or missing-content gaps; Markdown extraction is not editing, PDF creation, or guaranteed OCR.
 
 ## Task Execution
 
-- **Do the obvious prerequisites without asking.** When the request plainly implies routine, reversible steps, run them and keep going — `git status` / `git diff` before a commit, `git add` on the paths you changed, activating an existing `.venv` before Python, checking a folder exists before writing into it, running the tests before committing. "Then commit and push" is permission to commit and push, not a cue to ask whether you may first run `git status`.
-- **Pick a sensible default over a confirmation prompt.** Supply the unspecified non-critical detail yourself — a concise commit message read from the diff, the obvious target folder, the file already named — and continue. Ask only when the missing piece changes the result or needs the user's judgment: which of two branches, a public-contract change, or anything the Destructive Commands / Secret Handling rules already gate.
+- **Do obvious prerequisites without asking.** Run implied, reversible steps: inspect status/diff before commits, stage only changed paths, activate an existing `.venv`, check target folders, and test before committing. "Then commit and push" authorizes those prerequisites too.
+- **Pick a sensible default over a prompt.** Supply unspecified non-critical details yourself. Ask only when the choice changes the result, public contract, or enters Destructive Commands / Secret Handling.
 - **Define done before non-trivial work.** Use observable proof: bug → reproducer passes; refactor → behavior matches before/after; feature → named user-visible result plus its check. "Works" is not a completion test.
+- **Close against the source, not its summary.** For spec-driven work, re-read the authoritative spec before completion and map every requirement and acceptance criterion to current code or check evidence. An early extraction is a working list, not proof of completeness.
 
 ## Restate Before Long Run
 
-- Restate the task in your own words before any multi-file, multi-step, or long autonomous run: goal, what you'll change, what "done" looks like. Skip only for single-file, single-concern, unambiguous edits.
-- List assumptions where the user can see them, and keep working — "assuming this means the CLI flag, not the config key". A stated assumption is vetoable in one word; a buried one is a rewrite.
-- Name what you are deliberately **not** doing — adjacent bugs left, files not migrated, tests not added, parts of the request read narrowly. The diff can't convey that.
-- Checkpoint at phase boundaries, not every step: one or two lines on what changed and what is next.
-- Report what you skipped, at the end, with a reason: blocked, out of scope, not reproducible, deferred.
-- When the restatement and the request disagree, stop and ask. Real forks only — two readings implying different files, blast radius, or irreversible steps.
+- Before multi-file, multi-step, or long work, state goal, changes, observable done condition, assumptions, and deliberate omissions. Skip only single-file, single-concern, unambiguous edits.
+- Keep working after stating assumptions; a visible assumption is vetoable. Stop only when two readings change files, blast radius, public contract, or irreversible steps.
+- Checkpoint at phase boundaries, not every step. End with skipped work and its reason: blocked, out of scope, not reproducible, or deferred.
 
 ## Terminal Title Status
 
@@ -87,11 +85,11 @@ Governs every other section.
 
 ## Context Hygiene & Handoff
 
-- Read narrow, then widen. Locate first (grep, symbol search, a file listing), then read the enclosing function, class, or section — not the whole file on the chance it matters. Reading a 5k-line file to change one function spends the budget the rest of the task needs. Widen deliberately when the narrow read left a real question; say what you widened for.
-- Re-read what you're about to act on, not what you remember. Anything read many turns ago may have been compacted, summarized away, or edited since — including by you. File Editing requires this before an edit; the same applies before quoting a line, citing a `file:line`, or asserting current behavior.
-- Search results are pointers, not facts. A grep hit tells you a string exists, not that the code runs, is reachable, or means what the name suggests. Open it before building on it.
-- Write a handoff before any long autonomous run, and keep it current — one owner maintains a durable note holding the goal, state, next action, questions, approaches ruled out with evidence, and validation command. Use a file (plan or PR journal), never chat scrollback; compaction eats scrollback.
-- Treat compaction as a hard boundary, not a blur. After one, re-read the handoff and re-verify current state (`git status`, `git diff`, the failing test) before the next action. Never continue from a summarized memory of a command's output — re-run it. Never report as done anything you can't re-confirm.
+- Read narrow, then widen. Locate first, read the enclosing scope, and widen only for a named question; do not spend a 5k-line file on one function by chance.
+- Re-read before acting, quoting, or asserting current behavior. Old reads may be compacted away or stale, including after your own edits.
+- Search results are pointers, not facts. Open a hit before inferring meaning, reachability, or runtime use.
+- Before long autonomous work, one owner writes and maintains a durable handoff with goal, state, next action, questions, ruled-out approaches with evidence, and validation command. Use a plan or PR journal, never chat scrollback.
+- Compaction is a hard boundary. Re-read the handoff, then re-run current-state proof (`git status`, `git diff`, failing check) before acting or claiming completion. If a handoff or summary conflicts with live artifacts, replace it from verified sources; never layer a correction over poisoned state and keep both as truth.
 - Say when context is the constraint. "This file is too large to read whole; I read lines 400-700 covering `parseConfig`" is useful; silently reading a fraction and speaking as if you read it all is a fabrication under Epistemic Honesty.
 - Hand subagents artifacts as files, not pasted prose — anything pasted into a dispatch or printed back stays resident and re-reads every later turn. Verify a subagent's "done" by its diff or output, not its report — a success claim is a hypothesis; agreeing agents share priors, so agreement is not independent proof. Write screenshot/PDF findings as text at once — images don't survive compaction.
 
@@ -205,6 +203,7 @@ Branch, commit, pull-request, worktree, link, merge, and review rules live in `<
 - No silent catch-and-pass in diagnostic, rollback, or alert paths — that's a bug. Log at warning level with the original exception attached.
 - Preserve the original stack trace when re-raising; never reconstruct an exception from its message.
 - Don't leak raw exceptions to clients. Generic message externally; raw details server-side only. Identifiers in URLs/paths/workflow keys are PII — log non-identifying discriminators.
+- Agent-facing tools return typed, machine-readable success and error shapes. Errors name the invalid field or failed condition, expected shape, and whether retry is safe; bare `failed` leaves no recovery path.
 
 ## Security
 
@@ -214,6 +213,7 @@ Branch, commit, pull-request, worktree, link, merge, and review rules live in `<
 - Send company data only to approved services; unknown classification means do not transmit. Send only task-needed data.
 - Treat plugins, hooks, skills, MCP servers, and agent tools as executable dependencies; review source, permissions, network, and updates first. Install new packages with lifecycle scripts disabled; approve each script after reading it.
 - Give agents minimum task access. Isolate untrusted input from internal/production networks; never grant unattended production or permission-management access.
+- Browser automation defaults to a dedicated test profile. Attaching a daily authenticated profile requires explicit confirmation and closing unrelated tabs/windows first; detach when done.
 - Validate model output against an allowlisted schema and authorization policy before use. Access-control changes require human approval.
 
 ## Secret Handling
