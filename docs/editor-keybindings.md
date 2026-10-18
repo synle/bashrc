@@ -674,6 +674,7 @@ Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for 
 | `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                               |
 | `\z`, `,z`                                      | Undo (`u`) in normal + visual mode                                                |
 | `\y`, `,y`                                      | Redo (`ctrl+r`) in normal + visual mode                                           |
+| `\F5`, `,F5`                                    | Reload current file from disk (`:edit!`; discards unsaved changes)                |
 | `}`                                              | Toggle soft wrap (`set wrap!`)                                                    |
 | `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)                         |
 | `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |

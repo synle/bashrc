@@ -95,10 +95,11 @@ set nobackup                  " Disable backup files — prevents ~ file clutter
 set nowritebackup             " Don't create backup before overwriting a file
 set hidden                    " Allow switching buffers without saving — keeps undo history intact
 set autoread                  " Auto-reload files changed outside of vim (e.g. by git)
-" autoread only fires on a check — trigger one when focus or buffer changes
+" autoread only fires on a check — trigger one when focus or buffer changes.
+" Skip checktime for modified buffers so Vim doesn't raise W12 on focus switches.
 augroup AutoReadCheck
   autocmd!
-  autocmd FocusGained,BufEnter * silent! checktime
+  autocmd FocusGained,BufEnter * if !&modified | silent! checktime | endif
 augroup END
 set backspace=indent,eol,start " Backspace over indent, line breaks, and insert start (defaults.vim is skipped when ~/.vimrc exists)
 set ttimeout ttimeoutlen=50   " Short key-code timeout — <Esc>-prefixed Alt mappings no longer stall Esc for 1s
@@ -107,8 +108,8 @@ set splitright splitbelow     " New splits open right / below, like modern edito
 set wildignore+=*/node_modules/*,*/.git/* " Skip vendor/VCS folders in file completion
 set lazyredraw                " Don't redraw screen during macros — significant speed boost
 set ttyfast                   " Assume a fast terminal connection — smoother scrolling
-set history=500               " Remember 500 commands in history
-set undolevels=500            " Allow 500 undo steps
+set history=1000              " Remember 1000 commands in history
+set undolevels=1000           " Allow 1000 undo steps
 " Persistent undo — history survives closing the file. vim won't create the
 " folder itself, so make it (0700: undo files hold file contents).
 if has("persistent_undo")
@@ -227,6 +228,7 @@ nnoremap <silent> <C-g> <C-b>
 "   \a       select whole file (`ggvG$`)
 "   \z       undo
 "   \y       redo
+"   \<F5>    reload current file from disk (`:edit!`, discard unsaved changes)
 " Keep plain '\' free as a prefix so these two-key mappings fire reliably.
 nnoremap <silent> <Bslash><Bslash> :set number! norelativenumber<CR>
 nnoremap <silent> <Bslash>[ :set list!<CR>
@@ -250,6 +252,10 @@ nnoremap <silent> ,z u
 xnoremap <silent> ,z <Esc>u
 nnoremap <silent> ,y <C-r>
 xnoremap <silent> ,y <Esc><C-r>
+
+" ,<F5> / \<F5> reload current file from disk (`:edit!`, discard unsaved changes).
+nnoremap <silent> ,<F5> :edit!<CR>
+nnoremap <silent> <Bslash><F5> :edit!<CR>
 
 " ,[ / ,] for previous / next buffer tab (pairs with ,1..,9).
 nnoremap <silent> ,[ :bprevious<CR>
