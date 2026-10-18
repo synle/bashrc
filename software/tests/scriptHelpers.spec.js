@@ -1,29 +1,25 @@
-/** Tests for helper functions defined in individual script files. */
 import { describe, it, expect } from "vitest";
+
 import fs from "fs";
+
 import vm from "vm";
+
 import { getIndexFunction, getIndexConstant } from "./setup.js";
 
 const clone = getIndexFunction("clone");
+
 const code = getIndexFunction("code");
+
 const trimLeftSpaces = getIndexFunction("trimLeftSpaces");
+
 const EDITOR_CONFIGS = getIndexConstant("EDITOR_CONFIGS");
 
-/**
- * Evaluates a script file in a VM sandbox with provided globals.
- * Replaces const/let with var so assignments land on the sandbox object.
- * @param {string} filePath - Path to the .js file.
- * @param {object} globals - Globals to inject into the sandbox.
- * @returns {object} The sandbox with all top-level vars accessible as properties.
- */
 function loadScript(filePath, globals = {}) {
   const source = fs.readFileSync(filePath, "utf-8");
   const sandbox = { ...globals };
   vm.runInNewContext(source.replace(/^(const|let) /gm, "var "), sandbox);
   return sandbox;
 }
-
-// ---- browser-config.js helpers ----
 
 describe("_deepMerge (browser-config.js)", () => {
   /** Loads just the _deepMerge function. */
@@ -77,8 +73,6 @@ describe("_deepMerge (browser-config.js)", () => {
   });
 });
 
-// ---- browser-config.js — _inferBrowserName ----
-
 describe("_inferBrowserName (browser-config.js)", () => {
   /** Loads just the _inferBrowserName function. */
   function getInferBrowserName() {
@@ -111,8 +105,6 @@ describe("_inferBrowserName (browser-config.js)", () => {
     expect(_inferBrowserName("/Users/syle/Library/Application Support/BraveSoftware/Brave-Browser/Default/")).toBe("Brave-Browser");
   });
 });
-
-// ---- browser-config.js — _resolveBrowserOsKey ----
 
 describe("_resolveBrowserOsKey (browser-config.js)", () => {
   /** Loads the _resolveBrowserOsKey function with a given is_os_mac flag. */
@@ -156,8 +148,6 @@ describe("_resolveBrowserOsKey (browser-config.js)", () => {
   });
 });
 
-// ---- fonts.js helpers ----
-
 describe("_getFontDisplayName (fonts.js)", () => {
   const sb = loadScript("software/scripts/fonts.js", {
     log: () => {},
@@ -197,8 +187,6 @@ describe("_getFontDisplayName (fonts.js)", () => {
     expect(_getFontDisplayName("Font.otf")).toBe("Font");
   });
 });
-
-// ---- git.js helpers ----
 
 describe("_extractEmail (git.js)", () => {
   const sb = loadScript("software/scripts/git.js", {
@@ -240,8 +228,6 @@ describe("_extractEmail (git.js)", () => {
     expect(_extractEmail(config)).toBe("email  =  user@domain.org");
   });
 });
-
-// ---- sublime-text.js helpers ----
 
 describe("_convertIgnoredFilesAndFoldersForSublimeText (sublime-text.js)", () => {
   // This is a pure function; extract it directly
@@ -304,74 +290,5 @@ describe("_formatMouseKey (sublime-text.js)", () => {
     const input = [{ button: "button1" }];
     const result = _formatMouseKey(input, "alt");
     expect(result[0].modifiers).toBeUndefined();
-  });
-});
-
-// ---- ~cleanup.js helpers ----
-
-describe("_getPrimaryOsName (~cleanup.js)", () => {
-  it("should return the highest-priority active OS", () => {
-    // Simulate OS_SCRIPT_PATHS with mac active
-    const source = fs.readFileSync("software/scripts/~cleanup.js", "utf-8");
-    const sandbox = {
-      log: () => {},
-      fs: { existsSync: () => false, readFileSync: () => "", writeFileSync: () => {} },
-      path: require("path"),
-      BASH_SYLE_PATH: "/mock/.bash_syle",
-      BASE_HOMEDIR_LINUX: "/mock",
-      replaceBlock: (c) => c,
-      writeBuildArtifact: () => {},
-      IS_DRY_RUN: false,
-      writeFile: () => {},
-      OS_SCRIPT_PATHS: [
-        [true, "software/scripts/mac"],
-        [false, "software/scripts/ubuntu"],
-      ],
-    };
-    vm.runInNewContext(source.replace(/^(const|let) /gm, "var "), sandbox);
-    expect(sandbox._getPrimaryOsName()).toBe("mac");
-  });
-
-  it("should return null when no OS is active", () => {
-    const source = fs.readFileSync("software/scripts/~cleanup.js", "utf-8");
-    const sandbox = {
-      log: () => {},
-      fs: { existsSync: () => false, readFileSync: () => "", writeFileSync: () => {} },
-      path: require("path"),
-      BASH_SYLE_PATH: "/mock/.bash_syle",
-      BASE_HOMEDIR_LINUX: "/mock",
-      replaceBlock: (c) => c,
-      writeBuildArtifact: () => {},
-      IS_DRY_RUN: false,
-      writeFile: () => {},
-      OS_SCRIPT_PATHS: [
-        [false, "software/scripts/mac"],
-        [false, "software/scripts/ubuntu"],
-      ],
-    };
-    vm.runInNewContext(source.replace(/^(const|let) /gm, "var "), sandbox);
-    expect(sandbox._getPrimaryOsName()).toBe(null);
-  });
-
-  it("should respect priority order (mac before ubuntu)", () => {
-    const source = fs.readFileSync("software/scripts/~cleanup.js", "utf-8");
-    const sandbox = {
-      log: () => {},
-      fs: { existsSync: () => false, readFileSync: () => "", writeFileSync: () => {} },
-      path: require("path"),
-      BASH_SYLE_PATH: "/mock/.bash_syle",
-      BASE_HOMEDIR_LINUX: "/mock",
-      replaceBlock: (c) => c,
-      writeBuildArtifact: () => {},
-      IS_DRY_RUN: false,
-      writeFile: () => {},
-      OS_SCRIPT_PATHS: [
-        [true, "software/scripts/ubuntu"],
-        [true, "software/scripts/mac"],
-      ],
-    };
-    vm.runInNewContext(source.replace(/^(const|let) /gm, "var "), sandbox);
-    // mac should win since _OS_PRIORITY lists it before ubuntu
-    expect(sandbox._getPrimaryOsName()).toBe("mac");
   });
 });

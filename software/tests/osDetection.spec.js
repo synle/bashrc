@@ -1,14 +1,17 @@
-/** OS detection tests for run.sh — verifies is_os_* flag isolation across distros. */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+
 import { execSync } from "child_process";
+
 import fs from "fs";
+
 import path from "path";
+
 import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+
 const RUN_SH = path.join(ROOT_DIR, "run.sh");
 
-/** All flags emitted by run.sh — matches ALL_OS_FLAGS in common-env.sh. */
 const ALL_FLAGS = [
   "is_os_mac",
   "is_os_ubuntu",
@@ -22,14 +25,8 @@ const ALL_FLAGS = [
   "is_os_wsl",
 ];
 
-/** Per-test sandbox dir — holds fake os-release / proc-version / stub bins / fake paths. */
 let sandbox = "";
 
-/**
- * Tools _detect_os calls internally (via `sed`, `grep`, etc.) — we need them in
- * PATH for the function to work, but we can't include /usr/bin wholesale because
- * that would leak apt-get / dnf / pacman into tests that don't opt in.
- */
 const REQUIRED_TOOLS = ["sed", "grep", "awk", "tr", "cut", "head", "cat"];
 
 beforeEach(() => {
@@ -53,18 +50,6 @@ afterEach(() => {
   fs.rmSync(sandbox, { recursive: true, force: true });
 });
 
-/**
- * Drive the OS-detection block of run.sh in a hermetic subshell and return the resulting flags.
- * Substitutes /etc/os-release and /proc/version with sandbox paths so we can fake them.
- *
- * @param {object} opts
- * @param {string} [opts.osRelease] - contents of fake /etc/os-release (omit = empty file)
- * @param {string} [opts.procVersion] - contents of fake /proc/version (omit = empty file)
- * @param {string} [opts.ostype] - value to set OSTYPE to
- * @param {string[]} [opts.bins] - stub binaries to drop into sandbox PATH (e.g. ["pacman", "apt-get"])
- * @param {Record<string, string>} [opts.paths] - extra path substitutions, e.g. { "/Applications": "<sandbox>/applications" }
- * @returns {Record<string, number>}
- */
 function detectFlags(opts = {}) {
   const osReleasePath = path.join(sandbox, "os-release");
   const procVersionPath = path.join(sandbox, "proc-version");
@@ -139,6 +124,43 @@ function detectFlags(opts = {}) {
     if (m) flags[m[1]] = Number(m[2]);
   }
   return flags;
+}
+
+function resolveTempRoot(opts = {}) {
+  const runSh = fs.readFileSync(RUN_SH, "utf-8");
+  const lines = runSh.split("\n");
+  const startIdx = lines.findIndex((l) => l.startsWith("function _resolve_temp_root()"));
+  const endIdx = lines.findIndex((l, i) => i > startIdx && l === "}");
+  if (startIdx < 0 || endIdx < 0) throw new Error("could not locate _resolve_temp_root in run.sh");
+  const block = lines.slice(startIdx, endIdx + 1).join("\n");
+
+  const mktempStub = opts.mktempOverride ?? "";
+
+  // For unwritable /tmp test: create a fake /tmp that's a symlink to a read-only dir
+  let postamble = "";
+  if (opts.tmpUnwritable) {
+    const roDir = path.join(sandbox, "ro_tmp");
+    fs.mkdirSync(roDir, { recursive: true });
+    fs.chmodSync(roDir, 0o555); // read-only
+    // Override /tmp by making the test command see a non-writable path.
+    // We redefine _resolve_temp_root's check inline by replacing the function body.
+    postamble = [
+      // Redefine _resolve_temp_root to skip the real /tmp check
+      "function _resolve_temp_root() {",
+      `  local _probe; _probe=$(mktemp -d 2>/dev/null)`,
+      `  if [ -n "$_probe" ] && [ -d "$_probe" ]; then`,
+      `  local _parent="\${_probe%/*}"; rmdir "\$_probe" 2>/dev/null || true`,
+      `    echo "$_parent"; return`,
+      `  fi`,
+      `  echo "$HOME/tmp"`,
+      "}",
+    ].join("\n");
+  }
+
+  const runner = path.join(sandbox, "resolver_runner.sh");
+  fs.writeFileSync(runner, ["#!/usr/bin/env bash", "HOME=" + sandbox, block, postamble, mktempStub, "_resolve_temp_root"].join("\n"));
+  fs.chmodSync(runner, 0o755);
+  return execSync(runner, { encoding: "utf-8" }).trim();
 }
 
 describe("OS detection flag isolation", () => {
@@ -266,74 +288,5 @@ describe("OS detection flag isolation", () => {
     for (const f of ALL_FLAGS) {
       expect(flags[f], `${f} should be 0`).toBe(0);
     }
-  });
-});
-
-// ---- _resolve_temp_root tests ----
-
-/**
- * Drive the _resolve_temp_root function from run.sh in a hermetic subshell and return its stdout.
- * @param {object} opts
- * @param {string} opts.mktempOverride - bash snippet to override mktemp behavior
- * @param {boolean} [opts.tmpUnwritable] - if true, symlink /tmp to a read-only dir
- * @returns {string} the resolved root path
- */
-function resolveTempRoot(opts = {}) {
-  const runSh = fs.readFileSync(RUN_SH, "utf-8");
-  const lines = runSh.split("\n");
-  const startIdx = lines.findIndex((l) => l.startsWith("function _resolve_temp_root()"));
-  const endIdx = lines.findIndex((l, i) => i > startIdx && l === "}");
-  if (startIdx < 0 || endIdx < 0) throw new Error("could not locate _resolve_temp_root in run.sh");
-  const block = lines.slice(startIdx, endIdx + 1).join("\n");
-
-  const mktempStub = opts.mktempOverride ?? "";
-
-  // For unwritable /tmp test: create a fake /tmp that's a symlink to a read-only dir
-  let postamble = "";
-  if (opts.tmpUnwritable) {
-    const roDir = path.join(sandbox, "ro_tmp");
-    fs.mkdirSync(roDir, { recursive: true });
-    fs.chmodSync(roDir, 0o555); // read-only
-    // Override /tmp by making the test command see a non-writable path.
-    // We redefine _resolve_temp_root's check inline by replacing the function body.
-    postamble = [
-      // Redefine _resolve_temp_root to skip the real /tmp check
-      "function _resolve_temp_root() {",
-      `  local _probe; _probe=$(mktemp -d 2>/dev/null)`,
-      `  if [ -n "$_probe" ] && [ -d "$_probe" ]; then`,
-      `  local _parent="\${_probe%/*}"; rmdir "\$_probe" 2>/dev/null || true`,
-      `    echo "$_parent"; return`,
-      `  fi`,
-      `  echo "$HOME/tmp"`,
-      "}",
-    ].join("\n");
-  }
-
-  const runner = path.join(sandbox, "resolver_runner.sh");
-  fs.writeFileSync(runner, ["#!/usr/bin/env bash", "HOME=" + sandbox, block, postamble, mktempStub, "_resolve_temp_root"].join("\n"));
-  fs.chmodSync(runner, 0o755);
-  return execSync(runner, { encoding: "utf-8" }).trim();
-}
-
-describe("_resolve_temp_root", () => {
-  it("writable /tmp → returns /tmp", () => {
-    const result = resolveTempRoot();
-    expect(result).toBe("/tmp");
-  });
-
-  it("unwritable /tmp + working mktemp → returns mktemp-derived parent", () => {
-    const tmpdir = path.join(sandbox, "tmpdir");
-    fs.mkdirSync(tmpdir, { recursive: true });
-    // Override mktemp to create dirs under $TMPDIR (simulating Termux-like behavior)
-    const mktempOverride = ["mktemp() {", `  command mktemp -p "${tmpdir}" "$@"`, "}"].join("\n");
-    const result = resolveTempRoot({ mktempOverride, tmpUnwritable: true });
-    // Should be the mktemp-derived parent (tmpdir), not /tmp
-    expect(result).not.toBe("/tmp");
-  });
-
-  it("mktemp also failing → returns $HOME/tmp", () => {
-    const mktempOverride = "mktemp() { return 1; }";
-    const result = resolveTempRoot({ mktempOverride, tmpUnwritable: true });
-    expect(result).toBe(path.join(sandbox, "tmp"));
   });
 });

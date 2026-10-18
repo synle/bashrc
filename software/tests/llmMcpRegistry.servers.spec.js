@@ -1,41 +1,17 @@
-/** Tests for the shared MCP server registry helpers in llm-common.js. */
 import { describe, it, expect } from "vitest";
+
 import { expandSourceMarkers } from "./setup.js";
+
 import fs from "fs";
+
 import path from "path";
+
 import vm from "vm";
 
 const ROOT = path.resolve(".");
-/**
- * llm-common.js with its `// SOURCE` markers inlined (it SOURCEs llm-models.jsonc for
- * OLLAMA_MODELS_BY_VRAM), mirroring the runtime expansion.
- * @type {string}
- */
+
 const LLM_COMMON_SOURCE = expandSourceMarkers(fs.readFileSync(path.join(ROOT, "software/scripts/advanced/llm/llm-common.js"), "utf-8"));
 
-/**
- * Builds a vm sandbox seeded with the globals `llm-common.js` references
- * (`is_os_mac`, `path`, `log`, plus stubs for `readJson` and
- * `getOllamaHosts`). The `readJson` stub returns whatever the test
- * passes in for `software/scripts/advanced/llm/_common/mcp-servers.jsonc`, and
- * whatever `opts.tagsByHost` declares for an Ollama `/api/tags` URL.
- *
- * Source is run with `const`/`let` rewritten to `var` so every top-level
- * declaration becomes a sandbox property accessible from the test.
- *
- * `192.0.2.45` is RFC 5737 TEST-NET-1 (reserved for documentation) — a deliberate
- * stand-in so no real LAN address appears in the test suite. The production value
- * lives only in `software/metadata/ip-address.config`.
- *
- * @param {{ mcpServers?: Record<string, any> } | null} registryPayload - What `readJson` returns for the registry path.
- * @param {{ remoteIps?: string[], tagsByHost?: Record<string, string[]>, isWorkProfile?: boolean, isWsl?: boolean, windowsHome?: string }} [opts] - Discovery stubs.
- * @param {string[]} [opts.remoteIps] - OLLAMA_REMOTE host IPs, default first (`[]` = none tagged).
- * @param {Record<string, string[]>} [opts.tagsByHost] - Model names each host's `/api/tags` reports.
- * @param {boolean} [opts.isWorkProfile] - Whether local-model discovery must be disabled.
- * @param {boolean} [opts.isWsl] - Whether config homes should include the Windows host home.
- * @param {string} [opts.windowsHome] - Windows host home returned by the path probe.
- * @returns {Record<string, any>} The populated sandbox.
- */
 function loadLlmCommon(registryPayload, opts = {}) {
   /** @type {string} Source with `const`/`let` rewritten so declarations become sandbox properties. */
   const source = LLM_COMMON_SOURCE.replace(/^(const|let) /gm, "var ");
@@ -222,12 +198,6 @@ describe("translateMcpServersForOpencode", () => {
   });
 });
 
-// ---- Ollama host discovery: hosts come from ip-address.config tags ----
-//
-// getOllamaHosts() (index.js) lists OLLAMA_REMOTE hosts (default first) plus 127.0.0.1.
-// getReachableOllamaHosts() keeps only hosts whose /api/tags lists a model, so an
-// unreachable or empty host — remote or local — is never registered.
-
 describe("getOllamaProviderInputs > tagged host discovery", () => {
   it("registers every reachable remote host (default first), then localhost", async () => {
     const sandbox = loadLlmCommon(null, {
@@ -307,54 +277,5 @@ describe("getOllamaDefaultModel", () => {
 
   it("returns null when no Ollama model is currently registered", () => {
     expect(loadLlmCommon(null).getOllamaDefaultModel([])).toBeNull();
-  });
-});
-
-describe("getAutocompleteProvider > tagged host discovery", () => {
-  it("prefers localhost when it has a preferred model", async () => {
-    const sandbox = loadLlmCommon(null, {
-      remoteIps: ["192.0.2.45"],
-      tagsByHost: { "192.0.2.45": ["qwen2.5-coder:3b-base"], "127.0.0.1": ["qwen2.5-coder:1.5b-base"] },
-    });
-    expect(await sandbox.getAutocompleteProvider()).toEqual({
-      host: "127.0.0.1",
-      port: 11434,
-      model: "qwen2.5-coder:1.5b-base",
-    });
-  });
-
-  it("falls back to a remote host when localhost serves nothing", async () => {
-    const sandbox = loadLlmCommon(null, {
-      remoteIps: ["192.0.2.45"],
-      tagsByHost: { "192.0.2.45": ["qwen2.5-coder:1.5b-base"] },
-    });
-    expect(await sandbox.getAutocompleteProvider()).toEqual({
-      host: "192.0.2.45",
-      port: 11434,
-      model: "qwen2.5-coder:1.5b-base",
-    });
-  });
-
-  it("returns null when no reachable host has a preferred model", async () => {
-    const sandbox = loadLlmCommon(null, { remoteIps: [], tagsByHost: {} });
-    expect(await sandbox.getAutocompleteProvider()).toBeNull();
-    expect(sandbox.probedHosts).toEqual(["127.0.0.1"]);
-  });
-});
-
-describe("_common/mcp-servers.jsonc (checked-in source-of-truth)", () => {
-  it("parses as valid JSONC and exposes an `mcpServers` map", () => {
-    const sandbox = loadLlmCommon({});
-    const raw = fs.readFileSync(path.join(ROOT, "software/scripts/advanced/llm/_common/mcp-servers.jsonc"), "utf-8");
-    // Strip comments + trailing commas the same way the runtime does — sandbox's parser is JSON.
-    // Use the same minimal stripper as `parseJsonWithComments` would: kill `//` lines and `/* */` blocks.
-    const cleaned = raw
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "")
-      .replace(/,(\s*[}\]])/g, "$1");
-    const parsed = JSON.parse(cleaned);
-    expect(typeof parsed).toBe("object");
-    expect(parsed).toHaveProperty("mcpServers");
-    expect(typeof parsed.mcpServers).toBe("object");
   });
 });

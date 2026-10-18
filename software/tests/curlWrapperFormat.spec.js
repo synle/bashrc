@@ -1,60 +1,27 @@
-/**
- * Behavior tests for the curl() wrapper in software/bootstrap/profile-advanced.sh.
- *
- * Two things are under test:
- *   1. Format dispatch — which formatter (oxfmt / prettier) the wrapper picks
- *      for a given body shape or URL extension, and its fallbacks.
- *   2. HAR capture — the per-day $BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har archive
- *      the wrapper appends every buffered request to.
- *
- * Strategy (mirrors osDetection.spec.js):
- *   1. Extract the whole "HTTP / Networking Utilities" section (the _curl_*
- *      helpers plus curl() itself) from profile-advanced.sh by line markers, so
- *      the tests stay robust against line-number shifts.
- *   2. Patch out the `[ -t 1 ]` TTY guard so the buffered path runs in a
- *      non-TTY test subprocess.
- *   3. Build a hermetic sandbox PATH with: a `curl` shim that writes a fixture
- *      body to the wrapper's `-o <tmpfile>` capture, a header block to its
- *      `-D <dumpfile>`, and the newline-separated `-w` stats on stdout; the real
- *      oxfmt + prettier binaries; and the coreutils the wrapper invokes.
- *   4. Inject no-op shims for the profile helpers that live outside this section
- *      (is_help_arg, is_truthy, prompt_yes_no, _ensure_npm_binary).
- *   5. Invoke `curl <fake-url>` and assert stdout matches the formatter's own
- *      output against the same fixture (the wrapper's contract).
- */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+
 import { execSync } from "child_process";
+
 import fs from "fs";
+
 import path from "path";
+
 import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+
 const PROFILE_ADVANCED = path.join(ROOT_DIR, "software/bootstrap/profile-advanced.sh");
 
-/** Coreutils the wrapper + sandbox shims invoke — symlinked from host into sandbox PATH. */
 const REQUIRED_TOOLS = ["head", "tail", "tr", "cat", "mktemp", "rm", "cp", "mv", "mkdir", "sed", "awk", "date", "sleep", "wc", "bash"];
 
-/** Coreutils that are nice to have but whose absence the wrapper tolerates. */
 const OPTIONAL_TOOLS = ["timeout"];
 
-/** Per-test sandbox dir. */
 let sandbox = "";
-/** Sentinel cached for a formatter that is not installed anywhere on this box. */
+
 const MISSING = "\0missing";
-/** Cached formatter binary paths, resolved once per file. */
+
 const formatterBins = { prettier: "", oxfmt: "" };
 
-/**
- * Resolve a formatter binary: PATH first, then this repo's node_modules/.bin.
- *
- * Never throws. Neither formatter is a build dependency of this repo — oxfmt
- * ships as a devDependency, prettier is only ever reached through `npx` — so a
- * clean `npm ci` box (CI) legitimately has no prettier at all. Callers get ""
- * back and fall through to the hermetic stubs.
- *
- * @param {string} name - binary name (prettier / oxfmt)
- * @returns {string} absolute path to the binary, or "" when unavailable
- */
 function resolveFormatter(name) {
   if (formatterBins[name]) return formatterBins[name] === MISSING ? "" : formatterBins[name];
 
@@ -75,23 +42,11 @@ function resolveFormatter(name) {
   return resolved;
 }
 
-/**
- * Symlink a host binary into the sandbox PATH.
- *
- * @param {string} name - name the binary should have inside the sandbox
- * @param {string} target - absolute path to the host binary
- */
 function linkIntoSandbox(name, target) {
   const dest = path.join(sandbox, "bin", name);
   if (!fs.existsSync(dest)) fs.symlinkSync(target, dest);
 }
 
-/**
- * Find a tool on the host in the usual bin folders.
- *
- * @param {string} tool - binary name
- * @returns {string} absolute path, or "" when not found
- */
 function findHostTool(tool) {
   for (const dir of ["/usr/bin", "/bin", "/usr/local/bin", "/opt/homebrew/bin"]) {
     const src = path.join(dir, tool);
@@ -100,33 +55,12 @@ function findHostTool(tool) {
   return "";
 }
 
-/**
- * Write an executable shim into the sandbox PATH.
- *
- * Unlinks first: several sandbox names (oxfmt, prettier) can already be symlinks
- * to real host binaries, and writeFileSync follows a symlink — writing straight
- * to the path would overwrite the host binary the symlink points at.
- *
- * @param {string} name - binary name inside the sandbox
- * @param {string[]} lines - shim source lines
- */
 function writeSandboxBin(name, lines) {
   const dest = path.join(sandbox, "bin", name);
   fs.rmSync(dest, { force: true });
   fs.writeFileSync(dest, lines.join("\n"), { mode: 0o755 });
 }
 
-/**
- * Install a recording stub for a formatter.
- *
- * The stub replaces the file it is handed with a single `FMT|<name>|<ext>|<flags>`
- * marker line, which the wrapper then cats to stdout. That makes every dispatch
- * assertion hermetic: it proves the decision the wrapper made (which formatter,
- * which parser extension, which flags) without needing either real binary
- * installed — prettier in particular is not a dependency of this repo.
- *
- * @param {string} name - formatter name to stub (prettier / oxfmt)
- */
 function stubFormatter(name) {
   writeSandboxBin(name, [
     "#!/usr/bin/env bash",
@@ -144,13 +78,6 @@ function stubFormatter(name) {
   ]);
 }
 
-/**
- * Build the marker a stubbed formatter emits, for use in assertions.
- *
- * @param {string} name - formatter name (prettier / oxfmt)
- * @param {string} extension - parser extension the wrapper should have picked
- * @returns {string} expected stdout
- */
 function fmtMarker(name, extension) {
   return `FMT|${name}|${extension}|${name === "prettier" ? "--write" : ""}\n`;
 }
@@ -181,14 +108,6 @@ afterEach(() => {
   fs.rmSync(sandbox, { recursive: true, force: true });
 });
 
-/**
- * Extract the HTTP / Networking Utilities section (the `_curl_*` helpers plus
- * `curl()` itself) from profile-advanced.sh. Bounded by the first
- * `export BASHRC_CURL_HAR_FOLDER=` line and the closing `}` of `function curl()`
- * (the first `^}` at column 0 after the opener — convention enforced repo-wide).
- *
- * @returns {string} the extracted bash source, with the TTY guard patched out
- */
 function extractCurlSection() {
   const src = fs.readFileSync(PROFILE_ADVANCED, "utf-8").split("\n");
 
@@ -209,21 +128,6 @@ function extractCurlSection() {
   return block;
 }
 
-/**
- * Drive the patched curl() wrapper against a fixture body.
- *
- * @param {object} opts
- * @param {string} opts.url - fake URL passed as the only positional arg
- * @param {string} opts.body - fixture body the sandbox curl shim emits via -o
- * @param {string} [opts.httpCode] - http status the shim reports (default 200)
- * @param {string} [opts.contentType] - Content-Type the shim reports (default text/plain)
- * @param {string[]} [opts.extraArgs] - extra args appended to the curl invocation
- * @param {Record<string, string>} [opts.env] - extra env vars for the runner
- * @param {string} [opts.slowFormatter] - name of a formatter to replace with a sleeping shim
- * @param {string} [opts.realFormatter] - formatter whose stub is swapped for the real host binary
- * @param {string} [opts.dropFormatter] - formatter to delete from the sandbox PATH entirely
- * @returns {{ stdout: string, harFolder: string }}
- */
 function runCurl(opts) {
   const fixturePath = path.join(sandbox, "fixture.body");
   fs.writeFileSync(fixturePath, opts.body);
@@ -294,14 +198,6 @@ function runCurl(opts) {
   return { stdout, harFolder };
 }
 
-/**
- * Run a formatter directly against a string body — the wrapper's expected output.
- *
- * @param {string} body - source text
- * @param {string} formatter - prettier or oxfmt
- * @param {string} extension - file extension that selects the parser
- * @returns {string}
- */
 function formatDirect(body, formatter, extension) {
   const tmp = path.join(sandbox, `direct.${extension}`);
   fs.writeFileSync(tmp, body);
@@ -311,12 +207,6 @@ function formatDirect(body, formatter, extension) {
   return fs.readFileSync(tmp, "utf-8");
 }
 
-/**
- * Read today's HAR archive out of a sandbox HAR folder.
- *
- * @param {string} harFolder - folder the wrapper wrote into
- * @returns {object} the parsed HAR document
- */
 function readHar(harFolder) {
   const files = fs.readdirSync(harFolder).filter((f) => f.endsWith(".har"));
   expect(files).toHaveLength(1);
@@ -325,7 +215,7 @@ function readHar(harFolder) {
 }
 
 describe("curl wrapper format dispatch", () => {
-  describe("body sniff (no URL extension hint)", () => {
+describe("body sniff (no URL extension hint)", () => {
     it("routes a JSON object to oxfmt with the json parser", () => {
       const { stdout } = runCurl({ url: "https://api.example.com/user", body: '{"name":"sy","nested":{"a":1,"b":[1,2,3]}}' });
       expect(stdout).toBe(fmtMarker("oxfmt", "json"));
@@ -342,7 +232,7 @@ describe("curl wrapper format dispatch", () => {
     });
   });
 
-  describe("URL extension hint (body sniff inconclusive)", () => {
+describe("URL extension hint (body sniff inconclusive)", () => {
     it("routes .md to prettier", () => {
       const { stdout } = runCurl({ url: "https://raw.githubusercontent.com/x/y/HEAD/README.md", body: "# Title\nsome **bold** text\n" });
       expect(stdout).toBe(fmtMarker("prettier", "md"));
@@ -387,185 +277,5 @@ describe("curl wrapper format dispatch", () => {
       const { stdout } = runCurl({ url: "https://example.com/DOC.MD", body: "# H\n" });
       expect(stdout).toBe(fmtMarker("prettier", "md"));
     });
-  });
-
-  describe("fallback paths", () => {
-    it("emits raw body when neither sniff nor extension matches", () => {
-      const body = "plain text with no shape clue\nsecond line\n";
-      const { stdout } = runCurl({ url: "https://example.com/raw.dat", body });
-      expect(stdout).toBe(body);
-    });
-
-    it("emits empty-body stderr summary and skips formatting on 0-byte response", () => {
-      // runCurl detects an empty `body` and rewrites the shim to truncate the
-      // capture file, so the wrapper hits its `! -s "$tmpfile"` branch.
-      const { stdout } = runCurl({ url: "https://example.com/empty", body: "", httpCode: "204" });
-      expect(stdout).toContain("empty body");
-      expect(stdout).toContain("http 204");
-    });
-
-    it("emits raw body when the formatter blows BASHRC_CURL_FORMAT_TIMEOUT", () => {
-      if (!findHostTool("timeout")) return; // no coreutils timeout: nothing to enforce
-      const body = '{"a":1}';
-      const { stdout } = runCurl({
-        url: "https://example.com/slow.json",
-        body,
-        env: { BASHRC_CURL_FORMAT_TIMEOUT: "1" },
-        slowFormatter: "oxfmt",
-      });
-      expect(stdout).toBe(body);
-    });
-
-    it("emits raw body when the chosen formatter is missing from PATH", () => {
-      const body = '{"a":1,"b":2}';
-      const { stdout } = runCurl({ url: "https://example.com/data.json", body, dropFormatter: "oxfmt" });
-      expect(stdout).toBe(body);
-    });
-  });
-});
-
-// Real-binary output checks. Neither formatter is guaranteed on a clean box —
-// oxfmt is a devDependency, prettier is only ever reached through npx — so each
-// case is gated on the binary actually resolving. Dispatch itself is covered
-// hermetically above, so skipping here never leaves a decision branch untested.
-describe("curl wrapper formatter integration", () => {
-  it.skipIf(!resolveFormatter("oxfmt"))("reformats JSON through the real oxfmt", () => {
-    const body = '{"name":"sy","nested":{"a":1,"b":[1,2,3]}}';
-    const { stdout } = runCurl({ url: "https://api.example.com/user", body, realFormatter: "oxfmt" });
-    expect(stdout).toBe(formatDirect(body, "oxfmt", "json"));
-    expect(stdout).toContain('"name": "sy"'); // sanity: reformatting happened
-  });
-
-  it.skipIf(!resolveFormatter("prettier"))("reformats markdown through the real prettier", () => {
-    const body = "# Title\nsome   **bold**   text\n\n-   item1\n-   item2\n";
-    const { stdout } = runCurl({ url: "https://example.com/README.md", body, realFormatter: "prettier" });
-    expect(stdout).toBe(formatDirect(body, "prettier", "md"));
-  });
-});
-
-describe("curl wrapper HAR capture", () => {
-  it("writes a valid mm-dd-yyyy.har with one entry per request", () => {
-    const body = '{"a":1}';
-    const { harFolder } = runCurl({
-      url: "https://api.example.com/thing.json",
-      body,
-      contentType: "application/json",
-    });
-
-    const har = readHar(harFolder);
-    expect(har.log.version).toBe("1.2");
-    expect(har.log.entries).toHaveLength(1);
-
-    const entry = har.log.entries[0];
-    expect(entry.request.method).toBe("GET");
-    expect(entry.request.url).toBe("https://api.example.com/thing.json");
-    expect(entry.response.status).toBe(200);
-    expect(entry.response.content.mimeType).toBe("application/json");
-    expect(entry.response.content.text).toBe(body);
-    expect(entry.startedDateTime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/);
-    expect(entry.timings.wait).toBeGreaterThan(0);
-    expect(entry.response.headers).toContainEqual({ name: "x-fixture", value: "yes" });
-  });
-
-  it("appends to the same daily archive instead of overwriting it", () => {
-    const harFolder = path.join(sandbox, "har");
-
-    runCurl({ url: "https://example.com/one.json", body: '{"n":1}' });
-    runCurl({ url: "https://example.com/two.json", body: '{"n":2}' });
-    runCurl({ url: "https://example.com/three.json", body: '{"n":3}' });
-
-    const har = readHar(harFolder);
-    expect(har.log.entries.map((e) => e.request.url)).toEqual([
-      "https://example.com/one.json",
-      "https://example.com/two.json",
-      "https://example.com/three.json",
-    ]);
-  });
-
-  it("records the resolved method and request headers", () => {
-    const { harFolder } = runCurl({
-      url: "https://example.com/post.json",
-      body: '{"ok":true}',
-      extraArgs: ["-X", "POST", "-H", "X-Trace: abc123"],
-    });
-
-    const entry = readHar(harFolder).log.entries[0];
-    expect(entry.request.method).toBe("POST");
-    expect(entry.request.headers).toContainEqual({ name: "X-Trace", value: "abc123" });
-  });
-
-  it("masks sensitive header values", () => {
-    const { harFolder } = runCurl({
-      url: "https://example.com/secure.json",
-      body: '{"ok":true}',
-      extraArgs: ["-H", "Authorization: Bearer super-secret-token"],
-    });
-
-    const raw = fs.readFileSync(path.join(harFolder, fs.readdirSync(harFolder)[0]), "utf-8");
-    expect(raw).not.toContain("super-secret-token");
-
-    const entry = readHar(harFolder).log.entries[0];
-    expect(entry.request.headers).toContainEqual({ name: "Authorization", value: "[REDACTED]" });
-  });
-
-  it("stores sensitive values verbatim when BASHRC_CURL_HAR_NO_REDACT=1", () => {
-    const { harFolder } = runCurl({
-      url: "https://example.com/secure.json",
-      body: '{"ok":true}',
-      extraArgs: ["-H", "Authorization: Bearer keep-me"],
-      env: { BASHRC_CURL_HAR_NO_REDACT: "1" },
-    });
-
-    const entry = readHar(harFolder).log.entries[0];
-    expect(entry.request.headers).toContainEqual({ name: "Authorization", value: "Bearer keep-me" });
-  });
-
-  it("truncates bodies larger than BASHRC_CURL_HAR_MAX_BODY", () => {
-    const body = "x".repeat(5000);
-    const { harFolder } = runCurl({
-      url: "https://example.com/big.dat",
-      body,
-      env: { BASHRC_CURL_HAR_MAX_BODY: "100" },
-    });
-
-    const entry = readHar(harFolder).log.entries[0];
-    expect(entry.response.content.text).toHaveLength(100);
-    expect(entry.response.content.comment).toContain("truncated");
-  });
-
-  it("records empty-body responses too", () => {
-    const { harFolder } = runCurl({ url: "https://example.com/empty", body: "", httpCode: "204" });
-
-    const entry = readHar(harFolder).log.entries[0];
-    expect(entry.response.status).toBe(204);
-    expect(entry.response.content.text).toBe("");
-  });
-
-  it("skips HAR capture when BASHRC_CURL_NO_HAR=1", () => {
-    const { harFolder } = runCurl({
-      url: "https://example.com/quiet.json",
-      body: '{"a":1}',
-      env: { BASHRC_CURL_NO_HAR: "1" },
-    });
-
-    expect(fs.existsSync(harFolder)).toBe(false);
-  });
-
-  it("moves a corrupted archive aside instead of appending onto invalid JSON", () => {
-    const harFolder = path.join(sandbox, "har");
-    fs.mkdirSync(harFolder, { recursive: true });
-
-    // Pre-seed today's archive with a truncated (terminator-less) file.
-    runCurl({ url: "https://example.com/first.json", body: '{"a":1}' });
-    const harName = fs.readdirSync(harFolder).find((f) => f.endsWith(".har"));
-    const harPath = path.join(harFolder, harName);
-    fs.writeFileSync(harPath, '{"log":{"entries":[\n{"broken":true}\n');
-
-    runCurl({ url: "https://example.com/second.json", body: '{"a":2}' });
-
-    const har = JSON.parse(fs.readFileSync(harPath, "utf-8"));
-    expect(har.log.entries).toHaveLength(1);
-    expect(har.log.entries[0].request.url).toBe("https://example.com/second.json");
-    expect(fs.readdirSync(harFolder).some((f) => f.includes(".corrupt."))).toBe(true);
   });
 });

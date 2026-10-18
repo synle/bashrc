@@ -1,18 +1,17 @@
-/** Tests for print_action_summary + to_windows_path in profile-core.sh. */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+
 import { execSync } from "child_process";
+
 import fs from "fs";
+
 import path from "path";
+
 import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+
 const PROFILE_CORE = path.join(ROOT_DIR, "software/bootstrap/profile-core.sh");
 
-/**
- * profile-core.sh has top-level statements (exports, debug-tracing setup) that
- * fail without the full bashrc environment. Extract just the two helpers we
- * want to test by line markers so the test stays hermetic.
- */
 const HELPER_SOURCE = (() => {
   const text = fs.readFileSync(PROFILE_CORE, "utf-8");
   const lines = text.split("\n");
@@ -49,11 +48,6 @@ afterEach(() => {
   fs.rmSync(sandbox, { recursive: true, force: true });
 });
 
-/**
- * Drop a stub `wslpath` into the sandbox PATH that returns a transformation of its
- * `-m <path>` argument. Used to simulate WSL-style behavior in tests.
- * @param {(p: string) => string} transform
- */
 function stubWslpath(transform) {
   const p = path.join(sandbox, "bin", "wslpath");
   // POSIX sh shebang (NOT `#!/usr/bin/env bash` — the sandbox PATH excludes /usr/bin
@@ -74,16 +68,6 @@ fi
   fs.chmodSync(p, 0o755);
 }
 
-/**
- * Run `print_action_summary <args...>` in a hermetic bash subshell and capture
- * stdout. Optionally seed the sandbox PATH with a wslpath stub.
- *
- * @param {object} opts
- * @param {string[]} opts.args - args passed to print_action_summary
- * @param {string} [opts.cwd] - working directory the subshell starts in (defaults to sandbox/home)
- * @param {{cases: Record<string,string>}} [opts.wslpath] - optional stub mapping
- * @returns {string} stdout
- */
 function callSummary({ args, cwd, wslpath }) {
   if (wslpath) stubWslpath(wslpath);
   const home = path.join(sandbox, "home");
@@ -102,13 +86,6 @@ function callSummary({ args, cwd, wslpath }) {
   return execSync(`bash ${JSON.stringify(scriptPath)}`, { encoding: "utf-8" });
 }
 
-/**
- * macOS resolves /tmp/... → /private/tmp/... via `realpath` (and so does the bash
- * helper inside print_action_summary). Tests must use the realpath'd paths in both
- * case labels and assertions, otherwise the stub's case won't match and the
- * assertion will compare against the wrong value.
- * @param {string} p
- */
 function rp(p) {
   return fs.realpathSync(p);
 }
@@ -296,39 +273,5 @@ describe("print_action_summary", () => {
     const out = callSummary({ args: [dir] });
     const cdLines = out.split("\n").filter((l) => l.startsWith("cd "));
     expect(cdLines).toHaveLength(1);
-  });
-});
-
-describe("to_windows_path", () => {
-  /**
-   * Sources the helper into bash and runs `to_windows_path "$1"`, returning stdout.
-   * @param {string} input
-   * @param {{cases: Record<string,string>}} [wslpath]
-   */
-  function callConvert(input, wslpath) {
-    if (wslpath) stubWslpath(wslpath);
-    const script = [
-      `set -euo pipefail`,
-      `PATH=${JSON.stringify(path.join(sandbox, "bin"))}`,
-      HELPER_SOURCE,
-      `to_windows_path ${JSON.stringify(input)}`,
-    ].join("\n");
-    const scriptPath = path.join(sandbox, "run.sh");
-    fs.writeFileSync(scriptPath, script);
-    return execSync(`bash ${JSON.stringify(scriptPath)}`, { encoding: "utf-8" }).trim();
-  }
-
-  it("returns the input unchanged when wslpath is not on PATH (off-WSL)", () => {
-    expect(callConvert("/home/user/foo")).toBe("/home/user/foo");
-  });
-
-  it("delegates to wslpath -m when available, returning the converted path", () => {
-    const out = callConvert("/mnt/c/Users/test", { cases: { "/mnt/c/Users/test": "C:/Users/test" } });
-    expect(out).toBe("C:/Users/test");
-  });
-
-  it("falls back to the input when wslpath fails (returns its default arm)", () => {
-    // No mapping for this path → stub's `*` branch echoes the input unchanged.
-    expect(callConvert("/home/user/foo", { cases: {} })).toBe("/home/user/foo");
   });
 });

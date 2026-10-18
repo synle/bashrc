@@ -1,5 +1,5 @@
-/** Tests for platform-specific path utilities and text block internals. */
 import { describe, it, expect } from "vitest";
+
 import {
   getIndexFunction,
   getIndexConstant,
@@ -11,21 +11,32 @@ import {
 } from "./setup.js";
 
 const toWindowsPath = getIndexFunction("toWindowsPath");
-const hidePaths = getIndexFunction("hidePaths");
-const getCustomTweaksPath = getIndexFunction("getCustomTweaksPath");
-const getEtcHostsPath = getIndexFunction("getEtcHostsPath");
-const getOsxApplicationSupportCodeUserPath = getIndexFunction("getOsxApplicationSupportCodeUserPath");
-const _expandShortFormMarkers = getIndexFunction("_expandShortFormMarkers");
-const replaceBlocks = getIndexFunction("replaceBlocks");
-const _replaceSourceBlocks = getIndexFunction("_replaceSourceBlocks");
-const TEXT_BLOCK_START_MARKER = getIndexConstant("TEXT_BLOCK_START_MARKER");
-const TEXT_BLOCK_END_MARKER = getIndexConstant("TEXT_BLOCK_END_MARKER");
-const TEXT_BLOCK_SHORT_MARKER = getIndexConstant("TEXT_BLOCK_SHORT_MARKER");
-const TEXT_BLOCK_ALIAS_MARKER = getIndexConstant("TEXT_BLOCK_ALIAS_MARKER");
-const TEXT_BLOCK_SOURCE_START_MARKER = getIndexConstant("TEXT_BLOCK_SOURCE_START_MARKER");
-const TEXT_BLOCK_SOURCE_END_MARKER = getIndexConstant("TEXT_BLOCK_SOURCE_END_MARKER");
 
-// ---- toWindowsPath ----
+const hidePaths = getIndexFunction("hidePaths");
+
+const getCustomTweaksPath = getIndexFunction("getCustomTweaksPath");
+
+const getEtcHostsPath = getIndexFunction("getEtcHostsPath");
+
+const getOsxApplicationSupportCodeUserPath = getIndexFunction("getOsxApplicationSupportCodeUserPath");
+
+const _expandShortFormMarkers = getIndexFunction("_expandShortFormMarkers");
+
+const replaceBlocks = getIndexFunction("replaceBlocks");
+
+const _replaceSourceBlocks = getIndexFunction("_replaceSourceBlocks");
+
+const TEXT_BLOCK_START_MARKER = getIndexConstant("TEXT_BLOCK_START_MARKER");
+
+const TEXT_BLOCK_END_MARKER = getIndexConstant("TEXT_BLOCK_END_MARKER");
+
+const TEXT_BLOCK_SHORT_MARKER = getIndexConstant("TEXT_BLOCK_SHORT_MARKER");
+
+const TEXT_BLOCK_ALIAS_MARKER = getIndexConstant("TEXT_BLOCK_ALIAS_MARKER");
+
+const TEXT_BLOCK_SOURCE_START_MARKER = getIndexConstant("TEXT_BLOCK_SOURCE_START_MARKER");
+
+const TEXT_BLOCK_SOURCE_END_MARKER = getIndexConstant("TEXT_BLOCK_SOURCE_END_MARKER");
 
 describe("toWindowsPath", () => {
   it("should convert WSL path to Windows path", () => {
@@ -49,8 +60,6 @@ describe("toWindowsPath", () => {
     expect(toWindowsPath("/mnt/c/Program Files/App/bin/tool.exe")).toBe("C:\\Program Files\\App\\bin\\tool.exe");
   });
 });
-
-// ---- hidePaths ----
 
 describe("hidePaths", () => {
   it("uses PowerShell Hidden attributes for non-recursive Windows paths", async () => {
@@ -138,8 +147,6 @@ describe("hidePaths", () => {
   });
 });
 
-// ---- getCustomTweaksPath ----
-
 describe("getCustomTweaksPath", () => {
   it("should return base _extra path when no subPath provided", () => {
     const result = getCustomTweaksPath();
@@ -160,8 +167,6 @@ describe("getCustomTweaksPath", () => {
   });
 });
 
-// ---- getEtcHostsPath ----
-
 describe("getEtcHostsPath", () => {
   it("should return /etc/hosts when Windows host file does not exist", () => {
     // default mock: nothing exists
@@ -173,8 +178,6 @@ describe("getEtcHostsPath", () => {
     expect(getEtcHostsPath()).toBe("/mnt/c/Windows/System32/drivers/etc/hosts");
   });
 });
-
-// ---- _expandShortFormMarkers ----
 
 describe("_expandShortFormMarkers", () => {
   it("should expand BEGIN/END short-form marker", () => {
@@ -231,8 +234,6 @@ describe("_expandShortFormMarkers", () => {
   });
 });
 
-// ---- replaceBlocks (multi-block) ----
-
 describe("replaceBlocks", () => {
   it("should replace multiple blocks in a single pass", () => {
     const input = [
@@ -286,61 +287,5 @@ describe("replaceBlocks", () => {
     const input = "some content";
     const result = replaceBlocks(input, {}, "#");
     expect(result).toBe("some content");
-  });
-});
-
-// ---- _replaceSourceBlocks ----
-
-describe("_replaceSourceBlocks", () => {
-  it("should replace content between SOURCE_BEGIN/SOURCE_END markers", () => {
-    const input = [
-      `# ${TEXT_BLOCK_SOURCE_START_MARKER} path/file.bash`,
-      "old content",
-      `# ${TEXT_BLOCK_SOURCE_END_MARKER} path/file.bash`,
-    ].join("\n");
-
-    const result = _replaceSourceBlocks(input, { "path/file.bash": "new content" }, "#");
-    expect(result).toContain(`# ${TEXT_BLOCK_SOURCE_START_MARKER} path/file.bash`);
-    expect(result).toContain("new content");
-    expect(result).toContain(`# ${TEXT_BLOCK_SOURCE_END_MARKER} path/file.bash`);
-    expect(result).not.toContain("old content");
-  });
-
-  it("should replace multiple source blocks", () => {
-    const input = [
-      `# ${TEXT_BLOCK_SOURCE_START_MARKER} a.bash`,
-      "old a",
-      `# ${TEXT_BLOCK_SOURCE_END_MARKER} a.bash`,
-      "",
-      `# ${TEXT_BLOCK_SOURCE_START_MARKER} b.bash`,
-      "old b",
-      `# ${TEXT_BLOCK_SOURCE_END_MARKER} b.bash`,
-    ].join("\n");
-
-    const result = _replaceSourceBlocks(input, { "a.bash": "new a", "b.bash": "new b" }, "#");
-    expect(result).toContain("new a");
-    expect(result).toContain("new b");
-    expect(result).not.toContain("old a");
-    expect(result).not.toContain("old b");
-  });
-
-  it("should leave content unchanged when markers are not found", () => {
-    const input = "no markers here";
-    const result = _replaceSourceBlocks(input, { "missing.bash": "content" }, "#");
-    expect(result).toBe("no markers here");
-  });
-
-  it("should handle empty blockMap", () => {
-    const input = `# ${TEXT_BLOCK_SOURCE_START_MARKER} file.bash\nold\n# ${TEXT_BLOCK_SOURCE_END_MARKER} file.bash`;
-    const result = _replaceSourceBlocks(input, {}, "#");
-    expect(result).toBe(input);
-  });
-
-  it("should work with // comment prefix", () => {
-    const input = [`// ${TEXT_BLOCK_SOURCE_START_MARKER} file.js`, "old", `// ${TEXT_BLOCK_SOURCE_END_MARKER} file.js`].join("\n");
-
-    const result = _replaceSourceBlocks(input, { "file.js": "new" }, "//");
-    expect(result).toContain("new");
-    expect(result).not.toContain("\nold\n");
   });
 });

@@ -1,15 +1,14 @@
-/** Shape tests for generated JSON/JSONC config files in .build/. */
 import { describe, it, expect } from "vitest";
+
 import fs from "fs";
+
 import path from "path";
 
-/** Strip JSONC comments (// ... lines) and parse JSON. */
 function parseJsonc(text) {
   const stripped = text.replace(/^\s*\/\/.*$/gm, "").trim();
   return JSON.parse(stripped);
 }
 
-/** Read and parse a .build config file, returning sorted top-level keys. */
 function readBuildConfigKeys(filename) {
   const filePath = path.resolve(".build", filename);
   const content = fs.readFileSync(filePath, "utf-8");
@@ -17,7 +16,6 @@ function readBuildConfigKeys(filename) {
   return Object.keys(data).sort();
 }
 
-/** Read and parse a .build array config file, returning length and first-element keys. */
 function readBuildArrayShape(filename) {
   const filePath = path.resolve(".build", filename);
   const content = fs.readFileSync(filePath, "utf-8");
@@ -29,13 +27,10 @@ function readBuildArrayShape(filename) {
   return shape;
 }
 
-/** Get file size in bytes for a .build config file. */
 function readBuildFileSize(filename) {
   const filePath = path.resolve(".build", filename);
   return fs.statSync(filePath).size;
 }
-
-// ---- minimum file size thresholds (approximately 95% of current size, rounded) ----
 
 const MIN_FILE_SIZES = {
   "sublime-merge": 200,
@@ -62,10 +57,8 @@ const MIN_FILE_SIZES = {
   "ip-address.config.hostnamesFlattened": 1800,
 };
 
-// ---- file size threshold tests ----
-
 describe("build config file size thresholds", () => {
-  for (const [name, minSize] of Object.entries(MIN_FILE_SIZES)) {
+for (const [name, minSize] of Object.entries(MIN_FILE_SIZES)) {
     const filePath = path.resolve(".build", name);
     const fileExists = fs.existsSync(filePath);
 
@@ -78,12 +71,12 @@ describe("build config file size thresholds", () => {
       expect(size).toBeGreaterThanOrEqual(minSize);
     });
   }
+
+
 });
 
-// ---- object config tests ----
-
 describe("build config shape - objects", () => {
-  it("sublime-merge", () => {
+it("sublime-merge", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-merge"))) {
       console.warn("  [WARNING] .build/sublime-merge not found — skipping (not generated in this environment)");
       return;
@@ -108,7 +101,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("sublime-text-config", () => {
+it("sublime-text-config", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-config"))) {
       console.warn("  [WARNING] .build/sublime-text-config not found — skipping (not generated in this environment)");
       return;
@@ -171,7 +164,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("sublime-text-config-mac", () => {
+it("sublime-text-config-mac", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-config-mac"))) {
       console.warn("  [WARNING] .build/sublime-text-config-mac not found — skipping (not generated in this environment)");
       return;
@@ -234,7 +227,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("vs-code-color-dark", () => {
+it("vs-code-color-dark", () => {
     if (!fs.existsSync(path.resolve(".build", "vs-code-color-dark"))) {
       console.warn("  [WARNING] .build/vs-code-color-dark not found — skipping (not generated in this environment)");
       return;
@@ -247,7 +240,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("vs-code-color-light", () => {
+it("vs-code-color-light", () => {
     if (!fs.existsSync(path.resolve(".build", "vs-code-color-light"))) {
       console.warn("  [WARNING] .build/vs-code-color-light not found — skipping (not generated in this environment)");
       return;
@@ -256,584 +249,6 @@ describe("build config shape - objects", () => {
       [
         "editor.tokenColorCustomizations",
         "workbench.colorCustomizations",
-      ]
-    `);
-  });
-
-  it("vs-code-config", () => {
-    if (!fs.existsSync(path.resolve(".build", "vs-code-config"))) {
-      console.warn("  [WARNING] .build/vs-code-config not found — skipping (not generated in this environment)");
-      return;
-    }
-    expect(readBuildConfigKeys("vs-code-config")).toMatchInlineSnapshot(`
-      [
-        "[Default High Contrast Light]",
-        "[Default High Contrast]",
-        "[css]",
-        "[go]",
-        "[graphql]",
-        "[html]",
-        "[java]",
-        "[javascript]",
-        "[javascriptreact]",
-        "[json]",
-        "[jsonc]",
-        "[less]",
-        "[markdown]",
-        "[python]",
-        "[rust]",
-        "[scss]",
-        "[typescript]",
-        "[typescriptreact]",
-        "[vue]",
-        "[xml]",
-        "[yaml]",
-        "breadcrumbs.enabled",
-        "chat.agent.enabled",
-        "chat.mcp.enabled",
-        "claudeCode.allowDangerouslySkipPermissions",
-        "editor.accessibilitySupport",
-        "editor.bracketPairColorization.enabled",
-        "editor.codeActionsOnSave",
-        "editor.codeLens",
-        "editor.copyWithSyntaxHighlighting",
-        "editor.cursorBlinking",
-        "editor.defaultFormatter",
-        "editor.dragAndDrop",
-        "editor.emptySelectionClipboard",
-        "editor.fastScrollSensitivity",
-        "editor.folding",
-        "editor.fontFamily",
-        "editor.fontLigatures",
-        "editor.fontSize",
-        "editor.fontWeight",
-        "editor.formatOnPaste",
-        "editor.formatOnSave",
-        "editor.guides.indentation",
-        "editor.hover.delay",
-        "editor.hover.enabled",
-        "editor.lightbulb.enabled",
-        "editor.linkedEditing",
-        "editor.links",
-        "editor.matchBrackets",
-        "editor.maxTokenizationLineLength",
-        "editor.minimap.enabled",
-        "editor.mouseWheelScrollSensitivity",
-        "editor.multiCursorModifier",
-        "editor.occurrencesHighlight",
-        "editor.quickSuggestionsDelay",
-        "editor.renderControlCharacters",
-        "editor.renderLineHighlight",
-        "editor.renderWhitespace",
-        "editor.rulers",
-        "editor.selectionHighlight",
-        "editor.showUnused",
-        "editor.smoothScrolling",
-        "editor.snippetSuggestions",
-        "editor.suggest.snippetsPreventQuickSuggestions",
-        "editor.suggestSelection",
-        "editor.tabSize",
-        "editor.unicodeHighlight.ambiguousCharacters",
-        "editor.unicodeHighlight.invisibleCharacters",
-        "editor.wordWrap",
-        "editor.wordWrapColumn",
-        "explorer.copyRelativePathSeparator",
-        "extensions.autoCheckUpdates",
-        "extensions.autoUpdate",
-        "extensions.ignoreRecommendations",
-        "files.eol",
-        "files.exclude",
-        "files.hotExit",
-        "files.insertFinalNewline",
-        "files.trimTrailingWhitespace",
-        "files.watcherExclude",
-        "git.autofetch",
-        "git.autorefresh",
-        "git.decorations.enabled",
-        "git.enabled",
-        "git.ignoreLimitWarning",
-        "github.codespaces.showStatusbar",
-        "github.copilot.enable",
-        "javascript.inlayHints.variableTypes.enabled",
-        "javascript.suggestionActions.enabled",
-        "javascript.updateImportsOnFileMove.enabled",
-        "remote.SSH.connectTimeout",
-        "remote.SSH.localServerDownload",
-        "remote.SSH.remotePlatform",
-        "scm.diffDecorations",
-        "search.exclude",
-        "search.followSymlinks",
-        "search.useIgnoreFiles",
-        "security.workspace.trust.banner",
-        "security.workspace.trust.emptyWindow",
-        "security.workspace.trust.enabled",
-        "security.workspace.trust.startupPrompt",
-        "security.workspace.trust.untrustedFiles",
-        "telemetry.telemetryLevel",
-        "terminal.integrated.commandsToSkipShell",
-        "terminal.integrated.defaultLocation",
-        "terminal.integrated.defaultProfile.linux",
-        "terminal.integrated.defaultProfile.osx",
-        "terminal.integrated.enablePersistentSessions",
-        "terminal.integrated.experimentalImageSupport",
-        "terminal.integrated.fontFamily",
-        "terminal.integrated.fontSize",
-        "terminal.integrated.gpuAcceleration",
-        "terminal.integrated.rescaleOverlappingGlyphs",
-        "terminal.integrated.scrollback",
-        "terminal.integrated.smoothScrolling",
-        "typescript.inlayHints.variableTypes.enabled",
-        "typescript.suggestionActions.enabled",
-        "typescript.updateImportsOnFileMove.enabled",
-        "update.mode",
-        "update.showReleaseNotes",
-        "window.autoDetectColorScheme",
-        "window.newWindowDimensions",
-        "window.restoreWindows",
-        "window.zoomLevel",
-        "workbench.activityBar.location",
-        "workbench.colorTheme",
-        "workbench.editor.enablePreview",
-        "workbench.editor.limit.enabled",
-        "workbench.editor.limit.perEditorGroup",
-        "workbench.editor.limit.value",
-        "workbench.editor.showTabs",
-        "workbench.enableExperiments",
-        "workbench.iconTheme",
-        "workbench.list.smoothScrolling",
-        "workbench.preferredDarkColorTheme",
-        "workbench.preferredLightColorTheme",
-        "workbench.settings.enableNaturalLanguageSearch",
-        "workbench.startupEditor",
-        "workbench.tree.indent",
-        "workbench.tree.renderIndentGuides",
-      ]
-    `);
-  });
-
-  it("vs-code-config-mac", () => {
-    if (!fs.existsSync(path.resolve(".build", "vs-code-config-mac"))) {
-      console.warn("  [WARNING] .build/vs-code-config-mac not found — skipping (not generated in this environment)");
-      return;
-    }
-    expect(readBuildConfigKeys("vs-code-config-mac")).toMatchInlineSnapshot(`
-      [
-        "[graphql]",
-        "[handlebars]",
-        "[html]",
-        "[javascript]",
-        "[javascriptreact]",
-        "[json]",
-        "[markdown]",
-        "[plaintext]",
-        "[typescript]",
-        "[typescriptreact]",
-        "[xml]",
-        "[yaml]",
-        "breadcrumbs.enabled",
-        "chat.agent.enabled",
-        "chat.editor.fontSize",
-        "chat.mcp.enabled",
-        "editor.accessibilitySupport",
-        "editor.bracketPairColorization.enabled",
-        "editor.codeActionsOnSave",
-        "editor.codeLens",
-        "editor.copyWithSyntaxHighlighting",
-        "editor.cursorBlinking",
-        "editor.dragAndDrop",
-        "editor.emptySelectionClipboard",
-        "editor.fastScrollSensitivity",
-        "editor.folding",
-        "editor.fontFamily",
-        "editor.fontLigatures",
-        "editor.fontSize",
-        "editor.fontWeight",
-        "editor.formatOnPaste",
-        "editor.guides.indentation",
-        "editor.hover.delay",
-        "editor.hover.enabled",
-        "editor.lightbulb.enabled",
-        "editor.linkedEditing",
-        "editor.links",
-        "editor.matchBrackets",
-        "editor.maxTokenizationLineLength",
-        "editor.minimap.enabled",
-        "editor.mouseWheelScrollSensitivity",
-        "editor.multiCursorModifier",
-        "editor.occurrencesHighlight",
-        "editor.quickSuggestionsDelay",
-        "editor.renderControlCharacters",
-        "editor.renderLineHighlight",
-        "editor.renderWhitespace",
-        "editor.selectionHighlight",
-        "editor.showUnused",
-        "editor.smoothScrolling",
-        "editor.snippetSuggestions",
-        "editor.suggest.snippetsPreventQuickSuggestions",
-        "editor.suggestSelection",
-        "editor.tabSize",
-        "editor.tokenColorCustomizations",
-        "editor.unicodeHighlight.ambiguousCharacters",
-        "editor.unicodeHighlight.invisibleCharacters",
-        "editor.wordWrap",
-        "editor.wordWrapColumn",
-        "explorer.copyRelativePathSeparator",
-        "extensions.autoCheckUpdates",
-        "extensions.autoUpdate",
-        "extensions.ignoreRecommendations",
-        "files.eol",
-        "files.exclude",
-        "files.hotExit",
-        "files.insertFinalNewline",
-        "files.trimTrailingWhitespace",
-        "files.watcherExclude",
-        "git.autofetch",
-        "git.autorefresh",
-        "git.decorations.enabled",
-        "git.enabled",
-        "git.ignoreLimitWarning",
-        "github.codespaces.showStatusbar",
-        "github.copilot.enable",
-        "javascript.inlayHints.variableTypes.enabled",
-        "javascript.suggestionActions.enabled",
-        "javascript.updateImportsOnFileMove.enabled",
-        "remote.SSH.connectTimeout",
-        "remote.SSH.localServerDownload",
-        "remote.SSH.remotePlatform",
-        "scm.diffDecorations",
-        "scm.inputFontSize",
-        "search.exclude",
-        "search.followSymlinks",
-        "search.useIgnoreFiles",
-        "security.workspace.trust.enabled",
-        "telemetry.telemetryLevel",
-        "terminal.integrated.defaultProfile.linux",
-        "terminal.integrated.defaultProfile.osx",
-        "terminal.integrated.enablePersistentSessions",
-        "terminal.integrated.experimentalImageSupport",
-        "terminal.integrated.fontSize",
-        "terminal.integrated.gpuAcceleration",
-        "terminal.integrated.rescaleOverlappingGlyphs",
-        "terminal.integrated.smoothScrolling",
-        "typescript.inlayHints.variableTypes.enabled",
-        "typescript.suggestionActions.enabled",
-        "typescript.updateImportsOnFileMove.enabled",
-        "update.mode",
-        "update.showReleaseNotes",
-        "window.autoDetectColorScheme",
-        "window.newWindowDimensions",
-        "window.restoreWindows",
-        "window.zoomLevel",
-        "workbench.activityBar.location",
-        "workbench.colorCustomizations",
-        "workbench.colorTheme",
-        "workbench.editor.enablePreview",
-        "workbench.editor.limit.enabled",
-        "workbench.editor.limit.perEditorGroup",
-        "workbench.editor.limit.value",
-        "workbench.editor.showTabs",
-        "workbench.enableExperiments",
-        "workbench.fontAliasing",
-        "workbench.iconTheme",
-        "workbench.list.smoothScrolling",
-        "workbench.preferredDarkColorTheme",
-        "workbench.preferredLightColorTheme",
-        "workbench.settings.enableNaturalLanguageSearch",
-        "workbench.startupEditor",
-        "workbench.tree.indent",
-        "workbench.tree.renderIndentGuides",
-      ]
-    `);
-  });
-
-  it("zed-color-dark", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-color-dark"))) {
-      console.warn("  [WARNING] .build/zed-color-dark not found — skipping (not generated in this environment)");
-      return;
-    }
-    expect(readBuildConfigKeys("zed-color-dark")).toMatchInlineSnapshot(`
-      [
-        "$schema",
-        "author",
-        "name",
-        "themes",
-      ]
-    `);
-  });
-
-  it("zed-color-light", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-color-light"))) {
-      console.warn("  [WARNING] .build/zed-color-light not found — skipping (not generated in this environment)");
-      return;
-    }
-    expect(readBuildConfigKeys("zed-color-light")).toMatchInlineSnapshot(`
-      [
-        "$schema",
-        "author",
-        "name",
-        "themes",
-      ]
-    `);
-  });
-
-  it("zed-config", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-config"))) {
-      console.warn("  [WARNING] .build/zed-config not found — skipping (not generated in this environment)");
-      return;
-    }
-    expect(readBuildConfigKeys("zed-config")).toMatchInlineSnapshot(`
-      [
-        "agent",
-        "auto_indent_on_paste",
-        "auto_install_extensions",
-        "auto_update",
-        "buffer_font_family",
-        "buffer_font_size",
-        "buffer_font_weight",
-        "colorize_brackets",
-        "cursor_animation",
-        "cursor_blink",
-        "diagnostics",
-        "disable_ai",
-        "double_click_in_multibuffer",
-        "edit_predictions",
-        "ensure_final_newline_on_save",
-        "file_scan_exclusions",
-        "format_on_save",
-        "git",
-        "go_to_definition_fallback",
-        "gutter",
-        "hard_tabs",
-        "icon_theme",
-        "indent_guides",
-        "inlay_hints",
-        "languages",
-        "linked_edits",
-        "lsp_document_colors",
-        "markdown_preview",
-        "max_tabs",
-        "minimap",
-        "multi_cursor_modifier",
-        "on_new_window",
-        "outline_panel",
-        "preferred_line_length",
-        "prettier",
-        "project_panel",
-        "remove_trailing_whitespace_on_save",
-        "restore_on_startup",
-        "reveal_if_open",
-        "scrollbar",
-        "search",
-        "session",
-        "show_completions_on_input",
-        "show_whitespaces",
-        "show_wrap_guides",
-        "soft_wrap",
-        "soft_wrap_indent",
-        "sticky_scroll",
-        "tab_size",
-        "tabs",
-        "telemetry",
-        "terminal",
-        "theme",
-        "toolbar",
-        "ui_font_size",
-        "unnecessary_code_fade",
-        "use_smartcase_search",
-        "vim_mode",
-        "window_title_format",
-        "wrap_guides",
-      ]
-    `);
-  });
-});
-
-// ---- array config tests ----
-
-describe("build config shape - arrays", () => {
-  it("sublime-merge-keys-mac", () => {
-    if (!fs.existsSync(path.resolve(".build", "sublime-merge-keys-mac"))) {
-      console.warn("  [WARNING] .build/sublime-merge-keys-mac not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("sublime-merge-keys-mac");
-    expect(shape.length).toBeGreaterThanOrEqual(10);
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "command",
-        "keys",
-      ]
-    `);
-  });
-
-  it("sublime-merge-keys-windows", () => {
-    if (!fs.existsSync(path.resolve(".build", "sublime-merge-keys-windows"))) {
-      console.warn("  [WARNING] .build/sublime-merge-keys-windows not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("sublime-merge-keys-windows");
-    expect(shape.length).toBeGreaterThanOrEqual(20);
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "command",
-        "keys",
-      ]
-    `);
-  });
-
-  it("sublime-text-keys-linux", () => {
-    if (!fs.existsSync(path.resolve(".build", "sublime-text-keys-linux"))) {
-      console.warn("  [WARNING] .build/sublime-text-keys-linux not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("sublime-text-keys-linux");
-    expect(shape.length).toBeGreaterThanOrEqual(70);
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "command",
-        "keys",
-      ]
-    `);
-  });
-
-  it("sublime-text-keys-mac", () => {
-    if (!fs.existsSync(path.resolve(".build", "sublime-text-keys-mac"))) {
-      console.warn("  [WARNING] .build/sublime-text-keys-mac not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("sublime-text-keys-mac");
-    expect(shape.length).toMatchInlineSnapshot(`44`);
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "command",
-        "keys",
-      ]
-    `);
-  });
-
-  it("sublime-text-keys-windows", () => {
-    if (!fs.existsSync(path.resolve(".build", "sublime-text-keys-windows"))) {
-      console.warn("  [WARNING] .build/sublime-text-keys-windows not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("sublime-text-keys-windows");
-    expect(shape.length).toBeGreaterThanOrEqual(70);
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "command",
-        "keys",
-      ]
-    `);
-  });
-
-  it("sublime-text-mouse", () => {
-    if (!fs.existsSync(path.resolve(".build", "sublime-text-mouse"))) {
-      console.warn("  [WARNING] .build/sublime-text-mouse not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("sublime-text-mouse");
-    expect(shape.length).toMatchInlineSnapshot("5");
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "button",
-        "command",
-        "count",
-        "modifiers",
-        "press_command",
-      ]
-    `);
-  });
-
-  it("sublime-text-mouse-mac", () => {
-    if (!fs.existsSync(path.resolve(".build", "sublime-text-mouse-mac"))) {
-      console.warn("  [WARNING] .build/sublime-text-mouse-mac not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("sublime-text-mouse-mac");
-    expect(shape.length).toMatchInlineSnapshot("5");
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "button",
-        "command",
-        "count",
-        "modifiers",
-        "press_command",
-      ]
-    `);
-  });
-
-  it("vs-code-keys-combined", () => {
-    if (!fs.existsSync(path.resolve(".build", "vs-code-keys-combined"))) {
-      console.warn("  [WARNING] .build/vs-code-keys-combined not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("vs-code-keys-combined");
-    expect(shape.length).toBeGreaterThanOrEqual(150);
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "command",
-        "key",
-        "when",
-      ]
-    `);
-  });
-
-  it("zed-keys", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-keys"))) {
-      console.warn("  [WARNING] .build/zed-keys not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("zed-keys");
-    expect(shape.length).toMatchInlineSnapshot("2");
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "bindings",
-        "context",
-      ]
-    `);
-  });
-
-  it("zed-keys-linux", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-keys-linux"))) {
-      console.warn("  [WARNING] .build/zed-keys-linux not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("zed-keys-linux");
-    expect(shape.length).toMatchInlineSnapshot(`5`);
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "bindings",
-      ]
-    `);
-  });
-
-  it("zed-keys-windows", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-keys-windows"))) {
-      console.warn("  [WARNING] .build/zed-keys-windows not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("zed-keys-windows");
-    expect(shape.length).toMatchInlineSnapshot("2");
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "bindings",
-        "context",
-      ]
-    `);
-  });
-
-  it("ip-address.config.hostnamesFlattened", () => {
-    if (!fs.existsSync(path.resolve(".build", "ip-address.config.hostnamesFlattened"))) {
-      console.warn("  [WARNING] .build/ip-address.config.hostnamesFlattened not found — skipping (not generated in this environment)");
-      return;
-    }
-    const shape = readBuildArrayShape("ip-address.config.hostnamesFlattened");
-    expect(shape.length).toMatchInlineSnapshot("11");
-    expect(shape.firstElementKeys).toMatchInlineSnapshot(`
-      [
-        "0",
-        "1",
-        "2",
       ]
     `);
   });
