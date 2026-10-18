@@ -58,10 +58,7 @@ const LEGACY_BASH = (() => {
 const BASH_BINARIES = ["bash", ...(LEGACY_BASH ? [LEGACY_BASH] : [])];
 
 const shellSources = [
-  ...walkFiles(
-    path.join(ROOT_DIR, "software/scripts"),
-    (n) => /\.(profile\.bash|bash)$/.test(n) && !n.endsWith(".ps1.bash"),
-  ),
+  ...walkFiles(path.join(ROOT_DIR, "software/scripts"), (n) => /\.(profile\.bash|bash)$/.test(n) && !n.endsWith(".ps1.bash")),
   ...walkFiles(path.join(ROOT_DIR, "software/bootstrap"), (n) => n.endsWith(".bash")),
 ];
 

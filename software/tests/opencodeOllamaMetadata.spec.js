@@ -183,7 +183,7 @@ describe("OpenCode Ollama metadata", () => {
     const config = buildOpencodeConfig([
       {
         id: "ollama-local",
-        name: "Ollama·127.0.0.1:11434",
+        name: "OllamaÂ·127.0.0.1:11434",
         baseURL: "http://127.0.0.1:11434/v1",
         models: [{ name: "qwen3-coder:30b-a3b-q4_K_M" }, { name: "glm-4.7-flash" }],
       },

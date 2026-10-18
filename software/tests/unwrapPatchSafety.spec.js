@@ -147,7 +147,7 @@ describe("raw clipboard path", () => {
     const gitConfig = fs.readFileSync(path.join(ROOT_DIR, "software/scripts/git.gitconfig"), "utf-8");
     const clipboardSource = fs.readFileSync(CLIPBOARD_PROFILE, "utf-8");
 
-    expect(gitConfig).toContain("patch-view = \"!f() { LC_ALL=C git --no-pager format-patch");
+    expect(gitConfig).toContain('patch-view = "!f() { LC_ALL=C git --no-pager format-patch');
     expect(clipboardSource).toContain("  LC_ALL=C awk '/^From [0-9a-f]");
   });
 

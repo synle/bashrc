@@ -1,7 +1,7 @@
 /** Autocomplete spec file validation tests. */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import fs from "fs;
-import path from "path;
+import fs from "fs";
+import path from "path";
 import { execSync } from "child_process";
 
 // ---- load SPEC_COMMANDS and known tokens from autocomplete.common.js ----
@@ -15,7 +15,7 @@ const commonSource = fs.readFileSync("software/metadata/autocomplete.common.js",
 const COMMON_ENV_PATH = path.resolve("software/bootstrap/common-env.sh");
 
 // extract SPEC_COMMANDS array by evaluating the file in a sandbox
-const vm = await import("vm;
+const vm = await import("vm");
 const sandbox = {};
 vm.default.runInNewContext(commonSource.replace(/^(const|let) /gm, "var ").replace(/^function /gm, "var _fn = function "), sandbox);
 const SPEC_COMMANDS = sandbox.SPEC_COMMANDS;
@@ -251,4 +251,3 @@ function runCompletionScript(script, options = {}) {
     .split("\n")
     .filter((l) => l !== "");
 }
-

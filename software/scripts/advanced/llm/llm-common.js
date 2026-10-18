@@ -337,7 +337,7 @@ async function getOllamaProviderInputs() {
 
   const providers = (await getReachableOllamaHosts()).map(({ ip, hostname, models }) => ({
     id: `ollama-${hostname}`,
-    name: `${hostname.charAt(0).toUpperCase()}${hostname.slice(1)}·${ip}:${OLLAMA_PORT}`,
+    name: `${hostname.charAt(0).toUpperCase()}${hostname.slice(1)}Â·${ip}:${OLLAMA_PORT}`,
     baseURL: `http://${ip}:${OLLAMA_PORT}/v1`,
     models: models.map((name) => ({ name })),
   }));

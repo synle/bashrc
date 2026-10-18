@@ -602,18 +602,18 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 ### Common Shortcuts (matching editors)
 
-| Key              | Action                                              | Status |
-| ---------------- | --------------------------------------------------- | :----: |
-| `alt+up/down`    | Page up/down                                        |   ✅   |
-| `alt+left/right` | Home / end                                          |   ✅   |
-| `alt+z`, `\z`, `,z` | Undo                                             |   ✅   |
-| `alt+shift+z`, `alt+y`, `\y`, `,y` | Redo                                |   ✅   |
-| `alt+s`, `,s`    | Save                                                |   ✅   |
-| `,w`             | Save and quit                                       |   ✅   |
-| `,q`             | Quit all; discard unsaved changes without prompting |   ✅   |
-| `alt+w`          | Close buffer                                        |   ✅   |
-| `alt+l`          | Select line                                         |   ✅   |
-| `alt+backspace`  | Delete to BOL                                       |   ✅   |
+| Key                                | Action                                              | Status |
+| ---------------------------------- | --------------------------------------------------- | :----: |
+| `alt+up/down`                      | Page up/down                                        |   ✅   |
+| `alt+left/right`                   | Home / end                                          |   ✅   |
+| `alt+z`, `\z`, `,z`                | Undo                                                |   ✅   |
+| `alt+shift+z`, `alt+y`, `\y`, `,y` | Redo                                                |   ✅   |
+| `alt+s`, `,s`                      | Save                                                |   ✅   |
+| `,w`                               | Save and quit                                       |   ✅   |
+| `,q`                               | Quit all; discard unsaved changes without prompting |   ✅   |
+| `alt+w`                            | Close buffer                                        |   ✅   |
+| `alt+l`                            | Select line                                         |   ✅   |
+| `alt+backspace`                    | Delete to BOL                                       |   ✅   |
 
 ### Read Mode (vim -R / less)
 
@@ -626,10 +626,10 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 ### Visual Mode
 
-| Key      | Action            | Status |
-| -------- | ----------------- | :----: |
-| `ctrl+a`    | Beginning of line                         |   ✅   |
-| `ctrl+e`    | End of line                               |   ✅   |
+| Key         | Action                                     | Status |
+| ----------- | ------------------------------------------ | :----: |
+| `ctrl+a`    | Beginning of line                          |   ✅   |
+| `ctrl+e`    | End of line                                |   ✅   |
 | `backspace` | Delete selected text and leave visual mode |   ✅   |
 | `delete`    | Delete selected text and leave visual mode |   ✅   |
 
@@ -638,11 +638,11 @@ visual-mode deletion from Vim's insert-mode defaults.
 
 ### Insert Mode
 
-| Key      | Action              | Status |
-| -------- | ------------------- | :----: |
-| `ctrl+a` | Beginning of line   |   ✅   |
-| `ctrl+e` | End of line         |   ✅   |
-| `ctrl+w` | Delete previous word |   ✅   |
+| Key              | Action               | Status |
+| ---------------- | -------------------- | :----: |
+| `ctrl+a`         | Beginning of line    |   ✅   |
+| `ctrl+e`         | End of line          |   ✅   |
+| `ctrl+w`         | Delete previous word |   ✅   |
 | `ctrl+backspace` | Delete previous word |   ✅   |
 
 These mappings match readline/bash. They replace Vim's stock insert-mode `ctrl+a`
@@ -654,39 +654,39 @@ code; terminals that encode it as ordinary Backspace cannot be distinguished by 
 
 ### Splits & Navigation
 
-| Key                      | Action                               |
-| ------------------------ | ------------------------------------ |
-| `ctrl+d`, `,d`           | Vertical split                       |
-| `,'`                     | Horizontal split                     |
-| `ctrl+x`, `ctrl+q`, `,x` | Close split                          |
-| `ctrl+left/right` (normal and insert) | Previous / next word      |
-| `ctrl+up/down` (normal, insert, visual) | Page up / page down     |
-| `,arrow`                 | Navigate splits                      |
-| `,1` … `,9`              | Go to Nth buffer tab (tabline order) |
-| `,[` / `,]`              | Previous / next buffer tab           |
+| Key                                     | Action                               |
+| --------------------------------------- | ------------------------------------ |
+| `ctrl+d`, `,d`                          | Vertical split                       |
+| `,'`                                    | Horizontal split                     |
+| `ctrl+x`, `ctrl+q`, `,x`                | Close split                          |
+| `ctrl+left/right` (normal and insert)   | Previous / next word                 |
+| `ctrl+up/down` (normal, insert, visual) | Page up / page down                  |
+| `,arrow`                                | Navigate splits                      |
+| `,1` … `,9`                             | Go to Nth buffer tab (tabline order) |
+| `,[` / `,]`                             | Previous / next buffer tab           |
 
 ### Toggles (normal mode)
 
 Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for line numbers, whitespace markers, and soft wrap. `}` still overrides vim's default next-paragraph motion as a one-key soft-wrap toggle.
 
-| Key                                             | Action                                                                            |
-| ----------------------------------------------- | --------------------------------------------------------------------------------- |
-| `\\`                                           | Toggle line numbers                                                               |
-| `\[`                                            | Toggle whitespace markers (invisibles)                                            |
-| `\]`                                            | Toggle soft wrap (`set wrap!`)                                                    |
-| `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)                              |
-| `\s`                                            | Save file (`:w`)                                                                  |
-| `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                               |
-| `\z`, `,z`                                      | Undo (`u`) in normal + visual mode                                                |
-| `\y`, `,y`                                      | Redo (`ctrl+r`) in normal + visual mode                                           |
-| `\F5`, `,F5`                                    | Reload current file from disk (`:edit!`; discards unsaved changes)                |
-| `}`                                              | Toggle soft wrap (`set wrap!`)                                                    |
-| `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)                         |
-| `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |
-| `,g`                                            | Multi-cursor: select all matches, case-insensitive                                  |
-| `,G`                                            | Multi-cursor: select all matches, case-sensitive                                    |
-| `,l` (visual mode)                              | Multi-cursor: one cursor per selected line (like `OS_KEY+shift+l`)                |
-| `ctrl+n`                                        | Multi-cursor: add next match (plugin default, like `OS_KEY+d`)                    |
+| Key                                             | Action                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------ |
+| `\\`                                            | Toggle line numbers                                                |
+| `\[`                                            | Toggle whitespace markers (invisibles)                             |
+| `\]`                                            | Toggle soft wrap (`set wrap!`)                                     |
+| `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)               |
+| `\s`                                            | Save file (`:w`)                                                   |
+| `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                |
+| `\z`, `,z`                                      | Undo (`u`) in normal + visual mode                                 |
+| `\y`, `,y`                                      | Redo (`ctrl+r`) in normal + visual mode                            |
+| `\F5`, `,F5`                                    | Reload current file from disk (`:edit!`; discards unsaved changes) |
+| `}`                                             | Toggle soft wrap (`set wrap!`)                                     |
+| `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)          |
+| `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                 |
+| `,g`                                            | Multi-cursor: select all matches, case-insensitive                 |
+| `,G`                                            | Multi-cursor: select all matches, case-sensitive                   |
+| `,l` (visual mode)                              | Multi-cursor: one cursor per selected line (like `OS_KEY+shift+l`) |
+| `ctrl+n`                                        | Multi-cursor: add next match (plugin default, like `OS_KEY+d`)     |
 
 ### FZF / Search
 
@@ -699,13 +699,13 @@ Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for 
 
 ### Clipboard
 
-| Key                             | Action                                                                 |
-| ------------------------------- | ---------------------------------------------------------------------- |
-| `,c`, `\c`                     | Copy buffer (or selection) to system clipboard                         |
-| `\x`                           | Cut line/selection (`+clipboard` when available)                       |
-| `,p`                            | Replace buffer with system clipboard                                   |
-| `ctrl+v` (insert), `,v`, `\v`  | Paste clipboard image as `@<path>` (saved to Desktop), else paste text |
-| `ctrl+q` (insert)               | Insert next key literally (vim's stock `ctrl+v`)                       |
+| Key                           | Action                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `,c`, `\c`                    | Copy buffer (or selection) to system clipboard                         |
+| `\x`                          | Cut line/selection (`+clipboard` when available)                       |
+| `,p`                          | Replace buffer with system clipboard                                   |
+| `ctrl+v` (insert), `,v`, `\v` | Paste clipboard image as `@<path>` (saved to Desktop), else paste text |
+| `ctrl+q` (insert)             | Insert next key literally (vim's stock `ctrl+v`)                       |
 
 `ctrl+v` image paste exists for prompts edited in vim via an AI CLI's `ctrl+g`: the image is
 saved by `~/.local/bin/save_clipboard_image` (`software/scripts/clipboard-image.js`) and its
@@ -742,10 +742,10 @@ Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub C
 | `super+z` (Windows: `alt+z`), `ctrl+-`                                                          | Undo input                |       ✅       |       ✅       |       ⚠️       |       ✅        |
 | `super+l`, `ctrl+l`                                                                             | Clear input               |       ✅       | ❌<sup>n</sup> |       ⚠️       | ✅<sup>i</sup>  |
 | `escape` (opencode only)                                                                        | Clear input               |       ❌       | ✅<sup>n</sup> |       ❌       |       ❌        |
-| `ctrl+w`, `ctrl+backspace`                                                                    | Delete previous word     |       ✓       |       ✓       |       ††       |       ✓        |
+| `ctrl+w`, `ctrl+backspace`                                                                      | Delete previous word      |       ✓        |       ✓        |       ††       |        ✓        |
 | `ctrl+l`, `super+l` (Windows: `alt+l`), `ctrl+o c` (opencode only)                              | Compact / reset chat      |       ❌       | ✅<sup>o</sup> |       ❌       |       ❌        |
 | `ctrl+r` (opencode only)                                                                        | Recall previous prompt    |       ❌       | ✅<sup>k</sup> |       ❌       |       ❌        |
-| `ctrl+w`, `ctrl+backspace`                                                                    | Delete previous word     |       ✅       |       ✅       |       ⚠️       |       ✅        |
+| `ctrl+w`, `ctrl+backspace`                                                                      | Delete previous word      |       ✅       |       ✅       |       ⚠️       |       ✅        |
 | `ctrl+v`                                                                                        | Paste image / text        | ✅<sup>b</sup> | ✅<sup>j</sup> |       ⚠️       | ✅<sup>b2</sup> |
 | `home` / `end`, `ctrl+a` / `ctrl+e`                                                             | Home / End (current line) | ✅<sup>c</sup> |       ✅       |       ⚠️       | ✅<sup>c2</sup> |
 | `ctrl+home` / `super+home` (Windows: `alt+home`), `ctrl+end` / `super+end` (Windows: `alt+end`) | Home / End (whole buffer) |       ❌       | ✅<sup>d</sup> |       ⚠️       |       ❌        |
