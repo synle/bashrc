@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — output shape", () => {
-it("places WIP entries after non-WIP entries regardless of age", () => {
+  it("places WIP entries after non-WIP entries regardless of age", () => {
     const ready = pullRequest({ ...AWAITING_REVIEW, number: 1, createdAt: "2026-02-01T00:00:00Z" });
     const wip = pullRequest({
       ...AWAITING_REVIEW,
@@ -247,7 +247,7 @@ it("places WIP entries after non-WIP entries regardless of age", () => {
     expect(rowsFor([wip, ready]).map((row) => row.number)).toEqual([1, 2]);
   });
 
-it("places placeholder drafts after ordinary WIP entries", () => {
+  it("places placeholder drafts after ordinary WIP entries", () => {
     const ready = pullRequest({ ...AWAITING_REVIEW, number: 1, createdAt: "2026-03-01T00:00:00Z" });
     const wip = pullRequest({
       ...AWAITING_REVIEW,
@@ -265,7 +265,7 @@ it("places placeholder drafts after ordinary WIP entries", () => {
     expect(rowsFor([placeholder, wip, ready], ["--all"]).map((row) => row.number)).toEqual([1, 2, 3]);
   });
 
-it("enriches at most three PRs at once", () => {
+  it("enriches at most three PRs at once", () => {
     const prs = Array.from({ length: 7 }, (_, index) =>
       pullRequest({
         ...AWAITING_REVIEW,

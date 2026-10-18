@@ -5,7 +5,7 @@ const WEBAPP_URL = process.env.WEBAPP_URL || "https://synle.github.io/bashrc/";
 const TIMEOUT = 30000;
 
 describe("webapp smoke test", () => {
-it(
+  it(
     "phase 10 - global collapse/expand button toggles all blocks",
     async () => {
       const puppeteer = await import("puppeteer");
@@ -35,7 +35,7 @@ it(
     TIMEOUT,
   );
 
-it(
+  it(
     "phase 11 - settings dropdown shows dark mode toggle",
     async () => {
       const puppeteer = await import("puppeteer");
@@ -74,7 +74,7 @@ it(
     TIMEOUT,
   );
 
-it("phase 12 - each Setup tab renders non-empty code blocks", async () => {
+  it("phase 12 - each Setup tab renders non-empty code blocks", async () => {
     const puppeteer = await import("puppeteer");
     const browser = await puppeteer.default.launch({ headless: "new", args: ["--no-sandbox"] });
     try {

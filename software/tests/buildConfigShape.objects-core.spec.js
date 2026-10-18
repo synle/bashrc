@@ -58,7 +58,7 @@ const MIN_FILE_SIZES = {
 };
 
 describe("build config shape - objects", () => {
-it("vs-code-config", () => {
+  it("vs-code-config", () => {
     if (!fs.existsSync(path.resolve(".build", "vs-code-config"))) {
       console.warn("  [WARNING] .build/vs-code-config not found — skipping (not generated in this environment)");
       return;

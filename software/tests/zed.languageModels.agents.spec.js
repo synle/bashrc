@@ -172,4 +172,3 @@ describe("_getZedSettings > agent merge", () => {
 // (`opencode acp`, `copilot --acp`) map to `custom`; Claude Code has no ACP mode of its own,
 // so it maps to Zed's built-in `claude-acp` registry id with a `CLAUDE_CODE_EXECUTABLE`
 // override pointing at our install instead of the copy Zed vendors.
-

@@ -58,7 +58,7 @@ const MIN_FILE_SIZES = {
 };
 
 describe("build config shape - arrays", () => {
-it("sublime-merge-keys-mac", () => {
+  it("sublime-merge-keys-mac", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-merge-keys-mac"))) {
       console.warn("  [WARNING] .build/sublime-merge-keys-mac not found — skipping (not generated in this environment)");
       return;
@@ -73,7 +73,7 @@ it("sublime-merge-keys-mac", () => {
     `);
   });
 
-it("sublime-merge-keys-windows", () => {
+  it("sublime-merge-keys-windows", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-merge-keys-windows"))) {
       console.warn("  [WARNING] .build/sublime-merge-keys-windows not found — skipping (not generated in this environment)");
       return;
@@ -88,7 +88,7 @@ it("sublime-merge-keys-windows", () => {
     `);
   });
 
-it("sublime-text-keys-linux", () => {
+  it("sublime-text-keys-linux", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-keys-linux"))) {
       console.warn("  [WARNING] .build/sublime-text-keys-linux not found — skipping (not generated in this environment)");
       return;
@@ -103,7 +103,7 @@ it("sublime-text-keys-linux", () => {
     `);
   });
 
-it("sublime-text-keys-mac", () => {
+  it("sublime-text-keys-mac", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-keys-mac"))) {
       console.warn("  [WARNING] .build/sublime-text-keys-mac not found — skipping (not generated in this environment)");
       return;
@@ -118,7 +118,7 @@ it("sublime-text-keys-mac", () => {
     `);
   });
 
-it("sublime-text-keys-windows", () => {
+  it("sublime-text-keys-windows", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-keys-windows"))) {
       console.warn("  [WARNING] .build/sublime-text-keys-windows not found — skipping (not generated in this environment)");
       return;
@@ -133,7 +133,7 @@ it("sublime-text-keys-windows", () => {
     `);
   });
 
-it("sublime-text-mouse", () => {
+  it("sublime-text-mouse", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-mouse"))) {
       console.warn("  [WARNING] .build/sublime-text-mouse not found — skipping (not generated in this environment)");
       return;
@@ -151,7 +151,7 @@ it("sublime-text-mouse", () => {
     `);
   });
 
-it("sublime-text-mouse-mac", () => {
+  it("sublime-text-mouse-mac", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-mouse-mac"))) {
       console.warn("  [WARNING] .build/sublime-text-mouse-mac not found — skipping (not generated in this environment)");
       return;
@@ -169,7 +169,7 @@ it("sublime-text-mouse-mac", () => {
     `);
   });
 
-it("vs-code-keys-combined", () => {
+  it("vs-code-keys-combined", () => {
     if (!fs.existsSync(path.resolve(".build", "vs-code-keys-combined"))) {
       console.warn("  [WARNING] .build/vs-code-keys-combined not found — skipping (not generated in this environment)");
       return;
@@ -185,7 +185,7 @@ it("vs-code-keys-combined", () => {
     `);
   });
 
-it("zed-keys", () => {
+  it("zed-keys", () => {
     if (!fs.existsSync(path.resolve(".build", "zed-keys"))) {
       console.warn("  [WARNING] .build/zed-keys not found — skipping (not generated in this environment)");
       return;
@@ -200,7 +200,7 @@ it("zed-keys", () => {
     `);
   });
 
-it("zed-keys-linux", () => {
+  it("zed-keys-linux", () => {
     if (!fs.existsSync(path.resolve(".build", "zed-keys-linux"))) {
       console.warn("  [WARNING] .build/zed-keys-linux not found — skipping (not generated in this environment)");
       return;
@@ -214,7 +214,7 @@ it("zed-keys-linux", () => {
     `);
   });
 
-it("zed-keys-windows", () => {
+  it("zed-keys-windows", () => {
     if (!fs.existsSync(path.resolve(".build", "zed-keys-windows"))) {
       console.warn("  [WARNING] .build/zed-keys-windows not found — skipping (not generated in this environment)");
       return;
@@ -229,7 +229,7 @@ it("zed-keys-windows", () => {
     `);
   });
 
-it("ip-address.config.hostnamesFlattened", () => {
+  it("ip-address.config.hostnamesFlattened", () => {
     if (!fs.existsSync(path.resolve(".build", "ip-address.config.hostnamesFlattened"))) {
       console.warn("  [WARNING] .build/ip-address.config.hostnamesFlattened not found — skipping (not generated in this environment)");
       return;

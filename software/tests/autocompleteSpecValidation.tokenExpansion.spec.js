@@ -57,12 +57,12 @@ function runCompletionScript(script, options = {}) {
 }
 
 describe("SPEC_COMMANDS integrity", () => {
-it("should reference spec files that exist on disk", () => {
+  it("should reference spec files that exist on disk", () => {
     const missing = uniqueSpecFiles.filter((f) => !fs.existsSync(f));
     expect(missing, `Missing spec files: ${missing.join(", ")}`).toEqual([]);
   });
 
-it("should have matching spec files for all files in the spec directory", () => {
+  it("should have matching spec files for all files in the spec directory", () => {
     const specDir = "software/metadata/autocomplete-complete-spec";
     const filesOnDisk = fs.readdirSync(specDir).map((f) => path.join(specDir, f));
     const referenced = new Set(uniqueSpecFiles);
@@ -70,7 +70,7 @@ it("should have matching spec files for all files in the spec directory", () => 
     expect(unreferenced, `Spec files not referenced in SPEC_COMMANDS: ${unreferenced.join(", ")}`).toEqual([]);
   });
 
-it("should be sorted alphabetically by command name within each group", () => {
+  it("should be sorted alphabetically by command name within each group", () => {
     const groups = [];
     let current = [];
     for (const entry of SPEC_COMMANDS) {
@@ -95,7 +95,7 @@ it("should be sorted alphabetically by command name within each group", () => {
     }
   });
 
-it("should only use valid os values", () => {
+  it("should only use valid os values", () => {
     const validOs = new Set(["mac", "linux", "windows"]);
     const invalid = [];
     for (const { command, os } of SPEC_COMMANDS) {
@@ -107,7 +107,7 @@ it("should only use valid os values", () => {
     expect(invalid, `Invalid os values`).toEqual([]);
   });
 
-it("should have either specFile or specCommand for every entry", () => {
+  it("should have either specFile or specCommand for every entry", () => {
     const invalid = SPEC_COMMANDS.filter((c) => !c.specFile && !c.specCommand);
     expect(
       invalid.map((c) => c.command),
@@ -115,7 +115,7 @@ it("should have either specFile or specCommand for every entry", () => {
     ).toEqual([]);
   });
 
-it("should have specCommand references that point to existing commands with specFile", () => {
+  it("should have specCommand references that point to existing commands with specFile", () => {
     const commandsWithSpecFile = new Set(SPEC_COMMANDS.filter((c) => c.specFile).map((c) => c.command));
     const invalid = SPEC_COMMANDS.filter((c) => c.specCommand && !commandsWithSpecFile.has(c.specCommand));
     expect(
@@ -124,7 +124,7 @@ it("should have specCommand references that point to existing commands with spec
     ).toEqual([]);
   });
 
-it("should not have duplicate command names", () => {
+  it("should not have duplicate command names", () => {
     const seen = new Set();
     const duplicates = [];
     for (const { command } of SPEC_COMMANDS) {
@@ -136,7 +136,7 @@ it("should not have duplicate command names", () => {
 });
 
 describe("spec file formatting", () => {
-for (const specFile of uniqueSpecFiles) {
+  for (const specFile of uniqueSpecFiles) {
     const basename = path.basename(specFile);
 
     describe(basename, () => {
@@ -226,6 +226,4 @@ for (const specFile of uniqueSpecFiles) {
       });
     });
   }
-
-
 });

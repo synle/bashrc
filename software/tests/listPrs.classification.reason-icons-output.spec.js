@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — reason icons and auto-merge", () => {
-const CASES = [
+  const CASES = [
     ["🗣️", "changes requested", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
     ["⚔️", "merge conflict", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
     ["💥", "CI failed", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
@@ -248,13 +248,13 @@ const CASES = [
     ["▫", "placeholder draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true, title: "WIP: Placeholder" }],
   ];
 
-for (const [icon, label, overrides] of CASES) {
+  for (const [icon, label, overrides] of CASES) {
     it(`uses ${icon} for ${label}`, () => {
       expect(rowFor(overrides, ["--all"]).reasonIcon).toBe(icon);
     });
   }
 
-it("never decorates the URL line — callers parse it", () => {
+  it("never decorates the URL line — callers parse it", () => {
     const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
     expect(
       runCli(["--me=1"], [pullRequest(armed)])

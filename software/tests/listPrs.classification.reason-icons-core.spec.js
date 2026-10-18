@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — reason icons and auto-merge", () => {
-const CASES = [
+  const CASES = [
     ["🗣️", "changes requested", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
     ["⚔️", "merge conflict", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
     ["💥", "CI failed", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
@@ -248,18 +248,18 @@ const CASES = [
     ["▫", "placeholder draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true, title: "WIP: Placeholder" }],
   ];
 
-for (const [icon, label, overrides] of CASES) {
+  for (const [icon, label, overrides] of CASES) {
     it(`uses ${icon} for ${label}`, () => {
       expect(rowFor(overrides, ["--all"]).reasonIcon).toBe(icon);
     });
   }
 
-it("uses 💬 for a green PR that still has open threads", () => {
+  it("uses 💬 for a green PR that still has open threads", () => {
     const threads = [{ isResolved: false, comments: { nodes: [{ author: { login: "carol", __typename: "User" } }] } }];
     expect(rowFor({ ...READY_TO_MERGE, threads }).reasonIcon).toBe("💬");
   });
 
-it("ranks a blocked human above broken machinery when both apply", () => {
+  it("ranks a blocked human above broken machinery when both apply", () => {
     // Work-owed ranking order: P1 (someone waiting on a reply) outranks P2
     // (broken and ours to fix), so 🗣️ wins over ⚔️ and 💥 on the same PR.
     const row = rowFor({ checks: [FAILING_CHECK], reviewDecision: "CHANGES_REQUESTED", mergeable: "CONFLICTING" }, ["--all"]);
@@ -270,7 +270,7 @@ it("ranks a blocked human above broken machinery when both apply", () => {
     expect(row.status).toContain("MERGE CONFLICT");
   });
 
-it("flags an armed auto-merge with its method, and leaves it off otherwise", () => {
+  it("flags an armed auto-merge with its method, and leaves it off otherwise", () => {
     const armed = rowFor({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } });
     expect(armed.autoMerge).toBe(true);
     expect(armed.autoMergeMethod).toBe("SQUASH");
@@ -282,7 +282,7 @@ it("flags an armed auto-merge with its method, and leaves it off otherwise", () 
     expect(plain.status).not.toContain("AUTO-MERGE");
   });
 
-it("treats a null autoMergeRequest as disarmed", () => {
+  it("treats a null autoMergeRequest as disarmed", () => {
     // GitHub returns the field as null rather than omitting it — a truthiness check
     // on the object alone would be fine, but enabledAt is the actual arming signal.
     expect(rowFor({ ...AWAITING_REVIEW, autoMergeRequest: null }).autoMerge).toBe(false);

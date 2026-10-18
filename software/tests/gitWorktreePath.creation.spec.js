@@ -83,7 +83,7 @@ function worktreePath(context, name) {
 }
 
 describe("git worktree layout", () => {
-beforeAll(() => {
+  beforeAll(() => {
     sandboxDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "bashrc-worktree-")));
     cliBin = path.join(sandboxDir, "bin");
     fs.mkdirSync(cliBin);
@@ -92,11 +92,11 @@ beforeAll(() => {
     aliasConfigPath = writeAliasConfig();
   });
 
-afterAll(() => {
+  afterAll(() => {
     if (sandboxDir) fs.rmSync(sandboxDir, { recursive: true, force: true });
   });
 
-describe("create-worktree", () => {
+  describe("create-worktree", () => {
     /**
      * Builds a repo with one commit so `git worktree add` has something to branch from.
      * @param {string} name - Folder name for the repo inside the sandbox.
@@ -191,5 +191,5 @@ describe("create-worktree", () => {
       expect(result.status).not.toBe(0);
       expect(result.stderr.toLowerCase()).toContain("usage");
     });
-  })
+  });
 });

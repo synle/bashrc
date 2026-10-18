@@ -236,9 +236,9 @@ function runWrapper(command) {
 }
 
 describe("list_prs — reason icon encoding hygiene", () => {
-const codepoints = (glyph) => [...glyph].map((c) => c.codePointAt(0));
+  const codepoints = (glyph) => [...glyph].map((c) => c.codePointAt(0));
 
-it("uses no variation selector for build-in-progress or draft", () => {
+  it("uses no variation selector for build-in-progress or draft", () => {
     for (const [glyph, slot] of [
       ["🔨", "build in progress"],
       ["🛑", "draft"],
@@ -250,7 +250,7 @@ it("uses no variation selector for build-in-progress or draft", () => {
     }
   });
 
-it("pins each replaced glyph to the codepoint it was chosen for", () => {
+  it("pins each replaced glyph to the codepoint it was chosen for", () => {
     // Named against Unicode's own list: U+1F528 "hammer" (E0.6), U+1F6D1 "stop sign"
     // (E3.0), U+23F3 "hourglass not done" (E0.6), U+1F504 "counterclockwise arrows"
     // (E1.0). There is no traffic-cone emoji to prefer over any of them.
@@ -260,7 +260,7 @@ it("pins each replaced glyph to the codepoint it was chosen for", () => {
     expect(codepoints("🔄")[0]).toBe(0x1f504);
   });
 
-it("retired the two glyphs that read as the wrong instruction", () => {
+  it("retired the two glyphs that read as the wrong instruction", () => {
     // 👀 said "look at me" on the one row that wants nothing from you (the REVIEWER is
     // the one being waited on), and 🐌 editorialized about a branch that is merely out
     // of date. Both survive only in the comment explaining why they went.
@@ -269,7 +269,7 @@ it("retired the two glyphs that read as the wrong instruction", () => {
     expect(iconTable).not.toContain("🐌");
   });
 
-it("no longer ships the VS16 building glyph or the E13.0 magic wand as icons", () => {
+  it("no longer ships the VS16 building glyph or the E13.0 magic wand as icons", () => {
     // 🏗️ survives only inside the comment explaining why it was rejected, so assert
     // on the icon table itself rather than the whole file.
     const iconTable = CLI_SOURCE.slice(CLI_SOURCE.indexOf("const REASON_ICONS"), CLI_SOURCE.indexOf("UNKNOWN:"));
@@ -278,7 +278,7 @@ it("no longer ships the VS16 building glyph or the E13.0 magic wand as icons", (
     expect(CLI_SOURCE).not.toContain("AUTO_MERGE_ICON");
   });
 
-it("keeps every reason icon distinct", () => {
+  it("keeps every reason icon distinct", () => {
     // The swap moved 🚧 from draft to build-in-progress; leaving it in both slots
     // would silently collapse two different states onto one glyph.
     const table = CLI_SOURCE.slice(

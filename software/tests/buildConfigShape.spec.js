@@ -58,7 +58,7 @@ const MIN_FILE_SIZES = {
 };
 
 describe("build config file size thresholds", () => {
-for (const [name, minSize] of Object.entries(MIN_FILE_SIZES)) {
+  for (const [name, minSize] of Object.entries(MIN_FILE_SIZES)) {
     const filePath = path.resolve(".build", name);
     const fileExists = fs.existsSync(filePath);
 
@@ -71,12 +71,10 @@ for (const [name, minSize] of Object.entries(MIN_FILE_SIZES)) {
       expect(size).toBeGreaterThanOrEqual(minSize);
     });
   }
-
-
 });
 
 describe("build config shape - objects", () => {
-it("sublime-merge", () => {
+  it("sublime-merge", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-merge"))) {
       console.warn("  [WARNING] .build/sublime-merge not found — skipping (not generated in this environment)");
       return;
@@ -101,7 +99,7 @@ it("sublime-merge", () => {
     `);
   });
 
-it("sublime-text-config", () => {
+  it("sublime-text-config", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-config"))) {
       console.warn("  [WARNING] .build/sublime-text-config not found — skipping (not generated in this environment)");
       return;
@@ -164,7 +162,7 @@ it("sublime-text-config", () => {
     `);
   });
 
-it("sublime-text-config-mac", () => {
+  it("sublime-text-config-mac", () => {
     if (!fs.existsSync(path.resolve(".build", "sublime-text-config-mac"))) {
       console.warn("  [WARNING] .build/sublime-text-config-mac not found — skipping (not generated in this environment)");
       return;
@@ -227,7 +225,7 @@ it("sublime-text-config-mac", () => {
     `);
   });
 
-it("vs-code-color-dark", () => {
+  it("vs-code-color-dark", () => {
     if (!fs.existsSync(path.resolve(".build", "vs-code-color-dark"))) {
       console.warn("  [WARNING] .build/vs-code-color-dark not found — skipping (not generated in this environment)");
       return;
@@ -240,7 +238,7 @@ it("vs-code-color-dark", () => {
     `);
   });
 
-it("vs-code-color-light", () => {
+  it("vs-code-color-light", () => {
     if (!fs.existsSync(path.resolve(".build", "vs-code-color-light"))) {
       console.warn("  [WARNING] .build/vs-code-color-light not found — skipping (not generated in this environment)");
       return;

@@ -219,4 +219,3 @@ describe("_getZedSettings > lsp carry-through", () => {
 });
 
 // ---- getAcpAgentInputs: binary discovery (llm-common.js, inlined via SOURCE) ----
-

@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — classification", () => {
-it("marks a draft placeholder separately from ordinary WIP", () => {
+  it("marks a draft placeholder separately from ordinary WIP", () => {
     const row = rowFor({ isDraft: true, title: "WIP: DO NOT MERGE — [api] Placeholder", checks: [PASSING_CHECK] }, ["--all"]);
     expect(row.isPlaceholder).toBe(true);
     expect(row.reasonTag).toBe("[placeholder]");
@@ -244,7 +244,7 @@ it("marks a draft placeholder separately from ordinary WIP", () => {
     expect(row.group).toBe("NOT READY / WIP / DRAFT");
   });
 
-it("detects DNM and normalizes leading WIP markers to one prefix", () => {
+  it("detects DNM and normalizes leading WIP markers to one prefix", () => {
     const row = rowFor({
       title: "WIP: DO NOT MERGE — Repoint -default LCD pipeline to stage-only (Phase 2: cutover)",
       reviewDecision: "REVIEW_REQUIRED",
@@ -256,12 +256,12 @@ it("detects DNM and normalizes leading WIP markers to one prefix", () => {
     expect(dnm.title).toBe("WIP: Add production-only LCD pipeline");
   });
 
-it("strips a leading [repo] tag that just repeats the PR's own repo", () => {
+  it("strips a leading [repo] tag that just repeats the PR's own repo", () => {
     expect(rowFor({ title: "[api] Retry token refresh", reviewDecision: "REVIEW_REQUIRED" }).title).toBe("Retry token refresh");
     expect(rowFor({ title: "[infra] Retry token refresh", reviewDecision: "REVIEW_REQUIRED" }).title).toBe("[infra] Retry token refresh");
   });
 
-it("flags a BEHIND base branch", () => {
+  it("flags a BEHIND base branch", () => {
     const row = rowFor({ checks: [PASSING_CHECK], reviewDecision: "REVIEW_REQUIRED", mergeStateStatus: "BEHIND", baseRefName: "main" });
     expect(row.status).toContain("BEHIND main");
   });

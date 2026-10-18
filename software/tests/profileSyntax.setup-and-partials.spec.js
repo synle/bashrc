@@ -241,7 +241,7 @@ function findHeredocsInCommandSubstitution(source) {
 }
 
 describe("full-setup scripts syntax check", () => {
-fullSetupFiles.forEach((filePath) => {
+  fullSetupFiles.forEach((filePath) => {
     const relPath = path.relative(ROOT_DIR, filePath);
 
     it(`${relPath} - no syntax errors`, () => {
@@ -249,13 +249,13 @@ fullSetupFiles.forEach((filePath) => {
     });
   });
 
-it("should find full-setup script files to test", () => {
+  it("should find full-setup script files to test", () => {
     expect(fullSetupFiles.length).toBeGreaterThan(0);
   });
 });
 
 describe("profile partials syntax check", () => {
-profilePartialFiles.forEach((filePath) => {
+  profilePartialFiles.forEach((filePath) => {
     const relPath = path.relative(ROOT_DIR, filePath);
 
     it(`${relPath} - no syntax errors`, () => {
@@ -267,7 +267,7 @@ profilePartialFiles.forEach((filePath) => {
     });
   });
 
-it("should find profile partial files to test", () => {
+  it("should find profile partial files to test", () => {
     expect(profilePartialFiles.length).toBeGreaterThan(0);
   });
 });

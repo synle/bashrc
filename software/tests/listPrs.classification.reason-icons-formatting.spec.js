@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — reason icons and auto-merge", () => {
-const CASES = [
+  const CASES = [
     ["🗣️", "changes requested", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
     ["⚔️", "merge conflict", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
     ["💥", "CI failed", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
@@ -248,13 +248,13 @@ const CASES = [
     ["▫", "placeholder draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true, title: "WIP: Placeholder" }],
   ];
 
-for (const [icon, label, overrides] of CASES) {
+  for (const [icon, label, overrides] of CASES) {
     it(`uses ${icon} for ${label}`, () => {
       expect(rowFor(overrides, ["--all"]).reasonIcon).toBe(icon);
     });
   }
 
-it("suffixes a running build with … and nothing else with it", () => {
+  it("suffixes a running build with … and nothing else with it", () => {
     // A build is the only state that resolves itself while you read the output, so it
     // is the only one that earns the "still moving" marker.
     const running = runCli(["--me=1", "--all"], [pullRequest({ checks: [RUNNING_CHECK], reviewDecision: "APPROVED" })])
@@ -269,7 +269,7 @@ it("suffixes a running build with … and nothing else with it", () => {
     expect(settled).not.toContain("…");
   });
 
-it("keeps the … out of the machine-readable fields", () => {
+  it("keeps the … out of the machine-readable fields", () => {
     // The suffix is a render flourish. A JSON consumer diffing titles or matching a PR
     // by name must never see it, and runningChecks already carries the same fact.
     const row = rowFor({ checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }, ["--all"]);
@@ -278,7 +278,7 @@ it("keeps the … out of the machine-readable fields", () => {
     expect(row.runningChecks).toBeGreaterThan(0);
   });
 
-it("renders both markers together on one row", () => {
+  it("renders both markers together on one row", () => {
     const both = {
       checks: [RUNNING_CHECK],
       reviewDecision: "APPROVED",

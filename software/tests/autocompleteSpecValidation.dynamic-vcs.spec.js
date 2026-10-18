@@ -57,9 +57,9 @@ function runCompletionScript(script, options = {}) {
 }
 
 describe("dynamic token expansion (bash integration)", () => {
-let tmpDir;
+  let tmpDir;
 
-beforeAll(() => {
+  beforeAll(() => {
     tmpDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
     // create test file structure — legitimate folders
     fs.mkdirSync(path.join(tmpDir, "subdir"), { recursive: true });
@@ -110,11 +110,11 @@ beforeAll(() => {
     fs.writeFileSync(path.join(tmpDir, "__pycache__", "mod.pyc"), "cache");
   });
 
-afterAll(() => {
+  afterAll(() => {
     if (tmpDir) execSync(`rm -rf "${tmpDir}"`);
   });
 
-describe("__git_branches__", () => {
+  describe("__git_branches__", () => {
     /** Temp git repo for branch tests. */
     let gitDir;
 
@@ -146,7 +146,7 @@ describe("__git_branches__", () => {
     });
   });
 
-describe("__git_remotes__", () => {
+  describe("__git_remotes__", () => {
     /** Temp git repo for remote tests. */
     let gitDir;
 
@@ -173,7 +173,7 @@ describe("__git_remotes__", () => {
     });
   });
 
-describe("__git_files__", () => {
+  describe("__git_files__", () => {
     /** Temp git repo for file tests. */
     let gitDir;
 
@@ -201,7 +201,7 @@ describe("__git_files__", () => {
     });
   });
 
-describe("__git_head_refs__", () => {
+  describe("__git_head_refs__", () => {
     it("should expand to HEAD and HEAD~N refs", () => {
       const script = buildCompletionTestScript("|__git_head_refs__", ["testcmd", "HEAD"], 1);
       const results = runCompletionScript(script);
@@ -212,7 +212,7 @@ describe("__git_head_refs__", () => {
     });
   });
 
-describe("__git_commits__", () => {
+  describe("__git_commits__", () => {
     /** Temp git repo for commit hash tests. */
     let gitDir;
 
@@ -240,7 +240,7 @@ describe("__git_commits__", () => {
     });
   });
 
-describe("__npm_scripts__", () => {
+  describe("__npm_scripts__", () => {
     it("should expand to script names from package.json", () => {
       const setupDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
       fs.writeFileSync(path.join(setupDir, "package.json"), JSON.stringify({ scripts: { build: "tsc", test: "vitest", lint: "eslint" } }));
@@ -256,7 +256,7 @@ describe("__npm_scripts__", () => {
     });
   });
 
-describe("__makefile_targets__", () => {
+  describe("__makefile_targets__", () => {
     it("should expand to target names from Makefile", () => {
       const setupDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
       fs.writeFileSync(path.join(setupDir, "Makefile"), "build:\n\techo build\ntest:\n\techo test\nclean:\n\techo clean\n");
@@ -272,7 +272,7 @@ describe("__makefile_targets__", () => {
     });
   });
 
-describe("__composer_scripts__", () => {
+  describe("__composer_scripts__", () => {
     it("should expand to script names from composer.json", () => {
       const setupDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
       fs.writeFileSync(

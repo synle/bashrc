@@ -236,11 +236,11 @@ function runWrapper(command) {
 }
 
 describe("list_prs — CLI hygiene", () => {
-it("starts with a node shebang so the installed file is executable", () => {
+  it("starts with a node shebang so the installed file is executable", () => {
     expect(CLI_SOURCE.startsWith("#!/usr/bin/env node")).toBe(true);
   });
 
-it("is syntactically valid node", () => {
+  it("is syntactically valid node", () => {
     const tmp = path.join(os.tmpdir(), `list-prs-check-${process.pid}.js`);
     fs.writeFileSync(tmp, CLI_SOURCE);
     try {
@@ -250,7 +250,7 @@ it("is syntactically valid node", () => {
     }
   });
 
-it("never writes progress or debug output to STDOUT", () => {
+  it("never writes progress or debug output to STDOUT", () => {
     // Every user-facing diagnostic must go through info()/die() (stderr); stdout
     // is the data channel only.
     expect(CLI_SOURCE).not.toMatch(/console\.log\(/);
@@ -258,14 +258,14 @@ it("never writes progress or debug output to STDOUT", () => {
 });
 
 describe("list_prs — installer", () => {
-it("installs to ~/.local/bin/list_prs from the CommonJS payload", () => {
+  it("installs to ~/.local/bin/list_prs from the CommonJS payload", () => {
     expect(INSTALLER_SOURCE).toContain("software/scripts/git.pr_list.cjs");
     expect(INSTALLER_SOURCE).toMatch(/\.local`?,?\s*`?bin/);
     expect(INSTALLER_SOURCE).toContain("list_prs");
     expect(INSTALLER_SOURCE).toContain("chmodSync");
   });
 
-it("defines doWork and undoWork", () => {
+  it("defines doWork and undoWork", () => {
     expect(INSTALLER_SOURCE).toMatch(/async function doWork\(\)/);
     expect(INSTALLER_SOURCE).toMatch(/async function undoWork\(\)/);
   });

@@ -57,11 +57,11 @@ function runCompletionScript(script, options = {}) {
 }
 
 describe("bash-fzf.profile.bash (direct)", () => {
-const fzfTemplatePath = path.resolve("software/scripts/bash-fzf.profile.bash");
+  const fzfTemplatePath = path.resolve("software/scripts/bash-fzf.profile.bash");
 
-let tmpDir;
+  let tmpDir;
 
-beforeAll(() => {
+  beforeAll(() => {
     tmpDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
     // legitimate entries
     fs.mkdirSync(path.join(tmpDir, "src", "lib"), { recursive: true });
@@ -102,11 +102,11 @@ beforeAll(() => {
     fs.writeFileSync(path.join(tmpDir, ".venv", "lib", "site.py"), "venv");
   });
 
-afterAll(() => {
+  afterAll(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-function runFzfHelper(script) {
+  function runFzfHelper(script) {
     const full = `#!/usr/bin/env bash\nsource "${COMMON_ENV_PATH}"\nsource "${fzfTemplatePath}"\n${script}`;
     return execSync("bash", { input: full, encoding: "utf-8", cwd: tmpDir, timeout: 10000 })
       .trim()
@@ -114,7 +114,7 @@ function runFzfHelper(script) {
       .filter((l) => l !== "");
   }
 
-describe("filter_unwanted", () => {
+  describe("filter_unwanted", () => {
     it("should filter ignored folder paths from piped input", () => {
       const results = runFzfHelper(`
         printf '%s\\n' \
@@ -147,7 +147,7 @@ describe("filter_unwanted", () => {
     });
   });
 
-describe("_fuzzy_list_all", () => {
+  describe("_fuzzy_list_all", () => {
     it("should list files and dirs, filtering ignored paths", () => {
       const results = runFzfHelper("_fuzzy_list_all .");
       const all = results.join(" ");

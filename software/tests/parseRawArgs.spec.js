@@ -5,9 +5,9 @@ import { getIndexFunction, getSandboxProcess } from "./setup.js";
 const parseRawArgs = getIndexFunction("parseRawArgs");
 
 describe("parseRawArgs", () => {
-let proc;
+  let proc;
 
-beforeEach(() => {
+  beforeEach(() => {
     proc = getSandboxProcess();
     // reset env vars that parseRawArgs sets
     delete proc.env.TEST_SCRIPT_FILES;
@@ -21,7 +21,7 @@ beforeEach(() => {
     delete proc.env.PRESETS_JSON;
   });
 
-it("should return defaults when BASHRC_RAW_ARGS is empty", () => {
+  it("should return defaults when BASHRC_RAW_ARGS is empty", () => {
     proc.env.BASHRC_RAW_ARGS = "[]";
     const result = parseRawArgs();
     expect(result.files).toBe("");
@@ -33,45 +33,45 @@ it("should return defaults when BASHRC_RAW_ARGS is empty", () => {
     expect(result.setup).toBe(false);
   });
 
-it("should parse --files= flag", () => {
+  it("should parse --files= flag", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--files=git.js"]);
     const result = parseRawArgs();
     expect(result.files).toBe("git.js");
     expect(proc.env.TEST_SCRIPT_FILES).toBe("git.js");
   });
 
-it("should parse -files= flag (single dash)", () => {
+  it("should parse -files= flag (single dash)", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["-files=fzf.js"]);
     const result = parseRawArgs();
     expect(result.files).toBe("fzf.js");
   });
 
-it("should accumulate multiple --files= flags", () => {
+  it("should accumulate multiple --files= flags", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--files=a.js", "--files=b.js"]);
     const result = parseRawArgs();
     expect(result.files).toBe("a.js,b.js");
   });
 
-it("should parse --force-refresh flag", () => {
+  it("should parse --force-refresh flag", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--force-refresh"]);
     const result = parseRawArgs();
     expect(result.forceRefresh).toBe(true);
     expect(proc.env.IS_FORCE_REFRESH).toBe("1");
   });
 
-it("should parse --force shorthand", () => {
+  it("should parse --force shorthand", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--force"]);
     const result = parseRawArgs();
     expect(result.forceRefresh).toBe(true);
   });
 
-it("should parse -f shorthand", () => {
+  it("should parse -f shorthand", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["-f"]);
     const result = parseRawArgs();
     expect(result.forceRefresh).toBe(true);
   });
 
-it("should parse --refresh= flag and set both files and forceRefresh", () => {
+  it("should parse --refresh= flag and set both files and forceRefresh", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--refresh=fzf.js,fonts.js"]);
     const result = parseRawArgs();
     expect(result.files).toBe("fzf.js,fonts.js");
@@ -80,7 +80,7 @@ it("should parse --refresh= flag and set both files and forceRefresh", () => {
     expect(proc.env.REFRESH_FILES).toBe("fzf.js,fonts.js");
   });
 
-it("should expand --preset=lightweight into its file list", () => {
+  it("should expand --preset=lightweight into its file list", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       lightweight: { files: ["git.js", "vim.js"] },
     });
@@ -91,7 +91,7 @@ it("should expand --preset=lightweight into its file list", () => {
     expect(proc.env.TEST_SCRIPT_FILES).toBe("git.js,vim.js");
   });
 
-it("should accept --presets= alias (plural)", () => {
+  it("should accept --presets= alias (plural)", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       lightweight: { files: ["git.js"] },
     });
@@ -101,7 +101,7 @@ it("should accept --presets= alias (plural)", () => {
     expect(result.files).toBe("git.js");
   });
 
-it("should compose multiple presets (files union)", () => {
+  it("should compose multiple presets (files union)", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       a: { files: ["a.js"] },
       b: { files: ["b.js"] },
@@ -112,20 +112,20 @@ it("should compose multiple presets (files union)", () => {
     expect(result.files).toBe("a.js,b.js");
   });
 
-it("should compose --preset with explicit --files=", () => {
+  it("should compose --preset with explicit --files=", () => {
     proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--files=extra.js", "--preset=lightweight"]);
     const result = parseRawArgs();
     expect(result.files).toBe("extra.js,a.js");
   });
 
-it("should throw on unknown preset name", () => {
+  it("should throw on unknown preset name", () => {
     proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=does-not-exist"]);
     expect(() => parseRawArgs()).toThrow(/Unknown preset "does-not-exist"/);
   });
 
-it("should auto-resolve a partial preset name with exactly one match", () => {
+  it("should auto-resolve a partial preset name with exactly one match", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       editors: { files: ["a.js"] },
       browsers: { files: ["b.js"] },
@@ -136,14 +136,14 @@ it("should auto-resolve a partial preset name with exactly one match", () => {
     expect(result.files).toBe("a.js");
   });
 
-it("should auto-resolve a case-insensitive partial match", () => {
+  it("should auto-resolve a case-insensitive partial match", () => {
     proc.env.PRESETS_JSON = JSON.stringify({ Lightweight: { files: ["a.js"] } });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=LIGHT"]);
     const result = parseRawArgs();
     expect(result.presets).toEqual(["Lightweight"]);
   });
 
-it("should throw with a copy-paste suggestion list when partial match is ambiguous", () => {
+  it("should throw with a copy-paste suggestion list when partial match is ambiguous", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       editors: { files: ["a.js"] },
       "editor-pro": { files: ["b.js"] },
@@ -154,7 +154,7 @@ it("should throw with a copy-paste suggestion list when partial match is ambiguo
     expect(() => parseRawArgs()).toThrow(/bash run\.sh --preset=editor-pro/);
   });
 
-it("should still resolve presets by EXACT name regardless of prefix style", () => {
+  it("should still resolve presets by EXACT name regardless of prefix style", () => {
     // Underscore-prefixed names no longer get special handling — they're treated
     // like any other name. Exact match still wins over fuzzy.
     proc.env.PRESETS_JSON = JSON.stringify({
@@ -167,7 +167,7 @@ it("should still resolve presets by EXACT name regardless of prefix style", () =
     expect(result.files).toBe("internal.js");
   });
 
-it("should prefer exact match over partial when both exist", () => {
+  it("should prefer exact match over partial when both exist", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       // "edit" is an exact match; "editors" would also be a partial match.
       edit: { files: ["exact.js"] },
@@ -179,7 +179,7 @@ it("should prefer exact match over partial when both exist", () => {
     expect(result.files).toBe("exact.js");
   });
 
-it("should recursively expand a preset that references other presets via presets:[]", () => {
+  it("should recursively expand a preset that references other presets via presets:[]", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       editors: { files: ["vim.js", "vs-code.js"] },
       emulators: { files: ["ghostty.js"] },
@@ -190,7 +190,7 @@ it("should recursively expand a preset that references other presets via presets
     expect(result.files).toBe("vim.js,vs-code.js,ghostty.js");
   });
 
-it("should expand nested preset references multiple levels deep", () => {
+  it("should expand nested preset references multiple levels deep", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       leaf: { files: ["leaf.js"] },
       mid: { presets: ["leaf"], files: ["mid.js"] },
@@ -202,7 +202,7 @@ it("should expand nested preset references multiple levels deep", () => {
     expect(result.files).toBe("leaf.js,mid.js,root.js");
   });
 
-it("should dedup files within a single preset expansion (shared sub-preset files run once)", () => {
+  it("should dedup files within a single preset expansion (shared sub-preset files run once)", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       a: { files: ["shared.js", "a.js"] },
       b: { files: ["shared.js", "b.js"] },
@@ -213,7 +213,7 @@ it("should dedup files within a single preset expansion (shared sub-preset files
     expect(result.files).toBe("shared.js,a.js,b.js");
   });
 
-it("should detect a direct self-reference cycle", () => {
+  it("should detect a direct self-reference cycle", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       loop: { presets: ["loop"], files: ["a.js"] },
     });
@@ -222,7 +222,7 @@ it("should detect a direct self-reference cycle", () => {
     expect(() => parseRawArgs()).toThrow(/loop -> loop/);
   });
 
-it("should detect a transitive cycle (A -> B -> A)", () => {
+  it("should detect a transitive cycle (A -> B -> A)", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       a: { presets: ["b"] },
       b: { presets: ["a"] },
@@ -232,7 +232,7 @@ it("should detect a transitive cycle (A -> B -> A)", () => {
     expect(() => parseRawArgs()).toThrow(/a -> b -> a/);
   });
 
-it("should detect a deeper transitive cycle (A -> B -> C -> A)", () => {
+  it("should detect a deeper transitive cycle (A -> B -> C -> A)", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       a: { presets: ["b"] },
       b: { presets: ["c"] },
@@ -242,7 +242,7 @@ it("should detect a deeper transitive cycle (A -> B -> C -> A)", () => {
     expect(() => parseRawArgs()).toThrow(/a -> b -> c -> a/);
   });
 
-it("should throw when a sub-preset references an unknown preset name", () => {
+  it("should throw when a sub-preset references an unknown preset name", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       a: { presets: ["does-not-exist"] },
     });
@@ -250,7 +250,7 @@ it("should throw when a sub-preset references an unknown preset name", () => {
     expect(() => parseRawArgs()).toThrow(/Unknown preset "does-not-exist".*referenced from "a"/);
   });
 
-it("should treat empty --preset= value as a no-op", () => {
+  it("should treat empty --preset= value as a no-op", () => {
     proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset="]);
     const result = parseRawArgs();
@@ -258,20 +258,20 @@ it("should treat empty --preset= value as a no-op", () => {
     expect(result.files).toBe("");
   });
 
-it("should handle missing PRESETS_JSON env var by treating any preset as unknown", () => {
+  it("should handle missing PRESETS_JSON env var by treating any preset as unknown", () => {
     delete proc.env.PRESETS_JSON;
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=lightweight"]);
     expect(() => parseRawArgs()).toThrow(/Unknown preset "lightweight"/);
   });
 
-it("should tolerate malformed PRESETS_JSON without crashing parse", () => {
+  it("should tolerate malformed PRESETS_JSON without crashing parse", () => {
     proc.env.PRESETS_JSON = "{not valid json";
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=lightweight"]);
     // malformed JSON falls back to {}; preset is then unknown
     expect(() => parseRawArgs()).toThrow(/Unknown preset "lightweight"/);
   });
 
-it("should ignore presets when no --preset= flag is passed", () => {
+  it("should ignore presets when no --preset= flag is passed", () => {
     proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--files=git.js"]);
     const result = parseRawArgs();
@@ -279,14 +279,14 @@ it("should ignore presets when no --preset= flag is passed", () => {
     expect(result.files).toBe("git.js");
   });
 
-it("should parse --setup flag", () => {
+  it("should parse --setup flag", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--setup"]);
     const result = parseRawArgs();
     expect(result.setup).toBe(true);
     expect(proc.env.IS_SETUP).toBe("1");
   });
 
-it("should parse --is-setup alias", () => {
+  it("should parse --is-setup alias", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--is-setup"]);
     const result = parseRawArgs();
     expect(result.setup).toBe(true);

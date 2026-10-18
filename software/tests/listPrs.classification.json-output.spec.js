@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — output shape", () => {
-it("emits the full documented JSON contract per row", () => {
+  it("emits the full documented JSON contract per row", () => {
     const row = rowFor(AWAITING_REVIEW);
     // Fields /sy-list-prs and /sy-babysit-prs read off the fast path.
     for (const field of [

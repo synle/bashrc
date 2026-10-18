@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — reason icons and auto-merge", () => {
-const CASES = [
+  const CASES = [
     ["🗣️", "changes requested", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
     ["⚔️", "merge conflict", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
     ["💥", "CI failed", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
@@ -248,13 +248,13 @@ const CASES = [
     ["▫", "placeholder draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true, title: "WIP: Placeholder" }],
   ];
 
-for (const [icon, label, overrides] of CASES) {
+  for (const [icon, label, overrides] of CASES) {
     it(`uses ${icon} for ${label}`, () => {
       expect(rowFor(overrides, ["--all"]).reasonIcon).toBe(icon);
     });
   }
 
-it("prefixes the title line with the reason icon and the auto-merge tag", () => {
+  it("prefixes the title line with the reason icon and the auto-merge tag", () => {
     // runCli pipes stdout, so there is no TTY and no ANSI. The tag is plain text
     // rather than styling precisely so it survives this render intact.
     const { stdout } = runCli(
@@ -265,7 +265,7 @@ it("prefixes the title line with the reason icon and the auto-merge tag", () => 
     expect(lines[0]).toBe("⏳ [auto-merge] syle/retry-token-refresh · Retry token refresh on 401");
   });
 
-it("leaves the auto-merge tag off a disarmed PR", () => {
+  it("leaves the auto-merge tag off a disarmed PR", () => {
     const lines = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)])
       .stdout.split("\n")
       .filter(Boolean);
@@ -273,7 +273,7 @@ it("leaves the auto-merge tag off a disarmed PR", () => {
     expect(lines[0]).not.toContain("auto-merge");
   });
 
-it("spends no reason-column glyph on auto-merge", () => {
+  it("spends no reason-column glyph on auto-merge", () => {
     // The regression this guards: auto-merge used to render as a 🪄 competing with the
     // reason icon, so two unrelated facts fought for the same glance. It is a word now.
     const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };

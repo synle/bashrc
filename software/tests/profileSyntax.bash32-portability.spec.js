@@ -241,7 +241,7 @@ function findHeredocsInCommandSubstitution(source) {
 }
 
 describe("bash 3.2 portability", () => {
-allShellFiles.forEach((filePath) => {
+  allShellFiles.forEach((filePath) => {
     const relative = path.relative(ROOT_DIR, filePath);
 
     it(`${relative} - no heredoc nested inside $( ... )`, () => {
@@ -270,7 +270,7 @@ allShellFiles.forEach((filePath) => {
     });
   });
 
-it("should have shell files to lint", () => {
+  it("should have shell files to lint", () => {
     expect(allShellFiles.length).toBeGreaterThan(0);
   });
 });

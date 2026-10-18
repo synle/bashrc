@@ -236,32 +236,32 @@ function runWrapper(command) {
 }
 
 describe("list_prs — shell wrappers", () => {
-it("pr_list_my_open asks for every open PR of yours", () => {
+  it("pr_list_my_open asks for every open PR of yours", () => {
     expect(runWrapper("pr_list_my_open --cwd").forwarded).toEqual(["--all --me=1 --cwd"]);
   });
 
-it("pr_list_my_need_attention drops --all and stays mine-only", () => {
+  it("pr_list_my_need_attention drops --all and stays mine-only", () => {
     expect(runWrapper("pr_list_my_need_attention --cwd --verbose").forwarded).toEqual(["--me=1 --cwd --verbose"]);
   });
 
-it("pr_list_other_open asks for everyone else's open PRs", () => {
+  it("pr_list_other_open asks for everyone else's open PRs", () => {
     expect(runWrapper("pr_list_other_open").forwarded).toEqual(["--all --me=0"]);
   });
 
-it("pr_list_other_need_attention drops --all and stays everyone-else", () => {
+  it("pr_list_other_need_attention drops --all and stays everyone-else", () => {
     expect(runWrapper("pr_list_other_need_attention --json").forwarded).toEqual(["--me=0 --json"]);
   });
 
-it("puts --me first so a caller can still override it", () => {
+  it("puts --me first so a caller can still override it", () => {
     // list_prs is last-wins on --me, so the wrapper's default must lead.
     expect(runWrapper("pr_list_my_open --me=0").forwarded).toEqual(["--all --me=1 --me=0"]);
   });
 
-it("pr_list is the bare-name alias for pr_list_my_open", () => {
+  it("pr_list is the bare-name alias for pr_list_my_open", () => {
     expect(runWrapper("pr_list --cwd").forwarded).toEqual(["--all --me=1 --cwd"]);
   });
 
-it("every wrapper answers --help under its own name without calling list_prs", () => {
+  it("every wrapper answers --help under its own name without calling list_prs", () => {
     ["pr_list_my_open", "pr_list_my_need_attention", "pr_list_other_open", "pr_list_other_need_attention"].forEach((name) => {
       const { stdout, forwarded } = runWrapper(`${name} --help`);
       expect(stdout, `${name} --help should name itself`).toContain(`${name}:`);
@@ -269,7 +269,7 @@ it("every wrapper answers --help under its own name without calling list_prs", (
     });
   });
 
-it("dropped every old list_prs alias / internal", () => {
+  it("dropped every old list_prs alias / internal", () => {
     ["list_pending_prs", "list_open_prs", "_list_prs_repos", "pr_list_all_open", "pr_list_needs_attention"].forEach((name) => {
       expect(PROFILE_SOURCE, `${name} should be gone from the profile`).not.toMatch(new RegExp(`\\b${name}\\b`));
     });
@@ -279,7 +279,7 @@ it("dropped every old list_prs alias / internal", () => {
     });
   });
 
-it("keeps no bash list_prs implementation, only the four wrappers over one body", () => {
+  it("keeps no bash list_prs implementation, only the four wrappers over one body", () => {
     expect(PROFILE_SOURCE).not.toMatch(/^function list_prs\(\)/m);
     expect(PROFILE_SOURCE).toMatch(/^function _pr_list_run\(\)/m);
     ["pr_list_my_open", "pr_list_my_need_attention", "pr_list_other_open", "pr_list_other_need_attention"].forEach((name) => {

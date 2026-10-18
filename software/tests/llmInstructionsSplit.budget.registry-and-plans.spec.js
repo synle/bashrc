@@ -173,34 +173,34 @@ function countBullets(text) {
 }
 
 describe("shared instruction registry", () => {
-it("should point every registered target at a source file that exists", () => {
+  it("should point every registered target at a source file that exists", () => {
     for (const [target, source] of Object.entries(llm.LLM_SHARED_INSTRUCTION_FILES)) {
       expect(fs.existsSync(path.join(ROOT, source)), `${target} -> ${source}`).toBe(true);
     }
   });
 
-it("should have content expectations for every registered file, and no orphans", () => {
+  it("should have content expectations for every registered file, and no orphans", () => {
     expect(Object.keys(SPLIT_EXPECTATIONS).sort()).toEqual(Object.keys(llm.LLM_SHARED_INSTRUCTION_FILES).sort());
   });
 
-it("should place instructions, plans, and PR memory under one shared root", () => {
+  it("should place instructions, plans, and PR memory under one shared root", () => {
     expect(llm.LLM_SHARED_INSTRUCTIONS_FOLDER.startsWith(llm.LLM_SHARED_ROOT_FOLDER)).toBe(true);
     expect(llm.LLM_SHARED_PLANS_FOLDER.startsWith(llm.LLM_SHARED_ROOT_FOLDER)).toBe(true);
     expect(llm.LLM_SHARED_PR_REVIEWS_FOLDER).toBe(path.join(llm.LLM_SHARED_ROOT_FOLDER, "pr_reviews"));
     expect(llm.LLM_SHARED_PR_BABYSITS_FOLDER).toBe(path.join(llm.LLM_SHARED_ROOT_FOLDER, "pr_babysits"));
   });
 
-it("should keep the legacy plans folder distinct from the new one", () => {
+  it("should keep the legacy plans folder distinct from the new one", () => {
     expect(llm.LLM_LEGACY_PLANS_FOLDER).not.toBe(llm.LLM_SHARED_PLANS_FOLDER);
     expect(llm.LLM_LEGACY_PLANS_FOLDER.endsWith("sy_llm_ai_plans")).toBe(true);
   });
 
-it("should hang the shared root off the personal root, not the bare home folder", () => {
+  it("should hang the shared root off the personal root, not the bare home folder", () => {
     expect(llm.LLM_SHARED_ROOT_FOLDER).toBe(`${SANDBOX_SY_HOME}/ai_llm`);
     expect(llm.LLM_SHARED_ROOT_FOLDER.startsWith(SANDBOX_SY_HOME)).toBe(true);
   });
 
-it("should point each legacy folder at the destination its content belongs in", () => {
+  it("should point each legacy folder at the destination its content belongs in", () => {
     // The plans folder is NOT the root: its content belongs under <root>/plans, so the
     // recovery command the detector prints has to carry a per-row destination.
     expect(llm.LLM_LEGACY_FOLDERS.map((row) => row.folder)).toEqual([llm.LLM_LEGACY_ROOT_FOLDER, llm.LLM_LEGACY_PLANS_FOLDER]);
@@ -210,7 +210,7 @@ it("should point each legacy folder at the destination its content belongs in", 
     }
   });
 
-it("should list the persona file last, even behind a name that sorts after it", () => {
+  it("should list the persona file last, even behind a name that sorts after it", () => {
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), "llm-instr-"));
     const original = llm.LLM_SHARED_INSTRUCTIONS_FOLDER;
     try {
@@ -230,14 +230,14 @@ it("should list the persona file last, even behind a name that sorts after it", 
     }
   });
 
-it("should deploy the persona under a name that sorts after every letter", () => {
+  it("should deploy the persona under a name that sorts after every letter", () => {
     expect(llm.LLM_PERSONA_INSTRUCTION_FILE).toBe("~persona.md");
     expect(Object.keys(llm.LLM_SHARED_INSTRUCTION_FILES)).toContain(llm.LLM_PERSONA_INSTRUCTION_FILE);
   });
 });
 
 describe("no rules were lost in the split", () => {
-it("should hold each file's rules in the split file, not the always-loaded one", () => {
+  it("should hold each file's rules in the split file, not the always-loaded one", () => {
     for (const { target, text } of splitFiles) {
       for (const lead of SPLIT_EXPECTATIONS[target].leads) {
         expect(text, `${target} should hold: ${lead}`).toContain(lead);
@@ -248,13 +248,13 @@ it("should hold each file's rules in the split file, not the always-loaded one",
     }
   });
 
-it("should keep the combined bullet count at or above the pre-split total", () => {
+  it("should keep the combined bullet count at or above the pre-split total", () => {
     // 158 rules before the first split; pointer stubs add a few, so this can only grow.
     const total = splitFiles.reduce((sum, { text }) => sum + countBullets(text), countBullets(instructions));
     expect(total).toBeGreaterThanOrEqual(158);
   });
 
-it("should give every split file its own top-level heading and section structure", () => {
+  it("should give every split file its own top-level heading and section structure", () => {
     for (const { target, text } of splitFiles) {
       expect(text.startsWith("# "), `${target} needs a top-level heading`).toBe(true);
       expect(text, `${target} heading`).toContain(SPLIT_EXPECTATIONS[target].heading);
@@ -266,19 +266,19 @@ it("should give every split file its own top-level heading and section structure
 });
 
 describe("plans folder references", () => {
-it("should not mention the pre-consolidation plans path anywhere in the instructions", () => {
+  it("should not mention the pre-consolidation plans path anywhere in the instructions", () => {
     expect(instructions).not.toContain("sy_llm_ai_plans");
     for (const { target, text } of splitFiles) {
       expect(text, `${target} should not name the legacy plans folder`).not.toContain("sy_llm_ai_plans");
     }
   });
 
-it("should point plan artifacts at the consolidated folder", () => {
+  it("should point plan artifacts at the consolidated folder", () => {
     expect(instructions).toContain("<<LLM_ROOT_FOLDER>>/plans/");
     expect(llm.resolveLLMDocPlaceholders(instructions)).toContain(`${llm.LLM_SHARED_ROOT_FOLDER}/plans/`);
   });
 
-it("should not name the pre-consolidation LLM home anywhere", () => {
+  it("should not name the pre-consolidation LLM home anywhere", () => {
     for (const { target, text } of splitFiles) {
       expect(text, `${target} should not name the legacy LLM home`).not.toContain("sy_llm_ai");
     }

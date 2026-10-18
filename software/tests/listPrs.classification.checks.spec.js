@@ -236,27 +236,27 @@ function runWrapper(command) {
 }
 
 describe("list_prs — classification", () => {
-it("flags a failed check red with the check name", () => {
+  it("flags a failed check red with the check name", () => {
     const row = rowFor({ checks: [FAILING_CHECK], reviewDecision: "APPROVED" });
     expect(row.signal).toBe("🔴");
     expect(row.group).toBe("NEEDS ATTENTION");
     expect(row.status).toContain("CI FAILED — unit-tests");
   });
 
-it("counts a still-running check as a build in progress, not a failure", () => {
+  it("counts a still-running check as a build in progress, not a failure", () => {
     const row = rowFor({ checks: [RUNNING_CHECK], reviewDecision: "REVIEW_REQUIRED" });
     expect(row.signal).toBe("🟡");
     expect(row.status).toContain("BUILD IN PROGRESS (1 running)");
   });
 
-it("treats a pending approval-gate check as a gate, never as running CI", () => {
+  it("treats a pending approval-gate check as a gate, never as running CI", () => {
     const gate = { __typename: "StatusContext", context: "codeowner-approval", state: "PENDING" };
     const row = rowFor({ checks: [PASSING_CHECK, gate], reviewDecision: "REVIEW_REQUIRED" });
     expect(row.status).toContain("CI PASSED");
     expect(row.status).toContain("⏳ 1 approval gate");
   });
 
-it("honors BASHRC_PR_GATE_CHECK_PATTERN for what counts as a gate", () => {
+  it("honors BASHRC_PR_GATE_CHECK_PATTERN for what counts as a gate", () => {
     const custom = { __typename: "StatusContext", context: "waiting-on-legal", state: "PENDING" };
     const { stdout } = runCli(["--me=1", "--json"], [pullRequest({ checks: [PASSING_CHECK, custom], reviewDecision: "REVIEW_REQUIRED" })], {
       env: { BASHRC_PR_GATE_CHECK_PATTERN: "waiting-on-legal" },
@@ -266,19 +266,19 @@ it("honors BASHRC_PR_GATE_CHECK_PATTERN for what counts as a gate", () => {
     expect(row.status).toContain("⏳ 1 approval gate");
   });
 
-it("marks changes-requested red", () => {
+  it("marks changes-requested red", () => {
     const row = rowFor({ checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" });
     expect(row.signal).toBe("🔴");
     expect(row.status).toContain("CHANGES REQUESTED");
   });
 
-it("surfaces a merge conflict", () => {
+  it("surfaces a merge conflict", () => {
     const row = rowFor({ checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" });
     expect(row.signal).toBe("🔴");
     expect(row.status).toContain("MERGE CONFLICT");
   });
 
-it("separates human from bot review threads", () => {
+  it("separates human from bot review threads", () => {
     const threads = [
       { isResolved: false, comments: { nodes: [{ author: { login: "carol", __typename: "User" } }] } },
       { isResolved: false, comments: { nodes: [{ author: { login: "dependabot", __typename: "Bot" } }] } },
@@ -288,7 +288,7 @@ it("separates human from bot review threads", () => {
     expect(row.status).toContain("💬 2 open (1 human, 1 bot)");
   });
 
-it("classifies a WIP/draft title into the not-ready group", () => {
+  it("classifies a WIP/draft title into the not-ready group", () => {
     expect(rowFor({ isDraft: true, checks: [PASSING_CHECK] }).group).toBe("NOT READY / WIP / DRAFT");
     expect(rowFor({ title: "WIP: refactor auth", checks: [PASSING_CHECK] }).group).toBe("NOT READY / WIP / DRAFT");
   });

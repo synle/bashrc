@@ -57,11 +57,11 @@ function runCompletionScript(script, options = {}) {
 }
 
 describe("bash-fzf.profile.bash (direct)", () => {
-const fzfTemplatePath = path.resolve("software/scripts/bash-fzf.profile.bash");
+  const fzfTemplatePath = path.resolve("software/scripts/bash-fzf.profile.bash");
 
-let tmpDir;
+  let tmpDir;
 
-beforeAll(() => {
+  beforeAll(() => {
     tmpDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
     // legitimate entries
     fs.mkdirSync(path.join(tmpDir, "src", "lib"), { recursive: true });
@@ -102,11 +102,11 @@ beforeAll(() => {
     fs.writeFileSync(path.join(tmpDir, ".venv", "lib", "site.py"), "venv");
   });
 
-afterAll(() => {
+  afterAll(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-function runFzfHelper(script) {
+  function runFzfHelper(script) {
     const full = `#!/usr/bin/env bash\nsource "${COMMON_ENV_PATH}"\nsource "${fzfTemplatePath}"\n${script}`;
     return execSync("bash", { input: full, encoding: "utf-8", cwd: tmpDir, timeout: 10000 })
       .trim()
@@ -114,7 +114,7 @@ function runFzfHelper(script) {
       .filter((l) => l !== "");
   }
 
-describe("fuzzy_open (mocked fzf)", () => {
+  describe("fuzzy_open (mocked fzf)", () => {
     /**
      * Runs fuzzy_open with fzf mocked to return a fixed selection.
      * Also mocks view_file/vim to echo instead of opening.
@@ -190,7 +190,7 @@ describe("fuzzy_open (mocked fzf)", () => {
     });
   });
 
-describe("bookmark functions", () => {
+  describe("bookmark functions", () => {
     it("should define add_bookmark, add_bookmark_dir, and fuzzy_favorite_command", () => {
       const results = runFzfHelper(`
         type add_bookmark && echo "HAS_ADD_BOOKMARK"
@@ -236,7 +236,7 @@ describe("bookmark functions", () => {
     });
   });
 
-describe("fzf history timestamp filtering", () => {
+  describe("fzf history timestamp filtering", () => {
     it("should filter lines starting with # from bash_history in fuzzy_history", () => {
       // fuzzy_history (in bash-history.profile.bash) is the single source of truth for
       // history fzf search — used both by direct invocation and by the Ctrl+R bind in

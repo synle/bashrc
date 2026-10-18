@@ -173,7 +173,7 @@ function countBullets(text) {
 }
 
 describe("shared-home ownership tests", () => {
-it("should claim links under the current home and every former one", () => {
+  it("should claim links under the current home and every former one", () => {
     const current = llm.LLM_SHARED_ROOT_FOLDER;
     const legacy = llm.LLM_LEGACY_ROOT_FOLDER;
 
@@ -185,7 +185,7 @@ it("should claim links under the current home and every former one", () => {
     expect(llm.isUnderSharedLLMHome(current)).toBe(true);
   });
 
-it("should never claim a path outside those roots", () => {
+  it("should never claim a path outside those roots", () => {
     expect(llm.isUnderSharedLLMHome(`${SANDBOX_HOME}/.claude/skills/mine/SKILL.md`)).toBe(false);
     expect(llm.isUnderSharedLLMHome(`${SANDBOX_HOME}/unrelated`)).toBe(false);
     // Path-boundary, not string-prefix: a sibling folder sharing the prefix is not ours.
@@ -194,7 +194,7 @@ it("should never claim a path outside those roots", () => {
 });
 
 describe("deployed docs name folders by placeholder, never by hardcoded path", () => {
-const deployedSources = [
+  const deployedSources = [
     { label: "instructions.md", text: instructions },
     ...splitFiles.map(({ target, text }) => ({ label: target, text })),
     ...fs
@@ -210,7 +210,7 @@ const deployedSources = [
     },
   ];
 
-it("should never hardcode the personal root or the LLM home", () => {
+  it("should never hardcode the personal root or the LLM home", () => {
     // A hardcoded path is a second spelling of a folder common-env.sh already owns:
     // it goes stale the day the root moves, and is wrong outright on a machine whose
     // home layout differs. Every one of these must be a placeholder instead.
@@ -221,7 +221,7 @@ it("should never hardcode the personal root or the LLM home", () => {
     }
   });
 
-it("should resolve every placeholder it uses to a real absolute folder", () => {
+  it("should resolve every placeholder it uses to a real absolute folder", () => {
     // The LLM-only token plus the shared ones a doc gets for free. `<<SY_ROOT_FOLDER>>`
     // is resolved by COMMON_PLACEHOLDERS in index.js rather than declared here, so it
     // is named explicitly — otherwise moving it to the shared registry would have
@@ -243,7 +243,7 @@ it("should resolve every placeholder it uses to a real absolute folder", () => {
     }
   });
 
-it("should resolve every PR-loop tuning placeholder to a positive number of seconds", () => {
+  it("should resolve every PR-loop tuning placeholder to a positive number of seconds", () => {
     // These carry the babysit / review cadence, so an unresolved token ships the
     // literal `<<SY_PR_POLL_INTERVAL_SECONDS>>` to an agent, which reads as prose and
     // silently loses the interval it was supposed to sleep.
@@ -260,7 +260,7 @@ it("should resolve every PR-loop tuning placeholder to a positive number of seco
     }
   });
 
-it("should route every deployed doc through the one reader that resolves placeholders", () => {
+  it("should route every deployed doc through the one reader that resolves placeholders", () => {
     // readText alone skips resolution, which ships `<<LLM_ROOT_FOLDER>>` verbatim to an
     // agent — it reads as a literal folder name and fails silently. readLLMDocSource
     // is the only sanctioned reader for a doc that gets deployed.

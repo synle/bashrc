@@ -173,7 +173,7 @@ function countBullets(text) {
 }
 
 describe("shared CLI hook merge", () => {
-it("preserves existing event hooks and adds managed reminder only once", () => {
+  it("preserves existing event hooks and adds managed reminder only once", () => {
     const userHook = { hooks: [{ type: "command", command: "user-hook" }] };
     const managedHook = { hooks: [{ type: "command", command: "persona-hook" }] };
     const settings = { hooks: { UserPromptSubmit: [userHook] } };
@@ -184,14 +184,14 @@ it("preserves existing event hooks and adds managed reminder only once", () => {
     expect(settings.hooks.UserPromptSubmit).toEqual([userHook, managedHook]);
   });
 
-it("rejects malformed event lists without replacing user data", () => {
+  it("rejects malformed event lists without replacing user data", () => {
     const settings = { hooks: { BeforeAgent: { command: "user-hook" } } };
 
     expect(llm.mergeLLMHookEntry(settings, "BeforeAgent", { command: "persona-hook" })).toBe(false);
     expect(settings.hooks.BeforeAgent).toEqual({ command: "user-hook" });
   });
 
-it("replaces an older persona reminder while preserving hooks grouped beside it", () => {
+  it("replaces an older persona reminder while preserving hooks grouped beside it", () => {
     const userHook = { type: "command", command: "user-hook" };
     const oldHook = { type: "command", command: "node", args: [llm.LLM_PERSONA_HOOK_HELPER_PATH, "claude", "old reminder"] };
     const updated = { hooks: [{ ...oldHook, args: [llm.LLM_PERSONA_HOOK_HELPER_PATH, "claude", "new reminder"] }] };
@@ -205,11 +205,11 @@ it("replaces an older persona reminder while preserving hooks grouped beside it"
 });
 
 describe("always-loaded instructions stay within the CLAUDE.md budget", () => {
-it("should keep instructions.md under the char budget", () => {
+  it("should keep instructions.md under the char budget", () => {
     expect(instructions.length).toBeLessThan(CHAR_BUDGET);
   });
 
-it("should stay under the hard limit even with both auto-generated markers added", () => {
+  it("should stay under the hard limit even with both auto-generated markers added", () => {
     // deploySharedLLMInstructions / getLLMCustomInstructions wrap the content in an
     // opening and closing comment; ~200 chars covers both plus the BEGIN/END pair.
     expect(instructions.length + 200).toBeLessThan(CLAUDE_MD_CHAR_LIMIT);
@@ -217,7 +217,7 @@ it("should stay under the hard limit even with both auto-generated markers added
 });
 
 describe("split file pointers", () => {
-it("should point at every registered file through a placeholder that resolves on deploy", () => {
+  it("should point at every registered file through a placeholder that resolves on deploy", () => {
     /** @type {string} Exactly what the deploy pass writes to disk. */
     const deployed = llm.resolveLLMDocPlaceholders(instructions);
 
@@ -240,12 +240,12 @@ it("should point at every registered file through a placeholder that resolves on
     expect(deployed, "unresolved placeholder in the deployed instructions").not.toContain("<<LLM_ROOT_FOLDER>>");
   });
 
-it("should keep a Source Control section that points at the PR workflow file", () => {
+  it("should keep a Source Control section that points at the PR workflow file", () => {
     expect(instructions).toContain("## Source Control & PRs");
     expect(instructions).toContain("pr-workflow.md");
   });
 
-it("should not carry a Claude @path import of any kind", () => {
+  it("should not carry a Claude @path import of any kind", () => {
     /** @type {string[]} Lines outside fenced code blocks holding a bare @-import. */
     const imports = [];
     let inFence = false;

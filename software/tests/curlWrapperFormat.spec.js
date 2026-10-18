@@ -215,7 +215,7 @@ function readHar(harFolder) {
 }
 
 describe("curl wrapper format dispatch", () => {
-describe("body sniff (no URL extension hint)", () => {
+  describe("body sniff (no URL extension hint)", () => {
     it("routes a JSON object to oxfmt with the json parser", () => {
       const { stdout } = runCurl({ url: "https://api.example.com/user", body: '{"name":"sy","nested":{"a":1,"b":[1,2,3]}}' });
       expect(stdout).toBe(fmtMarker("oxfmt", "json"));
@@ -232,7 +232,7 @@ describe("body sniff (no URL extension hint)", () => {
     });
   });
 
-describe("URL extension hint (body sniff inconclusive)", () => {
+  describe("URL extension hint (body sniff inconclusive)", () => {
     it("routes .md to prettier", () => {
       const { stdout } = runCurl({ url: "https://raw.githubusercontent.com/x/y/HEAD/README.md", body: "# Title\nsome **bold** text\n" });
       expect(stdout).toBe(fmtMarker("prettier", "md"));

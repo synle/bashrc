@@ -173,7 +173,7 @@ function countBullets(text) {
 }
 
 describe("legacy folder detector", () => {
-function makeFixture() {
+  function makeFixture() {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "sy-legacy-"));
     const populated = path.join(root, "sy_llm_ai");
     const empty = path.join(root, "sy_llm_ai_plans");
@@ -198,7 +198,7 @@ function makeFixture() {
     };
   }
 
-function warn(rows) {
+  function warn(rows) {
     /** @type {string[]} Everything the detector printed. */
     const logs = [];
     const previousLog = llm.log;
@@ -210,12 +210,12 @@ function warn(rows) {
     }
   }
 
-beforeEach(() => {
+  beforeEach(() => {
     // The latch is per-process by design; reset it so cases stay independent.
     llm._legacyLLMFolderWarningShown = false;
   });
 
-it("should report a legacy folder that still holds files", () => {
+  it("should report a legacy folder that still holds files", () => {
     const { populated, rows } = makeFixture();
     const { found, logs } = warn(rows);
 
@@ -223,7 +223,7 @@ it("should report a legacy folder that still holds files", () => {
     expect(logs.join("\n")).toContain(populated);
   });
 
-it("should print each row's own destination, not the shared root for both", () => {
+  it("should print each row's own destination, not the shared root for both", () => {
     const { rows } = makeFixture();
     // Give the plans row content too, so both rows report.
     fs.writeFileSync(path.join(rows[1].folder, "plan-old.md"), "# old\n");
@@ -237,14 +237,14 @@ it("should print each row's own destination, not the shared root for both", () =
     expect(output).toContain(`'${rows[0].folder}/' '${rows[0].destination}/'`);
   });
 
-it("should stay silent for a legacy folder that exists but is empty", () => {
+  it("should stay silent for a legacy folder that exists but is empty", () => {
     const { empty, rows } = makeFixture();
     const { found } = warn(rows);
 
     expect(found.map((row) => row.folder)).not.toContain(empty);
   });
 
-it("should stay silent when no legacy folder is present", () => {
+  it("should stay silent when no legacy folder is present", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "sy-legacy-clean-"));
     const { found, logs } = warn([{ folder: path.join(root, "gone"), destination: root }]);
 
@@ -252,7 +252,7 @@ it("should stay silent when no legacy folder is present", () => {
     expect(logs).toEqual([]);
   });
 
-it("should never move or delete anything it reports", () => {
+  it("should never move or delete anything it reports", () => {
     const { populated, file, rows } = makeFixture();
     warn(rows);
 
@@ -261,7 +261,7 @@ it("should never move or delete anything it reports", () => {
     expect(fs.readFileSync(file, "utf-8")).toBe("# not migrated\n");
   });
 
-it("should log once no matter how many deploy entry points call it", () => {
+  it("should log once no matter how many deploy entry points call it", () => {
     const { rows } = makeFixture();
 
     const first = warn(rows);
@@ -274,7 +274,7 @@ it("should log once no matter how many deploy entry points call it", () => {
     expect(second.found.length).toBe(first.found.length);
   });
 
-it("should have no folder-moving machinery left behind", () => {
+  it("should have no folder-moving machinery left behind", () => {
     const source = fs.readFileSync(LLM_COMMON_PATH, "utf-8");
 
     for (const gone of ["migrateLegacyLLMFolder", "ensureLLMHomeMigrated", "retargetLegacyPlanSymlinks", "LLM_LEGACY_FOLDER_MIGRATIONS"]) {
@@ -284,7 +284,7 @@ it("should have no folder-moving machinery left behind", () => {
     expect(source).not.toContain("fs.renameSync");
   });
 
-it("should warn from every deploy entry point before it writes into the shared home", () => {
+  it("should warn from every deploy entry point before it writes into the shared home", () => {
     const source = fs.readFileSync(LLM_COMMON_PATH, "utf-8");
 
     for (const entry of ["deploySharedLLMInstructions", "deploySharedLLMSkills"]) {

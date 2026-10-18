@@ -116,7 +116,7 @@ _maybe_history_cleanup
 }
 
 describe("history_cleanup — pipeline", () => {
-it("end-to-end: mixed real-world input", () => {
+  it("end-to-end: mixed real-world input", () => {
     const input = [
       "#1700000001",
       "git status",
@@ -155,13 +155,13 @@ it("end-to-end: mixed real-world input", () => {
 });
 
 describe("_maybe_history_cleanup — 6h interval gate", () => {
-it("runs when no gate file exists (fresh shell after reboot)", () => {
+  it("runs when no gate file exists (fresh shell after reboot)", () => {
     const { ran, gateAfter } = runMaybeCleanup({ gateAgeSeconds: null });
     expect(ran).toBe(true);
     expect(gateAfter).toMatch(/^\d+$/); // wrote a fresh epoch timestamp
   });
 
-it("runs when gate is older than 6 hours", () => {
+  it("runs when gate is older than 6 hours", () => {
     const { ran, gateAfter } = runMaybeCleanup({ gateAgeSeconds: 21601 }); // 6h + 1s
     expect(ran).toBe(true);
     // gate timestamp should have been refreshed to ~now
@@ -169,26 +169,26 @@ it("runs when gate is older than 6 hours", () => {
     expect(Number(gateAfter)).toBeGreaterThanOrEqual(now - 5);
   });
 
-it("skips when gate is fresher than 6 hours", () => {
+  it("skips when gate is fresher than 6 hours", () => {
     const { ran, gateAfter, gateBefore } = runMaybeCleanup({ gateAgeSeconds: 60 }); // 1 minute ago
     expect(ran).toBe(false);
     // gate file unchanged when skipping
     expect(gateAfter).toBe(gateBefore);
   });
 
-it("runs when gate file is empty (treats as last=0)", () => {
+  it("runs when gate file is empty (treats as last=0)", () => {
     const { ran } = runMaybeCleanup({ gateContent: "" });
     expect(ran).toBe(true);
   });
 
-it("runs when gate file has garbage (non-numeric treated as never-run)", () => {
+  it("runs when gate file has garbage (non-numeric treated as never-run)", () => {
     // cache_lastrun_due rejects empty / non-numeric content and returns "due",
     // so cleanup runs. Defensive: a corrupted gate can never wedge cleanup.
     const { ran } = runMaybeCleanup({ gateContent: "not a number" });
     expect(ran).toBe(true);
   });
 
-it("runs at exactly the boundary (gate age = interval)", () => {
+  it("runs at exactly the boundary (gate age = interval)", () => {
     // cache_lastrun_due uses `age >= interval` as the "due" condition, so at
     // exactly 21600 it is due and cleanup runs.
     const { ran } = runMaybeCleanup({ gateAgeSeconds: 21600 });
@@ -197,7 +197,7 @@ it("runs at exactly the boundary (gate age = interval)", () => {
 });
 
 describe("bash-history.profile.bash — BSD-vs-GNU grep regex guard", () => {
-it("contains no BSD-incompatible escaped BRE metacharacters in single-quoted grep patterns", () => {
+  it("contains no BSD-incompatible escaped BRE metacharacters in single-quoted grep patterns", () => {
     // BSD grep treats `\{`, `\(`, `\+`, `\?` as BRE meta-operators. `\{` without
     // a closing `\}` and a numeric repetition count is a hard error on BSD —
     // a previous bug fed empty stdout into `> tmp && mv tmp file`, truncating

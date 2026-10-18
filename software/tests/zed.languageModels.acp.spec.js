@@ -125,4 +125,3 @@ describe("getAcpAgentInputs > binary resolution", () => {
 // Zed paints text ON every `*.background` / fill key, so a fill that matches its own foreground
 // (or a border color reused as a fill) renders invisible text. These checks flatten each fill
 // against the editor background and assert the text drawn on it stays legible.
-

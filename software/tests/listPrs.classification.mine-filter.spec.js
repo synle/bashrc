@@ -236,13 +236,13 @@ function runWrapper(command) {
 }
 
 describe("list_prs — audience (--me)", () => {
-it("--me=1 restricts the search to your own PRs", () => {
+  it("--me=1 restricts the search to your own PRs", () => {
     const { ghArgs } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
     const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
     expect(searchLine).toContain("--author=@me");
   });
 
-it("accepts every spelling of true that the shell is_truthy accepts", () => {
+  it("accepts every spelling of true that the shell is_truthy accepts", () => {
     ["1", "true", "TRUE", "y", "Y", "yes", "Yes"].forEach((value) => {
       const { ghArgs } = runCli([`--me=${value}`], [pullRequest(AWAITING_REVIEW)]);
       const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
@@ -250,7 +250,7 @@ it("accepts every spelling of true that the shell is_truthy accepts", () => {
     });
   });
 
-it("--me=0 drops the author qualifier and filters your own PRs back out", () => {
+  it("--me=0 drops the author qualifier and filters your own PRs back out", () => {
     const mine = pullRequest({ ...AWAITING_REVIEW, number: 1, author: { login: "syle" } });
     const theirs = pullRequest({ ...AWAITING_REVIEW, number: 2, author: { login: "alice", name: "Alice Nguyen" } });
     const { stdout, ghArgs } = runCli(["--me=0", "--links", "acme/api"], [mine, theirs]);
@@ -259,7 +259,7 @@ it("--me=0 drops the author qualifier and filters your own PRs back out", () => 
     expect(stdout.trim().split("\n")).toEqual(["https://github.com/acme/api/pull/2"]);
   });
 
-it("lists everyone, yourself included, when --me is omitted", () => {
+  it("lists everyone, yourself included, when --me is omitted", () => {
     const mine = pullRequest({ ...AWAITING_REVIEW, number: 1, author: { login: "syle" } });
     const theirs = pullRequest({ ...AWAITING_REVIEW, number: 2, author: { login: "alice" } });
     const { stdout, ghArgs } = runCli(["--links", "acme/api"], [mine, theirs]);
@@ -267,12 +267,12 @@ it("lists everyone, yourself included, when --me is omitted", () => {
     expect(stdout.trim().split("\n")).toHaveLength(2);
   });
 
-it("an explicit --author wins over --me", () => {
+  it("an explicit --author wins over --me", () => {
     const { ghArgs } = runCli(["--me=0", "--author=alice"], [pullRequest(AWAITING_REVIEW)]);
     expect(ghArgs.find((line) => line.startsWith("search prs"))).toContain("--author=alice");
   });
 
-it("implies --cwd rather than searching every open PR on GitHub", () => {
+  it("implies --cwd rather than searching every open PR on GitHub", () => {
     const empty = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-global-"));
     try {
       const { stderr, ghArgs } = runCli(["--me=0"], [pullRequest(AWAITING_REVIEW)], { cwd: empty });

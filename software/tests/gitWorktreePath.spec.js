@@ -83,7 +83,7 @@ function worktreePath(context, name) {
 }
 
 describe("git worktree layout", () => {
-beforeAll(() => {
+  beforeAll(() => {
     sandboxDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "bashrc-worktree-")));
     cliBin = path.join(sandboxDir, "bin");
     fs.mkdirSync(cliBin);
@@ -92,11 +92,11 @@ beforeAll(() => {
     aliasConfigPath = writeAliasConfig();
   });
 
-afterAll(() => {
+  afterAll(() => {
     if (sandboxDir) fs.rmSync(sandboxDir, { recursive: true, force: true });
   });
 
-describe("worktree-path", () => {
+  describe("worktree-path", () => {
     it.each([
       ["git@github.com:acme/widget-store.git", "acme", "widget-store"],
       ["https://github.com/acme/widget-store.git", "acme", "widget-store"],
@@ -180,5 +180,5 @@ describe("worktree-path", () => {
       expect(result.status).not.toBe(0);
       expect(result.stderr).toContain("no usable characters");
     });
-  })
+  });
 });

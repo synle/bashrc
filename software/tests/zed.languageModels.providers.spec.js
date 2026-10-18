@@ -151,4 +151,3 @@ describe("_buildZedLanguageModelsBlock > default_model selection", () => {
 });
 
 // ---- _getZedSettings: agent.default_model merge preserves baseConfig.agent.* ----
-

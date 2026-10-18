@@ -58,7 +58,7 @@ const MIN_FILE_SIZES = {
 };
 
 describe("build config shape - objects", () => {
-it("vs-code-config-mac", () => {
+  it("vs-code-config-mac", () => {
     if (!fs.existsSync(path.resolve(".build", "vs-code-config-mac"))) {
       console.warn("  [WARNING] .build/vs-code-config-mac not found — skipping (not generated in this environment)");
       return;
@@ -193,7 +193,7 @@ it("vs-code-config-mac", () => {
     `);
   });
 
-it("zed-color-dark", () => {
+  it("zed-color-dark", () => {
     if (!fs.existsSync(path.resolve(".build", "zed-color-dark"))) {
       console.warn("  [WARNING] .build/zed-color-dark not found — skipping (not generated in this environment)");
       return;
@@ -208,7 +208,7 @@ it("zed-color-dark", () => {
     `);
   });
 
-it("zed-color-light", () => {
+  it("zed-color-light", () => {
     if (!fs.existsSync(path.resolve(".build", "zed-color-light"))) {
       console.warn("  [WARNING] .build/zed-color-light not found — skipping (not generated in this environment)");
       return;
@@ -223,7 +223,7 @@ it("zed-color-light", () => {
     `);
   });
 
-it("zed-config", () => {
+  it("zed-config", () => {
     if (!fs.existsSync(path.resolve(".build", "zed-config"))) {
       console.warn("  [WARNING] .build/zed-config not found — skipping (not generated in this environment)");
       return;

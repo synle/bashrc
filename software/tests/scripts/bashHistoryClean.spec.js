@@ -116,7 +116,7 @@ _maybe_history_cleanup
 }
 
 describe("history_cleanup — pipeline", () => {
-it("preserves valid commands and their timestamps", () => {
+  it("preserves valid commands and their timestamps", () => {
     const input = ["#1700000001", "git status", "#1700000002", "ls -la", ""].join("\n");
     const out = runCleanup(input);
     expect(out).toContain("#1700000001");
@@ -125,7 +125,7 @@ it("preserves valid commands and their timestamps", () => {
     expect(out).toContain("ls -la");
   });
 
-it("preserves the (ts, cmd) pairing when an entry is dropped — no orphan timestamps", () => {
+  it("preserves the (ts, cmd) pairing when an entry is dropped — no orphan timestamps", () => {
     const input = ["#1700000001", "git status", "#1700000002", 'echo "broken', "#1700000003", "ls -la", ""].join("\n");
     const out = runCleanup(input);
     expect(out).toContain("#1700000001");
@@ -136,7 +136,7 @@ it("preserves the (ts, cmd) pairing when an entry is dropped — no orphan times
     expect(out).toContain("ls -la");
   });
 
-describe("paste-residue drops (patterns bash -n accepts as valid)", () => {
+  describe("paste-residue drops (patterns bash -n accepts as valid)", () => {
     const cases = [
       { label: 'leading " (JSON / PowerShell quote)', cmd: '"some json fragment"' },
       { label: "leading $ (PowerShell variable)", cmd: '$myVar = "x"' },
@@ -160,7 +160,7 @@ describe("paste-residue drops (patterns bash -n accepts as valid)", () => {
     }
   });
 
-describe("bash -nc validation drops invalid syntax", () => {
+  describe("bash -nc validation drops invalid syntax", () => {
     const invalid = [
       { label: "unterminated single quote", cmd: "ls 'unterminated" },
       { label: "unterminated double quote", cmd: 'echo "broken' },
@@ -184,7 +184,7 @@ describe("bash -nc validation drops invalid syntax", () => {
     });
   });
 
-describe("marker command stripping", () => {
+  describe("marker command stripping", () => {
     it("strips leading marker in compound: `clear && cmd` → `cmd`", () => {
       const out = runCleanup("#1\nclear && ls\n");
       expect(out).toContain("ls");
@@ -221,7 +221,7 @@ describe("marker command stripping", () => {
     }
   });
 
-describe("alias expansion via BASH_ALIASES", () => {
+  describe("alias expansion via BASH_ALIASES", () => {
     it("expands ≤2-char alias: g → git", () => {
       const out = runCleanup("#1\ng status\n", { g: "git" });
       expect(out).toContain("git status");
@@ -247,7 +247,7 @@ describe("alias expansion via BASH_ALIASES", () => {
     });
   });
 
-describe("dedup — most recent wins", () => {
+  describe("dedup — most recent wins", () => {
     it("collapses duplicates keeping the newest occurrence", () => {
       const input = ["#1700000001", "git status", "#1700000002", "ls", "#1700000003", "git status", ""].join("\n");
       const out = runCleanup(input);

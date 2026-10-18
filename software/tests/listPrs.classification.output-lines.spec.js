@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — output shape", () => {
-it("prints title then URL, two lines, and keeps STDOUT free of progress noise", () => {
+  it("prints title then URL, two lines, and keeps STDOUT free of progress noise", () => {
     const { stdout, stderr } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
     const lines = stdout.split("\n").filter(Boolean);
     expect(lines[0]).toBe("⏳ syle/retry-token-refresh · Retry token refresh on 401");
@@ -246,7 +246,7 @@ it("prints title then URL, two lines, and keeps STDOUT free of progress noise", 
     expect(stderr).toContain(">>>"); // the scan/footer lines live on stderr
   });
 
-it("adds a metadata line only with --verbose", () => {
+  it("adds a metadata line only with --verbose", () => {
     const plain = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]).stdout;
     expect(plain).not.toContain("· 🟡");
     const verbose = runCli(["--me=1", "--verbose"], [pullRequest(AWAITING_REVIEW)]).stdout;
@@ -254,17 +254,17 @@ it("adds a metadata line only with --verbose", () => {
     expect(verbose).toContain(`(${ageDays}d) · 🟡 CI PASSED · AWAITING REVIEW`);
   });
 
-it("prints only URLs with --links", () => {
+  it("prints only URLs with --links", () => {
     const { stdout } = runCli(["--me=1", "--links"], [pullRequest(AWAITING_REVIEW), pullRequest({ ...AWAITING_REVIEW, number: 2 })]);
     expect(stdout.split("\n").filter(Boolean)).toEqual(["https://github.com/acme/api/pull/1", "https://github.com/acme/api/pull/2"]);
   });
 
-it("prints a [draft] tag on the title line", () => {
+  it("prints a [draft] tag on the title line", () => {
     const { stdout } = runCli(["--me=1"], [pullRequest({ isDraft: true, checks: [PASSING_CHECK] })]);
     expect(stdout).toContain("🛑 [draft] syle/retry-token-refresh · Retry token refresh on 401");
   });
 
-it("prints the head branch between the tags and the title, and never on the URL line", () => {
+  it("prints the head branch between the tags and the title, and never on the URL line", () => {
     // The branch is the handle every local command wants (worktree, checkout, log), so
     // it leads the title — but the URL line stays machine-readable and bare.
     const lines = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)])
@@ -275,19 +275,19 @@ it("prints the head branch between the tags and the title, and never on the URL 
     expect(runCli(["--me=1", "--links"], [pullRequest(AWAITING_REVIEW)]).stdout).not.toContain("syle/retry-token-refresh");
   });
 
-it("keeps the branch out of the JSON title field", () => {
+  it("keeps the branch out of the JSON title field", () => {
     const row = rowFor(AWAITING_REVIEW);
     expect(row.title).toBe("Retry token refresh on 401");
     expect(row.headRefName).toBe("syle/retry-token-refresh");
   });
 
-it("emits no ANSI escapes when NO_COLOR / piped", () => {
+  it("emits no ANSI escapes when NO_COLOR / piped", () => {
     const { stdout } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
     // eslint-disable-next-line no-control-regex
     expect(stdout).not.toMatch(/\x1b\[/);
   });
 
-it("sorts oldest first", () => {
+  it("sorts oldest first", () => {
     const older = pullRequest({ ...AWAITING_REVIEW, number: 1, createdAt: "2026-01-01T00:00:00Z" });
     const newer = pullRequest({ ...AWAITING_REVIEW, number: 2, createdAt: "2026-02-01T00:00:00Z" });
     const rows = rowsFor([newer, older]);

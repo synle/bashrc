@@ -91,7 +91,7 @@ afterEach(() => {
 });
 
 describe("SteamOS setup", () => {
-it("preserves a launcher owned by another installation", () => {
+  it("preserves a launcher owned by another installation", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     const prefix = path.join(home, "stl/prefix");
@@ -112,7 +112,7 @@ it("preserves a launcher owned by another installation", () => {
     expect(fs.readFileSync(launcher, "utf-8")).toBe("user-owned\n");
   });
 
-it("contains no readonly Limine assignment when sourced repeatedly", () => {
+  it("contains no readonly Limine assignment when sourced repeatedly", () => {
     expect(setupSource).not.toMatch(/readonly\s+_LIMINE_BOOT_TIMEOUT/);
     expect(setupSource).toContain("sudo awk -v timeout=2");
   });

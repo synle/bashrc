@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — reason tags", () => {
-const TAGGED = [
+  const TAGGED = [
     ["[rejected]", "🗣️", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
     ["[conflict]", "⚔️", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
     ["[ci-failed]", "💥", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
@@ -245,7 +245,7 @@ const TAGGED = [
     ["[placeholder]", "▫", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true, title: "WIP: Placeholder" }],
   ];
 
-for (const [tag, icon, overrides] of TAGGED) {
+  for (const [tag, icon, overrides] of TAGGED) {
     it(`pairs ${icon} with ${tag}`, () => {
       const row = rowFor(overrides, ["--all"]);
       expect(row.reasonTag).toBe(tag);
@@ -257,13 +257,13 @@ for (const [tag, icon, overrides] of TAGGED) {
     });
   }
 
-const UNTAGGED = [
+  const UNTAGGED = [
     ["awaiting review", AWAITING_REVIEW],
     ["build running", { checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }],
     ["ready to merge", READY_TO_MERGE],
   ];
 
-for (const [label, overrides] of UNTAGGED) {
+  for (const [label, overrides] of UNTAGGED) {
     it(`leaves ${label} untagged — the icon already says it`, () => {
       const row = rowFor(overrides, ["--all"]);
       expect(row.reasonTag).toBe("");
@@ -274,7 +274,7 @@ for (const [label, overrides] of UNTAGGED) {
     });
   }
 
-it("never shows two reason tags at once", () => {
+  it("never shows two reason tags at once", () => {
     // "Blocked" is one answer, not a checklist — the key is picked once, so a PR that
     // is conflicting AND rejected AND red says only the highest-ranked of the three.
     const row = rowFor({ checks: [FAILING_CHECK], reviewDecision: "CHANGES_REQUESTED", mergeable: "CONFLICTING" }, ["--all"]);

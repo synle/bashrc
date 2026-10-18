@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — audience (--me)", () => {
-it("labels mixed-author rows with ME and a first name, and never in a mine-only run", () => {
+  it("labels mixed-author rows with ME and a first name, and never in a mine-only run", () => {
     const mine = pullRequest({ ...AWAITING_REVIEW, number: 1, author: { login: "syle" } });
     const theirs = pullRequest({ ...AWAITING_REVIEW, number: 2, author: { login: "alice", name: "Alice Nguyen" } });
     const handleOnly = pullRequest({ ...AWAITING_REVIEW, number: 3, author: { login: "bob" } });
@@ -251,7 +251,7 @@ it("labels mixed-author rows with ME and a first name, and never in a mine-only 
     expect(mineOnly).not.toContain(" ME ");
   });
 
-it("names the repos it scanned and the repos it listed from", () => {
+  it("names the repos it scanned and the repos it listed from", () => {
     const { stderr } = runCli(["--me=1", "acme/api", "acme/web"], [pullRequest(AWAITING_REVIEW)]);
     expect(stderr).toContain(`${"=".repeat(80)}\n>>> scanning 2 repo(s): acme/api acme/web for open @me PRs\n\n`);
     expect(stderr).toContain(

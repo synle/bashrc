@@ -91,7 +91,7 @@ afterEach(() => {
 });
 
 describe("SteamOS setup", () => {
-it("registers and refreshes Brave site tiles with absolute Brave path and current URL", () => {
+  it("registers and refreshes Brave site tiles with absolute Brave path and current URL", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     const accountFolder = path.join(home, ".steam/steam/userdata/12345/config");
@@ -135,7 +135,7 @@ _add_url_steam_shortcut Netflix https://www.netflix.com///`,
     ]);
   });
 
-it("fails when SteamTinkerLaunch returns success without writing a shortcut", () => {
+  it("fails when SteamTinkerLaunch returns success without writing a shortcut", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     const accountFolder = path.join(home, ".steam/steam/userdata/12345/config");
@@ -164,7 +164,7 @@ it("fails when SteamTinkerLaunch returns success without writing a shortcut", ()
     expect(result.stdout).not.toContain("Steam: added Example");
   });
 
-it("configures the verified Steam account before SteamTinkerLaunch resets its environment", () => {
+  it("configures the verified Steam account before SteamTinkerLaunch resets its environment", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     const accountFolder = path.join(home, ".steam/steam/userdata/12345");
@@ -211,7 +211,7 @@ _add_steam_shortcut Example "$1"`,
     expect(result.stdout).toContain("Steam: added Example");
   });
 
-it("only runs Decky setup after explicit initial confirmation", () => {
+  it("only runs Decky setup after explicit initial confirmation", () => {
     const deckyPrompt = setupSource.indexOf('_prompt "Install Decky Loader, plugins, and CSS Loader themes?"');
     const deckyCall = setupSource.indexOf('if [ "$DO_DECKY_SETUP" -eq 1 ]; then');
     const upgradePrompt = setupSource.indexOf('_prompt "Run system upgrade');
@@ -225,11 +225,11 @@ it("only runs Decky setup after explicit initial confirmation", () => {
     );
   });
 
-it("waits for explicit confirmation before finishing", () => {
+  it("waits for explicit confirmation before finishing", () => {
     expect(setupSource).toContain('until _prompt "Finish and exit setup?"; do');
   });
 
-it("keeps an existing SteamTinkerLaunch installation untouched", () => {
+  it("keeps an existing SteamTinkerLaunch installation untouched", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     fs.mkdirSync(binFolder);
@@ -242,7 +242,7 @@ it("keeps an existing SteamTinkerLaunch installation untouched", () => {
     expect(fs.existsSync(path.join(home, "stl"))).toBe(false);
   });
 
-it("reuses a ProtonUp-Qt layout and exposes it on PATH", () => {
+  it("reuses a ProtonUp-Qt layout and exposes it on PATH", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     const prefix = path.join(home, "stl/prefix");
@@ -257,7 +257,7 @@ it("reuses a ProtonUp-Qt layout and exposes it on PATH", () => {
     expect(fs.realpathSync(path.join(home, ".local/bin/steamtinkerlaunch"))).toBe(fs.realpathSync(path.join(prefix, "steamtinkerlaunch")));
   });
 
-it("downloads, initializes, and registers SteamTinkerLaunch", () => {
+  it("downloads, initializes, and registers SteamTinkerLaunch", () => {
     const home = createSandbox();
     const binFolder = path.join(home, "bin");
     fs.mkdirSync(binFolder);

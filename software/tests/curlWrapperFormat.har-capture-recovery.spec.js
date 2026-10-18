@@ -215,7 +215,7 @@ function readHar(harFolder) {
 }
 
 describe("curl wrapper HAR capture", () => {
-it("truncates bodies larger than BASHRC_CURL_HAR_MAX_BODY", () => {
+  it("truncates bodies larger than BASHRC_CURL_HAR_MAX_BODY", () => {
     const body = "x".repeat(5000);
     const { harFolder } = runCurl({
       url: "https://example.com/big.dat",
@@ -228,7 +228,7 @@ it("truncates bodies larger than BASHRC_CURL_HAR_MAX_BODY", () => {
     expect(entry.response.content.comment).toContain("truncated");
   });
 
-it("records empty-body responses too", () => {
+  it("records empty-body responses too", () => {
     const { harFolder } = runCurl({ url: "https://example.com/empty", body: "", httpCode: "204" });
 
     const entry = readHar(harFolder).log.entries[0];
@@ -236,7 +236,7 @@ it("records empty-body responses too", () => {
     expect(entry.response.content.text).toBe("");
   });
 
-it("skips HAR capture when BASHRC_CURL_NO_HAR=1", () => {
+  it("skips HAR capture when BASHRC_CURL_NO_HAR=1", () => {
     const { harFolder } = runCurl({
       url: "https://example.com/quiet.json",
       body: '{"a":1}',
@@ -246,7 +246,7 @@ it("skips HAR capture when BASHRC_CURL_NO_HAR=1", () => {
     expect(fs.existsSync(harFolder)).toBe(false);
   });
 
-it("moves a corrupted archive aside instead of appending onto invalid JSON", () => {
+  it("moves a corrupted archive aside instead of appending onto invalid JSON", () => {
     const harFolder = path.join(sandbox, "har");
     fs.mkdirSync(harFolder, { recursive: true });
 

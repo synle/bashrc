@@ -91,7 +91,7 @@ afterEach(() => {
 });
 
 describe("SteamOS setup", () => {
-it("installs SteamTinkerLaunch dependencies before shortcuts are added", () => {
+  it("installs SteamTinkerLaunch dependencies before shortcuts are added", () => {
     const dependencySetup = setupSource.indexOf("if ! _install_steamtinkerlaunch_dependencies");
     const firstShortcut = setupSource.indexOf('_add_steam_shortcut "Moonlight"');
 
@@ -101,7 +101,7 @@ it("installs SteamTinkerLaunch dependencies before shortcuts are added", () => {
     expect(dependencySetup).toBeLessThan(firstShortcut);
   });
 
-it("installs Flatpak Brave before creating its native and URL shortcuts", () => {
+  it("installs Flatpak Brave before creating its native and URL shortcuts", () => {
     const flatpakInstall = setupSource.indexOf("if ! flatpak install --user flathub com.brave.Browser; then");
     const braveShortcut = setupSource.indexOf('_add_steam_shortcut "Brave"');
     const disneyShortcut = setupSource.indexOf('_add_url_steam_shortcut "Disney+"');
@@ -122,12 +122,12 @@ it("installs Flatpak Brave before creating its native and URL shortcuts", () => 
     expect(flatpakInstall).toBeLessThan(setupSource.indexOf('_add_url_steam_shortcut "Disney+"'));
   });
 
-it("does not run the retired pacman Brave migration", () => {
+  it("does not run the retired pacman Brave migration", () => {
     expect(setupSource).not.toContain("pacman -Qq brave-bin");
     expect(setupSource).not.toContain("pacman -R --noconfirm brave-bin");
   });
 
-it("keeps pacman cleanup inline and launches fixed Brave URLs directly in kiosk mode", () => {
+  it("keeps pacman cleanup inline and launches fixed Brave URLs directly in kiosk mode", () => {
     expect(fs.existsSync(path.join(ROOT_DIR, "assets/steamos/remove-pacman-brave.sh"))).toBe(false);
     const urlShortcutFunction = setupSource.split("function _add_url_steam_shortcut()", 2)[1].split("\n}\n", 1)[0];
     expect(urlShortcutFunction).toContain('launchoptions="\\\"run\\\"');
@@ -138,14 +138,14 @@ it("keeps pacman cleanup inline and launches fixed Brave URLs directly in kiosk 
     expect(urlShortcutFunction).not.toContain('"@@"');
   });
 
-it("downloads the configured Moonlight release version", () => {
+  it("downloads the configured Moonlight release version", () => {
     expect(setupSource).toContain('MOONLIGHT_VERSION="6.2.0"');
     expect(setupSource).toContain(
       '"https://github.com/moonlight-stream/moonlight-qt/releases/download/v$MOONLIGHT_VERSION/Moonlight-$MOONLIGHT_VERSION-x86_64.AppImage"',
     );
   });
 
-it("backs up and clears active-account shortcuts and creates a working restore script", () => {
+  it("backs up and clears active-account shortcuts and creates a working restore script", () => {
     const home = createSandbox();
     const shortcutsPath = path.join(home, ".steam/steam/userdata/12345/config/shortcuts.vdf");
     const desktopFolder = path.join(home, "Desktop");
@@ -190,7 +190,7 @@ it("backs up and clears active-account shortcuts and creates a working restore s
     expect(fs.readFileSync(shortcutsPath)).toEqual(original);
   });
 
-it("does not clear shortcuts while Steam is running", () => {
+  it("does not clear shortcuts while Steam is running", () => {
     const home = createSandbox();
     const shortcutsPath = path.join(home, ".steam/steam/userdata/12345/config/shortcuts.vdf");
     const desktopFolder = path.join(home, "Desktop");
@@ -211,7 +211,7 @@ it("does not clear shortcuts while Steam is running", () => {
     expect(fs.readdirSync(desktopFolder)).toEqual([]);
   });
 
-it("leaves an empty shortcuts file unchanged and creates no recovery files", () => {
+  it("leaves an empty shortcuts file unchanged and creates no recovery files", () => {
     const home = createSandbox();
     const shortcutsPath = path.join(home, ".steam/steam/userdata/12345/config/shortcuts.vdf");
     const desktopFolder = path.join(home, "Desktop");
@@ -232,13 +232,13 @@ it("leaves an empty shortcuts file unchanged and creates no recovery files", () 
     expect(fs.readdirSync(desktopFolder)).toEqual([]);
   });
 
-it("verifies SteamTinkerLaunch actually wrote each shortcut", () => {
+  it("verifies SteamTinkerLaunch actually wrote each shortcut", () => {
     expect(setupSource).toContain('if ! _steam_shortcut_exists path "$registered_exepath"; then');
     expect(setupSource).toContain('if ! _steam_shortcut_exists title "$title"; then');
     expect(setupSource).toContain("SteamTinkerLaunch returned success but shortcut is absent");
   });
 
-it("rejects missing Steam executable paths before invoking SteamTinkerLaunch", () => {
+  it("rejects missing Steam executable paths before invoking SteamTinkerLaunch", () => {
     const home = createSandbox();
     const invokedPath = path.join(home, "steamtinkerlaunch-invoked");
     const result = spawnSync(
@@ -257,11 +257,11 @@ it("rejects missing Steam executable paths before invoking SteamTinkerLaunch", (
     expect(fs.existsSync(invokedPath)).toBe(false);
   });
 
-it("registers the EmuDeck-installed ES-DE AppImage under the requested Steam name", () => {
+  it("registers the EmuDeck-installed ES-DE AppImage under the requested Steam name", () => {
     expect(setupSource).toContain('_add_steam_shortcut "ES-DE Emulation Station" "/home/deck/Applications/ES-DE.AppImage"');
   });
 
-it("updates an existing app shortcut by name and removes same-name duplicates", () => {
+  it("updates an existing app shortcut by name and removes same-name duplicates", () => {
     const home = createSandbox();
     const shortcutsPath = path.join(home, ".steam/steam/userdata/12345/config/shortcuts.vdf");
     fs.mkdirSync(path.dirname(shortcutsPath), { recursive: true });

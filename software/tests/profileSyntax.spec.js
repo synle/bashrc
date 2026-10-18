@@ -241,7 +241,7 @@ function findHeredocsInCommandSubstitution(source) {
 }
 
 describe("profile bashrc syntax check", () => {
-profileFiles.forEach((filePath) => {
+  profileFiles.forEach((filePath) => {
     it(`${path.basename(filePath)} - no syntax errors`, () => {
       assertNoSyntaxErrors(filePath);
     });
@@ -257,7 +257,7 @@ profileFiles.forEach((filePath) => {
     });
   });
 
-it("should find profile files to test", () => {
+  it("should find profile files to test", () => {
     // `.build/profile_bashrc_*.sh` is no longer committed to the repo — each CI
     // build job emits its own and the test phase rehydrates `.build/` from
     // the per-OS `profile-build-*` artifacts before running this suite.
@@ -279,7 +279,7 @@ it("should find profile files to test", () => {
 });
 
 describe("bootstrap scripts syntax check", () => {
-bootstrapFiles.forEach((filePath) => {
+  bootstrapFiles.forEach((filePath) => {
     it(`${path.basename(filePath)} - no syntax errors`, () => {
       assertNoSyntaxErrors(filePath);
     });
@@ -290,7 +290,7 @@ bootstrapFiles.forEach((filePath) => {
     });
   });
 
-it("should find bootstrap files to test", () => {
+  it("should find bootstrap files to test", () => {
     expect(bootstrapFiles.length).toBeGreaterThan(0);
   });
 });

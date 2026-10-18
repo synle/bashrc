@@ -236,12 +236,12 @@ function runWrapper(command) {
 }
 
 describe("list_prs — ready-to-merge filter", () => {
-it("hides the fully green PR by default and keeps it when --all is set", () => {
+  it("hides the fully green PR by default and keeps it when --all is set", () => {
     expect(rowsFor([pullRequest(READY_TO_MERGE)])).toHaveLength(0);
     expect(rowsFor([pullRequest(READY_TO_MERGE)], ["--all"])).toHaveLength(1);
   });
 
-it("keeps a green PR that still has open threads even without --all", () => {
+  it("keeps a green PR that still has open threads even without --all", () => {
     const withThread = {
       checks: [PASSING_CHECK],
       reviewDecision: "APPROVED",
@@ -251,7 +251,7 @@ it("keeps a green PR that still has open threads even without --all", () => {
     expect(row.group).toBe("READY TO MERGE (with comments)");
   });
 
-it("always keeps a PR still awaiting review", () => {
+  it("always keeps a PR still awaiting review", () => {
     expect(rowFor(AWAITING_REVIEW).group).toBe("NEED APPROVAL");
   });
 });

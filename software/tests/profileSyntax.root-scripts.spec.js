@@ -241,11 +241,11 @@ function findHeredocsInCommandSubstitution(source) {
 }
 
 describe("profile-core.sh PATH construction", () => {
-const fs = require("fs");
+  const fs = require("fs");
 
-const tmpScript = `/tmp/_bashrc_path_test_${process.pid}.sh`;
+  const tmpScript = `/tmp/_bashrc_path_test_${process.pid}.sh`;
 
-function runPathTest(initialPath, extraSetup = "") {
+  function runPathTest(initialPath, extraSetup = "") {
     fs.writeFileSync(
       tmpScript,
       [
@@ -267,7 +267,7 @@ function runPathTest(initialPath, extraSetup = "") {
     }
   }
 
-it("should place user tool candidates before system dirs when both exist", () => {
+  it("should place user tool candidates before system dirs when both exist", () => {
     // create a fake user tool dir so it appears in PATH
     const setup = "mkdir -p /tmp/path_test_home/.local/bin";
     const result = runPathTest("/usr/bin:/bin", setup);
@@ -281,7 +281,7 @@ it("should place user tool candidates before system dirs when both exist", () =>
 });
 
 describe("root scripts syntax check", () => {
-rootScriptFiles.forEach((filePath) => {
+  rootScriptFiles.forEach((filePath) => {
     it(`${path.basename(filePath)} - no syntax errors`, () => {
       assertNoSyntaxErrors(filePath);
     });
@@ -291,7 +291,7 @@ rootScriptFiles.forEach((filePath) => {
     });
   });
 
-it("should find root script files to test", () => {
+  it("should find root script files to test", () => {
     expect(rootScriptFiles.length).toBeGreaterThan(0);
   });
 });

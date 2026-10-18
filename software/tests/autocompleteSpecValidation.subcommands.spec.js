@@ -57,9 +57,9 @@ function runCompletionScript(script, options = {}) {
 }
 
 describe("dynamic token expansion (bash integration)", () => {
-let tmpDir;
+  let tmpDir;
 
-beforeAll(() => {
+  beforeAll(() => {
     tmpDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
     // create test file structure — legitimate folders
     fs.mkdirSync(path.join(tmpDir, "subdir"), { recursive: true });
@@ -110,11 +110,11 @@ beforeAll(() => {
     fs.writeFileSync(path.join(tmpDir, "__pycache__", "mod.pyc"), "cache");
   });
 
-afterAll(() => {
+  afterAll(() => {
     if (tmpDir) execSync(`rm -rf "${tmpDir}"`);
   });
 
-describe("subcommand matching", () => {
+  describe("subcommand matching", () => {
     it("should match subcommand and return its completions", () => {
       const spec = "start|--port,--host,--verbose\nstop|--force,--timeout";
       const script = buildCompletionTestScript(spec, ["testcmd", "start", "--"], 2);
@@ -152,7 +152,7 @@ describe("subcommand matching", () => {
     });
   });
 
-describe("template bash syntax", () => {
+  describe("template bash syntax", () => {
     it("should produce valid bash when all tokens are used", () => {
       const allTokens = [...VALID_TOKENS].join(",");
       const spec = `|${allTokens}`;

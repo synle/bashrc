@@ -215,7 +215,7 @@ function readHar(harFolder) {
 }
 
 describe("curl wrapper format dispatch", () => {
-describe("fallback paths", () => {
+  describe("fallback paths", () => {
     it("emits raw body when neither sniff nor extension matches", () => {
       const body = "plain text with no shape clue\nsecond line\n";
       const { stdout } = runCurl({ url: "https://example.com/raw.dat", body });
@@ -251,18 +251,16 @@ describe("fallback paths", () => {
 });
 
 describe("curl wrapper formatter integration", () => {
-it.skipIf(!resolveFormatter("oxfmt"))("reformats JSON through the real oxfmt", () => {
+  it.skipIf(!resolveFormatter("oxfmt"))("reformats JSON through the real oxfmt", () => {
     const body = '{"name":"sy","nested":{"a":1,"b":[1,2,3]}}';
     const { stdout } = runCurl({ url: "https://api.example.com/user", body, realFormatter: "oxfmt" });
     expect(stdout).toBe(formatDirect(body, "oxfmt", "json"));
     expect(stdout).toContain('"name": "sy"'); // sanity: reformatting happened
   });
 
-it.skipIf(!resolveFormatter("prettier"))("reformats markdown through the real prettier", () => {
+  it.skipIf(!resolveFormatter("prettier"))("reformats markdown through the real prettier", () => {
     const body = "# Title\nsome   **bold**   text\n\n-   item1\n-   item2\n";
     const { stdout } = runCurl({ url: "https://example.com/README.md", body, realFormatter: "prettier" });
     expect(stdout).toBe(formatDirect(body, "prettier", "md"));
   });
-
-
 });

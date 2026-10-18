@@ -57,9 +57,9 @@ function runCompletionScript(script, options = {}) {
 }
 
 describe("dynamic token expansion (bash integration)", () => {
-let tmpDir;
+  let tmpDir;
 
-beforeAll(() => {
+  beforeAll(() => {
     tmpDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
     // create test file structure — legitimate folders
     fs.mkdirSync(path.join(tmpDir, "subdir"), { recursive: true });
@@ -110,11 +110,11 @@ beforeAll(() => {
     fs.writeFileSync(path.join(tmpDir, "__pycache__", "mod.pyc"), "cache");
   });
 
-afterAll(() => {
+  afterAll(() => {
     if (tmpDir) execSync(`rm -rf "${tmpDir}"`);
   });
 
-describe("__ssh_hosts__", () => {
+  describe("__ssh_hosts__", () => {
     it("should expand to host names from ssh config", () => {
       const setupDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
       const sshDir = path.join(setupDir, ".ssh");
@@ -131,7 +131,7 @@ describe("__ssh_hosts__", () => {
     });
   });
 
-describe("__folders__", () => {
+  describe("__folders__", () => {
     it("should expand to directories in cwd", () => {
       const script = buildCompletionTestScript("|__folders__", ["testcmd", ""], 1);
       const results = runCompletionScript(script, { cwd: tmpDir });
@@ -141,7 +141,7 @@ describe("__folders__", () => {
     });
   });
 
-describe("__nested_folders__", () => {
+  describe("__nested_folders__", () => {
     it("should expand to nested directories", () => {
       const script = buildCompletionTestScript("|__nested_folders__", ["testcmd", ""], 1);
       const results = runCompletionScript(script, { cwd: tmpDir });
@@ -204,7 +204,7 @@ describe("__nested_folders__", () => {
     });
   });
 
-describe("__nested_files__", () => {
+  describe("__nested_files__", () => {
     it("should expand to nested files and filter ignored paths", () => {
       const script = buildCompletionTestScript("|__nested_files__", ["testcmd", ""], 1);
       const results = runCompletionScript(script, { cwd: tmpDir });
@@ -236,7 +236,7 @@ describe("__nested_files__", () => {
     });
   });
 
-describe("__nested_text_files__", () => {
+  describe("__nested_text_files__", () => {
     it("should expand to nested text files and filter ignored paths", () => {
       const script = buildCompletionTestScript("|__nested_text_files__", ["testcmd", ""], 1);
       const results = runCompletionScript(script, { cwd: tmpDir });
@@ -254,7 +254,7 @@ describe("__nested_text_files__", () => {
     });
   });
 
-describe("__nested_paths__", () => {
+  describe("__nested_paths__", () => {
     it("should expand to both files and directories and filter ignored paths", () => {
       const script = buildCompletionTestScript("|__nested_paths__", ["testcmd", ""], 1);
       const results = runCompletionScript(script, { cwd: tmpDir });
@@ -285,7 +285,7 @@ describe("__nested_paths__", () => {
     });
   });
 
-describe("__paths__", () => {
+  describe("__paths__", () => {
     it("should expand to files and directories in cwd", () => {
       const script = buildCompletionTestScript("|__paths__", ["testcmd", ""], 1);
       const results = runCompletionScript(script, { cwd: tmpDir });

@@ -236,21 +236,21 @@ function runWrapper(command) {
 }
 
 describe("list_prs — scope resolution", () => {
-it("searches all of GitHub by default (no --repo flags)", () => {
+  it("searches all of GitHub by default (no --repo flags)", () => {
     const { ghArgs } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
     const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
     expect(searchLine).toBeTruthy();
     expect(searchLine).not.toContain("--repo");
   });
 
-it("passes explicit repos through as --repo flags", () => {
+  it("passes explicit repos through as --repo flags", () => {
     const { ghArgs } = runCli(["--me=1", "acme/api", "acme/web"], [pullRequest(AWAITING_REVIEW)]);
     const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
     expect(searchLine).toContain("--repo acme/api");
     expect(searchLine).toContain("--repo acme/web");
   });
 
-it("prints the no-repos hint and never calls search when --cwd finds nothing", () => {
+  it("prints the no-repos hint and never calls search when --cwd finds nothing", () => {
     const empty = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-empty-"));
     try {
       const { stderr, stdout, ghArgs } = runCli(["--me=1", "--cwd"], [], { cwd: empty });
@@ -262,14 +262,14 @@ it("prints the no-repos hint and never calls search when --cwd finds nothing", (
     }
   });
 
-it("forwards --author and --limit to gh search", () => {
+  it("forwards --author and --limit to gh search", () => {
     const { ghArgs } = runCli(["--me=1", "--author=alice", "--limit=5"], [pullRequest(AWAITING_REVIEW)]);
     const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
     expect(searchLine).toContain("--author=alice");
     expect(searchLine).toContain("--limit=5");
   });
 
-it("exits non-zero on an unknown flag", () => {
+  it("exits non-zero on an unknown flag", () => {
     const { status, stderr } = runCli(["--me=1", "--nope"], []);
     expect(status).not.toBe(0);
     expect(stderr).toContain("unknown option");

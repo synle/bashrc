@@ -5,7 +5,7 @@ const WEBAPP_URL = process.env.WEBAPP_URL || "https://synle.github.io/bashrc/";
 const TIMEOUT = 30000;
 
 describe("webapp smoke test", () => {
-it(
+  it(
     "phase 1 - site is alive and returns HTML",
     async () => {
       const res = await fetch(WEBAPP_URL);
@@ -17,7 +17,7 @@ it(
     TIMEOUT,
   );
 
-it(
+  it(
     "phase 2 - page loads and JS initializes",
     async () => {
       const puppeteer = await import("puppeteer");
@@ -37,7 +37,7 @@ it(
     TIMEOUT,
   );
 
-it(
+  it(
     "phase 3 - no JS errors on page",
     async () => {
       const puppeteer = await import("puppeteer");
@@ -61,7 +61,7 @@ it(
     TIMEOUT,
   );
 
-it(
+  it(
     "phase 4 - all expected navigation tabs are present",
     async () => {
       const puppeteer = await import("puppeteer");
@@ -104,7 +104,7 @@ it(
     TIMEOUT,
   );
 
-it("phase 5 - links in code block banners should open in new tabs", async () => {
+  it("phase 5 - links in code block banners should open in new tabs", async () => {
     const puppeteer = await import("puppeteer");
     const browser = await puppeteer.default.launch({ headless: "new", args: ["--no-sandbox"] });
     try {
@@ -135,7 +135,7 @@ it("phase 5 - links in code block banners should open in new tabs", async () => 
     }
   }, 60000);
 
-it(
+  it(
     "phase 6 - copy button triggers clipboard copy and shows alert modal",
     async () => {
       const puppeteer = await import("puppeteer");
@@ -166,7 +166,7 @@ it(
     TIMEOUT,
   );
 
-it(
+  it(
     "phase 7 - fullscreen modal opens with copy and close buttons",
     async () => {
       const puppeteer = await import("puppeteer");
@@ -204,7 +204,7 @@ it(
     TIMEOUT,
   );
 
-it(
+  it(
     "phase 8 - fullscreen modal copy button works",
     async () => {
       const puppeteer = await import("puppeteer");
@@ -240,7 +240,7 @@ it(
     TIMEOUT,
   );
 
-it(
+  it(
     "phase 9 - expand a collapsed code block via Show More",
     async () => {
       const puppeteer = await import("puppeteer");

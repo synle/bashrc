@@ -215,7 +215,7 @@ function readHar(harFolder) {
 }
 
 describe("curl wrapper HAR capture", () => {
-it("writes a valid mm-dd-yyyy.har with one entry per request", () => {
+  it("writes a valid mm-dd-yyyy.har with one entry per request", () => {
     const body = '{"a":1}';
     const { harFolder } = runCurl({
       url: "https://api.example.com/thing.json",
@@ -238,7 +238,7 @@ it("writes a valid mm-dd-yyyy.har with one entry per request", () => {
     expect(entry.response.headers).toContainEqual({ name: "x-fixture", value: "yes" });
   });
 
-it("appends to the same daily archive instead of overwriting it", () => {
+  it("appends to the same daily archive instead of overwriting it", () => {
     const harFolder = path.join(sandbox, "har");
 
     runCurl({ url: "https://example.com/one.json", body: '{"n":1}' });
@@ -253,7 +253,7 @@ it("appends to the same daily archive instead of overwriting it", () => {
     ]);
   });
 
-it("records the resolved method and request headers", () => {
+  it("records the resolved method and request headers", () => {
     const { harFolder } = runCurl({
       url: "https://example.com/post.json",
       body: '{"ok":true}',
@@ -265,7 +265,7 @@ it("records the resolved method and request headers", () => {
     expect(entry.request.headers).toContainEqual({ name: "X-Trace", value: "abc123" });
   });
 
-it("masks sensitive header values", () => {
+  it("masks sensitive header values", () => {
     const { harFolder } = runCurl({
       url: "https://example.com/secure.json",
       body: '{"ok":true}',
@@ -279,7 +279,7 @@ it("masks sensitive header values", () => {
     expect(entry.request.headers).toContainEqual({ name: "Authorization", value: "[REDACTED]" });
   });
 
-it("stores sensitive values verbatim when BASHRC_CURL_HAR_NO_REDACT=1", () => {
+  it("stores sensitive values verbatim when BASHRC_CURL_HAR_NO_REDACT=1", () => {
     const { harFolder } = runCurl({
       url: "https://example.com/secure.json",
       body: '{"ok":true}',

@@ -236,7 +236,7 @@ function runWrapper(command) {
 }
 
 describe("list_prs — shell wrappers", () => {
-it("uses shared confirmation and seeds the requested bookmarks", () => {
+  it("uses shared confirmation and seeds the requested bookmarks", () => {
     expect(PROFILE_SOURCE).toContain('command pr_merge "$@"');
     expect(INSTALLER_SOURCE).toContain("git.pr_merge.cjs");
     expect(MERGE_CLI_SOURCE).toContain("split(/[\\s,|]+/");
@@ -249,20 +249,20 @@ it("uses shared confirmation and seeds the requested bookmarks", () => {
     expect(bookmarkBlock[0]).toContain('"pr_merge"');
   });
 
-it("checks unresolved review threads before auto-merge", () => {
+  it("checks unresolved review threads before auto-merge", () => {
     expect(MERGE_CLI_SOURCE).toContain("reviewThreads(first:100)");
     expect(MERGE_CLI_SOURCE).toContain("isWipTitle");
     expect(MERGE_CLI_SOURCE).toContain("Number(left.wip) - Number(right.wip)");
   });
 
-it("accepts piped stdin and still prompts on the controlling terminal", () => {
+  it("accepts piped stdin and still prompts on the controlling terminal", () => {
     expect(MERGE_CLI_SOURCE).toContain("function readPipedInput()");
     expect(MERGE_CLI_SOURCE).toContain("readPipedInput()");
     expect(MERGE_CLI_SOURCE).toContain('fs.openSync("/dev/tty", "r")');
     expect(PROFILE_SOURCE).toContain("command cat mypr_list | pr_merge");
   });
 
-it("offers am / dm / ig with am as the default and prints the gh commands first", () => {
+  it("offers am / dm / ig with am as the default and prints the gh commands first", () => {
     expect(MERGE_CLI_SOURCE).toContain("function parseAction(");
     expect(MERGE_CLI_SOURCE).toContain('if (!value) return "am"');
     expect(MERGE_CLI_SOURCE).toContain('info(colorize(34, "[am] enable auto-merge (default)"))');

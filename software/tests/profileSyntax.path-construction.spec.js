@@ -241,11 +241,11 @@ function findHeredocsInCommandSubstitution(source) {
 }
 
 describe("profile-core.sh PATH construction", () => {
-const fs = require("fs");
+  const fs = require("fs");
 
-const tmpScript = `/tmp/_bashrc_path_test_${process.pid}.sh`;
+  const tmpScript = `/tmp/_bashrc_path_test_${process.pid}.sh`;
 
-function runPathTest(initialPath, extraSetup = "") {
+  function runPathTest(initialPath, extraSetup = "") {
     fs.writeFileSync(
       tmpScript,
       [
@@ -267,21 +267,21 @@ function runPathTest(initialPath, extraSetup = "") {
     }
   }
 
-it("should preserve /usr/bin and /bin in PATH", () => {
+  it("should preserve /usr/bin and /bin in PATH", () => {
     const result = runPathTest("/usr/bin:/bin:/usr/sbin:/sbin");
     const dirs = result.split(":");
     expect(dirs).toContain("/usr/bin");
     expect(dirs).toContain("/bin");
   });
 
-it("should not produce empty PATH segments", () => {
+  it("should not produce empty PATH segments", () => {
     const result = runPathTest("/usr/bin:/bin");
     expect(result).not.toMatch(/::/);
     expect(result).not.toMatch(/^:/);
     expect(result).not.toMatch(/:$/);
   });
 
-it("should dedupe PATH entries", () => {
+  it("should dedupe PATH entries", () => {
     const result = runPathTest("/usr/bin:/bin:/usr/bin:/bin");
     const dirs = result.split(":");
     const usrBinCount = dirs.filter((d) => d === "/usr/bin").length;
