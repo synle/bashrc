@@ -481,7 +481,7 @@ function gogit() {
 function clone() {
   if [ -z "${1:-}" ] || is_help_arg "${1:-}"; then
     echo "clone: clone a repo by URL or owner/repo shorthand
-  Usage: clone <url-or-owner/repo> [destination_folder] [destination_folder]
+  Usage: clone <url-or-owner/repo> [destination_folder]
   Examples:
     clone git@github.com:synle/bashrc.git
     clone https://github.com/synle/bashrc.git
@@ -547,14 +547,29 @@ function clone() {
   fi
 
   local destination_path
-  destination_path="(cd "$destination_parent" && pwd)/$destination_name"
-  if ! git clone "$clone_url" "$destination_folder"; then
+  destination_path="$(cd "$destination_parent" && pwd)/$destination_name"
+  if ! git clone1 "$clone_url" "$destination_folder"; then
     echo "clone: clone failed: $clone_url"
     return 1
   fi
   echo "Cloned repository: $destination_path"
 }
+
+# cd to Downloads directory (tries multiple paths in order)
+function godownload() {
+  if is_help_arg "${1:-}"; then
+    echo "godownload: cd to the Downloads folder
+  Usage: godownload [subfolder]
+  Tries \$HOME/Downloads, /mnt/d/Downloads, and on WSL the Windows user Downloads folder."
+    return 0
+  fi
+  local candidates=(
+    "$HOME/Downloads"
+    "/mnt/d/Downloads"
+  )
+  # on WSL, try to resolve the Windows user Downloads folder via wslpath
   if type -P wslpath &> /dev/null; then
+    local win_home
     win_home="$(wslpath "$(cmd.exe /C 'echo %USERPROFILE%' 2> /dev/null | tr -d '\r')" 2> /dev/null)"
     if [ -n "$win_home" ]; then
       candidates+=("$win_home/Downloads")

@@ -593,6 +593,7 @@ file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
 | `gitAliasResolution`              | Every `git.gitconfig` alias (incl. generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` placeholder.                                                                                                                                                                                                                                               |
 | `presets`                         | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles.                                                                                                                                                                                                                                                                                                                  |
 | `profileSyntax`                   | Generated profiles pass `bash -n` under **both** PATH bash and the oldest local bash (`/bin/bash`, 3.2 on macOS), meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. Also lints every shell file for the bash-3.2 traps: no heredoc inside `$( ... )`, no `&>>` (§8).                                                      |
+| `profileShellSyntax`              | Every `*.profile.bash` / `*.bash` under `software/scripts/` (recursive, `.ps1.bash` excluded) and `software/bootstrap/` passes `bash -n` under both PATH bash and the oldest local bash. Runs in the **fast default suite** (no `.build/` needed), so `make test_unit` alone catches a botched partial — e.g. a deleted `function foo() {` header leaving an orphaned `}` body that breaks `source ~/.bash_syle`.                                    |
 | `filterFilesByOsGuard`            | Explicit `--files=` entries in an inactive OS folder are dropped, not run.                                                                                                                                                                                                                                                                                                                                                                     |
 | `osDetection`                     | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.                                                                                                                                                                                                                                                                                             |
 | `smokeTestRawUrls`                | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                                                                                                                                                                                                                                                               |
@@ -862,7 +863,7 @@ Targeted escalations that beat a full `make validate` when you know what you tou
 | ----------------------------------------------------- | ------------------------------------------------------------------------- |
 | A `software/scripts/` script                          | `bash run.sh --files="<script>"` (twice, for idempotency)                 |
 | `software/index.js`, `run.sh`, `bootstrap/`           | `make test_unit && make test_profile`                                     |
-| A `.sh` / `.bash` / profile partial                   | `make test_profile`                                                       |
+| A `.sh` / `.bash` / profile partial                   | `bash -n <file>` then `make test_unit` (`profileShellSyntax` parses every partial — §11) |
 | BEGIN/END markers, `ci-binaries.json`, script indexes | `make format && make test_buildconfig`                                    |
 | `presets.jsonc`                                       | `npx vitest run --config vitest.config.js software/tests/presets.spec.js` |
 | Only `.md` / docs / skills                            | nothing — docs aren't linted or built                                     |
@@ -880,6 +881,10 @@ regenerating a BEGIN/END block, a codegen pass, a dependency bump) — say so wh
 - Introduce bash 4+ syntax — including `&>>` and any heredoc nested inside `$( ... )`.
   Confirm with `/bin/bash -n <file>`; a bare `bash -n` is Homebrew 5.x on macOS and
   will not catch it (§8).
+- Delete a `function foo() {` header without removing its whole body. An orphaned body
+  (stray `}`, unmatched `if`/`fi`) still parses as "almost function definitions" to a
+  careless reader, but breaks `source ~/.bash_syle` at startup — caught by
+  `profileShellSyntax` (§11), which is why every partial edit ends with `bash -n`.
 - `console.log` in a JS script.
 - Commit `.build/`, `dist/`, `coverage/`, or `software/types/` churn as hand-written work.
 

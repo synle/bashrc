@@ -28,7 +28,7 @@ function git() {
 }
 source "$1"
 if [ -n "$3" ]; then
-  clone "2" "3"
+  clone "$2" "$3"
 else
   clone "$2"
 fi
