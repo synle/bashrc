@@ -31,22 +31,23 @@ export default defineConfig({
   test: {
     include: ["software/tests/**/*.spec.js"],
     exclude: [
-      "software/tests/smokeTestWebapp.spec.js",
-      "software/tests/smokeTestRawUrls.spec.js",
-      "software/tests/profileSyntax.spec.js",
-      "software/tests/buildConfigShape.spec.js",
+      "software/tests/smokeTestWebapp*.spec.js",
+      "software/tests/smokeTestRawUrls*.spec.js",
+      "software/tests/profileSyntax*.spec.js",
+      "software/tests/buildConfigShape*.spec.js",
     ],
     setupFiles: ["software/tests/setup.js"],
     env: {
       BASHRC_TEST_COVERAGE: IS_COVERAGE_RUN ? "1" : "0",
     },
     reporters: ["verbose"],
-    // In-file concurrency for the `describe.concurrent` suites (the bash-subprocess
-    // integration tests: packText, curlWrapperFormat, osDetection, bashHistoryClean…).
-    // Those tests are subprocess-bound, not CPU-bound, so oversubscribing past the core
-    // count is the point — vitest's default of 5 left most cores idle while the longest
-    // file serialized the whole run.
-    maxConcurrency: Math.max(8, os.cpus().length * 2),
+    // Run independent files in parallel with bounded fork workers. Forks keep each VM
+    // sandbox isolated, while a cap prevents shell-heavy integrity tests from timing out
+    // under oversubscription. In-file concurrency stays higher for child-process tests.
+    fileParallelism: true,
+    pool: "forks",
+    maxWorkers: Math.max(4, Math.min(8, os.cpus().length)),
+    maxConcurrency: Math.max(8, os.cpus().length),
     // Several suites (osDetection, packText, bashHistoryClean) spawn real bash
     // subprocesses. Under full-suite parallelism these routinely exceed vitest's
     // 5s default and fail intermittently, while passing in isolation. 30s is

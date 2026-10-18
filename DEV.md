@@ -82,7 +82,13 @@ give in-memory mocks, auto-reset in `beforeEach`.
 
 When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touch
 `software/index.js` or `software/tools/build-include.js`, add or update unit tests.
-The convention-linter specs (one rule each) are listed in AGENTS.md §11.
+Keep every test spec at **300 lines or fewer**. If a spec grows beyond 300 lines,
+split it by behavior into independently named `*.spec.js` files; never use numeric
+`partN` names. The convention-linter specs (one rule each) are listed in AGENTS.md §11.
+
+The unit runner uses bounded Vitest fork workers and file parallelism. Keep tests independent:
+own fixtures and temp folders, no shared mutable state, no order assumptions. Use
+`describe.concurrent` only when a suite has no shared process or filesystem state.
 
 Executable scripts may use `.personal.js` / `.personal.sh` or `.work.js` / `.work.sh`.
 Discovery and explicit `--files` / preset runs enforce the active `is_work_profile`;
