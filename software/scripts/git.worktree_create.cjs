@@ -10,6 +10,9 @@ const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
+/** Maximum time allowed for an optional remote fetch before local recovery continues. */
+const WORKTREE_FETCH_TIMEOUT_MS = 5000;
+
 /**
  * Write a diagnostic line to stderr.
  * @param {string} message
@@ -22,7 +25,7 @@ function info(message) {
 /**
  * Run git and return its result.
  * @param {string[]} args
- * @param {object} [options]
+ * @param {{cwd?: string, stdio?: string, timeout?: number}} [options]
  * @returns {{status: number, stdout: string, stderr: string}}
  */
 function git(args, options = {}) {
@@ -30,6 +33,7 @@ function git(args, options = {}) {
     cwd: options.cwd,
     encoding: "utf8",
     stdio: options.stdio || "pipe",
+    timeout: options.timeout,
     env: process.env,
   });
   return {
@@ -119,7 +123,7 @@ function existingWorktree(branch, primary) {
  */
 function addWorktree(folder, branch) {
   fs.mkdirSync(path.dirname(folder), { recursive: true });
-  git(["fetch", "origin", branch], { stdio: "ignore" });
+  git(["fetch", "origin", branch], { stdio: "ignore", timeout: WORKTREE_FETCH_TIMEOUT_MS });
 
   let unpushed = ``;
   const localBranch = git(["show-ref", "--verify", "--quiet", `refs/heads/${branch}`]);

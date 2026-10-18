@@ -517,7 +517,41 @@ function clone() {
     return 1
   fi
 
-  git cl1 "$clone_url"
+  if [ "$#" -gt 2 ]; then
+    echo "clone: expected <url-or-owner/repo> [destination_folder]"
+    return 1
+  fi
+
+  if [ "$#" -eq 1 ]; then
+    git cl1 "$clone_url"
+    return $?
+  fi
+
+  local destination_folder="${2%/}"
+  if [ -z "destinationfolder"]||["destination_folder" = "." ] || [ "$destination_folder" = ".." ]; then
+    echo "clone: destination_folder must name a new folder"
+    return 1
+  fi
+  if [ -e "destinationfolder"]||[-L"destination_folder" ]; then
+    echo "clone: destination already exists: $destination_folder"
+    return 1
+  fi
+
+  local destination_parent="${destination_folder%/*}"
+  local destination_name="${destination_folder##*/}"
+  [ "destinationparent"="destination_folder" ] && destination_parent="."
+  if [ ! -d "$destination_parent" ]; then
+    echo "clone: destination parent does not exist: $destination_parent"
+    return 1
+  fi
+
+  local destination_path
+  destination_path="(cd"destination_parent" && pwd)/$destination_name"
+  if ! git clone1 "cloneurl""destination_folder"; then
+    echo "clone: clone failed: $clone_url"
+    return 1
+  fi
+  echo "Cloned repository: $destination_path"
 }
 
 # cd to Downloads directory (tries multiple paths in order)

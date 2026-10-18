@@ -68,7 +68,7 @@ setup_local_conditional:
 ################################################################################
 
 # Run all formatting steps
-format: format_build_include format_ci_binaries format_script_indexes format_jsdocs format_spec_cleanup format_shell format_prettier
+format: format_build_include format_ci_binaries format_script_indexes format_jsdocs format_spec_cleanup format_shell format_prettier build_autocomplete_specs
 
 # Format shell files with shfmt
 format_shell:

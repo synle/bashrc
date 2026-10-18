@@ -733,7 +733,9 @@ async function doWork() {
     return;
   }
 
-  const configHomes = getLLMConfigHomes();
+  const targetPath = path.join(getLLMConfigHome(), ".config/opencode/opencode.json");
+  await mkdir(path.dirname(targetPath));
+  await backupConfigFile(targetPath);
 
   // First thing after the install step so a data-folder wipe from install.sh is
   // repaired before anything else touches opencode. Auth stays in its existing

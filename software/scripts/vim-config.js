@@ -35,6 +35,17 @@ async function doWork() {
     endif
     silent! packadd vim-jetpack
 
+    " Vim (not Neovim) can hit E517 inside jetpack#execute's scratch-buffer path.
+    " Force a temp-file execute path to avoid startup interruption prompts.
+    if exists('*jetpack#execute') && !has('nvim')
+      function! jetpack#execute(code) abort
+        let s:jetpack_temp = tempname()
+        call writefile(split(a:code, "\n"), s:jetpack_temp)
+        execute 'source ' . fnameescape(s:jetpack_temp)
+        call delete(s:jetpack_temp)
+      endfunction
+    endif
+
     if exists('*jetpack#begin')
       call jetpack#begin()
       Jetpack 'tani/vim-jetpack', { 'opt': 1 }                          " Self-manage so :JetpackSync keeps the manager updated

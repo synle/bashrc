@@ -32,6 +32,7 @@
 //   chat:clearInput             edit.clear                  OS_KEY+l
 //   chat:externalEditor         input.openExternalEditor    ctrl+g, ctrl+x
 //   chat:imagePaste             input.paste                 ctrl+v
+//   readline word deletion      edit.deleteWordLeft         ctrl+w, ctrl+backspace
 //   (readline HOME, ctrl+a null) cursor.home                ctrl+a, home
 //   (readline END, ctrl+e null)  cursor.end                 ctrl+e, end
 //
