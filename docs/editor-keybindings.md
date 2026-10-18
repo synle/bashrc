@@ -625,6 +625,13 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `ctrl+f` | Page forward (down) |   ✅   |
 | `ctrl+g` | Page backward (up)  |   ✅   |
 
+### Visual Mode
+
+| Key      | Action            | Status |
+| -------- | ----------------- | :----: |
+| `ctrl+a` | Beginning of line |   ✅   |
+| `ctrl+e` | End of line       |   ✅   |
+
 ### Insert Mode
 
 | Key      | Action              | Status |
@@ -665,6 +672,7 @@ Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for 
 | `\]`                                            | Toggle soft wrap (`set wrap!`)                                                    |
 | `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)                              |
 | `\s`                                            | Save file (`:w`)                                                                  |
+| `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                               |
 | `}`                                              | Toggle soft wrap (`set wrap!`)                                                    |
 | `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)                         |
 | `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                                |

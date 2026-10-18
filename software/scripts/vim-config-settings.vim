@@ -202,6 +202,8 @@ augroup END
 " Ctrl+A / Ctrl+E to jump to beginning / end of line (matches readline/bash)
 nnoremap <silent> <C-a> ^
 nnoremap <silent> <C-e> $
+xnoremap <silent> <C-a> ^
+xnoremap <silent> <C-e> $
 " Insert mode uses true line start/end, matching readline/bash editor behavior.
 " This intentionally replaces Vim's stock Ctrl-A (insert previously inserted text)
 " and Ctrl-E (scroll the window down one line) commands.
@@ -222,15 +224,21 @@ nnoremap <silent> <C-g> <C-b>
 "   \]       toggle soft wrap
 "   \<Space> trim trailing whitespace (whole file)
 "   \s       save file
+"   \a       select whole file (`ggvG$`)
 " Keep plain '\' free as a prefix so these two-key mappings fire reliably.
 nnoremap <silent> <Bslash><Bslash> :set number! norelativenumber<CR>
 nnoremap <silent> <Bslash>[ :set list!<CR>
 nnoremap <silent> <Bslash>] :set wrap!<CR>
 nnoremap <silent> <Bslash><Space> :TrimTrailingWhitespace<CR>
 nnoremap <silent> <Bslash>s :w<CR>
+nnoremap <silent> <Bslash>a ggvG$
+xnoremap <silent> <Bslash>a <Esc>ggvG$
 
 " ,<Space> also trims trailing whitespace (whole file).
 nnoremap <silent> ,<Space> :TrimTrailingWhitespace<CR>
+" ,a selects the whole file (`ggvG$`) in normal and visual mode.
+nnoremap <silent> ,a ggvG$
+xnoremap <silent> ,a <Esc>ggvG$
 
 " ,[ / ,] for previous / next buffer tab (pairs with ,1..,9).
 nnoremap <silent> ,[ :bprevious<CR>
