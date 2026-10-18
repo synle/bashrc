@@ -18,7 +18,7 @@ const HELP = readFileSync(path.join(ROOT, "software/bootstrap/common-functions.b
 )[0];
 
 /**
- * Source the wrapper twice and invoke it against a recording uvx executable.
+ * Source the wrapper twice and invoke it against recording uv/uvx executables.
  * @param {string[]} args - Arguments passed to markitdown without shell interpolation.
  * @param {{available?: boolean, exitCode?: number}} options - Executable availability and exit status.
  * @returns {import("child_process").SpawnSyncReturns<string>} Captured output and status.
@@ -29,7 +29,9 @@ function runWrapper(args, { available = true, exitCode = 0 } = {}) {
   try {
     symlinkSync("/usr/bin/tr", path.join(sandbox, "tr"));
     if (available) {
-      writeFileSync(path.join(sandbox, "uvx"), `#!/bin/bash\nprintf '%s\\0' "$@"\nexit ${exitCode}\n`, { mode: 0o755 });
+      const recorder = `#!/bin/bash\nprintf '%s\\0' "$@"\nexit ${exitCode}\n`;
+      writeFileSync(path.join(sandbox, "uv"), recorder, { mode: 0o755 });
+      writeFileSync(path.join(sandbox, "uvx"), recorder, { mode: 0o755 });
     }
     return spawnSync("/bin/bash", ["--noprofile", "--norc", "-c", `${HELP}\n${WRAPPER}\n${WRAPPER}\nmarkitdown "$@"`, "test", ...args], {
       encoding: "utf8",
@@ -61,7 +63,6 @@ describe("markitdown profile wrapper", () => {
       ["input.docx", "-o", "output.md", "--keep-data-uris"],
     ],
     [["--version"], ["--version"]],
-    [[], []],
   ])("forwards %j with positional output normalization", (args, expected) => {
     const result = runWrapper(args);
     expect(result.status).toBe(0);
@@ -69,12 +70,23 @@ describe("markitdown profile wrapper", () => {
     expect(result.stderr).toBe("");
   });
 
+  it("installs the converter without starting it when called without arguments", () => {
+    const result = runWrapper([]);
+    expect(result.status).toBe(0);
+    expect(result.stdout.split("\0").slice(0, -1)).toEqual(["tool", "install", "--python", "3.12", "markitdown[all]"]);
+    expect(result.stderr).toBe("");
+  });
+
   it("shows local help without starting uvx", () => {
     const result = runWrapper(["--help"]);
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("Usage: markitdown INPUT [-o OUTPUT | OUTPUT] [OPTIONS]");
-    expect(result.stdout).toContain("Without OUTPUT, writes Markdown to stdout.");
+    expect(result.stdout).toContain("Usage: markitdown [INPUT [-o OUTPUT | OUTPUT] [OPTIONS]]");
+    expect(result.stdout).toContain("Without arguments, installs markitdown[all] with Python 3.12 and exits.");
     expect(result.stdout).not.toContain("\0");
+  });
+
+  it("preserves installation failure status", () => {
+    expect(runWrapper([], { exitCode: 7 }).status).toBe(7);
   });
 
   it("preserves conversion failure status", () => {
