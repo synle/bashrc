@@ -94,7 +94,7 @@ function _clipboard_save() {
   else
     $filter | _normalize_patch_headers > "$clip_file"
   fi
-  ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | tail -n +$((_CLIPBOARD_MAX + 1)) | while read -r f; do
+  command ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | tail -n +$((_CLIPBOARD_MAX + 1)) | while read -r f; do
     rm -f "$_CLIPBOARD_DIR/$f"
   done
 }
@@ -161,7 +161,7 @@ function paste() {
       eval "$_PASTE_CMD"
     else
       local latest
-      latest=$(ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -1)
+      latest=$(command ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -1)
       [ -n "$latest" ] && command cat "$_CLIPBOARD_DIR/$latest"
     fi
   elif [ "$1" = "--unwrap" ]; then
@@ -177,7 +177,7 @@ function paste() {
         paste file1 file2      forward to /usr/bin/paste (merge lines)
     "
   elif [ "$1" = "list" ]; then
-    ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -n "$_CLIPBOARD_MAX"
+    command ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -n "$_CLIPBOARD_MAX"
   elif [ -f "$_CLIPBOARD_DIR/$1" ]; then
     command cat "$_CLIPBOARD_DIR/$1"
   else
