@@ -703,8 +703,7 @@ Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for 
 | ----------------------------- | ---------------------------------------------------------------------- |
 | `,c`, `\c`                    | Copy buffer (or selection) to system clipboard                         |
 | `\x`                          | Cut line/selection (`+clipboard` when available)                       |
-| `,p`                          | Replace buffer with system clipboard                                   |
-| `ctrl+v` (insert), `,v`, `\v` | Paste clipboard image as `@<path>` (saved to Desktop), else paste text |
+| `p` (normal), `ctrl+v` (insert), `,v`, `\v` | Paste clipboard image as `@<path>` (saved to Desktop), else paste text with trailing `\r`, `\n`, and spaces removed |
 | `ctrl+q` (insert)             | Insert next key literally (vim's stock `ctrl+v`)                       |
 
 `ctrl+v` image paste exists for prompts edited in vim via an AI CLI's `ctrl+g`: the image is
