@@ -7,9 +7,9 @@
  * `system()` inside an editor launched by an AI CLI (Ctrl+G), which runs a bare
  * shell with a stripped environment.
  *
- * Save folder, first existing wins: `$CLIPBOARD_IMAGE_FOLDER`, the D: drive
- * Desktop (`/mnt/d` WSL, `/d` MinGW), the C: drive Windows user Desktop, then
- * `~/Desktop`, else `~/tmp/clipboard_images`. Same D-before-C order as
+ * Save folder, first existing wins: `$CLIPBOARD_IMAGE_FOLDER`, WSL/Windows-mounted
+ * D: screenshots folder, D: Desktop, C: user screenshots folder, C: user Desktop,
+ * then `~/Desktop/_screenshots`, `~/Desktop`, else `/tmp/clipboard_images`. Same D-before-C order as
  * `getDesktopPath()` and `_screenshot_local_folder`.
  *
  * Side effects: writes and chmods `~/.local/bin/save_clipboard_image`.
@@ -38,7 +38,7 @@ async function doWork() {
         echo "save_clipboard_image: save clipboard image to a png, print its path
         save_clipboard_image             -> <Desktop>/clipboard_<timestamp>.png
         save_clipboard_image <out.png>   -> given path
-        Desktop order: CLIPBOARD_IMAGE_FOLDER, D: Desktop, C: user Desktop, ~/Desktop, ~/tmp/clipboard_images
+        Desktop order: CLIPBOARD_IMAGE_FOLDER, WSL/Windows D: Desktop/_screenshots, D: Desktop, C: user Desktop/_screenshots, C: user Desktop, ~/Desktop/_screenshots, ~/Desktop, /tmp/clipboard_images
         exit 0 saved | 1 no image on clipboard | 2 no supported clipboard tool"
         exit 0
       fi
@@ -46,14 +46,20 @@ async function doWork() {
       # --- Save folder ---
       function _pick_save_folder() {
         local candidate
-        for candidate in "$CLIPBOARD_IMAGE_FOLDER" /mnt/d/Desktop /d/Desktop /mnt/c/Users/[Ss][Yy]*/Desktop /c/Users/[Ss][Yy]*/Desktop "$HOME/Desktop"; do
+        local os_name
+        os_name="$(uname -s)"
+        set -- "$CLIPBOARD_IMAGE_FOLDER" "$HOME/Desktop/_screenshots" "$HOME/Desktop"
+        if grep -qi microsoft /proc/version 2> /dev/null || case "$os_name" in MINGW* | MSYS* | CYGWIN*) true ;; *) false ;; esac; then
+          set -- "$CLIPBOARD_IMAGE_FOLDER" /mnt/d/Desktop/_screenshots /d/Desktop/_screenshots /mnt/d/Desktop /d/Desktop /mnt/c/Users/[Ss][Yy]*/Desktop/_screenshots /c/Users/[Ss][Yy]*/Desktop/_screenshots /mnt/c/Users/[Ss][Yy]*/Desktop /c/Users/[Ss][Yy]*/Desktop "$HOME/Desktop/_screenshots" "$HOME/Desktop"
+        fi
+        for candidate do
           if [ -n "$candidate" ] && [ -d "$candidate" ]; then
             echo "$candidate"
             return 0
           fi
         done
-        mkdir -p "$HOME/tmp/clipboard_images"
-        echo "$HOME/tmp/clipboard_images"
+        mkdir -p /tmp/clipboard_images
+        echo /tmp/clipboard_images
       }
 
       out_file="$1"
