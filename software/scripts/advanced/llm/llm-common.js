@@ -794,6 +794,8 @@ const LLM_DOC_TUNING_PLACEHOLDERS = {
   "<<SY_PR_RETRY_INTERVAL_SECONDS>>": "15",
   /** How many consecutive unreachable retries end the run. */
   "<<SY_PR_RETRY_MAX_FAILURES>>": "5",
+  /** How many actionable review comments activate babysit remediation. */
+  "<<SY_PR_REVIEW_CHANGE_THRESHOLD>>": "5",
 };
 
 /**

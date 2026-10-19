@@ -171,6 +171,7 @@ set linebreak                 " Soft wrap breaks at word boundaries, not mid-wor
 set breakindent               " Wrapped continuation lines keep the line's indent
 set wrap                      " Soft wrap on by default
 set fileformat=unix           " Save files with Unix LF line endings by default
+set fixendofline              " Always write one final newline, matching VS Code and Sublime Text
 set showmatch                 " Briefly jump to matching bracket when inserting one
 set wildmenu                  " Show autocomplete menu for commands (Tab in command mode)
 set wildmode=longest:full,full " Complete to longest common string first, then cycle through matches
@@ -536,25 +537,25 @@ else
   nnoremap <silent> <Bslash>x dd
   vnoremap <silent> <Bslash>x d
 endif
-if has("clipboard")
-  nnoremap <silent> ,p :%d _ \| put + \| 1d _<CR>
-elseif executable("pbcopy")
-  nnoremap <silent> ,p :%d \| r !pbpaste \| 1d<CR>
-endif
+" Clipboard paste commands remove terminal newlines so pasted text does not add blank lines.
 
 " Ctrl+V (insert mode) / ,v (normal mode) = paste clipboard image or text.
 " Image -> saved by ~/.local/bin/save_clipboard_image (clipboard-image.js), "@<path>" inserted
 " (opencode / copilot file-reference syntax, for prompts edited via Ctrl+G).
 " No image -> normal text paste. Vim's literal-insert stays on Ctrl+Q.
 " Absolute path: vim launched from an AI CLI may not have ~/.local/bin on PATH.
-" Mapped only when the tool exists, so native Windows vim keeps stock Ctrl+V.
 " Windows Terminal likely intercepts Ctrl+V before vim sees it.
 let s:save_clipboard_image = expand('~/.local/bin/save_clipboard_image')
-function! s:PasteClipboardImageOrText() abort
+function! s:PasteClipboardImageOrText(...) abort
+  let l:replace_buffer = get(a:, 1, 0)
   let l:line = line('.')
-  let l:path = trim(system(shellescape(s:save_clipboard_image)))
-  let l:status = v:shell_error
-  if l:status == 0 && !empty(l:path)
+  let l:path = ''
+  let l:status = 1
+  if executable(s:save_clipboard_image)
+    let l:path = trim(system(shellescape(s:save_clipboard_image)))
+    let l:status = v:shell_error
+  endif
+  if l:status == 0 && !empty(l:path) && !l:replace_buffer
     execute "normal! a@" . l:path . " "
     redraw | echo 'Pasted image from clipboard on line ' . l:line . ' - ' . fnamemodify(l:path, ':~')
     return
@@ -569,25 +570,28 @@ function! s:PasteClipboardImageOrText() abort
   elseif executable('pbpaste')
     let l:text = system('pbpaste')
   elseif executable('powershell.exe')
-    let l:text = substitute(system('powershell.exe -NoProfile -Command Get-Clipboard'), '\r', '', 'g')
+    let l:text = system('powershell.exe -NoProfile -Command Get-Clipboard')
   else
     let l:text = ''
   endif
+  let l:text = substitute(l:text, '[\r\n ]\+$', '', '')
   if empty(l:text)
     echohl WarningMsg | echo 'Clipboard is empty' | echohl None
     return
   endif
-  if has('clipboard')
-    normal! "+p
+  if l:replace_buffer
+    call setline(1, split(l:text, '\n', 1))
+    silent! 2,$delete _
   else
-    execute "normal! a" . l:text
+    call setreg('"', l:text, 'c')
+    normal! p
   endif
-  " A trailing newline ends the last line; it does not start a new one.
-  let l:count = len(split(substitute(l:text, '\n$', '', ''), '\n', 1))
+  let l:count = len(split(l:text, '\n', 1))
   redraw | echo 'Pasted from clipboard (' . l:count . (l:count == 1 ? ' line' : ' lines') . ') on line ' . l:line
 endfunction
 if executable(s:save_clipboard_image)
   inoremap <silent> <C-v> <C-o>:call <SID>PasteClipboardImageOrText()<CR>
-  nnoremap <silent> ,v :call <SID>PasteClipboardImageOrText()<CR>
-  nnoremap <silent> <Bslash>v :call <SID>PasteClipboardImageOrText()<CR>
 endif
+nnoremap <silent> ,v :call <SID>PasteClipboardImageOrText()<CR>
+nnoremap <silent> <Bslash>v :call <SID>PasteClipboardImageOrText()<CR>
+nnoremap <silent> p :call <SID>PasteClipboardImageOrText()<CR>
