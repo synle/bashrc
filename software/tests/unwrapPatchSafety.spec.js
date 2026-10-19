@@ -173,6 +173,24 @@ describe("raw clipboard path", () => {
     expect(source).toContain('git apply --check "$patch_file"');
   });
 
+  it("splits fenced patches and asks before each patch", () => {
+    const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
+    expect(source).toContain('patch_count=$(command grep -c "^# BEGIN patch " "$patch_file"');
+    expect(source).toContain('output = folder "/patch-" patch_number ".patch"');
+    expect(source).toContain(
+      'prompt_yes_no "$(printf \'\\033[0;31mApplying patch %s/%s: Continue?\\033[0m\'',
+    );
+    expect(source).toContain('if ! _git_patch_apply_file "$patch_part"; then');
+    expect(source).toContain('command rm -rf "$patch_folder"');
+  });
+
+  it("keeps an unfenced patch on the existing direct-apply path", () => {
+    const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
+    const applier = source.split("function _git_patch_apply_file() {", 2)[1].split("\n}\n", 1)[0];
+    expect(applier).toContain('if git apply --check "$patch_file"');
+    expect(applier).toContain('if [ "${patch_count:-0}" -gt 0 ]; then');
+  });
+
   it("routes every apply through the one forgiving applier", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     // A rejected hunk must still land the rest, otherwise a patch cut against a

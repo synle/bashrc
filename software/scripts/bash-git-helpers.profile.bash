@@ -778,9 +778,59 @@ function _git_patch_apply_clipboard() {
   _git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
 }
 
-# _git_patch_apply_file: the only applier — clean when it can, --reject when it must
+# _git_patch_apply_file: the only applier — prompt between fenced patches, then
+# clean when it can, --reject when it must
 function _git_patch_apply_file() {
   local patch_file="$1"
+
+  # Multi-commit patch files have one fenced section per commit. Split those
+  # sections before applying so each commit sees the tree left by the previous
+  # one; applying the combined file makes later patches fail against the old tree.
+  local patch_count
+  patch_count=$(command grep -c "^# BEGIN patch " "$patch_file" 2> /dev/null)
+  if [ "${patch_count:-0}" -gt 0 ]; then
+    local patch_folder patch_index patch_part
+    patch_folder=$(command dirname "$(_git_patch_temp_file multi.patch)") || return 1
+    command awk -v folder="$patch_folder" '
+      /^# BEGIN patch / {
+        inside = 1
+        patch_number++
+        output = folder "/patch-" patch_number ".patch"
+        next
+      }
+      /^# END patch / {
+        inside = 0
+        close(output)
+        next
+      }
+      inside { print > output }
+    ' "$patch_file" || {
+      command rm -rf "$patch_folder"
+      return 1
+    }
+
+    patch_index=0
+    while [ "$patch_index" -lt "$patch_count" ]; do
+      patch_index=$((patch_index + 1))
+      patch_part="$patch_folder/patch-$patch_index.patch"
+      if [ ! -s "$patch_part" ]; then
+        echo ">>> patch $patch_index/$patch_count is empty or malformed" >&2
+        command rm -rf "$patch_folder"
+        return 1
+      fi
+      if ! prompt_yes_no "$(printf '\033[0;31mApplying patch %s/%s: Continue?\033[0m' "$patch_index" "$patch_count")" N; then
+        echo ">>> patch apply stopped before patch $patch_index/$patch_count" >&2
+        command rm -rf "$patch_folder"
+        return 1
+      fi
+      if ! _git_patch_apply_file "$patch_part"; then
+        command rm -rf "$patch_folder"
+        return 1
+      fi
+    done
+    command rm -rf "$patch_folder"
+    return 0
+  fi
 
   # Dry-run first so a corrupt or already-applied patch is named as such before
   # anything touches the working tree.
