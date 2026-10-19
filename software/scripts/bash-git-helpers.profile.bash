@@ -697,36 +697,38 @@ function _git_patch_temp_file() {
   echo "$patch_folder/${1:-patch.patch}"
 }
 
+# _git_patch_boundary_username: return a safe optional sender username for patch markers
+function _git_patch_boundary_username() {
+  local username="${GIT_PATCH_USERNAME:-${GITHUB_USERNAME:-${GITHUB_ACTOR:-}}}"
+  if [ -z "$username" ]; then
+    username=$(git config --get github.user 2> /dev/null)
+  fi
+  username=$(printf '%s' "$username" | tr -cd 'A-Za-z0-9._-')
+  echo "${username:-unknown}"
+}
+
 # _git_patch_write: render the last N commits into a patch file (the only generator)
 #   $1 = output file, $2 = commit count (default 1)
-#   count 1  -> plain patch, unchanged format
-#   count N  -> one section per commit, oldest first, each fenced by
-#               `# BEGIN patch <i> (<sha>)` / `# END patch <i> (<sha>)`;
-#               patch 1 is the oldest, patch N is HEAD (apply order).
-#               `git apply` ignores the fence lines between diffs.
+#   Every count uses one section per commit, oldest first, fenced by the versioned
+#   boundary marker; patch 1 is oldest and patch N is HEAD (apply order).
 function _git_patch_write() {
   local patch_file="$1"
   local count="${2:-1}"
-  # Rendered once into a file, then served to stdout / clipboard / upload from
-  # there — a second `git patch-view` run could disagree with what was copied.
-  if [ "$count" -le 1 ]; then
-    git patch-view 1 > "$patch_file" 2> /dev/null && [ -s "$patch_file" ]
-    return $?
-  fi
-
   local shas
   shas=$(git rev-list --reverse -n "$count" HEAD 2> /dev/null) || return 1
   [ -n "$shas" ] || return 1
 
+  local author_username
+  author_username=$(_git_patch_boundary_username)
   : > "$patch_file"
   local index=0 sha short_sha
   while IFS= read -r sha; do
     index=$((index + 1))
     short_sha=$(git rev-parse --short "$sha")
     {
-      echo "# BEGIN patch $index ($short_sha)"
+      echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $index/$count · $short_sha · $author_username"
       git --no-pager format-patch -1 "$sha" --stdout | git patch-clean
-      echo "# END patch $index ($short_sha)"
+      echo "# END SY_GIT_PATCH_BOUNDARY_v1 · $index/$count · $short_sha · $author_username"
       echo ""
     } >> "$patch_file" 2> /dev/null || return 1
   done <<< "$shas"
@@ -783,28 +785,42 @@ function _git_patch_apply_clipboard() {
 function _git_patch_apply_file() {
   local patch_file="$1"
 
-  # Multi-commit patch files have one fenced section per commit. Split those
-  # sections before applying so each commit sees the tree left by the previous
-  # one; applying the combined file makes later patches fail against the old tree.
+  # Fenced files split before applying so each commit sees the tree left by its
+  # predecessor. Strict pair validation stops malformed metadata before touching
+  # the working tree.
   local patch_count
-  patch_count=$(command grep -c "^# BEGIN patch " "$patch_file" 2> /dev/null)
+  patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 " "$patch_file" 2> /dev/null)
   if [ "${patch_count:-0}" -gt 0 ]; then
     local patch_folder patch_index patch_part
     patch_folder=$(command dirname "$(_git_patch_temp_file multi.patch)") || return 1
     command awk -v folder="$patch_folder" '
-      /^# BEGIN patch / {
+      BEGIN { valid = 1 }
+      /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/ {
+        if ($0 !~ /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · [0-9][0-9]*\/[0-9][0-9]* · [0-9a-f][0-9a-f]* · [A-Za-z0-9._-]*$/ || inside) {
+          valid = 0
+          next
+        }
+        split($5, counts, "/")
+        if (patch_number + 1 != counts[1] || (patch_number > 0 && total_count != counts[2])) valid = 0
         inside = 1
         patch_number++
+        total_count = counts[2]
         output = folder "/patch-" patch_number ".patch"
+        expected_end = "# END SY_GIT_PATCH_BOUNDARY_v1 · " $5 " · " $7 " · " $9
         next
       }
-      /^# END patch / {
+      /^# END SY_GIT_PATCH_BOUNDARY_v1/ {
+        if (!inside || $0 != expected_end) valid = 0
         inside = 0
         close(output)
         next
       }
       inside { print > output }
+      END {
+        if (inside || !valid || patch_number == 0 || patch_number != total_count) exit 1
+      }
     ' "$patch_file" || {
+      echo ">>> patch boundary metadata is malformed" >&2
       command rm -rf "$patch_folder"
       return 1
     }
@@ -818,7 +834,7 @@ function _git_patch_apply_file() {
         command rm -rf "$patch_folder"
         return 1
       fi
-      if ! prompt_yes_no "$(printf '\033[0;31mApplying patch %s/%s: Continue?\033[0m' "$patch_index" "$patch_count")" N; then
+      if [ "$patch_count" -gt 1 ] && ! prompt_yes_no "$(printf '\033[0;31mApplying patch %s/%s: Continue?\033[0m' "$patch_index" "$patch_count")" N; then
         echo ">>> patch apply stopped before patch $patch_index/$patch_count" >&2
         command rm -rf "$patch_folder"
         return 1
@@ -1178,6 +1194,18 @@ function _git_patch_outcome_line() {
   esac
 }
 
+# _git_patch_create_unpushed: create every commit ahead of upstream, or latest commit
+# with a warning when this branch has no upstream.
+function _git_patch_create_unpushed() {
+  local count
+  if count=$(git rev-list --count '@{upstream}..HEAD' 2> /dev/null); then
+    git_patch_create "$count"
+    return $?
+  fi
+  printf '\033[0;31m>>> branch has no upstream; generating only the latest commit\033[0m\n' >&2
+  git_patch_create 1
+}
+
 # patch: one word for the whole transfer pair — apply when there is something to
 # apply, otherwise cut a fresh patch. This shadows /usr/bin/patch in shells that
 # load the profile; reach the binary with `command patch`.
@@ -1190,16 +1218,16 @@ function patch() {
   Resolution order:
     0. <count>, a positive number     -> git_patch_create <count> (last N commits,
                                          oldest first, each fenced by
-                                         '# BEGIN/END patch <i> (<sha>)')
+                                         '# BEGIN/END SY_GIT_PATCH_BOUNDARY_v1 · <i>/<total> · <sha> · <username>')
     1. <patch_file>, when given       -> git_patch_apply <patch_file>
     2. clipboard reads like a diff    -> asks first, then applies it
-    3. declined, empty, or not a diff -> git_patch_create (export the last commit)
+    3. declined, empty, or not a diff -> export every commit ahead of upstream
   After a successful apply it copies the patch's own commit message (minus any
   Co-authored-by trailer) to the clipboard, then runs 'git add -u && git commit'
   so the message can be pasted straight into the editor.
   Examples:
-    patch                  offer to apply the clipboard diff, else export the last commit
-    patch -y               apply the clipboard diff without asking, else export the last commit
+    patch                  offer to apply the clipboard diff, else export unpushed commits
+    patch -y               apply the clipboard diff without asking, else export unpushed commits
     patch 3                export the last 3 commits (patch 1 = oldest, patch 3 = HEAD)
     patch /tmp/fix.patch   apply an existing patch file
   Shadows /usr/bin/patch — reach the binary with 'command patch'."
@@ -1252,12 +1280,12 @@ function patch() {
       fi
       return "$status"
     fi
-    echo ">>> leaving the clipboard patch alone — creating one from the last commit instead"
+    echo ">>> leaving the clipboard patch alone — creating patches from unpushed commits instead"
   else
-    echo ">>> clipboard holds no patch — creating one from the last commit instead"
+    echo ">>> clipboard holds no patch — creating patches from unpushed commits instead"
   fi
 
-  git_patch_create
+  _git_patch_create_unpushed
   status=$?
   if [ "$status" -eq 0 ]; then
     _git_patch_outcome_line copied

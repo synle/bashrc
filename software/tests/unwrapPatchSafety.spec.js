@@ -137,7 +137,7 @@ describe("raw clipboard path", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     // The patch is rendered to a file once, then both the clipboard and stdout are
     // served from that file — but the clipboard hop is still the raw one.
-    expect(source).toMatch(/git patch-view 1 > "\$patch_file"/);
+    expect(source).toContain('git --no-pager format-patch -1 "$sha" --stdout | git patch-clean');
     expect(source).toContain('copy --raw "$patch_file"');
     expect(source).not.toMatch(/^\s*copy "\$patch_file"\s*$/m);
     expect(source).not.toMatch(/git patch-view \| copy$/m);
@@ -175,10 +175,12 @@ describe("raw clipboard path", () => {
 
   it("splits fenced patches and asks before each patch", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
-    expect(source).toContain('patch_count=$(command grep -c "^# BEGIN patch " "$patch_file"');
+    expect(source).toContain('patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 " "$patch_file"');
     expect(source).toContain('output = folder "/patch-" patch_number ".patch"');
+    expect(source).toContain('split($5, counts, "/")');
+    expect(source).toContain('patch_number != total_count');
     expect(source).toContain(
-      'prompt_yes_no "$(printf \'\\033[0;31mApplying patch %s/%s: Continue?\\033[0m\'',
+      'if [ "$patch_count" -gt 1 ] && ! prompt_yes_no "$(printf \'\\033[0;31mApplying patch %s/%s: Continue?\\033[0m\'',
     );
     expect(source).toContain('if ! _git_patch_apply_file "$patch_part"; then');
     expect(source).toContain('command rm -rf "$patch_folder"');
@@ -191,6 +193,16 @@ describe("raw clipboard path", () => {
     expect(applier).toContain('if [ "${patch_count:-0}" -gt 0 ]; then');
   });
 
+  it("wraps one generated commit with the same versioned boundary", () => {
+    const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
+    expect(source).toContain('echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $index/$count · $short_sha · $author_username');
+    expect(source).toContain('· $author_username');
+    expect(source).toContain('echo "${username:-unknown}"');
+    expect(source).toContain('function _git_patch_create_unpushed()');
+    expect(source).toContain("git rev-list --count '@{upstream}..HEAD'");
+    expect(source).toContain('branch has no upstream; generating only the latest commit');
+  });
+
   it("routes every apply through the one forgiving applier", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     // A rejected hunk must still land the rest, otherwise a patch cut against a
@@ -199,7 +211,7 @@ describe("raw clipboard path", () => {
     // Exactly one applier and one generator: every caller goes through them.
     expect(source.match(/^function _git_patch_apply_file\(\)/gm) || []).toHaveLength(1);
     expect(source.match(/^function _git_patch_write\(\)/gm) || []).toHaveLength(1);
-    expect(source.match(/^\s*git patch-view /gm) || []).toHaveLength(1);
+    expect(source.match(/^\s*git --no-pager format-patch -1 /gm) || []).toHaveLength(1);
   });
 });
 
