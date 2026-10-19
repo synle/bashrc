@@ -171,6 +171,7 @@ set linebreak                 " Soft wrap breaks at word boundaries, not mid-wor
 set breakindent               " Wrapped continuation lines keep the line's indent
 set wrap                      " Soft wrap on by default
 set fileformat=unix           " Save files with Unix LF line endings by default
+set fixendofline              " Always write one final newline, matching VS Code and Sublime Text
 set showmatch                 " Briefly jump to matching bracket when inserting one
 set wildmenu                  " Show autocomplete menu for commands (Tab in command mode)
 set wildmode=longest:full,full " Complete to longest common string first, then cycle through matches

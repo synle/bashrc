@@ -83,7 +83,8 @@ describe("Vim Visual-Multi case keybindings", () => {
     expect(VIM_SETTINGS).toContain("xnoremap <Del> d");
   });
 
-  it("routes every normal-mode clipboard paste through trailing-whitespace trimming", () => {
+  it("keeps final-newline and clipboard-trim save behavior aligned", () => {
+    expect(VIM_SETTINGS).toContain("set fixendofline");
     expect(VIM_SETTINGS).toContain("let l:text = substitute(l:text, '[\\r\\n ]\\+$', '', '')");
     expect(VIM_SETTINGS).toContain("nnoremap <silent> ,v :call <SID>PasteClipboardImageOrText()<CR>");
     expect(VIM_SETTINGS).toContain("nnoremap <silent> <Bslash>v :call <SID>PasteClipboardImageOrText()<CR>");

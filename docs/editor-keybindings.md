@@ -598,7 +598,7 @@ and dismisses fzf instead of closing the terminal.
 
 ## Vim
 
-Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader combos, `ctrl+key` for splits/search. Modified buffers show a red filename and `*` in the bottom statusline.
+Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader combos, `ctrl+key` for splits/search. Save commands always write one final newline, matching VS Code and Sublime Text. Modified buffers show a red filename and `*` in the bottom statusline.
 
 ### Common Shortcuts (matching editors)
 
