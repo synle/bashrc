@@ -1,0 +1,4 @@
+# personalDNSfilter custom Fire TV overrides.
+# Add one hostname per line to blacklist it.
+# Prefix a hostname with ! to whitelist it.
+# Wildcards are supported.

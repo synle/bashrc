@@ -31,36 +31,36 @@
 SETTINGS_APPLIED=""
 
 # Run an Android command through the host's connected ADB device.
-function adb_shell() {
+function _adb_shell() {
   adb shell "$@"
 }
 
-function put_setting() {
+function _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> put_setting $@"
-  adb_shell settings put "$@" >/dev/null 2>&1
+  echo ">>> setting put $@"
+  _adb_shell settings put "$@" >/dev/null 2>&1
 }
 
-function reset_setting() {
+function _restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> reset_setting $@"
-  adb_shell settings delete "$@" >/dev/null 2>&1
+  echo ">>> restore_setting $@"
+  _adb_shell settings delete "$@" >/dev/null 2>&1
 }
 
-function reset_all_settings() {
+function restore_all_settings() {
   echo "$SETTINGS_APPLIED" | while read entry; do
     [ -z "$entry" ] && continue
-    reset_setting $entry
+    _restore_setting $entry
   done
-  echo ">>> all settings reset to defaults"
+  echo ">>> all settings restored to defaults"
 }
 
-function disable_app() {
+function _disable_app() {
   ok=0
-  adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
-  adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Disabled > Success"
   else
@@ -68,12 +68,12 @@ function disable_app() {
   fi
 }
 
-function remove_app() {
+function _remove_app() {
   ok=0
-  disable_app $@ >/dev/null 2>&1 && ok=1
-  adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
-  adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
-  adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
+  _disable_app $@ >/dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Removed > Success"
   else
@@ -81,10 +81,10 @@ function remove_app() {
   fi
 }
 
-function restore_app() {
+function _restore_app() {
   ok=0
-  adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
-  adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Restored > Success"
   else
@@ -92,7 +92,7 @@ function restore_app() {
   fi
 }
 
-function parse_app_name() {
+function _parse_app_name() {
   echo "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
 }
 
@@ -100,19 +100,19 @@ function remove_app_collection() {
   echo "$1" | while read line; do
     [ -z "$line" ] && continue
     case "$line" in \#*) continue ;; esac
-    app=$(parse_app_name "$line")
+    app=$(_parse_app_name "$line")
     [ -z "$app" ] && continue
-    remove_app "$app"
+    _remove_app "$app"
   done
 }
 
-function restore_app_collection() {
+function _restore_app_collection() {
   echo "$1" | while read line; do
     [ -z "$line" ] && continue
     case "$line" in \#*) continue ;; esac
-    app=$(parse_app_name "$line")
+    app=$(_parse_app_name "$line")
     [ -z "$app" ] && continue
-    restore_app "$app"
+    _restore_app "$app"
   done
 }
 
@@ -123,42 +123,42 @@ function restore_app_collection() {
 
 debloat_settings() {
   # ---- Animations Off ----
-  put_setting global window_animation_scale 0.0       # window open/close off. instant UI.
-  put_setting global transition_animation_scale 0.0   # screen transitions off. instant UI.
-  put_setting global animator_duration_scale 0.0      # in-app animations off. instant UI.
+  _put_setting global window_animation_scale 0.0       # window open/close off. instant UI.
+  _put_setting global transition_animation_scale 0.0   # screen transitions off. instant UI.
+  _put_setting global animator_duration_scale 0.0      # in-app animations off. instant UI.
 
   # ---- Telemetry Off ----
-  put_setting secure collection_info_enabled 0        # disable system info collection. no side effects.
-  put_setting secure privacy_metrics_collection_enabled 0 # disable privacy metrics. no side effects.
-  put_setting global analytics_enabled 0              # disable system analytics. no side effects.
-  put_setting global usage_reporting_enabled 0        # disable usage reporting. no side effects.
+  _put_setting secure collection_info_enabled 0        # disable system info collection. no side effects.
+  _put_setting secure privacy_metrics_collection_enabled 0 # disable privacy metrics. no side effects.
+  _put_setting global analytics_enabled 0              # disable system analytics. no side effects.
+  _put_setting global usage_reporting_enabled 0        # disable usage reporting. no side effects.
 
   # ---- Connectivity ----
-  put_setting global wifi_scan_always_enabled 0       # stop Wi-Fi scan when Wi-Fi is off. no side effects.
-  put_setting global ble_scan_always_enabled 0        # stop Bluetooth scan when BT is off. no side effects.
+  _put_setting global wifi_scan_always_enabled 0       # stop Wi-Fi scan when Wi-Fi is off. no side effects.
+  _put_setting global ble_scan_always_enabled 0        # stop Bluetooth scan when BT is off. no side effects.
 
   # ---- Privacy ----
-  put_setting global device_provisioned 1             # mark device as provisioned. skip setup wizard.
-  put_setting global send_action_app_error 0          # disable crash reports to Google. no side effects.
-  put_setting global ad_id_opt_out 1                  # opt out of personalized ad tracking. no side effects.
+  _put_setting global device_provisioned 1             # mark device as provisioned. skip setup wizard.
+  _put_setting global send_action_app_error 0          # disable crash reports to Google. no side effects.
+  _put_setting global ad_id_opt_out 1                  # opt out of personalized ad tracking. no side effects.
 
   # ---- Other Settings ----
   # Make sure voice control is enabled
-  put_setting secure voice_disabled 0
-  put_setting secure alexa_wake_word_disabled 0
+  _put_setting secure voice_disabled 0
+  _put_setting secure alexa_wake_word_disabled 0
 
   # --- Fire TV-specific settings ---
-  put_setting global amz_limit_ad_tracking 1
-  put_setting global limit_ad_tracking 1
-  put_setting global non_amz_limit_ad_tracking 1
-  put_setting global advertisingIdApp:interestBasedAds:value 0
-  put_setting global USAGE_METRICS_UPLOAD_ENABLED 0
-  put_setting global usage_metrics_marketing_enabled 0
-  put_setting global settingsApp:appUsageData:value 0
-  put_setting global settingsApp:deviceUsageData:value 0
-  put_setting global heads_up_notifications_enabled 0
-  put_setting global com.amazon.tv.settings.featured_item_video_enabled 0
-  put_setting global com.amazon.tv.settings.featured_item_video_volume 0.0
+  _put_setting global amz_limit_ad_tracking 1
+  _put_setting global limit_ad_tracking 1
+  _put_setting global non_amz_limit_ad_tracking 1
+  _put_setting global advertisingIdApp:interestBasedAds:value 0
+  _put_setting global USAGE_METRICS_UPLOAD_ENABLED 0
+  _put_setting global usage_metrics_marketing_enabled 0
+  _put_setting global settingsApp:appUsageData:value 0
+  _put_setting global settingsApp:deviceUsageData:value 0
+  _put_setting global heads_up_notifications_enabled 0
+  _put_setting global com.amazon.tv.settings.featured_item_video_enabled 0
+  _put_setting global com.amazon.tv.settings.featured_item_video_volume 0.0
 }
 
 
@@ -196,6 +196,10 @@ com.amazon.device.messaging.sdk.internal.library    # Messaging SDK Internal - l
 com.amazon.device.messaging.sdk.library             # Messaging SDK - lose messaging SDK
 com.amazon.device.sync                              # Device Sync - lose Amazon device sync
 com.amazon.device.sync.sdk.internal                 # Sync SDK Internal - lose sync SDK internals
+com.amazon.pai                                      # Amazon PAI - disable personalized ads
+com.amazon.zico.app                                 # Zico - disable Amazon recommendation engine
+com.amazon.ism.recommendations                       # ISM Recommendations - disable content suggestions
+com.amazon.kindle.unifiedreader                      # Kindle Unified Reader - lose Kindle reader integration
 com.amazon.firebat                                  # Firebat - lose Amazon performance telemetry
 com.amazon.ftv.screensaver                          # Screensaver - lose Amazon screensaver/art channel
 com.amazon.hedwig                                   # Hedwig - lose Amazon notification service
@@ -290,9 +294,9 @@ com.android.traceur
 # --- Restore ---
 ################################################################################
 
-function restore_all() {
-  restore_app_collection "$FIRE_TV_DEBLOAT_SAFE"
-  reset_all_settings
+function restore_all_apps() {
+  _restore_app_collection "$FIRE_TV_DEBLOAT_SAFE"
+  restore_all_settings
   echo ">>> All Fire TV apps and settings restored"
 }
 
@@ -301,7 +305,7 @@ function restore_all() {
 ################################################################################
 
 # Download and install one APK from a repository's latest GitHub release.
-function install_latest_github_apk() {
+function _install_latest_github_apk() {
   repo="$1"
   asset_pattern="$2"
   app_name="$3"
@@ -337,6 +341,48 @@ function install_latest_github_apk() {
   return "$install_status"
 }
 
+# Push Amazon filtering rules and start personalDNSfilter's VPN activity.
+function _configure_personal_dnsfilter() {
+  blocklist_url="https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/wildcard/native.amazon-onlydomains.txt"
+  extra_hosts_url="https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/data/blocklists/extra-hosts.txt"
+  config_url="https://raw.githubusercontent.com/IngoZenz/personaldnsfilter/master/app/src/main/assets/dnsfilter.conf"
+  remote_folder="/storage/emulated/0/Android/data/dnsfilter.android/files/PersonalDNSFilter"
+  temp_folder="$(mktemp -d "${TMPDIR:-/tmp}/firetv-dns.XXXXXX")" || return 1
+  blocklist_file="$temp_folder/FILTERHOSTS.TXT"
+  extra_hosts_file="$temp_folder/additionalHosts.txt"
+  config_file="$temp_folder/dnsfilter.conf"
+
+  echo ">>> personalDNSfilter > Downloading Amazon blocklist"
+  if ! curl -fsSL "$blocklist_url" -o "$blocklist_file" ||
+    ! curl -fsSL "$extra_hosts_url" -o "$extra_hosts_file" ||
+    ! curl -fsSL "$config_url" |
+      command sed \
+        -e 's#^filterHostsFile = .*#filterHostsFile = FILTERHOSTS.TXT#' \
+        -e 's#^filterAutoUpdateURL = .*#filterAutoUpdateURL = https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/wildcard/native.amazon-onlydomains.txt#' \
+        -e 's#^filterAutoUpdateURL_IDs = .*#filterAutoUpdateURL_IDs = HaGeZi Amazon#' \
+        -e 's#^filterAutoUpdateURL_categories = .*#filterAutoUpdateURL_categories = Amazon#' \
+        -e 's#^filterAutoUpdateURL_switchs = .*#filterAutoUpdateURL_switchs = true#' \
+      > "$config_file"; then
+    rm -rf "$temp_folder"
+    return 1
+  fi
+
+  echo ">>> personalDNSfilter > Pushing configuration"
+  if ! _adb_shell mkdir -p "$remote_folder" ||
+    ! adb push "$blocklist_file" "$remote_folder/FILTERHOSTS.TXT" ||
+    ! adb push "$extra_hosts_file" "$remote_folder/additionalHosts.txt" ||
+    ! adb push "$config_file" "$remote_folder/dnsfilter.conf"; then
+    rm -rf "$temp_folder"
+    return 1
+  fi
+  rm -rf "$temp_folder"
+
+  echo ">>> personalDNSfilter > Starting VPN activity"
+  _adb_shell am force-stop dnsfilter.android
+  _adb_shell am start -n dnsfilter.android/.DNSProxyActivity
+  echo ">>> personalDNSfilter > Approve VPN access on Fire TV if prompted"
+}
+
 function install_apps() {
   if ! adb get-state >/dev/null 2>&1; then
     echo ">>> No connected ADB device" >&2
@@ -344,16 +390,16 @@ function install_apps() {
   fi
 
   # Re-enable Amazon services required for Fire TV voice control.
-  adb_shell pm enable com.amazon.vizzini.ftvcds
-  adb_shell pm enable com.amazon.ale
-  adb_shell pm enable com.amazon.aca
-  adb_shell settings put secure voice_disabled 0
-  adb_shell settings put secure alexa_wake_word_disabled 0
+  _adb_shell pm enable com.amazon.vizzini.ftvcds
+  _adb_shell pm enable com.amazon.ale
+  _adb_shell pm enable com.amazon.aca
+  _adb_shell settings put secure voice_disabled 0
+  _adb_shell settings put secure alexa_wake_word_disabled 0
 
-  install_latest_github_apk "yuliskov/SmartTube" "_universal.apk" "SmartTube" || return 1
-  install_latest_github_apk "humblemuzzu/dumbtv" "dumbtv-home.apk" "DumbTV" || return 1
-  install_latest_github_apk "IngoZenz/personaldnsfilter" "DNSFilter_" "personalDNSFilter" || return 1
+  _install_latest_github_apk "yuliskov/SmartTube" "_universal.apk" "SmartTube" || return 1
+  _install_latest_github_apk "humblemuzzu/dumbtv" "dumbtv-home.apk" "DumbTV" || return 1
+  _install_latest_github_apk "IngoZenz/personaldnsfilter" "DNSFilter_" "personalDNSFilter" || return 1
+  _configure_personal_dnsfilter || return 1
 }
 
-# TODO: follow up with https://github.com/humblemuzzu/dumbtv
-# data/blocklists/extra-hosts.txt - Fetches HaGeZi's Amazon-focused tracking blocklist and combines it with local extra domains - Pushes the resulting blocklist.txt and custom dnsfilter.conf configuration file to the app's internal storage directory on the device using adb push. Starts the personalDNSfilter service, which utilizes Android's VpnService interface locally on the device to intercept and filter DNS requests on port 53/UDP locally without requiring root access.
+# personalDNSfilter needs user approval for its Android VPN service after launch.
