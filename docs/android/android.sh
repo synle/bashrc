@@ -87,6 +87,34 @@ function remove_app_collection() {
   done
 }
 
+# Return unique package names, excluding packages from the supplied newline list.
+function normalize_app_collection() {
+  apps=$1
+  excluded=$(printf '%s\n' "$2" | tr '\n' ' ')
+  printf '%s\n' "$apps" | awk -v excluded="$excluded" '
+    function trim(value) {
+      sub(/^[[:space:]]*/, "", value)
+      sub(/[[:space:]]*$/, "", value)
+      return value
+    }
+    BEGIN {
+      count = split(excluded, excluded_apps, "[[:space:]]+")
+      for (position = 1; position <= count; position++) {
+        excluded_app = trim(excluded_apps[position])
+        if (excluded_app != "") excluded_map[excluded_app] = 1
+      }
+    }
+    {
+      sub(/#.*/, "")
+      app = trim($0)
+      if (app != "" && !(app in excluded_map) && !(app in seen)) {
+        seen[app] = 1
+        print app
+      }
+    }
+  '
+}
+
 restore_app_collection() {
   echo "$1" | while read line; do
     [ -z "$line" ] && continue
@@ -328,4 +356,13 @@ com.samsung.android.authfw                  # Samsung Auth Framework - lose Sams
 # [KEEP] com.samsung.android.app.watchmanagerstub    # Galaxy Watch Manager stub - lose Galaxy Watch pairing prompt; Not Needed if no Galaxy Watch
 # [KEEP] com.samsung.android.scloud                  # Samsung Cloud - lose Samsung cloud backup/sync; backs up Samsung Notes (S Pen handwriting)
 
+# Packages kept out of every debloat and restore collection.
+DEBLOAT_IGNORED="
+com.samsung.android.app.sharelive                    # Quick Share tile
+"
+
+# Safe is the master collection. Aggressive cannot repeat safe entries.
+DEBLOAT_SAFE=$(normalize_app_collection "$DEBLOAT_SAFE" "$DEBLOAT_IGNORED")
+DEBLOAT_AGGRESSIVE=$(normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$DEBLOAT_IGNORED
+$DEBLOAT_SAFE")
 
