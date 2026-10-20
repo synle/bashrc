@@ -147,19 +147,18 @@ debloat_settings() {
   put_setting secure voice_disabled 0
   put_setting secure alexa_wake_word_disabled 0
 
-  # TODO: more settings
-  # privacy settings
-  # amz_limit_ad_tracking                          1
-  # limit_ad_tracking                              1
-  # non_amz_limit_ad_tracking                      1
-  # advertisingIdApp:interestBasedAds:value        0
-  # USAGE_METRICS_UPLOAD_ENABLED                   0
-  # usage_metrics_marketing_enabled                0
-  # settingsApp:appUsageData:value                 0
-  # settingsApp:deviceUsageData:value              0
-  # heads_up_notifications_enabled                 0
-  # com.amazon.tv.settings.featured_item_video_enabled 0
-  # com.amazon.tv.settings.featured_item_video_volume 0.0
+  # --- Fire TV-specific settings ---
+  put_setting global amz_limit_ad_tracking 1
+  put_setting global limit_ad_tracking 1
+  put_setting global non_amz_limit_ad_tracking 1
+  put_setting global advertisingIdApp:interestBasedAds:value 0
+  put_setting global USAGE_METRICS_UPLOAD_ENABLED 0
+  put_setting global usage_metrics_marketing_enabled 0
+  put_setting global settingsApp:appUsageData:value 0
+  put_setting global settingsApp:deviceUsageData:value 0
+  put_setting global heads_up_notifications_enabled 0
+  put_setting global com.amazon.tv.settings.featured_item_video_enabled 0
+  put_setting global com.amazon.tv.settings.featured_item_video_volume 0.0
 }
 
 
