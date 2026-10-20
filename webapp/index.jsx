@@ -1570,6 +1570,20 @@ function SteamOSNotesDom() {
 }
 
 /**
+ * Fire TV setup notes page. Renders the host wrapper, debloat script, and restore script.
+ * @returns {React.ReactElement} The Fire TV setup notes section.
+ */
+function FireTVNotesDom() {
+  return (
+    <>
+      <DynamicTextArea path="/docs/android/firetv.sh" />
+      <DynamicTextArea path="/docs/android/firetv.debloat.sh" />
+      <DynamicTextArea path="/docs/android/firetv.restore.sh" />
+    </>
+  );
+}
+
+/**
  * Lightweight setup notes page. Renders the bootstrap setup script, SponsorBlock settings,
  * and common built configs (gitconfig, ssh-config, inputrc, vimrc).
  * @returns {React.ReactElement} The lightweight setup notes section.
@@ -2045,6 +2059,10 @@ function App() {
 
         const configs = [
           ...osConfigs,
+          {
+            text: "TV - FireTV",
+            renderBody: () => <FireTVNotesDom />,
+          },
           {
             text: "Setup Lightweight Profile",
             renderBody: () => (

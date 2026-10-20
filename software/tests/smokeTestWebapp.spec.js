@@ -83,6 +83,7 @@ describe("webapp smoke test", () => {
           "SETUP ARCH LINUX",
           "SETUP STEAMOS",
           "SETUP ANDROID",
+          "TV - FIRETV",
           "SETUP CHROMEOS",
           "SETUP MINGW64",
           "SETUP WSL",
