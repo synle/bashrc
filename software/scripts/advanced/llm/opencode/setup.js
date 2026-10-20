@@ -507,9 +507,8 @@ async function _syncOpencodeCommandSymlinks() {
  * Runs AFTER `_syncOpencodeCommandSymlinks` so a real `~/.claude/commands/<x>.md`
  * always wins a name collision against a same-named skill.
  *
- * Per-repo skills (`<repo>/.claude/skills/`) are out of scope here — mirror them
- * with a repo-local `<repo>/.opencode/commands/<name>.md -> ../../.claude/skills/<name>/SKILL.md`
- * symlink, which is what this repo checks in for its own skills.
+ * Per-repo skills (`<repo>/.claude/skills/`) are out of scope here because OpenCode
+ * reads that native project path directly.
  */
 async function _syncOpencodeSkillCommandSymlinks() {
   /** @type {string} The one physical home of every Sy-managed skill. */

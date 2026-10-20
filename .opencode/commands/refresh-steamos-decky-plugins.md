@@ -1,1 +1,0 @@
-../../.claude/skills/refresh-steamos-decky-plugins/SKILL.md

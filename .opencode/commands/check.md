@@ -1,1 +1,0 @@
-../../.claude/skills/check/SKILL.md

@@ -89,7 +89,7 @@ software/tools/               build-include.js, build-installer.js,
 software/tests/               vitest specs — also the convention linters (§11)
 webapp/, src/, dist/          the vite webapp published to GitHub Pages
 docs/                         long-form topic docs (incl. editor-keybindings.md)
-.claude/skills/               agent skills (symlinked into .opencode/commands/)
+.claude/skills/               repo-local agent skills
 ```
 
 Single-source files worth memorizing: `metadata/presets.jsonc` (`--preset=` bundles, read
@@ -630,8 +630,7 @@ Flow** (`.github/workflows/build-main.yml` = prep → build-{ubuntu,rhel,arch,de
 
 Load these instead of improvising the workflow. Each is
 `.claude/skills/<name>/SKILL.md` — the single source read natively by Claude Code,
-OpenCode, and Copilot CLI; `.opencode/commands/<name>.md` symlinks make them `/name`
-slash commands.
+OpenCode, and Copilot CLI.
 
 | Skill                            | Use when                                                                                      |
 | -------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -647,11 +646,7 @@ slash commands.
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
 invisible to every loader. Folder name is kebab-case and must equal the frontmatter
-`name`. Adding a skill: folder + symlink + a row here, same commit.
-
-```bash
-ln -sfn ../../.claude/skills/<name>/SKILL.md .opencode/commands/<name>.md
-```
+`name`. Adding a skill: folder + `SKILL.md` + a row here, same commit.
 
 ### 13.0 Portability contract — a `SKILL.md` is tool-agnostic
 

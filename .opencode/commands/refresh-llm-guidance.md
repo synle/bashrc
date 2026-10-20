@@ -1,1 +1,0 @@
-../../.claude/skills/refresh-llm-guidance/SKILL.md

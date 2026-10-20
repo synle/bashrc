@@ -512,26 +512,11 @@ the model decides when a description matches, then calls
 `/skill-name` binding in OpenCode's TUI** — the keybind registry has no
 `skill_list` entry, and `/skill` is an HTTP route, not a slash command.
 
-To make a skill directly user-invocable, it also has to exist in a `commands/`
-slot. Since OpenCode command frontmatter reads `description` and ignores
-skill-only keys (`name`, `argument-hint`), and `$ARGUMENTS` works in both, one
-file can serve both surfaces via a symlink:
+Repo-local skills stay in `.claude/skills/<name>/SKILL.md`; OpenCode reads that path natively. Do not add a second repo-local copy or a `.opencode/commands/` symlink.
 
-```bash
-# per-repo — checked into this repo under .opencode/commands/
-ln -sfn ../../.claude/skills/add-package/SKILL.md .opencode/commands/add-package.md
-```
+Global skills use a separate ergonomics layer: `_syncOpencodeSkillCommandSymlinks()` mirrors global skills into `~/.config/opencode/commands/<n>.md` so users can invoke `/sy-*`. That global mirror does not apply to repo-local skills.
 
-That yields `/add-package fzf` as a direct command **and** keeps the skill model-invocable. Verified against `GET /command` + `GET /skill` on OpenCode 2 — the same file shows up in both listings.
-
-| Scope    | Wired by                                                     | Result                                                                    |
-| -------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| Global   | `_syncOpencodeSkillCommandSymlinks()` in `opencode/setup.js` | `~/.claude/skills/<n>/SKILL.md` → `~/.config/opencode/commands/<n>.md`    |
-| Per-repo | committed symlinks under `<repo>/.opencode/commands/`        | `<repo>/.claude/skills/<n>/SKILL.md` → `<repo>/.opencode/commands/<n>.md` |
-
-Name collisions resolve first-writer-wins: `_syncOpencodeCommandSymlinks()` (real `/sy-*` commands) runs first, so a command always beats a same-named skill.
-
-Copilot CLI has no `commands/` slot at all, so `/skill-name` is not reachable there — its skills stay model-invoked only.
+Copilot CLI has no `commands/` slot, so repo-local skills stay model-invoked there.
 
 ---
 
