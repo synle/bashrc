@@ -8,7 +8,7 @@ Argument: $ARGUMENTS (optional — scope filter; see "Resolving scope" below). D
 
 ## Execution mode
 
-Background agents are default. Resolve, sort, announce, and assign the complete PR set first, then dispatch the existing slot jobs in parallel and return while they run. Explicit foreground signals are `foreground`, `fg`, `inline`, `blocking`, `synchronous`, `sync`, or `wait`; strip that token, keep the same reviewer-lens ranking and queue order, then execute enrolled PRs inline in that order without background agents. Never change scope, sorting, enrollment, worktree reuse, state checkpoints, or pass cadence based on mode.
+Background agents are default. Resolve, sort, announce, and assign the complete PR set first, then dispatch the existing slot jobs in parallel and await every dispatched or resumed job before the turn ends. Explicit foreground signals are `foreground`, `fg`, `inline`, `blocking`, `synchronous`, `sync`, or `wait`; strip that token, keep the same reviewer-lens ranking and queue order, then execute enrolled PRs inline in that order without background agents. Never change scope, sorting, enrollment, worktree reuse, state checkpoints, or pass cadence based on mode.
 
 ## Run clock overrides
 

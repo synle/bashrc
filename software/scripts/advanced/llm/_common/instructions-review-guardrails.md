@@ -30,8 +30,20 @@ Honesty from the main instructions governs this file too.
   authorization failures, and capacity limits distinct; tests assert both the public
   error and whether the caller retries. Unknown failures never become empty data or
   success.
+- **Outcome metadata follows the side effect.** Derive externally visible status,
+  effective recipients, counters, and mutually exclusive outcome buckets from the
+  same committed or irreversible result that performed the action. A prediction is
+  not delivery; one item cannot be both sent and failed; an intentional skip is not
+  a retryable failure. Tests exercise the real side-effect path plus no-op,
+  partial-failure, and ambiguous-result branches.
 - **Idempotency keys come from intent, not attempt.** Claim the key atomically (never SELECT-then-INSERT); same key with a different payload is rejected; retention outlives the longest retry or redelivery path; in-flight duplicates have explicit bounded behavior; a timeout is `unknown`, not failure.
 - **Authorize the resource, not just the caller.** Every request checks the caller may touch that specific object (IDOR); server-side fetches of user-supplied URLs go through an allowlist (SSRF).
+- **Mutable eligibility is rechecked at the irreversible boundary.** If authorization,
+  membership, account state, or another mutable predicate is checked before slow
+  work, queuing, persistence, batching, or a later disclosure/send/export/delete,
+  revalidate it immediately before each irreversible operation or bounded batch.
+  Reclassified items become an explicit skip or denial, never a send or a failure by
+  subtraction. Release DB transactions before external I/O.
 - **Derived deletion targets prove containment.** Resolve the final path, reject symlinks and check/use races, require an allowlisted root plus minimum depth and ownership evidence, then delete only that verified target.
 - **Selectors prove uniqueness.** Select from a repeated collection with the complete
   structural key. A reduced key needs a documented uniqueness scope enforced by
@@ -44,6 +56,13 @@ Honesty from the main instructions governs this file too.
 - **Caches key every varying input.** Include every value that can change the result,
   especially tenant, user, locale, authorization scope, and version. Name acceptable
   staleness, invalidation, and stampede behavior before adding a cache.
+- **URL transforms preserve state they do not own.** Implement redirects and
+  canonicalization as parse-transform-serialize operations. Preserve unknown or
+  unrelated query parameters, modify or delete only state owned by the transition,
+  and consume one-shot callback or error parameters before starting a new attempt.
+  Interpret shared parameter names in the destination route's context. Tests cover
+  unknown-parameter preservation, transient-state cleanup, and every route-specific
+  value set.
 - **Cryptographic pseudonyms fail closed.** Missing key material is an error, never an
   empty-key fallback. Redactors normalize key style before matching and test nested
   snake_case, camelCase, and mixed payloads.
