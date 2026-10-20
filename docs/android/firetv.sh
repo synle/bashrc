@@ -16,7 +16,7 @@
 #                          tahoe, tmm.tutorial, tv.csapp, tv.forcedotaupdater.v2, tv.fw.metrics,
 #                          tv.legal.notices, tv.livetv, tv.nimh, tv.releasenotes, tv.support, webview
 #   Alexa & Voice: bueller.notification, device.software.ota, device.software.ota.override,
-#                   imbd.tv.android.app, parentalcontrols, kindle.freetime
+  #                   imbd.tv.android.app, parentalcontrols, kindle.freetime
 #   Non-Amazon: ivona.orchestrator, ivona.tts.oem, svox.pico, documentsui, wallpaperbackup
 #   Disabled (not removed): device.software.ota, pai, zico.app, ism.recommendations,
 #                            kindle.unifiedreader
@@ -210,6 +210,56 @@ com.amazon.ivona.tts.oem                            # IVONA TTS - lose Amazon te
 com.svox.pico                                       # Pico TTS - lose Android built-in TTS engine
 com.android.documentsui                             # Documents UI - lose file manager (side-load via other means)
 com.android.wallpaperbackup                         # Wallpaper Backup - lose wallpaper backup service
+
+# --- New List - TBD ---
+com.amazon.bueller.music
+com.amazon.bueller.photos
+com.amazon.ceviche
+com.amazon.cloud9
+com.amazon.connectivitydiag
+com.amazon.csm.htmlruntime
+com.amazon.dp.logger
+com.amazon.dummy.alarmclock
+com.amazon.dummy.calendar
+com.amazon.dummy.contacts
+com.amazon.dummy.gallery
+com.amazon.dummy.music
+com.amazon.dummy.settings
+com.amazon.firebat
+com.amazon.ftv.screensaver
+com.amazon.gamehub
+com.amazon.hedwig
+com.amazon.hybridadidservice
+com.amazon.katoch
+com.amazon.logan
+com.amazon.minitv.android.app
+com.amazon.perfcollection
+com.amazon.privacypassservice
+com.amazon.shoptv.client
+com.amazon.sneakpeek
+com.amazon.spiderpork
+com.amazon.spotify.mediabrowserservice
+com.amazon.storm.lightning.tutorial
+com.amazon.systemnotices
+com.amazon.tahoe
+com.amazon.tigris
+com.amazon.tmm.tutorial
+com.amazon.tv.acr
+com.amazon.tv.developer.dataservice
+com.amazon.tv.easyupgrade
+com.amazon.tv.forcedotaupdater.v2
+com.amazon.tv.fw.metrics
+com.amazon.tv.notificationcenter
+com.amazon.tv.ottssocompanionapp
+com.amazon.tv.releasenotes
+com.amazon.tv.support
+com.amazon.tv.website_launcher
+com.amazon.uxnotification
+com.amazon.wha.mediabrowserservice
+com.amazon.wirelessmetrics.service
+com.android.bips
+com.android.printspooler
+com.android.traceur
 "
 
 
