@@ -80,8 +80,10 @@ describe("markitdown profile wrapper", () => {
   it("shows local help without starting uvx", () => {
     const result = runWrapper(["--help"]);
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("Usage: markitdown [INPUT [-o OUTPUT | OUTPUT] [OPTIONS]]");
-    expect(result.stdout).toContain("Without arguments, installs markitdown[all] with Python 3.12 and exits.");
+    expect(result.stdout).toContain("markitdown INPUT -o OUTPUT.md");
+    expect(result.stdout).toContain("cat INPUT | markitdown");
+    expect(result.stdout).toContain("-x, --extension EXTENSION");
+    expect(result.stdout).toContain("markitdown with no arguments installs markitdown[all] with Python 3.12.");
     expect(result.stdout).not.toContain("\0");
   });
 

@@ -1236,9 +1236,44 @@ if type -P uvx > /dev/null 2>&1; then
   function markitdown() {
     if is_help_arg "${1:-}"; then
       echo "markitdown: install or convert documents to Markdown with optional output file
-  Usage: markitdown [INPUT [-o OUTPUT | OUTPUT] [OPTIONS]]
-  Without arguments, installs markitdown[all] with Python 3.12 and exits.
-  Without OUTPUT, writes Markdown to stdout."
+  Usage:
+    markitdown INPUT
+    markitdown INPUT -o OUTPUT.md
+    markitdown INPUT OUTPUT.md
+    cat INPUT | markitdown
+    markitdown < INPUT
+
+  Examples:
+    markitdown report.pdf
+    markitdown report.docx report.md
+    markitdown report.xlsx -o report.md
+    markitdown report.pdf > report.md
+    cat report.pdf | markitdown -x pdf
+
+  Input:
+    Supports common PDF, Office, HTML, CSV, JSON, image, audio, and archive files.
+    Use -x/--extension, -m/--mime-type, or -c/--charset for stdin hints.
+
+  Output:
+    Without -o/--output, writes Markdown to stdout.
+    With -o/--output OUTPUT, writes Markdown to OUTPUT.
+    Two plain arguments mean INPUT OUTPUT and become INPUT -o OUTPUT.
+
+  Options:
+    -h, --help                 Show this help.
+    -v, --version              Show MarkItDown version.
+    -o, --output OUTPUT        Write Markdown to OUTPUT instead of stdout.
+    -x, --extension EXTENSION  Hint input extension, useful with stdin.
+    -m, --mime-type MIME       Hint input MIME type, useful with stdin.
+    -c, --charset CHARSET      Hint input charset, for example UTF-8.
+    -p, --use-plugins          Enable installed third-party plugins.
+        --list-plugins         List installed third-party plugins.
+        --keep-data-uris       Keep base64/data URIs in output.
+
+  Installation:
+    markitdown with no arguments installs markitdown[all] with Python 3.12.
+    First conversion may download packages through uvx and take a while.
+    MarkItDown runs through uvx, so no permanent global install is required."
       return 0
     fi
     if [ "$#" -eq 0 ]; then
