@@ -277,5 +277,29 @@ describe("list_prs — output shape", () => {
     expect(row.headRefName).toBe("syle/retry-token-refresh");
     expect(row.baseRefName).toBe("main");
     expect(row.color).toBe(row.signal);
+    expect(row).not.toHaveProperty("activityAt");
+  });
+
+  it("keeps activity enrichment opt-in", () => {
+    const activity = rowFor(
+      {
+        ...AWAITING_REVIEW,
+        updatedAt: "2026-01-02T00:00:00Z",
+        comments: { nodes: [{ updatedAt: "2026-01-05T00:00:00Z" }] },
+        reviews: { nodes: [{ submittedAt: "2026-01-06T00:00:00Z" }] },
+        commits: {
+          nodes: [
+            {
+              commit: {
+                committedDate: "2026-01-04T00:00:00Z",
+                statusCheckRollup: { state: "SUCCESS", contexts: { nodes: [{ ...PASSING_CHECK, completedAt: "2026-01-07T00:00:00Z" }] } },
+              },
+            },
+          ],
+        },
+      },
+      ["--activity"],
+    );
+    expect(activity.activityAt).toBe("2026-01-07T00:00:00Z");
   });
 });

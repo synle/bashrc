@@ -57,6 +57,7 @@
  *   `--verbose`    : adds a third metadata line (timestamp · signal · status).
  *   `--links`      : just the URLs, one per line — paste-clean for other tools.
  *   `--json`       : the full enriched rows as JSON.
+ *   `--activity`   : opt in to activity timestamps for scheduler consumers; default output is unchanged.
  *   Colors are emitted ONLY to an interactive TTY (and never when `NO_COLOR`
  *   is set), so piped / redirected / `--json` / `--links` output stays plain.
  *   All progress, warnings, and the summary footer go to STDERR, so STDOUT
@@ -139,6 +140,7 @@ function isTruthy(value) {
  * @property {boolean} asJson      Emit JSON instead of the human layout.
  * @property {boolean} linksOnly   Emit only URLs.
  * @property {boolean} verbose     Add the per-PR metadata line.
+ * @property {boolean} activity    Include activity timestamps for scheduler consumers.
  * @property {boolean|null} mine   True = only mine, false = everyone but me, null = everyone.
  * @property {string}  author      Explicit author login, or `` for none.
  * @property {number}  limit       Max PRs to fetch.
@@ -162,6 +164,7 @@ function parseArgs(argv) {
     asJson: false,
     linksOnly: false,
     verbose: false,
+    activity: false,
     mine: null,
     author: ``,
     limit: 1000,
@@ -189,6 +192,8 @@ function parseArgs(argv) {
       opts.linksOnly = true;
     } else if (lower === `--verbose` || lower === `-v`) {
       opts.verbose = true;
+    } else if (lower === `--activity`) {
+      opts.activity = true;
     } else if (lower === `--quiet` || lower === `-q` || lower === `--no-verbose`) {
       opts.verbose = false;
     } else if (arg.startsWith(`-`)) {
@@ -385,6 +390,21 @@ query($owner:String!,$repo:String!,$number:Int!){
 }
 `;
 
+/** Optional activity fields used only by scheduler consumers. */
+const ACTIVITY_FIELDS = `
+      comments(last:1){ nodes{ updatedAt } }
+      reviews(last:1){ nodes{ submittedAt } }
+`;
+
+/** Query variant that adds activity timestamps without changing default requests. */
+const ACTIVITY_QUERY = PR_QUERY.replace(`      reviewDecision\n`, `${ACTIVITY_FIELDS}      reviewDecision\n`)
+  .replace(
+    `reviewThreads(first:100){ nodes{ isResolved comments(first:1){ nodes{ author{ login __typename } } } } }`,
+    `reviewThreads(first:100){ nodes{ isResolved comments(first:1){ nodes{ author{ login __typename } } } latestComments: comments(last:1){ nodes{ updatedAt } } } }`,
+  )
+  .replace(`commits(last:1){ nodes{ commit{ statusCheckRollup`, `commits(last:1){ nodes{ commit{ committedDate statusCheckRollup`)
+  .replace(`... on CheckRun{ name status conclusion }`, `... on CheckRun{ name status conclusion startedAt completedAt }`);
+
 /**
  * Regex matching check names that are HUMAN approval gates (they sit pending by
  * design until a person clicks) rather than self-resolving CI. Overridable via
@@ -577,6 +597,7 @@ function reasonKeyFor(state) {
  * @property {string} authorName  Author's display name, or "" when GitHub has none.
  * @property {string} createdAt
  * @property {string} updatedAt
+ * @property {string} [activityAt] Latest observed activity; present only with `--activity`.
  * @property {number} ageDays
  * @property {string} headRefName  PR branch (not returnable by `gh search prs`).
  * @property {string} baseRefName  Target branch.
@@ -608,9 +629,10 @@ function reasonKeyFor(state) {
 /**
  * Turn one enriched GraphQL response into a {@link Row}, or null if unreadable.
  * @param {any} raw Parsed `gh api graphql` JSON.
+ * @param {boolean} [includeActivity=false] Whether optional activity fields were requested.
  * @returns {Row|null}
  */
-function classify(raw) {
+function classify(raw, includeActivity = false) {
   const pr = raw && raw.data && raw.data.repository && raw.data.repository.pullRequest;
   if (!pr) return null;
 
@@ -621,10 +643,27 @@ function classify(raw) {
   let failedCheck = ``;
   let running = 0;
   let gates = 0;
+  const activityDates = includeActivity ? [pr.updatedAt] : [];
+  if (includeActivity) {
+    const latestComment = ((pr.comments || {}).nodes || [])[0];
+    if (latestComment && latestComment.updatedAt) activityDates.push(latestComment.updatedAt);
+    const latestReview = ((pr.reviews || {}).nodes || [])[0];
+    if (latestReview && latestReview.submittedAt) activityDates.push(latestReview.submittedAt);
+    const latestCommit = ((pr.commits || {}).nodes || [])[0];
+    if (latestCommit && latestCommit.commit && latestCommit.commit.committedDate) {
+      activityDates.push(latestCommit.commit.committedDate);
+    }
+    ((pr.reviewThreads || {}).nodes || []).forEach((thread) => {
+      const latest = ((thread.latestComments || {}).nodes || [])[0];
+      if (latest && latest.updatedAt) activityDates.push(latest.updatedAt);
+    });
+  }
 
   contexts.forEach((check) => {
     const name = check.name || check.context || `check`;
     const verdict = check.conclusion || check.state || ``;
+    if (includeActivity && check.startedAt) activityDates.push(check.startedAt);
+    if (includeActivity && check.completedAt) activityDates.push(check.completedAt);
     const unfinished = UNFINISHED.includes(check.status || ``) || UNFINISHED.includes(verdict);
 
     if (GATE_RE.test(name)) {
@@ -652,6 +691,12 @@ function classify(raw) {
     else openHuman += 1;
   });
   const openThreads = openHuman + openBot;
+  const activityAt = includeActivity
+    ? activityDates
+        .filter((date) => typeof date === `string` && !Number.isNaN(Date.parse(date)))
+        .sort()
+        .pop() || pr.updatedAt
+    : ``;
 
   const decision = pr.reviewDecision || ``;
   const conflicted = pr.mergeable === `CONFLICTING`;
@@ -721,6 +766,7 @@ function classify(raw) {
     authorName: (pr.author || {}).name || ``,
     createdAt: pr.createdAt,
     updatedAt: pr.updatedAt,
+    ...(includeActivity ? { activityAt } : {}),
     ageDays: ageInDays(pr.createdAt),
     headRefName: pr.headRefName || ``,
     baseRefName: pr.baseRefName || ``,
@@ -830,14 +876,26 @@ function searchPrs(author, limit, repos) {
 /**
  * Enrich one search hit with a per-PR GraphQL query.
  * @param {{number:number, repository:{nameWithOwner:string}}} pr
+ * @param {boolean} [includeActivity=false] Whether to request optional activity fields.
  * @returns {Promise<string|null>} Raw JSON, or null when GitHub rejects the request.
  */
-function queryPr(pr) {
+function queryPr(pr, includeActivity = false) {
   const [owner, repo] = pr.repository.nameWithOwner.split(`/`);
   return new Promise((resolve) => {
     const child = spawn(
       `gh`,
-      [`api`, `graphql`, `-f`, `owner=${owner}`, `-f`, `repo=${repo}`, `-F`, `number=${pr.number}`, `-f`, `query=${PR_QUERY}`],
+      [
+        `api`,
+        `graphql`,
+        `-f`,
+        `owner=${owner}`,
+        `-f`,
+        `repo=${repo}`,
+        `-F`,
+        `number=${pr.number}`,
+        `-f`,
+        `query=${includeActivity ? ACTIVITY_QUERY : PR_QUERY}`,
+      ],
       { stdio: [`ignore`, `pipe`, `ignore`] },
     );
     let stdout = ``;
@@ -852,9 +910,10 @@ function queryPr(pr) {
 /**
  * Enrich search hits with a bounded pool of per-PR GraphQL queries.
  * @param {Array<{number:number, repository:{nameWithOwner:string}}>} hits
+ * @param {boolean} [includeActivity=false] Whether to request optional activity fields.
  * @returns {Promise<{rows: Row[], unreadable: number}>}
  */
-async function enrich(hits) {
+async function enrich(hits, includeActivity = false) {
   const rows = Array.from({ length: hits.length });
   let unreadable = 0;
   let nextIndex = 0;
@@ -864,11 +923,11 @@ async function enrich(hits) {
     while (nextIndex < hits.length) {
       const index = nextIndex;
       nextIndex += 1;
-      const raw = await queryPr(hits[index]);
+      const raw = await queryPr(hits[index], includeActivity);
       let row = null;
       if (raw !== null) {
         try {
-          row = classify(JSON.parse(raw));
+          row = classify(JSON.parse(raw), includeActivity);
         } catch {
           row = null;
         }
@@ -1050,7 +1109,7 @@ async function main() {
   }
   if (hits.length >= opts.limit) info(`>>> WARNING: hit --limit=${opts.limit}; results may be truncated.`);
 
-  const { rows, unreadable } = await enrich(hits);
+  const { rows, unreadable } = await enrich(hits, opts.activity);
 
   // `--me=0` is "everyone but me": GitHub search has no not-author qualifier, so the
   // exclusion happens here, against the login gh reports for the current token.
