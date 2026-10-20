@@ -30,8 +30,8 @@ disable_app com.amazon.zico.app                           # Zico - disable Amazo
 disable_app com.amazon.ism.recommendations                 # ISM Recommendations - disable content suggestions
 disable_app com.amazon.kindle.unifiedreader               # Kindle Unified Reader - disable Kindle reader integration
 
-echo ">> Make sure voice is enabled..."  # for Alexa
-adb shell settings put secure voice_disabled 0
-adb shell settings put secure alexa_wake_word_disabled 0
+
+echo ">> Bootstrapping and Installing apps..."
+install_apps
 
 echo ">>> Fire TV debloat complete"

@@ -30,18 +30,23 @@
 
 SETTINGS_APPLIED=""
 
+# Run an Android command through the host's connected ADB device.
+function adb_shell() {
+  adb shell "$@"
+}
+
 function put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
   echo ">>> put_setting $@"
-  settings put $@ >/dev/null 2>&1
+  adb_shell settings put "$@" >/dev/null 2>&1
 }
 
 function reset_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
   echo ">>> reset_setting $@"
-  settings delete $@ >/dev/null 2>&1
+  adb_shell settings delete "$@" >/dev/null 2>&1
 }
 
 function reset_all_settings() {
@@ -54,8 +59,8 @@ function reset_all_settings() {
 
 function disable_app() {
   ok=0
-  pm disable-user --user 0 $@ >/dev/null 2>&1 && ok=1
-  pm disable-user -k --user 0 $@ >/dev/null 2>&1 && ok=1
+  adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
+  adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Disabled > Success"
   else
@@ -66,9 +71,9 @@ function disable_app() {
 function remove_app() {
   ok=0
   disable_app $@ >/dev/null 2>&1 && ok=1
-  pm uninstall $@ >/dev/null 2>&1 && ok=1
-  pm uninstall -k --user 0 $@ >/dev/null 2>&1 && ok=1
-  pm uninstall -k --user 10 $@ >/dev/null 2>&1 && ok=1
+  adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
+  adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
+  adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Removed > Success"
   else
@@ -78,8 +83,8 @@ function remove_app() {
 
 function restore_app() {
   ok=0
-  cmd package install-existing $@ >/dev/null 2>&1 && ok=1
-  pm enable $@ >/dev/null 2>&1 && ok=1
+  adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
+  adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Restored > Success"
   else
@@ -136,6 +141,25 @@ debloat_settings() {
   put_setting global device_provisioned 1             # mark device as provisioned. skip setup wizard.
   put_setting global send_action_app_error 0          # disable crash reports to Google. no side effects.
   put_setting global ad_id_opt_out 1                  # opt out of personalized ad tracking. no side effects.
+
+  # ---- Other Settings ----
+  # Make sure voice control is enabled
+  put_setting secure voice_disabled 0
+  put_setting secure alexa_wake_word_disabled 0
+
+  # TODO: more settings
+  # privacy settings
+  # amz_limit_ad_tracking                          1
+  # limit_ad_tracking                              1
+  # non_amz_limit_ad_tracking                      1
+  # advertisingIdApp:interestBasedAds:value        0
+  # USAGE_METRICS_UPLOAD_ENABLED                   0
+  # usage_metrics_marketing_enabled                0
+  # settingsApp:appUsageData:value                 0
+  # settingsApp:deviceUsageData:value              0
+  # heads_up_notifications_enabled                 0
+  # com.amazon.tv.settings.featured_item_video_enabled 0
+  # com.amazon.tv.settings.featured_item_video_volume 0.0
 }
 
 
@@ -211,7 +235,7 @@ com.svox.pico                                       # Pico TTS - lose Android bu
 com.android.documentsui                             # Documents UI - lose file manager (side-load via other means)
 com.android.wallpaperbackup                         # Wallpaper Backup - lose wallpaper backup service
 
-# --- New List - TBD ---
+# --- Ads and Telemetry ---
 com.amazon.bueller.music
 com.amazon.bueller.photos
 com.amazon.ceviche
@@ -272,3 +296,65 @@ function restore_all() {
   reset_all_settings
   echo ">>> All Fire TV apps and settings restored"
 }
+
+################################################################################
+# --- Bootstrap and Install apps ---
+################################################################################
+
+# Download and install one APK from a repository's latest GitHub release.
+function install_latest_github_apk() {
+  repo="$1"
+  asset_pattern="$2"
+  app_name="$3"
+  release_api="https://api.github.com/repos/$repo/releases/latest"
+  apk_url="$(
+    curl -fsSL "$release_api" |
+      sed -n 's/.*"browser_download_url": "\([^\"]*\.apk\)".*/\1/p' |
+      command grep -m 1 -F "$asset_pattern"
+  )"
+
+  if [ -z "$apk_url" ]; then
+    echo ">>> $app_name > APK not found in latest $repo release" >&2
+    return 1
+  fi
+
+  temp_folder="$(mktemp -d "${TMPDIR:-/tmp}/firetv-apk.XXXXXX")" || return 1
+  apk_file="$temp_folder/$app_name.apk"
+  echo ">>> $app_name > Downloading $apk_url"
+  if ! curl -fsSL "$apk_url" -o "$apk_file"; then
+    rm -rf "$temp_folder"
+    return 1
+  fi
+
+  echo ">>> $app_name > Installing"
+  adb install -r "$apk_file"
+  install_status=$?
+  rm -rf "$temp_folder"
+  if [ "$install_status" = "0" ]; then
+    echo ">>> $app_name > Installed > Success"
+  else
+    echo ">>> $app_name > Installed > Error" >&2
+  fi
+  return "$install_status"
+}
+
+function install_apps() {
+  if ! adb get-state >/dev/null 2>&1; then
+    echo ">>> No connected ADB device" >&2
+    return 1
+  fi
+
+  # Re-enable Amazon services required for Fire TV voice control.
+  adb_shell pm enable com.amazon.vizzini.ftvcds
+  adb_shell pm enable com.amazon.ale
+  adb_shell pm enable com.amazon.aca
+  adb_shell settings put secure voice_disabled 0
+  adb_shell settings put secure alexa_wake_word_disabled 0
+
+  install_latest_github_apk "yuliskov/SmartTube" "_universal.apk" "SmartTube" || return 1
+  install_latest_github_apk "humblemuzzu/dumbtv" "dumbtv-home.apk" "DumbTV" || return 1
+  install_latest_github_apk "IngoZenz/personaldnsfilter" "DNSFilter_" "personalDNSFilter" || return 1
+}
+
+# TODO: follow up with https://github.com/humblemuzzu/dumbtv
+# data/blocklists/extra-hosts.txt - Fetches HaGeZi's Amazon-focused tracking blocklist and combines it with local extra domains - Pushes the resulting blocklist.txt and custom dnsfilter.conf configuration file to the app's internal storage directory on the device using adb push. Starts the personalDNSfilter service, which utilizes Android's VpnService interface locally on the device to intercept and filter DNS requests on port 53/UDP locally without requiring root access.
