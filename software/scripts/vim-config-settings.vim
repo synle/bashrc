@@ -146,11 +146,10 @@ set autoindent                " Copy indentation from the current line when star
 set smartindent               " Auto-indent after {, if, etc. — smarter than autoindent alone
 
 " Strip trailing whitespace on every save and keep exactly one blank line at EOF
-" (cursor + search history preserved). Markdown skips whitespace trimming because
-" two trailing spaces there are a hard line break; blank-line cleanup still runs.
+" (cursor + search history preserved). This also removes Markdown hard-break spaces.
 augroup TrimTrailingWhitespaceOnSave
   autocmd!
-  autocmd BufWritePre * if &filetype !=# 'markdown' | TrimTrailingWhitespace | endif | TrimTrailingBlankLines
+  autocmd BufWritePre * TrimTrailingWhitespace | TrimTrailingBlankLines
 augroup END
 
 " Whitespace visualization (default ON; toggle with \[)
