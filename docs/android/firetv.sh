@@ -403,3 +403,30 @@ function install_apps() {
 }
 
 # personalDNSfilter needs user approval for its Android VPN service after launch.
+
+# Check host ADB and optionally connect to a user-provided Fire TV device.
+function _greet_and_connect_adb() {
+  echo ">>> Fire TV ADB setup"
+  if ! command -v adb >/dev/null 2>&1; then
+    echo ">>> adb not found on host; install Android platform tools first" >&2
+    return 1
+  fi
+
+  adb_target=""
+  if { [ -t 0 ] || [ -t 1 ] || [ -t 2 ]; } && [ -r /dev/tty ]; then
+    printf "Enter ADB IP/host (leave empty to use current connection): " > /dev/tty
+    IFS= read -r adb_target < /dev/tty || adb_target=""
+  fi
+
+  if [ -n "$adb_target" ]; then
+    echo ">>> Reconnecting ADB to $adb_target"
+    adb disconnect >/dev/null 2>&1 || true
+    adb kill-server >/dev/null 2>&1 || true
+    adb start-server || return 1
+    adb connect "$adb_target" || return 1
+  else
+    echo ">>> Using current ADB connection"
+  fi
+}
+
+_greet_and_connect_adb
