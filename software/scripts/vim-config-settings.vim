@@ -145,11 +145,12 @@ set expandtab                 " Insert spaces when pressing Tab — never use ac
 set autoindent                " Copy indentation from the current line when starting a new line
 set smartindent               " Auto-indent after {, if, etc. — smarter than autoindent alone
 
-" Strip trailing whitespace on every save (cursor + search history preserved).
-" Markdown skipped — two trailing spaces there are a hard line break.
+" Strip trailing whitespace on every save and keep exactly one blank line at EOF
+" (cursor + search history preserved). Markdown skips whitespace trimming because
+" two trailing spaces there are a hard line break; blank-line cleanup still runs.
 augroup TrimTrailingWhitespaceOnSave
   autocmd!
-  autocmd BufWritePre * if &filetype !=# 'markdown' | TrimTrailingWhitespace | endif
+  autocmd BufWritePre * if &filetype !=# 'markdown' | TrimTrailingWhitespace | endif | TrimTrailingBlankLines
 augroup END
 
 " Whitespace visualization (default ON; toggle with \[)
@@ -293,6 +294,19 @@ endif
 " matching VS Code/Sublime/text-server. Remove duplicate lines (keep first, order kept):
 " cmd/ctrl/alt + shift + delete. Only GUI vim / CSI-u terminals deliver these chords.
 command! -bar TrimTrailingWhitespace let s:view = winsaveview() | keeppatterns %s/\s\+$//e | call winrestview(s:view)
+function! s:TrimTrailingBlankLines() abort
+  let l:view = winsaveview()
+  while line('$') > 2 && getline('$') =~# '^\s*$'
+    call deletebufline(bufnr('%'), line('$'))
+  endwhile
+  if line('$') > 1 && getline('$') =~# '^\s*$'
+    call setline('$', '')
+  elseif getline('$') !=# ''
+    call append('$', '')
+  endif
+  call winrestview(l:view)
+endfunction
+command! -bar TrimTrailingBlankLines call <SID>TrimTrailingBlankLines()
 command! -range=% UniqueLines <line1>,<line2>!awk '\!seen[$0]++'
 let s:trim_lhs = ['<C-S-BS>', '<M-S-BS>'] + (has('gui_macvim') ? ['<D-S-BS>'] : [])
 let s:uniq_lhs = ['<C-S-Del>', '<M-S-Del>'] + (has('gui_macvim') ? ['<D-S-Del>'] : [])
