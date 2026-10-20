@@ -5,8 +5,8 @@ echo "> Restoring all settings and apps to defaults..."
 debloat_settings
 
 echo "> Debloating..."
-echo ">> reset_all_settings..."
-reset_all_settings
+echo ">> restore_all_settings..."
+restore_all_settings
 echo ">> restore_app_collection > DEBLOAT_SAFE..."
 restore_app_collection "$DEBLOAT_SAFE"
 echo ">> restore_app_collection > DEBLOAT_AGGRESSIVE..."

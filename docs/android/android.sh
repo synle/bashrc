@@ -10,7 +10,7 @@
 # curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=1 https://github.com/synle/bashrc/blob/HEAD/docs/android/android.restore.sh?raw=1
 #
 # Settings
-# Tracks applied settings for reset_all_settings. Example: "global window_animation_scale\nsecure long_press_timeout"
+# Tracks applied settings for restore_all_settings. Example: "global window_animation_scale\nsecure long_press_timeout"
 SETTINGS_APPLIED=""
 
 # Run an Android command through the host's connected ADB device.
@@ -18,30 +18,30 @@ function _adb_shell() {
   adb shell "$@"
 }
 
-function put_setting() {
+function _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> put_setting $@"
+  echo ">>> setting put $@"
   _adb_shell settings put "$@" >/dev/null 2>&1
 }
 
-function reset_setting() {
+function _restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> reset_setting $@"
+  echo ">>> setting restore $@"
   _adb_shell settings delete "$@" >/dev/null 2>&1
 }
 
-function reset_all_settings() {
+function restore_all_settings() {
   echo "$SETTINGS_APPLIED" | while read entry; do
     [ -z "$entry" ] && continue
-    reset_setting $entry
+    _restore_setting $entry
   done
   echo ">>> all settings reset to defaults"
 }
 
 # App disable
-function disable_app() {
+function _disable_app() {
   ok=0
   _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
@@ -52,9 +52,9 @@ function disable_app() {
   fi
 }
 
-function remove_app() {
+function _remove_app() {
   ok=0
-  disable_app $@ >/dev/null 2>&1 && ok=1
+  _disable_app $@ >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
@@ -65,7 +65,7 @@ function remove_app() {
   fi
 }
 
-function restore_app() {
+function _restore_app() {
   ok=0
   _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
@@ -78,7 +78,7 @@ function restore_app() {
 
 # Collection functions - take a newline-delimited string of package names
 # Supports inline comments (# ...) and section headers (lines starting with #)
-function parse_app_name() {
+function _parse_app_name() {
   echo "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
 }
 
@@ -86,14 +86,14 @@ function remove_app_collection() {
   echo "$1" | while read line; do
     [ -z "$line" ] && continue
     case "$line" in \#*) continue ;; esac
-    app=$(parse_app_name "$line")
+    app=$(_parse_app_name "$line")
     [ -z "$app" ] && continue
-    remove_app "$app"
+    _remove_app "$app"
   done
 }
 
 # Return unique package names, excluding packages from the supplied newline list.
-function normalize_app_collection() {
+function _normalize_app_collection() {
   apps=$1
   excluded=$(printf '%s\n' "$2" | tr '\n' ' ')
   printf '%s\n' "$apps" | awk -v excluded="$excluded" '
@@ -124,9 +124,9 @@ restore_app_collection() {
   echo "$1" | while read line; do
     [ -z "$line" ] && continue
     case "$line" in \#*) continue ;; esac
-    app=$(parse_app_name "$line")
+    app=$(_parse_app_name "$line")
     [ -z "$app" ] && continue
-    restore_app "$app"
+    _restore_app "$app"
   done
 }
 
@@ -137,94 +137,94 @@ restore_app_collection() {
 
 debloat_settings() {
   # ---- Animation Speed ----
-  put_setting global window_animation_scale 0.05       # faster window open/close animations. No side effects.
-  put_setting global transition_animation_scale 0.05   # faster screen transitions. No side effects.
-  put_setting global animator_duration_scale 0.3      # faster in-app animations. Rare apps may mistime logic tied to animator duration.
+  _put_setting global window_animation_scale 0.05       # faster window open/close animations. No side effects.
+  _put_setting global transition_animation_scale 0.05   # faster screen transitions. No side effects.
+  _put_setting global animator_duration_scale 0.3      # faster in-app animations. Rare apps may mistime logic tied to animator duration.
 
   # ---- Performance & Hardware ----
-  put_setting global ram_expand_size_list 0         # Disable RAM Plus (Virtual RAM). Apps killed sooner when RAM is full, but 12GB devices don't need swap.
-  put_setting global force_gpu_rendering 1          # Force GPU for 2D drawing. Largely no-op on modern One UI. Can cause glitches in some banking/legacy apps.
-  put_setting global disable_window_blurs 1         # Disable gaussian blur behind notifications/dialogs. Big performance win, slightly less polished look.
-  put_setting global sem_enhanced_cpu_responsiveness 0 # Disable Samsung CPU boost on touch. Slightly less snappy, better battery life. No harm.
+  _put_setting global ram_expand_size_list 0         # Disable RAM Plus (Virtual RAM). Apps killed sooner when RAM is full, but 12GB devices don't need swap.
+  _put_setting global force_gpu_rendering 1          # Force GPU for 2D drawing. Largely no-op on modern One UI. Can cause glitches in some banking/legacy apps.
+  _put_setting global disable_window_blurs 1         # Disable gaussian blur behind notifications/dialogs. Big performance win, slightly less polished look.
+  _put_setting global sem_enhanced_cpu_responsiveness 0 # Disable Samsung CPU boost on touch. Slightly less snappy, better battery life. No harm.
 
   # ---- Connectivity & Scanning ----
-  put_setting global wifi_scan_always_enabled 0     # Disable Wi-Fi scanning when Wi-Fi is off. Degrades indoor/urban location accuracy (GPS still works).
-  put_setting global ble_scan_always_enabled 0      # Disable Bluetooth scanning when BT is off. Breaks Find My Device, SmartTag tracking when BT is toggled off.
-  put_setting global wifi_watchdog_on 0             # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
-  put_setting global private_dns_mode hostname       # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
-  put_setting global private_dns_specifier dns.adguard.com # AdGuard DNS. Blocks ads/trackers at DNS level. Some ad-supported apps/sites may break.
+  _put_setting global wifi_scan_always_enabled 0     # Disable Wi-Fi scanning when Wi-Fi is off. Degrades indoor/urban location accuracy (GPS still works).
+  _put_setting global ble_scan_always_enabled 0      # Disable Bluetooth scanning when BT is off. Breaks Find My Device, SmartTag tracking when BT is toggled off.
+  _put_setting global wifi_watchdog_on 0             # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
+  _put_setting global private_dns_mode hostname       # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
+  _put_setting global private_dns_specifier dns.adguard.com # AdGuard DNS. Blocks ads/trackers at DNS level. Some ad-supported apps/sites may break.
 
   # ---- Privacy & Logging ----
-  put_setting global analytics_enabled 0            # Disable system analytics. No side effects.
-  put_setting global usage_reporting_enabled 0      # Disable usage reporting. No side effects.
+  _put_setting global analytics_enabled 0            # Disable system analytics. No side effects.
+  _put_setting global usage_reporting_enabled 0      # Disable usage reporting. No side effects.
 
   # ---- Touch Responsiveness ----
   # Default: long_press_timeout=400, multi_press_timeout=300
   # 250 is too aggressive — causes accidental long presses when scrolling
   # and missed double taps. 325 is a good middle ground: noticeably snappier
   # than stock without the mis-trigger issues.
-  put_setting secure long_press_timeout 300         # Faster long press (default 400). Below 300 causes accidental triggers when tap-and-scrolling.
-  put_setting secure multi_press_timeout 275        # Tighter double/triple press window (default 300). Below 250 makes slow double-taps fail to register.
+  _put_setting secure long_press_timeout 300         # Faster long press (default 400). Below 300 causes accidental triggers when tap-and-scrolling.
+  _put_setting secure multi_press_timeout 275        # Tighter double/triple press window (default 300). Below 250 makes slow double-taps fail to register.
 
   # ---- Accessibility ----
-  put_setting secure accessibility_reduce_transparency 1 # Remove translucent backgrounds. Better readability and performance, slightly less polished look.
-  put_setting secure accessibility_reduce_motion 1       # Reduce parallax/zoom/motion effects. Some app entrance animations become simple fades.
+  _put_setting secure accessibility_reduce_transparency 1 # Remove translucent backgrounds. Better readability and performance, slightly less polished look.
+  _put_setting secure accessibility_reduce_motion 1       # Reduce parallax/zoom/motion effects. Some app entrance animations become simple fades.
 
   # ---- Battery & Power ----
-  put_setting global mobile_data_always_on 0        # Turn off mobile radio when on Wi-Fi. Saves battery. Wi-Fi-to-mobile handoff takes 1-2s longer.
-  put_setting secure screensaver_enabled 0           # Disable Daydream screensaver. Prevents OLED burn-in while charging/docked.
-  put_setting secure wake_gesture_enabled 0          # Disable lift-to-wake gesture. Prevents pocket wake-ups, saves battery.
+  _put_setting global mobile_data_always_on 0        # Turn off mobile radio when on Wi-Fi. Saves battery. Wi-Fi-to-mobile handoff takes 1-2s longer.
+  _put_setting secure screensaver_enabled 0           # Disable Daydream screensaver. Prevents OLED burn-in while charging/docked.
+  _put_setting secure wake_gesture_enabled 0          # Disable lift-to-wake gesture. Prevents pocket wake-ups, saves battery.
 
   # ---- Notifications & UX ----
-  put_setting global wifi_networks_available_notification_on 0 # Disable "Wi-Fi networks available" notification. No side effects.
-  put_setting system sound_effects_enabled 0         # Disable touch/tap sound effects. No side effects.
-  put_setting system haptic_feedback_enabled 1       # Enable haptic feedback on taps. Default Samsung behavior. No side effects.
+  _put_setting global wifi_networks_available_notification_on 0 # Disable "Wi-Fi networks available" notification. No side effects.
+  _put_setting system sound_effects_enabled 0         # Disable touch/tap sound effects. No side effects.
+  _put_setting system haptic_feedback_enabled 1       # Enable haptic feedback on taps. Default Samsung behavior. No side effects.
 
   # ---- Privacy: Lock Screen ----
-  put_setting secure lock_screen_allow_private_notifications 0 # Hide notification content on lock screen. Must unlock to read messages. No side effects.
+  _put_setting secure lock_screen_allow_private_notifications 0 # Hide notification content on lock screen. Must unlock to read messages. No side effects.
 
   # ---- Privacy: Network ----
-  put_setting global network_recommendations_enabled 0 # Disable Google Wi-Fi network rating/suggestions. Wi-Fi works the same. No side effects.
+  _put_setting global network_recommendations_enabled 0 # Disable Google Wi-Fi network rating/suggestions. Wi-Fi works the same. No side effects.
 
   # ---- Safety ----
-  put_setting global data_roaming 1                   # Enable cellular data roaming. Keeps data working when traveling abroad. May incur roaming charges.
-  put_setting global package_verifier_enable 1       # Ensure Play Protect app scanning stays on. No side effects.
+  _put_setting global data_roaming 1                   # Enable cellular data roaming. Keeps data working when traveling abroad. May incur roaming charges.
+  _put_setting global package_verifier_enable 1       # Ensure Play Protect app scanning stays on. No side effects.
 
   # ---- Privacy & Telemetry: Google & Android ----
-  put_setting global logcat_for_apps_enabled 0       # Block apps from reading system logs. Breaks debugging apps (Logcat Reader), normal apps unaffected.
-  put_setting global usage_stats_enabled 0           # Disable app usage tracking. Digital Wellbeing shows no data, Adaptive Battery slightly less smart.
-  put_setting global send_action_app_error 0         # Disable crash reports to Google. No side effects.
-  put_setting global ad_id_opt_out 1                 # Opt out of personalized ad tracking. Still see ads, just not personalized. No side effects.
+  _put_setting global logcat_for_apps_enabled 0       # Block apps from reading system logs. Breaks debugging apps (Logcat Reader), normal apps unaffected.
+  _put_setting global usage_stats_enabled 0           # Disable app usage tracking. Digital Wellbeing shows no data, Adaptive Battery slightly less smart.
+  _put_setting global send_action_app_error 0         # Disable crash reports to Google. No side effects.
+  _put_setting global ad_id_opt_out 1                 # Opt out of personalized ad tracking. Still see ads, just not personalized. No side effects.
 
   # ---- Privacy & Telemetry: Samsung ----
-  put_setting global multi_cb 0                      # Disable Samsung Customization Service data collection. Lose Samsung "personalized" suggestions.
-  put_setting global rhythmic_logging_button_enabled 0 # Disable Samsung background behavior logging. No side effects.
-  put_setting secure send_security_reports 0         # Stop sending security logs to Samsung. Device Care scans still work locally. No side effects.
+  _put_setting global multi_cb 0                      # Disable Samsung Customization Service data collection. Lose Samsung "personalized" suggestions.
+  _put_setting global rhythmic_logging_button_enabled 0 # Disable Samsung background behavior logging. No side effects.
+  _put_setting secure send_security_reports 0         # Stop sending security logs to Samsung. Device Care scans still work locally. No side effects.
 
   # ---- Privacy & Telemetry: Scanning ----
-  put_setting global nearby_scanning_enabled 0       # Disable Nearby Device beaconing. Lose auto "device found" prompts (Galaxy Buds, SmartTags). Manual pairing still works.
-  put_setting global adaptive_connectivity_enabled 0 # Stop Google from tracking Wi-Fi quality/location. Wi-Fi works the same. No side effects.
+  _put_setting global nearby_scanning_enabled 0       # Disable Nearby Device beaconing. Lose auto "device found" prompts (Galaxy Buds, SmartTags). Manual pairing still works.
+  _put_setting global adaptive_connectivity_enabled 0 # Stop Google from tracking Wi-Fi quality/location. Wi-Fi works the same. No side effects.
 
   # ---- Privacy & Telemetry: Additional ----
-  put_setting global device_provisioned_time 0         # Hide device setup timestamp from telemetry. No side effects.
-  put_setting global network_scoring_provisioned 1     # Suppress Wi-Fi scoring prompt. Wi-Fi works the same. No side effects.
-  put_setting secure unknown_sources_default_reversed 1 # Disable Samsung marketing data tied to sideloaded apps. Does not affect APK installs. No side effects.
-  reset_setting global euicc_provisioned               # Reset eSIM provisioning to default. Keeps eSIM functional for adding/switching profiles.
+  _put_setting global device_provisioned_time 0         # Hide device setup timestamp from telemetry. No side effects.
+  _put_setting global network_scoring_provisioned 1     # Suppress Wi-Fi scoring prompt. Wi-Fi works the same. No side effects.
+  _put_setting secure unknown_sources_default_reversed 1 # Disable Samsung marketing data tied to sideloaded apps. Does not affect APK installs. No side effects.
+  _restore_setting global euicc_provisioned               # Reset eSIM provisioning to default. Keeps eSIM functional for adding/switching profiles.
 
   # TO BE REVIEWED:
   # ---- Performance ----
-  # put_setting global cached_apps_freezer enable       # Freeze cached apps (SIGSTOP). Apps take longer to resume, messaging apps may delay notifications by seconds.
-  # put_setting global always_finish_activities 1        # Destroy activities on leave. Every app reloads from scratch on switch-back, sluggish multitasking.
+  # _put_setting global cached_apps_freezer enable       # Freeze cached apps (SIGSTOP). Apps take longer to resume, messaging apps may delay notifications by seconds.
+  # _put_setting global always_finish_activities 1        # Destroy activities on leave. Every app reloads from scratch on switch-back, sluggish multitasking.
   # ---- Battery ----
-  # put_setting global low_power_back_data off           # Block background sync in battery saver. Email/chat won't sync until you open them.
-  # put_setting global automatic_power_save_mode 1       # Auto-enable battery saver at low battery. May throttle performance unexpectedly.
+  # _put_setting global low_power_back_data off           # Block background sync in battery saver. Email/chat won't sync until you open them.
+  # _put_setting global automatic_power_save_mode 1       # Auto-enable battery saver at low battery. May throttle performance unexpectedly.
   # ---- Display / UX ----
-  # put_setting secure tap_duration_threshold 0.0        # Zero-delay tap registration. May register accidental touches, especially with screen protectors.
-  # put_setting global heads_up_notifications_enabled 0  # Kill floating notification banners. Must check notification shade manually. Calls still ring.
-  # put_setting system screen_off_timeout 60000          # Screen off after 60s (default 30s). Drains more battery if you forget to lock.
+  # _put_setting secure tap_duration_threshold 0.0        # Zero-delay tap registration. May register accidental touches, especially with screen protectors.
+  # _put_setting global heads_up_notifications_enabled 0  # Kill floating notification banners. Must check notification shade manually. Calls still ring.
+  # _put_setting system screen_off_timeout 60000          # Screen off after 60s (default 30s). Drains more battery if you forget to lock.
   # ---- Privacy ----
-  # put_setting secure location_mode 3                   # GPS-only location (no Wi-Fi/cell assist). Most private but slower initial GPS fix.
-  # put_setting global safe_boot_disallowed 1            # Disable safe boot access. Prevents bypassing your setup but harder to troubleshoot.
+  # _put_setting secure location_mode 3                   # GPS-only location (no Wi-Fi/cell assist). Most private but slower initial GPS fix.
+  # _put_setting global safe_boot_disallowed 1            # Disable safe boot access. Prevents bypassing your setup but harder to troubleshoot.
 }
 
 
@@ -351,23 +351,22 @@ com.google.ar.core                          # Google AR Core - lose AR in apps (
 com.samsung.android.authfw                  # Samsung Auth Framework - lose Samsung biometric auth for Samsung apps
 "
 
-# [KEEP] com.google.android.apps.docs                # Google Docs actively used
-# [KEEP] com.google.android.apps.docs.editors.sheets # Google Sheets actively used
-# [KEEP] com.google.android.apps.docs.editors.slides # Google Slides actively used
-# [KEEP] com.google.android.apps.nbu.files           # Google Files actively used
-# [KEEP] com.samsung.android.app.galaxyfinder        # Galaxy Store Finder lose search within Galaxy Store; Not Needed if using Google Play Store
-# [KEEP] com.samsung.android.app.notes               # Samsung Notes actively used for S Pen handwriting
-# [KEEP] com.samsung.android.app.updatecenter        # Samsung App Update Manager lose auto updates for Samsung system apps
-# [KEEP] com.samsung.android.app.watchmanagerstub    # Galaxy Watch Manager stub - lose Galaxy Watch pairing prompt; Not Needed if no Galaxy Watch
-# [KEEP] com.samsung.android.scloud                  # Samsung Cloud - lose Samsung cloud backup/sync; backs up Samsung Notes (S Pen handwriting)
-
 # Packages kept out of every debloat and restore collection.
 DEBLOAT_IGNORED="
+com.google.android.apps.docs                         # Google Docs actively used
+com.google.android.apps.docs.editors.sheets          # Google Sheets actively used
+com.google.android.apps.docs.editors.slides          # Google Slides actively used
+com.google.android.apps.nbu.files                    # Google Files actively used
+com.samsung.android.app.galaxyfinder                 # Galaxy Store Finder
+com.samsung.android.app.notes                        # Samsung Notes actively used for S Pen handwriting
+com.samsung.android.app.updatecenter                 # Samsung system app updates
+com.samsung.android.app.watchmanagerstub             # Galaxy Watch pairing stub
+com.samsung.android.scloud                           # Samsung Cloud backup for Samsung Notes
 com.samsung.android.app.sharelive                    # Quick Share tile
 "
 
 # Safe is the master collection. Aggressive cannot repeat safe entries.
-DEBLOAT_SAFE=$(normalize_app_collection "$DEBLOAT_SAFE" "$DEBLOAT_IGNORED")
-DEBLOAT_AGGRESSIVE=$(normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$DEBLOAT_IGNORED
+DEBLOAT_SAFE=$(_normalize_app_collection "$DEBLOAT_SAFE" "$DEBLOAT_IGNORED")
+DEBLOAT_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$DEBLOAT_IGNORED
 $DEBLOAT_SAFE")
 
