@@ -13,18 +13,23 @@
 # Tracks applied settings for reset_all_settings. Example: "global window_animation_scale\nsecure long_press_timeout"
 SETTINGS_APPLIED=""
 
+# Run an Android command through the host's connected ADB device.
+function _adb_shell() {
+  adb shell "$@"
+}
+
 function put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
   echo ">>> put_setting $@"
-  settings put $@ >/dev/null 2>&1
+  _adb_shell settings put "$@" >/dev/null 2>&1
 }
 
 function reset_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
   echo ">>> reset_setting $@"
-  settings delete $@ >/dev/null 2>&1
+  _adb_shell settings delete "$@" >/dev/null 2>&1
 }
 
 function reset_all_settings() {
@@ -38,8 +43,8 @@ function reset_all_settings() {
 # App disable
 function disable_app() {
   ok=0
-  pm disable-user --user 0 $@ >/dev/null 2>&1 && ok=1
-  pm disable-user -k --user 0 $@ >/dev/null 2>&1 && ok=1
+  _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Disabled > Success"
   else
@@ -50,9 +55,9 @@ function disable_app() {
 function remove_app() {
   ok=0
   disable_app $@ >/dev/null 2>&1 && ok=1
-  pm uninstall $@ >/dev/null 2>&1 && ok=1
-  pm uninstall -k --user 0 $@ >/dev/null 2>&1 && ok=1
-  pm uninstall -k --user 10 $@ >/dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Removed > Success"
   else
@@ -62,8 +67,8 @@ function remove_app() {
 
 function restore_app() {
   ok=0
-  cmd package install-existing $@ >/dev/null 2>&1 && ok=1
-  pm enable $@ >/dev/null 2>&1 && ok=1
+  _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
     echo ">>> $@ > Restored > Success"
   else
