@@ -1232,7 +1232,7 @@ alias flake8="python -m flake8"
 if type -P uvx > /dev/null 2>&1; then
   # markitdown: install or convert documents to Markdown with optional output file.
   # With no arguments, installs the tool; otherwise accepts native CLI arguments or INPUT OUTPUT.
-  # Returns uv/uvx status; conversions write Markdown to stdout or OUTPUT.
+  # Returns uv/uvx status; one-input conversions cache Markdown in /tmp before printing it.
   function markitdown() {
     if is_help_arg "${1:-}"; then
       echo "markitdown: install or convert documents to Markdown with optional output file
@@ -1255,7 +1255,9 @@ if type -P uvx > /dev/null 2>&1; then
     Use -x/--extension, -m/--mime-type, or -c/--charset for stdin hints.
 
   Output:
-    Without -o/--output, writes Markdown to stdout.
+    With one INPUT and no options, saves to /tmp/YYYY_MM_DD_HH_MM_SS-markitdown-XXXXXX.md,
+    prints the saved file path to stderr, then writes the file content to stdout.
+    Without -o/--output in other forms, writes Markdown to stdout.
     With -o/--output OUTPUT, writes Markdown to OUTPUT.
     Two plain arguments mean INPUT OUTPUT and become INPUT -o OUTPUT.
 
@@ -1282,6 +1284,18 @@ if type -P uvx > /dev/null 2>&1; then
     fi
     if [ "$#" -eq 2 ] && [[ "$1" != -* && "$2" != -* ]]; then
       set -- "$1" -o "$2"
+    fi
+    if [ "$#" -eq 1 ] && [[ "$1" != -* ]]; then
+      local temp_file output_file exit_code
+      temp_file=$(command mktemp "/tmp/$(command date +%Y_%m_%d_%H_%M_%S)-markitdown-XXXXXX") || return 1
+      output_file="${temp_file}.md"
+      command mv "$temp_file" "$output_file" || return 1
+      command uvx --python 3.12 --from "markitdown[all]" markitdown "$1" -o "$output_file"
+      exit_code=$?
+      [ "$exit_code" -eq 0 ] || return "$exit_code"
+      printf '>> MarkItDown output: %s\n' "$output_file" >&2
+      command cat "$output_file"
+      return $?
     fi
     command uvx --python 3.12 --from "markitdown[all]" markitdown "$@"
   }

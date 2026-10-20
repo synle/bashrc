@@ -28,8 +28,29 @@ function runWrapper(args, { available = true, exitCode = 0 } = {}) {
   const sandbox = mkdtempSync(path.join(os.tmpdir(), "markitdown-wrapper-"));
   try {
     symlinkSync("/usr/bin/tr", path.join(sandbox, "tr"));
+    symlinkSync("/bin/cat", path.join(sandbox, "cat"));
+    symlinkSync("/bin/date", path.join(sandbox, "date"));
+    symlinkSync("/bin/mv", path.join(sandbox, "mv"));
+    symlinkSync("/usr/bin/mktemp", path.join(sandbox, "mktemp"));
     if (available) {
-      const recorder = `#!/bin/bash\nprintf '%s\\0' "$@"\nexit ${exitCode}\n`;
+      const recorder = `#!/bin/bash
+output=""
+for arg in "$@"; do
+  printf '%s\\0' "$arg"
+done
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    output="$2"
+    shift 2
+  else
+    shift
+  fi
+done
+if [ -n "$output" ] && [ "\${output#/}" != "$output" ]; then
+  printf 'converted markdown\\n' > "$output"
+fi
+exit ${exitCode}
+`;
       writeFileSync(path.join(sandbox, "uv"), recorder, { mode: 0o755 });
       writeFileSync(path.join(sandbox, "uvx"), recorder, { mode: 0o755 });
     }
@@ -53,7 +74,6 @@ describe("markitdown profile wrapper", () => {
       ["input doc.docx", "output file.md"],
       ["input doc.docx", "-o", "output file.md"],
     ],
-    [["input.pdf"], ["input.pdf"]],
     [
       ["input.xlsx", "--output=output.md"],
       ["input.xlsx", "--output=output.md"],
@@ -68,6 +88,14 @@ describe("markitdown profile wrapper", () => {
     expect(result.status).toBe(0);
     expect(result.stdout.split("\0").slice(0, -1)).toEqual(["--python", "3.12", "--from", "markitdown[all]", "markitdown", ...expected]);
     expect(result.stderr).toBe("");
+  });
+
+  it("caches one-input conversion in a timestamped Markdown file before printing it", () => {
+    const result = runWrapper(["input.pdf"]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("converted markdown\n");
+    expect(result.stdout).toContain("\0-o\0");
+    expect(result.stderr).toMatch(/>> MarkItDown output: \/tmp\/20[0-9_]+-markitdown-[A-Za-z0-9]+\.md\n/);
   });
 
   it("installs the converter without starting it when called without arguments", () => {
