@@ -104,7 +104,8 @@ async function doWork() {
   // ----------------------------------------------------------
   /** Requested appearance shared by defaults and saved per-profile overrides. */
   const requiredProfileStyles = {
-    font: { weight: "semi-bold", cellHeight: 1.1 },
+    // Terminal parses cellHeight as a CSS length string, not a JSON number.
+    font: { weight: "semi-bold", cellHeight: "1.1" },
     showMarksOnScrollbar: true,
     suppressApplicationTitle: false,
     scrollbarState: "visible",

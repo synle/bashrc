@@ -64,7 +64,7 @@ describe("Windows Terminal modern appearance", () => {
     const settings = await generateAppearance({}, windows);
     expect(settings.profiles.defaults).toMatchObject({
       cursorShape: "underscore",
-      font: { face: "Fixture Mono", size: 12, weight: "semi-bold", cellHeight: 1.1 },
+      font: { face: "Fixture Mono", size: 12, weight: "semi-bold", cellHeight: "1.1" },
       showMarksOnScrollbar: true,
       suppressApplicationTitle: false,
       scrollbarState: "visible",
@@ -85,7 +85,7 @@ describe("Windows Terminal modern appearance", () => {
     [{ name: "Windows PowerShell" }, undefined],
     [{ name: "Custom", elevate: true }, true],
     [{}, undefined],
-  ])("enforces appearance and selective elevation for %j", async (profile, elevate) => {
+  ])("repairs numeric cellHeight to a string while enforcing appearance and selective elevation for %j", async (profile, elevate) => {
     const oldProfile = {
       ...profile,
       guid: "fixture",
@@ -93,7 +93,7 @@ describe("Windows Terminal modern appearance", () => {
       suppressApplicationTitle: true,
       scrollbarState: "hidden",
       adjustIndistinguishableColors: "never",
-      font: { face: "Custom Mono", size: 18, weight: "light", cellHeight: 2 },
+      font: { face: "Custom Mono", size: 18, weight: "light", cellHeight: 1.1 },
     };
     const first = await generateAppearance({ profiles: { defaults: oldProfile, list: [oldProfile] } });
     const savedProfile = first.profiles.list.find(({ guid }) => guid === "fixture");
@@ -103,11 +103,13 @@ describe("Windows Terminal modern appearance", () => {
       suppressApplicationTitle: false,
       scrollbarState: "visible",
       adjustIndistinguishableColors: "always",
-      font: { face: "Custom Mono", size: 18, weight: "semi-bold", cellHeight: 1.1 },
+      font: { face: "Custom Mono", size: 18, weight: "semi-bold", cellHeight: "1.1" },
     });
+    expect(first.profiles.defaults.font.cellHeight).toBe("1.1");
     expect(first.profiles.defaults).not.toHaveProperty("elevate");
     expect(await generateAppearance(first)).toEqual(first);
     expect(oldProfile.font.weight).toBe("light");
+    expect(oldProfile.font.cellHeight).toBe(1.1);
   });
 
   it.each(["default.ico", null, ""])("preserves the saved default icon %j without adding explicit WSL overrides", async (icon) => {
@@ -247,7 +249,7 @@ describe("Windows Terminal modern appearance", () => {
       face: "Old Mono",
       size: 17,
       weight: "semi-bold",
-      cellHeight: 1.1,
+      cellHeight: "1.1",
       features: { liga: 0 },
       axes: { wght: 600 },
     });
@@ -258,13 +260,13 @@ describe("Windows Terminal modern appearance", () => {
   });
 
   it.each([
-    [{}, { weight: "semi-bold", cellHeight: 1.1 }],
-    [{ fontFace: "Custom Mono" }, { face: "Custom Mono", weight: "semi-bold", cellHeight: 1.1 }],
-    [{ fontSize: 18 }, { size: 18, weight: "semi-bold", cellHeight: 1.1 }],
-    [{ fontWeight: 700 }, { weight: "semi-bold", cellHeight: 1.1 }],
+    [{}, { weight: "semi-bold", cellHeight: "1.1" }],
+    [{ fontFace: "Custom Mono" }, { face: "Custom Mono", weight: "semi-bold", cellHeight: "1.1" }],
+    [{ fontSize: 18 }, { size: 18, weight: "semi-bold", cellHeight: "1.1" }],
+    [{ fontWeight: 700 }, { weight: "semi-bold", cellHeight: "1.1" }],
     [
       { fontFace: "Old", fontSize: 19, fontWeight: "bold", font: { face: "Modern", size: 20, weight: 500, features: { liga: 0 } } },
-      { face: "Modern", size: 20, weight: "semi-bold", cellHeight: 1.1, features: { liga: 0 } },
+      { face: "Modern", size: 20, weight: "semi-bold", cellHeight: "1.1", features: { liga: 0 } },
     ],
   ])("migrates only present per-profile legacy font fields: %j", async (fontSettings, expected) => {
     const settings = await generateAppearance({ profiles: [{ name: "Custom", guid: "custom", hidden: false, ...fontSettings }] });
