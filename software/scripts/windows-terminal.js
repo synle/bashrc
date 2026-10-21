@@ -246,8 +246,6 @@ async function doWork() {
     if (preferredProfile) settings.defaultProfile = preferredProfile.guid;
 
     delete settings.actions;
-    // Discovery stays enabled; per-profile hidden flags alone control visibility.
-    delete settings.disabledProfileSources;
     return settings;
   };
 

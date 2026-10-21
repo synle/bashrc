@@ -120,18 +120,15 @@ describe("Windows Terminal profile policy", () => {
 });
 
 describe("Windows Terminal generated settings", () => {
-  it("replaces the string paste warning with false and removes disabled generators", async () => {
-    const settings = await generateSettings({
-      "warning.multiLinePaste": "never",
-      disabledProfileSources: [
-        "Windows.Terminal.Wsl",
-        "Windows.Terminal.VisualStudio",
-        "Windows.Terminal.PowershellCore",
-        "Windows.Terminal.Azure",
-      ],
-    });
+  it.each([
+    {},
+    { disabledProfileSources: [] },
+    { disabledProfileSources: ["Windows.Terminal.Wsl", "Windows.Terminal.PowershellCore"] },
+    { disabledProfileSources: ["Windows.Terminal.Azure", "Windows.Terminal.VisualStudio"] },
+  ])("preserves disabled generator preferences %j while disabling paste warnings", async (oldSettings) => {
+    const settings = await generateSettings({ ...oldSettings, "warning.multiLinePaste": "never" });
     expect(settings["warning.multiLinePaste"]).toBe(false);
-    expect(settings).not.toHaveProperty("disabledProfileSources");
+    expect(settings.disabledProfileSources).toEqual(oldSettings.disabledProfileSources);
   });
 
   it.each([
@@ -291,6 +288,7 @@ describe("Windows Terminal generated settings", () => {
   it("emits portable artifacts without host-specific profiles and remains idempotent", async () => {
     const artifact = await generateSettings({}, [], null, false);
     expect(artifact.profiles.list).toEqual([]);
+    expect(artifact).not.toHaveProperty("disabledProfileSources");
     expect(artifact["warning.multiLinePaste"]).toBe(false);
     const first = await generateSettings({ profiles: { list: [{ name: "Windows PowerShell", guid: "ps" }] } }, ["pwsh"]);
     expect(await generateSettings(first, ["pwsh"])).toEqual(first);

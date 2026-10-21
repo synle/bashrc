@@ -19,9 +19,11 @@ modified by these Terminal settings changes.
 Profiles sort as WSL, `Powershell v7`, `Powershell v5`, Azure, then everything else.
 Existing boolean `hidden` values are preserved. Missing values default to visible
 for WSL, both PowerShell profiles, and Azure, and hidden for everything else.
-`disabledProfileSources` is removed: profile visibility is controlled by `hidden`,
-not by disabling discovery. The first visible WSL profile with a GUID remains the
-preferred default, followed by visible PowerShell and then another visible profile.
+The installer leaves `disabledProfileSources` untouched: existing discovery
+preferences are preserved, and the setting is not added when absent. Profile
+visibility updates use `hidden` without changing which sources are enabled.
+The first visible WSL profile with a GUID remains the preferred default, followed
+by visible PowerShell and then another visible profile.
 
 New managed modern profiles start at `%USERPROFILE%` without a startup
 `Set-Location` command. Existing profiles and shortcuts keep their own startup
