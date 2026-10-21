@@ -349,6 +349,12 @@ Profile registration is buffered: `registerProfileBlock` /
 
 ### 7.3 Profile & config
 
+- **Windows Terminal folder inheritance** uses OSC 9;9 reporting from
+  `_windows_terminal_report_folder` in `profile-advanced.sh` and
+  `Write-WindowsTerminalWorkingFolder` in `powershell-profile.ps1.bash`. Keep both
+  PowerShell prompt paths wired to the reporter. Duplicate actions retain the active
+  profile and its reported folder; do not overwrite `startingDirectory` to simulate this.
+  Targeted regression: `software/tests/windowsTerminalWorkingFolder.spec.js`.
 - **Section markers**: `// --- Title ---` in JS/TS/JSONC, `# --- Title ---` in bash,
   `[section]` in git config. The old `////// Title //////` and `# ---- Title ----` styles
   fail `sectionMarkerStyle.spec.js` — convert when you touch a file. Read existing

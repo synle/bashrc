@@ -278,13 +278,35 @@ if [ -n "${GHOSTTY_SHELL_FEATURES:-}" ]; then
   export GHOSTTY_SHELL_FEATURES="${GHOSTTY_SHELL_FEATURES//title/}"
 fi
 
+# _windows_terminal_report_folder - Report the current folder for duplicate tabs/panes.
+# No args; returns 0 and emits OSC 9;9 only for Windows Terminal WSL/MinGW sessions.
+# Conversion failures retain converter stderr; unsafe/unavailable folders emit nothing.
+function _windows_terminal_report_folder() {
+  [ -n "${WT_SESSION:-}" ] || return 0
+  local folder
+  if ((is_os_wsl)); then
+    type -P wslpath &> /dev/null || return 0
+    folder=$(wslpath -w "$PWD") || return 0
+  elif ((is_os_mingw64)); then
+    type -P cygpath &> /dev/null || return 0
+    folder=$(cygpath -w "$PWD") || return 0
+  else
+    return 0
+  fi
+  # A folder name must not terminate or inject a terminal control sequence.
+  case "$folder" in
+  "" | *[$'\001'-$'\037'$'\177']* | *\"*) return 0 ;;
+  esac
+  printf '\033]9;9;"%s"\033\\' "$folder"
+}
+
 # append history to file after every command (but do NOT clear+reload with -c/-r,
 # so Up arrow navigates current tab's session history instead of showing commands
 # from other tabs. Ctrl+R / fuzzy_history search the shared file for cross-tab history)
 # Also force the terminal cursor back to a steady (non-blinking) block via
 # DECSCUSR `\e[2 q` on every prompt — defends against shell integrations,
 # plugins, or stray escape sequences that flip the cursor to a bar/beam.
-_prompt_command_add "_rewrite_last_history_entry; _track_folder; history -a; echo -ne '\\033]0;'\"\$(shorter_pwd_path)\"'\\007\\033[2 q'"
+_prompt_command_add "_rewrite_last_history_entry; _track_folder; history -a; _windows_terminal_report_folder; echo -ne '\\033]0;'\"\$(shorter_pwd_path)\"'\\007\\033[2 q'"
 
 ################################################################################
 # --- Track Recent Files ---

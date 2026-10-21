@@ -33,7 +33,7 @@
     "keys": "alt+f",
   },
   {
-    "command": "newTab",
+    "command": "duplicateTab",
     "keys": ["alt+t"],
   },
   {

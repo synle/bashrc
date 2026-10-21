@@ -488,6 +488,18 @@ function shorterTimestamp() {
   (Get-Date).ToString("HH:mm:ss")
 }
 
+# Reports the current filesystem folder to Windows Terminal for duplicate tabs/panes.
+# No parameters or pipeline output; writes OSC 9;9 only in a Windows Terminal session.
+# Non-filesystem providers and unsafe folder names produce no report.
+function Write-WindowsTerminalWorkingFolder {
+  if (-not $env:WT_SESSION) { return }
+  $location = $executionContext.SessionState.Path.CurrentLocation
+  if ($location.Provider.Name -ne 'FileSystem') { return }
+  $folder = $location.ProviderPath
+  if ([string]::IsNullOrEmpty($folder) -or $folder -match '[\x00-\x1f\x7f"]') { return }
+  [Console]::Write("$([char]27)]9;9;`"$folder`"$([char]27)\")
+}
+
 # --- Starship Prompt ---
 # If starship is installed, use it for the prompt. Otherwise, use the custom prompt below.
 if (Get-Command starship -ErrorAction SilentlyContinue) {
@@ -496,7 +508,10 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
   # Populate Starship environment modules without running custom Git commands;
   # Starship's native Git modules provide repository status and branch information.
   $global:_original_starship_prompt = $function:prompt
+  # Refreshes Starship modules and reports the folder; returns Starship's prompt text.
+  # No parameters; preserves LASTEXITCODE and writes terminal metadata as a side effect.
   function global:prompt {
+    Write-WindowsTerminalWorkingFolder
     $now = Get-Date
     $utc = $now.ToUniversalTime()
     $env:STARSHIP_LOCAL_TIME = $now.ToString("hh:mm:sstt")
@@ -507,7 +522,10 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
     & $global:_original_starship_prompt
   }
 } else {
+  # Reports the folder and draws the fallback prompt; returns its input marker string.
+  # No parameters; writes the visible prompt and terminal metadata to the host.
   function prompt() {
+    Write-WindowsTerminalWorkingFolder
     # $path = "$($executionContext.SessionState.Path.CurrentLocation)"
     $path = "$(shorterPwdPath)"
 

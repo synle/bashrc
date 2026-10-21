@@ -300,6 +300,24 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 | `OS_KEY+m`         | Tab / session switcher          |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+p`         | Key palette                     |        ❌        |  ✅  |   ❌    |
 
+In Windows Terminal, `alt+t` duplicates the active profile and its last reported
+working folder rather than opening the default profile. `alt+d` (vertical split),
+`alt+'` (horizontal split), and `alt+shift+d` keep the same profile and folder too.
+The Bash prompt reports Windows paths in WSL/MinGW; both PowerShell prompt variants
+report filesystem locations. A normal new-tab menu action still uses the profile's
+configured starting folder. Non-filesystem PowerShell providers do not report a folder.
+
+Deploy from the updated checkout on Windows/WSL with the normal profile refresh,
+`bash run.sh`, then restart the shells. A targeted `--files` run alone does not rebuild
+the base Bash profile containing this hook. To verify on Windows, enter a non-home
+folder containing spaces, wait for the prompt, then try
+`alt+t`, `alt+d`, and `alt+'` separately. Run `pwd` in Bash or `Get-Location` in
+PowerShell in each new tab/pane; each should match the source folder and profile.
+Repeat after changing folders, with PowerShell's fallback and Starship prompts, and
+with each elevated WSL profile. An elevated profile must run in an elevated Terminal
+window to split into that window. Run this check directly in the shell, outside tmux:
+duplicating an outer Terminal tab does not promise to inherit an inner tmux pane's folder.
+
 On macOS, Ghostty's `global:cmd+escape` quick-terminal binding requires Ghostty under
 **System Settings → Privacy & Security → Accessibility**. Without that permission,
 Ghostty does not intercept the chord and the terminal receives it as `ESC[27;9~`.
