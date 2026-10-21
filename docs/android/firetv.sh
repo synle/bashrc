@@ -38,21 +38,21 @@ function _adb_shell() {
 function _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> setting put $@"
+  echo ">>> setting put $*"
   _adb_shell settings put "$@" >/dev/null 2>&1
 }
 
 function _restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> restore_setting $@"
+  echo ">>> setting restore $*"
   _adb_shell settings delete "$@" >/dev/null 2>&1
 }
 
 function restore_all_settings() {
-  echo "$SETTINGS_APPLIED" | while read entry; do
-    [ -z "$entry" ] && continue
-    _restore_setting $entry
+  printf '%s\n' "$SETTINGS_APPLIED" | while IFS=' ' read -r setting_namespace setting_key; do
+    [ -z "$setting_namespace" ] && continue
+    _restore_setting "$setting_namespace" "$setting_key"
   done
   echo ">>> all settings restored to defaults"
 }
@@ -62,22 +62,22 @@ function _disable_app() {
   _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $@ > Disabled > Success"
+    echo ">>> $* > Disabled > Success"
   else
-    echo ">>> $@ > Disabled > Error"
+    echo ">>> $* > Disabled > Error"
   fi
 }
 
 function _remove_app() {
   ok=0
-  _disable_app $@ >/dev/null 2>&1 && ok=1
+  _disable_app "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $@ > Removed > Success"
+    echo ">>> $* > Removed > Success"
   else
-    echo ">>> $@ > Removed > Error"
+    echo ">>> $* > Removed > Error"
   fi
 }
 
@@ -86,9 +86,9 @@ function _restore_app() {
   _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $@ > Restored > Success"
+    echo ">>> $* > Restored > Success"
   else
-    echo ">>> $@ > Restored > Error"
+    echo ">>> $* > Restored > Error"
   fi
 }
 
@@ -97,7 +97,7 @@ function _parse_app_name() {
 }
 
 function remove_app_collection() {
-  echo "$1" | while read line; do
+  printf '%s\n' "$1" | while IFS= read -r line; do
     [ -z "$line" ] && continue
     case "$line" in \#*) continue ;; esac
     app=$(_parse_app_name "$line")
@@ -107,7 +107,7 @@ function remove_app_collection() {
 }
 
 function _restore_app_collection() {
-  echo "$1" | while read line; do
+  printf '%s\n' "$1" | while IFS= read -r line; do
     [ -z "$line" ] && continue
     case "$line" in \#*) continue ;; esac
     app=$(_parse_app_name "$line")
@@ -426,6 +426,10 @@ function _greet_and_connect_adb() {
     adb connect "$adb_target" || return 1
   else
     echo ">>> Using current ADB connection"
+    if ! adb get-state >/dev/null 2>&1; then
+      echo ">>> No connected ADB device" >&2
+      return 1
+    fi
   fi
 }
 

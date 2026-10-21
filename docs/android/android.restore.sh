@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Samsung restore: reinstall all removed apps and reset settings to defaults.
+# Samsung restore: reinstall all removed apps and restore settings to defaults.
 echo "> Restoring all settings and apps to defaults..."
 debloat_settings
 

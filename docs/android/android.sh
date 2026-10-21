@@ -14,76 +14,76 @@
 SETTINGS_APPLIED=""
 
 # Run an Android command through the host's connected ADB device.
-function _adb_shell() {
+_adb_shell() {
   adb shell "$@"
 }
 
-function _put_setting() {
+_put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> setting put $@"
+  echo ">>> setting put $*"
   _adb_shell settings put "$@" >/dev/null 2>&1
 }
 
-function _restore_setting() {
+_restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> setting restore $@"
+  echo ">>> setting restore $*"
   _adb_shell settings delete "$@" >/dev/null 2>&1
 }
 
-function restore_all_settings() {
-  echo "$SETTINGS_APPLIED" | while read entry; do
-    [ -z "$entry" ] && continue
-    _restore_setting $entry
+restore_all_settings() {
+  printf '%s\n' "$SETTINGS_APPLIED" | while IFS=' ' read -r setting_namespace setting_key; do
+    [ -z "$setting_namespace" ] && continue
+    _restore_setting "$setting_namespace" "$setting_key"
   done
-  echo ">>> all settings reset to defaults"
+  echo ">>> all settings restored to defaults"
 }
 
 # App disable
-function _disable_app() {
+_disable_app() {
   ok=0
   _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $@ > Disabled > Success"
+    echo ">>> $* > Disabled > Success"
   else
-    echo ">>> $@ > Disabled > Error"
+    echo ">>> $* > Disabled > Error"
   fi
 }
 
-function _remove_app() {
+_remove_app() {
   ok=0
-  _disable_app $@ >/dev/null 2>&1 && ok=1
+  _disable_app "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $@ > Removed > Success"
+    echo ">>> $* > Removed > Success"
   else
-    echo ">>> $@ > Removed > Error"
+    echo ">>> $* > Removed > Error"
   fi
 }
 
-function _restore_app() {
+_restore_app() {
   ok=0
   _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $@ > Restored > Success"
+    echo ">>> $* > Restored > Success"
   else
-    echo ">>> $@ > Restored > Error"
+    echo ">>> $* > Restored > Error"
   fi
 }
 
 # Collection functions - take a newline-delimited string of package names
 # Supports inline comments (# ...) and section headers (lines starting with #)
-function _parse_app_name() {
+_parse_app_name() {
   echo "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
 }
 
-function remove_app_collection() {
-  echo "$1" | while read line; do
+remove_app_collection() {
+  printf '%s\n' "$1" | while IFS= read -r line; do
     [ -z "$line" ] && continue
     case "$line" in \#*) continue ;; esac
     app=$(_parse_app_name "$line")
@@ -93,7 +93,7 @@ function remove_app_collection() {
 }
 
 # Return unique package names, excluding packages from the supplied newline list.
-function _normalize_app_collection() {
+_normalize_app_collection() {
   apps=$1
   excluded=$(printf '%s\n' "$2" | tr '\n' ' ')
   printf '%s\n' "$apps" | awk -v excluded="$excluded" '
@@ -121,7 +121,7 @@ function _normalize_app_collection() {
 }
 
 restore_app_collection() {
-  echo "$1" | while read line; do
+  printf '%s\n' "$1" | while IFS= read -r line; do
     [ -z "$line" ] && continue
     case "$line" in \#*) continue ;; esac
     app=$(_parse_app_name "$line")
@@ -209,7 +209,7 @@ debloat_settings() {
   _put_setting global device_provisioned_time 0         # Hide device setup timestamp from telemetry. No side effects.
   _put_setting global network_scoring_provisioned 1     # Suppress Wi-Fi scoring prompt. Wi-Fi works the same. No side effects.
   _put_setting secure unknown_sources_default_reversed 1 # Disable Samsung marketing data tied to sideloaded apps. Does not affect APK installs. No side effects.
-  _restore_setting global euicc_provisioned               # Reset eSIM provisioning to default. Keeps eSIM functional for adding/switching profiles.
+  _restore_setting global euicc_provisioned               # Restore eSIM provisioning to default. Keeps eSIM functional for adding/switching profiles.
 
   # TO BE REVIEWED:
   # ---- Performance ----
@@ -371,7 +371,7 @@ DEBLOAT_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$DEBLOAT_I
 $DEBLOAT_SAFE")
 
 # Check host ADB and optionally connect to a user-provided Android device.
-function _greet_and_connect_adb() {
+_greet_and_connect_adb() {
   echo ">>> Android ADB setup"
   if ! command -v adb >/dev/null 2>&1; then
     echo ">>> adb not found on host; install Android platform tools first" >&2
@@ -392,6 +392,10 @@ function _greet_and_connect_adb() {
     adb connect "$adb_target" || return 1
   else
     echo ">>> Using current ADB connection"
+    if ! adb get-state >/dev/null 2>&1; then
+      echo ">>> No connected ADB device" >&2
+      return 1
+    fi
   fi
 }
 
