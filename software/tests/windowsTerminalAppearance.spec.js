@@ -64,7 +64,11 @@ describe("Windows Terminal modern appearance", () => {
     const settings = await generateAppearance({}, windows);
     expect(settings.profiles.defaults).toMatchObject({
       cursorShape: "underscore",
-      font: { face: "Fixture Mono", size: 12, weight: "normal" },
+      font: { face: "Fixture Mono", size: 12, weight: "semi-bold", cellHeight: 1.1 },
+      showMarksOnScrollbar: true,
+      suppressApplicationTitle: false,
+      scrollbarState: "visible",
+      adjustIndistinguishableColors: "always",
     });
     expect(settings.profiles.defaults).not.toHaveProperty("icon");
     expect(settings.profiles.defaults).not.toHaveProperty("cursorHeight");
@@ -72,6 +76,38 @@ describe("Windows Terminal modern appearance", () => {
     expect(settings.profiles.defaults).not.toHaveProperty("fontSize");
     expect(settings.profiles.defaults).not.toHaveProperty("fontWeight");
     expect(settings).not.toHaveProperty("experimental.rendering.forceFullRepaint");
+  });
+
+  it.each([
+    [{ name: "Ubuntu-24.04", elevate: false }, true],
+    [{ name: "debian" }, true],
+    [{ name: "Kali", source: "Microsoft.WSL", elevate: false }, false],
+    [{ name: "Windows PowerShell" }, undefined],
+    [{ name: "Custom", elevate: true }, true],
+    [{}, undefined],
+  ])("enforces appearance and selective elevation for %j", async (profile, elevate) => {
+    const oldProfile = {
+      ...profile,
+      guid: "fixture",
+      showMarksOnScrollbar: false,
+      suppressApplicationTitle: true,
+      scrollbarState: "hidden",
+      adjustIndistinguishableColors: "never",
+      font: { face: "Custom Mono", size: 18, weight: "light", cellHeight: 2 },
+    };
+    const first = await generateAppearance({ profiles: { defaults: oldProfile, list: [oldProfile] } });
+    const savedProfile = first.profiles.list.find(({ guid }) => guid === "fixture");
+    expect(savedProfile.elevate).toBe(elevate);
+    expect(savedProfile).toMatchObject({
+      showMarksOnScrollbar: true,
+      suppressApplicationTitle: false,
+      scrollbarState: "visible",
+      adjustIndistinguishableColors: "always",
+      font: { face: "Custom Mono", size: 18, weight: "semi-bold", cellHeight: 1.1 },
+    });
+    expect(first.profiles.defaults).not.toHaveProperty("elevate");
+    expect(await generateAppearance(first)).toEqual(first);
+    expect(oldProfile.font.weight).toBe("light");
   });
 
   it.each(["default.ico", null, ""])("preserves the saved default icon %j without adding explicit WSL overrides", async (icon) => {
@@ -207,7 +243,14 @@ describe("Windows Terminal modern appearance", () => {
       },
     });
     const legacy = settings.profiles.list.find(({ guid }) => guid === "ps");
-    expect(legacy.font).toEqual({ face: "Old Mono", size: 17, weight: "bold", features: { liga: 0 }, axes: { wght: 600 } });
+    expect(legacy.font).toEqual({
+      face: "Old Mono",
+      size: 17,
+      weight: "semi-bold",
+      cellHeight: 1.1,
+      features: { liga: 0 },
+      axes: { wght: 600 },
+    });
     expect(legacy).not.toHaveProperty("fontFace");
     expect(legacy).not.toHaveProperty("fontSize");
     expect(legacy).not.toHaveProperty("fontWeight");
@@ -215,13 +258,13 @@ describe("Windows Terminal modern appearance", () => {
   });
 
   it.each([
-    [{}, undefined],
-    [{ fontFace: "Custom Mono" }, { face: "Custom Mono" }],
-    [{ fontSize: 18 }, { size: 18 }],
-    [{ fontWeight: 700 }, { weight: 700 }],
+    [{}, { weight: "semi-bold", cellHeight: 1.1 }],
+    [{ fontFace: "Custom Mono" }, { face: "Custom Mono", weight: "semi-bold", cellHeight: 1.1 }],
+    [{ fontSize: 18 }, { size: 18, weight: "semi-bold", cellHeight: 1.1 }],
+    [{ fontWeight: 700 }, { weight: "semi-bold", cellHeight: 1.1 }],
     [
       { fontFace: "Old", fontSize: 19, fontWeight: "bold", font: { face: "Modern", size: 20, weight: 500, features: { liga: 0 } } },
-      { face: "Modern", size: 20, weight: 500, features: { liga: 0 } },
+      { face: "Modern", size: 20, weight: "semi-bold", cellHeight: 1.1, features: { liga: 0 } },
     ],
   ])("migrates only present per-profile legacy font fields: %j", async (fontSettings, expected) => {
     const settings = await generateAppearance({ profiles: [{ name: "Custom", guid: "custom", hidden: false, ...fontSettings }] });

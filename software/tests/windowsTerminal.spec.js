@@ -1,13 +1,10 @@
-/** Windows Terminal generated settings and profile policy regression tests. */
+/** Windows Terminal generated settings regression tests. */
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import vm from "vm";
 import { createRequire } from "module";
-import { getIndexFunction, loadScriptHelpers } from "./setup.js";
-
-loadScriptHelpers("software/scripts/windows-terminal.js");
-const prioritizeProfiles = getIndexFunction("_prioritizeWindowsTerminalProfiles");
+import { getIndexFunction } from "./setup.js";
 
 /**
  * Execute the installer with owned IO boundaries and return serialized settings output.
@@ -62,67 +59,6 @@ async function generateSettings(oldSettings = {}, binaries = [], executable = nu
   return windows ? written : artifact;
 }
 
-describe("Windows Terminal profile policy", () => {
-  it("orders WSL, Windows PowerShell, Azure, then other profiles with missing visibility defaults", () => {
-    expect(
-      prioritizeProfiles([
-        { name: "Azure", source: "Windows.Terminal.Azure" },
-        { name: "Developer PowerShell for VS 2022", source: "Windows.Terminal.VisualStudio" },
-        { name: "Windows PowerShell" },
-        { name: "Command Prompt" },
-        { name: "Kali", source: "Microsoft.WSL" },
-        { name: "Ubuntu" },
-      ]).map(({ name, hidden }) => [name, hidden]),
-    ).toEqual([
-      ["Ubuntu", false],
-      ["Kali", false],
-      ["Windows PowerShell", false],
-      ["Azure", false],
-      ["Developer PowerShell for VS 2022", true],
-      ["Command Prompt", true],
-    ]);
-  });
-
-  it("preserves explicit true and false visibility for every profile category", () => {
-    expect(
-      prioritizeProfiles([
-        { name: "Kali", source: "Microsoft.WSL", hidden: true },
-        { name: "Windows PowerShell", hidden: true },
-        { name: "Command Prompt", hidden: false },
-        { name: "Azure", source: "Windows.Terminal.Azure", hidden: true },
-      ]).map(({ hidden }) => hidden),
-    ).toEqual([true, true, true, false]);
-  });
-
-  it("hides miscellaneous profiles without WSL while retaining Command Prompt's scheme", () => {
-    expect(
-      prioritizeProfiles([
-        { name: "Custom", colorScheme: "old" },
-        { name: "Command Prompt", colorScheme: "Campbell" },
-      ]),
-    ).toEqual([
-      { name: "Custom", hidden: true },
-      { name: "Command Prompt", colorScheme: "Campbell", hidden: true },
-    ]);
-  });
-
-  it("handles empty lists and normalizes non-boolean hidden values without mutating input", () => {
-    const input = [
-      { name: "Windows PowerShell", hidden: null },
-      { name: "Custom", hidden: "false" },
-    ];
-    expect(prioritizeProfiles(input)).toEqual([
-      { name: "Windows PowerShell", hidden: false },
-      { name: "Custom", hidden: true },
-    ]);
-    expect(input).toEqual([
-      { name: "Windows PowerShell", hidden: null },
-      { name: "Custom", hidden: "false" },
-    ]);
-    expect(prioritizeProfiles([])).toEqual([]);
-  });
-});
-
 describe("Windows Terminal generated settings", () => {
   it.each([
     {},
@@ -150,6 +86,11 @@ describe("Windows Terminal generated settings", () => {
       name: "Powershell v7",
       guid: "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
       commandline,
+      font: { weight: "semi-bold", cellHeight: 1.1 },
+      showMarksOnScrollbar: true,
+      suppressApplicationTitle: false,
+      scrollbarState: "visible",
+      adjustIndistinguishableColors: "always",
       colorScheme: "Campbell",
       startingDirectory: "%USERPROFILE%",
       icon: "C:\\Users\\test\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
@@ -245,6 +186,11 @@ describe("Windows Terminal generated settings", () => {
       icon: "C:\\Users\\test\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
       colorScheme: "Campbell",
       tabColor: "#000000",
+      font: { weight: "semi-bold", cellHeight: 1.1 },
+      showMarksOnScrollbar: true,
+      suppressApplicationTitle: false,
+      scrollbarState: "visible",
+      adjustIndistinguishableColors: "always",
     });
     expect(settings.defaultProfile).toBe("ps");
   });

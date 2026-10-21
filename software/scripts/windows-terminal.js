@@ -102,20 +102,28 @@ async function doWork() {
   // ----------------------------------------------------------
   // Default profile appearance
   // ----------------------------------------------------------
+  /** Requested appearance shared by defaults and saved per-profile overrides. */
+  const requiredProfileStyles = {
+    font: { weight: "semi-bold", cellHeight: 1.1 },
+    showMarksOnScrollbar: true,
+    suppressApplicationTitle: false,
+    scrollbarState: "visible",
+    adjustIndistinguishableColors: "always",
+  };
+  /** Default appearance for profiles without explicit styling. */
   const defaultProfileStyles = {
+    ...requiredProfileStyles,
     cursorShape: "underscore",
     font: {
       face: EDITOR_CONFIGS.fontFamily,
       size: Math.min(EDITOR_CONFIGS.fontSize, 12),
-      weight: EDITOR_CONFIGS.fontWeightKeyword,
+      ...requiredProfileStyles.font,
     },
     padding: "10, 8, 10, 8",
     bellStyle: "all",
     historySize: EDITOR_CONFIGS.terminalScrollback,
-    scrollbarState: "visible",
     antialiasingMode: "cleartype",
     intenseTextStyle: "bright",
-    adjustIndistinguishableColors: "indexed",
     colorScheme: {
       dark: useCustomTheme ? syDarkScheme.name : fallbackDarkScheme,
       light: useCustomTheme ? syLightScheme.name : fallbackLightScheme,
@@ -206,7 +214,7 @@ async function doWork() {
         : null;
 
   /**
-   * Apply current appearance, migrate saved font settings, and resolve the default profile.
+   * Enforce requested appearance for all profiles, elevate Ubuntu/Debian, and resolve the default profile.
    * Mutates and returns the passed-in settings object.
    * @param {object} settings Settings object produced by `buildSettings`.
    * @param {string|null} powershellCommand Discovered modern command; omitted for portable artifacts.
@@ -250,6 +258,9 @@ async function doWork() {
     }
     const profiles = _prioritizeWindowsTerminalProfiles(shellProfiles);
     for (const profile of profiles) {
+      // Saved profile fields override defaults, so apply requested preferences at both levels.
+      Object.assign(profile, requiredProfileStyles, { font: { ...profile.font, ...requiredProfileStyles.font } });
+      if (/Ubuntu|Debian/i.test(profile.name || "")) profile.elevate = true;
       if ((profile.cursorShape ?? defaultProfileStyles.cursorShape) !== "vintage") delete profile.cursorHeight;
       if (_isWindowsTerminalWslProfile(profile)) profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.wsl;
       else if (profile.name === "Powershell v7") profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.powershell7;
