@@ -31,6 +31,34 @@ New managed modern profiles start at `%USERPROFILE%` without a startup
 `Set-Location` command. Existing profiles and shortcuts keep their own startup
 folders; managed v7 commands are refreshed when a modern executable is discovered.
 
+## Windows Terminal appearance
+
+The installer uses an underscore cursor and the current `font` object (`face`,
+`size`, `weight`) instead of the deprecated flat font settings. Saved per-profile
+font overrides are migrated; explicit nested font fields take precedence over
+flat fields at the same level. Legacy PowerShell retains its inherited custom
+font settings. Ineffective cursor heights are removed, but explicit vintage
+cursors retain their heights.
+
+PowerShell 5 keeps its original blue shell icon, and WSL distributions such as
+Ubuntu and Debian keep their original icons. Managed PowerShell 7 uses the official
+black PowerShell logo, downloaded once from the PowerShell project's public assets
+to `LocalState/powershell7.png` beside Terminal settings. The local file allows
+offline rendering after deployment; an uncached download failure stops deployment
+before changing saved settings. Saved default icons and other profile icons are
+preserved. Shell **tab colors** are black
+(`#000000`) for managed PowerShell 7, blue (`#012456`) for PowerShell 5, and orange
+(`#e95420`) for WSL profiles. These do not set terminal backgrounds or a global
+window title-bar color. Other profiles retain their own tab colors.
+
+The old `experimental.rendering.forceFullRepaint` setting is removed even when
+already saved. This is a settings cleanup, not a measured speed improvement.
+These changes do not modify PowerShell profiles, startup commands, bell behavior,
+or scrollbar marks. Native Windows rendering still requires a Windows check.
+
+To update only Windows Terminal, run `bash run.sh --files="windows-terminal.js"`.
+For broader terminal tooling, use `bash run.sh --preset=emulators`.
+
 ## Deploy from WSL
 
 Refresh the profiles, Windows Terminal settings, and shared Starship configuration:

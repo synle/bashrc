@@ -22,6 +22,9 @@ async function generateSettings(oldSettings = {}, binaries = [], executable = nu
   let artifact;
   const sandbox = {
     IS_CI: true,
+    IS_DRY_RUN: false,
+    fs: { statSync: () => ({ size: 1024 }) },
+    pathExists: () => true,
     is_os_windows: windows,
     BUILD_DIR: ".build",
     EDITOR_CONFIGS: {},
@@ -33,7 +36,8 @@ async function generateSettings(oldSettings = {}, binaries = [], executable = nu
     getWindowUserBaseDir: () => "/mnt/c/Users/test",
     findPathFromList: () => executable,
     findPath: () => "/mnt/c/Users/test/AppData/Local/Packages/Terminal",
-    toWindowsPath: () => "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    toWindowsPath: getIndexFunction("toWindowsPath"),
+    downloadAsset: async () => {},
     hasBinary: (name) => binaries.includes(name),
     exitIfPathNotFound: () => {},
     backupConfigFile: async () => {},
@@ -148,7 +152,9 @@ describe("Windows Terminal generated settings", () => {
       commandline,
       colorScheme: "Campbell",
       startingDirectory: "%USERPROFILE%",
+      icon: "C:\\Users\\test\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
       hidden: false,
+      tabColor: "#000000",
     });
     expect(settings.profiles.list[1]).toMatchObject({ name: "Powershell v5", guid: "ps", commandline: "powershell.exe", hidden: false });
     expect(settings.defaultProfile).toBe("{91c9f255-5190-4a5e-9ee5-d05d36dece87}");
@@ -236,7 +242,9 @@ describe("Windows Terminal generated settings", () => {
       commandline: "pwsh",
       tabTitle: "Mine",
       startingDirectory: "D:/",
+      icon: "C:\\Users\\test\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
       colorScheme: "Campbell",
+      tabColor: "#000000",
     });
     expect(settings.defaultProfile).toBe("ps");
   });

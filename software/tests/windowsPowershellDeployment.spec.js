@@ -20,6 +20,7 @@ const WINDOWS_HOME = "/mnt/c/Users/Test User";
 function loadInstaller(file, overrides = {}) {
   const context = {
     path,
+    fs: { statSync: () => ({ size: 1024 }) },
     Buffer,
     IS_CI: false,
     IS_DRY_RUN: false,
@@ -51,6 +52,7 @@ function loadInstaller(file, overrides = {}) {
     cleanupExtraWhitespaces: (value) => value,
     mkdir: vi.fn(),
     backupConfigFile: vi.fn(),
+    downloadAsset: vi.fn(),
     writeText: vi.fn(),
     writeJson: vi.fn(),
     writeBuildArtifact: vi.fn(),
