@@ -1,4 +1,4 @@
-/** Integration coverage for repository-labelled patch boundaries and legacy readers. */
+/** Integration coverage for readable patch labels and prefix-only boundary pairing. */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import fs from "fs";
 import os from "os";
@@ -62,8 +62,8 @@ describe("Git patch boundary integration", () => {
     expect(result.status, result.stderr).toBe(0);
     const patch = fs.readFileSync(path.join(folder, "output.patch"), "utf8");
     const sha = git("rev-parse", "--short", "HEAD");
-    expect(patch.split("\n")[0]).toBe(`# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · acme/widget-store · 1/1 · ${sha}`);
-    expect(patch.trimEnd().split("\n").at(-1)).toBe(`# END SY_GIT_PATCH_BOUNDARY_v1 · acme/widget-store · 1/1 · ${sha}`);
+    expect(patch.split("\n")[0]).toBe(`# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · acme/widget-store · patch 1 of 1 · ${sha}`);
+    expect(patch.trimEnd().split("\n").at(-1)).toBe(`# END SY_GIT_PATCH_BOUNDARY_v1 · acme/widget-store · patch 1 of 1 · ${sha}`);
   });
 
   it.each([1, 2])("round-trips %i commits through the real applier", (count) => {
@@ -101,16 +101,50 @@ describe("Git patch boundary integration", () => {
   });
 
   it.each([
-    ["acme/widget-store · 1/1 · abc123", "other/widget-store · 1/1 · abc123"],
-    ["acme/widget-store · 2/2 · abc123", "acme/widget-store · 2/2 · abc123"],
-    ["acme/widget-store · 1/2 · abc123", "acme/widget-store · 1/2 · abc123"],
-    ["bad · 1/1 · abc123", "bad · 1/1 · abc123"],
-  ])("rejects malformed boundary %s / %s before applying", (begin, end) => {
+    ["", ""],
+    [" · acme/widget-store · 1/1 · abc123", " · other/widget-store · 9/99 · def456"],
+    [" · acme/widget-store · patch 1 of 1 · abc123", " · changed label"],
+    ["custom 🪨 label", "\tanything goes"],
+  ])("applies boundaries with display-only suffixes %s / %s", (begin, end) => {
     const patch = git("format-patch", "-1", "--stdout");
     fs.writeFileSync(
-      path.join(folder, "invalid.patch"),
-      `# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · ${begin}\n${patch}\n# END SY_GIT_PATCH_BOUNDARY_v1 · ${end}\n`,
+      path.join(folder, "custom.patch"),
+      `# BEGIN SY_GIT_PATCH_BOUNDARY_v1${begin}\n${patch}\n# END SY_GIT_PATCH_BOUNDARY_v1${end}\n`,
     );
+    git("checkout", "--detach", "HEAD~1");
+    const result = shell('_git_patch_apply_file "$PWD/custom.patch"');
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("patch applied cleanly");
+    expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe("base\nfirst\n");
+  });
+
+  it("counts actual sections and prompts in file order without suffix counts", () => {
+    const first = git("format-patch", "-1", "--stdout");
+    fs.writeFileSync(path.join(folder, "note.txt"), "base\nfirst\nsecond\n");
+    git("commit", "-qam", "Second change");
+    const second = git("format-patch", "-1", "--stdout");
+    fs.writeFileSync(
+      path.join(folder, "custom.patch"),
+      `# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n${first}\n# END SY_GIT_PATCH_BOUNDARY_v1 old\n# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · patch 99 of 99\n${second}\n# END SY_GIT_PATCH_BOUNDARY_v1\n`,
+    );
+    git("checkout", "--detach", "HEAD~2");
+    const result = shell('function prompt_yes_no() { printf "%s\\n" "$1"; }; _git_patch_apply_file "$PWD/custom.patch"');
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("Applying patch 1/2: Continue?");
+    expect(result.stdout).toContain("Applying patch 2/2: Continue?");
+    expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe("base\nfirst\nsecond\n");
+  });
+
+  it.each([
+    ["missing end", "# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n", ""],
+    ["orphan end", "", "# END SY_GIT_PATCH_BOUNDARY_v1\n"],
+    ["nested begin", "# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n", "# END SY_GIT_PATCH_BOUNDARY_v1\n"],
+    ["extra end", "# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n", "# END SY_GIT_PATCH_BOUNDARY_v1\n# END SY_GIT_PATCH_BOUNDARY_v1\n"],
+    ["end before begin", "# END SY_GIT_PATCH_BOUNDARY_v1\n# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n", "# END SY_GIT_PATCH_BOUNDARY_v1\n"],
+    ["unclosed later section", "# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n", "# END SY_GIT_PATCH_BOUNDARY_v1\n# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n"],
+  ])("rejects %s before applying any hunks", (_label, begin, end) => {
+    const patch = git("format-patch", "-1", "--stdout");
+    fs.writeFileSync(path.join(folder, "invalid.patch"), `${begin}${patch}\n${end}`);
     git("checkout", "--detach", "HEAD~1");
     const result = shell('_git_patch_apply_file "$PWD/invalid.patch"');
     expect(result.status).toBe(1);

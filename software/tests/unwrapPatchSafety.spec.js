@@ -175,10 +175,8 @@ describe("raw clipboard path", () => {
 
   it("splits fenced patches and asks before each patch", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
-    expect(source).toContain('patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 " "$patch_file"');
+    expect(source).toContain('patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1" "$patch_file"');
     expect(source).toContain('output = folder "/patch-" patch_number ".patch"');
-    expect(source).toContain('split(repo_first ? $7 : $5, counts, "/")');
-    expect(source).toContain("patch_number != total_count");
     expect(source).toContain(
       'if [ "$patch_count" -gt 1 ] && ! prompt_yes_no "$(printf \'\\033[0;31mApplying patch %s/%s: Continue?\\033[0m\'',
     );
@@ -190,12 +188,12 @@ describe("raw clipboard path", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     const applier = source.split("function _git_patch_apply_file() {", 2)[1].split("\n}\n", 1)[0];
     expect(applier).toContain('if git apply --check "$patch_file"');
-    expect(applier).toContain('if [ "${patch_count:-0}" -gt 0 ]; then');
+    expect(applier).toContain('if [ "${patch_count:-0}" -gt 0 ] || command grep -q "^# END SY_GIT_PATCH_BOUNDARY_v1" "$patch_file"; then');
   });
 
   it("wraps one generated commit with the same versioned boundary", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
-    expect(source).toContain('echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · $index/$count · $short_sha');
+    expect(source).toContain('echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha');
     expect(source).toContain("function _git_patch_create_unpushed()");
     expect(source).toContain("git rev-list --count '@{upstream}..HEAD'");
     expect(source).toContain("branch has no upstream; generating only the latest commit");

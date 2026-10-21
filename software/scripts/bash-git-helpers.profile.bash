@@ -725,9 +725,9 @@ function _git_patch_write() {
     index=$((index + 1))
     short_sha=$(git rev-parse --short "$sha")
     {
-      echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · $index/$count · $short_sha"
+      echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha"
       git --no-pager format-patch -1 "$sha" --stdout | git patch-clean
-      echo "# END SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · $index/$count · $short_sha"
+      echo "# END SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha"
       echo ""
     } >> "$patch_file" 2> /dev/null || return 1
   done <<< "$shas"
@@ -780,48 +780,43 @@ function _git_patch_apply_clipboard() {
 }
 
 # _git_patch_apply_file: the only applier — prompt between fenced patches, then
-# clean when it can, --reject when it must. Reads repo-first and legacy username
-# boundaries; returns non-zero on invalid metadata or rejected hunks.
+# clean when it can, --reject when it must. $1 = patch file; boundary suffixes are
+# display-only. Returns non-zero on unpaired/nested boundaries or rejected hunks;
+# validates all pairs before changing the working tree.
 function _git_patch_apply_file() {
   local patch_file="$1"
 
   # Fenced files split before applying so each commit sees the tree left by its
-  # predecessor. Strict pair validation stops malformed metadata before touching
-  # the working tree.
+  # predecessor. Validate pair structure, not labels that may have been edited.
   local patch_count
-  patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 " "$patch_file" 2> /dev/null)
-  if [ "${patch_count:-0}" -gt 0 ]; then
+  patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1" "$patch_file" 2> /dev/null)
+  if [ "${patch_count:-0}" -gt 0 ] || command grep -q "^# END SY_GIT_PATCH_BOUNDARY_v1" "$patch_file"; then
     local patch_folder patch_index patch_part
     patch_folder=$(command dirname "$(_git_patch_temp_file multi.patch)") || return 1
     command awk -v folder="$patch_folder" '
       BEGIN { valid = 1 }
       /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/ {
-        # Accept saved username-labelled patches as well as repo-first markers.
-        repo_first = ($0 ~ /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · [A-Za-z0-9._-]+\/[A-Za-z0-9._-]+ · [0-9]+\/[0-9]+ · [0-9a-f]+$/)
-        legacy = ($0 ~ /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · [0-9][0-9]*\/[0-9][0-9]* · [0-9a-f][0-9a-f]* · [A-Za-z0-9._-]*$/)
-        if ((!repo_first && !legacy) || inside) {
+        if (inside) {
           valid = 0
           next
         }
-        split(repo_first ? $7 : $5, counts, "/")
-        if (patch_number + 1 != counts[1] || (patch_number > 0 && total_count != counts[2])) valid = 0
         inside = 1
         patch_number++
-        total_count = counts[2]
         output = folder "/patch-" patch_number ".patch"
-        expected_end = $0
-        sub(/^# BEGIN /, "# END ", expected_end)
         next
       }
       /^# END SY_GIT_PATCH_BOUNDARY_v1/ {
-        if (!inside || $0 != expected_end) valid = 0
+        if (!inside) {
+          valid = 0
+          next
+        }
         inside = 0
         close(output)
         next
       }
       inside { print > output }
       END {
-        if (inside || !valid || patch_number == 0 || patch_number != total_count) exit 1
+        if (inside || !valid || patch_number == 0) exit 1
       }
     ' "$patch_file" || {
       echo ">>> patch boundary metadata is malformed" >&2
@@ -1222,7 +1217,7 @@ function patch() {
   Resolution order:
     0. <count>, a positive number     -> git_patch_create <count> (last N commits,
                                          oldest first, each fenced by
-                                         '# BEGIN/END SY_GIT_PATCH_BOUNDARY_v1 · <owner>/<repo> · <i>/<total> · <sha>')
+                                         '# BEGIN/END SY_GIT_PATCH_BOUNDARY_v1 · <owner>/<repo> · patch <i> of <total> · <sha>')
     1. <patch_file>, when given       -> git_patch_apply <patch_file>
     2. clipboard reads like a diff    -> asks first, then applies it
     3. declined, empty, or not a diff -> export every commit ahead of upstream
