@@ -169,6 +169,23 @@ async function doWork() {
     keybindings: [...(oldSettings.actions || []), ...keybindings],
   });
 
+  // Discover Windows installations only on Windows; CI artifacts must not embed host paths.
+  const windowsHome = is_os_windows ? getWindowUserBaseDir() : null;
+  const modernExecutable = is_os_windows
+    ? findPathFromList(
+        [
+          ["/mnt/c/Program Files/PowerShell/7", "pwsh.exe"],
+          ...(windowsHome ? [[path.join(windowsHome, "AppData/Local/Microsoft/WindowsApps"), "pwsh.exe"]] : []),
+        ],
+        { type: "file" },
+      )
+    : null;
+  const modernCommand = modernExecutable
+    ? `"${toWindowsPath(modernExecutable)}" -NoLogo`
+    : is_os_windows && hasBinary("pwsh.exe")
+      ? "pwsh.exe -NoLogo"
+      : null;
+
   /**
    * Apply profile defaults and resolve the default profile.
    * Mutates and returns the passed-in settings object.
@@ -176,7 +193,16 @@ async function doWork() {
    * @returns {object} The mutated settings object.
    */
   const applyProfileDefaults = (settings) => {
-    const allProfiles = settings.profiles?.list || settings.profiles || [];
+    const allProfiles = [...(settings.profiles?.list || settings.profiles || [])];
+    if (modernCommand && !allProfiles.some(_isWindowsTerminalModernPowershellProfile)) {
+      allProfiles.push({
+        // Stable ID owned by this installer; preserve dynamic and user-authored profiles.
+        guid: "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
+        name: "PowerShell 7",
+        commandline: modernCommand,
+        startingDirectory: "%USERPROFILE%",
+      });
+    }
     const profiles = _prioritizeWindowsTerminalProfiles(allProfiles);
 
     settings.profiles = {
@@ -184,9 +210,9 @@ async function doWork() {
       list: profiles,
     };
 
-    // Prefer first WSL distribution as default; preserve first profile otherwise.
-    const wslProfile = profiles.find(_isWindowsTerminalWslProfile);
-    settings.defaultProfile = wslProfile ? wslProfile.guid : allProfiles[0]?.guid;
+    // Preserve WSL preference, then choose modern PowerShell before legacy shells.
+    const preferredProfile = profiles.find(_isWindowsTerminalWslProfile) || profiles.find(_isWindowsTerminalModernPowershellProfile);
+    settings.defaultProfile = preferredProfile ? preferredProfile.guid : allProfiles[0]?.guid;
 
     delete settings.actions;
     return settings;
@@ -232,7 +258,13 @@ function _prioritizeWindowsTerminalProfiles(profiles) {
   const prioritizedProfiles = profiles.map((profile) => {
     const prioritizedProfile = { ...profile, hidden: true };
     delete prioritizedProfile.colorScheme;
-    if (_isWindowsTerminalWslProfile(profile) || /PowerShell/i.test(profile.name || "")) prioritizedProfile.hidden = false;
+    if (
+      _isWindowsTerminalWslProfile(profile) ||
+      _isWindowsTerminalModernPowershellProfile(profile) ||
+      /PowerShell/i.test(profile.name || "")
+    ) {
+      prioritizedProfile.hidden = false;
+    }
     return prioritizedProfile;
   });
 
@@ -254,15 +286,25 @@ function _isWindowsTerminalWslProfile(profile) {
 }
 
 /**
- * Rank Ubuntu/Debian, other WSL, PowerShell, and remaining profiles in that order.
+ * Identify modern PowerShell by its dynamic source or executable, including quoted paths.
+ * @param {object} profile Windows Terminal profile; custom display names are allowed.
+ * @returns {boolean} Whether the profile launches PowerShell Core.
+ */
+function _isWindowsTerminalModernPowershellProfile(profile) {
+  return profile.source === "Windows.Terminal.PowershellCore" || /(?:^|[\\/\s"])pwsh(?:\.exe)?(?=["\s]|$)/i.test(profile.commandline || "");
+}
+
+/**
+ * Rank Ubuntu/Debian, other WSL, modern PowerShell, legacy PowerShell, and other profiles.
  * @param {object} profile - Windows Terminal profile.
- * @returns {number} Sort rank: Ubuntu/Debian 0, other WSL 1, PowerShell 2, other 3.
+ * @returns {number} Sort rank: Ubuntu/Debian 0, other WSL 1, modern PowerShell 2, legacy 3, other 4.
  */
 function _getWindowsTerminalProfileRank(profile) {
   if (/Ubuntu|Debian/i.test(profile.name || "")) return 0;
   if (_isWindowsTerminalWslProfile(profile)) return 1;
-  if (/PowerShell/i.test(profile.name || "")) return 2;
-  return 3;
+  if (_isWindowsTerminalModernPowershellProfile(profile)) return 2;
+  if (/PowerShell/i.test(profile.name || "")) return 3;
+  return 4;
 }
 
 /**

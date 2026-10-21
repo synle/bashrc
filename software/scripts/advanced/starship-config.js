@@ -1,4 +1,10 @@
-/** Deploys starship.toml config and registers starship init with bash profile. */
+/** Deploys shared Starship settings to the host and Windows homes and registers bash initialization. */
+/**
+ * Configure Starship for bash and, on WSL/Windows, for the Windows PowerShell prompt.
+ * @returns {Promise<void>} Resolves after configuration and profile registration.
+ * @throws {Error} If Windows home cannot be resolved or a configuration write fails.
+ * @sideEffects Backs up and writes prompt configs and queues bash profile initialization.
+ */
 async function doWork() {
   const targetDir = path.join(BASE_HOMEDIR_LINUX, ".config");
   const targetPath = path.join(targetDir, "starship.toml");
@@ -10,6 +16,17 @@ async function doWork() {
   await mkdir(targetDir);
   await backupConfigFile(targetPath);
   await writeText(targetPath, starshipConfig);
+
+  // Windows Starship reads the Windows home, not the WSL user's .config folder.
+  if (is_os_windows) {
+    const windowsHome = getWindowUserBaseDir();
+    if (!windowsHome) throw new Error("Windows user home could not be resolved for Starship configuration");
+    const windowsConfigFolder = path.join(windowsHome, ".config");
+    const windowsConfigPath = path.join(windowsConfigFolder, "starship.toml");
+    await mkdir(windowsConfigFolder);
+    await backupConfigFile(windowsConfigPath);
+    await writeText(windowsConfigPath, starshipConfig);
+  }
 
   // register starship init with bash profile, including the env var updates
   // that feed get_time, ifconfig2, and shorter_pwd_path into starship env vars
