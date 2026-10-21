@@ -24,8 +24,9 @@
  *                             `collapseChangelog`, `enableInstallTelemetry`,
  *                             `hideThinkingBlock`) into the user's settings; only
  *                             managed keys are touched.
- *   ~/.pi/agent/models.json — discovered Ollama providers and selected GitHub
- *                             Copilot model overrides merged under `providers`.
+ *   ~/.pi/agent/models.json — discovered Ollama providers, selected GitHub
+ *                             Copilot model overrides, and Copilot IDE-auth headers
+ *                             merged under `providers`.
  *
  * Shared `/sy-*` skills need NO wiring here: `deploySharedLLMSkills()` symlinks
  * every skill into `~/.agents/skills/` (a member of LLM_SKILL_LINK_FOLDERS), and
@@ -52,6 +53,14 @@ const PI_APPEND_SYSTEM_CONTENT = `${LLM_PERSONA_REMINDER}\n`;
  * @type {string}
  */
 const PI_PERSONA_SYSTEM_PROMPT_APPEND = `\n\n${LLM_PERSONA_REMINDER}\n`;
+
+/**
+ * Headers required by the GitHub Copilot IDE-authenticated API.
+ * @type {Record<string, string>}
+ */
+const PI_COPILOT_HEADERS = {
+  "Editor-Version": "vscode/1.107.0",
+};
 
 /**
  * Managed keys merged into ~/.pi/agent/settings.json. Only these keys are
@@ -201,9 +210,8 @@ async function _doPiKeybindingsWork(agentDir) {
 
 /**
  * Replaces discovered Ollama providers and refreshes GitHub Copilot models in one pi models.json under `providers`,
- * preserving non-Ollama providers the user hand-added. Skips entirely
- * when no Ollama host is reachable and no models.json exists yet, so a headless /
- * copilot-only box gets no empty file.
+ * preserving user-managed provider settings and adding Copilot's required IDE-auth header.
+ * Always writes the Copilot header configuration, even when no Ollama host is reachable.
  * @param {string} agentDir - Target pi agent folder.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providerInputs - Discovered reachable Ollama hosts.
  * @returns {Promise<void>}
@@ -219,17 +227,6 @@ async function _doPiModelsWork(agentDir, providerInputs) {
   /** @type {Record<string, any>} Providers discovered this run. */
   const discovered = _buildPiOllamaProviders(providerInputs);
   const copilotModels = _getPiCopilotModels();
-  if (copilotModels.length > 0) {
-    discovered[LLM_COPILOT_PROVIDER_ID] = { models: copilotModels };
-  }
-
-  /** @type {boolean} Whether models.json already exists on disk. */
-  const fileExists = fs.existsSync(targetPath);
-
-  if (Object.keys(discovered).length === 0 && !fileExists) {
-    log(">> pi: no reachable Ollama hosts and no existing models.json — skipping");
-    return;
-  }
 
   log(">> pi Models:", targetPath);
 
@@ -241,6 +238,13 @@ async function _doPiModelsWork(agentDir, providerInputs) {
 
   /** @type {Record<string, any>} Existing providers block, defaulted to empty. */
   const existingProviders = existing.providers && typeof existing.providers === "object" ? existing.providers : {};
+  const existingCopilot = existingProviders[LLM_COPILOT_PROVIDER_ID];
+  const existingCopilotHeaders = existingCopilot?.headers && typeof existingCopilot.headers === "object" ? existingCopilot.headers : {};
+  discovered[LLM_COPILOT_PROVIDER_ID] = {
+    ...(existingCopilot && typeof existingCopilot === "object" ? existingCopilot : {}),
+    ...(copilotModels.length > 0 ? { models: copilotModels } : {}),
+    headers: { ...existingCopilotHeaders, ...PI_COPILOT_HEADERS },
+  };
 
   // `ollama-*` is reserved for providers generated from ip-address.config. Rebuild
   // that namespace from current discovery so removed models and unavailable hosts

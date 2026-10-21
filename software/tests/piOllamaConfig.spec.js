@@ -19,14 +19,24 @@ describe("Pi setup wiring", () => {
 });
 
 describe("Pi Ollama provider refresh", () => {
-  it("omits the Copilot override when no extension is verified", async () => {
+  it("adds Copilot's required IDE header while preserving user provider settings", async () => {
     mockFsExistence[PI_MODELS_PATH] = true;
-    fileSystem[PI_MODELS_PATH] = JSON.stringify({ providers: {} });
+    fileSystem[PI_MODELS_PATH] = JSON.stringify({
+      providers: {
+        "github-copilot": {
+          headers: { "X-User-Header": "kept", "Editor-Version": "user-value" },
+          customSetting: "kept",
+        },
+      },
+    });
 
     await getIndexFunction("_doPiModelsWork")([]);
 
     const result = JSON.parse(fileSystem[PI_MODELS_PATH]);
-    expect(result.providers).not.toHaveProperty("github-copilot");
+    expect(result.providers["github-copilot"]).toEqual({
+      headers: { "X-User-Header": "kept", "Editor-Version": "vscode/1.107.0" },
+      customSetting: "kept",
+    });
   });
 
   it("removes models no longer reported by Ollama and keeps user-managed providers", async () => {
@@ -65,6 +75,17 @@ describe("Pi Ollama provider refresh", () => {
 
     await getIndexFunction("_doPiModelsWork")([]);
 
-    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers).toEqual({ "custom-local": { models: [{ id: "manual-model" }] } });
+    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers).toEqual({
+      "custom-local": { models: [{ id: "manual-model" }] },
+      "github-copilot": { headers: { "Editor-Version": "vscode/1.107.0" } },
+    });
+  });
+
+  it("creates the Copilot header config when models.json does not exist", async () => {
+    await getIndexFunction("_doPiModelsWork")("/mock/home/.pi/agent", []);
+
+    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers["github-copilot"]).toEqual({
+      headers: { "Editor-Version": "vscode/1.107.0" },
+    });
   });
 });
