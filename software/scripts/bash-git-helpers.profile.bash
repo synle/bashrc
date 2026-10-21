@@ -697,20 +697,11 @@ function _git_patch_temp_file() {
   echo "$patch_folder/${1:-patch.patch}"
 }
 
-# _git_patch_boundary_username: return a safe optional sender username for patch markers
-function _git_patch_boundary_username() {
-  local username="${GIT_PATCH_USERNAME:-${GITHUB_USERNAME:-${GITHUB_ACTOR:-}}}"
-  if [ -z "$username" ]; then
-    username=$(git config --get github.user 2> /dev/null)
-  fi
-  username=$(printf '%s' "$username" | tr -cd 'A-Za-z0-9._-')
-  echo "${username:-unknown}"
-}
-
 # _git_patch_write: render the last N commits into a patch file (the only generator)
 #   $1 = output file, $2 = commit count (default 1)
 #   Every count uses one section per commit, oldest first, fenced by the versioned
-#   boundary marker; patch 1 is oldest and patch N is HEAD (apply order).
+#   repo-labelled boundary marker; patch 1 is oldest and patch N is HEAD (apply order).
+#   Returns 1 without truncating output when origin has no valid owner/repo.
 function _git_patch_write() {
   local patch_file="$1"
   local count="${2:-1}"
@@ -718,17 +709,25 @@ function _git_patch_write() {
   shas=$(git rev-list --reverse -n "$count" HEAD 2> /dev/null) || return 1
   [ -n "$shas" ] || return 1
 
-  local author_username
-  author_username=$(_git_patch_boundary_username)
+  local remote_url repo_slug
+  remote_url=$(git remote get-url origin 2> /dev/null)
+  remote_url="${remote_url%/}"
+  remote_url="${remote_url%.git}"
+  if [[ "$remote_url" =~ [:/]([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)$ ]]; then
+    repo_slug="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+  else
+    echo ">>> could not resolve origin owner/repo for patch boundaries" >&2
+    return 1
+  fi
   : > "$patch_file"
   local index=0 sha short_sha
   while IFS= read -r sha; do
     index=$((index + 1))
     short_sha=$(git rev-parse --short "$sha")
     {
-      echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $index/$count · $short_sha · $author_username"
+      echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · $index/$count · $short_sha"
       git --no-pager format-patch -1 "$sha" --stdout | git patch-clean
-      echo "# END SY_GIT_PATCH_BOUNDARY_v1 · $index/$count · $short_sha · $author_username"
+      echo "# END SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · $index/$count · $short_sha"
       echo ""
     } >> "$patch_file" 2> /dev/null || return 1
   done <<< "$shas"
@@ -781,7 +780,8 @@ function _git_patch_apply_clipboard() {
 }
 
 # _git_patch_apply_file: the only applier — prompt between fenced patches, then
-# clean when it can, --reject when it must
+# clean when it can, --reject when it must. Reads repo-first and legacy username
+# boundaries; returns non-zero on invalid metadata or rejected hunks.
 function _git_patch_apply_file() {
   local patch_file="$1"
 
@@ -796,17 +796,21 @@ function _git_patch_apply_file() {
     command awk -v folder="$patch_folder" '
       BEGIN { valid = 1 }
       /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/ {
-        if ($0 !~ /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · [0-9][0-9]*\/[0-9][0-9]* · [0-9a-f][0-9a-f]* · [A-Za-z0-9._-]*$/ || inside) {
+        # Accept saved username-labelled patches as well as repo-first markers.
+        repo_first = ($0 ~ /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · [A-Za-z0-9._-]+\/[A-Za-z0-9._-]+ · [0-9]+\/[0-9]+ · [0-9a-f]+$/)
+        legacy = ($0 ~ /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · [0-9][0-9]*\/[0-9][0-9]* · [0-9a-f][0-9a-f]* · [A-Za-z0-9._-]*$/)
+        if ((!repo_first && !legacy) || inside) {
           valid = 0
           next
         }
-        split($5, counts, "/")
+        split(repo_first ? $7 : $5, counts, "/")
         if (patch_number + 1 != counts[1] || (patch_number > 0 && total_count != counts[2])) valid = 0
         inside = 1
         patch_number++
         total_count = counts[2]
         output = folder "/patch-" patch_number ".patch"
-        expected_end = "# END SY_GIT_PATCH_BOUNDARY_v1 · " $5 " · " $7 " · " $9
+        expected_end = $0
+        sub(/^# BEGIN /, "# END ", expected_end)
         next
       }
       /^# END SY_GIT_PATCH_BOUNDARY_v1/ {
@@ -1218,7 +1222,7 @@ function patch() {
   Resolution order:
     0. <count>, a positive number     -> git_patch_create <count> (last N commits,
                                          oldest first, each fenced by
-                                         '# BEGIN/END SY_GIT_PATCH_BOUNDARY_v1 · <i>/<total> · <sha> · <username>')
+                                         '# BEGIN/END SY_GIT_PATCH_BOUNDARY_v1 · <owner>/<repo> · <i>/<total> · <sha>')
     1. <patch_file>, when given       -> git_patch_apply <patch_file>
     2. clipboard reads like a diff    -> asks first, then applies it
     3. declined, empty, or not a diff -> export every commit ahead of upstream
