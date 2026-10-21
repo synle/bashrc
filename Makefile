@@ -411,7 +411,14 @@ nuke:
 	  ~/.powershell_syle \
 	  ~/.bashrc.bak* \
 	  ~/.bash_history_backups* \
-	  ~/.bash_history.tmp.*
+	  ~/.bash_history.tmp.* \
+	  ~/.gitconfig.bak_* \
+	  ~/.gitignore_global.bak_* \
+	  ~/.inputrc.bak_* \
+	  ~/.vimrc.bak_* \
+	  ~/.deno \
+	  ~/.fzf-tab-completion \
+	  && echo 'Done cleaning up folders'
 	# ~/.bash_syle_* above also sweeps the legacy pre-_extra locations
 	# ~/.bash_syle_paths.* and ~/.bash_syle_recent_files.* left by the one-time
 	# migration to $SY_ROOT_FOLDER. The live copies live under ~/_extra and are spared.
@@ -583,3 +590,4 @@ rollback:
 	fi
 	cp ~/.bash_syle.bak ~/.bash_syle
 	echo "Restored ~/.bash_syle from backup. Run 'source ~/.bash_syle' to reload."
+
