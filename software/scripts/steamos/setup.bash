@@ -524,9 +524,12 @@ function _configure_steamtinkerlaunch_account() {
 }
 
 # Run SteamTinkerLaunch for the verified account after checking executable exists.
-# Arguments: addnonsteamgame options including --exepath=<executable>. Returns nonzero if invalid or command fails.
+# Arguments: addnonsteamgame options including --exepath=<executable>.
+# Returns 1 on preflight failure, otherwise the command's exit status; updates account config/cache.
+# Logs phases, exit status, and elapsed seconds to stderr without dumping raw arguments.
 function _steamtinkerlaunch_add() {
-  local shortcuts account_folder account_id argument executable_path=""
+  local shortcuts account_folder account_id argument executable_path="" status started_seconds
+  echo "[DEBUG] SteamTinkerLaunch add: validating executable" >&2
   for argument in "$@"; do
     case "$argument" in
     --exepath=*) executable_path=${argument#--exepath=} ;;
@@ -537,13 +540,27 @@ function _steamtinkerlaunch_add() {
     return 1
   fi
 
+  echo "[DEBUG] SteamTinkerLaunch add: resolving Steam account" >&2
   if ! shortcuts=$(_steam_shortcuts_file); then
+    echo ">>> SteamTinkerLaunch add: account resolution failed; command not started" >&2
     return 1
   fi
   account_folder=${shortcuts%/config/shortcuts.vdf}
   account_id=${account_folder##*/}
-  _configure_steamtinkerlaunch_account "$account_id" || return 1
-  steamtinkerlaunch addnonsteamgame "$@"
+  echo "[DEBUG] SteamTinkerLaunch add: preparing account config and refreshing path cache" >&2
+  if ! _configure_steamtinkerlaunch_account "$account_id"; then
+    echo ">>> SteamTinkerLaunch add: account config or path-cache refresh failed; command not started" >&2
+    return 1
+  fi
+  echo "[DEBUG] SteamTinkerLaunch add: starting addnonsteamgame; command output follows" >&2
+  started_seconds=$SECONDS
+  if steamtinkerlaunch addnonsteamgame "$@"; then
+    status=0
+  else
+    status=$?
+  fi
+  printf '[DEBUG] SteamTinkerLaunch add: command finished; exit status %s; elapsed %ss\n' "$status" "$((SECONDS - started_seconds))" >&2
+  return "$status"
 }
 
 # Update one same-name shortcut while preserving unrelated Steam metadata.
