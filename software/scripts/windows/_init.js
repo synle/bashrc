@@ -42,6 +42,10 @@ async function doWork() {
       });
       writeText(path.join(desktopPath, "_full-setup-bootstrap.ps1"), bootstrapScript);
       writeText(path.join(desktopPath, "_full-setup.ps1"), setupScript);
+      await writeText(
+        path.join(desktopPath, "windows-context-menu.ps1"),
+        await readText`software/scripts/windows/windows-context-menu.ps1.bash`,
+      );
     }
   }
 }

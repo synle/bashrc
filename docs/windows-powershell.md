@@ -10,9 +10,11 @@ profile only when an installed executable is found. Its stable installer-owned
 GUID prevents duplicate managed profiles on redeployment. The profile uses Command
 Prompt's explicit color scheme, or the built-in `Campbell` scheme when none is set.
 
-The existing `Windows PowerShell` profile becomes `Powershell v5`; its command,
-explicit styling, and inherited appearance settings are preserved. Renaming does
-not change the executable, including any command customized before this deploy.
+The existing `Windows PowerShell` profile becomes `Powershell v5`; its command
+is normalized to `powershell.exe`, including profiles already named `Powershell v5`.
+Explicit styling and inherited appearance settings are preserved. This deliberately
+replaces custom commands on those two legacy profile names so the fallback does
+not depend on a missing `pwsh` or a bare `powershell` command.
 PowerShell startup scripts and noninteractive `powershell.exe` automation are not
 modified by these Terminal settings changes.
 
@@ -34,7 +36,7 @@ folders; managed v7 commands are refreshed when a modern executable is discovere
 Refresh the profiles, Windows Terminal settings, and shared Starship configuration:
 
 ```bash
-bash run.sh --files="software/scripts/windows/_init.js,software/scripts/windows/powershell.js,software/scripts/windows-terminal.js,software/scripts/advanced/starship-config.js,software/scripts/windows/~cleanup.js"
+bash run.sh --files="software/scripts/windows/_init.js,software/scripts/windows/_only.js,software/scripts/windows/powershell.js,software/scripts/windows-terminal.js,software/scripts/advanced/starship-config.js,software/scripts/windows/~cleanup.js"
 ```
 
 For broader terminal-emulator and prompt tooling, use
@@ -59,10 +61,87 @@ Starship configuration is also written to the Windows user's
 backed up first. A user-set `STARSHIP_CONFIG` still takes precedence in Starship;
 inspect that variable if the prompt does not use the deployed configuration.
 
-## Diagnose `E:"` startup errors on Windows
+## Explorer context menus
 
-The shared profile does not issue a startup `Set-Location`. These repository
-changes do not repair external shortcuts or user-authored profile files.
+Windows initialization also copies `windows-context-menu.ps1` to the Windows
+user's Desktop. It does not execute registry changes automatically. After the WSL
+deployment above, run this in Windows PowerShell as the affected user (elevated
+with the same account when possible):
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Desktop\windows-context-menu.ps1"
+```
+
+The script exports each existing affected registry key before changing it:
+
+- Removes `git_gui` and `git_shell` from `Directory`, `Directory\Background`, and
+  `LibraryFolder\Background` under both HKCU and HKLM `Software\Classes`.
+  If deletion is denied, creates a current-user `LegacyDisable` override instead.
+  Git remains installed. A Git update may recreate its menu entries; rerun the script.
+- Creates current-user `Powershell` overrides for `Directory`,
+  `Directory\Background`, and `Drive`, labeled **Open Powershell Here**.
+  At registry-write time, checks `Get-Command pwsh.exe -CommandType Application`:
+  if found, writes its quoted full executable path; otherwise uses `powershell.exe`.
+  Both commands receive `-NoExit -WorkingDirectory "%V\."`. Rerun after installing,
+  moving, or removing PowerShell 7 to refresh the stored selection. Windows-owned
+  machine PowerShell keys are not modified. This menu selection is independent
+  of Windows Terminal's profiles; `Powershell v5` always uses `powershell.exe`.
+- If `wsl.exe` is discoverable as an application, creates per-user `SyWSL` verbs
+  in those same three scopes, labeled **Open WSL Linux Here**, with the quoted
+  binary path followed by `--cd "%V\."`. WSL uses its default distribution; the
+  binary's presence does not prove that a distribution is installed. Other WSL
+  menu entries remain untouched and may coexist. If WSL is later removed, restore
+  or remove only these backed-up `SyWSL` keys; absence does not delete prior entries.
+  Both labels explicitly set `MUIVerb` as well as the default value so an inherited
+  machine label cannot override the requested text.
+- Does not invoke `last_folder`. Windows shell tweaks also no longer invoke that
+  helper automatically; it remains available manually. Existing shell sessions
+  need a profile reload or restart to pick up the startup change.
+
+The affected machine's registry showed `powershell.exe -noexit -WorkingDirectory
+"%V"` on all three PowerShell verbs. For a drive root, substitution produces
+`"D:\"`. Windows native argument parsing can consume the final quote after the
+backslash, consistent with the reported `D:"` error. The replacement produces
+`"D:\\."`: the final dot prevents that trailing-backslash ambiguity. Folder names
+remain arguments, not interpolated PowerShell code. The exact original Explorer
+failure and the repaired menu still require an affected-host check.
+
+### Recovery and verification
+
+Backups live in `%LOCALAPPDATA%\Sy\ContextMenuBackup`. Each `.reg` contains the
+original key; `.reg.absent` records a key that did not exist. Successful backups
+are never overwritten; failed exports remain `.pending` and stop that key's change.
+The script is not transactional: an error can leave earlier keys changed.
+
+To undo, inspect the backup folder and export any later manual edits first.
+For a `.reg.absent` marker, remove only the corresponding key created by this
+script. For an existing original key, remove only that exact affected key, then
+use `reg.exe import "<exact backup file>.reg"` to restore it. This removes added
+`MUIVerb` / `LegacyDisable` values before restoration; importing alone merges
+values and cannot restore an exact original key. Restore machine backups in an
+elevated shell. Never bulk-delete `Software\Classes`, `shell`, or unrelated verbs.
+Restoring a first-run backup replaces later edits to that key; preserve those
+separately before deleting it.
+
+After applying, open a new Explorer window. Check a folder icon, folder background,
+a drive icon, and a library background: Git entries should be absent. Launch
+**Open Powershell Here** at `D:\` and in an existing folder containing spaces,
+apostrophes, or brackets. `Get-Location` must match the chosen folder with no
+startup path error; `$PSVersionTable.PSEdition` should be `Core` when `pwsh.exe`
+was discovered, otherwise `Desktop`. Check **Open WSL Linux Here** with `pwd`
+in a configured default distribution; it should match the chosen Windows folder's
+WSL mount, not the remembered folder. Repeat after rerunning with `pwsh.exe`
+unavailable to verify the fallback selection.
+Run the maintenance script twice; the second run must retain the first backups
+and leave the same effective menu configuration. PowerShell tests on macOS execute
+the script with registry boundary fixtures; they do not prove Explorer behavior,
+Windows registry merging, or Windows PowerShell 5.1 argument parsing.
+
+## Diagnose remaining `E:"` startup errors on Windows
+
+The shared profile does not issue a startup `Set-Location`. The maintenance script
+repairs only the standard Explorer verbs, not external shortcuts or user-authored
+profile files.
 On the affected Windows machine, compare these launches from an existing shell:
 
 ```powershell

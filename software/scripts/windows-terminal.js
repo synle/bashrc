@@ -208,8 +208,14 @@ async function doWork() {
     const commandPromptScheme = allProfiles.find((profile) => profile.name === "Command Prompt")?.colorScheme ?? "Campbell";
     const shellProfiles = allProfiles.map((profile) => {
       if (profile.name === "Windows PowerShell" || profile.name === "Powershell v5") {
-        // Freeze inherited appearance before replacing the shared defaults; never rewrite the legacy command.
-        return { ...defaultProfileStyles, ...settings.profiles?.defaults, ...profile, name: "Powershell v5" };
+        // Freeze inherited appearance and use the inbox executable, even if an old command points at absent pwsh.
+        return {
+          ...defaultProfileStyles,
+          ...settings.profiles?.defaults,
+          ...profile,
+          name: "Powershell v5",
+          commandline: "powershell.exe",
+        };
       }
       if (profile.guid === WINDOWS_TERMINAL_PWSH_GUID) {
         return {

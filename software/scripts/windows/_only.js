@@ -33,8 +33,7 @@ async function doWork() {
     alias update='sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get autoclean && sudo apt-get clean && sudo apt-get autoremove -y'
     alias docker='docker.exe'
 
-    # last_folder (workaround for the last folder — suppress output during profile load)
-    last_folder
+    # Preserve the launch folder; last_folder remains available for manual use.
 
     # auto-mount Windows mapped drives into WSL via drvfs (see EXTRA_DRIVES above for details)
     _EXTRA_DRIVES=(X Y Z)

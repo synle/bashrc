@@ -156,11 +156,15 @@ describe("PowerShell 7 Terminal launch", () => {
     ]);
   });
 
-  it("does not invent a modern shell when it is absent", async () => {
-    const { settings } = await configureTerminal([{ guid: "legacy", name: "Windows PowerShell" }]);
-    expect(settings.profiles.list).toHaveLength(1);
-    expect(settings.defaultProfile).toBe("legacy");
-  });
+  it.each(["powershell", "pwsh", undefined])(
+    "uses inbox powershell.exe when modern discovery fails and legacy command was %s",
+    async (commandline) => {
+      const { settings } = await configureTerminal([{ guid: "legacy", name: "Windows PowerShell", commandline }]);
+      expect(settings.profiles.list).toHaveLength(1);
+      expect(settings.profiles.list[0].commandline).toBe("powershell.exe");
+      expect(settings.defaultProfile).toBe("legacy");
+    },
+  );
 
   it("skips local non-Windows installs and emits portable CI artifacts without host shell discovery", async () => {
     const local = loadInstaller("software/scripts/windows-terminal.js", { is_os_windows: false });

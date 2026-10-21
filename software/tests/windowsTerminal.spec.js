@@ -135,7 +135,7 @@ describe("Windows Terminal generated settings", () => {
     [["pwsh"], null, "pwsh"],
     [["pwsh.exe"], null, "pwsh.exe"],
     [[], "/mnt/c/Program Files/PowerShell/7/pwsh.exe", '"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -NoLogo'],
-  ])("creates a separate v7 profile for binaries %j without changing the legacy command", async (binaries, executable, commandline) => {
+  ])("creates a separate v7 profile for binaries %j and normalizes the legacy executable", async (binaries, executable, commandline) => {
     const settings = await generateSettings(
       { profiles: { list: [{ name: "Windows PowerShell", guid: "ps", commandline: "pwsh" }] } },
       binaries,
@@ -150,11 +150,11 @@ describe("Windows Terminal generated settings", () => {
       startingDirectory: "%USERPROFILE%",
       hidden: false,
     });
-    expect(settings.profiles.list[1]).toMatchObject({ name: "Powershell v5", guid: "ps", commandline: "pwsh", hidden: false });
+    expect(settings.profiles.list[1]).toMatchObject({ name: "Powershell v5", guid: "ps", commandline: "powershell.exe", hidden: false });
     expect(settings.defaultProfile).toBe("{91c9f255-5190-4a5e-9ee5-d05d36dece87}");
   });
 
-  it("preserves legacy command, explicit styling, and inherited appearance", async () => {
+  it("normalizes the legacy command while preserving explicit styling and inherited appearance", async () => {
     const oldSettings = {
       schemes: [
         { name: "Legacy blue", background: "#012456" },
@@ -179,7 +179,7 @@ describe("Windows Terminal generated settings", () => {
     expect(first.profiles.list[1]).toMatchObject({
       name: "Powershell v5",
       guid: "ps",
-      commandline: "powershell.exe -NoLogo",
+      commandline: "powershell.exe",
       background: "#012456",
       padding: "4",
       hidden: true,
@@ -205,7 +205,7 @@ describe("Windows Terminal generated settings", () => {
       cursorShape: "bar",
       hidden: false,
     });
-    expect(settings.profiles.list[0]).not.toHaveProperty("commandline");
+    expect(settings.profiles.list[0].commandline).toBe("powershell.exe");
     expect(settings.defaultProfile).toBe("ps");
   });
 
