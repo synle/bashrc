@@ -5,16 +5,27 @@
 The Windows Terminal installer discovers PowerShell 7 in the conventional
 `C:\Program Files\PowerShell\7` folder, the current user's WindowsApps folder,
 and then `PATH`. Executable paths containing spaces are quoted. It preserves
-existing PowerShell Core profiles and adds a `PowerShell 7` profile only when
-an installed executable is found and no modern profile already exists.
+unrelated PowerShell Core profiles and creates a dedicated `Powershell v7`
+profile only when an installed executable is found. Its stable installer-owned
+GUID prevents duplicate managed profiles on redeployment. The profile uses Command
+Prompt's explicit color scheme, or the built-in `Campbell` scheme when none is set.
 
-WSL remains the preferred Terminal default when a WSL profile exists. Otherwise,
-PowerShell Core takes precedence over Windows PowerShell 5.1. Legacy profiles
-remain available; noninteractive `powershell.exe` automation is not globally
-rewritten because the inbox shell is available before PowerShell 7 installation.
-The managed modern profile starts at `%USERPROFILE%` without a startup
+The existing `Windows PowerShell` profile becomes `Powershell v5`; its command,
+explicit styling, and inherited appearance settings are preserved. Renaming does
+not change the executable, including any command customized before this deploy.
+PowerShell startup scripts and noninteractive `powershell.exe` automation are not
+modified by these Terminal settings changes.
+
+Profiles sort as WSL, `Powershell v7`, `Powershell v5`, Azure, then everything else.
+Existing boolean `hidden` values are preserved. Missing values default to visible
+for WSL, both PowerShell profiles, and Azure, and hidden for everything else.
+`disabledProfileSources` is removed: profile visibility is controlled by `hidden`,
+not by disabling discovery. The first visible WSL profile with a GUID remains the
+preferred default, followed by visible PowerShell and then another visible profile.
+
+New managed modern profiles start at `%USERPROFILE%` without a startup
 `Set-Location` command. Existing profiles and shortcuts keep their own startup
-commands and folders.
+folders; managed v7 commands are refreshed when a modern executable is discovered.
 
 ## Deploy from WSL
 

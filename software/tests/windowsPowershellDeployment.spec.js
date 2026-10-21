@@ -94,19 +94,22 @@ describe("PowerShell 7 Terminal launch", () => {
       "/mnt/c/Users/Test User/AppData/Local/Microsoft/WindowsApps/pwsh.exe",
       '"C:\\Users\\Test User\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -NoLogo',
     ],
-  ])("quotes discovered executable %s in the existing Windows PowerShell profile", async (executable, commandline) => {
+  ])("quotes discovered executable %s in a separate modern profile", async (executable, commandline) => {
     const { settings } = await configureTerminal([{ guid: "legacy", name: "Windows PowerShell", commandline: "powershell.exe" }], {
       findPathFromList: () => executable,
     });
     const modern = settings.profiles.list.find((profile) => profile.commandline?.includes("pwsh.exe"));
     expect(modern).toBeDefined();
-    expect(modern.guid).toBe("legacy");
-    expect(modern.name).toBe("Windows PowerShell");
+    expect(modern.guid).toBe("{91c9f255-5190-4a5e-9ee5-d05d36dece87}");
+    expect(modern.name).toBe("Powershell v7");
+    expect(modern.colorScheme).toBe("Campbell");
+    expect(modern.startingDirectory).toBe("%USERPROFILE%");
     expect(modern.commandline).toBe(commandline);
     expect(modern.commandline).not.toContain("Set-Location");
     expect(modern.hidden).toBe(false);
     expect(settings.defaultProfile).toBe(modern.guid);
-    expect(settings.profiles.list).toHaveLength(1);
+    expect(settings.profiles.list).toHaveLength(2);
+    expect(settings.profiles.list[1]).toMatchObject({ guid: "legacy", name: "Powershell v5", commandline: "powershell.exe" });
   });
 
   it("uses PATH pwsh when fixed locations are absent", async () => {
@@ -125,7 +128,7 @@ describe("PowerShell 7 Terminal launch", () => {
     expect(second.context.backupConfigFile).toHaveBeenCalledOnce();
   });
 
-  it("prefers Windows PowerShell and preserves the command of an unrelated dynamic Core profile", async () => {
+  it("prefers legacy PowerShell when discovery fails and preserves an unrelated dynamic Core profile", async () => {
     const profiles = [
       { guid: "legacy", name: "Windows PowerShell" },
       { guid: "core", name: "Custom shell", source: "Windows.Terminal.PowershellCore", commandline: "pwsh.exe -NoLogo" },
@@ -147,6 +150,7 @@ describe("PowerShell 7 Terminal launch", () => {
     );
     expect(settings.profiles.list.map(({ guid, hidden }) => [guid, hidden])).toEqual([
       ["wsl", false],
+      ["{91c9f255-5190-4a5e-9ee5-d05d36dece87}", false],
       ["legacy", false],
       ["core", true],
     ]);

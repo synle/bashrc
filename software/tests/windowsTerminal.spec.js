@@ -90,8 +90,16 @@ describe("Windows Terminal profile policy", () => {
     ).toEqual([true, true, true, false]);
   });
 
-  it("hides miscellaneous profiles even without WSL and clears per-profile colors", () => {
-    expect(prioritizeProfiles([{ name: "Command Prompt", colorScheme: "old" }])).toEqual([{ name: "Command Prompt", hidden: true }]);
+  it("hides miscellaneous profiles without WSL while retaining Command Prompt's scheme", () => {
+    expect(
+      prioritizeProfiles([
+        { name: "Custom", colorScheme: "old" },
+        { name: "Command Prompt", colorScheme: "Campbell" },
+      ]),
+    ).toEqual([
+      { name: "Custom", hidden: true },
+      { name: "Command Prompt", colorScheme: "Campbell", hidden: true },
+    ]);
   });
 
   it("handles empty lists and normalizes non-boolean hidden values without mutating input", () => {
@@ -109,36 +117,153 @@ describe("Windows Terminal profile policy", () => {
     ]);
     expect(prioritizeProfiles([])).toEqual([]);
   });
-
-  it("is idempotent", () => {
-    const first = prioritizeProfiles([{ name: "Debian" }, { source: "Windows.Terminal.Wsl" }, { name: "Custom", hidden: false }]);
-    expect(prioritizeProfiles(first)).toEqual(first);
-  });
 });
 
 describe("Windows Terminal generated settings", () => {
-  it("replaces the string paste warning with false and enables WSL/Azure generators only", async () => {
+  it("replaces the string paste warning with false and removes disabled generators", async () => {
     const settings = await generateSettings({
       "warning.multiLinePaste": "never",
-      disabledProfileSources: ["Windows.Terminal.Wsl", "Microsoft.WSL", "Windows.Terminal.Azure", "Windows.Terminal.VisualStudio"],
+      disabledProfileSources: [
+        "Windows.Terminal.Wsl",
+        "Windows.Terminal.VisualStudio",
+        "Windows.Terminal.PowershellCore",
+        "Windows.Terminal.Azure",
+      ],
     });
     expect(settings["warning.multiLinePaste"]).toBe(false);
-    expect(settings.disabledProfileSources).toEqual(["Windows.Terminal.VisualStudio"]);
+    expect(settings).not.toHaveProperty("disabledProfileSources");
   });
 
   it.each([
-    [[], null, "powershell"],
     [["pwsh"], null, "pwsh"],
     [["pwsh.exe"], null, "pwsh.exe"],
     [[], "/mnt/c/Program Files/PowerShell/7/pwsh.exe", '"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -NoLogo'],
-  ])("updates the existing Windows PowerShell command for binaries %j", async (binaries, executable, commandline) => {
+  ])("creates a separate v7 profile for binaries %j without changing the legacy command", async (binaries, executable, commandline) => {
     const settings = await generateSettings(
       { profiles: { list: [{ name: "Windows PowerShell", guid: "ps", commandline: "pwsh" }] } },
       binaries,
       executable,
     );
-    expect(settings.profiles.list).toEqual([{ name: "Windows PowerShell", guid: "ps", commandline, hidden: false }]);
+    expect(settings.profiles.list).toHaveLength(2);
+    expect(settings.profiles.list[0]).toEqual({
+      name: "Powershell v7",
+      guid: "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
+      commandline,
+      colorScheme: "Campbell",
+      startingDirectory: "%USERPROFILE%",
+      hidden: false,
+    });
+    expect(settings.profiles.list[1]).toMatchObject({ name: "Powershell v5", guid: "ps", commandline: "pwsh", hidden: false });
+    expect(settings.defaultProfile).toBe("{91c9f255-5190-4a5e-9ee5-d05d36dece87}");
+  });
+
+  it("preserves legacy command, explicit styling, and inherited appearance", async () => {
+    const oldSettings = {
+      schemes: [
+        { name: "Legacy blue", background: "#012456" },
+        { name: "Prompt green", foreground: "#00ff00" },
+      ],
+      profiles: {
+        defaults: { font: { face: "Custom Mono", size: 15 }, opacity: 73, colorScheme: "Legacy blue" },
+        list: [
+          {
+            name: "Windows PowerShell",
+            guid: "ps",
+            commandline: "powershell.exe -NoLogo",
+            background: "#012456",
+            padding: "4",
+            hidden: true,
+          },
+          { name: "Command Prompt", colorScheme: { dark: "Prompt green", light: "Campbell" } },
+        ],
+      },
+    };
+    const first = await generateSettings(oldSettings, ["pwsh"]);
+    expect(first.profiles.list[1]).toMatchObject({
+      name: "Powershell v5",
+      guid: "ps",
+      commandline: "powershell.exe -NoLogo",
+      background: "#012456",
+      padding: "4",
+      hidden: true,
+      font: { face: "Custom Mono", size: 15 },
+      opacity: 73,
+      colorScheme: "Legacy blue",
+    });
+    expect(first.profiles.list[0].colorScheme).toEqual({ dark: "Prompt green", light: "Campbell" });
+    expect(first.schemes).toEqual(expect.arrayContaining(oldSettings.schemes));
+    expect(await generateSettings(first, ["pwsh"])).toEqual(first);
+    expect(oldSettings.profiles.list[0].name).toBe("Windows PowerShell");
+  });
+
+  it("keeps explicit legacy styling without pwsh and does not fabricate a v7 profile", async () => {
+    const settings = await generateSettings({
+      profiles: [{ name: "Windows PowerShell", guid: "ps", colorScheme: "Campbell", cursorShape: "bar" }],
+    });
+    expect(settings.profiles.list).toHaveLength(1);
+    expect(settings.profiles.list[0]).toMatchObject({
+      name: "Powershell v5",
+      guid: "ps",
+      colorScheme: "Campbell",
+      cursorShape: "bar",
+      hidden: false,
+    });
+    expect(settings.profiles.list[0]).not.toHaveProperty("commandline");
     expect(settings.defaultProfile).toBe("ps");
+  });
+
+  it("updates a prior managed v7 profile without changing its explicit visibility or custom fields", async () => {
+    const settings = await generateSettings(
+      {
+        profiles: {
+          list: [
+            {
+              name: "PowerShell 7",
+              guid: "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
+              hidden: true,
+              commandline: "pwsh.exe",
+              tabTitle: "Mine",
+              startingDirectory: "D:/",
+            },
+            { name: "Windows PowerShell", guid: "ps", hidden: false, colorScheme: "Campbell" },
+          ],
+        },
+      },
+      ["pwsh"],
+    );
+    expect(settings.profiles.list).toHaveLength(2);
+    expect(settings.profiles.list[0]).toEqual({
+      name: "Powershell v7",
+      guid: "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
+      hidden: true,
+      commandline: "pwsh",
+      tabTitle: "Mine",
+      startingDirectory: "D:/",
+      colorScheme: "Campbell",
+    });
+    expect(settings.defaultProfile).toBe("ps");
+  });
+
+  it("orders both shell versions before Azure and miscellaneous profiles", async () => {
+    const settings = await generateSettings(
+      {
+        profiles: [
+          { name: "Command Prompt", guid: "cmd" },
+          { name: "Azure", source: "Windows.Terminal.Azure", guid: "az" },
+          { name: "Windows PowerShell", guid: "ps" },
+          { name: "Ubuntu", guid: "u" },
+        ],
+      },
+      ["pwsh"],
+    );
+    expect(settings.profiles.list.map(({ name, hidden }) => [name, hidden])).toEqual([
+      ["Ubuntu", false],
+      ["Powershell v7", false],
+      ["Powershell v5", false],
+      ["Azure", false],
+      ["Command Prompt", true],
+    ]);
+    expect(settings.defaultProfile).toBe("u");
   });
 
   it("selects the first visible WSL with a GUID and preserves all profiles", async () => {

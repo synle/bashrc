@@ -1,5 +1,11 @@
 /** Configures Windows Terminal settings with color schemes, keybindings, and profile defaults. */
 // SOURCE software/scripts/advanced/editor.common.js
+
+/** Installer-owned identity for the dedicated PowerShell 7 Terminal profile. @type {string} */
+const WINDOWS_TERMINAL_PWSH_GUID = "{91c9f255-5190-4a5e-9ee5-d05d36dece87}";
+
+/** Supported legacy and managed PowerShell display names. @type {string[]} */
+const WINDOWS_TERMINAL_POWERSHELL_NAMES = ["Windows PowerShell", "Powershell v5", "Powershell v7"];
 /**
  * Configures Windows Terminal settings - deploys high contrast dark/light color schemes, keybindings, and profile defaults.
  *
@@ -160,15 +166,11 @@ async function doWork() {
     snapOnInput: true,
     altGrAliasing: true,
 
-    // color schemes
-    // Omitted when custom theming is off, leaving Windows Terminal's built-in schemes
-    // (which `colorScheme` above then names) as the only ones defined.
-    schemes: useCustomTheme ? [syDarkScheme, syLightScheme] : [],
-
-    // WSL and Azure must remain discoverable; keep unrelated generator preferences.
-    disabledProfileSources: (oldSettings.disabledProfileSources || []).filter(
-      (source) => !["Microsoft.WSL", "Windows.Terminal.Wsl", "Windows.Terminal.Azure"].includes(source),
-    ),
+    // Keep user-defined schemes needed by the preserved PowerShell and Command Prompt styles.
+    schemes: [
+      ...(oldSettings.schemes || []).filter((scheme) => !useCustomTheme || ![syDarkScheme.name, syLightScheme.name].includes(scheme.name)),
+      ...(useCustomTheme ? [syDarkScheme, syLightScheme] : []),
+    ],
 
     // keybindings
     keybindings: [...(oldSettings.actions || []), ...keybindings],
@@ -185,26 +187,50 @@ async function doWork() {
         { type: "file" },
       )
     : null;
-  /** Windows-native command for the existing Windows PowerShell profile, with a legacy fallback. */
-  const powershellCommand = modernExecutable
+  /** Discovered Windows-native PowerShell 7 command, or null when unavailable. @type {string|null} */
+  const modernCommand = modernExecutable
     ? `"${toWindowsPath(modernExecutable)}" -NoLogo`
     : is_os_windows && hasBinary("pwsh.exe")
       ? "pwsh.exe"
       : is_os_windows && hasBinary("pwsh")
         ? "pwsh"
-        : "powershell";
+        : null;
 
   /**
    * Apply profile defaults and resolve the default profile.
    * Mutates and returns the passed-in settings object.
    * @param {object} settings Settings object produced by `buildSettings`.
+   * @param {string|null} powershellCommand Discovered modern command; omitted for portable artifacts.
    * @returns {object} The mutated settings object.
    */
-  const applyProfileDefaults = (settings) => {
+  const applyProfileDefaults = (settings, powershellCommand = null) => {
     const allProfiles = settings.profiles?.list || settings.profiles || [];
-    const profiles = _prioritizeWindowsTerminalProfiles(allProfiles).map((profile) =>
-      profile.name === "Windows PowerShell" ? { ...profile, commandline: powershellCommand } : profile,
-    );
+    const commandPromptScheme = allProfiles.find((profile) => profile.name === "Command Prompt")?.colorScheme ?? "Campbell";
+    const shellProfiles = allProfiles.map((profile) => {
+      if (profile.name === "Windows PowerShell" || profile.name === "Powershell v5") {
+        // Freeze inherited appearance before replacing the shared defaults; never rewrite the legacy command.
+        return { ...defaultProfileStyles, ...settings.profiles?.defaults, ...profile, name: "Powershell v5" };
+      }
+      if (profile.guid === WINDOWS_TERMINAL_PWSH_GUID) {
+        return {
+          ...profile,
+          name: "Powershell v7",
+          ...(powershellCommand ? { commandline: powershellCommand } : {}),
+          colorScheme: commandPromptScheme,
+        };
+      }
+      return profile;
+    });
+    if (powershellCommand && !shellProfiles.some((profile) => profile.guid === WINDOWS_TERMINAL_PWSH_GUID)) {
+      shellProfiles.push({
+        guid: WINDOWS_TERMINAL_PWSH_GUID,
+        name: "Powershell v7",
+        commandline: powershellCommand,
+        startingDirectory: "%USERPROFILE%",
+        colorScheme: commandPromptScheme,
+      });
+    }
+    const profiles = _prioritizeWindowsTerminalProfiles(shellProfiles);
 
     settings.profiles = {
       defaults: defaultProfileStyles,
@@ -215,11 +241,13 @@ async function doWork() {
     const visibleProfiles = profiles.filter((profile) => !profile.hidden && profile.guid);
     const preferredProfile =
       visibleProfiles.find(_isWindowsTerminalWslProfile) ||
-      visibleProfiles.find((profile) => profile.name === "Windows PowerShell") ||
+      visibleProfiles.find((profile) => WINDOWS_TERMINAL_POWERSHELL_NAMES.includes(profile.name)) ||
       visibleProfiles[0];
     if (preferredProfile) settings.defaultProfile = preferredProfile.guid;
 
     delete settings.actions;
+    // Discovery stays enabled; per-profile hidden flags alone control visibility.
+    delete settings.disabledProfileSources;
     return settings;
   };
 
@@ -247,7 +275,7 @@ async function doWork() {
   log(">>> Windows Terminal settings path:", targetPath);
 
   const oldSettings = await readJson`${targetPath}`;
-  const newSettings = applyProfileDefaults(buildSettings(oldSettings));
+  const newSettings = applyProfileDefaults(buildSettings(oldSettings), modernCommand);
 
   await backupConfigFile(targetPath);
   writeJson(targetPath, newSettings);
@@ -256,16 +284,18 @@ async function doWork() {
 /**
  * Order profiles and default visibility without overriding explicit boolean hidden values.
  * @param {Array<object>} profiles - Profiles from Windows Terminal settings.
- * @returns {Array<object>} New profile list with settings color schemes cleared and hidden flags set.
+ * @returns {Array<object>} New ordered list preserving shell/Command Prompt schemes and explicit hidden flags.
  */
 function _prioritizeWindowsTerminalProfiles(profiles) {
   const prioritizedProfiles = profiles.map((profile) => {
     const prioritizedProfile = { ...profile };
-    delete prioritizedProfile.colorScheme;
+    if (!WINDOWS_TERMINAL_POWERSHELL_NAMES.includes(profile.name) && profile.name !== "Command Prompt") {
+      delete prioritizedProfile.colorScheme;
+    }
     if (typeof profile.hidden !== "boolean") {
       prioritizedProfile.hidden = !(
         _isWindowsTerminalWslProfile(profile) ||
-        profile.name === "Windows PowerShell" ||
+        WINDOWS_TERMINAL_POWERSHELL_NAMES.includes(profile.name) ||
         profile.source === "Windows.Terminal.Azure"
       );
     }
@@ -287,16 +317,16 @@ function _isWindowsTerminalWslProfile(profile) {
 }
 
 /**
- * Rank WSL distributions first, Windows PowerShell next, Azure next, and other profiles last.
+ * Rank WSL distributions, modern/legacy PowerShell, Azure, then other profiles.
  * @param {object} profile - Windows Terminal profile.
- * @returns {number} Sort rank: Ubuntu/Debian 0, other WSL 1, Windows PowerShell 2, Azure 3, other 4.
+ * @returns {number} Sort rank: Ubuntu/Debian 0, other WSL 1, v7 2, legacy 3, Azure 4, other 5.
  */
 function _getWindowsTerminalProfileRank(profile) {
   if (/Ubuntu|Debian/i.test(profile.name || "")) return 0;
   if (_isWindowsTerminalWslProfile(profile)) return 1;
-  if (profile.name === "Windows PowerShell") return 2;
-  if (profile.source === "Windows.Terminal.Azure") return 3;
-  return 4;
+  if (WINDOWS_TERMINAL_POWERSHELL_NAMES.includes(profile.name)) return profile.name === "Powershell v7" ? 2 : 3;
+  if (profile.source === "Windows.Terminal.Azure") return 4;
+  return 5;
 }
 
 /**
