@@ -136,7 +136,7 @@ async function doWork() {
     confirmCloseAllTabs: true,
 
     // input
-    multiLinePasteWarning: false,
+    "warning.multiLinePaste": false,
     focusFollowMouse: false, // require click to focus pane (like iTerm), set to true for hover-to-focus
 
     // window
@@ -165,6 +165,11 @@ async function doWork() {
     // (which `colorScheme` above then names) as the only ones defined.
     schemes: useCustomTheme ? [syDarkScheme, syLightScheme] : [],
 
+    // WSL and Azure must remain discoverable; keep unrelated generator preferences.
+    disabledProfileSources: (oldSettings.disabledProfileSources || []).filter(
+      (source) => !["Microsoft.WSL", "Windows.Terminal.Wsl", "Windows.Terminal.Azure"].includes(source),
+    ),
+
     // keybindings
     keybindings: [...(oldSettings.actions || []), ...keybindings],
   });
@@ -180,11 +185,14 @@ async function doWork() {
         { type: "file" },
       )
     : null;
-  const modernCommand = modernExecutable
+  /** Windows-native command for the existing Windows PowerShell profile, with a legacy fallback. */
+  const powershellCommand = modernExecutable
     ? `"${toWindowsPath(modernExecutable)}" -NoLogo`
     : is_os_windows && hasBinary("pwsh.exe")
-      ? "pwsh.exe -NoLogo"
-      : null;
+      ? "pwsh.exe"
+      : is_os_windows && hasBinary("pwsh")
+        ? "pwsh"
+        : "powershell";
 
   /**
    * Apply profile defaults and resolve the default profile.
@@ -193,26 +201,23 @@ async function doWork() {
    * @returns {object} The mutated settings object.
    */
   const applyProfileDefaults = (settings) => {
-    const allProfiles = [...(settings.profiles?.list || settings.profiles || [])];
-    if (modernCommand && !allProfiles.some(_isWindowsTerminalModernPowershellProfile)) {
-      allProfiles.push({
-        // Stable ID owned by this installer; preserve dynamic and user-authored profiles.
-        guid: "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
-        name: "PowerShell 7",
-        commandline: modernCommand,
-        startingDirectory: "%USERPROFILE%",
-      });
-    }
-    const profiles = _prioritizeWindowsTerminalProfiles(allProfiles);
+    const allProfiles = settings.profiles?.list || settings.profiles || [];
+    const profiles = _prioritizeWindowsTerminalProfiles(allProfiles).map((profile) =>
+      profile.name === "Windows PowerShell" ? { ...profile, commandline: powershellCommand } : profile,
+    );
 
     settings.profiles = {
       defaults: defaultProfileStyles,
       list: profiles,
     };
 
-    // Preserve WSL preference, then choose modern PowerShell before legacy shells.
-    const preferredProfile = profiles.find(_isWindowsTerminalWslProfile) || profiles.find(_isWindowsTerminalModernPowershellProfile);
-    settings.defaultProfile = preferredProfile ? preferredProfile.guid : allProfiles[0]?.guid;
+    // Respect explicitly hidden profiles when choosing a launch target.
+    const visibleProfiles = profiles.filter((profile) => !profile.hidden && profile.guid);
+    const preferredProfile =
+      visibleProfiles.find(_isWindowsTerminalWslProfile) ||
+      visibleProfiles.find((profile) => profile.name === "Windows PowerShell") ||
+      visibleProfiles[0];
+    if (preferredProfile) settings.defaultProfile = preferredProfile.guid;
 
     delete settings.actions;
     return settings;
@@ -249,27 +254,23 @@ async function doWork() {
 }
 
 /**
- * Show WSL profiles and PowerShell first; hide other profiles only when WSL profiles exist.
+ * Order profiles and default visibility without overriding explicit boolean hidden values.
  * @param {Array<object>} profiles - Profiles from Windows Terminal settings.
  * @returns {Array<object>} New profile list with settings color schemes cleared and hidden flags set.
  */
 function _prioritizeWindowsTerminalProfiles(profiles) {
-  const hasWslProfile = profiles.some(_isWindowsTerminalWslProfile);
   const prioritizedProfiles = profiles.map((profile) => {
-    const prioritizedProfile = { ...profile, hidden: true };
+    const prioritizedProfile = { ...profile };
     delete prioritizedProfile.colorScheme;
-    if (
-      _isWindowsTerminalWslProfile(profile) ||
-      _isWindowsTerminalModernPowershellProfile(profile) ||
-      /PowerShell/i.test(profile.name || "")
-    ) {
-      prioritizedProfile.hidden = false;
+    if (typeof profile.hidden !== "boolean") {
+      prioritizedProfile.hidden = !(
+        _isWindowsTerminalWslProfile(profile) ||
+        profile.name === "Windows PowerShell" ||
+        profile.source === "Windows.Terminal.Azure"
+      );
     }
     return prioritizedProfile;
   });
-
-  // Without a WSL profile, keep every profile available instead of hiding everything but PowerShell.
-  if (!hasWslProfile) prioritizedProfiles.forEach((profile) => (profile.hidden = false));
 
   return prioritizedProfiles.sort((a, b) => _getWindowsTerminalProfileRank(a) - _getWindowsTerminalProfileRank(b));
 }
@@ -286,24 +287,15 @@ function _isWindowsTerminalWslProfile(profile) {
 }
 
 /**
- * Identify modern PowerShell by its dynamic source or executable, including quoted paths.
- * @param {object} profile Windows Terminal profile; custom display names are allowed.
- * @returns {boolean} Whether the profile launches PowerShell Core.
- */
-function _isWindowsTerminalModernPowershellProfile(profile) {
-  return profile.source === "Windows.Terminal.PowershellCore" || /(?:^|[\\/\s"])pwsh(?:\.exe)?(?=["\s]|$)/i.test(profile.commandline || "");
-}
-
-/**
- * Rank Ubuntu/Debian, other WSL, modern PowerShell, legacy PowerShell, and other profiles.
+ * Rank WSL distributions first, Windows PowerShell next, Azure next, and other profiles last.
  * @param {object} profile - Windows Terminal profile.
- * @returns {number} Sort rank: Ubuntu/Debian 0, other WSL 1, modern PowerShell 2, legacy 3, other 4.
+ * @returns {number} Sort rank: Ubuntu/Debian 0, other WSL 1, Windows PowerShell 2, Azure 3, other 4.
  */
 function _getWindowsTerminalProfileRank(profile) {
   if (/Ubuntu|Debian/i.test(profile.name || "")) return 0;
   if (_isWindowsTerminalWslProfile(profile)) return 1;
-  if (_isWindowsTerminalModernPowershellProfile(profile)) return 2;
-  if (/PowerShell/i.test(profile.name || "")) return 3;
+  if (profile.name === "Windows PowerShell") return 2;
+  if (profile.source === "Windows.Terminal.Azure") return 3;
   return 4;
 }
 
