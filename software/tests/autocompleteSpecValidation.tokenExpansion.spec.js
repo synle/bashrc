@@ -21,9 +21,6 @@ const SPEC_COMMANDS = sandbox.SPEC_COMMANDS;
 const VALID_TOKENS = new Set(sandbox.DYNAMIC_TOKENS);
 
 const uniqueSpecFiles = [...new Set(SPEC_COMMANDS.map((c) => c.specFile).filter(Boolean))];
-// TODO: Delete this allowlist after Deno is fully decommissioned and its protected spec is removed.
-const LEGACY_UNREFERENCED_SPEC_FILES = new Set(["software/metadata/autocomplete-complete-spec/deno"]);
-
 const commonContent = fs.readFileSync("software/scripts/advanced/bash-autocomplete-complete-spec.common.bash", "utf-8");
 
 const templateContent =
@@ -68,7 +65,7 @@ describe("SPEC_COMMANDS integrity", () => {
     const specDir = "software/metadata/autocomplete-complete-spec";
     const filesOnDisk = fs.readdirSync(specDir).map((f) => path.join(specDir, f));
     const referenced = new Set(uniqueSpecFiles);
-    const unreferenced = filesOnDisk.filter((f) => !referenced.has(f) && !LEGACY_UNREFERENCED_SPEC_FILES.has(f));
+    const unreferenced = filesOnDisk.filter((f) => !referenced.has(f));
     expect(unreferenced, `Spec files not referenced in SPEC_COMMANDS: ${unreferenced.join(", ")}`).toEqual([]);
   });
 
