@@ -25,7 +25,6 @@ path_candidates=(
   ~/.local/share/fnm # fnm (fast node manager)
   ~/.volta/bin       # volta node version manager
   ~/.bun/bin         # bun javascript runtime
-  ~/.deno/bin        # deno javascript runtime
   # ---- go ----
   /usr/local/go/bin # go sdk
   ~/go/bin          # go binaries (GOPATH)

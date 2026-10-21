@@ -340,7 +340,6 @@ runs:
         check_binary_required oxfmt
         check_binary_required oxlint
         check_binary_required bun
-        check_binary_required deno
         check_binary_required uv
         check_binary_required kubectl "kubectl version --client"
         check_binary_required gemini
@@ -603,7 +602,7 @@ runs:
         # so it gets a :wrench: marker next to the package name in the table.
         # Keep this list in sync with the check_binary_required block above
         # (plus common package-name aliases like httpie -> http).
-        required_pkgs_re='^(git|git-filter-repo|curl|make|build-essential|node|nodejs|node-?js|npm|fzf|unzip|yarn|bun|deno|uv|kubectl|kubernetes-cli|@google/gemini-cli|gemini-cli|gemini|temporal|temporalio|httpie|http|ansible|btop)$'
+        required_pkgs_re='^(git|git-filter-repo|curl|make|build-essential|node|nodejs|node-?js|npm|fzf|unzip|yarn|bun|uv|kubectl|kubernetes-cli|@google/gemini-cli|gemini-cli|gemini|temporal|temporalio|httpie|http|ansible|btop)$'
 
         # Parse lines matching: >> <pkg> >> Installing with <manager> >> <result>
         while IFS= read -r line; do

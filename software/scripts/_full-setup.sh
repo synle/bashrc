@@ -71,7 +71,6 @@ if ! ((IS_CI)); then
   safe_chown -R "$HOME/.cargo"
   safe_chown -R "$HOME/.claude"
   safe_chown -R "$HOME/.config"
-  safe_chown -R "$HOME/.deno"
   safe_chown -R "$HOME/.fzf"
   safe_chown -R "$HOME/.local"
   safe_chown -R "$HOME/.ssh"

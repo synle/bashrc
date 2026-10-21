@@ -43,7 +43,7 @@
 #
 # --- Language package upgrades ---
 # update_lang   — Upgrade global packages from each language pkg manager on PATH
-#                 (rustup, cargo-update, npm, pnpm, yarn, bun, deno, uv, pip).
+#                 (rustup, cargo-update, npm, pnpm, yarn, bun, uv, pip).
 #                 Companion to the `update` alias which only handles OS pkg managers.
 #
 # --- Git ---
@@ -317,7 +317,7 @@ function update_lang() {
   if is_help_arg "${1:-}"; then
     echo "update_lang: upgrade globally-installed language packages
   Skips any tool not on PATH. Companion to the OS-level \`update\` alias.
-  Covers: rustup, cargo-update, npm, pnpm, yarn (v1), bun, deno, uv, pip (--user)."
+  Covers: rustup, cargo-update, npm, pnpm, yarn (v1), bun, uv, pip (--user)."
     return 0
   fi
 
@@ -357,12 +357,6 @@ function update_lang() {
   if type -P bun &> /dev/null; then
     echo ">> bun upgrade"
     bun upgrade
-  fi
-
-  # deno runtime
-  if type -P deno &> /dev/null; then
-    echo ">> deno upgrade"
-    deno upgrade
   fi
 
   # uv tool installs

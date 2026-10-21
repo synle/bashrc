@@ -191,7 +191,6 @@ winget_packages=(
   "Python.Python.3.12"
   "Rustlang.Rustup"
   "GoLang.Go"
-  "DenoLand.Deno"
   "Oven-sh.Bun"
   # Gradle is deliberately absent: winget publishes no package for it. Windows
   # builds use the gradlew wrapper, which needs no Gradle install, and

@@ -386,10 +386,6 @@ const SPEC_COMMANDS = [
     specFile: "software/metadata/autocomplete-complete-spec/composer",
   },
   {
-    command: "deno",
-    specFile: "software/metadata/autocomplete-complete-spec/deno",
-  },
-  {
     command: "fnm",
     specFile: "software/metadata/autocomplete-complete-spec/fnm",
   },
