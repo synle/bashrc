@@ -1,21 +1,22 @@
 # Measure Before Optimizing
 
-Read before any performance-motivated cache, batch, index, loop, data-structure, or worker change. Apply Test Quality and Runtime Guardrails alongside this file. Epistemic Honesty governs measurements and claims. Rules are named, not numbered.
+Companion to the always-loaded engineering principles. Governs every
+performance-motivated change — read before caching, batching, indexing,
+rewriting a loop, swapping a data structure, or adding a worker.
+
+Rules are named, not numbered — quote the name when referencing one. Epistemic
+Honesty from the main instructions governs this file too.
 
 ## Prove the win
 
-- **No optimization without a number before and after.** Name the operation, measurement boundary, representative data size/distribution, concurrency, runtime, and cache state. Record the harness and fixed sample/time budget. A comparison of different inputs, machines, cold/warm states, or measurement boundaries does not isolate the change.
-- **State the budget before optimizing.** Set the user-visible latency, throughput, memory, cost, or build-time target and why it matters. Measure the caller's end-to-end wait, not an invisible background step. Use p95/p99 for tail-sensitive services rather than hiding affected users in a mean. If the current result meets the budget, leave the code alone and report that evidence.
-- **Profile; don't guess.** Reproduce the slow operation at realistic scale, then use a CPU/allocation profile, query plan, timed trace, browser trace, or equivalent measurement to identify the responsible span. Distinguish executing from waiting on I/O, a connection pool, lock, or garbage collection. Record a mechanism and its contribution, not a list of suspicious code.
-- **One measured intervention.** Change one bottleneck at a time and rerun the same harness. When changes must ship together, isolate their effects experimentally first. Repeat measurements and compare against run-to-run variation; a gain inside the noise is not a demonstrated win. Check the tail as well as the median.
-- **Keep only a real win.** Retain a change only when the target-relevant improvement exceeds noise and correctness checks remain green. Remove only your neutral or slower experiment, preserving unrelated work; sunk effort does not justify permanent complexity. Stop at the stated budget.
-- **Re-measure after landing.** Validate against real traffic or representative data through approved observability. Report when contention, cache misses, multi-tenant load, or deployment conditions erase the synthetic gain. If production access is unavailable, distinguish the measured local result from the unverified production expectation.
+- No optimization without a number before and after. "Faster" is not a result; `1.8s → 240ms on the same input, 5 runs, median` is. Applies to every performance-motivated change — caching, batching, an index, a rewritten loop, a swapped data structure, an added worker.
+- A measured win must exceed run-to-run variance under the same harness. Revert neutral or slower changes; sunk effort is not evidence.
+- Profile; don't guess. Locate the bottleneck with a profiler, flame graph, timed query logs, `EXPLAIN`, browser traces, or timers around suspected spans.
+- State the budget before optimizing and stop when you hit it — p99 under 200ms at 10× load, a build under two minutes. Without a target, optimization has no completion condition. If the current number already meets the budget, leave the code alone and say so.
+- Measure the thing the user waits on. A step running at startup, in parallel, or on a background thread gives a real benchmark win and zero perceived win. Measure end-to-end at the boundary a human or caller experiences, at realistic input size — a 10-row fixture hides every scaling problem.
+- Re-measure after landing, on real traffic or data. Benchmarks lie by omission: warm caches, absent contention, single-tenant machines, unrealistic distributions. Say plainly when the win didn't survive production.
 
 ## Spend complexity carefully
 
-- **Fix the complexity class before micro-optimizing.** Profile repeated scans/sorts, per-row queries, unbounded fetches, avoidable allocations, and invariant work inside loops. Reuse the existing owning layer and installed tools; a new cache or worker is not the default answer to redundant work.
-- **Correctness gates speed.** Do not improve a benchmark by dropping validation, authorization, accessibility, freshness, required work, or an await that preserves ordering. Removal of a field or path still requires Risky Changes' downstream audit.
-- **An index needs the actual plan.** Check the query shape, parameters, cardinality estimates, sort/scan costs, and write overhead. Statistics, selectivity, expressions, and leading wildcards can matter more than another index. Do not execute a mutating query-plan command on production under read-only investigation authority.
-- **Caching adds a contract.** Name every varying key input, especially tenant/user/permission/locale/version, acceptable staleness, invalidation, bounded size, and stampede handling. Never reuse sensitive results across scopes or substitute a stale permission check for authorization at the side-effect boundary.
-- **Parallelism and batching spend resources.** State bounded concurrency, deadlines, pool/service limits, cancellation, ordering, partial-failure behavior, and retry/idempotency semantics. Check resource usage and unrelated work progressing under load; moving a queue downstream is not removing it.
-- **Document the retained tradeoff.** When a less-obvious fast path must remain, keep the date, measured workload, before/after result, and limit/upgrade trigger next to it or in its linked benchmark. Report unsuccessful experiments so the next investigation does not repeat them. Never trade readability or safety for an unmeasured gain.
+- Fix the complexity class before micro-optimizing inside it. An O(n²) loop is not rescued by a faster inner comparison; the nested scan, the query inside the loop, the linear lookup that should be a hash, the repeated full sort are the wins that survive growth.
+- Never trade readability, correctness, or safety for an unmeasured gain. Caching adds key, staleness, invalidation, and stampede contracts; batching adds partial-failure semantics; concurrency adds races. When a fast version must stay, document the measurement and date beside it.
