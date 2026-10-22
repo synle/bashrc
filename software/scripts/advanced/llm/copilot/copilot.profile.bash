@@ -36,6 +36,10 @@
 # Use `co auth` to authenticate with GitHub first.
 ################################################################################
 
+# Allow one hour for background tasks instead of autopilot's 600-second wait.
+# Preserve nonempty overrides; this is not a total session runtime limit.
+export COPILOT_TASK_WAIT_TIMEOUT_SECONDS="${COPILOT_TASK_WAIT_TIMEOUT_SECONDS:-3600}"
+
 # copilot: wrapper around the `copilot` binary; echoes resolved invocation to stderr before running
 function copilot() {
   # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
