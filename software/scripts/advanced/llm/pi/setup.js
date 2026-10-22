@@ -17,6 +17,9 @@
  *                             directly to Pi's system prompt on every run,
  *                             reinforcing the caveman response style separately
  *                             from the long AGENTS.md corpus.
+ *   ~/.pi/agent/extensions/sy-persona-reminder.js — structured run guideline
+ *                             and one owned persona section refreshed before
+ *                             each model request, including tool follow-ups.
  *   ~/.pi/agent/settings.json — merge of managed defaults (`defaultTools`,
  *                             `quietStartup`, `terminal.imageWidthCells`,
  *                             `terminal.showTerminalProgress`, `terminal.hyperlinks`,
@@ -47,12 +50,15 @@
 const PI_APPEND_SYSTEM_CONTENT = `${LLM_PERSONA_REMINDER}\n`;
 
 /**
- * Full per-turn persona reminder appended by the Pi extension. Stronger than a
- * prompt-guideline nudge alone: the extension can inject this at the end of the
- * live system prompt every agent turn, even after reloads or context shifts.
+ * Self-delimiting request-level reminder with a concrete chat example. The shared
+ * reminder owns policy and exemptions; the example illustrates ordinary status prose.
  * @type {string}
  */
-const PI_PERSONA_SYSTEM_PROMPT_APPEND = `\n\n${LLM_PERSONA_REMINDER}\n`;
+const PI_PERSONA_REQUEST_REMINDER = `<sy_persona_reminder>
+${LLM_PERSONA_REMINDER}
+
+Chat-status example: "Backup complete. Eight files verified. Active rules unchanged."
+</sy_persona_reminder>`;
 
 /**
  * Headers required by the GitHub Copilot IDE-authenticated API.
@@ -307,25 +313,41 @@ async function _doPiAppendSystemWork(agentDir) {
 }
 
 /**
- * Deploys a Pi extension that reinforces the persona before every agent turn.
- * It keeps the short prompt-guideline reminder and also appends a stronger
- * tail-position block to the live system prompt for that run.
+ * Writes a Pi extension with a run guideline and one owned system section before
+ * every model request. Existing prompt content, tools, and transcript order survive;
+ * no replies are rewritten and no additional model calls are requested.
  * @param {string} agentDir - Target pi agent folder.
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Resolves after writing the generated extension; IO errors propagate.
  */
 async function _doPiPersonaExtensionWork(agentDir) {
   const targetPath = path.join(agentDir, "extensions", "sy-persona-reminder.js");
-  const content = `/** Keeps user-facing Pi replies aligned with the shared response persona. */
+  const content = `/** Registers request-level persona reinforcement without rewriting replies or replacing the prompt.
+ * @param {import("@earendil-works/pi-coding-agent").ExtensionAPI} pi - Pi extension API.
+ * @returns {void} Registers lifecycle handlers; performs no startup IO.
+ */
 export default function (pi) {
+  /** @type {string} Shared chat-style policy, including prose exemptions. */
+  const PERSONA_REMINDER = ${JSON.stringify(LLM_PERSONA_REMINDER)};
+  /** @type {string} Self-delimiting reminder rendered after other leading system sections. */
+  const REQUEST_REMINDER = ${JSON.stringify(PI_PERSONA_REQUEST_REMINDER)};
+
   pi.on("before_agent_start", (event) => {
-    const PERSONA_REMINDER = ${JSON.stringify(LLM_PERSONA_REMINDER)};
-    const PERSONA_APPEND = ${JSON.stringify(PI_PERSONA_SYSTEM_PROMPT_APPEND)};
     const guidelines = event.systemPromptOptions.promptGuidelines;
     if (!guidelines.includes(PERSONA_REMINDER)) guidelines.push(PERSONA_REMINDER);
+  });
+
+  pi.on("context_with_system", (event) => {
+    const system = event.messages[0];
+    // Do not manufacture or reorder system/tool state in a nonstandard transcript.
+    if (system?.role !== "system") return;
+
+    // Replace only our section, moving it last without mutating reusable context.
+    const { sy_persona_reminder: previousReminder, ...sections } = system.sections ?? {};
     return {
-      systemPrompt: event.systemPrompt.includes(PERSONA_APPEND)
-        ? event.systemPrompt
-        : event.systemPrompt + PERSONA_APPEND,
+      messages: [
+        { ...system, sections: { ...sections, sy_persona_reminder: REQUEST_REMINDER } },
+        ...event.messages.slice(1),
+      ],
     };
   });
 }

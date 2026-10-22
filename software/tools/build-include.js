@@ -558,7 +558,7 @@ if (typeof module !== "undefined" && require.main !== module) {
     .filter((f) => f && !f.startsWith("software/tests/"));
   const inclusionTargets = INCLUSIONS.flatMap((inc) => inc.targets);
   /** @type {string[]} Repository-relative folders that must never be regenerated, even through explicit targets. */
-  const excludedTargetFolders = ["software/scripts/advanced/llm/_common/v1"].map(
+  const excludedTargetFolders = ["software/scripts/advanced/llm/_common/v1", "software/scripts/advanced/llm/_common/v2"].map(
     (folder) => path.resolve(__dirname, "../..", folder) + path.sep,
   );
   const targetFiles = (cliTargets.length > 0 ? cliTargets : [...new Set([...trackedFiles, ...inclusionTargets])]).filter((target) => {
