@@ -237,6 +237,10 @@ inoremap <silent> <C-e> <C-o>$
 " Ctrl+W already deletes the previous word natively in insert mode; keep Vim's default.
 " Ctrl+Backspace follows the same action when the terminal sends a distinct <C-BS> code.
 inoremap <silent> <C-BS> <C-w>
+" Ctrl+Delete deletes the next Vim word and stays in insert mode. Native Delete
+" joins lines at a line boundary and does nothing at EOF; CTRL-\ CTRL-O
+" avoids moving left before forward deletion, preserving preceding text.
+inoremap <silent> <expr> <C-Del> col('.') > strlen(getline('.')) ? "\<Del>" : "\<C-\>\<C-o>dw"
 " Ctrl+F pages forward natively; Ctrl+G pages backward (matches less/readline)
 nnoremap <silent> <C-g> <C-b>
 

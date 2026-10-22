@@ -1,4 +1,4 @@
-/** Integration tests for indentation and bracket navigation in the actual Vim settings. */
+/** Integration tests for indentation, word deletion, and bracket navigation in the actual Vim settings. */
 import { describe, expect, it, onTestFinished } from "vitest";
 import fs from "fs";
 import os from "os";
@@ -142,6 +142,72 @@ describe("Vim indentation integration", () => {
     expect(result.observations).toEqual({ search: "keep-search", cursor: [2, 3], hard: [0, 2] });
     expect(result.indent).toEqual([1, 2, 2, 2]);
     expect(result.lines).toEqual(["    spaces"]);
+  });
+});
+
+describe("Vim Ctrl+Delete forward-word deletion integration", () => {
+  it.each([
+    ["word start", "alpha beta", "gg0i", "Xbeta"],
+    ["inside a word", "alpha beta", "gg02li", "alXbeta"],
+    ["before punctuation", "alpha.beta", "gg0i", "X.beta"],
+    ["at whitespace", "alpha   beta", "gg05li", "alphaXbeta"],
+    ["end of file", "alpha", "ggA", "alphaX"],
+    ["empty buffer", "", "gg0i", "X"],
+  ])("deletes forward from %s and resumes insertion without deleting backward", (_name, input, position, expected) => {
+    const result = editInVim(input, [
+      `call feedkeys("${position}\\<C-Del>X\\<Esc>", "xt")`,
+    ]);
+    expect(result.lines).toEqual([expected]);
+  });
+
+  it("joins the next line at a line boundary without deleting preceding text", () => {
+    const result = editInVim("alpha\nbeta", [
+      'call feedkeys("ggA\\<C-Del>X\\<Esc>", "xt")',
+    ]);
+    expect(result.lines).toEqual(["alphaXbeta"]);
+  });
+
+  it("supports repeated forward deletions in the same insert session", () => {
+    const result = editInVim("alpha beta gamma", [
+      'call feedkeys("gg0i\\<C-Del>\\<C-Del>X\\<Esc>", "xt")',
+    ]);
+    expect(result.lines).toEqual(["Xgamma"]);
+  });
+
+  it("keeps Ctrl+Backspace deleting the previous word", () => {
+    const result = editInVim("alpha beta", [
+      'call feedkeys("ggA\\<C-BS>X\\<Esc>", "xt")',
+    ]);
+    expect(result.lines).toEqual(["alpha X"]);
+  });
+});
+
+describe("Vim Ctrl+Delete forward-word deletion integration", () => {
+  it.each([
+    ["word start", "alpha beta", "gg0i", "Xbeta"],
+    ["inside a word", "alpha beta", "gg02li", "alXbeta"],
+    ["before punctuation", "alpha.beta", "gg0i", "X.beta"],
+    ["at whitespace", "alpha   beta", "gg05li", "alphaXbeta"],
+    ["end of file", "alpha", "ggA", "alphaX"],
+    ["empty buffer", "", "gg0i", "X"],
+  ])("deletes forward from %s and resumes insertion without deleting backward", (_name, input, position, expected) => {
+    const result = editInVim(input, [`call feedkeys("${position}\\<C-Del>X\\<Esc>", "xt")`]);
+    expect(result.lines).toEqual([expected]);
+  });
+
+  it("joins the next line at a line boundary without deleting preceding text", () => {
+    const result = editInVim("alpha\nbeta", ['call feedkeys("ggA\\<C-Del>X\\<Esc>", "xt")']);
+    expect(result.lines).toEqual(["alphaXbeta"]);
+  });
+
+  it("supports repeated forward deletions in the same insert session", () => {
+    const result = editInVim("alpha beta gamma", ['call feedkeys("gg0i\\<C-Del>\\<C-Del>X\\<Esc>", "xt")']);
+    expect(result.lines).toEqual(["Xgamma"]);
+  });
+
+  it("keeps Ctrl+Backspace deleting the previous word", () => {
+    const result = editInVim("alpha beta", ['call feedkeys("ggA\\<C-BS>X\\<Esc>", "xt")']);
+    expect(result.lines).toEqual(["alpha X"]);
   });
 });
 

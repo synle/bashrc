@@ -662,6 +662,7 @@ visual-mode deletion from Vim's insert-mode defaults.
 | `ctrl+e`         | End of line                                  |   ✅   |
 | `ctrl+w`         | Delete previous word                         |   ✅   |
 | `ctrl+backspace` | Delete previous word                         |   ✅   |
+| `ctrl+delete`    | Delete next word, remain in insert mode       |   ✅   |
 | `ctrl+m`         | Jump to matching pair, remain in insert mode |   ✅   |
 
 These mappings match readline/bash. They replace Vim's stock insert-mode `ctrl+a`
@@ -670,6 +671,9 @@ These mappings match readline/bash. They replace Vim's stock insert-mode `ctrl+a
 natively in insert mode.
 `ctrl+backspace` maps to the same action when the terminal sends a distinct key
 code; terminals that encode it as ordinary Backspace cannot be distinguished by Vim.
+`ctrl+delete` uses Vim's forward-word deletion (`dw`), including punctuation
+boundaries. At a line boundary it joins the next line; at EOF it does nothing.
+The terminal must send a distinct Ctrl+Delete code rather than ordinary Delete.
 
 ### Splits & Navigation
 
