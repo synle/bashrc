@@ -1,15 +1,9 @@
 # assets/steamos
 
-Vendored SteamOS / Steam Deck post-install assets used by
+SteamOS / Steam Deck post-install resources used by
 [`software/scripts/steamos/setup.bash`](../../software/scripts/steamos/setup.bash).
-
-The zips are mirrored here so the setup helper downloads from this repo instead
-of third-party release URLs that can move, get renamed, or disappear. Credit for
-every artifact belongs to its original author — see the tables below for the
-upstream repo and page each file came from.
-
-Files are named `<org>_<component>[_v<version>].zip` (plugins) and
-`<theme>_<themeId>.zip` (CSS Loader themes).
+Decky ZIPs are no longer tracked here. The opt-in Node.js installer uses a
+build-generated release bundle, with pinned upstream recovery.
 
 ## Steam shortcuts for apps
 
@@ -153,65 +147,28 @@ the Deck. Users in the bug report found the remote entries disappear until the
 clients reconnect or restart. While host Steam is closed, Remote Play from that
 PC is unavailable. Keep host shortcuts if you still use them there.
 
-## Decky Loader plugins — `decky_plugin/`
+## Decky package bundle
 
-| File in this repo                                           | Repo                                | Repo URL                                             |
-| ----------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------- |
-| `decky_plugin/xXJSONDeruloXx_decky-lsfg-vk_v0.14.4.zip`     | `xXJSONDeruloXx/decky-lsfg-vk`      | https://github.com/xXJSONDeruloXx/decky-lsfg-vk      |
-| `decky_plugin/hulkrelax_hltb-for-deck.zip`                  | `hulkrelax/hltb-for-deck`           | https://github.com/hulkrelax/hltb-for-deck           |
-| `decky_plugin/SteamGridDB_decky-steamgriddb.zip`            | `SteamGridDB/decky-steamgriddb`     | https://github.com/SteamGridDB/decky-steamgriddb     |
-| `decky_plugin/suchmememanyskill_SDH-CssLoader.zip`          | `suchmememanyskill/SDH-CssLoader`   | https://github.com/suchmememanyskill/SDH-CssLoader   |
-| `decky_plugin/OMGDuke_protondb-decky.zip`                   | `OMGDuke/protondb-decky`            | https://github.com/OMGDuke/protondb-decky            |
-| `decky_plugin/EmuDeck_EmuDecky.zip`                         | `EmuDeck/EmuDecky`                  | https://github.com/EmuDeck/EmuDecky                  |
-| `decky_plugin/saumya-banthia_volume-boost.zip`              | `saumya-banthia/volume-boost`       | https://github.com/saumya-banthia/volume-boost       |
-| `decky_plugin/jurassicplayer_decky-autoflatpaks_v1.6.8.zip` | `jurassicplayer/decky-autoflatpaks` | https://github.com/jurassicplayer/decky-autoflatpaks |
-| `decky_plugin/honjow_HueSync_v3.9.0.zip`                    | `honjow/HueSync`                    | https://github.com/honjow/HueSync                    |
+[`software/metadata/decky-packages.json`](../../software/metadata/decky-packages.json)
+is the authoritative inventory: nine plugins and eight themes, with exact versions,
+upstream attribution/download URLs, SHA-256, selected roots, and theme IDs.
+HLTB for Deck 2.0.12, ProtonDB Badges 1.3.4, and CSS Loader 2.1.3 retain the verified
+newer releases. Centered Home is excluded from new selections; installed copies and
+settings are not removed.
 
-SteamGridDB and Volume Boost are served from the Decky store CDN
-(`cdn.tzatzikiweeb.moe`); their upstream repos are listed above for attribution.
+The generated `steamos-decky__bundle.zip` contains `metadata.json`,
+`decky_plugin/<name>_v<version>.zip`, and
+`decky_css_loader/<name>_v<version>.zip`. Filenames contain no author prefixes,
+UUIDs, or checksums. Credit belongs to the upstream authors linked in the inventory.
 
-### Refresh procedure
+The standard opt-in installer is `bash run.sh --files=decky-and-css-loader`.
+It works alongside comma-separated selections; no preset includes it implicitly.
+SteamOS setup delegates to that same path through the self-extracting bootstrap.
+See [installation and validation details](../../docs/steamos-decky-installation.md).
 
-Use the repo-local `refresh-steamos-decky-plugins` skill for a full refresh. It keeps
-`setup.bash`, this table, and the vendored ZIPs synchronized.
-
-1. Read this table and `software/scripts/steamos/setup.bash` to establish the plugin scope.
-2. Query each GitHub repository's latest release with:
-   `curl -fsSL https://api.github.com/repos/OWNER/REPO/releases/latest | jq .`
-3. For store-backed plugins, query the Decky store with:
-   `curl -fsSL --get --data-urlencode "query=PLUGIN_NAME" https://plugins.deckbrew.xyz/plugins | jq .`
-   Treat `versions[0]` as the latest listed store version only after checking its name,
-   creation time, and hash.
-4. Download candidates to a temporary folder. Never overwrite a tracked ZIP first.
-5. Compare `shasum -a 256`, then run `unzip -t` and inspect the top-level folder,
-   `plugin.json`, package metadata when present, and the plugin entry point.
-6. Replace only verified changed archives. Update versioned filenames in both the setup
-   array and this table. Keep repository attribution URLs and record the store source,
-   release tag, or verification date when useful.
-7. Verify every ZIP appears once in this table and once in the setup array, then run:
-   `bash -n software/scripts/steamos/setup.bash`,
-   `npx vitest run --config vitest.config.js software/tests/steamosSetup.spec.js`, and
-   `git diff --check`.
-
-Store metadata alone does not prove an installable archive. If no verified artifact URL is
-available, leave that plugin unchanged and report its store version and hash for follow-up.
-
-## CSS Loader themes — `decky_css_loader/`
-
-Themes come from the [DeckThemes](https://deckthemes.com/) store. Each file is
-named `<theme>_<themeId>.zip`, where `<themeId>` is the DeckThemes theme id.
-
-| File in this repo                                                                        | Theme (author)                      | Theme URL                                                                       |
-| ---------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------- |
-| `decky_css_loader/Round_c6844008-a809-41f6-b140-7aa76f2a62ad.zip`                        | Round (EMERALD)                     | https://deckthemes.com/themes/view?themeId=c6844008-a809-41f6-b140-7aa76f2a62ad |
-| `decky_css_loader/Clean_Gameview_a9776f60-2724-4ff0-824b-e1f82a04688e.zip`               | Clean Gameview (Sims)               | https://deckthemes.com/themes/view?themeId=a9776f60-2724-4ff0-824b-e1f82a04688e |
-| `decky_css_loader/Centered_Home_865407ae-fb14-4db7-b123-61f6995ed757.zip`                | Centered Home (EMERALD)             | https://deckthemes.com/themes/view?themeId=865407ae-fb14-4db7-b123-61f6995ed757 |
-| `decky_css_loader/No_Home_Text_0e8a208f-136f-4f26-b0e1-344bcd186ed9.zip`                 | No Home Text (Joyboy)               | https://deckthemes.com/themes/view?themeId=0e8a208f-136f-4f26-b0e1-344bcd186ed9 |
-| `decky_css_loader/No_Home_Recent_Text_95c4e310-0770-4e1f-9f9d-cbe444e9bb17.zip`          | No Home Recent Text (Leozito)       | https://deckthemes.com/themes/view?themeId=95c4e310-0770-4e1f-9f9d-cbe444e9bb17 |
-| `decky_css_loader/Obsidian_f16cf40d-7ccc-4981-95bf-77b28e8d101e.zip`                     | Obsidian (EMERALD)                  | https://deckthemes.com/themes/view?themeId=f16cf40d-7ccc-4981-95bf-77b28e8d101e |
-| `decky_css_loader/Faster_Transition_Animations_921a7ec8-b355-4799-b23f-73f4b9c713b8.zip` | Faster Transition Animations (Sims) | https://deckthemes.com/themes/view?themeId=921a7ec8-b355-4799-b23f-73f4b9c713b8 |
-| `decky_css_loader/Mini_Carousel_4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b.zip`                | Mini Carousel (levi)                | https://deckthemes.com/themes/view?themeId=4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b |
-| `decky_css_loader/No_Home_Edge_Fade_2dab90ab-2cf3-480f-adce-f6c67caadd67.zip`            | No Home Edge Fade (Sims)            | https://deckthemes.com/themes/view?themeId=2dab90ab-2cf3-480f-adce-f6c67caadd67 |
+Use the repo-local `refresh-steamos-decky-plugins` skill to verify candidates and
+update the inventory. ZIPs are generated, not committed. CI builds the bundle on
+PRs without release credentials and publishes it only on default-branch pushes.
 
 ## Misc — repo root
 

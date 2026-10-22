@@ -20,8 +20,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Isolate upstream package builds from the prep job's release-write credentials.
+  decky-bundle:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+      - name: Build Decky package bundle
+        run: make build_decky_bundle DECKY_BUNDLE_OUTPUT="$RUNNER_TEMP/decky-cache/steamos-decky__bundle.zip"
+      - name: Upload Decky package artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: steamos-decky
+          path: ${{ runner.temp }}/decky-cache/steamos-decky__bundle.zip
+          retention-days: 14
+          if-no-files-found: error
+
   # ---- Phase 1: Format code, build include, and build webapp (no commit, upload patch) ----
   prep:
+    needs: [decky-bundle]
     if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
     runs-on: ubuntu-latest
     permissions:
@@ -96,6 +120,62 @@ jobs:
           # Tell Puppeteer where Chrome was installed.
           PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
         run: make ci_prep
+
+      - name: Download verified Decky package artifact
+        if: >-
+          github.event_name == 'push'
+          && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: steamos-decky
+          path: ${{ runner.temp }}/decky-cache
+
+      # Never remove the old cache before building; failed builds stop the dependency.
+      # Only trusted default-branch pushes may replace this rolling release asset.
+      - name: Upload Decky bundle to binary-cache release
+        if: >-
+          github.event_name == 'push'
+          && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CACHE_REPO: ${{ github.repository }}
+        run: |
+          asset=steamos-decky__bundle.zip
+          candidate="steamos-decky__bundle.candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.zip"
+          backup="steamos-decky__bundle.previous-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.zip"
+          api="repos/$CACHE_REPO/releases"
+          cp "$RUNNER_TEMP/decky-cache/$asset" "$RUNNER_TEMP/decky-cache/$candidate"
+          # --clobber deletes before uploading. Keep the current cache through upload.
+          gh release upload binary-cache "$RUNNER_TEMP/decky-cache/$candidate" --repo "$CACHE_REPO"
+          candidate_id=$(gh api "$api/tags/binary-cache" --jq ".assets[] | select(.name == \"$candidate\") | .id")
+          old_id=$(gh api "$api/tags/binary-cache" --jq ".assets[] | select(.name == \"$asset\") | .id")
+          [[ "$candidate_id" =~ ^[0-9]+$ ]]
+          [[ -z "$old_id" || "$old_id" =~ ^[0-9]+$ ]]
+          old_renamed=0
+          # Restore the consumer-visible name on failure; never delete a failed swap's backup.
+          # No arguments. Returns the original exit status and logs rollback failure.
+          function restore_previous_asset() {
+            local status=$?
+            if [ "$status" -ne 0 ] && [ "$old_renamed" -eq 1 ]; then
+              if ! gh api "$api/assets/$old_id" --method PATCH -f name="$asset"; then
+                echo "::error::Decky cache rollback failed; previous asset retained as $backup" >&2
+              fi
+            fi
+            return "$status"
+          }
+          trap restore_previous_asset EXIT
+          if [ -n "$old_id" ]; then
+            gh api "$api/assets/$old_id" --method PATCH -f name="$backup"
+            old_renamed=1
+          fi
+          gh api "$api/assets/$candidate_id" --method PATCH -f name="$asset"
+          old_renamed=0
+          # Cleanup only after activation; a cleanup failure must not undo a valid cache.
+          if [ -n "$old_id" ]; then
+            if ! gh api "$api/assets/$old_id" --method DELETE; then
+              echo "::warning::Decky cache published; retained backup $backup" >&2
+            fi
+          fi
 
       - name: Record time after ci-prep
         if: always()

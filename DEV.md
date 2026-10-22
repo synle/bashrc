@@ -23,26 +23,32 @@ See `software/tools/build-installer.js`.
 
 ## Refreshing SteamOS Decky Plugins
 
-Decky plugin archives are vendored under `assets/steamos/decky_plugin/` and downloaded by
-`software/scripts/steamos/setup.bash`. The source table and refresh procedure live in
-[`assets/steamos/README.md`](assets/steamos/README.md). Use the repo skill for a checked
-refresh:
+Decky plugins and CSS Loader themes are pinned in `software/metadata/decky-packages.json`.
+The opt-in `decky-and-css-loader.standalone.js` stages the generated binary-cache bundle,
+recovers missing packages upstream in batches of three, and installs through the shared
+protected Node runtime. SteamOS setup delegates to the same standard script. No Decky
+ZIPs are tracked under `assets/steamos/`. Use the repo skill for a checked refresh:
 
 ```text
 refresh-steamos-decky-plugins
 ```
 
-The refresh must query each GitHub release or Decky store record, download candidates to a
-temporary folder, compare SHA-256 checksums, validate `plugin.json` and archive contents,
-then update the archive, setup list, and README together. Store metadata is not an archive;
-if the store artifact URL cannot be verified, leave that plugin unchanged and report the
-missing step.
+Query upstream releases/store records, verify temporary candidate SHA-256, ZIP safety,
+identity/version, compiled plugin payload, and theme IDs before changing inventory pins.
+Keep newer verified releases; do not downgrade merely to match older store listings.
+Use `<name>_v<version>.zip` filenames; preserve theme IDs and hashes in metadata. Store
+metadata alone is not an archive. Leave unverified candidates unchanged.
+
+`make build_decky_bundle DECKY_BUNDLE_OUTPUT="$HOME/steamos-decky__bundle.zip"` builds
+and validates deterministic output with Node.js and curl; failed builds preserve existing
+output. CI builds without release credentials on PRs and publishes only on default-branch
+pushes. See [`docs/steamos-decky-installation.md`](docs/steamos-decky-installation.md).
 
 After a refresh, run:
 
 ```bash
-bash -n software/scripts/steamos/setup.bash
-npx vitest run --config vitest.config.js software/tests/steamosSetup.spec.js
+/bin/bash -n software/scripts/steamos/setup.bash
+npx vitest run --config vitest.config.js software/tests/steamosSetup.cache.spec.js software/tests/steamosSetup.decky.spec.js software/tests/deckyZip.spec.js software/tests/deckyInstaller.spec.js
 git diff --check
 ```
 

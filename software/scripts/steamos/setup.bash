@@ -36,21 +36,19 @@ function _start_steamos_setup_log() {
     return 1
   fi
   local binary
-  for binary in python3 tee mktemp; do
+  for binary in getent tee mktemp; do
     if ! type -P "$binary" > /dev/null; then
       echo ">>> SteamOS setup: required command unavailable: $binary" >&2
       return 1
     fi
   done
-  python3 - "$HOME" << 'PY' || return 1
-import os
-import pwd
-import sys
-
-account = pwd.getpwuid(os.getuid())
-if os.path.realpath(sys.argv[1]) != os.path.realpath(account.pw_dir):
-    sys.exit(">>> SteamOS setup: HOME does not match the invoking account; refusing installation.")
-PY
+  local account_record account_name account_uid account_gid account_home ignored
+  account_record=$(getent passwd "$(id -u)") || return 1
+  IFS=: read -r account_name ignored account_uid account_gid ignored account_home ignored <<< "$account_record"
+  if [ -z "$account_home" ] || [ "$(cd -- "$HOME" && pwd -P)" != "$(cd -- "$account_home" && pwd -P)" ]; then
+    echo ">>> SteamOS setup: HOME does not match the invoking account; refusing installation." >&2
+    return 1
+  fi
   mkdir -p "$HOME/Desktop" || return 1
   STEAMOS_SETUP_LOG=$(mktemp "$HOME/Desktop/steamos-setup.XXXXXX") || return 1
   exec > >(tee -a "$STEAMOS_SETUP_LOG") 2>&1
@@ -61,7 +59,7 @@ PY
   printf '>>> SteamOS setup system: '
   uname -sr
   printf '>>> SteamOS setup runtime: '
-  python3 --version
+  printf 'bash %s\n' "$BASH_VERSION"
   printf '>>> SteamOS setup source checksum: '
   # Reading a process-substitution pipe here would consume pending setup commands.
   if [ -f "${BASH_SOURCE[0]}" ]; then
@@ -115,8 +113,6 @@ if ! sudo -v; then
 fi
 
 DESKTOP_FOLDER="$HOME/Desktop"
-DECKY_PLUGINS_FOLDER="$DESKTOP_FOLDER/decky_plugins"
-CSS_LOADER_THEMES_FOLDER="$DECKY_PLUGINS_FOLDER/css_loader_themes"
 APPS_FOLDER="$HOME/Apps"
 mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
 
@@ -150,272 +146,21 @@ curl -fsSL "https://raw.githubusercontent.com/synle/bashrc/HEAD/assets/steamos/s
   -o "$DESKTOP_FOLDER/sponsporblock.json"
 
 # --- Decky Loader + plugins + CSS Loader themes ---
-# Install a validated ZIP through scoped elevation, matching Decky's mixed ownership.
-# $1: archive; $2: plugins or themes. Returns nonzero with phase/status diagnostics.
-# Writes only archive members under the verified account's homebrew folder; keeps extras.
-function _install_decky_archive() {
-  local archive="$1" kind="$2" status=0
-  echo ">>> Decky phase=install archive=$(basename "$archive") kind=$kind privilege=sudo"
-  sudo python3 - "$archive" "$HOME" "$kind" "$(id -u)" << 'PY' || status=$?
-import grp
-import hashlib
-import json
-import os
-import pwd
-import stat
-import sys
-import zipfile
-
-archive, home, kind, uid = sys.argv[1:]
-phase = "identity"
-member = "<none>"
-
-
-def describe(label, fd):
-    """Print label (str) and ownership/mode of fd (int); return None.
-
-    Raises OSError if fstat fails; writes diagnostics to stdout.
-    """
-    value = os.fstat(fd)
-    print(f">>> Decky {label}: uid={value.st_uid} gid={value.st_gid} mode={stat.S_IMODE(value.st_mode):04o}", flush=True)
-
-
-def open_folder(parent, name, create=False):
-    """Return an int FD for child name (str) under parent (int FD), without links.
-
-    If create (bool), create the folder when missing. Raises OSError on failure;
-    the caller owns the returned descriptor and must close it.
-    """
-    if create:
-        try:
-            os.mkdir(name, 0o755, dir_fd=parent)
-        except FileExistsError:
-            pass
-    return os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
-
-
-try:
-    account = pwd.getpwuid(int(uid))
-    if account.pw_uid == 0 or os.path.realpath(home) != os.path.realpath(account.pw_dir):
-        raise ValueError("HOME must match a non-root invoking account")
-    if kind not in ("plugins", "themes"):
-        raise ValueError("kind must be plugins or themes")
-    host_owner = (account.pw_uid, account.pw_gid)
-    print(f">>> Decky host={account.pw_name} uid={account.pw_uid} group={grp.getgrgid(account.pw_gid).gr_name} gid={account.pw_gid} home={home} effective_uid={os.geteuid()}", flush=True)
-    phase = "archive-validation"
-    with zipfile.ZipFile(archive) as bundle:
-        bundle.fp.seek(0)
-        digest = hashlib.sha256()
-        for block in iter(lambda: bundle.fp.read(1024 * 1024), b""):
-            digest.update(block)
-        print(f">>> Decky archive-sha256={digest.hexdigest()} bytes={bundle.fp.tell()}", flush=True)
-        members = bundle.infolist()
-        names = [item.filename.rstrip("/") for item in members]
-        if not names or len(names) != len(set(names)):
-            raise ValueError("archive must contain unique members")
-        # Bound privileged decompression; explicitly review assets exceeding these limits.
-        if sum(item.file_size for item in members) > 1024 ** 3 or any(item.file_size > 256 * 1024 ** 2 for item in members):
-            raise ValueError("archive exceeds 1 GiB total or 256 MiB per-file extraction limit")
-        for item, name in zip(members, names):
-            member = name
-            parts = name.split("/")
-            file_type = stat.S_IFMT(item.external_attr >> 16)
-            if (any(part in ("", ".", "..") for part in parts)
-                    or parts[0].startswith(".") or "\\" in name
-                    or any(ord(char) < 32 for char in name)
-                    or file_type not in (0, stat.S_IFREG, stat.S_IFDIR)):
-                raise ValueError("archive contains an unsafe path or non-regular member")
-        roots = {name.split("/")[0] for name in names}
-        if len(roots) != 1:
-            raise ValueError("archive must have exactly one top-level folder")
-        root = roots.pop()
-        metadata = root + ("/plugin.json" if kind == "plugins" else "/theme.json")
-        if metadata not in names or bundle.getinfo(metadata).is_dir():
-            raise ValueError("archive is missing required plugin.json or theme.json file")
-        root_plugin = False
-        member = metadata
-        if kind == "plugins":
-            manifest = json.loads(bundle.read(metadata))
-            if not isinstance(manifest, dict) or not isinstance(manifest.get("flags", []), list):
-                raise ValueError("plugin.json must be an object with an optional flags array")
-            root_plugin = "root" in manifest.get("flags", [])
-        invalid_member = bundle.testzip()
-        if invalid_member is not None:
-            member = invalid_member
-            raise ValueError("archive CRC validation failed")
-        content_owner = (0, 0) if root_plugin else host_owner
-        print(f">>> Decky archive={os.path.basename(archive)} target={kind}/{root} members={len(members)} root_plugin={root_plugin} content_uid={content_owner[0]} content_gid={content_owner[1]}", flush=True)
-        phase = "destination-preflight"
-        # Anchor all writes to open folders, never resolve archive paths as root.
-        home_fd = os.open(home, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-        try:
-            homebrew_fd = open_folder(home_fd, "homebrew")
-        finally:
-            os.close(home_fd)
-        folders = {}
-        try:
-            describe("homebrew-before", homebrew_fd)
-            base_fd = open_folder(homebrew_fd, kind, create=kind == "themes")
-            folders[""] = base_fd
-            describe(f"{kind}-before", base_fd)
-            if kind == "themes":
-                os.fchown(base_fd, *host_owner)
-                os.fchmod(base_fd, 0o755)
-            # Open every existing target before writing to reject links and special files.
-            folder_names = {root}
-            for item, name in zip(members, names):
-                parts = name.split("/")
-                folder_names.update("/".join(parts[:index]) for index in range(1, len(parts)))
-                if item.is_dir():
-                    folder_names.add(name)
-            for name in sorted(folder_names, key=lambda value: (value.count("/"), value)):
-                member = name
-                parent, _, leaf = name.rpartition("/")
-                folders[name] = open_folder(folders[parent], leaf, create=True)
-            for item, name in zip(members, names):
-                member = name
-                if item.is_dir():
-                    continue
-                parent, _, leaf = name.rpartition("/")
-                try:
-                    value = os.stat(leaf, dir_fd=folders[parent], follow_symlinks=False)
-                except FileNotFoundError:
-                    continue
-                if not stat.S_ISREG(value.st_mode) or value.st_nlink != 1:
-                    raise ValueError("destination contains a symlink, hardlink, or special file")
-            describe("target-before", folders[root])
-            phase = "write-and-verify"
-            files = 0
-            for item, name in zip(members, names):
-                member = name
-                if item.is_dir():
-                    continue
-                parent, _, leaf = name.rpartition("/")
-                owner = (0, 0) if kind == "plugins" and name == metadata else content_owner
-                data = bundle.read(item)
-                fd = os.open(leaf, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600, dir_fd=folders[parent])
-                with os.fdopen(fd, "r+b") as output:
-                    value = os.fstat(output.fileno())
-                    if not stat.S_ISREG(value.st_mode) or value.st_nlink != 1:
-                        raise ValueError("destination changed to a hardlink or special file")
-                    executable = ((item.external_attr >> 16) | value.st_mode) & 0o111
-                    mode = 0o755 if executable or (kind == "plugins" and name == metadata) else 0o644
-                    output.truncate(0)
-                    output.write(data)
-                    output.flush()
-                    os.fchown(output.fileno(), *owner)
-                    os.fchmod(output.fileno(), mode)
-                    output.seek(0)
-                    value = os.fstat(output.fileno())
-                    if output.read() != data or (value.st_uid, value.st_gid) != owner or stat.S_IMODE(value.st_mode) != mode:
-                        raise OSError("installed file content, ownership, or mode verification failed")
-                files += 1
-            phase = "folder-permissions"
-            for name, fd in folders.items():
-                member = name
-                if not name:
-                    continue
-                owner = (0, 0) if kind == "plugins" and name == root else content_owner
-                os.fchown(fd, *owner)
-                os.fchmod(fd, 0o755)
-                value = os.fstat(fd)
-                if (value.st_uid, value.st_gid) != owner or stat.S_IMODE(value.st_mode) != 0o755:
-                    raise OSError("installed folder ownership or mode verification failed")
-            describe("target-after", folders[root])
-            print(f">>> Decky phase=verified target={kind}/{root} files={files} ownership=verified mode=verified", flush=True)
-        finally:
-            for fd in folders.values():
-                os.close(fd)
-            os.close(homebrew_fd)
-except (OSError, ValueError, KeyError, zipfile.BadZipFile, RuntimeError) as error:
-    print(f">>> Decky phase={phase} failed: {type(error).__name__}: {error}; member={member!r}", file=sys.stderr, flush=True)
-    sys.exit(1)
-PY
-  if [ "$status" -ne 0 ]; then
-    echo ">>> Decky phase=install failed archive=$(basename "$archive") kind=$kind status=$status; fix the reported phase and re-run setup." >&2
-    return "$status"
-  fi
-}
-
-# Install Decky Loader when missing, then stage and install its plugins and themes.
-# No arguments. Returns nonzero on download, validation, or protected-write failure.
-# Keeps downloads user-owned; elevated archive writes apply Decky's ownership policy.
+# Delegate the opt-in Decky installation to the standard bootstrap, which supplies Node.js.
+# Returns its exit status; writes only a private temporary installer before delegation.
 function _bootstrap_decky_loader_plugins_themes() {
-  # Wipe any prior staging so stale downloads or renamed plugins never linger
-  if [ -n "${DECKY_PLUGINS_FOLDER:-}" ] && [ "$DECKY_PLUGINS_FOLDER" != "/" ]; then
-    echo ">>> Cleaning up old $DECKY_PLUGINS_FOLDER/"
-    rm -rf "$DECKY_PLUGINS_FOLDER"
-  fi
-  mkdir -p "$DECKY_PLUGINS_FOLDER" "$CSS_LOADER_THEMES_FOLDER"
-
-  # The upstream installer creates the plugin folder and starts the Loader service.
-  if [ ! -x "$HOME/homebrew/services/PluginLoader" ] || [ ! -d "$HOME/homebrew/plugins" ]; then
-    if ! type -P jq > /dev/null; then
-      echo ">>> Decky Loader requires jq; install jq and re-run this script."
-      return 1
-    fi
-    echo ">>> Installing Decky Loader"
-    curl -fsSL "https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_release.sh" \
-      -o "$HOME/decky_loader_installer.sh" || return 1
-    sudo bash "$HOME/decky_loader_installer.sh" || return 1
-    if [ ! -x "$HOME/homebrew/services/PluginLoader" ] || [ ! -d "$HOME/homebrew/plugins" ]; then
-      echo ">>> Decky Loader installation did not create its service and plugin folder."
-      return 1
-    fi
+  local installer_folder status=0
+  installer_folder=$(mktemp -d) || return 1
+  if curl -fsSL --connect-timeout 15 --max-time 120 \
+    "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" \
+    -o "$installer_folder/run.sh"; then
+    bash "$installer_folder/run.sh" --files=decky-and-css-loader < /dev/null || status=$?
   else
-    echo ">>> Decky Loader already installed"
+    status=$?
   fi
-
-  # Decky plugin and CSS Loader theme zips are vendored in this repo under
-  # assets/steamos/ so the helper never depends on third-party release URLs.
-  # See assets/steamos/README.md for the upstream author and repo of each file.
-  DECKY_ASSETS_BASE="https://raw.githubusercontent.com/synle/bashrc/HEAD/assets/steamos"
-
-  # Decky plugins -> $DECKY_PLUGINS_FOLDER
-  DECKY_PLUGINS=(
-    "xXJSONDeruloXx_decky-lsfg-vk_v0.14.4.zip"
-    "hulkrelax_hltb-for-deck.zip"
-    "SteamGridDB_decky-steamgriddb.zip"
-    "suchmememanyskill_SDH-CssLoader.zip"
-    "OMGDuke_protondb-decky.zip"
-    "EmuDeck_EmuDecky.zip"
-    "saumya-banthia_volume-boost.zip"
-    "jurassicplayer_decky-autoflatpaks_v1.6.8.zip"
-    "honjow_HueSync_v3.9.0.zip"
-  )
-  for asset in "${DECKY_PLUGINS[@]}"; do
-    echo ">>> Downloading $asset to $DECKY_PLUGINS_FOLDER/"
-    curl -fsSL "$DECKY_ASSETS_BASE/decky_plugin/$asset" -o "$DECKY_PLUGINS_FOLDER/$asset" || return 1
-  done
-
-  # Reapply every archive member: matching versions do not prove a prior install completed.
-  echo ">>> Installing Decky plugins into $HOME/homebrew/plugins/"
-  for zip in "$DECKY_PLUGINS_FOLDER"/*.zip; do
-    _install_decky_archive "$zip" plugins || return 1
-  done
-
-  # CSS Loader Themes (vendored from the DeckThemes store: https://deckthemes.com/)
-  CSS_LOADER_THEMES=(
-    "Round_c6844008-a809-41f6-b140-7aa76f2a62ad.zip"
-    "Clean_Gameview_a9776f60-2724-4ff0-824b-e1f82a04688e.zip"
-    "Centered_Home_865407ae-fb14-4db7-b123-61f6995ed757.zip"
-    "No_Home_Text_0e8a208f-136f-4f26-b0e1-344bcd186ed9.zip"
-    "No_Home_Recent_Text_95c4e310-0770-4e1f-9f9d-cbe444e9bb17.zip"
-    "Obsidian_f16cf40d-7ccc-4981-95bf-77b28e8d101e.zip"
-    "Faster_Transition_Animations_921a7ec8-b355-4799-b23f-73f4b9c713b8.zip"
-    "Mini_Carousel_4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b.zip"
-    "No_Home_Edge_Fade_2dab90ab-2cf3-480f-adce-f6c67caadd67.zip"
-  )
-  for asset in "${CSS_LOADER_THEMES[@]}"; do
-    echo ">>> Downloading CSS Loader theme $asset to $CSS_LOADER_THEMES_FOLDER/"
-    curl -fsSL "$DECKY_ASSETS_BASE/decky_css_loader/$asset" -o "$CSS_LOADER_THEMES_FOLDER/$asset" || return 1
-  done
-
-  echo ">>> Installing CSS Loader themes into $HOME/homebrew/themes/"
-  for zip in "$CSS_LOADER_THEMES_FOLDER"/*.zip; do
-    _install_decky_archive "$zip" themes || return 1
-  done
-  echo ">>> Decky phase=complete plugins=${#DECKY_PLUGINS[@]} themes=${#CSS_LOADER_THEMES[@]}"
+  rm -f "$installer_folder/run.sh"
+  rmdir "$installer_folder"
+  return "$status"
 }
 # --- Steam shortcuts ---
 # Locate the single local Steam account's shortcut file.

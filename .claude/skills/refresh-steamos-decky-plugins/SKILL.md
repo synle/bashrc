@@ -1,82 +1,61 @@
 ---
 name: refresh-steamos-decky-plugins
-description: Refresh the vendored SteamOS Decky plugin archives from their verified upstream release or Decky store sources. Use when checking or updating plugin versions in assets/steamos/decky_plugin.
+description: Verify and refresh pinned Decky plugins and CSS Loader themes for the generated release bundle. Use when checking package versions, provenance, hashes, or theme IDs in software/metadata/decky-packages.json.
 ---
 
 ## Purpose
 
-Refresh the vendored Decky plugin archives used by `software/scripts/steamos/setup.bash`. Keep the archive files, installer list, and `assets/steamos/README.md` source table synchronized.
+Refresh the trusted package inventory used by the opt-in Node.js installer and bundle
+builder. Keep installable upstream artifacts verified without committing package ZIPs.
 
-The user query is: `$ARGUMENTS` — if empty or unexpanded, refresh every plugin listed in `assets/steamos/README.md`; otherwise treat it as a comma- or space-separated plugin name or repository query.
+If `$ARGUMENTS` is empty or unexpanded, check every inventory entry; otherwise scope
+to the supplied comma- or space-separated package names.
 
 ## Steps
 
-1. Confirm repository root, branch, and worktree state:
-   ```bash
-   git rev-parse --show-toplevel
-   git status --short --branch
-   ```
-   Stop if unrelated uncommitted changes touch `assets/steamos/`, `software/scripts/steamos/setup.bash`, or `assets/steamos/README.md`.
-2. Read the plugin table in `assets/steamos/README.md` and the `DECKY_PLUGINS` array in `software/scripts/steamos/setup.bash`. Treat those two lists as the requested scope.
-3. For GitHub release plugins, query each repository's latest release:
-   ```bash
-   curl -fsSL "https://api.github.com/repos/OWNER/REPO/releases/latest" | jq .
-   ```
-   Select the release asset intended for Decky installation. Prefer a ZIP over a tarball when both exist. Do not infer a newer version from a branch, commit, or unrelated asset.
-4. Download each candidate to a temporary folder outside the repository. Never download directly over a tracked archive. Compare SHA-256 checksums before replacing anything:
-   ```bash
-   shasum -a 256 CURRENT.zip CANDIDATE.zip
-   ```
-5. For Decky store plugins without a usable GitHub release, query the store metadata:
-   ```bash
-   curl -fsSL --get --data-urlencode "query=PLUGIN_NAME" \
-     https://plugins.deckbrew.xyz/plugins | jq .
-   ```
-   Treat `versions[0]` as the store's latest listed version only after checking its `name`, `created`, and `hash`. Obtain the archive through a verified Decky store download flow or a documented CDN URL. Store metadata alone is not an archive.
-6. Validate every candidate archive before replacing the tracked file:
-   ```bash
-   unzip -t CANDIDATE.zip
-   unzip -Z1 CANDIDATE.zip | head -20
-   unzip -p CANDIDATE.zip '*/package.json' | jq -e '.name and .version' || true
-   unzip -p CANDIDATE.zip '*/plugin.json' | jq -e '.'
-   ```
-   Confirm one safe top-level plugin folder, `plugin.json`, a usable `dist/` or plugin entry point, and the expected plugin identity. If a plugin has no `package.json`, record that fact and validate its `plugin.json` instead.
-7. Replace only archives whose verified upstream checksum or version changed. Retain the existing local naming convention. If a filename contains a version, update both the archive filename and matching entry in `software/scripts/steamos/setup.bash`.
-8. Update the matching row in `assets/steamos/README.md` with the current filename, repository, store source when applicable, version, release tag, or store version, and verification date. Keep attribution URLs unchanged unless upstream moved the repository.
-9. Check that every archive in `assets/steamos/decky_plugin/` appears once in `setup.bash` and the README table, and every listed archive exists:
-   ```bash
-   bash -eu -o pipefail -c '
-     for file in assets/steamos/decky_plugin/*.zip; do
-       name=${file##*/}
-       grep -Fq "\"$name\"" software/scripts/steamos/setup.bash
-       grep -Fq "decky_plugin/$name" assets/steamos/README.md
-     done
-   '
-   ```
-10. Re-read the changed files, inspect `git diff --stat` and `git diff --check`, then run the verification commands below.
+1. Confirm repository root, branch, and worktree state. Read the canonical inventory,
+   `docs/steamos-decky-installation.md`, and shared Decky runtime. Preserve unrelated edits.
+2. Query each selected upstream release or store record using its recorded source.
+   Verify identity and version; keep newer verified releases rather than downgrading to
+   older store listings. Store metadata alone does not establish an installable artifact.
+3. Download candidates outside the checkout. For themes, inspect the current approved
+   DeckThemes blob and its dependencies. Never execute plugin code.
+4. Validate SHA-256, safe ZIP32 entries and CRC, one selected root, exact identity/version,
+   nonempty compiled plugin `dist/index.js`, and theme ID where applicable. Use the shared
+   Node validator against independently checked candidate pins; no Python tooling.
+5. Update only verified entries in `software/metadata/decky-packages.json`. Record exact
+   HTTPS download and attribution URLs, SHA-256, root, version, and theme ID. Filenames
+   must be `<name>_v<version>.zip`, without author prefixes, UUIDs, or hashes. Preserve
+   `decky_plugin/` and `decky_css_loader/` bundle paths. Keep Centered Home excluded.
+6. Build the full bundle outside the checkout with `make build_decky_bundle
+DECKY_BUNDLE_OUTPUT="OUTPUT.zip"`. The builder downloads upstream-only in complete
+   batches of three, validates all packages, and atomically replaces successful output.
+7. Re-read the inventory and diff. Update documentation only where the described contract
+   changes. Do not create a second package-selection list in setup or runtime code.
 
 ## Safety
 
 Never:
 
-- overwrite a tracked archive before downloading and validating a temporary candidate
-- claim a plugin is current from a failed request, missing release, branch head, or unverified store hash
-- invent a Decky CDN URL or substitute a source archive that is not the installable Decky artifact
-- remove a plugin because its repository has no GitHub release; mark it unresolved and stop for user input
-- update only a README row while leaving `setup.bash` pointed at a different archive
-- use credentials, GitHub tokens, or authenticated endpoints
-- delete old archives until the replacement passes ZIP and plugin metadata checks
-
-If a store artifact cannot be retrieved and verified, stop and report the plugin name, store version, hash, and exact missing artifact step. Ask before changing that plugin.
+- commit generated ZIPs or restore the removed Decky archive folders
+- infer an artifact URL, substitute source-code ZIPs, or accept an unverified store hash
+- execute downloaded plugin code during validation
+- delete installed themes/settings or remove existing Centered Home installations
+- replace an old output before the replacement passes complete validation
+- publish a release, push, or use credentials without explicit authorization
+- continue with an unverifiable candidate; leave its pin unchanged and stop to ask
 
 ## Verification
 
-Run and report exact output for:
+Run the following and quote exact result lines, distinguishing passed, failed, and skipped:
 
 ```bash
-bash -n software/scripts/steamos/setup.bash
-npx vitest run --config vitest.config.js software/tests/steamosSetup.spec.js
+/bin/bash -n software/scripts/steamos/setup.bash
+npx vitest run --config vitest.config.js software/tests/steamosSetup.cache.spec.js software/tests/steamosSetup.decky.spec.js software/tests/deckyZip.spec.js software/tests/deckyInstaller.spec.js
+make build_decky_bundle DECKY_BUNDLE_OUTPUT="OUTPUT.zip"
 git diff --check
 ```
 
-For each refreshed plugin, report old version and SHA-256, new version and SHA-256, source URL, and archive validation result. Report unchanged plugins separately. A successful refresh requires zero failed commands, matching installer and README lists, and no unverified candidate archives.
+Report old/new versions and SHA-256, verified source URLs, archive validation, unchanged
+packages, and gaps. A macOS filesystem-boundary simulation is not live SteamOS proof.
+Do not run interactive setup or privileged installation merely to validate a refresh.

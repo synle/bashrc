@@ -172,6 +172,12 @@ build_installer:
 build_text_server:
 	node software/tools/build-text-server.js
 
+# Build pinned Decky plugins/themes from upstream, including provenance metadata.
+# CI overrides output into RUNNER_TEMP; never commit the generated ZIP.
+DECKY_BUNDLE_OUTPUT ?= .build/steamos-decky__bundle.zip
+build_decky_bundle:
+	node software/tools/decky-bundle.js "$(DECKY_BUNDLE_OUTPUT)"
+
 # Render every generated editor theme into .build/_theme-preview.{html,png}.
 # The unit tests assert contrast floors for the pairs someone listed; this
 # renders the surfaces where two colors sit side by side, so a collision no
