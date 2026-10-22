@@ -131,6 +131,32 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
+### OpenCode experimental Code Mode
+
+The `opencode` wrapper (also exposed as `op`) defaults
+`OPENCODE_EXPERIMENTAL_CODE_MODE` to `1` for the launched process. The installed
+OpenCode 1.19.3 binary recognizes this experimental flag and conditionally loads
+its native Code Mode tool; no additional plugin or JSON setting is required.
+Direct `command opencode` invocations bypass the wrapper's default.
+
+Disable it for one invocation with:
+
+```bash
+OPENCODE_EXPERIMENTAL_CODE_MODE=0 opencode
+```
+
+The wrapper preserves explicit overrides and does not export its default into the
+calling shell. Restart OpenCode after refreshing the profile; existing processes
+retain their startup environment.
+
+Code Mode can reduce model round trips by composing tool calls in JavaScript.
+Batch related calls, parallelize only independent work, and filter results before
+returning them to the model. Await dependent calls in order and retain errors and
+necessary evidence. Pi's `tools.read(...)` and `text(...)` examples are not a
+verified OpenCode scripting API: use the runtime's exposed tool schema instead.
+Neither individual-tool speedups nor Pi-equivalent UI rendering are guaranteed;
+native interactive execution and performance parity remain unverified.
+
 ### Using the MarkItDown CLI
 
 Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) converts documents

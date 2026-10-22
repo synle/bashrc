@@ -17,6 +17,11 @@ function opencode() {
     return 1
   fi
 
+  # TODO: EXPERIMENTAL Code Mode in OpenCode 1.19.3; recheck this flag when upstream stabilizes it.
+  # Keep the default local to this invocation; an explicit 0 disables it.
+  local OPENCODE_EXPERIMENTAL_CODE_MODE="${OPENCODE_EXPERIMENTAL_CODE_MODE:-1}"
+  export OPENCODE_EXPERIMENTAL_CODE_MODE
+
   # Single-arg + arg is a readable file -> pipe contents in as the prompt.
   if [ "$#" -eq 1 ] && [ -f "$1" ] && [ -r "$1" ]; then
     command opencode --prompt "$(command cat "$1")"
