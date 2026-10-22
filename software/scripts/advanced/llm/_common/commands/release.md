@@ -4,6 +4,8 @@ One release command accepts channel intent through `$ARGUMENTS`; do not create p
 
 Free-form phrasing such as "release", "release from main", "ship a release", "cut a release", "release official", "release stable", "release prod" — all map to the OFFICIAL path. Only an explicit `beta` keyword, a validated SHA, or a non-default branch name routes to BETA.
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Inputs
 
 - `$ARGUMENTS` — optional free-form text after the command (may contain a SHA, a branch name, or keywords like `beta`).

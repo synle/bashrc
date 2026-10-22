@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — a repo path, or which docs to generate: `rules`, `architecture`, `dev`, or `all`. Default: the current repo, `all`, skipping any doc that already exists.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - A repo has no `AGENTS.md` / `CLAUDE.md`, so every agent session rediscovers its conventions from scratch and gets them subtly wrong.

@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — a target repo path or owner/repo. Defaults to current folder.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - A local checkout has drifted behind its remote — branches deleted on the remote still exist locally, the default branch is behind origin, or feature branches need the latest default-branch commits.

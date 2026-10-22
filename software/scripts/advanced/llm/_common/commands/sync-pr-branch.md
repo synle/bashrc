@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS — a target plus optional `key=value` options (see Invocation contract).
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - A PR is behind its base branch and CI requires "up to date with base" before merging.

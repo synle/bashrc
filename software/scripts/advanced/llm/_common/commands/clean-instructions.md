@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional paths or glob; if empty or unexpanded, use the scope in the request, otherwise the repo's complete source guidance corpus).
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - Reduce context load after additions or before a budget overflow.

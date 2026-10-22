@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — passed straight through to `/sy-close-stale-prs` in Phase 1. Typically a staleness threshold in days, e.g. `90`, or a scope like `acme/widget-store`. Defaults to that skill's own defaults: `@me`, 60 days.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - Periodic "cleanup day" — the PR dashboard has gone noisy and local checkouts have drifted behind their defaults.

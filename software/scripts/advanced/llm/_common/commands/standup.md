@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — a period like `today`, `yesterday`, `week`, `2w`, `month`, `since 2026-05-01`, or a date range. Add `all` to include every author, `slack` for a paste-ready message, or a repo name to scope to one. Default: `week`, your work only, terminal format.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - Standup, weekly sync, or a status update.

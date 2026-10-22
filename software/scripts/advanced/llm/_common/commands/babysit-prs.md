@@ -15,6 +15,8 @@ Argument: $ARGUMENTS (optional — selects scope; the first token decides the mo
   - shorthand: `<owner>/<repo>#<n>`
   - bare `#<n>` or bare digits `<n>` — only valid when the current working directory is a git repo with a GitHub `origin`; resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name (see Repo Identification).
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Execution mode
 
 Background agents are default. Resolve, sort, announce, and enroll the complete PR set first, then dispatch the existing slot jobs in parallel and await every dispatched or resumed job before the turn ends. Explicit foreground signals are `foreground`, `fg`, `inline`, `blocking`, `synchronous`, `sync`, or `wait`; strip that token, keep the same author-lens ranking and queue order, then execute enrolled PRs inline in that order without background agents. Never change scope, sorting, enrollment, worktree reuse, state checkpoints, or pass cadence based on mode.

@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (the goal — "fix all failing tests", "migrate every call site off the old client", a plan file path, or a plain-English objective. May end with `max=<n>` to override the iteration cap. If the placeholder arrives unexpanded or empty, ask for the goal and the command that proves it done, then stop.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - A goal that is one sentence to state and many small edits to reach: fix every failing test, remove a deprecated API from every call site, add missing docstrings across a module, work a checklist someone already wrote.

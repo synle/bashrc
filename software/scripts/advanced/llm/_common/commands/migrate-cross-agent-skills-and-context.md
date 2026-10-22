@@ -1,5 +1,7 @@
 [Sy] Migrate a repository's agent context and skills to AGENTS.md and .agents/skills while preserving rules, scope, and discovery. Use when consolidating vendor-specific guidance into one cross-agent source.
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Purpose
 
 Standardize shared repository context on `AGENTS.md` and reusable skills on `.agents/skills/<name>/SKILL.md`. Crawl the entire repository for guidance and consumers, not just the root's obvious files. Preserve behavior and compatibility; this is a layout migration, not a policy rewrite.

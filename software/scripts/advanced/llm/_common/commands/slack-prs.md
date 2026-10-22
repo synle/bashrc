@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — the PR author to filter by: a GitHub username, a full name, or empty.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Resolving the author
 
 1. If `$ARGUMENTS` is empty, whitespace, or one of `me`/`mine`/`self`, filter by the current user (`--author=@me`) — this is the default.

@@ -4,6 +4,8 @@ Argument: none. Scope is always PWD, author is always `@me`, format is always `c
 
 **Pending = still needs something.** Keep open `@me` PRs except fully clear ones (passing CI, approved, no conflicts, zero unresolved threads) and placeholder drafts (`isDraft == true`, title contains `Placeholder`). Babysitting still enrolls fully clear PRs for watching; this pending view deliberately filters them.
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Steps
 
 1. **Resolve the PR set exactly the way `/sy-babysit-prs` does** — run `/sy-list-prs clusters pwd`. `/sy-babysit-prs` Step 1a delegates to `/sy-list-prs short pwd`: same scope, same author, so the **same PR set** — only the render format differs (`clusters` here, `short` there). Scope resolution therefore stays identical: repos discovered two levels deep, each resolved to `<owner>/<repo>` via `git remote get-url origin` (never the folder name — see Repo Identification), then one `gh search prs --author=@me --state=open` across them.

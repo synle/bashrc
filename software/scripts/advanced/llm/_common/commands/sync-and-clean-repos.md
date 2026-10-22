@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — a root folder path. Defaults to current folder.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - Periodic "cleanup day" — multiple local checkouts have drifted behind their remotes.

@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — a package name, a list, `outdated` to survey everything, `security` for advisories only, or `patch` / `minor` / `major` to scope by bump size. If empty, survey and propose. Add `loop` to work the list to empty through `/sy-loop` — see **Loop mode**.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - A security advisory names a dependency you ship.

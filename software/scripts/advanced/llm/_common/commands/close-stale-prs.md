@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — `<days>` threshold, `<owner>/<repo>` scope, `me` / `mine` to filter to your own PRs, or a combination. Defaults to all open PRs authored by `@me` across all repos, 60-day staleness threshold.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - After a project pivot leaves a backlog of WIP PRs nobody will finish.

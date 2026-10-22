@@ -1,5 +1,7 @@
 [Sy] Create a pull request for the current branch.
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Steps
 
 1. **Resolve the repo** via `git remote get-url origin` → authoritative `owner/repo`. Do not derive from folder name.

@@ -4,6 +4,8 @@
 
 Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR. A caller dispatching a batch, e.g. `/sy-babysit-prs`, may also pass the full list of sibling PR URLs in that batch; Step 2a's companion check treats them as companions. A slot driver holding several PRs may pass `pass=single` — see the Step 12 loop gate.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Execution mode
 
 Top-level default: one self-contained background worker owning workspace recovery, cadence, pushes, and reporting. Match stable key `sy-babysit-pr:<owner>/<repo>#<number>` against live jobs first: retain running owner, resume idle owner, create only when unowned; cancel a confirmed duplicate, keeping the older. Record the handle and await the dispatched work before ending the turn, per shared PR instructions. Run inline when already dispatched, when `pass=single` is present, or when explicitly given `foreground`, `fg`, `inline`, `blocking`, `synchronous`, `sync`, or `wait`; strip mode tokens. Placement changes no scope, ownership, recovery, sync, checks, or pass order.

@@ -1,5 +1,7 @@
 [Sy] List open pull requests across repos, grouped by readiness. Defaults to `short` format (just full links).
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Inputs
 
 `$ARGUMENTS` is a free-form string that may carry three independent dimensions: a **format keyword**, a **scope**, and an **author**.

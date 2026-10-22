@@ -1,5 +1,7 @@
 [Sy] Create a WIP pull request for the current branch. Ordinary WIP mode uses a regular PR; placeholder-before-implementation mode uses a true GitHub draft with `Placeholder` in the title, returns the link, and lets coding start behind that draft.
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Steps
 
 1. **Resolve the repo** via `git remote get-url origin` → authoritative `owner/repo`. NEVER derive from folder name.

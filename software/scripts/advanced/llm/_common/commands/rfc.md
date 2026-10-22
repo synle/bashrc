@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (topic, request, issue, or existing notes. If empty or unexpanded, use current conversation; if that still lacks a concrete decision, ask for the problem and stop.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Purpose
 
 Create one decision document that helps reviewers align on a hard-to-reverse change, expose technical and operational risk, and understand implementation direction. An RFC captures why and what at design level; it does not replace product requirements, code review, API schemas, or an implementation plan.

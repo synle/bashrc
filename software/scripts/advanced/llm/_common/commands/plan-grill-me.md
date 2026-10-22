@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — topic to grill. If empty, asks what to grill.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Rules
 
 - Ask one question at a time.

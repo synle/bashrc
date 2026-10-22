@@ -1,5 +1,7 @@
 [Sy] Merge latest code into a working branch. Plain-English asks like "pull latest code", "pull latest code from master", or "pull latest code from main" mean this fixed merge workflow: first merge repo floor/default changes, then any ancestor wave or feature branches the branch sits on, then `upstream/<default>` when the repo is a fork. Merge only — never rebase.
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Purpose
 
 Delegate repo-local sync to the branch-syncing workflow, then merge a distinct `upstream` remote's default branch last. That workflow owns floor/ancestor resolution, conflicts, migration checks, and push gates.

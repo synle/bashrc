@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — a PR number/URL, a commit range like `main..HEAD`, a path, or `staged` / `unstaged`. If empty, use the current branch versus its base. Add `loop` to work the list to empty through `/sy-loop` — see **Loop mode**.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - Before opening a PR, to find what you forgot to test.

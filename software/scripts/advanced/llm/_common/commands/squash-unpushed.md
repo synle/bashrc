@@ -1,5 +1,7 @@
 [Sy] Combine all unpushed commits on the current branch into a single commit with a fresh one-line-plus-description message. Local history only — never rewrites, force-pushes, or touches anything already on the remote.
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Scope
 
 Squashes the run of commits that exist locally but are **not yet on the remote** into one clean commit, so a messy work-in-progress history (`wip`, `fix`, `typo`, `address review`) collapses into a single reviewable change before it is pushed. It rewrites **only unpushed history**, so there is nothing for anyone else to reconcile. It does NOT push, does NOT open a PR, and does NOT rebase onto or sync with the base branch — pushing and PR work stay explicit (`/sy-create-pr`, `git push`). For combining commits that are already pushed, this is the wrong tool: that is a shared-history rewrite and needs a human decision.

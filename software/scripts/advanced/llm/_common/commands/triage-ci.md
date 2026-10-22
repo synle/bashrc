@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — a run URL, a run ID, a workflow name, or a branch. If empty, take the most recent failing run on the default branch.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - The default branch is red and there is no PR to babysit.

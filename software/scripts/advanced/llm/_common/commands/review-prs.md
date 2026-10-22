@@ -6,6 +6,8 @@
 
 Argument: $ARGUMENTS (optional — scope filter; see "Resolving scope" below). Defaults to **all open PRs in the current repo authored by anyone EXCEPT me** when invoked from inside a git checkout — reviewing is something you do for other people, so your own PRs are excluded unless you ask for them by name (`me` / `mine` / `self`, or your handle). Outside a git checkout there is no repo to scope to, so the default falls back to `--author=@me`; say so, since that is the one default that hands you your own PRs.
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## Execution mode
 
 Background agents are default. Resolve, sort, announce, and assign the complete PR set first, then dispatch the existing slot jobs in parallel and await every dispatched or resumed job before the turn ends. Explicit foreground signals are `foreground`, `fg`, `inline`, `blocking`, `synchronous`, `sync`, or `wait`; strip that token, keep the same reviewer-lens ranking and queue order, then execute enrolled PRs inline in that order without background agents. Never change scope, sorting, enrollment, worktree reuse, state checkpoints, or pass cadence based on mode.

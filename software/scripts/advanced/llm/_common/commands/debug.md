@@ -2,6 +2,8 @@
 
 Argument: $ARGUMENTS (optional — the bug: a failing test name, an error string, a stack trace, a PR/issue link, or a plain-English symptom. If empty, ask for the symptom and the command that triggers it.)
 
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+
 ## When to use
 
 - A test, build, or CI job is red and the cause is not obvious on the first read.
