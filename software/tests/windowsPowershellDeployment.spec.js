@@ -138,7 +138,14 @@ describe("PowerShell 7 Terminal launch", () => {
     const { settings } = await configureTerminal(profiles);
     expect(settings.defaultProfile).toBe("legacy");
     expect(settings.profiles.list).toHaveLength(2);
-    expect(settings.profiles.list[1]).toEqual({ ...profiles[1], hidden: true });
+    // Managed appearance may add fields without changing this user's shell identity.
+    expect(settings.profiles.list[1]).toMatchObject({
+      guid: "core",
+      name: "Custom shell",
+      source: "Windows.Terminal.PowershellCore",
+      commandline: "pwsh.exe -NoLogo",
+      hidden: true,
+    });
   });
 
   it("defaults a renamed quoted pwsh profile to hidden without deleting or duplicating it", async () => {

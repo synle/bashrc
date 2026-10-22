@@ -150,11 +150,11 @@ PC is unavailable. Keep host shortcuts if you still use them there.
 ## Decky package bundle
 
 [`software/metadata/decky-packages.json`](../../software/metadata/decky-packages.json)
-is the authoritative inventory: nine plugins and eight themes, with exact versions,
+is the authoritative inventory: nine plugins and nine themes, with exact versions,
 upstream attribution/download URLs, SHA-256, selected roots, and theme IDs.
 HLTB for Deck 2.0.12, ProtonDB Badges 1.3.4, and CSS Loader 2.1.3 retain the verified
-newer releases. Centered Home is excluded from new selections; installed copies and
-settings are not removed.
+newer releases. Centered Home v1.3 is included; extra installed files and settings
+are preserved.
 
 The generated `steamos-decky__bundle.zip` contains `metadata.json`,
 `decky_plugin/<name>_v<version>.zip`, and
@@ -166,8 +166,12 @@ It works alongside comma-separated selections; no preset includes it implicitly.
 SteamOS setup delegates to that same path through the self-extracting bootstrap.
 See [installation and validation details](../../docs/steamos-decky-installation.md).
 
-Use the repo-local `refresh-steamos-decky-plugins` skill to verify candidates and
-update the inventory. ZIPs are generated, not committed. CI builds the bundle on
+To update everything, ask an agent: **“Refresh all pinned Decky plugins and CSS Loader
+themes to the latest verified installable releases.”** The repo-local
+[`refresh-steamos-decky-plugins` skill](../../.claude/skills/refresh-steamos-decky-plugins/SKILL.md)
+checks every inventory entry when no package names are supplied, verifies candidates,
+updates pins, tests, and rebuilds. Building alone does not update versions.
+ZIPs are generated, not committed. CI builds the bundle on
 PRs without release credentials and publishes it only on default-branch pushes.
 
 ## Misc — repo root

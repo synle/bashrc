@@ -1,0 +1,69 @@
+name: Clean Binary Cache Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      precompiled_profiles:
+        description: "Delete precompiled Bash profiles"
+        type: boolean
+        required: false
+        default: false
+      tool_binaries_and_installers:
+        description: "Delete tool binaries, installer bundles, and version metadata (not Decky)"
+        type: boolean
+        required: false
+        default: false
+      decky_bundles:
+        description: "Delete Decky plugin/theme bundle ZIPs, including candidate/backup ZIPs"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+# Serialize manual cleanups without cancelling a deletion already in progress.
+concurrency:
+  group: binary-cache-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup-release-cache:
+    name: Clean ${{ matrix.name }}
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      && (inputs.precompiled_profiles || inputs.tool_binaries_and_installers || inputs.decky_bundles)
+    runs-on: ubuntu-latest
+    # Separate group jobs, serialized so deletion cannot shift another job's asset pages.
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        include:
+          - group: profiles
+            name: precompiled Bash profiles
+          - group: tools
+            name: tool binaries and installer bundles
+          - group: decky
+            name: Decky plugin and theme bundles
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+      - name: Plan and delete selected release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CACHE_REPO: ${{ github.repository }}
+          CLEAN_PRECOMPILED_PROFILES: ${{ matrix.group == 'profiles' && inputs.precompiled_profiles }}
+          CLEAN_TOOL_BINARIES_AND_INSTALLERS: ${{ matrix.group == 'tools' && inputs.tool_binaries_and_installers }}
+          CLEAN_DECKY_BUNDLES: ${{ matrix.group == 'decky' && inputs.decky_bundles }}
+        run: node software/tools/cleanup-release-cache.js

@@ -25,7 +25,7 @@ Loader bootstrap must run. Existing Loader services are not upgraded or restarte
 ## Cache and trust
 
 The canonical [`decky-packages.json`](../software/metadata/decky-packages.json)
-pins nine plugins and eight themes. The first request is the rolling release asset
+pins nine plugins and nine themes. The first request is the rolling release asset
 `steamos-decky__bundle.zip`. Missing, stale, or invalid packages recover from their
 exact pinned upstream URLs. Downloads run concurrently in complete batches of **3**;
 a failed batch waits for all in-flight work and starts no further batch.
@@ -38,7 +38,7 @@ version, theme ID, and nonempty compiled plugin `dist/index.js`. No downloaded
 plugin code executes during validation. Limits are 256 MiB per download/member,
 1 GiB expanded per archive, 1 MiB per JSON member, and 10,000 ZIP entries.
 
-Centered Home is not selected. Existing installed copies and settings remain intact.
+Centered Home v1.3 is selected. Existing extra files and settings remain intact.
 
 ## Ownership and repair
 
@@ -70,6 +70,20 @@ Review logs before sharing: they may include local account and filesystem paths.
 Terminal-only password prompts are not captured. No shell tracing or credential dump
 is enabled. Downloads stay unprivileged; only upstream Loader bootstrap and protected
 archive writes use scoped `sudo`.
+
+## Refresh all packages to the latest verified versions
+
+Use the repo-local [`refresh-steamos-decky-plugins` skill](../.claude/skills/refresh-steamos-decky-plugins/SKILL.md).
+Ask an agent: **“Refresh all pinned Decky plugins and CSS Loader themes to the latest
+verified installable releases.”** No package arguments means every inventory entry;
+name specific packages only for a partial refresh.
+
+The skill discovers upstream releases and approved theme blobs, verifies installable
+archives, updates the single JSON inventory, tests, and rebuilds the whole bundle.
+It reports old/new versions and blocked candidates instead of silently downgrading
+or accepting unbuilt source ZIPs. Building alone does not discover updates or change
+pins. Publication still requires a successful default-branch push; refreshing does
+not install plugins, upload releases, or commit automatically.
 
 ## Build and checks
 

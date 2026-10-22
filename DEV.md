@@ -21,17 +21,31 @@ curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc
 
 See `software/tools/build-installer.js`.
 
+## Manual release-cache cleanup
+
+**Actions → Clean Binary Cache Release** provides three off-by-default checkboxes:
+**Precompiled Bash profiles**, **Tool binaries and installer bundles**, and
+**Decky plugin and theme bundles**. Only selected, allowlisted asset groups are deleted;
+the release, tag, and unknown assets stay. This is separate from Actions artifact
+cleanup. Read [scope, preconditions, and recovery](docs/release-cache-cleanup.md)
+before running it; no live cleanup is needed to verify the workflow locally.
+
 ## Refreshing SteamOS Decky Plugins
 
 Decky plugins and CSS Loader themes are pinned in `software/metadata/decky-packages.json`.
 The opt-in `decky-and-css-loader.standalone.js` stages the generated binary-cache bundle,
 recovers missing packages upstream in batches of three, and installs through the shared
 protected Node runtime. SteamOS setup delegates to the same standard script. No Decky
-ZIPs are tracked under `assets/steamos/`. Use the repo skill for a checked refresh:
+ZIPs are tracked under `assets/steamos/`. For a checked update of every package, ask:
 
 ```text
-refresh-steamos-decky-plugins
+Refresh all pinned Decky plugins and CSS Loader themes to the latest verified installable releases.
 ```
+
+The repo-local `refresh-steamos-decky-plugins` skill defaults to all entries; supply
+package names only for a partial refresh. It discovers current stable releases,
+verifies artifacts, updates pins, tests, builds, and reports updated/current/blocked
+packages. Building alone does not discover updates.
 
 Query upstream releases/store records, verify temporary candidate SHA-256, ZIP safety,
 identity/version, compiled plugin payload, and theme IDs before changing inventory pins.

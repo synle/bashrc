@@ -1,4 +1,4 @@
-/** Opt-in Decky Loader, nine pinned plugins, and eight CSS Loader themes for Linux desktops. */
+/** Opt-in Decky Loader, nine pinned plugins, and nine CSS Loader themes for Linux desktops. */
 
 /** Install only when explicitly selected; stage Node helpers locally, then emit the shared installer invocation. */
 async function doWork() {
