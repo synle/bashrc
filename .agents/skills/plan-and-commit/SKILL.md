@@ -24,11 +24,11 @@ Verify the shared plans folder before writing. A user-requested tracked copy bel
 
 ## Steps
 
-### 1. Establish a clean starting point
+### 1. Record the starting state
 
 - Resolve `<owner>/<repo>` via `git remote get-url origin` — never from the folder name (see Repo Identification).
 - Record the base SHA: `git rev-parse HEAD`. Every diff below is measured from here.
-- `git status --porcelain` — if the tree is dirty, list the pre-existing changes and ask whether to (a) stash them, (b) proceed and leave them out of the commit, or (c) abort. **Never fold someone else's uncommitted work into your commit.** Note every pre-existing dirty path; those paths are excluded from staging in Step 5.
+- Inspect `git status --porcelain`, the worktree diff, and the staged diff; record pre-existing work without changing it. Follow Concurrent work and Commit/push authority: continue around unrelated dirty files without asking, and isolate task hunks even in already-dirty files. Do not stash or exclude an entire path merely because it was dirty.
 - Read the repo's rules file (`AGENTS.md` / `CLAUDE.md`) and its map (`DEV.md`, `ARCHITECTURE.md`) before planning. Rules without the map produce locally-correct, architecturally-wrong changes.
 
 ### 2. Write `<repo>-<feature>.md`
@@ -48,15 +48,11 @@ Sections, in order:
 
 Apply Scope Discipline before adding a new file, class, dependency, or abstraction; explain why earlier rungs fail when reaching new implementation.
 
-### 3. Confirm before executing
+### 3. Execute clear requests without repeated approval
 
-Show the user the plan's Goal + Changes and ask: `"Execute this plan? (yes / edit / no)"`.
+Show the plan's Goal + Changes, then proceed to Step 4 when the request clearly authorizes implementation. A written plan does not create a new approval gate, and unrelated dirty files do not require confirmation.
 
-- **yes** → proceed to Step 4.
-- **edit** → take their corrections, rewrite `<repo>-<feature>.md`, ask again.
-- **no** → stop. The plan file stays on disk; nothing was changed.
-
-Skip this confirmation only when the user already pre-approved (e.g. "just do it", autopilot mode).
+Ask only when the plan introduces an unapproved scope or decision under Task Contract, or reaches an ownership, inseparable-overlap, secret, or destructive-action boundary. For a planning-only request, deliver the plan and stop; do not treat it as implementation or commit authority.
 
 ### 4. Execute
 
@@ -66,7 +62,7 @@ Work through the plan. If reality diverges — a file isn't where you expected, 
 
 1. Run the repo's own validation before committing. Look for it in this order: the rules file's documented command (e.g. `make validate`), then `Makefile` targets, then `package.json` scripts, then the language default (`cargo test`, `go test ./...`, `pytest`).
 2. **Validation failure blocks the commit.** Fix it. If it can't be fixed, report the failure and stop — do not commit red. Only commit a failing tree on an explicit user override, and say so in the commit body.
-3. Stage **only the paths in the plan's Files-touched table**, minus anything that was already dirty in Step 1. Never `git add -A` / `git add .` — that's how unrelated work gets swept into a commit.
+3. Recheck the live worktree and index, then stage **only task hunks within the plan's Files-touched table**. Already-dirty files are allowed when task hunks can be separated. Follow Commit/push authority to preserve unrelated staged changes and keep them out of the commit. Never `git add -A` / `git add .`.
 4. Run the Commit-author check (see Source Control & PRs) before committing.
 5. Commit once, with a real message: subject line describing the change, body summarizing the plan's Goal.
 
@@ -100,19 +96,19 @@ State: the commit SHA(s), the two artifact paths, the validation command and its
 Never:
 
 - push, open a pull request, or merge — this skill ends at the commit
-- `git add -A` over files you did not touch; stage only the paths the plan named
-- rebase, force-push, reset, or drop a stash to get a clean starting point — Step 1 stops and asks instead
+- blanket-stage files; stage only task hunks in the paths the plan named
+- rebase, force-push, reset, or drop a stash to get a clean starting point — preserve existing work and continue around it
 - commit while validation is red, or write a Wrap-Up claiming a validation you did not run
 - overwrite an existing plan or diff artifact from earlier work
 - create any subfolder under `~/_extra/ai_llm/plans/`, or write a generated script or data file to a name that does not start with its plan's stem
 
-If the working tree holds unrelated uncommitted changes, or the plan turns out to need a scope the user did not approve in Step 3, stop and ask.
+Stop and ask when changes overlap inseparably, ownership is unclear, an action risks data loss, or the plan requires unapproved scope. Unrelated uncommitted changes alone are not a reason to stop.
 
 ## Verification
 
 Before declaring success, confirm and report:
 
-- the commit SHA(s), and that `git status` is clean afterwards
+- the commit SHA(s), that the commit contains only task hunks, and that unrelated worktree and index changes remain intact; report remaining dirty work without treating it as failure
 - both artifact paths, with the diff regenerated from the actual commit range rather than hand-assembled
 - the validation command and its result, quoted, not paraphrased
 - every deviation from the plan, reflected in both the plan body and the Wrap-Up
