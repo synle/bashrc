@@ -75,6 +75,8 @@ Read before any branch, commit, push, PR, review, worktree, or GitHub action. De
 
 ## Links and references
 
+- **PR tooling discovery.** Before listing PRs or declaring collection/rendering unavailable, read the `sy-list-prs` skill's **Fetch PR data** and requested **Output format** sections. Check the canonical `list_prs` executable, not only optional `pr_list_*` shell wrappers; collection and Markdown rendering have separate availability checks.
+
 - **API-returned links only.** Emit the verified `url`/`html_url` rather than constructing it. Verify owner, repository, issue-versus-pull-request type, and number independently; the issues endpoint's pull-request discriminator distinguishes the shared numbering space. A 404 is unresolved identity/access, not license to invent a sibling link. State candidates actually tried and never print an unresolved link. Re-probe remembered, pasted, ticket, or commit-message references before acting.
 - **A bare `#<number>` is a rendering bug.** Outside GitHub-authored prose, use the full verified reference or omit the number; local rendering context can link shorthand to the wrong repository. Scan all chat prose, not only lists, for accidental shorthand.
 - **Render full clickable URLs.** Include `https://`, leave URLs bare rather than bold/backticked/labeled Markdown, and put one per list line with optional trailing context. Scheme-less text and label markup can hide links in terminal clients. Machine bare-URL output remains untouched. When a list includes anyone else's PR, show authors on every row and name the breakdown; omit redundant authors only when all are yours.

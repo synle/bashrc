@@ -140,16 +140,33 @@ set smartcase                 " Override ignorecase when search pattern has uppe
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Indentation & Whitespace
 """""""""""""""""""""""""""""""""""""""""""""""""
-set sts=2 sw=2 ts=2           " Soft tab stop, shift width, and tab stop all set to 2 spaces
-set expandtab                 " Insert spaces when pressing Tab — never use actual tab characters
+set sts=2 sw=2 ts=2           " Default to 2-space indentation for new soft-tab files
+set expandtab                 " Use spaces unless file contents or filetype require hard tabs
 set autoindent                " Copy indentation from the current line when starting a new line
 set smartindent               " Auto-indent after {, if, etc. — smarter than autoindent alone
 
-" Strip trailing whitespace on every save and keep exactly one blank line at EOF
+" Set buffer-local indent options without rewriting text, moving the cursor, or
+" changing search history. Any tab-led content selects hard tabs at the current
+" tabstop width; otherwise use 2 spaces. Preserve a hard-tab filetype's default
+" when no space-led content exists (including an empty Makefile).
+function! s:DetectIndentStyle() abort
+  if search('^\t\+\s*\S', 'nw') || (!&l:expandtab && !search('^ \+\S', 'nw'))
+    setlocal noexpandtab softtabstop=0
+    let &l:shiftwidth = &l:tabstop
+  else
+    setlocal expandtab softtabstop=2 shiftwidth=2 tabstop=2
+  endif
+endfunction
+augroup SyIndentStyle
+  autocmd!
+  autocmd BufReadPost,BufNewFile,FileType * call s:DetectIndentStyle()
+augroup END
+
+" Strip leading blank lines and trailing whitespace on every save, and keep one blank line at EOF
 " (cursor + search history preserved). This also removes Markdown hard-break spaces.
 augroup TrimTrailingWhitespaceOnSave
   autocmd!
-  autocmd BufWritePre * TrimTrailingWhitespace | TrimTrailingBlankLines
+  autocmd BufWritePre * TrimTrailingWhitespace | TrimLeadingBlankLines | TrimTrailingBlankLines
 augroup END
 
 " Whitespace visualization (default ON; toggle with \[)
@@ -206,6 +223,12 @@ nnoremap <silent> <C-a> ^
 nnoremap <silent> <C-e> $
 xnoremap <silent> <C-a> ^
 xnoremap <silent> <C-e> $
+" Ctrl+M follows Vim's % matching-pair motion in every editing mode.
+" Traditional terminals also encode Enter as Ctrl+M, so editing-mode Enter
+" jumps too. Command-line Enter is deliberately unchanged.
+nnoremap <silent> <C-m> %
+xnoremap <silent> <C-m> %
+inoremap <silent> <C-m> <C-o>%
 " Insert mode uses true line start/end, matching readline/bash editor behavior.
 " This intentionally replaces Vim's stock Ctrl-A (insert previously inserted text)
 " and Ctrl-E (scroll the window down one line) commands.
@@ -214,6 +237,10 @@ inoremap <silent> <C-e> <C-o>$
 " Ctrl+W already deletes the previous word natively in insert mode; keep Vim's default.
 " Ctrl+Backspace follows the same action when the terminal sends a distinct <C-BS> code.
 inoremap <silent> <C-BS> <C-w>
+" Ctrl+Delete deletes the next Vim word and stays in insert mode. Native Delete
+" joins lines at a line boundary and does nothing at EOF; CTRL-\ CTRL-O
+" avoids moving left before forward deletion, preserving preceding text.
+inoremap <silent> <expr> <C-Del> col('.') > strlen(getline('.')) ? "\<Del>" : "\<C-\>\<C-o>dw"
 " Ctrl+F pages forward natively; Ctrl+G pages backward (matches less/readline)
 nnoremap <silent> <C-g> <C-b>
 
@@ -274,8 +301,9 @@ xnoremap <BS> d
 xnoremap <Del> d
 
 " Tab / Shift+Tab in visual mode indent / dedent and keep the selection, so
-" repeated presses keep shifting — VS Code/Sublime parity. Replaces the old
-" visual-mode Tab wrap toggle; \] / } still toggle wrap.
+" repeated presses keep shifting — VS Code/Sublime parity. Buffer-local
+" expandtab/shiftwidth/tabstop select 2 spaces or one hard tab, not a fixed width.
+" Replaces the old visual-mode Tab wrap toggle; \] / } still toggle wrap.
 xnoremap <Tab> >gv
 xnoremap <S-Tab> <gv
 
@@ -293,6 +321,22 @@ endif
 " matching VS Code/Sublime/text-server. Remove duplicate lines (keep first, order kept):
 " cmd/ctrl/alt + shift + delete. Only GUI vim / CSI-u terminals deliver these chords.
 command! -bar TrimTrailingWhitespace let s:view = winsaveview() | keeppatterns %s/\s\+$//e | call winrestview(s:view)
+" Remove whole blank prefix lines before content, preserving registers, search,
+" content indentation, and the cursor's position relative to surviving text.
+" Blank-only buffers retain their existing trailing-normalization behavior.
+function! s:TrimLeadingBlankLines() abort
+  let l:count = nextnonblank(1) - 1
+  if l:count <= 0
+    return
+  endif
+  let l:view = winsaveview()
+  call deletebufline(bufnr('%'), 1, l:count)
+  let l:view.lnum = max([1, l:view.lnum - l:count])
+  let l:view.topline = max([1, l:view.topline - l:count])
+  call winrestview(l:view)
+endfunction
+command! -bar TrimLeadingBlankLines call <SID>TrimLeadingBlankLines()
+" Normalize trailing blank lines without changing the saved cursor view.
 function! s:TrimTrailingBlankLines() abort
   let l:view = winsaveview()
   while line('$') > 2 && getline('$') =~# '^\s*$'
@@ -433,7 +477,6 @@ nnoremap <silent> <Esc>l V
 
 " Break undo into smaller chunks — makes undo more granular like modern editors
 inoremap <space> <C-g>u<space>
-inoremap <CR> <C-g>u<CR>
 inoremap , <C-g>u,
 inoremap . <C-g>u.
 
