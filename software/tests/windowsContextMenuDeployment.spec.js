@@ -62,7 +62,7 @@ describe("final Windows Explorer maintenance deployment", () => {
     await context.doWork();
     expect(context.execBashSync.mock.calls).toEqual([]);
     expect(context.execBash.mock.calls).toEqual([]);
-    expect(context.readText.mock.calls.map(([strings]) => strings[0])).toEqual(["/working/profile.ps1"]);
+    expect(context.readText.mock.calls.map(([strings, ...values]) => String.raw(strings, ...values))).toEqual(["/working/profile.ps1"]);
     expect(context.writeText.mock.calls).toEqual([]);
     expect(context.deleteFile.mock.calls).toEqual([]);
   });
