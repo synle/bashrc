@@ -42,8 +42,6 @@
   //   - Remote servers must be reachable from every machine that runs setup —
   //     a corp-VPN-only endpoint will break setup on a laptop without VPN.
   "mcpServers": {
-    // Document extraction uses the markitdown shell function in
-    // software/bootstrap/profile-advanced.sh instead of an MCP server.
     // Microsoft Playwright — browser automation over STDIO: navigate, click,
     // fill forms, screenshot, and capture accessibility snapshots. Useful for
     // debugging the repo's own webapp/ and any web work. `npx` (Node installed
@@ -61,10 +59,27 @@
       "args": ["-y", "@playwright/mcp@latest", "--headless", "--isolated"],
       "argsOnMac": ["-y", "@playwright/mcp@latest"],
     },
-    // Example (commented; uncomment + edit to enable everywhere):
-    // "context7": {
-    //   "command": "npx",
-    //   "args": ["-y", "@upstash/context7-mcp"]
-    // }
+    // Context7 — current library documentation via a local stdio launcher.
+    // Queries go to Context7's hosted API; do not send private source or data.
+    // Keyless use has lower limits; an optional CONTEXT7_API_KEY is inherited
+    // from the environment, never committed here. Disable optional telemetry
+    // and npm lifecycle scripts without disabling documentation requests.
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "env": { "npm_config_ignore_scripts": "true", "OTEL_SDK_DISABLED": "true" },
+    },
+    // AnyDoc — community MCP wrapper around @firecrawl/anydoc for local
+    // PDF/Office-to-Markdown conversion; no parser API key or cloud upload.
+    // Converted text still enters model context. No OCR; mixed PDFs can omit
+    // scanned pages. output_path writes/overwrites files: preserve originals.
+    // Node >=20; published native builds cover macOS x64/arm64, Linux/WSL
+    // x64/arm64 (glibc/musl), and Windows x64, not Windows ARM64 or Termux.
+    // npm lifecycle scripts stay disabled; native bindings ship prebuilt.
+    "anydoc": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-anydoc@latest"],
+      "env": { "npm_config_ignore_scripts": "true" },
+    },
   },
 }

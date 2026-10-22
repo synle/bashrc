@@ -1,4 +1,5 @@
 /** Verifies shared MCP deployment through native setup destinations and safe additive writes. */
+import { readFileSync } from "fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fetchResponses,
@@ -29,6 +30,41 @@ const CLIENTS = [
   { cli: "gemini", target: "/mock/home/.gemini/settings.json", key: "mcpServers" },
   { cli: "opencode", target: "/mock/home/.config/opencode/opencode.json", key: "mcp" },
 ];
+
+/** Checked-in registry, used to verify requested servers rather than only synthetic fixtures. */
+const SHIPPED_REGISTRY = JSON.stringify(
+  getIndexFunction("parseJsonWithComments")(readFileSync("software/scripts/advanced/llm/_common/mcp-servers.jsonc", "utf8")),
+);
+
+/** Independent native config expectations for the requested npm MCP launchers. */
+const REQUESTED_SERVERS = {
+  mcpServers: {
+    context7: {
+      command: "npx",
+      args: ["-y", "@upstash/context7-mcp@latest"],
+      env: { npm_config_ignore_scripts: "true", OTEL_SDK_DISABLED: "true" },
+    },
+    anydoc: {
+      command: "npx",
+      args: ["-y", "mcp-server-anydoc@latest"],
+      env: { npm_config_ignore_scripts: "true" },
+    },
+  },
+  mcp: {
+    context7: {
+      type: "local",
+      command: ["npx", "-y", "@upstash/context7-mcp@latest"],
+      environment: { npm_config_ignore_scripts: "true", OTEL_SDK_DISABLED: "true" },
+      enabled: true,
+    },
+    anydoc: {
+      type: "local",
+      command: ["npx", "-y", "mcp-server-anydoc@latest"],
+      environment: { npm_config_ignore_scripts: "true" },
+      enabled: true,
+    },
+  },
+};
 
 /** Unrelated deployment seams stubbed so entry-point tests exercise real MCP IO only. */
 const OTHER_DEPLOYMENTS = [
@@ -106,6 +142,29 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
             docs: { type: "http", url: "https://example.com/mcp" },
           },
     );
+    const first = fileSystem[target];
+    await getIndexFunction("doWork")();
+    expect(fileSystem[target]).toBe(first);
+  });
+
+  it.each([false, true])("deploys shipped Context7 and AnyDoc servers safely and idempotently (macOS: %s)", async (isMac) => {
+    loadClient(cli);
+    setSandboxGlobal("is_os_mac", isMac);
+    fetchResponses["software/scripts/advanced/llm/_common/mcp-servers.jsonc"] = SHIPPED_REGISTRY;
+    mockFsExistence[target] = true;
+    fileSystem[target] = JSON.stringify({
+      customSetting: "kept",
+      [key]: { personal: { command: "personal-server" }, context7: { command: "old-server" } },
+    });
+
+    await getIndexFunction("doWork")();
+
+    const result = JSON.parse(fileSystem[target]);
+    expect(result.customSetting).toBe("kept");
+    expect(Object.keys(result[key]).sort()).toEqual(["anydoc", "context7", "personal", "playwright"]);
+    expect(result[key].personal).toEqual({ command: "personal-server" });
+    expect(result[key].context7).toEqual(REQUESTED_SERVERS[key].context7);
+    expect(result[key].anydoc).toEqual(REQUESTED_SERVERS[key].anydoc);
     const first = fileSystem[target];
     await getIndexFunction("doWork")();
     expect(fileSystem[target]).toBe(first);
