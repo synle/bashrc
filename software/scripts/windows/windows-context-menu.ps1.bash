@@ -38,7 +38,7 @@ function Save-ContextMenuKey {
 }
 
 # Git's installer owns only these verbs; leave Git itself and other verbs intact.
-foreach ($scope in @('Directory', 'Directory\Background', 'LibraryFolder\Background')) {
+foreach ($scope in @('Directory', 'Directory\Background', 'LibraryFolder\Background', 'Drive')) {
     foreach ($verb in @('git_gui', 'git_shell')) {
         foreach ($hive in @('HKEY_CURRENT_USER', 'HKEY_LOCAL_MACHINE')) {
             $key = "$hive\Software\Classes\$scope\shell\$verb"

@@ -165,11 +165,19 @@ describe("Windows maintenance deployment", () => {
 const hasPwsh = spawnSync("pwsh", ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "exit 0"], { timeout: 10000 }).status === 0;
 
 describe.skipIf(!hasPwsh)("Explorer maintenance consumer (PowerShell integration; registry fixture)", () => {
-  it("exports and removes twelve Git keys and writes three root-safe user commands", () => {
+  it("exports and removes sixteen Git keys and writes three root-safe user commands", () => {
     const result = runMaintenance();
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output.Removed).toHaveLength(12);
-    expect(result.output.Exports).toHaveLength(15);
+    expect(result.output.Removed).toHaveLength(16);
+    expect(result.output.Exports).toHaveLength(19);
+    expect(result.output.Removed).toEqual(
+      expect.arrayContaining([
+        "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Drive\\shell\\git_gui",
+        "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Drive\\shell\\git_shell",
+        "Registry::HKEY_LOCAL_MACHINE\\Software\\Classes\\Drive\\shell\\git_gui",
+        "Registry::HKEY_LOCAL_MACHINE\\Software\\Classes\\Drive\\shell\\git_shell",
+      ]),
+    );
     expect(result.output.Hidden).toEqual([]);
     expect(result.output.Labels.map(({ Value }) => Value)).toEqual(Array(3).fill("Open Powershell Here"));
     expect(result.output.Commands).toEqual([
@@ -212,14 +220,14 @@ describe.skipIf(!hasPwsh)("Explorer maintenance consumer (PowerShell integration
       "Open Powershell Here",
       "Open WSL Linux Here",
     ]);
-    expect(result.output.Exports).toHaveLength(18);
+    expect(result.output.Exports).toHaveLength(22);
   });
 
-  it("hides only the six denied machine Git verbs for the current user", () => {
+  it("hides only the eight denied machine Git verbs for the current user", () => {
     const result = runMaintenance("denied");
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output.Removed).toHaveLength(6);
-    expect(result.output.Hidden).toHaveLength(6);
+    expect(result.output.Removed).toHaveLength(8);
+    expect(result.output.Hidden).toHaveLength(8);
     expect(result.output.Hidden[0]).toEqual({
       Key: "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\git_gui",
       Name: "LegacyDisable",
@@ -256,7 +264,7 @@ describe.skipIf(!hasPwsh)("Explorer maintenance consumer (PowerShell integration
   it("preserves first-run backups when maintenance runs twice", () => {
     const result = runMaintenance("twice");
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output.Exports).toHaveLength(15);
+    expect(result.output.Exports).toHaveLength(19);
     expect(result.output.Commands).toHaveLength(6);
     expect(result.output.Commands[3]).toEqual(result.output.Commands[0]);
   });

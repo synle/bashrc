@@ -1,4 +1,4 @@
-/** Final cleanup for Windows - strips empty markers, deploys PowerShell profile, and removes working copy.
+/** Final cleanup for Windows - deploys PowerShell profiles, applies Explorer menus, and removes working copy.
  * The ~ prefix ensures this runs last (ASCII 126 sorts after all alphanumeric characters).
  */
 
@@ -32,10 +32,10 @@ async function _getPowershellProfilePaths() {
 }
 
 /**
- * Back up and deploy the finalized profile for PowerShell 7 and Windows PowerShell 5.1.
- * @returns {Promise<void>} Resolves after both deployments and working-copy cleanup.
- * @throws {Error} Propagates discovery or write failures, preserving the working copy on failure.
- * @sideEffects Writes the build artifact and both profiles; removes the temporary profile after success.
+ * Deploy both PowerShell profiles and apply backed-up Explorer menu maintenance after installers.
+ * @returns {Promise<void>} Resolves after profile/menu deployment and working-copy cleanup.
+ * @throws {Error} Propagates discovery, write, or maintenance failures, preserving the working copy on failure.
+ * @sideEffects Writes profiles and registry backups, updates owned Explorer verbs, and removes the working copy after success.
  */
 async function doWork() {
   log(">> Windows cleanup - finalizing PowerShell profile");
@@ -58,7 +58,7 @@ async function doWork() {
 
   // Offline dry-runs build the artifact but cannot discover another OS's known folders.
   if (IS_DRY_RUN) {
-    log(">>> [DryRun] Would resolve Windows Documents and deploy PowerShell and WindowsPowerShell profiles");
+    log(">>> [DryRun] Would deploy both PowerShell profiles and apply Explorer menu maintenance");
     return;
   }
 
@@ -70,7 +70,16 @@ async function doWork() {
     await writeText(targetPath, outputContent);
   }
 
-  // clean up the working copy now that the final profile has been deployed
+  // Run after package installers; copying the Desktop helper alone never changes Explorer.
+  log(">>> Applying backed-up Windows Explorer menu maintenance");
+  /** Shared registry maintenance source, also deployed for manual use. @type {string} */
+  const menuScript = await readText`software/scripts/windows/windows-context-menu.ps1.bash`;
+  /** Encoded source avoids shell interpolation of Windows paths and registry values. @type {string} */
+  const encodedMenuScript = Buffer.from(menuScript, "utf16le").toString("base64");
+  // execBash swallows nonzero exits; use the throwing helper so registry failures stop cleanup.
+  execBashSync(`powershell.exe -NoLogo -NoProfile -NonInteractive -EncodedCommand ${encodedMenuScript}`);
+
+  // Keep the working copy if either profile deployment or menu maintenance fails.
   log(">>> Cleaning up working copy:", POWERSHELL_SYLE_PATH);
   await deleteFile(POWERSHELL_SYLE_PATH);
 }

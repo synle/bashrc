@@ -48,6 +48,7 @@ function loadInstaller(file, overrides = {}) {
         ? fs.readFileSync("software/scripts/advanced/starship-config.toml", "utf8")
         : "# profile fixture\nWrite-Output 'ready'\n",
     execBash: vi.fn(async () => "E:\\Documents\r\n"),
+    execBashSync: vi.fn(() => ""),
     removeEmptyBlocks: (value) => value,
     cleanupExtraWhitespaces: (value) => value,
     mkdir: vi.fn(),

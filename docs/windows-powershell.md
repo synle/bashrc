@@ -91,10 +91,21 @@ inspect that variable if the prompt does not use the deployed configuration.
 
 ## Explorer context menus
 
-Windows initialization also copies `windows-context-menu.ps1` to the Windows
-user's Desktop. It does not execute registry changes automatically. After the WSL
-deployment above, run this in Windows PowerShell as the affected user (elevated
-with the same account when possible):
+Normal Windows provisioning and the complete WSL deployment above now execute
+Explorer maintenance during final Windows cleanup, after package installers and
+profile deployment. Previously, initialization only copied the helper to the
+Desktop; running provisioning alone never applied its registry changes.
+
+Cleanup runs the shared source through inbox Windows PowerShell with `-NoProfile`
+and `-NonInteractive`, as the current Windows user without automatic elevation.
+Dry-runs neither invoke maintenance nor change registry keys. Maintenance failure
+fails cleanup and preserves the working profile for retry; previously deployed
+profiles or registry keys are not rolled back.
+
+Initialization still copies `windows-context-menu.ps1` to the Windows user's
+Desktop. A selective run that omits `windows/~cleanup.js` does not apply menus.
+To apply only menu maintenance after initialization, run this in Windows PowerShell
+as the affected user (elevated with the same account when possible):
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Desktop\windows-context-menu.ps1"
@@ -102,10 +113,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Deskto
 
 The script exports each existing affected registry key before changing it:
 
-- Removes `git_gui` and `git_shell` from `Directory`, `Directory\Background`, and
-  `LibraryFolder\Background` under both HKCU and HKLM `Software\Classes`.
+- Removes `git_gui` and `git_shell` from `Directory`, `Directory\Background`,
+  `LibraryFolder\Background`, and `Drive` under both HKCU and HKLM `Software\Classes`.
   If deletion is denied, creates a current-user `LegacyDisable` override instead.
-  Git remains installed. A Git update may recreate its menu entries; rerun the script.
+  Git and unknown/custom verbs remain installed. A Git update may recreate its menu
+  entries; rerun normal provisioning or the copied maintenance script.
 - Creates current-user `Powershell` overrides for `Directory`,
   `Directory\Background`, and `Drive`, labeled **Open Powershell Here**.
   At registry-write time, checks `Get-Command pwsh.exe -CommandType Application`:
@@ -162,8 +174,10 @@ WSL mount, not the remembered folder. Repeat after rerunning with `pwsh.exe`
 unavailable to verify the fallback selection.
 Run the maintenance script twice; the second run must retain the first backups
 and leave the same effective menu configuration. PowerShell tests on macOS execute
-the script with registry boundary fixtures; they do not prove Explorer behavior,
-Windows registry merging, or Windows PowerShell 5.1 argument parsing.
+the script with registry boundary fixtures when those tests are run; they do not
+prove Explorer behavior, Windows registry merging, or Windows PowerShell 5.1
+argument parsing. The automatic cleanup change still needs verification on the
+affected Windows host; a source-only review is not proof that its live menu disappeared.
 
 ## Diagnose remaining `E:"` startup errors on Windows
 
