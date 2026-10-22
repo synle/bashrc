@@ -69,6 +69,7 @@
       "advanced/llm/opencode/install.sh",
       "advanced/llm/opencode/setup.js",
       "advanced/llm/pi/install.sh",
+      "advanced/llm/pi/setup-plugins.sh",
       "advanced/llm/pi/setup.js",
     ],
   },

@@ -278,6 +278,12 @@ describe("profile bashrc syntax check", () => {
   });
 });
 
+describe("Pi plugin setup syntax check", () => {
+  it("setup-plugins.sh - no syntax errors", () => {
+    assertNoSyntaxErrors(path.join(ROOT_DIR, "software/scripts/advanced/llm/pi/setup-plugins.sh"));
+  });
+});
+
 describe("bootstrap scripts syntax check", () => {
   bootstrapFiles.forEach((filePath) => {
     it(`${path.basename(filePath)} - no syntax errors`, () => {
