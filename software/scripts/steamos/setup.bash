@@ -10,13 +10,14 @@
 # Fixed site URLs open directly in kiosk mode; do not use "--app=" or URI forwarding.
 STEAMOS_SCRIPT_FOLDER="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-# Print a red yes/no prompt. Return 0 for Yes, 1 for No or unavailable terminal.
+# Print a yes/no prompt with only the default choice in red; read from /dev/tty.
 # $1: prompt text; $2: optional default (Y or N; defaults to N).
+# Return 0 for Yes, 1 for No, invalid input, or unavailable terminal/input.
 function _prompt() {
-  local prompt="$1" default="${2:-N}" reply="" hint="[y/N]"
-  case "$default" in [Yy]*) hint="[Y/n]" ;; esac
+  local prompt="$1" default="${2:-N}" reply="" hint='[y/\033[0;31mN\033[0m]'
+  case "$default" in [Yy]*) hint='[\033[0;31mY\033[0m/n]' ;; esac
   (: < /dev/tty) 2> /dev/null || return 1
-  printf '\033[0;31m>>> %s %s \033[0m' "$prompt" "$hint" > /dev/tty
+  printf '>>> %s %b ' "$prompt" "$hint" > /dev/tty
   read -r reply < /dev/tty || return 1
   case "$reply" in
   [Yy] | [Yy][Ee][Ss]) return 0 ;;
@@ -101,17 +102,23 @@ else
   DO_DECKY_SETUP=0
 fi
 
-DESKTOP_FOLDER="$HOME/Desktop"
-DECKY_PLUGINS_FOLDER="$DESKTOP_FOLDER/decky_plugins"
-CSS_LOADER_THEMES_FOLDER="$DECKY_PLUGINS_FOLDER/css_loader_themes"
-APPS_FOLDER="$HOME/Apps"
-mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
-
 if _prompt "Run system upgrade (sudo pacman -Syu / paru -Syu)?"; then
   DO_SYSTEM_UPGRADE=1
 else
   DO_SYSTEM_UPGRADE=0
 fi
+
+# Authenticate before downloads and installation; cached credentials may avoid a prompt.
+if ! sudo -v; then
+  echo ">>> SteamOS setup stopped: sudo authentication failed." >&2
+  exit 1
+fi
+
+DESKTOP_FOLDER="$HOME/Desktop"
+DECKY_PLUGINS_FOLDER="$DESKTOP_FOLDER/decky_plugins"
+CSS_LOADER_THEMES_FOLDER="$DECKY_PLUGINS_FOLDER/css_loader_themes"
+APPS_FOLDER="$HOME/Apps"
+mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
 
 # Flatpak Brave is required before downloads and Steam shortcut setup.
 function _install_flatpak_brave_prerequisite() {
