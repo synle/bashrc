@@ -417,6 +417,15 @@ Profile registration is buffered: `registerProfileBlock` /
 - In `software/scripts/advanced/llm/_common/instructions.md`, **rules are named, not
   numbered** — bullets only, cross-reference by name. Never hand-edit the generated
   global `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`; edit `_common/instructions.md`.
+- When editing current `_common/instructions*.md` or refreshing guidance, preserve the
+  established tone and apply these rules; frozen `v1/` and `v2/` stay untouched:
+  - **Meaning never dropped.** Optional articles can go; `not`, `never`, `no`, and
+    `only` never go. Keep numbers and units exact. Preserve conditions, exceptions,
+    ordering, safety gates, and technical payloads.
+  - **No theater.** No "me think", roleplay, or chatter between tool calls. Keep
+    required progress checkpoints, not narration of each command. If caveman
+    phrasing is not shorter, plain prose wins. Policy, skills, code, and written
+    deliverables stay in concise standard prose.
 - **Never name a real repo, org, or service in instructional prose** —
   `_common/instructions.md`, `_common/commands/*.md`, `.agents/skills/*/SKILL.md`, any doc
   telling an agent what to do. Use mock names (`acme/widget-store`, `myapp-frontend`).

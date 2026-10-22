@@ -36,7 +36,7 @@ Resolve current default branch and HEAD every run. Never pin this registry to pr
 4. Build one semantic inventory per source with four buckets: `already covered`, `net-new`, `conflicts`, `upstream-only`. Compare behavior, not wording. Examples prove intent but do not become rules by themselves. Track every candidate to its source URL, path, and SHA until accepted or rejected.
 5. Compare overlapping candidates across sources before merging; report upstream-vs-upstream contradictions instead of silently picking one. Ties favor canonical or actively maintained sources over curated lists and incidental mentions.
 6. Reject source-specific mechanics that do not fit this repo, unneeded benchmark claims, promotion, duplicate aliases, and rules weaker than local safety or repo instructions.
-7. Give each `net-new` item one authoritative home. Tighten an existing rule when possible; add a line only when no current rule carries the behavior. Keep persona, engineering rules, review workflows, and operational skills in their own layers.
+7. Give each `net-new` item one authoritative home. Tighten an existing rule when possible; add a line only when no current rule carries the behavior. Preserve the established tone and apply **Meaning never dropped** and **No theater** below. Keep persona, engineering rules, review workflows, and operational skills in their own layers; current instruction sources are in scope, frozen `v1/` and `v2/` snapshots are not.
 8. For a reusable repo-local workflow, use `.agents/skills/<name>/SKILL.md` and the AGENTS skill table. Do not add it to `LLM_COMMAND_DEPLOY_MAP` unless explicitly requested.
 9. Regenerate source-derived includes; check the always-loaded char budget and pay for any addition there by trimming equal text. Deploy affected context twice; second run must show stable counts and no stale-removal churn.
 10. Run narrow registry, instruction-budget, build-include, and affected script checks first. Run required full gate once after final edits.
@@ -45,6 +45,8 @@ Resolve current default branch and HEAD every run. Never pin this registry to pr
 ## Rules
 
 - Distill behavior, not vendor voice or layout. Tighten the existing authoritative rule instead of adding a second definition; already-enforced advice stays out.
+- **Meaning never dropped.** Optional articles can go; `not`, `never`, `no`, and `only` never go. Keep numbers and units exact. Preserve conditions, exceptions, ordering, safety gates, and technical payloads when tightening or merging guidance.
+- **No theater.** Preserve the local concise tone, not upstream padding. No "me think", roleplay, or chatter between tool calls. Keep required progress checkpoints, not narration of each command. If caveman phrasing is not shorter, plain prose wins. Policy, skills, code, and written deliverables stay in concise standard prose.
 - Preserve local safety exceptions. Brevity and minimal-code rules never remove validation, authorization, security, data-loss prevention, accessibility, migration/rollback safety, concurrency guards, compatibility, or required proof.
 - Upstream absence is never evidence to remove a local rule. Removal needs local evidence that the rule is obsolete, duplicated, or contradicted by an intentional repo change.
 - Keep candidate-level provenance in the final report, not merged guidance or always-loaded context. The Core Upstreams registry retains source identity only to define `core` and `default`.
