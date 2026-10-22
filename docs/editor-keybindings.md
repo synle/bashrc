@@ -656,12 +656,13 @@ visual-mode deletion from Vim's insert-mode defaults.
 
 ### Insert Mode
 
-| Key              | Action               | Status |
-| ---------------- | -------------------- | :----: |
-| `ctrl+a`         | Beginning of line    |   ✅   |
-| `ctrl+e`         | End of line          |   ✅   |
-| `ctrl+w`         | Delete previous word |   ✅   |
-| `ctrl+backspace` | Delete previous word |   ✅   |
+| Key              | Action                                       | Status |
+| ---------------- | -------------------------------------------- | :----: |
+| `ctrl+a`         | Beginning of line                            |   ✅   |
+| `ctrl+e`         | End of line                                  |   ✅   |
+| `ctrl+w`         | Delete previous word                         |   ✅   |
+| `ctrl+backspace` | Delete previous word                         |   ✅   |
+| `ctrl+m`         | Jump to matching pair, remain in insert mode |   ✅   |
 
 These mappings match readline/bash. They replace Vim's stock insert-mode `ctrl+a`
 (insert previously inserted text) and `ctrl+e` (scroll the window down one line).
@@ -679,9 +680,31 @@ code; terminals that encode it as ordinary Backspace cannot be distinguished by 
 | `ctrl+x`, `ctrl+q`, `,x`                | Close split                          |
 | `ctrl+left/right` (normal and insert)   | Previous / next word                 |
 | `ctrl+up/down` (normal, insert, visual) | Page up / page down                  |
+| `ctrl+m` (normal, visual, insert)       | Jump to matching pair (`%`)          |
 | `,arrow`                                | Navigate splits                      |
 | `,1` … `,9`                             | Go to Nth buffer tab (tabline order) |
 | `,[` / `,]`                             | Previous / next buffer tab           |
+
+In traditional terminals, `ctrl+m` and Enter both send carriage return. Enter
+therefore also jumps to the matching pair in normal, visual, and insert modes.
+Command-line Enter remains unchanged, so `:w`
+and other Ex commands still execute normally. Visual mode extends the selection;
+insert mode resumes insertion at the destination. Matching follows Vim's `%`
+behavior, including searching forward on the current line for a bracket.
+
+### Indentation and Save Cleanup
+
+Indentation detection changes buffer-local options, not existing file contents.
+Files with tab-led nonblank content use hard tabs at the current tabstop width;
+otherwise soft indentation always uses 2 spaces, even when existing lines use 4.
+A hard-tab filetype's default is retained when no space-led content exists,
+including empty Makefiles. Visual `Tab` / `shift+Tab` use these buffer settings
+and keep the selection for repeated shifts.
+
+Every save (`:w`, `,s`, or `\s`) removes whole leading blank/whitespace-only
+lines, removes trailing whitespace, and retains the existing single blank line
+at EOF. First-content indentation and interior blank lines are preserved.
+Empty and all-blank files retain their previous EOF normalization.
 
 ### Toggles (normal mode)
 

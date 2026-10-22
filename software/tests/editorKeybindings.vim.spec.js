@@ -85,7 +85,7 @@ describe("Vim Visual-Multi case keybindings", () => {
 
   it("keeps final-newline and clipboard-trim save behavior aligned", () => {
     expect(VIM_SETTINGS).toContain("set fixendofline");
-    expect(VIM_SETTINGS).toContain("autocmd BufWritePre * TrimTrailingWhitespace | TrimTrailingBlankLines");
+    expect(VIM_SETTINGS).toContain("autocmd BufWritePre * TrimTrailingWhitespace | TrimLeadingBlankLines | TrimTrailingBlankLines");
     expect(VIM_SETTINGS).toContain("while line('$') > 2 && getline('$') =~# '^\\s*$'");
     expect(VIM_SETTINGS).toContain("call deletebufline(bufnr('%'), line('$'))");
     expect(VIM_SETTINGS).toContain("let l:text = substitute(l:text, '[\\r\\n ]\\+$', '', '')");
