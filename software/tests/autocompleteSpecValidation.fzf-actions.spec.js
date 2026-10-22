@@ -221,6 +221,41 @@ describe("bash-fzf.profile.bash (direct)", () => {
       expect(results).toContain("cd /var");
     });
 
+    it.each([
+      ["favorite_alias", "favorite_target", "EXEC:"],
+      ["favorite_alias --verbose", "favorite_target 'two words' \"quoted\"", "EXEC:two words quoted --verbose"],
+    ])("should display alias expansion on a separate line for %s", (selection, expansion, execution) => {
+      const results = runFzfHelper(`
+        shopt -s expand_aliases
+        function h1() { printf 'H1:%s\\n' "$@"; }
+        function hr() { echo "HR"; }
+        function fzf_run() { printf '%s\\n' ${JSON.stringify(selection)}; }
+        function favorite_target() { printf 'EXEC:%s\\n' "$*"; }
+        alias favorite_alias=${JSON.stringify(expansion)}
+        fuzzy_favorite_command
+      `);
+      expect(results).toEqual([`H1:${selection}`, "HR", "H1:favorite_alias is an alias", expansion, "HR", execution]);
+    });
+
+    it("should preserve function definitions and execute the selected function", () => {
+      const results = runFzfHelper(`
+        function h1() { printf 'H1:%s\\n' "$@"; }
+        function hr() { echo "HR"; }
+        function fzf_run() { echo "favorite_test_command"; }
+        function favorite_test_command() { echo "EXECUTED"; }
+        expected=$(type favorite_test_command)
+        h1 favorite_test_command
+        hr
+        h1 "$expected"
+        hr
+        echo EXECUTED
+        echo SPLIT
+        fuzzy_favorite_command
+      `);
+      const split = results.indexOf("SPLIT");
+      expect(results.slice(split + 1)).toEqual(results.slice(0, split));
+    });
+
     it("should truncate long type output and frame it with hr separators", () => {
       // h1 / hr live in common-env.sh / profile-advanced.sh, which this harness
       // does not source — stub them with markers so the framing order is visible.

@@ -597,7 +597,8 @@ function add_bookmark_dir() {
   add_bookmark "cd $dir"
 }
 
-# Ctrl+B — fuzzy favorite command picker
+# Ctrl+B — pick and execute a bookmarked command, then add it to history.
+# Display aliases as a name and expansion; retain type output for other commands.
 function fuzzy_favorite_command() {
   local cmd
   local _MAX_TYPE_OUTPUT_CHARS=500
@@ -610,11 +611,14 @@ function fuzzy_favorite_command() {
     --bind 'f5:reload(command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null | sort -u)')
 
   if [ -n "$cmd" ]; then
-    # Echo the selected command in blue, then frame its capped `type` resolution
-    # (also blue) between rainbow `hr` separators before running it — so an aliased bookmark like ssh_tde_backend
-    # shows the real command it expands to (e.g. `command kubectl in exec ...`).
+    # Frame the selected command's capped resolution in blue before running it.
     _cmd_word=$(echo "$cmd" | awk '{print $1}')
-    _cmd_type_output=$(type "$_cmd_word" 2>&1 || true)
+    _cmd_type_output=$(LC_ALL=C type "$_cmd_word" 2>&1 || true)
+    if [[ "$_cmd_type_output" == "$_cmd_word is aliased to "* ]]; then
+      # C locale fixes Bash's wrapper text; strip only its outer quotes.
+      _cmd_type_output="${_cmd_type_output#*\`}"
+      _cmd_type_output="$_cmd_word is an alias"$'\n'"${_cmd_type_output%\'}"
+    fi
     if [ "${#_cmd_type_output}" -gt "$_MAX_TYPE_OUTPUT_CHARS" ]; then
       _cmd_type_output="${_cmd_type_output:0:$_MAX_TYPE_OUTPUT_CHARS}"
     fi
