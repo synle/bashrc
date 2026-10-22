@@ -243,7 +243,7 @@ describe("LLM agent deploy call sites", () => {
     // AGENTS.md §13.2 + §13.0: a skill selects a worker by BEHAVIOR, never by
     // name. A name here is literal prose on any CLI that resolves agents
     // differently, and rots the moment an agent is renamed.
-    const commandDir = path.join(ROOT, "software/scripts/advanced/llm/_common/commands");
+    const commandDir = path.join(ROOT, "software/scripts/advanced/llm/_common/v_current/commands");
     /** @type {string[]} `<command>: <agent>` for every agent name found in a body. */
     const violations = [];
     for (const entry of fs.readdirSync(commandDir).filter((f) => f.endsWith(".md"))) {

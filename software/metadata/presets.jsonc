@@ -56,7 +56,7 @@
     "files": ["advanced/starship.sh", "advanced/starship-config.js", "zoxide.js"],
   },
   "llm": {
-    "description": "Building block: AI CLI clients — install + configure Claude Code, GitHub Copilot, Google Gemini, OpenCode, and Pi (settings, keybindings, shared instructions, slash commands). Claude is the base — all CLIs read the same `_common/instructions.md`, OpenCode symlinks Claude's `/sy-*` commands, and Pi reads the shared skills from `~/.agents/skills`.",
+    "description": "Building block: AI CLI clients — install + configure Claude Code, GitHub Copilot, Google Gemini, OpenCode, and Pi (settings, keybindings, shared instructions, slash commands). Claude is the base — all CLIs read the same `_common/v_current/instructions.md`, OpenCode symlinks Claude's `/sy-*` commands, and Pi reads the shared skills from `~/.agents/skills`.",
     "files": [
       "advanced/llm/ollama.personal.sh",
       "advanced/llm/ollama-models.personal.js",
@@ -74,7 +74,7 @@
     ],
   },
   "llm-prompts": {
-    "description": "Building block subset of `llm`: re-sync prompts, slash commands, keybindings, and settings only — runs each CLI's setup.js without the install.sh / npm-install steps. Fast refresh after editing `_common/instructions.md` or `_common/commands/*.md`.",
+    "description": "Building block subset of `llm`: re-sync prompts, slash commands, keybindings, and settings only — runs each CLI's setup.js without the install.sh / npm-install steps. Fast refresh after editing `_common/v_current/instructions.md` or `_common/v_current/commands/*.md`.",
     "files": [
       "advanced/llm/claude/setup.js",
       "advanced/llm/copilot/setup.js",

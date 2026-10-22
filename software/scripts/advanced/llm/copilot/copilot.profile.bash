@@ -26,11 +26,11 @@
 #      seeds defaults into `~/.copilot/settings.json` and deploys the shared
 #      engineering principles into `~/.copilot/copilot-instructions.md` between BEGIN/END
 #      markers keyed by the source-of-truth path
-#      (`synle/bashrc | software/scripts/advanced/llm/_common/instructions.md`),
+#      (`synle/bashrc | software/scripts/advanced/llm/_common/v_current/instructions.md`),
 #      mirroring `~/.claude/CLAUDE.md` and `~/.gemini/GEMINI.md`. A symlink
 #      `~/.copilot/AGENTS.md` -> `copilot-instructions.md` is also created so
 #      copilot discovers the file via both paths. Source of
-#      truth: `software/scripts/advanced/llm/_common/instructions.md`.
+#      truth: `software/scripts/advanced/llm/_common/v_current/instructions.md`.
 #
 # Use `co` (or `copilot`) to launch, then type natural-language requests.
 # Use `co auth` to authenticate with GitHub first.
@@ -99,7 +99,7 @@ Files inside ~/.copilot/ worth knowing about:
   ~/.copilot/config.json              - state/credential file (auth tokens, session
                                         metadata); managed by the copilot binary.
   ~/.copilot/copilot-instructions.md  - user-level engineering rules (sourced from
-                                        software/scripts/advanced/llm/_common/instructions.md).
+                                        software/scripts/advanced/llm/_common/v_current/instructions.md).
   ~/.copilot/AGENTS.md                - symlink to copilot-instructions.md (copilot
                                         discovers the file via this path too).
   ~/.copilot/mcp-config.json          - MCP server registrations; managed by user or by
@@ -120,7 +120,7 @@ function copilot_edit_rule_global() {
 
 Opens ~/.copilot/copilot-instructions.md — the user-level instructions loaded into every session.
 The managed block is generated from
-software/scripts/advanced/llm/_common/instructions.md; edit that source for
+software/scripts/advanced/llm/_common/v_current/instructions.md; edit that source for
 changes that survive a re-run. See also: copilot_edit (whole folder),
 copilot_edit_config (settings file)."
     return 0

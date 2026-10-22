@@ -288,7 +288,7 @@ const COPILOT_MANAGED_SETTINGS = {
   // Keep the `Co-authored-by: Copilot <copilot@github.com>` trailer on git
   // commits copilot makes on the user's behalf. Matches upstream default
   // (true) but pinned for explicit intent. Per the engineering-principles
-  // gotcha in software/scripts/advanced/llm/_common/instructions.md (and
+  // gotcha in software/scripts/advanced/llm/_common/v_current/instructions.md (and
   // the deployed ~/.claude/CLAUDE.md / ~/.copilot/copilot-instructions.md /
   // ~/.gemini/GEMINI.md / ~/.config/opencode/AGENTS.md), Co-Authored-By
   // trailers for supported LLM CLIs are INTENTIONAL provenance and must
@@ -432,6 +432,8 @@ async function _doCopilotInstructionsWork(targetDir) {
   // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
   // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
   existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
+  // Migrate the previous source-path key after moving the active corpus into v_current.
+  existing = removeBlock(existing, LLM_INSTRUCTIONS_PREVIOUS_MARKER, "<!--", " -->");
 
   // One-time reposition: if the managed block exists but isn't at the very top,
   // remove it so the prepend below re-lands it first — above the LinkedIn Captain

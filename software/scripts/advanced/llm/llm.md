@@ -11,15 +11,15 @@ doesn't have to chase references.
 
 ## Part 1 — LLM CLI setup (shared rules)
 
-Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini, OpenCode) derives its rules, slash commands, and ergonomics from the same source files in `_common/`. Each per-CLI `setup.js` is responsible for mapping the shared content onto whatever config surface that specific CLI exposes on disk.
+Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini, OpenCode) derives its rules, slash commands, and ergonomics from the same active source files in `_common/v_current/`. Shared runtime helpers and MCP configuration remain in `_common/`. Each per-CLI `setup.js` is responsible for mapping the shared content onto whatever config surface that specific CLI exposes on disk.
 
 ### Single sources of truth
 
 | Shared file                                                        | Consumed by                                                                                                                                                                                                                                               |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_common/instructions.md`                                          | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                                                                                                        |
-| `_common/commands/*.md`                                            | `~/_extra/ai_llm/skills/sy-*/SKILL.md` (the ONE deployed copy) → symlinked into `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`, `~/.gemini/skills/`, `~/.agents/skills/`, plus `~/.config/opencode/commands/sy-*.md` for `/sy-*` |
-| `_common/agents/*.md`                                              | `<<LLM_ROOT_FOLDER>>/agents/<name>.md` (the ONE deployed copy) → symlinked into `~/.claude/agents/`, `~/.copilot/agents/` (as `<name>.agent.md`), `~/.config/opencode/agent/`                                                                             |
+| `_common/v_current/instructions.md`                                | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                                                                                                        |
+| `_common/v_current/commands/*.md`                                  | `~/_extra/ai_llm/skills/sy-*/SKILL.md` (the ONE deployed copy) → symlinked into `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`, `~/.gemini/skills/`, `~/.agents/skills/`, plus `~/.config/opencode/commands/sy-*.md` for `/sy-*` |
+| `_common/v_current/agents/*.md`                                    | `<<LLM_ROOT_FOLDER>>/agents/<name>.md` (the ONE deployed copy) → symlinked into `~/.claude/agents/`, `~/.copilot/agents/` (as `<name>.agent.md`), `~/.config/opencode/agent/`                                                                             |
 | Review and babysit PR memory                                       | `<<LLM_ROOT_FOLDER>>/pr_reviews/` and `<<LLM_ROOT_FOLDER>>/pr_babysits/` (concise durable context, created by every LLM setup)                                                                                                                            |
 | `_common/mcp-servers.jsonc`                                        | `~/.claude/settings.json::mcpServers`, `~/.copilot/mcp-config.json::mcpServers`, `~/.gemini/settings.json::mcpServers`, `~/.config/opencode/opencode.json::mcp` (translated)                                                                              |
 | `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                                                                                                                                                                          |
@@ -124,9 +124,9 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 
 ### Editing rules
 
-- **Instructions / rules**: edit `_common/instructions.md`, then re-run all four setup scripts (or `bash run.sh --preset=llm`).
-- **Slash commands**: edit a file under `_common/commands/<name>.md` — every deploy (Claude direct + Copilot skills + OpenCode symlink) picks it up on the next setup run. **Adding / renaming / retiring** one is a single edit to `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` — that one map is the registry every CLI setup reads, so there is no per-CLI list to keep in sync.
-- **Named agents**: edit a file under `_common/agents/<name>.md` — one vendor-neutral **worker persona** per file (who the worker is, what it owns, what it must never touch), never the workflow, which stays in the matching skill. **Adding / renaming / retiring** one is a single edit to `LLM_AGENT_DEPLOY_MAP` (or `LLM_AGENT_RETIRED_NAMES`) in `llm-common.js`. Like skills, an agent is ONE physical file under `<<LLM_ROOT_FOLDER>>/agents/` symlinked into every CLI; `LLM_AGENT_LINK_FOLDERS` holds only the destination folder and filename suffix. The frontmatter is the union of what each CLI needs (`name` + `description` + `mode: subagent`) — they all ignore keys they do not know, and dropping any one key silently breaks exactly one CLI. **Adding a CLI requires a live probe first**: a wrong folder or frontmatter key fails silently, so confirm with `claude --agent zz-nope -p x` / `copilot --agent zz-nope -p x` (both enumerate what they resolved, before spending a model turn) or `opencode agent list`.
+- **Instructions / rules**: edit `_common/v_current/instructions.md`, then re-run all four setup scripts (or `bash run.sh --preset=llm`).
+- **Slash commands**: edit a file under `_common/v_current/commands/<name>.md` — every deploy (Claude direct + Copilot skills + OpenCode symlink) picks it up on the next setup run. **Adding / renaming / retiring** one is a single edit to `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` — that one map is the registry every CLI setup reads, so there is no per-CLI list to keep in sync.
+- **Named agents**: edit a file under `_common/v_current/agents/<name>.md` — one vendor-neutral **worker persona** per file (who the worker is, what it owns, what it must never touch), never the workflow, which stays in the matching skill. **Adding / renaming / retiring** one is a single edit to `LLM_AGENT_DEPLOY_MAP` (or `LLM_AGENT_RETIRED_NAMES`) in `llm-common.js`. Like skills, an agent is ONE physical file under `<<LLM_ROOT_FOLDER>>/agents/` symlinked into every CLI; `LLM_AGENT_LINK_FOLDERS` holds only the destination folder and filename suffix. The frontmatter is the union of what each CLI needs (`name` + `description` + `mode: subagent`) — they all ignore keys they do not know, and dropping any one key silently breaks exactly one CLI. **Adding a CLI requires a live probe first**: a wrong folder or frontmatter key fails silently, so confirm with `claude --agent zz-nope -p x` / `copilot --agent zz-nope -p x` (both enumerate what they resolved, before spending a model turn) or `opencode agent list`.
 - **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.- **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
@@ -240,7 +240,7 @@ own `webapp/` or any web task.
 
 ### Shell dispatchers (`sy-*` and `<cli>_skill_*` from the terminal)
 
-Every `_common/commands/<name>.md` slash command also has matching bash
+Every `_common/v_current/commands/<name>.md` slash command also has matching bash
 functions so the same workflow can run interactively or print output and exit.
 Source: `_common/sy-commands.profile.bash` (sourced via `profile-advanced.sh`).
 Four families are registered per skill, from one loop, on shell load — no
@@ -401,17 +401,17 @@ skills loader, but **no slash-command slot and no live keymap surface**
 (instructions/settings as of `v1.0.48`; skills behavior verified on `v1.0.76`).
 You will lose ergonomics. Plan accordingly.
 
-| From (Claude Code)                      | To (Copilot CLI)                           | Notes                                                                                                                                                                                                                                                                            |
-| --------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `~/.claude/CLAUDE.md`                   | `~/.copilot/copilot-instructions.md`       | Same Markdown-as-system-prompt model.                                                                                                                                                                                                                                            |
-| `~/_extra/ai_llm/skills/sy-<name>/`     | ✅ `~/.copilot/skills/sy-<name>` (symlink) | No `~/.copilot/commands/` slot exists, so the shared `_common/commands/*.md` corpus is deployed once as folder-form **skills** with generated YAML frontmatter and symlinked here. Gives `/sy-*` in Copilot plus model-triggering off `description` — no plugin manifest needed. |
-| `~/.claude/skills/<name>/SKILL.md`      | ✅ `~/.copilot/skills/<name>` (symlink)    | Copilot does NOT read `~/.claude/skills/` (verified `v1.0.76` — a probe skill there never appears in `available_skills`). Irrelevant now: both folders hold per-skill symlinks into `~/_extra/ai_llm/skills/`, so neither CLI depends on the other's path.                       |
-| `~/.claude/keybindings.json`            | ❌ no live keymap config in v1.0.48        | This repo still builds a `copilot-keys.*.jsonc` artifact so the schema stays exercised for the day upstream ships one.                                                                                                                                                           |
-| `~/.claude/settings.json`               | `~/.copilot/settings.json`                 | Different key names — see the settings-intent table above for the cross-CLI mapping.                                                                                                                                                                                             |
-| `<repo>/CLAUDE.md`                      | `<repo>/AGENTS.md`                         | Copilot CLI also reads `AGENTS.md` at the repo root.                                                                                                                                                                                                                             |
-| `<repo>/.claude/skills/<name>/SKILL.md` | ✅ read natively (same path)               | Verified `v1.0.76`: this repo's seven skills load as project skills with zero setup. Model-invoked only — no `/skill-name`.                                                                                                                                                      |
-| `<repo>/.claude/settings.json` hooks    | ❌ no hook system today                    | Same gap as OpenCode.                                                                                                                                                                                                                                                            |
-| `~/.claude/projects/.../memory/*.md`    | ❌ no auto-memory layer today              | Same gap as OpenCode — anything load-bearing must move into `AGENTS.md`.                                                                                                                                                                                                         |
+| From (Claude Code)                      | To (Copilot CLI)                           | Notes                                                                                                                                                                                                                                                                                      |
+| --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `~/.claude/CLAUDE.md`                   | `~/.copilot/copilot-instructions.md`       | Same Markdown-as-system-prompt model.                                                                                                                                                                                                                                                      |
+| `~/_extra/ai_llm/skills/sy-<name>/`     | ✅ `~/.copilot/skills/sy-<name>` (symlink) | No `~/.copilot/commands/` slot exists, so the shared `_common/v_current/commands/*.md` corpus is deployed once as folder-form **skills** with generated YAML frontmatter and symlinked here. Gives `/sy-*` in Copilot plus model-triggering off `description` — no plugin manifest needed. |
+| `~/.claude/skills/<name>/SKILL.md`      | ✅ `~/.copilot/skills/<name>` (symlink)    | Copilot does NOT read `~/.claude/skills/` (verified `v1.0.76` — a probe skill there never appears in `available_skills`). Irrelevant now: both folders hold per-skill symlinks into `~/_extra/ai_llm/skills/`, so neither CLI depends on the other's path.                                 |
+| `~/.claude/keybindings.json`            | ❌ no live keymap config in v1.0.48        | This repo still builds a `copilot-keys.*.jsonc` artifact so the schema stays exercised for the day upstream ships one.                                                                                                                                                                     |
+| `~/.claude/settings.json`               | `~/.copilot/settings.json`                 | Different key names — see the settings-intent table above for the cross-CLI mapping.                                                                                                                                                                                                       |
+| `<repo>/CLAUDE.md`                      | `<repo>/AGENTS.md`                         | Copilot CLI also reads `AGENTS.md` at the repo root.                                                                                                                                                                                                                                       |
+| `<repo>/.claude/skills/<name>/SKILL.md` | ✅ read natively (same path)               | Verified `v1.0.76`: this repo's seven skills load as project skills with zero setup. Model-invoked only — no `/skill-name`.                                                                                                                                                                |
+| `<repo>/.claude/settings.json` hooks    | ❌ no hook system today                    | Same gap as OpenCode.                                                                                                                                                                                                                                                                      |
+| `~/.claude/projects/.../memory/*.md`    | ❌ no auto-memory layer today              | Same gap as OpenCode — anything load-bearing must move into `AGENTS.md`.                                                                                                                                                                                                                   |
 
 ### Starting from scratch — what a brand-new machine needs
 
@@ -438,7 +438,7 @@ The whole point of `software/scripts/advanced/llm/` is so that none of the
 above has to be hand-maintained per CLI. One edit, four deployments, every run.
 
 - **One instructions file feeds four CLIs.**
-  `_common/instructions.md` is the single source of truth. Each `setup.js`
+  `_common/v_current/instructions.md` is the single source of truth. Each `setup.js`
   (`claude/`, `copilot/`, `gemini/`, `opencode/`) writes it out to the right
   filename in the right folder, in the right managed-block format for that CLI:
   - `~/.claude/CLAUDE.md`
@@ -446,7 +446,7 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
   - `~/.gemini/GEMINI.md`
   - `~/.config/opencode/AGENTS.md`
 - **One command corpus feeds all four CLIs without duplication.**
-  `_common/commands/*.md` is deployed ONCE to `~/_extra/ai_llm/skills/sy-*/SKILL.md`
+  `_common/v_current/commands/*.md` is deployed ONCE to `~/_extra/ai_llm/skills/sy-*/SKILL.md`
   by `deploySharedLLMSkills()` (llm-common.js), then **per-skill symlinked** into
   `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`,
   `~/.gemini/skills/`, and `~/.agents/skills/`. Per-skill, never a folder
@@ -487,7 +487,7 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
   `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` plus its linked files are
   read on every Claude Code turn but have no analogue in OpenCode/Copilot/Gemini.
   If you rely on memory for load-bearing context (preferences, project facts,
-  feedback), promote it into `_common/instructions.md` before switching CLIs,
+  feedback), promote it into `_common/v_current/instructions.md` before switching CLIs,
   or accept that the second CLI will start without it.
 
 ---
@@ -510,7 +510,7 @@ OpenCode also accepts `.agents/skills/` and `~/.agents/skills/`, and walks up
 from the cwd to the git worktree root when resolving project skills
 ([docs](https://opencode.ai/docs/skills/)).
 
-Copilot's own path list comes from `copilot skill --help` on `v1.0.76`. Note the asymmetry: it reads `<repo>/.claude/skills/` but **not** `~/.claude/skills/`. That asymmetry no longer costs anything, because no CLI reads another's folder here: `deploySharedLLMSkills()` (llm-common.js) writes each `_common/commands/<name>.md` once to `~/_extra/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then symlinks that folder into every CLI's own skills path — Claude, Copilot, Gemini, OpenCode, and the interoperable `~/.agents/skills/`.
+Copilot's own path list comes from `copilot skill --help` on `v1.0.76`. Note the asymmetry: it reads `<repo>/.claude/skills/` but **not** `~/.claude/skills/`. That asymmetry no longer costs anything, because no CLI reads another's folder here: `deploySharedLLMSkills()` (llm-common.js) writes each `_common/v_current/commands/<name>.md` once to `~/_extra/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then symlinks that folder into every CLI's own skills path — Claude, Copilot, Gemini, OpenCode, and the interoperable `~/.agents/skills/`.
 
 For this repo, Pi, OpenCode, and Copilot CLI can discover `.agents/skills/` directly; Claude Code retains the `.claude/skills` compatibility path. Pi requires project trust before loading project skills. Gemini's local discovery probe was blocked by its untrusted-folder gate; do not treat a skipped project scan as missing files.
 

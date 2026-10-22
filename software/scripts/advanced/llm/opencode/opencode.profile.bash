@@ -53,7 +53,7 @@ Files inside ~/.config/opencode/ worth knowing about:
                      software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc
                      and the inline TUI defaults in opencode/setup.js.
   AGENTS.md        - user-level engineering rules (sourced from
-                     software/scripts/advanced/llm/_common/instructions.md).
+                     software/scripts/advanced/llm/_common/v_current/instructions.md).
   commands/*.md    - slash command definitions, symlinked from
                      ~/.claude/commands/ by opencode/setup.js.
 
@@ -77,7 +77,7 @@ function opencode_edit_rule_global() {
 
 Opens ~/.config/opencode/AGENTS.md — the user-level instructions loaded into every session.
 The managed block is generated from
-software/scripts/advanced/llm/_common/instructions.md; edit that source for
+software/scripts/advanced/llm/_common/v_current/instructions.md; edit that source for
 changes that survive a re-run. See also: opencode_edit (whole folder),
 opencode_edit_config (settings file)."
     return 0

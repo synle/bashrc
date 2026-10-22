@@ -73,7 +73,7 @@ bash run.sh --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"
 
 ### AI CLI Setup
 
-Unified setup for the major terminal AI clients: Claude Code, GitHub Copilot CLI, Gemini CLI, and OpenCode. Lives under `software/scripts/advanced/llm/` with shared rules + slash commands + keybindings in `_common/` (the `instructions.md` in there is the single source for the generated global `AGENTS` / `AGENTS.md` / `GEMINI.md` configs). Includes an Ollama installer + dynamic provider discovery shared between Zed and OpenCode.
+Unified setup for the major terminal AI clients: Claude Code, GitHub Copilot CLI, Gemini CLI, and OpenCode. Lives under `software/scripts/advanced/llm/` with active rules and slash commands in `_common/v_current/` and shared runtime helpers in `_common/` (the `v_current/instructions.md` file is the single source for the generated global `AGENTS` / `AGENTS.md` / `GEMINI.md` configs). Includes an Ollama installer + dynamic provider discovery shared between Zed and OpenCode.
 
 ### CI/CD
 

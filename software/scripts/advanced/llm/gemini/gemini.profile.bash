@@ -20,7 +20,7 @@
 #      seeds ~/.gemini/settings.json defaults, ~/.gemini/keybindings.json from
 #      gemini-keys.common.jsonc, and ~/.gemini/GEMINI.md from the shared
 #      engineering rules (managed block keyed by source path). Source of truth:
-#      software/scripts/advanced/llm/_common/instructions.md.
+#      software/scripts/advanced/llm/_common/v_current/instructions.md.
 ################################################################################
 
 # gemini: wrapper around the `gemini` binary; auto-yolo, auto-symlinks GEMINI.md → CLAUDE.md, echoes resolved invocation to stderr
@@ -72,7 +72,7 @@ Files inside ~/.gemini/ worth knowing about:
   ~/.gemini/keybindings.json - generated from
                                software/scripts/advanced/llm/gemini/gemini-keys.common.jsonc.
   ~/.gemini/GEMINI.md        - user-level engineering rules (sourced from
-                               software/scripts/advanced/llm/_common/instructions.md)."
+                               software/scripts/advanced/llm/_common/v_current/instructions.md)."
     return 0
   fi
   view_file "$HOME/.gemini"
@@ -86,7 +86,7 @@ function gemini_edit_rule_global() {
 
 Opens ~/.gemini/GEMINI.md — the user-level instructions loaded into every session.
 The managed block is generated from
-software/scripts/advanced/llm/_common/instructions.md; edit that source for
+software/scripts/advanced/llm/_common/v_current/instructions.md; edit that source for
 changes that survive a re-run. See also: gemini_edit (whole folder),
 gemini_edit_config (settings file)."
     return 0

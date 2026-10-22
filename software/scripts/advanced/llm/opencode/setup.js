@@ -3,7 +3,7 @@
  *
  * NOTE: OpenCode WOULD fall through to `~/.claude/CLAUDE.md` automatically when
  * `~/.config/opencode/AGENTS.md` is absent (per https://opencode.ai/docs/rules/),
- * but we deploy our OWN copy of `_common/instructions.md` to
+ * but we deploy our OWN copy of `_common/v_current/instructions.md` to
  * `~/.config/opencode/AGENTS.md` anyway — see `_doOpencodeInstructionsWork`
  * below. Reason: redundancy. If the user later disables claude-code fallback
  * (`OPENCODE_DISABLE_CLAUDE_CODE=1`) or relocates `~/.claude/`, OpenCode still
@@ -680,6 +680,8 @@ async function _doOpencodeInstructionsWork() {
   // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
   // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
   existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
+  // Migrate the previous source-path key after moving the active corpus into v_current.
+  existing = removeBlock(existing, LLM_INSTRUCTIONS_PREVIOUS_MARKER, "<!--", " -->");
 
   // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when AGENTS.md is brand new or the markers are missing.

@@ -48,7 +48,7 @@ Files inside ~/.pi/agent/ worth knowing about:
                     a built-in subscription provider reached via /login, not a
                     models.json entry.
   AGENTS.md       - user-level engineering rules (sourced from
-                    software/scripts/advanced/llm/_common/instructions.md).
+                    software/scripts/advanced/llm/_common/v_current/instructions.md).
   APPEND_SYSTEM.md - short tail-position system-prompt reminder that
                     reinforces caveman reply style every run.
   auth.json       - provider credential store (OAuth tokens from /login),
@@ -70,7 +70,7 @@ function pi_edit_rule_global() {
 
 Opens ~/.pi/agent/AGENTS.md — the user-level instructions loaded into every session.
 The managed block is generated from
-software/scripts/advanced/llm/_common/instructions.md; edit that source for
+software/scripts/advanced/llm/_common/v_current/instructions.md; edit that source for
 changes that survive a re-run. See also: pi_edit (whole folder),
 pi_edit_config (settings file)."
     return 0

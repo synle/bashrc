@@ -75,6 +75,10 @@ OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chr
 
 ## 4. Layout
 
+Active shared LLM instructions, commands, and agents live in
+`software/scripts/advanced/llm/_common/v_current/`; runtime helpers and MCP configuration
+remain in `_common/`, alongside historical snapshots.
+
 Full directory + file map lives in `ARCHITECTURE.md` (Key Directories / Important Files)
 — read it rather than duplicating it here. The paths an agent touches most:
 
@@ -414,10 +418,10 @@ Profile registration is buffered: `registerProfileBlock` /
   by `vs-code-ext.js` — don't hand-edit.
 - Any keybinding change (editor, terminal, browser, CLI) also updates
   `docs/editor-keybindings.md`, the single source of truth.
-- In `software/scripts/advanced/llm/_common/instructions.md`, **rules are named, not
+- In `software/scripts/advanced/llm/_common/v_current/instructions.md`, **rules are named, not
   numbered** — bullets only, cross-reference by name. Never hand-edit the generated
-  global `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`; edit `_common/instructions.md`.
-- When editing current `_common/instructions*.md`, shared `_common/commands/*.md`,
+  global `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`; edit `_common/v_current/instructions.md`.
+- When editing current `_common/v_current/instructions*.md`, shared `_common/v_current/commands/*.md`,
   or refreshing guidance, preserve the established tone and apply these rules;
   frozen `v1/` and `v2/` stay untouched:
   - **Meaning never dropped.** Optional articles can go; `not`, `never`, `no`, and
@@ -428,7 +432,7 @@ Profile registration is buffered: `registerProfileBlock` /
     phrasing is not shorter, plain prose wins. Policy, skills, code, and written
     deliverables stay in concise standard prose.
 - **Never name a real repo, org, or service in instructional prose** —
-  `_common/instructions.md`, `_common/commands/*.md`, `.agents/skills/*/SKILL.md`, any doc
+  `_common/v_current/instructions.md`, `_common/v_current/commands/*.md`, `.agents/skills/*/SKILL.md`, any doc
   telling an agent what to do. Use mock names (`acme/widget-store`, `myapp-frontend`).
   Incident notes keep the behavior and drop the name. This file may name `synle/bashrc` —
   a repo's own rules file can't be wrong about its remote; `assets/` / §3 is inventory,
@@ -707,7 +711,7 @@ One `SKILL.md` is shared across CLIs — write to the open Agent Skills lowest c
 ### 13.1 The global `/sy-*` corpus — one registry, never a per-CLI list
 
 Repo-local skills are separate from the machine-wide `/sy-*` corpus. Exactly two files
-to touch: `_common/commands/<name>.md` (behavior) and `LLM_COMMAND_DEPLOY_MAP` /
+to touch: `_common/v_current/commands/<name>.md` (behavior) and `LLM_COMMAND_DEPLOY_MAP` /
 `LLM_COMMAND_RETIRED_NAMES` in `llm-common.js` (add/rename/retire). Every CLI's
 `setup.js` reads that map via `// SOURCE software/scripts/advanced/llm/llm-common.js`;
 keys are extension-less so one map serves file- and folder-based CLIs.
@@ -743,7 +747,7 @@ Deploy = one physical copy plus symlinks: `deploySharedLLMSkills()` writes
 ### 13.2 Named agents — a persona, never a workflow
 
 Skill = workflow; agent = worker. Registry `LLM_AGENT_DEPLOY_MAP` in `llm-common.js`,
-sources `_common/agents/<name>.md`.
+sources `_common/v_current/agents/<name>.md`.
 
 - **Agent source describes who the worker is, never what it does** — lens, ownership,
   never-touch list, reporting style. Steps/cadence/safety stay in the matching `SKILL.md`.
@@ -804,7 +808,7 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
 - **The always-loaded block has a hard size budget:** Claude Code refuses `CLAUDE.md`
   over 40k chars; keep `instructions.md` under 39.5k — split a section rather than trim rules.
   PR-workflow/debugging/testing/readability/review-guardrail rules live in
-  `_common/instructions-{pr-workflow,debugging,testing,readability,review-guardrails}.md`.
+  `_common/v_current/instructions-{pr-workflow,debugging,testing,readability,review-guardrails}.md`.
   - Reference split files as a backticked path, **never `@path`** (an `@`-import
     re-inflates the budget; `llmInstructionsSplit.spec.js` fails on it).
   - New split file = one `LLM_SHARED_INSTRUCTION_FILES` entry + a pointer in

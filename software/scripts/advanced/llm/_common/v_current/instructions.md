@@ -1,4 +1,4 @@
-<!-- BEGIN software/scripts/advanced/llm/_common/instructions-persona.md -->
+<!-- BEGIN software/scripts/advanced/llm/_common/v_current/instructions-persona.md -->
 
 # Persona — Caveman Speak
 
@@ -30,7 +30,7 @@ Example status report: “Both PRs wait on approval. Backend auto-merge armed.�
 
 **Bottom bookend — next user-facing sentence returns to Caveman Speak.**
 
-<!-- END software/scripts/advanced/llm/_common/instructions-persona.md -->
+<!-- END software/scripts/advanced/llm/_common/v_current/instructions-persona.md -->
 
 # Engineering Principles
 

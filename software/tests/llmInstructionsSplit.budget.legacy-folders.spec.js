@@ -12,7 +12,7 @@ import vm from "vm";
 
 const ROOT = path.resolve(".");
 
-const COMMON_FOLDER = "software/scripts/advanced/llm/_common";
+const COMMON_FOLDER = "software/scripts/advanced/llm/_common/v_current";
 
 const INSTRUCTIONS_PATH = path.join(ROOT, COMMON_FOLDER, "instructions.md");
 

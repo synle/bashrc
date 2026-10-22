@@ -51,7 +51,7 @@ describe("removeBlock", () => {
   });
 
   it("should support keys containing spaces, pipes, slashes, and dots (descriptive marker keys)", () => {
-    const key = "synle/bashrc | software/scripts/advanced/llm/_common/instructions.md";
+    const key = "synle/bashrc | software/scripts/advanced/llm/_common/v_current/instructions.md";
     const input = `header\n<!-- BEGIN ${key} -->\nbody\n<!-- END ${key} -->\nfooter\n`;
     expect(removeBlock(input, key, "<!--", " -->")).toBe("header\nfooter\n");
   });

@@ -331,7 +331,7 @@ Files inside ~/.claude/ worth knowing about:
                                (GLOBAL_CLAUDE_SETTINGS) if you want changes to
                                survive a re-run.
   ~/.claude/CLAUDE.md        - user-level engineering rules (sourced from
-                               software/scripts/advanced/llm/_common/instructions.md).
+                               software/scripts/advanced/llm/_common/v_current/instructions.md).
   ~/.claude/keybindings.json - generated from
                                software/scripts/advanced/llm/claude/claude-keys.common.jsonc."
     return 0
@@ -348,7 +348,7 @@ function claude_edit_rule_global() {
 
 Opens ~/.claude/CLAUDE.md — the user-level instructions loaded into every session.
 The managed block is generated from
-software/scripts/advanced/llm/_common/instructions.md; edit that source for
+software/scripts/advanced/llm/_common/v_current/instructions.md; edit that source for
 changes that survive a re-run. See also: claude_edit (whole folder),
 claude_edit_config (settings file)."
     return 0

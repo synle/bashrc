@@ -83,7 +83,7 @@ describe("llm-common.js registry constants", () => {
   });
 
   it("exposes the source folder and skill marker the deploy loop depends on", () => {
-    expect(SOURCE_FOLDER).toBe("software/scripts/advanced/llm/_common/commands");
+    expect(SOURCE_FOLDER).toBe("software/scripts/advanced/llm/_common/v_current/commands");
     expect(MARKER).toBe("[Sy] ");
     expect(fs.existsSync(path.join(ROOT, SOURCE_FOLDER))).toBe(true);
   });
