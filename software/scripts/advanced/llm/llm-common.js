@@ -1564,6 +1564,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-loop": "loop",
   "sy-maintenance-day": "maintenance-day",
   "sy-merge": "merge",
+  "sy-migrate-cross-agent-skills-and-context": "migrate-cross-agent-skills-and-context",
   "sy-onboard-repo": "onboard-repo",
   "sy-plan-grill-me": "plan-grill-me",
   // Single release entry-point. The command body checks $ARGUMENTS to decide
