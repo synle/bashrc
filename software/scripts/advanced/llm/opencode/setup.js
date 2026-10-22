@@ -232,6 +232,10 @@ function _buildOpencodeConfig(providersArray) {
     // risk: low — opencode ignores unknown experimental keys silently.
     experimental: {
       batch_tool: true,
+      // Keep this disable flag false: long pastes should collapse into a compact
+      // placeholder instead of flooding the input box; the full text is still sent.
+      // A saved TUI override wins: select "Enable paste summary" in the command palette.
+      disable_paste_summary: false,
     },
     // Others tried and dropped as buggy or silent no-ops: supermemory,
     // subagent-statusline, notify, worktree, snip. snip (VincentHardouin/opencode-snip)

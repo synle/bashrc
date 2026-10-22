@@ -662,7 +662,7 @@ visual-mode deletion from Vim's insert-mode defaults.
 | `ctrl+e`         | End of line                                  |   ✅   |
 | `ctrl+w`         | Delete previous word                         |   ✅   |
 | `ctrl+backspace` | Delete previous word                         |   ✅   |
-| `ctrl+delete`    | Delete next word, remain in insert mode       |   ✅   |
+| `ctrl+delete`    | Delete next word, remain in insert mode      |   ✅   |
 | `ctrl+m`         | Jump to matching pair, remain in insert mode |   ✅   |
 
 These mappings match readline/bash. They replace Vim's stock insert-mode `ctrl+a`

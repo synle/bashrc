@@ -140,6 +140,13 @@ describe("OpenCode Ollama metadata", () => {
     }
   });
 
+  it("keeps long pasted input collapsed by default", () => {
+    const buildOpencodeConfig = getIndexFunction("_buildOpencodeConfig");
+    const config = buildOpencodeConfig([]);
+
+    expect(config.experimental.disable_paste_summary).toBe(false);
+  });
+
   it("leaves GitHub Copilot model discovery native when no extension is verified", () => {
     const buildOpencodeConfig = getIndexFunction("_buildOpencodeConfig");
     const config = buildOpencodeConfig([]);

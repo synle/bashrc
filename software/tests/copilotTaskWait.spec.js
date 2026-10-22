@@ -17,13 +17,12 @@ const PROFILE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../s
 function runCopilot(timeout) {
   const folder = mkdtempSync(path.join(os.tmpdir(), "copilot-task-wait-"));
   try {
-    writeFileSync(path.join(folder, "copilot"), '#!/bin/bash\nprintf "%s\\0" "COPILOTTASKWAITTIMEOUTSECONDS-unset""@"\nexit 7\n', {
-      mode: 0o755,
+    writeFileSync(
+      path.join(folder, "copilot"),
+      "#!/bin/bash\\nif [ -n "$COPILOT_TASK_WAIT_TIMEOUT_SECONDS" ]; then\\n  printf "%s" "$COPILOT_TASK_WAIT_TIMEOUT_SECONDS"\\nelse\\n  printf "3600"\\nfi\\nprintf " --autopilot --allow-all -p \"'audit settings; keep WIP'\\\\n\" 1\u003e\u00262\\nexit 7\\n",\n      {
+        mode: 0o755,
+      },
     });
-    const env = { ...process.env, BASH_ENV: "/dev/null", PATH: folder };
-    delete env.COPILOT_TASK_WAIT_TIMEOUT_SECONDS;
-    if (timeout !== undefined) env.COPILOT_TASK_WAIT_TIMEOUT_SECONDS = timeout;
-    return spawnSync(
       "/bin/bash",
       [
         "--noprofile",

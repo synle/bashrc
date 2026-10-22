@@ -154,30 +154,22 @@ describe("Vim Ctrl+Delete forward-word deletion integration", () => {
     ["end of file", "alpha", "ggA", "alphaX"],
     ["empty buffer", "", "gg0i", "X"],
   ])("deletes forward from %s and resumes insertion without deleting backward", (_name, input, position, expected) => {
-    const result = editInVim(input, [
-      `call feedkeys("${position}\\<C-Del>X\\<Esc>", "xt")`,
-    ]);
+    const result = editInVim(input, [`call feedkeys("${position}\\<C-Del>X\\<Esc>", "xt")`]);
     expect(result.lines).toEqual([expected]);
   });
 
   it("joins the next line at a line boundary without deleting preceding text", () => {
-    const result = editInVim("alpha\nbeta", [
-      'call feedkeys("ggA\\<C-Del>X\\<Esc>", "xt")',
-    ]);
+    const result = editInVim("alpha\nbeta", ['call feedkeys("ggA\\<C-Del>X\\<Esc>", "xt")']);
     expect(result.lines).toEqual(["alphaXbeta"]);
   });
 
   it("supports repeated forward deletions in the same insert session", () => {
-    const result = editInVim("alpha beta gamma", [
-      'call feedkeys("gg0i\\<C-Del>\\<C-Del>X\\<Esc>", "xt")',
-    ]);
+    const result = editInVim("alpha beta gamma", ['call feedkeys("gg0i\\<C-Del>\\<C-Del>X\\<Esc>", "xt")']);
     expect(result.lines).toEqual(["Xgamma"]);
   });
 
   it("keeps Ctrl+Backspace deleting the previous word", () => {
-    const result = editInVim("alpha beta", [
-      'call feedkeys("ggA\\<C-BS>X\\<Esc>", "xt")',
-    ]);
+    const result = editInVim("alpha beta", ['call feedkeys("ggA\\<C-BS>X\\<Esc>", "xt")']);
     expect(result.lines).toEqual(["alpha X"]);
   });
 });
