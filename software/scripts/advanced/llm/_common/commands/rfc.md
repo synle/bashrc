@@ -6,7 +6,7 @@ Argument: $ARGUMENTS (topic, request, issue, or existing notes. If empty or unex
 
 ## Purpose
 
-Create one decision document that helps reviewers align on a hard-to-reverse change, expose technical and operational risk, and understand implementation direction. An RFC captures why and what at design level; it does not replace product requirements, code review, API schemas, or an implementation plan.
+Create one document aligning reviewers on a hard-to-reverse change, its technical and operational risks, and implementation direction. An RFC captures design-level why and what; it does not replace product requirements, code review, API schemas, or an implementation plan.
 
 Use an RFC when at least one condition holds:
 
@@ -15,7 +15,7 @@ Use an RFC when at least one condition holds:
 - A decision will be expensive to reverse.
 - Several stakeholders need alignment before implementation.
 
-Skip an RFC for straightforward, low-risk work with an obvious approach and few collaborators. Say why a shorter issue or implementation plan is enough instead of manufacturing complexity.
+Skip an RFC for straightforward, low-risk work with an obvious approach and few collaborators. Explain why an issue or implementation plan suffices.
 
 ## Steps
 
@@ -120,7 +120,7 @@ Keep the main body under roughly three rendered pages. Cut repetition; move usef
 - Check that newcomer can explain problem, chosen approach, major tradeoffs, failure modes, rollout, rollback, and proof of success after one read.
 - Check each section earns its space and each linked claim resolves.
 - Surface assumptions, open questions, requested reviewers, and target decision date in final response.
-- During review, fold answers back into RFC so decision stays understandable without comment history. Record substantive decisions and rejected alternatives in appendix; do not preserve every conversational turn.
+- Fold review answers into the RFC so it stands without comment history. Record substantive decisions and rejected alternatives in the appendix, not every conversational turn.
 - Recommend synchronous discussion only when asynchronous review stalls, reviewers conflict, or one hard topic benefits from a short focused session. Capture attendees, decisions, and action items afterward.
 
 ## Safety

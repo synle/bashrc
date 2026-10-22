@@ -8,7 +8,7 @@
 
 - **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `clusters`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `clusters` (aliases `cluster`, `grouped`, `feature`) prints the same URLs bucketed by **feature cluster** — one feature that spans several repos reads as one block — with a running `pr<N>` handle on every line; it is what `/sy-list-prs-pending` renders. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`, grouped by feature set / dispatch slot so a cross-repo feature reads as one block.
 - **Scope** — pick exactly one (first match wins):
-  - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
+  - **PWD** (default, no scope token present) — scan git repos at or below cwd, two levels deep, and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
   - **PWD keyword** — one of the PWD keyword set (see below, case-insensitive). Same as default PWD scope above.
   - **Explicit PR refs** — one or more PR refs: full URL (`https://github.com/<owner>/<repo>/pull/<n>`), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name — see Repo Identification). Explicit-refs scope is author-agnostic (you asked for those PRs).
@@ -54,13 +54,13 @@ Examples:
 
 ## Fetch PR data
 
-**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with four shell wrappers (`pr_list_my_open` / `pr_list_my_need_attention` / `pr_list_other_open` / `pr_list_other_need_attention`, plus `pr_list` as a bare alias for the first). It enriches up to three PRs concurrently, keeps successful rows in search order before display sorting, normalizes leading WIP / DO NOT MERGE / DNM markers to one `WIP: ` prefix, and places WIP rows after non-WIP rows. Check for it first:
+**Fast path — one call instead of one-per-PR.** `list_prs` implements this section's repo discovery, open-PR search, CI rollup, review decision, review threads, and mergeability. This Node CLI lives at `~/.local/bin/list_prs`, with four shell wrappers (`pr_list_my_open` / `pr_list_my_need_attention` / `pr_list_other_open` / `pr_list_other_need_attention`, plus `pr_list` as a bare alias for the first). It enriches up to three PRs concurrently, keeps successful rows in search order before display sorting, normalizes leading WIP / DO NOT MERGE / DNM markers to one `WIP: ` prefix, and places WIP rows after non-WIP rows. Check for it first:
 
 ```bash
 type pr_list_my_open
 ```
 
-When it exists, one call returns the whole set as JSON and every field below is already in it — no `gh search prs`, no per-PR `gh pr view`, no per-PR GraphQL:
+When present, one call returns the complete JSON set with all fields below—no `gh search prs`, per-PR `gh pr view`, or per-PR GraphQL:
 
 ```bash
 pr_list_my_open --json                                  # scope = all  (every repo you have a PR in)

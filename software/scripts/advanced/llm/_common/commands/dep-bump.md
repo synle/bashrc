@@ -20,7 +20,7 @@ Apply Risky Changes for runtime major/minor changelogs, local verification, and 
 - **Pin exact versions on production dependencies.** Apply Risky Changes; a lockfile is not an exception to its pinning requirement.
 - **Note every new deprecation warning in the PR body.** Capture warnings in Step 6.
 
-- **One dependency per commit** whenever a bump is major, or minor on a runtime dep. Batching six upgrades into one commit means the revert is all-or-nothing and the bisect is useless. Batch only patch-level and dev-only bumps.
+- **One dependency per commit** whenever a bump is major, or minor on a runtime dep. Separate commits allow independent reverts and bisection. Batch only patch-level and dev-only bumps.
 - **Never upgrade to fix a bug you have not diagnosed.** "Maybe the new version fixes it" is a guess wearing a version number, and it swaps one unknown for a much larger one. Diagnose first (see the Debugging Discipline rules), then upgrade if the changelog says so.
 
 ## Loop mode
@@ -79,7 +79,7 @@ gh release view --repo <dep-owner>/<dep-repo> <version>
 gh release list --repo <dep-owner>/<dep-repo> --limit 20
 ```
 
-Crossing several versions at once means reading **every** intervening entry, not just the newest — the breaking change is usually in the middle. Extract, and carry into the PR body: breaking changes, new deprecations, changed defaults (the quietest source of production surprises), dropped runtime versions, and any required migration step.
+Read **every** intervening version's entry, not just the newest. Record in the PR body: breaking changes, new deprecations, changed defaults, dropped runtime versions, and required migration steps.
 
 If no changelog exists at all, that is itself a finding: say so, and diff the tags to see what moved.
 
@@ -92,7 +92,7 @@ git grep -n "<removed-api>"
 git grep -n "from ['\"]<package>" | head -30
 ```
 
-Report which breaking changes apply to this repo and which do not. This is the step that turns "major bump, scary" into "major bump, we use three functions, none changed".
+Report which breaking changes apply to this repo and which do not.
 
 ### 5. Apply one change at a time
 
@@ -114,7 +114,7 @@ Commit the lockfile with the manifest, always, in the same commit. Apply the mig
 5. Start the app / run the binary and exercise the path that uses this dependency. A green suite with an unbootable app is a coverage gap, not a pass.
 6. Capture new warnings — deprecations, peer-dependency complaints, resolution warnings. These go in the PR body verbatim.
 
-If anything fails, do not paper over it. Either fix the usage per the migration guide, or report that this bump needs work and stop — an upgrade abandoned with an honest reason is a good outcome.
+If anything fails, do not hide it. Fix usage per the migration guide, or report that the bump needs work and stop.
 
 ### 7. PR
 

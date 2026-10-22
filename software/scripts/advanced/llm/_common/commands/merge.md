@@ -18,14 +18,14 @@ Use when the user asks in plain English to pull or merge the latest code into a 
 
 2. **Guard the default branch exception.**
    - If the target branch **is the repo default branch itself**, stop and say so. Do NOT use this command there.
-   - Reason: the shared git workflow rule says syncing the default branch itself is the fast-forward path (`git pull --rebase` then push), not a merge-commit path. This command is for working branches.
+   - The shared git workflow uses fast-forward sync (`git pull --rebase` then push) for the default branch, not this working-branch merge path.
 
 3. **Delegate repo-local sync to `/sy-sync-pr-branch`.**
    - Invoke `/sy-sync-pr-branch` for the target and consume its result block rather than re-implementing any branch-sync logic here.
    - That delegated sync already does the first two parts of the workflow safely:
      - merges repo-local floor / default-branch changes first;
      - then, when the branch is stacked or wave-based, merges every ancestor branch from root-most down to the immediate parent.
-   - Important nuance: when the branch sits on a long-lived non-default floor branch, `/sy-sync-pr-branch` merges that floor instead of forcing `origin/<default>`. Keep that behavior. Do not override it here.
+   - For a long-lived non-default floor, `/sy-sync-pr-branch` merges that floor, not `origin/<default>`. Do not override this behavior.
    - If `/sy-sync-pr-branch` reports `stopped-for-human` or `needs-human`, stop here. Do not continue to upstream.
 
 4. **Merge upstream default branch LAST when this repo is a fork.**
@@ -63,4 +63,4 @@ Show evidence for all three layers:
 - whether `upstream` existed and which repo it resolved to;
 - upstream merge outcome (`already up to date`, merged SHA/branch, or conflicts resolved).
 
-If nothing changed, say so explicitly rather than implying a merge happened.
+If nothing changed, report a no-op, not a merge.

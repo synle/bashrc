@@ -10,7 +10,7 @@ Argument: $ARGUMENTS (optional — passed straight through to `/sy-close-stale-p
 - After a project pivot left a backlog of abandoned WIP PRs plus a pile of merged-but-undeleted local branches.
 - Before starting a large piece of work, so you branch from an up-to-date default instead of a three-week-old one.
 
-This is a thin orchestrator. It owns **no** git or `gh` logic of its own — both phases delegate wholesale to the skills below. Read those files for the actual behavior.
+This orchestrator owns **no** git or `gh` logic. Both phases delegate entirely to the skills below; read them for behavior.
 
 ## Steps
 
@@ -22,7 +22,7 @@ This is a thin orchestrator. It owns **no** git or `gh` logic of its own — bot
    ROOT="$PWD"; echo "maintenance-day root: $ROOT"
    ```
 
-2. Confirm both dependencies are available and authenticated — Phase 1 is pure `gh`, so a missing auth token wastes the whole run:
+2. Confirm both dependencies are available and authenticated; Phase 1 requires `gh`:
 
    ```bash
    gh auth status
@@ -43,7 +43,7 @@ This is a thin orchestrator. It owns **no** git or `gh` logic of its own — bot
 
 Run `/sy-close-stale-prs $ARGUMENTS` and let it own the whole loop — candidate search, the always-skip filters, the per-PR `y / n / s / q` confirmation, and the close comment.
 
-- **Do not** call `gh pr close` yourself here. That skill requires per-PR consent and never deletes branches; bypassing it is how a bulk wipe happens.
+- **Do not** call `gh pr close` yourself here. That skill enforces per-PR consent and never deletes branches.
 - If the user answers `s` or `q` mid-loop, that ends Phase 1 only — continue to Phase 2.
 - Capture the closed / skipped tally for the summary.
 
@@ -66,7 +66,7 @@ Print one **Maintenance Summary** block:
 
 ## Rules
 
-- **Phases run in order, and Phase 2 runs even if Phase 1 was aborted.** Closing PRs is opt-in and interruptible; cleaning up local checkouts is independent of it.
+- **Phases run in order, and Phase 2 runs even if Phase 1 was aborted.** PR closing is opt-in and interruptible; local cleanup is independent.
 - **Delegate, never re-implement.** Every destructive action belongs to `/sy-close-stale-prs` or `/sy-sync-and-clean-repo`. This command's only job is sequencing and the consolidated report.
 - **No branch deletion on the remote.** Phase 1 leaves branches so `gh pr reopen <n>` stays a one-liner; Phase 2 only deletes _local_ branches whose upstream is already `[gone]`.
 - **Never force-push, never rebase a shared branch, never `git gc --aggressive`** — all inherited from the cleanup skill; do not add them here.

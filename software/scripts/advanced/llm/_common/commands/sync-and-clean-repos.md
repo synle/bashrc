@@ -10,7 +10,7 @@ Argument: $ARGUMENTS (optional — a root folder path. Defaults to current folde
 - After a project pivot left a backlog of merged-but-undeleted local branches across many repos.
 - Before starting a large piece of work spanning multiple repos.
 
-This is a thin orchestrator. It owns **no** git logic of its own — it discovers repos and delegates each to `/sy-sync-and-clean-repo`. Read that file for the actual behavior.
+This orchestrator owns **no** git logic: it discovers repos and delegates each to `/sy-sync-and-clean-repo`. Read that skill for behavior.
 
 ## Invocation contract
 
@@ -34,11 +34,11 @@ This is a thin orchestrator. It owns **no** git logic of its own — it discover
 
 ## Rules
 
-- **Delegate, never re-implement.** Every destructive action belongs to `/sy-sync-and-clean-repo`. This command's only job is discovery, sequencing, and the consolidated report.
+- **Delegate, never re-implement.** Delegate every destructive action to `/sy-sync-and-clean-repo`; handle only discovery, sequencing, and consolidated reporting.
 - **Repos run in order.** Report and skip a failed repo (diverged default, unresolved conflict, detached HEAD); continue the remaining repos.
 - **No branch deletion on the remote.** Inherited from the per-repo skill.
 - **Never force-push, never rebase a shared branch, never `git gc --aggressive`.** Inherited from the per-repo skill.
-- **One `$ROOT` per invocation.** To clean up a different tree, `cd` there and rerun rather than passing multiple roots.
+- **One `$ROOT` per invocation.** For another tree, `cd` there and rerun; do not pass multiple roots.
 
 ## Safety
 

@@ -22,7 +22,7 @@ If topic not clear from $ARGUMENTS or context:
 > What plan, design, or decision should I grill?
 > Recommended answer: concrete goal, current approach, constraints, decision needed.
 
-If context already contains the plan, summarize in 3-6 bullets and ask for correction.
+If the plan is in context, summarize in 3-6 bullets and ask for correction.
 
 ### Phase 2 — Calibration
 
@@ -39,11 +39,11 @@ Default: Knowledge=Working, Pressure=Standard.
 
 ### Phase 3 — Build Decision Map
 
-Track privately: Goal, User/Customer, Constraints, Options, Dependencies, Risks, Validation, Rollback. Use to choose next question. Don't dump unless asked.
+Privately track Goal, User/Customer, Constraints, Options, Dependencies, Risks, Validation, Rollback to choose the next question. Don't share unless asked.
 
 ### Phase 4 — Question Ladder
 
-Move through these tiers. Stop early when plan firms up.
+Advance through these tiers until the plan is firm.
 
 1. **Goal Fit** — What outcome matters most? What makes this not worth doing? What problem, for whom?
 2. **Constraint Reality** — What hard constraint can't move? What resource bottleneck decides the plan? What assumption kills the plan if false?

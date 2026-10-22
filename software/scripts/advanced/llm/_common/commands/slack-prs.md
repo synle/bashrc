@@ -19,7 +19,7 @@ Argument: $ARGUMENTS (optional — the PR author to filter by: a GitHub username
    `gh search prs --author=<resolved> --state=open --limit 1000 --json number,title,repository,isDraft,url,createdAt,updatedAt,author`
    - Follow the field contract in the PR-listing workflow: search has no branch-name fields; fetch `headRefName`, `baseRefName`, and `body` together for every PR before rendering or dependency sorting:
      `gh pr view <url> --json headRefName,baseRefName,body`
-   - Pass `--limit` explicitly or the search silently returns just 30, so the message under-reports the queue. At exactly the limit, treat the set as possibly truncated and say so.
+   - Pass `--limit` explicitly; otherwise search returns just 30. At the limit, report possible truncation.
 
 2. **Classify each PR into one of two groups:**
 
@@ -46,13 +46,13 @@ Argument: $ARGUMENTS (optional — the PR author to filter by: a GitHub username
 
    Rules:
    - Keep it short. Just the four fields per line — no CI, approvals, or merge status.
-   - "Friendly title" = the PR title with any `WIP:`, `DO NOT MERGE`, or `[Draft]` prefixes stripped for readability, plus a leading `[<repo>] ` prefix stripped when it matches the repo already shown in the same line — the repo is its own field here, so keeping it in the title prints it twice.
+   - "Friendly title" = the PR title with any `WIP:`, `DO NOT MERGE`, or `[Draft]` prefixes stripped for readability, plus a leading `[<repo>] ` prefix stripped when it matches the line's repo field.
    - Omit a group entirely (including its header) if it has zero PRs.
    - If BOTH groups are empty, output just: `No PRs to share right now.`
    - Use Slack-flavored formatting (`*bold*`, not `**bold**`).
    - **Attribute anything that isn't yours** (see Show PR authors). Compare each `author.login` against `gh api user --jq .login`:
      - All yours → opener stays `Hi team, can I have a review on these PRs? 🙏`, no author on any line.
      - All one other person's → opener becomes `Hi team, can I have a review on <handle>'s PRs? 🙏`, still no per-line author (it'd repeat).
-     - Mixed → keep the generic opener and add the author as a fifth field on **every** line: `- <repo> — <branch> — <friendly title> — <@author> — <url>`. A Slack reader can't guess who to ping otherwise, and asking the channel to review a PR while implying it's yours is a misattribution in front of the whole team.
+     - Mixed → keep the generic opener and add the author as a fifth field on **every** line: `- <repo> — <branch> — <friendly title> — <@author> — <url>`. This identifies whom to ping without misattributing ownership.
 
 5. Print the final message inside a fenced code block so the user can copy it directly into Slack.

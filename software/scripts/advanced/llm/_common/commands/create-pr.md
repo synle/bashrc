@@ -20,9 +20,9 @@
 4a. **No-stack pre-flight — run this before anything is pushed.** `git log --oneline "origin/$DEF..HEAD"` must list **only this PR's own commits**. If it also lists commits belonging to a sibling branch or another open PR, this branch was cut from that sibling and creating the PR now would stack it.
 
     - **On a hit, stop and report** rather than opening a stacked PR: `"This branch was cut from <sibling> — <n> of its commits are in the diff, so opening a PR now would stack this on <sibling's PR>. Options: (a) re-cut from <default> and re-apply only this branch's work, or (b) fold both into one PR. Which?"`
-    - **Never resolve it by pointing `--base` at the sibling.** That makes the diff read cleanly and creates exactly the stack this check exists to prevent.
+    - **Never resolve it by pointing `--base` at the sibling.** A clean-looking diff would still create the prohibited stack.
 
-4b. **Sibling-overlap pre-flight — the last moment de-overlapping is still free.** A stack is not the only way sibling PRs collide; two independent PRs editing the same file collide too, and the second one to merge pays for it. List this branch's files and compare against your other open PRs in this repo:
+4b. **Sibling-overlap pre-flight — the last moment de-overlapping is still free.** Independent sibling PRs can conflict when they edit the same file. Compare this branch's files with your other open PRs in this repo:
 
     ```bash
     git diff --name-only "origin/$DEF...HEAD" | sort > /tmp/pr-files-mine
@@ -37,7 +37,7 @@
     - **Append-only** (barrel, registry, config list, enum block) → low risk. Say which file, and confirm this branch appended at the **end** rather than in sorted position — a sorted insert puts both siblings on adjacent lines and turns a trivial merge into a conflict.
     - **Same source or test file, substantive** → report it now, while it is still cheap: `"<file> is also changed by <sibling PR link> — whoever merges second hits a conflict."` Offer the fix from the _Make slices disjoint with new files_ rule; for tests that is almost always "move this branch's tests into their own spec file rather than appending to the shared one".
 
-    **This is advisory, not a gate.** Shipping both and resolving once is sometimes the right call — the point is that the decision gets made now, deliberately, instead of being discovered by whoever merges second.
+    **This is advisory, not a gate.** Decide now whether to ship both and resolve the overlap when the second merges.
 
 4c. **Wave check — does this branch need something that has not landed yet?** Ask before writing the PR: does this work require a migration, schema column, API field, or config key that is still sitting in an open PR? If yes, this is a later wave under the _Hard dependencies phase into waves_ rule, and **it does not belong in `/sy-create-pr`** — a PR that cannot merge should not look mergeable. Two things change and neither is the base: **the base stays `$DEF`** (a hard dependency never justifies basing on the blocking PR — that is the stack Step 4a exists to prevent), and the PR is opened as a WIP instead, per `/sy-draft-pr` — `WIP: DO NOT MERGE — [<repo>] ...` with a `## Blocked on` section naming the blocking PRs. Say out loud that you routed it there and why. If nothing is blocking, skip this step and continue; most PRs are wave 1 without anyone having to call them that.
 
