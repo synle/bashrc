@@ -14,6 +14,7 @@ pi_plugins=(
   'npm:pi-web-access@0.44.0'
   'npm:pi-subagents@0.80.0'
   'npm:pi-powerline-footer@0.20.2'
+  'npm:pi-lens@4.4.4'
 )
 
 for pi_plugin in "${pi_plugins[@]}"; do

@@ -18,6 +18,7 @@ const EXPECTED_CALLS = [
   "install|npm:pi-web-access@0.44.0|true|eof",
   "install|npm:pi-subagents@0.80.0|true|eof",
   "install|npm:pi-powerline-footer@0.20.2|true|eof",
+  "install|npm:pi-lens@4.4.4|true|eof",
 ];
 /** Per-test fixture folder, removed after every test. */
 let fixture;
@@ -82,7 +83,7 @@ describe("Pi plugin bootstrap", () => {
     expect(result.calls).toEqual([]);
   });
 
-  it("installs exactly the three packages through the binary, bypassing a shadowing function and alias", () => {
+  it("installs exactly the four packages through the binary, bypassing a shadowing function and alias", () => {
     writePiBinary();
     const result = runInstaller({
       preamble: 'function pi() { echo "WRONG FUNCTION" >&2; return 99; }\nshopt -s expand_aliases\nalias pi="echo WRONG ALIAS"',
@@ -95,7 +96,15 @@ describe("Pi plugin bootstrap", () => {
   it.each([
     ["npm:pi-web-access@0.44.0", ["install|npm:pi-web-access@0.44.0|true|eof"]],
     ["npm:pi-subagents@0.80.0", ["install|npm:pi-web-access@0.44.0|true|eof", "install|npm:pi-subagents@0.80.0|true|eof"]],
-    ["npm:pi-powerline-footer@0.20.2", EXPECTED_CALLS],
+    [
+      "npm:pi-powerline-footer@0.20.2",
+      [
+        "install|npm:pi-web-access@0.44.0|true|eof",
+        "install|npm:pi-subagents@0.80.0|true|eof",
+        "install|npm:pi-powerline-footer@0.20.2|true|eof",
+      ],
+    ],
+    ["npm:pi-lens@4.4.4", EXPECTED_CALLS],
   ])("propagates failure for %s without installing later packages", (failPackage, expected) => {
     writePiBinary();
     const result = runInstaller({ failPackage });
