@@ -92,7 +92,8 @@ software/tools/               build-include.js, build-installer.js,
 software/tests/               vitest specs — also the convention linters (§11)
 webapp/, src/, dist/          the vite webapp published to GitHub Pages
 docs/                         long-form topic docs (incl. editor-keybindings.md)
-.claude/skills/               repo-local agent skills
+.agents/skills/               canonical repo-local agent skills
+.claude/skills                compatibility symlink to ../.agents/skills
 ```
 
 Single-source files worth memorizing: `metadata/presets.jsonc` (`--preset=` bundles, read
@@ -413,7 +414,7 @@ Profile registration is buffered: `registerProfileBlock` /
   numbered** — bullets only, cross-reference by name. Never hand-edit the generated
   global `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`; edit `_common/instructions.md`.
 - **Never name a real repo, org, or service in instructional prose** —
-  `_common/instructions.md`, `_common/commands/*.md`, `.claude/skills/*/SKILL.md`, any doc
+  `_common/instructions.md`, `_common/commands/*.md`, `.agents/skills/*/SKILL.md`, any doc
   telling an agent what to do. Use mock names (`acme/widget-store`, `myapp-frontend`).
   Incident notes keep the behavior and drop the name. This file may name `synle/bashrc` —
   a repo's own rules file can't be wrong about its remote; `assets/` / §3 is inventory,
@@ -638,8 +639,12 @@ Flow** (`.github/workflows/build-main.yml` = prep → build-{ubuntu,rhel,arch,de
 ## 13. Skills
 
 Load these instead of improvising the workflow. Each is
-`.claude/skills/<name>/SKILL.md` — the single source read natively by Claude Code,
-OpenCode, and Copilot CLI.
+`.agents/skills/<name>/SKILL.md` — the canonical repo-local source. Pi, OpenCode,
+and Copilot CLI discover this location directly; `.claude/skills` is a compatibility
+symlink to `../.agents/skills` for Claude Code. Project trust may be required.
+Do not recreate `.pi/skills` or duplicate skill bodies. Discovery does not guarantee
+a slash command: Pi uses `/skill:<name>`; OpenCode's global command mirror does not
+include repo-local skills.
 
 | Skill                            | Use when                                                                                      |
 | -------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -653,13 +658,14 @@ OpenCode, and Copilot CLI.
 | `/refresh-llm-guidance`          | Distilling upstream agent guidance into this repo's context and local skills                  |
 | `/refresh-steamos-decky-plugins` | Verifying Decky plugin/theme pins and rebuilding the generated binary-cache bundle            |
 
-**One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
-invisible to every loader. Folder name is kebab-case and must equal the frontmatter
+**One skill = one folder = one `SKILL.md`.** Do not use flat
+`.agents/skills/<name>.md` files; standalone Markdown support varies by loader.
+Folder name is kebab-case and must equal the frontmatter
 `name`. Adding a skill: folder + `SKILL.md` + a row here, same commit.
 
 ### 13.0 Portability contract — a `SKILL.md` is tool-agnostic
 
-One `SKILL.md` is read by four CLIs — write to the open Agent Skills lowest common denominator.
+One `SKILL.md` is shared across CLIs — write to the open Agent Skills lowest common denominator.
 
 - **Frontmatter is exactly two keys:** `name` (kebab-case, no leading/trailing/double
   hyphen, equals folder name) and
@@ -773,7 +779,7 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
 - **Deployed docs use `<<LLM_ROOT_FOLDER>>` placeholders**, resolved at deploy time by
   `resolveLLMDocPlaceholders()`; token name matches the env var exactly. Every deployed
   doc goes through `readLLMDocSource()` — never bare `readText` on a doc that ships.
-  Repo-local docs (`AGENTS.md`, `docs/`, `llm.md`, `.claude/skills/*/SKILL.md`) keep
+  Repo-local docs (`AGENTS.md`, `docs/`, `llm.md`, `.agents/skills/*/SKILL.md`) keep
   literal paths; `<<SY_ROOT_FOLDER>>` comes from `COMMON_PLACEHOLDERS`.
 - **Moving the folder = two edits:** the `LLM_ROOT_FOLDER` line plus a row in
   `LLM_LEGACY_FOLDERS` (with its own `destination`). Nothing auto-moves:

@@ -37,7 +37,7 @@ Resolve current default branch and HEAD every run. Never pin this registry to pr
 5. Compare overlapping candidates across sources before merging; report upstream-vs-upstream contradictions instead of silently picking one. Ties favor canonical or actively maintained sources over curated lists and incidental mentions.
 6. Reject source-specific mechanics that do not fit this repo, unneeded benchmark claims, promotion, duplicate aliases, and rules weaker than local safety or repo instructions.
 7. Give each `net-new` item one authoritative home. Tighten an existing rule when possible; add a line only when no current rule carries the behavior. Keep persona, engineering rules, review workflows, and operational skills in their own layers.
-8. For a reusable repo-local workflow, use `.claude/skills/<name>/SKILL.md` and the AGENTS skill table. Do not add it to `LLM_COMMAND_DEPLOY_MAP` unless explicitly requested.
+8. For a reusable repo-local workflow, use `.agents/skills/<name>/SKILL.md` and the AGENTS skill table. Do not add it to `LLM_COMMAND_DEPLOY_MAP` unless explicitly requested.
 9. Regenerate source-derived includes; check the always-loaded char budget and pay for any addition there by trimming equal text. Deploy affected context twice; second run must show stable counts and no stale-removal churn.
 10. Run narrow registry, instruction-budget, build-include, and affected script checks first. Run required full gate once after final edits.
 11. Review final diff sentence by sentence. Remove copied prose, duplicate meaning, stale examples, and additions that do not change behavior. Report accepted and rejected material separately.

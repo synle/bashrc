@@ -31,7 +31,7 @@ machine's real folders on the way out. A repo source must not hardcode `~/_extra
 machine with a different home layout — and must not carry `$LLM_ROOT_FOLDER` either, since
 the agent reading the deployed file has no shell expanding anything and an unexpanded
 variable inside a `mkdir -p` writes at the filesystem root. Repo-local docs (this file,
-`AGENTS.md`, `docs/`, `.claude/skills/`) keep the literal path instead: nothing resolves
+`AGENTS.md`, `docs/`, `.agents/skills/`) keep the literal path instead: nothing resolves
 them, so a placeholder there would never expand. `llmInstructionsSplit.spec.js` fails the
 build on a hardcoded path in a deployed source, on a placeholder that survives resolution,
 and on a deployed doc read with bare `readText`.
@@ -400,7 +400,7 @@ If you've never set up _any_ of these CLIs and want all four in parity, you need
    uses a different schema and different OS-modifier conventions.
 4. **Per-CLI settings files** mapping the same _intent_ (hide banner, disable
    auto-update, hide tips, etc.) onto each CLI's actual key names.
-5. **A per-project `CLAUDE.md` / `AGENTS.md`** per repo, plus any `.claude/skills/<name>/SKILL.md`
+5. **A per-project `CLAUDE.md` / `AGENTS.md`** per repo, plus any `.agents/skills/<name>/SKILL.md`
    playbooks you want loaded on matching tasks.
 6. **A way to keep all of the above in sync** when you change one rule — without
    that, you will silently drift apart within a week and find yourself debugging
@@ -451,12 +451,11 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
   bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
   ```
 
-- **Per-project `.claude/skills/<name>/SKILL.md` lives in the project's own
-  repo**, not in this dotfiles tree. This repo's `.claude/skills/` (`add-os`,
-  `add-package`, `check`, `plan-and-commit`, `remove-os`, `remove-package`,
-  `run`) are an example of repo-scoped playbooks — they ride with the repo's
-  source rather than the global LLM-CLI deploy. Both OpenCode and Copilot CLI
-  read that path natively; see [Skills across CLIs](#skills-across-clis) below.
+- **Per-project `.agents/skills/<name>/SKILL.md` lives in the project's own
+  repo**, separate from the global LLM-CLI deploy. This repo keeps its skill
+  bodies there and exposes `.claude/skills -> ../.agents/skills` for Claude
+  compatibility. Pi, OpenCode, and Copilot CLI support the canonical location;
+  see [Skills across CLIs](#skills-across-clis) below.
 
 - **Auto-memory is Claude-Code-specific today.**
   `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` plus its linked files are
@@ -469,7 +468,7 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
 
 ## Skills across CLIs
 
-Agent skills (`SKILL.md` playbooks) need **no translation layer**. Three of the four CLIs read Claude's `.claude/skills/` path directly. What differs is _where_ they look and _how_ a skill gets fired.
+Agent skills (`SKILL.md` playbooks) share one format, but discovery paths and invocation differ. This repo's canonical project location is `.agents/skills/`; `.claude/skills` is a compatibility symlink, not a second copy. Pi does not scan `.claude/skills/` by default.
 
 ### Discovery — where each CLI looks
 
@@ -478,7 +477,8 @@ Agent skills (`SKILL.md` playbooks) need **no translation layer**. Three of the 
 | Claude Code | ✅                                      | ✅                                 | — (this _is_ the native path)                                                                                       |
 | OpenCode    | ✅                                      | ✅                                 | `.opencode/skills/`, `~/.config/opencode/skills/`                                                                   |
 | Copilot CLI | ✅                                      | ❌ global path not read            | `.github/skills/`, `.agents/skills/`, `~/.copilot/skills/`, `~/.agents/skills/`, plugins, `copilot skill add <dir>` |
-| Gemini CLI  | ❌                                      | ❌                                 | `gemini skills install/link`                                                                                        |
+| Gemini CLI  | ❌                                      | ❌                                 | `.agents/skills/`, `~/.agents/skills/`, `gemini skills install/link` (project discovery requires trust)             |
+| Pi          | ❌                                      | ❌                                 | `.agents/skills/`, `.pi/skills/`, `~/.agents/skills/`, `~/.pi/agent/skills/` (project discovery requires trust)     |
 
 OpenCode also accepts `.agents/skills/` and `~/.agents/skills/`, and walks up
 from the cwd to the git worktree root when resolving project skills
@@ -486,21 +486,21 @@ from the cwd to the git worktree root when resolving project skills
 
 Copilot's own path list comes from `copilot skill --help` on `v1.0.76`. Note the asymmetry: it reads `<repo>/.claude/skills/` but **not** `~/.claude/skills/`. That asymmetry no longer costs anything, because no CLI reads another's folder here: `deploySharedLLMSkills()` (llm-common.js) writes each `_common/commands/<name>.md` once to `~/_extra/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then symlinks that folder into every CLI's own skills path — Claude, Copilot, Gemini, OpenCode, and the interoperable `~/.agents/skills/`.
 
-Practical consequence: **this repo's seven skills already work in OpenCode and Copilot CLI with zero setup.** Nothing to copy, nothing to deploy.
+For this repo, Pi, OpenCode, and Copilot CLI can discover `.agents/skills/` directly; Claude Code retains the `.claude/skills` compatibility path. Pi requires project trust before loading project skills. Gemini's local discovery probe was blocked by its untrusted-folder gate; do not treat a skipped project scan as missing files.
 
 ### Layout — folder form only
 
 One skill = one folder = one `SKILL.md`:
 
 ```
-.claude/skills/<name>/SKILL.md      ✅  the only layout every CLI loads
-.claude/skills/<name>.md            ❌  invisible to every loader
+.agents/skills/<name>/SKILL.md     canonical repo-local skill
+.claude/skills                    -> ../.agents/skills (compatibility)
 ```
 
-Every CLI above globs for `<dir>/*/SKILL.md`, so a flat sibling `.md` file is
-never discovered — it silently does nothing. The folder name is kebab-case and
-must equal the frontmatter `name`. Supporting material (reference docs, helper
-scripts, templates) lives beside the `SKILL.md` in the same folder, which is the
+Use folder-form `SKILL.md` for portability; standalone Markdown support varies
+by loader. The folder name is kebab-case and must equal the frontmatter `name`.
+Supporting material (reference docs, helper scripts, templates) lives beside the
+`SKILL.md` in the same folder, which is the
 other reason folder form is the standard: a flat file has nowhere to put them.
 
 ### Invocation — model-invoked vs `/skill-name`
@@ -512,7 +512,7 @@ the model decides when a description matches, then calls
 `/skill-name` binding in OpenCode's TUI** — the keybind registry has no
 `skill_list` entry, and `/skill` is an HTTP route, not a slash command.
 
-Repo-local skills stay in `.claude/skills/<name>/SKILL.md`; OpenCode reads that path natively. Do not add a second repo-local copy or a `.opencode/commands/` symlink.
+Repo-local skills stay in `.agents/skills/<name>/SKILL.md`, with `.claude/skills` pointing to that folder for compatibility. Do not add a second repo-local copy or recreate `.pi/skills`. In Pi, run `/reload` after the move and invoke `/skill:<name>`; project trust must be granted. Moving the folder does not add OpenCode slash commands.
 
 Global skills use a separate ergonomics layer: `_syncOpencodeSkillCommandSymlinks()` mirrors global skills into `~/.config/opencode/commands/<n>.md` so users can invoke `/sy-*`. That global mirror does not apply to repo-local skills.
 

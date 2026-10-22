@@ -73,7 +73,7 @@ archive writes use scoped `sudo`.
 
 ## Refresh all packages to the latest verified versions
 
-Use the repo-local [`refresh-steamos-decky-plugins` skill](../.claude/skills/refresh-steamos-decky-plugins/SKILL.md).
+Use the repo-local [`refresh-steamos-decky-plugins` skill](../.agents/skills/refresh-steamos-decky-plugins/SKILL.md).
 Ask an agent: **“Refresh all pinned Decky plugins and CSS Loader themes to the latest
 verified installable releases.”** No package arguments means every inventory entry;
 name specific packages only for a partial refresh.
