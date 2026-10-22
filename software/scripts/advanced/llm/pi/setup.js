@@ -358,9 +358,36 @@ export default function (pi) {
 }
 
 /**
+ * Deploys collapsed tool output through Pi's UI API; no persisted setting exists.
+ * Session startup and tool boundaries restore the preference after manual expansion.
+ * @param {string} agentDir - Target Pi agent folder.
+ * @returns {Promise<void>} Resolves after writing the extension; IO errors propagate.
+ */
+async function _doPiToolOutputExtensionWork(agentDir) {
+  /** @type {string} Personal extension path discovered automatically by Pi. */
+  const targetPath = path.join(agentDir, "extensions", "sy-collapsed-tools.js");
+  /** @type {string} Generated extension source; no model or settings changes. */
+  const content = `/** Keeps tool output collapsed at session startup and tool execution boundaries.
+ * @param {import("@earendil-works/pi-coding-agent").ExtensionAPI} pi - Pi extension API.
+ * @returns {void} Registers TUI-only lifecycle handlers; tool data is unchanged.
+ */
+export default function (pi) {
+  for (const event of ["session_start", "tool_execution_start", "tool_execution_end"]) {
+    pi.on(event, (_event, ctx) => {
+      if (ctx.mode === "tui") ctx.ui.setToolsExpanded(false);
+    });
+  }
+}
+`;
+
+  await mkdir(path.dirname(targetPath));
+  await writeText(targetPath, content);
+}
+
+/**
  * Orchestrates pi setup: settings, Ollama providers, shared instructions,
- * APPEND_SYSTEM persona reinforcement, and shared skills. Skips entirely when
- * pi is not installed.
+ * APPEND_SYSTEM persona reinforcement, collapsed tool output, and shared skills.
+ * Skips entirely when pi is not installed.
  * @returns {Promise<void>}
  */
 async function doWork() {
@@ -387,6 +414,7 @@ async function doWork() {
   await _doPiInstructionsWork(piAgentDir);
   await _doPiAppendSystemWork(piAgentDir);
   await _doPiPersonaExtensionWork(piAgentDir);
+  await _doPiToolOutputExtensionWork(piAgentDir);
 
   // Skills are written once to $LLM_ROOT_FOLDER/skills and symlinked into
   // ~/.agents/skills, which pi scans by default — no pi-local copy or slot.

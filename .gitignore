@@ -106,3 +106,4 @@ _build
 .svelte-kit
 Pods
 DerivedData
+.pi-plugins-test*
