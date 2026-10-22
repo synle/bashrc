@@ -41,4 +41,6 @@ coverage/
 # Worktrees
 .worktrees/
 .worktree/
+.worktree*/
+worktree*/
 .wt/

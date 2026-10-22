@@ -42,6 +42,8 @@ describe("git.js doWork", () => {
     expect(gitignore).toContain(".env");
     expect(gitignore).toContain(".worktrees/");
     expect(gitignore).toContain(".worktree/");
+    expect(gitignore).toContain(".worktree*/");
+    expect(gitignore).toContain("worktree*/");
     expect(gitignore).toContain(".wt/");
   });
 

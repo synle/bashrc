@@ -99,7 +99,7 @@ function _extractEmail(config) {
 }
 
 /**
- * Returns the content for the global gitignore file with common OS and editor exclusions.
+ * Returns the global gitignore content with common OS, editor, and worktree-folder exclusions.
  * @returns {string} The global gitignore content.
  */
 function _getGlobalGitIgnore() {
@@ -147,6 +147,8 @@ function _getGlobalGitIgnore() {
     # Worktrees
     .worktrees/
     .worktree/
+    .worktree*/
+    worktree*/
     .wt/
   `;
 }
