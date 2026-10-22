@@ -11,7 +11,7 @@
 //   ✅ Settings  — ~/.gemini/settings.json (defaults-merge; never clobbers
 //                   auth keys like selectedAuthType, gcpProjectId. The
 //                   `mcpServers` key is now additively managed by
-//                   `_doMcpWork` from the shared MCP registry — user-added
+//                   `deploySharedMcpServers` from the shared MCP registry — user-added
 //                   server entries with names NOT in the registry are still
 //                   preserved untouched.)
 //   ✅ Instructions — ~/.gemini/GEMINI.md (managed block keyed by source path, mirrors
@@ -154,7 +154,7 @@ async function _doGeminiKeysWork(targetDir) {
  * Auth-shaped keys (`selectedAuthType`, `gcpProjectId`, etc.) and
  * user-managed shape (`theme`, `model.*` overrides) are deliberately omitted
  * so they survive untouched across re-runs. `mcpServers` is handled
- * separately by `_doMcpWork` (additive merge from the shared registry,
+ * separately by `deploySharedMcpServers` (additive merge from the shared registry,
  * preserves user-added server names).
  *
  * When adding a new managed setting, also update the settings-intent table in
@@ -250,7 +250,7 @@ function _deepMerge(target, source) {
  * existing user-set key. Only keys in GEMINI_MANAGED_SETTINGS that are
  * missing from the user's settings.json are filled in — anything already
  * present (selectedAuthType, theme, model.*, etc.) is left exactly as the
- * user left it. `mcpServers` is handled separately by `_doMcpWork` — an
+ * user left it. `mcpServers` is handled separately by `deploySharedMcpServers` — an
  * additive merge from the shared registry; user-added server names that
  * aren't in the registry survive untouched.
  *
@@ -290,51 +290,6 @@ async function _doGeminiSettingsWork(targetDir) {
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);
-}
-
-// --- MCP Servers ---
-
-/**
- * Additively merges every entry from the shared MCP registry into
- * `~/.gemini/settings.json::mcpServers`. Semantics:
- *
- *   - Names listed in `_common/mcp-servers.jsonc` get our value (file wins).
- *   - Names ONLY in the on-disk settings.json — added by hand or via
- *     `gemini mcp add` — are preserved untouched.
- *   - Removing a name from the registry does NOT remove it from settings.json
- *     (additive overlay only; documented in the registry header).
- *
- * Runs AFTER `_doGeminiSettingsWork` so the read-modify-write here sees the
- * managed settings already on disk and only touches the `mcpServers` key.
- *
- * @param {string} targetDir - Path to the `~/.gemini` directory.
- */
-async function _doMcpWork(targetDir) {
-  const targetPath = path.join(targetDir, "settings.json");
-
-  log(">> Gemini CLI MCP Servers:", targetPath);
-
-  /** @type {Record<string, any>} */
-  const sharedServers = await loadSharedMcpServers();
-  if (Object.keys(sharedServers).length === 0) {
-    log("   No managed MCP entries — skipping");
-    return;
-  }
-
-  /** @type {object} Existing settings — empty object on missing / invalid file. */
-  let existing = {};
-  try {
-    existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
-  } catch (e) {}
-
-  /** @type {Record<string, any>} */
-  const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};
-  /** @type {Record<string, any>} Existing names first so shared entries override on collision. */
-  const merged = { ...existingServers, ...sharedServers };
-
-  existing.mcpServers = merged;
-  await backupConfigFile(targetPath);
-  await writeJson(targetPath, existing);
 }
 
 /**
@@ -385,8 +340,9 @@ async function _doGeminiInstructionsWork(targetDir) {
 
 /**
  * Orchestrates Google Gemini CLI user-level setup: settings defaults +
- * shared engineering-principles instructions block. Skips entirely when the
+ * native MCP and shared engineering-principles instructions. Skips entirely when the
  * `gemini` binary is not installed.
+ * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */
 async function doWork() {
   if (!(await isBinaryFound("gemini"))) {
@@ -402,8 +358,9 @@ async function doWork() {
 
   log(">> Configuring Gemini CLI:", targetDir);
 
+  // Validate and preserve MCP before the settings writer reads the same file.
+  await deploySharedMcpServers(path.join(targetDir, "settings.json"));
   await _doGeminiSettingsWork(targetDir);
-  await _doMcpWork(targetDir);
   await _doGeminiKeysWork(targetDir);
   // Shared on-demand instruction files must exist before the always-loaded block
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.

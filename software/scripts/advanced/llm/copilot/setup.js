@@ -396,61 +396,6 @@ async function _doCopilotSettingsWork(targetDir) {
   await writeJson(targetPath, merged);
 }
 
-// --- MCP Servers ---
-
-/**
- * Additively merges every entry from the shared MCP registry into
- * `~/.copilot/mcp-config.json::mcpServers`. Copilot CLI reads MCP config from
- * `~/.copilot/mcp-config.json` (separate file from `settings.json`, per the
- * `mcp-config.json` reference in the existing "Plugins / MCP" comment above).
- * Semantics:
- *
- *   - Names listed in `_common/mcp-servers.jsonc` get our value (file wins).
- *   - Names ONLY in the on-disk mcp-config.json — added by hand or via
- *     `copilot mcp add` — are preserved untouched.
- *   - Removing a name from the registry does NOT remove it from mcp-config.json
- *     (additive overlay only; documented in the registry header).
- *
- * @param {string} targetDir - Path to the `~/.copilot` directory.
- */
-async function _doMcpWork(targetDir) {
-  const targetPath = path.join(targetDir, "mcp-config.json");
-
-  log(">> GitHub Copilot CLI MCP Servers:", targetPath);
-
-  /** @type {Record<string, any>} */
-  const sharedServers = await loadSharedMcpServers();
-  if (Object.keys(sharedServers).length === 0) {
-    log("   No managed MCP entries — skipping");
-    return;
-  }
-
-  /** @type {object} Existing config — empty object on missing / invalid file. */
-  let existing = {};
-  if (fs.existsSync(targetPath)) {
-    try {
-      existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
-    } catch (e) {
-      // Never silent: an unparseable file here means every hand-added server in it is
-      // about to be dropped from the merge and overwritten. A trailing comma is the
-      // common cause (JSON has none) and it also means copilot itself has been failing
-      // to load those servers. Say so loudly; backupConfigFile below keeps .bak_latest
-      // so the original is recoverable.
-      log(`>> copilot: mcp-config.json is not valid JSON (${e.message})`);
-      log(`>> copilot: any hand-added servers in it are NOT loading — repair ${targetPath}`);
-    }
-  }
-
-  /** @type {Record<string, any>} */
-  const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};
-  /** @type {Record<string, any>} Existing names first so shared entries override on collision. */
-  const merged = { ...existingServers, ...sharedServers };
-
-  existing.mcpServers = merged;
-  await backupConfigFile(targetPath);
-  await writeJson(targetPath, existing);
-}
-
 // --- Instructions (User-Level copilot-instructions.md) ---
 
 /**
@@ -637,9 +582,10 @@ async function _doCopilotPersonaHookWork(targetDir) {
 
 /**
  * Orchestrates GitHub Copilot CLI user-level setup: settings defaults +
- * shared engineering-principles instructions block + `/sy-*` skills. Skips
+ * native MCP, shared engineering-principles instructions, and `/sy-*` skills. Skips
  * entirely when the `copilot` binary is not installed (treat as a no-op rather
  * than an error so partial setups don't fail this script).
+ * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */
 async function doWork() {
   if (!(await isBinaryFound("copilot"))) {
@@ -658,7 +604,7 @@ async function doWork() {
   log(">> Configuring GitHub Copilot CLI:", targetDir);
 
   await _doCopilotSettingsWork(targetDir);
-  await _doMcpWork(targetDir);
+  await deploySharedMcpServers(path.join(targetDir, "mcp-config.json"));
   await _doCopilotKeysWork(targetDir);
   // Shared on-demand instruction files must exist before the always-loaded block
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.

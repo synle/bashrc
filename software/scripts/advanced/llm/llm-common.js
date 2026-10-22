@@ -1,5 +1,5 @@
 /**
- * Shared constants and helpers for LLM CLI setup scripts (claude, copilot, gemini, opencode).
+ * Shared constants and helpers for LLM CLI setup scripts (claude, copilot, gemini, opencode, pi).
  *
  * Lives here (instead of pulling from software/scripts/advanced/editor.common.js) so the
  * llm/* setup scripts are self-contained — none of them SOURCE editor.common.js anymore.
@@ -74,7 +74,7 @@ const LLM_INSTRUCTIONS_LEGACY_MARKER = "managed-rules";
  * Repo-relative path to the cross-CLI MCP server registry. Each per-CLI
  * `setup.js` reads this file via `loadSharedMcpServers()` and merges the
  * entries into the CLI's native MCP config location. Authored in the
- * standard `mcpServers` shape (Claude / Copilot / Gemini consume verbatim;
+ * standard `mcpServers` shape (Claude / Copilot / Gemini / Pi consume verbatim;
  * OpenCode translates via `_translateToOpencodeMcp()`).
  * @type {string}
  */
@@ -166,6 +166,64 @@ function translateMcpServersForOpencode(servers) {
     out[name] = _translateToOpencodeMcp(entry);
   }
   return out;
+}
+
+/**
+ * Deploys the shared MCP registry additively into a native client config file.
+ * Shared server names override collisions; user-only servers and unrelated keys
+ * survive. Removed registry names are not pruned. OpenCode also overlays its
+ * generated settings before writing, avoiding a second destructive config write.
+ * Backs up before writing; an empty registry with no managed settings is a no-op.
+ * @param {string} targetPath - Native user config file to read, back up, and write.
+ * @param {Record<string, any>} [managedConfig={}] - Other managed top-level settings.
+ * @param {"standard" | "opencode"} [format="standard"] - Native MCP schema.
+ * @returns {Promise<void>} Resolves after deployment or an empty-registry skip.
+ * @throws {Error} On unreadable or malformed existing config, unsupported format,
+ * backup failure, or write failure. Invalid existing files are never overwritten.
+ */
+async function deploySharedMcpServers(targetPath, managedConfig = {}, format = "standard") {
+  if (format !== "standard" && format !== "opencode") {
+    throw new TypeError("Unsupported MCP config format");
+  }
+  /** @type {string} Native server-map key. */
+  const key = format === "opencode" ? "mcp" : "mcpServers";
+  /** @type {Record<string, any>} Resolved standard-shape registry entries. */
+  const servers = await loadSharedMcpServers();
+  if (Object.keys(servers).length === 0 && Object.keys(managedConfig).length === 0) return;
+
+  /** @type {string} Raw local bytes; readJson's parse-error fallback would lose user data. */
+  let content = "";
+  try {
+    content = fs.readFileSync(targetPath, "utf-8");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  /** @type {Record<string, any>} Existing config, empty only for missing or empty files. */
+  let existing = {};
+  try {
+    // The older parseJsonWithComments helper evaluates JavaScript on parse errors.
+    existing = content.trim() ? JSON.parse(stripJsoncComments(content)) : {};
+  } catch {
+    // Do not include raw parser errors: they can contain credentials from the file.
+    throw new TypeError("MCP configuration must contain valid JSON or JSONC");
+  }
+  if (!existing || typeof existing !== "object" || Array.isArray(existing)) {
+    throw new TypeError("MCP configuration must be an object");
+  }
+  if (key in existing && (!existing[key] || typeof existing[key] !== "object" || Array.isArray(existing[key]))) {
+    throw new TypeError(`MCP configuration ${key} must be an object`);
+  }
+  /** @type {Record<string, any>} Existing names first so managed entries win collisions. */
+  const merged = { ...existing, ...managedConfig };
+  if (key in existing || Object.keys(servers).length > 0) {
+    merged[key] = {
+      ...existing[key],
+      ...(format === "opencode" ? translateMcpServersForOpencode(servers) : servers),
+    };
+  }
+  log(`>> MCP: deploying ${Object.keys(servers).length} shared server(s):`, targetPath);
+  await backupConfigFile(targetPath);
+  await writeJson(targetPath, merged);
 }
 
 // --- Ollama Provider Discovery ---

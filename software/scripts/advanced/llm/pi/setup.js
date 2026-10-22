@@ -1,10 +1,8 @@
 /**
  * Configures the pi coding agent (https://pi.dev): user-level engineering
- * instructions, managed display/privacy defaults, and any reachable local
- * Ollama providers.
- *
- * Pi is a minimal harness — no MCP, no sub-agents — so this setup is
- * deliberately smaller than opencode's. What it wires:
+ * instructions, managed display/privacy defaults, shared native MCP servers,
+ * and any reachable local Ollama providers. Existing packages such as piweb
+ * remain unchanged. What it wires:
  *
  *   ~/.pi/agent/AGENTS.md   — the shared engineering-principles block. Pi
  *                             discovers `AGENTS.md` natively from `~/.pi/agent/`,
@@ -27,6 +25,8 @@
  *                             `collapseChangelog`, `enableInstallTelemetry`,
  *                             `hideThinkingBlock`) into the user's settings; only
  *                             managed keys are touched.
+ *   ~/.pi/agent/mcp.json — shared MCP servers, merged additively while
+ *                             preserving user-only servers and other keys.
  *   ~/.pi/agent/models.json — discovered Ollama providers, selected GitHub
  *                             Copilot model overrides, and Copilot IDE-auth headers
  *                             merged under `providers`.
@@ -385,10 +385,10 @@ export default function (pi) {
 }
 
 /**
- * Orchestrates pi setup: settings, Ollama providers, shared instructions,
+ * Orchestrates pi setup: settings, native MCP, Ollama providers, shared instructions,
  * APPEND_SYSTEM persona reinforcement, collapsed tool output, and shared skills.
  * Skips entirely when pi is not installed.
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */
 async function doWork() {
   if (!(await isBinaryFound("pi"))) {
@@ -402,6 +402,7 @@ async function doWork() {
   await mkdir(piAgentDir);
 
   await _doPiSettingsWork(piAgentDir);
+  await deploySharedMcpServers(path.join(piAgentDir, "mcp.json"));
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
   const providerInputs = await getOllamaProviderInputs();

@@ -87,10 +87,10 @@ function _buildOpencodeWatcherIgnore() {
 /**
  * Builds the opencode config object dynamically from an array of providers.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providersArray - Simplified input schemas.
- * @param {Record<string, any>} [mcpServersOpencodeShape={}] - Map of MCP server name → opencode-native config (already translated from the standard shape via `translateMcpServersForOpencode`). Pass `{}` (or omit) when the shared registry is empty so opencode falls back to whatever the user has under `mcp` in `opencode.json`.
- * @returns {object} The full opencode.json content.
+ * MCP entries are merged separately by deploySharedMcpServers at write time.
+ * @returns {object} Managed opencode.json settings, excluding MCP entries.
  */
-function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
+function _buildOpencodeConfig(providersArray) {
   const providers = {};
   const opencodeProviders = providersArray.map((item) => ({
     ...item,
@@ -254,14 +254,6 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   const agents = resolveOpencodeAgentConfig(opencodeProviders);
   if (Object.keys(agents).length > 0) {
     out.agent = agents;
-  }
-
-  // Only write the `mcp` key when we actually have managed entries — leaving
-  // the key absent lets opencode keep whatever the user maintains under `mcp`
-  // in their own opencode.json. Once a registry entry is added, opencode.json
-  // gets the translated shape written verbatim on each setup run.
-  if (mcpServersOpencodeShape && Object.keys(mcpServersOpencodeShape).length > 0) {
-    out.mcp = mcpServersOpencodeShape;
   }
 
   return out;
@@ -724,7 +716,7 @@ export default async function () {
  * Configures installed OpenCode: discovered providers, MCP, TUI, instructions,
  * persona plugin, command/skill links, agents, and the existing auth-store link.
  * Omits Ollama providers when discovery returns none; skips if OpenCode is absent.
- * @returns {Promise<void>} Resolves after deploying managed configuration.
+ * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */
 async function doWork() {
   if (!(await isBinaryFound("opencode"))) {
@@ -734,7 +726,6 @@ async function doWork() {
 
   const targetPath = path.join(getLLMConfigHome(), ".config/opencode/opencode.json");
   await mkdir(path.dirname(targetPath));
-  await backupConfigFile(targetPath);
 
   // First thing after the install step so a data-folder wipe from install.sh is
   // repaired before anything else touches opencode. Auth stays in its existing
@@ -747,12 +738,6 @@ async function doWork() {
     log(">> opencode: no reachable Ollama hosts — writing config without provider entries");
   }
 
-  /** @type {Record<string, any>} Shared MCP entries in opencode's native `{ type, command|url, ... }` shape. */
-  const mcpServersOpencodeShape = translateMcpServersForOpencode(await loadSharedMcpServers());
-  if (Object.keys(mcpServersOpencodeShape).length > 0) {
-    log(`>> opencode: deploying ${Object.keys(mcpServersOpencodeShape).length} MCP server(s) from shared registry`);
-  }
-
   // Shared on-demand instruction files must exist before the always-loaded block
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
   //
@@ -762,7 +747,7 @@ async function doWork() {
   // self-corrects on the second run.
   await deploySharedLLMInstructions();
 
-  await writeJson(targetPath, _buildOpencodeConfig(providerInputs, mcpServersOpencodeShape));
+  await deploySharedMcpServers(targetPath, _buildOpencodeConfig(providerInputs), "opencode");
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();
