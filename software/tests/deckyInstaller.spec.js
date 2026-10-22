@@ -135,7 +135,7 @@ describe("standard opt-in Decky script consumer", () => {
     expect(requireModule(path.join(folder, "software/scripts/decky/decky-runtime.common.js")).CACHE_URL).toBe(
       "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
     );
-    expect(requireModule(path.join(folder, "software/metadata/decky-packages.json"))).toHaveLength(17);
+    expect(requireModule(path.join(folder, "software/metadata/decky-packages.json"))).toHaveLength(18);
     expect(fs.existsSync(path.join(folder, "software/scripts/decky-and-css-loader.standalone.js"))).toBe(true);
     expect(fs.existsSync(path.join(folder, "assets/steamos"))).toBe(false);
   });
@@ -149,7 +149,7 @@ describe("standard opt-in Decky script consumer", () => {
     expect(requireModule(runtime).CACHE_URL).toBe(
       "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
     );
-    expect(requireModule(path.join(stage, "software/metadata/decky-packages.json"))).toHaveLength(17);
+    expect(requireModule(path.join(stage, "software/metadata/decky-packages.json"))).toHaveLength(18);
     // Test-owned runtime replacement proves the generated invocation seam without live installation.
     fs.writeFileSync(runtime, 'exports.install = async () => { process.stdout.write("fixture invoked\\n"); };');
     const result = spawnSync("/bin/bash", ["-c", bash], { encoding: "utf8", timeout: 15000 });

@@ -280,12 +280,15 @@ describe("Decky deterministic bundle build", () => {
     expect(fs.readdirSync(folder)).toEqual(["previous.zip"]);
   });
 
-  it("ships nine plugins and eight themes, including verified newer store releases but not Centered Home", () => {
+  it("ships nine plugins and nine themes, including verified newer store releases and Centered Home", () => {
     expect(pins.filter((pin) => pin.path.startsWith("decky_plugin/"))).toHaveLength(9);
-    expect(pins.filter((pin) => pin.path.startsWith("decky_css_loader/"))).toHaveLength(8);
+    expect(pins.filter((pin) => pin.path.startsWith("decky_css_loader/"))).toHaveLength(9);
     expect(pins.find((pin) => pin.name === "HLTB for Deck").version).toBe("2.0.12");
     expect(pins.find((pin) => pin.name === "ProtonDB Badges").version).toBe("1.3.4");
-    expect(pins.some((pin) => pin.name === "Centered Home")).toBe(false);
+    expect(pins.find((pin) => pin.name === "Centered Home")).toMatchObject({
+      path: "decky_css_loader/Centered_Home_v1.3.zip",
+      theme_id: "865407ae-fb14-4db7-b123-61f6995ed757",
+    });
     expect(pins.every((pin) => /\/[A-Za-z0-9_-]+_v[0-9.]+\.zip$/.test(pin.path))).toBe(true);
   });
 
