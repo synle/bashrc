@@ -1,109 +1,39 @@
 # Review & Runtime Guardrails
 
-Companion to the always-loaded engineering principles. Read before writing or
-reviewing code that touches multiple execution paths, retries, collection selectors,
-runtime control planes, pseudonymization or redaction, operational runbooks,
-persistent integration tests, streaming limits, async request/RPC handlers, or
-long-running batch loops that mix database sessions with slow external I/O.
-
-Rules are named, not numbered — quote the name when referencing one. Epistemic
-Honesty from the main instructions governs this file too.
+Read before writing or reviewing multi-path, retry, selector, control-plane, pseudonym/redaction, operational-runbook, persistent-test, streaming, async request/RPC, or long-running batch changes. Epistemic Honesty and the main safety gates remain binding. Rules are named, not numbered.
 
 ## Review-Derived Guardrails
 
-- **Concrete failure or question.** A finding names the input or state, traces the reachable bad behavior, checks surrounding guards, and gives one correction. If that path cannot be constructed, ask a question instead of asserting a defect.
-- **Review expected absences.** Before reading hunks, list required artifacts — migration, test, logging, rollback, docs, config — and investigate missing ones.
-- **Review one concern per sweep.** Check correctness across the affected files, then security, then design and simplification; keep mechanical checks separate. A focused pass must still trace connected code, not treat each file as an isolated checklist.
-- **Paired operations are one contract.** When changing acquire/release, encode/decode, setup/teardown, subscribe/unsubscribe, or another paired operation, read its partner even outside the diff and check success and error paths. Compare constraints held in different layers too — a validator's bound must fit the stored field and its encoding.
-- **Removed guards have history.** Before approving a deleted or weakened guard, `git log -L` its lines; an introducing commit citing a bug, CVE, or incident makes the removal a regression until the author shows the cause is gone.
-- **Hunt deletable complexity.** Beyond defects, flag reinvented stdlib, single-implementation abstractions, and unused flexibility — one line each: location, cut, replacement.
-- **Self-review from a fresh context.** Review your own diff in a fresh subagent given only the diff, touched files, and rules — or, with none available, judge only from re-read files, never from memory of writing them.
-- **Bolted-on conditionals are design findings.** A new branch special-casing one input inside an unrelated flow, or the same shape test repeated across call sites, signals a missing model or dispatcher — report it at design severity, not as a nit.
-- **CI expressions are untrusted input.** A workflow interpolating `${{ github.event.* }}` (titles, bodies, branch names) into a `run:` block is script injection — pass it through `env:` instead; flag unscoped or write-all `permissions:`.
-- **Feature flags carry an owner and an expiry.** CI exercises both flag states; a flag with no removal date is permanent dead code waiting to happen.
-- **One behavior, every path.** Route sync/async, streaming/batch, manual/scheduled,
-  list/detail, runtime/standalone, and fallback paths through one implementation seam.
-  When duplication is unavoidable, run identical contract fixtures through every path
-  and compare observable results.
-- **Retry taxonomy is public behavior.** Map one exception or result type to one retry
-  policy. Keep transient transport failures, deterministic input or contract failures,
-  authorization failures, and capacity limits distinct; tests assert both the public
-  error and whether the caller retries. Unknown failures never become empty data or
-  success.
-- **Outcome metadata follows the side effect.** Derive externally visible status,
-  effective recipients, counters, and mutually exclusive outcome buckets from the
-  same committed or irreversible result that performed the action. A prediction is
-  not delivery; one item cannot be both sent and failed; an intentional skip is not
-  a retryable failure. Tests exercise the real side-effect path plus no-op,
-  partial-failure, and ambiguous-result branches.
-- **Idempotency keys come from intent, not attempt.** Claim the key atomically (never SELECT-then-INSERT); same key with a different payload is rejected; retention outlives the longest retry or redelivery path; in-flight duplicates have explicit bounded behavior; a timeout is `unknown`, not failure.
-- **Authorize the resource, not just the caller.** Every request checks the caller may touch that specific object (IDOR); server-side fetches of user-supplied URLs go through an allowlist (SSRF).
-- **Mutable eligibility is rechecked at the irreversible boundary.** If authorization,
-  membership, account state, or another mutable predicate is checked before slow
-  work, queuing, persistence, batching, or a later disclosure/send/export/delete,
-  revalidate it immediately before each irreversible operation or bounded batch.
-  Reclassified items become an explicit skip or denial, never a send or a failure by
-  subtraction. Release DB transactions before external I/O.
-- **Derived deletion targets prove containment.** Resolve the final path, reject symlinks and check/use races, require an allowlisted root plus minimum depth and ownership evidence, then delete only that verified target.
-- **Selectors prove uniqueness.** Select from a repeated collection with the complete
-  structural key. A reduced key needs a documented uniqueness scope enforced by
-  producer validation and consumer tests.
-- **Control planes preserve identity.** Validate and normalize runtime settings on
-  write, reject unknowns, bound numerics, enforce one persisted value per scope+key,
-  and use symmetric read/write resolution. Safety controls fail closed outside
-  explicit development mode.
-- **Agent guardrails live outside the prompt.** Enforce tool/resource permissions and run time, action, and spend caps in credentials or runtime code; instruction text and delimiters are guidance, not enforcement. Test hostile retrieved instructions and runaway loops against those controls, including a stop mechanism that needs no model cooperation. Record where each claimed control is enforced and which check proves it.
-- **Caches key every varying input.** Include every value that can change the result,
-  especially tenant, user, locale, authorization scope, and version. Name acceptable
-  staleness, invalidation, and stampede behavior before adding a cache.
-- **URL transforms preserve state they do not own.** Implement redirects and
-  canonicalization as parse-transform-serialize operations. Preserve unknown or
-  unrelated query parameters, modify or delete only state owned by the transition,
-  and consume one-shot callback or error parameters before starting a new attempt.
-  Interpret shared parameter names in the destination route's context. Tests cover
-  unknown-parameter preservation, transient-state cleanup, and every route-specific
-  value set.
-- **Cryptographic pseudonyms fail closed.** Missing key material is an error, never an
-  empty-key fallback. Redactors normalize key style before matching and test nested
-  snake_case, camelCase, and mixed payloads.
-- **Operational docs are executable interfaces.** Verify commands in the correct
-  non-production environment. Recovery steps name scope, preconditions, idempotency,
-  cancellation completion, rollback, and proof of success. Absolute security or
-  privacy claims enumerate and verify every mode.
-- **Isolate every iteration of a long-running loop.** Materialize each iteration's
-  inputs into plain values before slow I/O; never carry ORM/session-bound objects
-  across a commit or rollback (both can expire them, turning later iterations into
-  lazy reloads on a stale connection). Release transactions, locks, and connections
-  before waiting on an external call; do follow-up writes in a fresh, bounded scope.
-  Test that one failed iteration — including a failure inside its own error
-  bookkeeping — cannot poison the next.
-- **Defaults exist only where they are applied.** Column/model defaults often apply at
-  flush or insert, not construction; a failure path reading a new, unsaved object sees
-  `None`. Set required initial values explicitly at construction, and make counters
-  tolerate absent (`(n or 0) + 1`).
-- **Systemic upstream failure trips a breaker.** When a batch exhausts its retry budget
-  on a server-side error (5xx, timeout), stop submitting remaining batches and leave
-  them pending for a later run. Continuing multiplies calls, commits, and rollbacks
-  against a dependency already known to be down.
-- **Keep the failure evidence.** On an upstream error, log a bounded, redacted excerpt
-  of the response body plus status and fault code — never only its size. A discarded
-  body turns root cause into guesswork.
-- **Persistent tests clean what they create.** Use a run-unique marker, capture the
-  created resource identifier from the mutation response, and register cleanup
-  immediately with language-native teardown (`finally`, `defer`, or equivalent);
-  failed readback must not prevent cleanup.
+- **Concrete failure or question.** Trace an actual input/state through reachable callers, surrounding guards, and the violated contract before asserting a defect. Name the consequence and smallest complete correction. If the path cannot be demonstrated, ask a genuine question; do not launder uncertainty into a blocker.
+- **Review the connected system.** Read intent, relevant rules, full enclosing code, callers, dependencies, and tests, not only hunks. List required but potentially absent artifacts first: migration, test, logging, configuration, docs, and recovery. Review correctness, security, design/simplification, and mechanical checks in focused passes rather than a diffuse checklist per file.
+- **Calibrate findings.** Verify load-bearing claims and existing feedback before reporting. Prefer a few actionable, evidence-backed findings over speculative recall. Repository conventions and demonstrated cost outrank taste. A declared shortcut is not a defect unless its stated limit is crossed; hunt removable wrappers, reinvented platform behavior, and unused flexibility without deleting unaudited contracts.
+- **Review the reviewer.** Re-read your diff from current files, or use a fresh-context reviewer with the diff, relevant contracts, and rules. Agreement between agents is not independent proof. A finding blocks only when it demonstrates a contract, safety, acceptance, or required-check violation; leave preferences non-blocking.
+- **Paired operations are one contract.** Read acquire/release, encode/decode, setup/teardown, subscribe/unsubscribe, and migration up/down together, including errors. Compare constraints across layers: validator bounds must fit storage and encoding. Investigate the history of any removed/weakened guard; an earlier incident/CVE remains relevant until its cause is demonstrably gone.
+- **Model recurring branches.** A special-case condition in an unrelated flow or repeated shape test can expose a missing owner/model/dispatcher. Trace the invariant before adding another branch; report a demonstrated design cost, not merely a dislike of conditionals.
+- **CI text is untrusted data.** Pass event titles/bodies/branch names through environment variables, never interpolate them into executable workflow shell. Use scoped permissions; reject write-all defaults and fork-code execution with privileged credentials. Feature flags need an owner and expiry/removal date, with both states exercised.
+- **One behavior, every path.** Route sync/async, streaming/batch, manual/scheduled, list/detail, runtime/standalone, and fallback behavior through one responsible seam. If deployment forces duplication, run identical contract fixtures through each path and compare observable outputs. Test alternate and negative paths, not only the route just changed.
+- **Retry taxonomy is public behavior.** Separate transient transport failures, deterministic input/contract errors, authorization failures, and capacity limits. Test public status and retry decisions together. Apply bounded attempt/time budgets; do not convert unknown failures into empty results or success, or retry non-idempotent work blindly.
+- **Outcome follows commitment.** Derive status, recipients, counters, and exclusive result buckets from the same committed/irreversible action. Predicted delivery is not delivery; one item is not both sent and failed; intentional skips are not retryable errors. Cover no-op, partial-failure, and ambiguous outcomes through the real side-effect path.
+- **Idempotency follows intent.** Atomically claim a stable intent key rather than check-then-insert. Reject reuse with a different payload, retain the key beyond the longest retry/redelivery window, and bound in-flight duplicate handling. A timeout after a possible commit means unknown, not confirmed failure.
+- **Authorize each resource.** Check access to the specific object, not only caller authentication. User-selected URLs need an allowlisted server-side fetch policy. Recheck mutable eligibility/authorization immediately before each irreversible operation or bounded batch after slow work, queuing, or persistence; changed eligibility becomes an explicit skip/denial. Release database transactions before external I/O.
+- **Deletion proves containment.** Resolve the final target and require the allowlisted root, minimum depth, ownership evidence, and protection against symlink/check-use races. Delete only that verified target after the main destructive-action approval gate; a derived path is not automatically safe.
+- **Selectors prove uniqueness.** Use the complete structural key in repeated collections. Reduced keys require a documented uniqueness scope enforced by producer validation and consumer tests, including collisions and ambiguity.
+- **Control planes preserve identity.** Validate and normalize on write, reject unknown settings, bound numerics, persist one value per scope/key, and resolve reads/writes symmetrically. Fail closed for safety controls outside explicit development mode. Test defaults, overrides, absent values, and both sides of configuration updates.
+- **Agent controls live outside prompts.** Enforce tool/resource permissions, time/action/spend caps, and cancellation in credentials/runtime policy. Delimiters and instructions are not security enforcement. Test hostile retrieved instructions and runaway loops against a stop path that needs no model cooperation; identify the enforcement location and evidence for each claimed control.
+- **Caches key every varying input.** Include tenant, user, locale, permission scope, version, and any other response-changing value. Define staleness, invalidation, size bound, and stampede behavior before caching; do not cache an authorization decision past its permitted lifetime.
+- **URL transitions own only their state.** Parse, transform, then serialize. Preserve unrelated/unknown query parameters, clean one-shot callback/error state before retry, and interpret shared parameter names in destination-route context. Test preservation, transient cleanup, and each route's valid values.
+- **Cryptographic pseudonyms fail closed.** Missing key material is an error, never an empty-key fallback. Normalize redaction key styles before matching and test nested snake_case, camelCase, mixed keys, and raw diagnostic paths. Do not claim privacy across modes that were not checked.
+- **Operational docs are executable interfaces.** Verify commands in the correct non-production environment. State impact, preconditions, scope, expected output, observable success, idempotency, cancellation completion, rollback, owner, and escalation trigger/target. Every decision path ends in a verified action or explicit escalation, including uncertainty. Keep mitigation distinct from an unproven root-cause claim; never waive approval because a runbook says to act quickly.
+- **Isolate every iteration of a long-running loop.** Materialize plain inputs before slow I/O; do not carry session-bound ORM objects across commit/rollback, which can expire them and trigger stale lazy reloads. Release locks/connections/transactions before waiting, then write in a fresh bounded scope. A failed item, including its error-bookkeeping failure, must not poison the next; test that sequence.
+- **Defaults apply at a named boundary.** Database/model defaults may not exist until flush/insert. Initialize values required before persistence explicitly; counters handle absent state deliberately rather than assuming a freshly constructed object already has persisted defaults.
+- **Systemic upstream failure trips a breaker.** Stop submitting later batches after exhausting the retry budget on a systemic server/timeout failure; leave remaining work explicitly pending. Do not multiply calls, commits, and rollbacks against a known outage. Resume only under the documented recovery policy.
+- **Keep useful failure evidence.** Record status/fault category and a bounded redacted response excerpt, not only body size. Preserve causal stacks internally and generic errors externally. Never retain full authenticated captures or private identifiers merely to make debugging easier.
+- **Persistent tests clean what they create.** Use a run-unique marker, capture the mutation response's identifier, and register native teardown immediately. A failed assertion/readback must not skip cleanup; cleanup failure is reported, not silently swallowed. Never discover cleanup targets with an unbounded delete.
 
 ## Concurrency & Resources
 
-- One try/catch per batch iteration; outer-only discards earlier successes.
-- Chunk unbounded list params — query and packet-size limits bite.
-- Enforce byte, item, page, token, and time limits while consuming, not after
-  buffering. Close nested streams on timeout, cancellation, or limit breach.
-- Async request/RPC paths never call blocking filesystem, subprocess, synchronous SDK,
-  registry, or network APIs directly. Use an async client or offload the call, apply a
-  deadline, and test that unrelated work progresses while the slow operation runs.
-- Emit heartbeats from long-running jobs or the scheduler kills and retries.
-- Register teardown for async resources — timers, intervals, abort controllers,
-  handles, sessions, pools.
-- No long synchronous retry chains in request handlers — one attempt, queue the rest.
-- Hoist loop-invariant work — permission lookups, regex compiles, deadline math.
+- **Contain each item's failure.** Use an independent error boundary per batch iteration; an outer-only catch loses earlier successes and later work. Preserve truthful partial results, and do not let rollback or error reporting hide the original exception.
+- **Bound work while consuming.** Enforce byte, item, page, token, and time limits incrementally, before buffering the entire stream or collection. Chunk list parameters to query/packet limits. Close nested streams on timeout, cancellation, or limit breach and test exact-boundary and over-boundary behavior.
+- **Keep event loops responsive.** Async request/RPC paths never call blocking filesystem, subprocess, synchronous SDK, registry, or network APIs directly. Use async I/O or explicit offload with a deadline; prove unrelated work progresses during the slow operation. Avoid long synchronous retry chains in handlers: one attempt, queue the rest under policy.
+- **Own resource lifetime.** Register teardown for timers, intervals, abort controllers, handles, sessions, and pools. Send required heartbeats for long jobs so schedulers do not duplicate live work. Cancellation is complete only when owned work/resources stop, not when a flag is set.
+- **Do invariant work once.** Hoist stable permission lookups, regex compilation, and deadline math only when their freshness/ownership contracts allow it. Never hoist mutable authorization past the irreversible-boundary recheck.

@@ -29,6 +29,7 @@
  *
  * Scans all git-tracked *.sh, *.md, and *.js/.jsx/.ts/.tsx/.mjs files for BEGIN/END markers automatically.
  * Optionally pass specific files as CLI args to process only those.
+ * Excluded target folders are protected in build/clean modes, including explicit targets.
  *
  * Usage:
  *   make format_build_include                                  # auto-scan tracked *.sh, *.md, and *.js/ts files
@@ -556,7 +557,15 @@ if (typeof module !== "undefined" && require.main !== module) {
     .split("\n")
     .filter((f) => f && !f.startsWith("software/tests/"));
   const inclusionTargets = INCLUSIONS.flatMap((inc) => inc.targets);
-  const targetFiles = cliTargets.length > 0 ? cliTargets : [...new Set([...trackedFiles, ...inclusionTargets])];
+  /** @type {string[]} Repository-relative folders that must never be regenerated, even through explicit targets. */
+  const excludedTargetFolders = ["software/scripts/advanced/llm/_common/v1"].map(
+    (folder) => path.resolve(__dirname, "../..", folder) + path.sep,
+  );
+  const targetFiles = (cliTargets.length > 0 ? cliTargets : [...new Set([...trackedFiles, ...inclusionTargets])]).filter((target) => {
+    // Resolve filesystem aliases (including macOS /var -> /private/var) before matching folder boundaries.
+    const resolved = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
+    return !excludedTargetFolders.some((folder) => resolved.startsWith(folder));
+  });
 
   let totalUpdated = 0;
 
