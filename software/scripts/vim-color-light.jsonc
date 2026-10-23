@@ -1,0 +1,26 @@
+{
+  // Shared Sy palette. Regenerate COLOR_MAP markers with make format_build_include.
+  "name": "Sy Light", // {{light.themeName}}
+  "background": "#f8f8f8", // {{light.background}}
+  "foreground": "#1e1e1e", // {{light.foreground}}
+  "surface": "#ececec", // {{light.surface}}
+  "muted": "#5a5a5a", // {{light.textDisabled}}
+  "border": "#262626", // {{light.brightGray}}
+  "selection": "#96c6fa", // {{light.selection}}
+  "activeLine": "#cfe0f7", // {{light.activeLine}}
+  "match": "#ffbe3d", // {{light.matchHighlight}}
+  "accent": "#0252ad", // {{light.linkBlue}}
+  "comment": "#004a15", // {{light.green}}
+  "string": "#a12626", // {{light.brightRed}}
+  "number": "#03623a", // {{light.darkGreen}}
+  "keyword": "#0033b3", // {{light.blue}}
+  "flow": "#8700c1", // {{light.brightPurple}}
+  "function": "#6a5100", // {{light.brown}}
+  "type": "#145e5e", // {{light.brightCyan}}
+  "variable": "#001080", // {{light.darkBlue}}
+  "constant": "#00416f", // {{light.cyan}}
+  "tag": "#9b2c2c", // {{light.darkRed}}
+  "special": "#734e06", // {{light.gold}}
+  "error": "#840000", // {{light.red}}
+  "warning": "#6a5100", // {{light.brown}}
+}
