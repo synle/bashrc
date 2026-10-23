@@ -85,21 +85,20 @@ async function _doConfigWork(targetPath, artifacts) {
 
     // deploy custom color schemes (only when custom theming is enabled)
     if (shouldInstallCustomTheme()) {
+      // Read both appearances before either file is backed up or written.
       const colorSchemes = [
-        {
-          src: "software/scripts/advanced/sublime-text-color-dark.jsonc",
-          dest: SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME,
-        },
-        {
-          src: "software/scripts/advanced/sublime-text-color-light.jsonc",
-          dest: SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME,
-        },
+        { data: await readSyTheme("sublime", "dark"), dest: SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME },
+        { data: await readSyTheme("sublime", "light"), dest: SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME },
       ];
-      for (const { src, dest } of colorSchemes) {
+      if (
+        colorSchemes.some(
+          ({ data }) => !data.globals || typeof data.globals !== "object" || Array.isArray(data.globals) || !Array.isArray(data.rules),
+        )
+      ) {
+        throw new Error("Invalid Sy Sublime source: expected globals and syntax rules");
+      }
+      for (const { data, dest } of colorSchemes) {
         log(`>>> Deploying color scheme: ${dest}`);
-        const data = await readJson`${src}`;
-
-        log(`>>>> Parsing: ${dest}`, src);
         await backupConfigFile(path.join(targetPath, `Packages/User/${dest}`));
         await writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
       }

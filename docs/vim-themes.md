@@ -6,12 +6,12 @@ One plugin provides dark and light appearances through `g:ayucolor` and the nati
 
 ## Selection
 
-The setup generator reuses `shouldInstallCustomTheme()` from `software/scripts/advanced/editor.common.js`.
+The setup generator reuses `shouldInstallCustomTheme("terminal")` from `software/scripts/advanced/editor.common.js`, including SSH/headless terminal sessions.
 When enabled, it deploys `sy-dark.vim` and `sy-light.vim` into each target's native colors folder.
-When disabled or headless, it selects the installed Ayu theme instead.
+When custom themes are disabled, it selects the installed Ayu theme instead.
 The flag never removes Ayu's Jetpack declaration.
 
-`software/scripts/vim-color-dark.jsonc` and `vim-color-light.jsonc` bind Sy colors to shared `COLOR_MAP` placeholders.
+`theme/sy/vim_dark.jsonc` and `vim_light.jsonc` store native highlight groups, terminal ANSI colors, and Lightline data with shared `COLOR_MAP` markers.
 Run `make format_build_include` after changing their marker mappings or shared colors.
 Lightline uses the same generated Sy palette or Ayu's supplied palette.
 TSX and React groups link to standard syntax roles rather than independent hex overrides.

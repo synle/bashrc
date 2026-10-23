@@ -1,5 +1,6 @@
 /** Google Gemini CLI setup: settings + user-level GEMINI.md instructions. Run: `bash run.sh --files="gemini/setup.js"` */
 // SOURCE software/scripts/advanced/llm/llm-common.js
+// SOURCE software/scripts/advanced/editor.common.js
 
 // ----------------------------------------------------------------------------
 // What this file does and does NOT do
@@ -246,6 +247,47 @@ function _deepMerge(target, source) {
 }
 
 /**
+ * Adds managed custom themes without replacing explicit foreign selections or theme entries.
+ * @param {object} settings - In-memory merged settings, modified before the caller's backup/write.
+ * @returns {Promise<void>} Resolves after both source themes have been validated.
+ * @throws {Error} For invalid settings/source shapes; no configuration file is written here.
+ */
+async function _doGeminiThemeWork(settings) {
+  if (settings.ui === undefined) settings.ui = {};
+  if (!settings.ui || typeof settings.ui !== "object" || Array.isArray(settings.ui))
+    throw new Error("Invalid Gemini ui settings: expected an object");
+  const selected = settings.ui.theme;
+  if (selected !== undefined && typeof selected !== "string") throw new Error("Invalid Gemini theme selection: expected a string");
+  if (!shouldInstallCustomTheme("terminal")) {
+    if (selected === "Sy Dark") settings.ui.theme = getTheme("gemini").dark;
+    if (selected === "Sy Light") settings.ui.theme = getTheme("gemini").light;
+    return;
+  }
+  const [dark, light] = await Promise.all([readSyTheme("gemini", "dark"), readSyTheme("gemini", "light")]);
+  for (const theme of [dark, light]) {
+    if (
+      typeof theme.name !== "string" ||
+      !theme.name ||
+      ["__proto__", "constructor", "prototype"].includes(theme.name) ||
+      theme.type !== "custom" ||
+      !theme.text ||
+      typeof theme.text !== "object" ||
+      !theme.background ||
+      typeof theme.background !== "object"
+    ) {
+      throw new Error("Invalid Gemini Sy source: expected a safe name, custom type, and native text/background groups");
+    }
+  }
+  if (dark.name === light.name) throw new Error("Invalid Gemini themes: appearance names must be distinct");
+  const custom = settings.ui.customThemes;
+  if (custom !== undefined && (!custom || typeof custom !== "object" || Array.isArray(custom)))
+    throw new Error("Invalid Gemini customThemes: expected an object");
+  settings.ui.customThemes = { ...custom, [dark.name]: dark, [light.name]: light };
+  if (selected === undefined || selected === "Sy Dark") settings.ui.theme = dark.name;
+  if (selected === "Sy Light") settings.ui.theme = light.name;
+}
+
+/**
  * Merges managed defaults into ~/.gemini/settings.json, preserving every
  * existing user-set key. Only keys in GEMINI_MANAGED_SETTINGS that are
  * missing from the user's settings.json are filled in — anything already
@@ -275,6 +317,7 @@ async function _doGeminiSettingsWork(targetDir) {
   // `general.sessionRetention`. Deep merge fills in missing leaves at every
   // nesting level while preserving every existing user-set leaf.
   const merged = _deepMerge(clone(GEMINI_MANAGED_SETTINGS), existing);
+  await _doGeminiThemeWork(merged);
 
   mergeLLMHookEntry(merged, "BeforeAgent", {
     matcher: "*",

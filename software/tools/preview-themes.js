@@ -3,7 +3,7 @@
  *
  * Output: .build/_theme-preview.html and .build/_theme-preview.png (both gitignored via `/.build/_*`).
  *
- * The theme specs live in `software/scripts/advanced/*-color-{dark,light}.jsonc` and are generated
+ * The theme specs live in `theme/sy/<app>_{dark,light}.jsonc` and are generated
  * from `COLOR_MAP` in `software/tools/build-include.js`. Unit tests assert numeric contrast floors,
  * but they can only check the pairs someone thought to list. This tool covers the rest of the gap:
  * it mocks up the surfaces where two colors sitting next to each other is the whole point, so a
@@ -26,12 +26,13 @@
  */
 const fs = require("fs");
 const path = require("path");
+const ts = require("typescript");
 
 /** Repo root, resolved from this file so the tool works from any cwd. */
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
 /** Directory holding the generated theme specs. */
-const THEME_DIR = path.join(REPO_ROOT, "software", "scripts", "advanced");
+const THEME_DIR = path.join(REPO_ROOT, "theme", "sy");
 
 /** Build output directory for the generated artifacts. */
 const BUILD_DIR = path.join(REPO_ROOT, ".build");
@@ -56,9 +57,9 @@ const INHERIT = "__inherit__";
  * @returns {object} The parsed object.
  */
 function parseJsonc(file) {
-  const raw = fs.readFileSync(file, "utf-8");
-  const stripped = raw.replace(/"(?:\\.|[^"\\])*"|\/\/[^\n]*/g, (m) => (m.startsWith("//") ? "" : m));
-  return JSON.parse(stripped.replace(/,(\s*[}\]])/g, "$1"));
+  const result = ts.parseConfigFileTextToJson(file, fs.readFileSync(file, "utf8"));
+  if (result.error) throw new Error(`Invalid theme JSONC: ${file}`);
+  return result.config;
 }
 
 /**
@@ -122,7 +123,7 @@ function contrast(a, b, backdrop) {
 /**
  * Build the preview model for a Zed theme file.
  *
- * @param {string} file - Path to `zed-color-{dark,light}.jsonc`.
+ * @param {string} file - Path to `theme/sy/zed_{dark,light}.jsonc`.
  * @returns {object} Normalized preview model.
  */
 function readZed(file) {
@@ -222,7 +223,7 @@ function resolveScope(rules, scope, getColor) {
 /**
  * Build the preview model for a VS Code theme file.
  *
- * @param {string} file - Path to `vs-code-color-{dark,light}.jsonc`.
+ * @param {string} file - Path to `theme/sy/vscode_{dark,light}.jsonc`.
  * @param {string} label - Display name for the panel.
  * @param {string} appearance - `dark` or `light`.
  * @returns {object} Normalized preview model.
@@ -288,7 +289,7 @@ function readVsCode(file, label, appearance) {
  *
  * Sublime values are `var(name)` references into a `variables` block, so they are dereferenced here.
  *
- * @param {string} file - Path to `sublime-text-color-{dark,light}.jsonc`.
+ * @param {string} file - Path to `theme/sy/sublime_{dark,light}.jsonc`.
  * @param {string} label - Display name for the panel.
  * @param {string} appearance - `dark` or `light`.
  * @returns {object} Normalized preview model.
@@ -554,12 +555,12 @@ function renderHtml(themes) {
 /** Collect every theme preview model from the committed specs. */
 function collectThemes() {
   const themes = [
-    readZed(path.join(THEME_DIR, "zed-color-dark.jsonc")),
-    readZed(path.join(THEME_DIR, "zed-color-light.jsonc")),
-    readVsCode(path.join(THEME_DIR, "vs-code-color-dark.jsonc"), "Sy Dark", "dark"),
-    readVsCode(path.join(THEME_DIR, "vs-code-color-light.jsonc"), "Sy Light", "light"),
-    readSublime(path.join(THEME_DIR, "sublime-text-color-dark.jsonc"), "Sy Dark", "dark"),
-    readSublime(path.join(THEME_DIR, "sublime-text-color-light.jsonc"), "Sy Light", "light"),
+    readZed(path.join(THEME_DIR, "zed_dark.jsonc")),
+    readZed(path.join(THEME_DIR, "zed_light.jsonc")),
+    readVsCode(path.join(THEME_DIR, "vscode_dark.jsonc"), "Sy Dark", "dark"),
+    readVsCode(path.join(THEME_DIR, "vscode_light.jsonc"), "Sy Light", "light"),
+    readSublime(path.join(THEME_DIR, "sublime_dark.jsonc"), "Sy Dark", "dark"),
+    readSublime(path.join(THEME_DIR, "sublime_light.jsonc"), "Sy Light", "light"),
   ];
   // Collapse TextMate scope inheritance the way a real editor does, so the preview shows the colors
   // that actually render. Which scopes inherited is kept for the stdout report.

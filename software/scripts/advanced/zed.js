@@ -1,4 +1,4 @@
-/** Zed editor setup: settings + custom dark/light themes. Reads zed-config.jsonc and zed-color-{dark,light}.jsonc, augments with shared EDITOR_CONFIGS, and writes to the local Zed config dir + build artifacts for prebuilt configs. */
+/** Zed editor setup: settings + custom dark/light themes. Reads zed-config.jsonc and theme/sy/zed_{dark,light}.jsonc, augments with shared EDITOR_CONFIGS, and writes to the local Zed config dir + build artifacts for prebuilt configs. */
 // SOURCE software/scripts/advanced/editor.common.js
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
@@ -281,14 +281,14 @@ function _getZedSettings(
 }
 
 /**
- * Reads the three Zed JSONC source files. Falls back to empty objects if a file is missing
- * so a partially-populated repo (e.g. mid-rebase) doesn't crash the run.
+ * Reads Zed settings/keybindings and both canonical Sy themes before deployment.
+ * Missing or malformed active theme sources fail closed instead of installing empty themes.
  * @returns {Promise<{baseConfig: object, darkTheme: object, lightTheme: object}>}
  */
 async function _readZedSources() {
   const baseConfig = (await readJson`software/scripts/advanced/zed-config.jsonc`) || {};
-  const darkTheme = (await readJson`software/scripts/advanced/zed-color-dark.jsonc`) || {};
-  const lightTheme = (await readJson`software/scripts/advanced/zed-color-light.jsonc`) || {};
+  const darkTheme = await readSyTheme("zed", "dark");
+  const lightTheme = await readSyTheme("zed", "light");
   const keymap = (await readJson`software/scripts/advanced/zed-keys.common.jsonc`) || [];
   return { baseConfig, darkTheme, lightTheme, keymap };
 }

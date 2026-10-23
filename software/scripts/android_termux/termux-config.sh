@@ -61,7 +61,7 @@ EOF
 ################################################################################
 # Colors are NOT written here. ~/.termux/colors.properties is owned by
 # software/scripts/android_termux/termux-colors.js, which renders it from
-# termux-color-dark.jsonc — the only file format that can carry a COLOR_MAP
+# theme/sy/termux_{dark,light}.jsonc — renderer inputs carrying COLOR_MAP
 # inline marker. This block used to hold a hardcoded Dracula palette that had
 # drifted off every other surface on the machine (worst hue 4.53:1, and color0
 # at 1.47:1 against its own background).

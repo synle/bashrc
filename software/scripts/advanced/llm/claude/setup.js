@@ -126,7 +126,7 @@ async function _doKeysWork(targetDir) {
 
 /**
  * Creates the theme folder, deploys the selected Sy or Ayu adapters, and resolves the native selection ID.
- * Uses the shared custom-theme routine for Sy/Ayu selection; headless hosts retain native themes.
+ * Uses terminal-aware Sy/Ayu selection; opted-out headless hosts retain native themes.
  * Preserves light appearance across family changes.
  * @param {string} targetFolder - Claude user configuration folder.
  * @param {string|undefined} selectedTheme - Existing settings.json theme selection.
@@ -145,8 +145,8 @@ async function _doClaudeTheme(targetFolder, selectedTheme) {
   ].includes(selectedTheme)
     ? "light"
     : "dark";
-  if (!is_gui) return appearance;
-  const useCustomTheme = shouldInstallCustomTheme();
+  const useCustomTheme = shouldInstallCustomTheme("terminal");
+  if (!is_gui && !useCustomTheme) return appearance;
 
   /**
    * Ayu Dark and Light palette defaults, separate from placeholder-generated Sy JSONC.
@@ -189,11 +189,11 @@ async function _doClaudeTheme(targetFolder, selectedTheme) {
     },
   };
 
-  /** @type {Record<string, object>|undefined} Sy colors loaded only when selected; Ayu never depends on generated JSONC. */
+  /** @type {Record<string, object>|undefined} Native Sy definitions; Ayu fallback remains independent of Sy sources. */
   const CLAUDE_THEME_PALETTES_SY_THEMES = useCustomTheme
     ? {
-        dark: await readJson`software/scripts/advanced/llm/claude/claude-color-dark.jsonc`,
-        light: await readJson`software/scripts/advanced/llm/claude/claude-color-light.jsonc`,
+        dark: await readSyTheme("claude", "dark"),
+        light: await readSyTheme("claude", "light"),
       }
     : undefined;
   const palettes = useCustomTheme ? CLAUDE_THEME_PALETTES_SY_THEMES : CLAUDE_THEME_PALETTES_AYU_THEMES;
@@ -219,6 +219,23 @@ async function _doClaudeTheme(targetFolder, selectedTheme) {
   ];
   // readJson returns an empty object on malformed JSONC; never deploy incomplete adapters.
   for (const [mode, palette] of Object.entries(palettes)) {
+    if (useCustomTheme) {
+      if (
+        typeof palette.name !== "string" ||
+        palette.name.length === 0 ||
+        palette.base !== mode ||
+        !palette.overrides ||
+        typeof palette.overrides !== "object" ||
+        Array.isArray(palette.overrides) ||
+        !["claude", "text", "error", "success", "warning", "selectionBg", "userMessageBackground"].every(
+          (key) => typeof palette.overrides[key] === "string",
+        ) ||
+        !Object.values(palette.overrides).every((value) => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value))
+      ) {
+        throw new Error(`Invalid Claude ${mode} native theme: expected a name, matching base, and generated color overrides`);
+      }
+      continue;
+    }
     if (!palette || typeof palette !== "object" || Array.isArray(palette)) {
       throw new Error(`Invalid Claude ${mode} palette: expected a JSONC palette object; retry after repairing the source`);
     }
@@ -239,36 +256,38 @@ async function _doClaudeTheme(targetFolder, selectedTheme) {
   await mkdir(themesFolder);
   for (const [mode, palette] of Object.entries(palettes)) {
     const targetPath = path.join(themesFolder, `${themeIds[mode].slice("custom:".length)}.json`);
-    /** @type {object} Native Claude theme; unmapped syntax and diff tokens inherit the built-in base. */
-    const theme = {
-      name: palette.name,
-      base: mode,
-      overrides: {
-        claude: palette.accent,
-        claudeShimmer: palette.shimmer,
-        text: palette.foreground,
-        inverseText: palette.background,
-        inactive: palette.muted,
-        subtle: palette.border,
-        permission: palette.info,
-        permissionShimmer: palette.accent,
-        promptBorder: palette.accent,
-        promptBorderShimmer: palette.shimmer,
-        planMode: palette.info,
-        autoAccept: palette.success,
-        success: palette.success,
-        error: palette.error,
-        warning: palette.warning,
-        warningShimmer: palette.warning,
-        remember: palette.accent,
-        userMessageBackground: palette.surface,
-        userMessageBackgroundHover: palette.hover,
-        bashMessageBackgroundColor: palette.surface,
-        memoryBackgroundColor: palette.surface,
-        selectionBg: palette.selection,
-        composerSidebarBackground: palette.background,
-      },
-    };
+    /** @type {object} Sy is already native JSONC; only the independent Ayu fallback needs an adapter. */
+    const theme = useCustomTheme
+      ? palette
+      : {
+          name: palette.name,
+          base: mode,
+          overrides: {
+            claude: palette.accent,
+            claudeShimmer: palette.shimmer,
+            text: palette.foreground,
+            inverseText: palette.background,
+            inactive: palette.muted,
+            subtle: palette.border,
+            permission: palette.info,
+            permissionShimmer: palette.accent,
+            promptBorder: palette.accent,
+            promptBorderShimmer: palette.shimmer,
+            planMode: palette.info,
+            autoAccept: palette.success,
+            success: palette.success,
+            error: palette.error,
+            warning: palette.warning,
+            warningShimmer: palette.warning,
+            remember: palette.accent,
+            userMessageBackground: palette.surface,
+            userMessageBackgroundHover: palette.hover,
+            bashMessageBackgroundColor: palette.surface,
+            memoryBackgroundColor: palette.surface,
+            selectionBg: palette.selection,
+            composerSidebarBackground: palette.background,
+          },
+        };
     await backupConfigFile(targetPath);
     await writeJson(targetPath, theme);
   }

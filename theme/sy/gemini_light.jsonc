@@ -5,6 +5,7 @@ Edit marker roles, then run make format_build_include; do not edit generated lit
 {
   "name": "Sy Light", // {{light.themeName}}
   "type": "custom",
+  "DarkGray": "#262626", // {{light.brightGray}}
   "text": {
     "primary": "#1e1e1e", // {{light.foreground}}
     "secondary": "#3f3f3f", // {{light.textSecondary}}
@@ -18,13 +19,8 @@ Edit marker roles, then run make format_build_include; do not edit generated lit
       "removed": "#ecdfdf", // {{light.diffRemovedBackground}}
     },
     "primary": "#f8f8f8", // {{light.background}}
-    "message": "#ececec", // {{light.surface}}
-    "input": "#cacaca", // {{light.gray}}
-    "focus": "#96c6fa", // {{light.selection}}
   },
-  "border": {
-    "default": "#262626", // {{light.brightGray}}
-  },
+
   "status": {
     "error": "#840000", // {{light.red}}
     "success": "#004a15", // {{light.green}}
@@ -34,7 +30,6 @@ Edit marker roles, then run make format_build_include; do not edit generated lit
     "comment": "#004a15", // {{light.green}}
     "symbol": "#1e1e1e", // {{light.foreground}}
     "active": "#0033b3", // {{light.blue}}
-    "dark": "#a4a4a4", // {{light.guide}}
     "focus": "#0033b3", // {{light.blue}}
     "gradient": [
       "#0033b3", // {{light.blue}}

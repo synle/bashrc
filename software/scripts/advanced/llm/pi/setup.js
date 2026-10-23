@@ -44,6 +44,7 @@
  */
 
 // SOURCE software/scripts/advanced/llm/llm-common.js
+// SOURCE software/scripts/advanced/editor.common.js
 
 /**
  * Short persona reminder appended through ~/.pi/agent/APPEND_SYSTEM.md.
@@ -171,6 +172,53 @@ function _buildPiOllamaProviders(providerInputs) {
 }
 
 /**
+ * Deploys both native Pi themes before returning a managed default selection.
+ * @param {string} agentDir - Pi configuration home.
+ * @param {string|undefined} selected - Existing explicit theme selection.
+ * @returns {Promise<string>} Existing user selection or the managed light/dark pair.
+ * @throws {Error} For invalid templates/selections or backup/write failures; settings are not written here.
+ */
+async function _doPiThemeWork(agentDir, selected) {
+  if (selected !== undefined && typeof selected !== "string") throw new Error("Invalid Pi theme selection: expected a string");
+  const owned = ["Sy Dark", "Sy Light", "Sy Light/Sy Dark"];
+  if (!shouldInstallCustomTheme("terminal")) {
+    if (selected === undefined || owned.includes(selected)) return getTheme("pi").dark;
+    return selected;
+  }
+  const [dark, light] = await Promise.all([readSyTheme("pi", "dark"), readSyTheme("pi", "light")]);
+  for (const [mode, theme] of Object.entries({ dark, light })) {
+    if (
+      typeof theme.name !== "string" ||
+      !theme.name ||
+      theme.name.startsWith(".") ||
+      /[/\\\\\x00-\x1f]/.test(theme.name) ||
+      theme.name === "system" ||
+      theme.appearance !== mode ||
+      !theme.colors ||
+      typeof theme.colors !== "object" ||
+      Array.isArray(theme.colors) ||
+      !Object.keys(theme.colors).length ||
+      !Object.values(theme.colors).every((value) => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value))
+    ) {
+      throw new Error(`Invalid Pi ${mode} theme: expected a safe name, matching appearance, and generated native color roles`);
+    }
+  }
+  if (dark.name === light.name) throw new Error("Invalid Pi themes: appearance names must be distinct");
+  const folder = path.join(agentDir, "themes");
+  await mkdir(folder);
+  for (const theme of [dark, light]) {
+    const file = path.join(folder, `${theme.name}.json`);
+    await backupConfigFile(file);
+    await writeJson(file, theme);
+  }
+  const automatic = `${light.name}/${dark.name}`;
+  if (selected === undefined || selected === "Sy Light/Sy Dark") return automatic;
+  if (selected === "Sy Dark") return dark.name;
+  if (selected === "Sy Light") return light.name;
+  return selected;
+}
+
+/**
  * Merges managed defaults and normalizes only the redundant system-theme pair, preserving other user settings.
  * @param {string} agentDir - Target Pi agent folder.
  * @returns {Promise<void>} Resolves after backing up and writing settings; IO errors propagate.
@@ -189,10 +237,12 @@ async function _doPiSettingsWork(agentDir) {
   // Collapse the redundant automatic pair without replacing a custom theme.
   if (existing.theme === "system/system") existing.theme = "system";
 
+  const theme = await _doPiThemeWork(agentDir, existing.theme);
   // Managed keys are defaults: a user value already on disk wins.
   const merged = {
     ...PI_MANAGED_SETTINGS,
     ...existing,
+    theme,
     terminal: {
       ...PI_MANAGED_SETTINGS.terminal,
       ...(existing.terminal && typeof existing.terminal === "object" ? existing.terminal : {}),

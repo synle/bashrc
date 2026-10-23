@@ -11,7 +11,9 @@
 - `manifest.jsonc` preserves reference provenance and checksums. Mutable Sy sources are validated by tests and generation, not snapshot hashes.
 - `AUDIT.md`, `audit.jsonc`, and `mappings.jsonc` retain the historical audit evidence and original proposals. Current source and regression tests supersede proposal status.
 
-The first integration commit adds the source/compiler contract while legacy consumers remain intact. The second commit migrates consumers and removes their replaced definitions.
+Supported setup consumers read canonical active sources directly. Legacy app-specific Sy JSONC inputs are removed; existing generated/native output names remain stable.
+Pi, OpenCode, and Gemini preserve explicit foreign selections. GUI defaults retain display gating; terminal consumers support SSH/headless use.
+Termux defaults to dark; `TERMUX_THEME_MODE=light` selects its light source on Termux. Native automatic switching is not assumed.
 
 ## Foundation recipes
 
@@ -81,6 +83,26 @@ node software/tools/build-include.js theme/sy/vscode_dark.jsonc
 Explicit targets work without a Git checkout. Automatic discovery combines tracked files and active Sy templates, including templates not yet staged.
 
 Foundation inputs, reference captures, and historical audit/metadata files are excluded even when supplied explicitly. All active inputs are checked before any template is rewritten.
+
+## Source-path migration
+
+Legacy Sy color inputs outside this folder are removed. Update source consumers as follows; native and generated output filenames remain unchanged.
+
+| Previous source                                                  | Canonical source                                       |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| `software/scripts/advanced/vs-code-color-<mode>.jsonc`           | `theme/sy/vscode_<mode>.jsonc`                         |
+| `software/scripts/advanced/sublime-text-color-<mode>.jsonc`      | `theme/sy/sublime_<mode>.jsonc`                        |
+| `software/scripts/advanced/zed-color-<mode>.jsonc`               | `theme/sy/zed_<mode>.jsonc`                            |
+| `software/scripts/advanced/ghostty-color-<mode>.jsonc`           | `theme/sy/ghostty_<mode>.jsonc`                        |
+| `software/scripts/advanced/llm/claude/claude-color-<mode>.jsonc` | `theme/sy/claude_<mode>.jsonc`                         |
+| `software/scripts/vim-color-<mode>.jsonc`                        | `theme/sy/vim_<mode>.jsonc`                            |
+| `software/scripts/android_termux/termux-color-dark.jsonc`        | `theme/sy/termux_dark.jsonc` and the new light variant |
+
+Claude sources now contain native `name/base/overrides` objects instead of a second intermediate palette.
+Vim sources contain `highlights/terminal/lightline` renderer data instead of a flat palette.
+Windows Terminal schemes formerly embedded in its setup script now come from `theme/sy/windows_terminal_<mode>.jsonc`.
+
+The self-extracting installer bundles `theme/sy/` so these sources remain available offline. Baseline references and historical audit payloads are not bundled.
 
 ## Native shapes and capability limits
 

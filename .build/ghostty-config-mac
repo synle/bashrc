@@ -13,7 +13,7 @@ adjust-cell-height = 2
 
 # ---- Theme (auto-switch with OS appearance, high-contrast both ways) ----
 # Sy Dark / Sy Light are written by this script into
-# ~/.config/ghostty/themes/ from ghostty-color-{dark,light}.jsonc, which are
+# ~/.config/ghostty/themes/ from theme/sy/ghostty_{dark,light}.jsonc, which are
 # bound to COLOR_MAP in software/tools/build-include.js by inline markers —
 # the same single source of truth VS Code, Sublime, Zed, Windows Terminal and
 # the webapp already use.

@@ -31,7 +31,7 @@
     "editorWhitespace.foreground": "#a4a4a4",
     "editorCodeLens.foreground": "#5a5a5a",
     "editorGhostText.foreground": "#5a5a5a",
-    "editorInlayHint.foreground": "#5a5a5a",
+    "editorInlayHint.foreground": "#3f3f3f",
     "editorInlayHint.background": "#cacaca",
     "editorStickyScroll.background": "#ececec",
     "editorStickyScrollHover.background": "#cacaca",
@@ -123,7 +123,7 @@
     "input.background": "#cacaca",
     "input.foreground": "#1e1e1e",
     "input.border": "#262626",
-    "input.placeholderForeground": "#5a5a5a",
+    "input.placeholderForeground": "#3f3f3f",
     "inputOption.activeBorder": "#0451a5",
     "inputOption.activeBackground": "#96c6fa",
     "inputOption.activeForeground": "#1e1e1e",
@@ -264,7 +264,36 @@
     "terminal.ansiBrightBlue": "#0051ae",
     "terminal.ansiBrightMagenta": "#8700c1",
     "terminal.ansiBrightCyan": "#145e5e",
-    "terminal.ansiBrightWhite": "#8b8b8b"
+    "terminal.ansiBrightWhite": "#8b8b8b",
+    "editor.findMatchForeground": "#1e1e1e",
+    "editor.findMatchHighlightForeground": "#1e1e1e",
+    "terminal.selectionForeground": "#1e1e1e",
+    "terminal.inactiveSelectionBackground": "#96c6fa99",
+    "terminal.findMatchBackground": "#ffbe3d66",
+    "terminal.findMatchBorder": "#0033b3",
+    "terminal.findMatchHighlightBackground": "#ffbe3d33",
+    "terminal.findMatchHighlightBorder": "#262626",
+    "chat.requestBackground": "#ececec",
+    "chat.requestBorder": "#262626",
+    "chat.slashCommandBackground": "#96c6fa",
+    "chat.slashCommandForeground": "#1e1e1e",
+    "chat.avatarBackground": "#ececec",
+    "chat.avatarForeground": "#1e1e1e",
+    "chat.editedFileForeground": "#0033b3",
+    "chat.linesAddedForeground": "#004a15",
+    "chat.linesRemovedForeground": "#840000",
+    "inlineChat.background": "#ececec",
+    "inlineChat.foreground": "#1e1e1e",
+    "inlineChat.border": "#262626",
+    "inlineChatInput.background": "#cacaca",
+    "inlineChatInput.border": "#262626",
+    "inlineChatInput.focusBorder": "#0033b3",
+    "inlineChatInput.placeholderForeground": "#3f3f3f",
+    "statusBarItem.warningBackground": "#775502",
+    "statusBarItem.warningForeground": "#f8f8f8",
+    "statusBar.inactiveBackground": "#ececec",
+    "actionBar.toggledBackground": "#b0b0b0",
+    "ports.iconRunningProcessForeground": "#004a15"
   },
   "editor.tokenColorCustomizations": {
     "textMateRules": [
@@ -714,5 +743,14 @@
         }
       }
     ]
+  },
+  "editor.semanticTokenColorCustomizations": {
+    "enabled": true,
+    "rules": {
+      "newOperator": "#1e1e1e",
+      "stringLiteral": "#a12626",
+      "customLiteral": "#6a5100",
+      "numberLiteral": "#03623a"
+    }
   }
 }

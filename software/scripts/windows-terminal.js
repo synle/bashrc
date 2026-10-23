@@ -48,56 +48,8 @@ async function doWork() {
   // ----------------------------------------------------------
   // High contrast dark/light color schemes (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark/Light")
   // ----------------------------------------------------------
-  const syDarkScheme = json`
-    {
-      "name": "Sy Dark", // {{dark.themeName}}
-      "background": "#0a0a0a", // {{dark.background}}
-      "foreground": "#e8e8e8", // {{dark.foreground}}
-      "cursorColor": "#5ca0d7", // {{dark.cursorColor}}
-      "selectionBackground": "#1b3c5e", // {{dark.selection}}
-      "black": "#6e6e6e", // {{dark.brightGray}}
-      "blue": "#5ca0d7", // {{dark.blue}}
-      "brightBlack": "#a0a0a0", // {{dark.brightBlack}}
-      "brightBlue": "#4fc1ff", // {{dark.brightBlue}}
-      "brightCyan": "#a4ffff", // {{dark.brightCyan}}
-      "brightGreen": "#69ff94", // {{dark.brightGreen}}
-      "brightPurple": "#ff92df", // {{dark.brightPurple}}
-      "brightRed": "#ff6e6e", // {{dark.brightRed}}
-      "brightWhite": "#ffffff", // {{dark.brightWhite}}
-      "brightYellow": "#ffffa5", // {{dark.brightYellow}}
-      "cyan": "#4ec9b0", // {{dark.cyan}}
-      "green": "#76a762", // {{dark.green}}
-      "purple": "#c586c0", // {{dark.purple}}
-      "red": "#f67070", // {{dark.red}}
-      "white": "#cccccc", // {{dark.white}}
-      "yellow": "#dcdcaa", // {{dark.yellow}}
-    }
-  `;
-  const syLightScheme = json`
-    {
-      "name": "Sy Light", // {{light.themeName}}
-      "background": "#f8f8f8", // {{light.background}}
-      "foreground": "#1e1e1e", // {{light.foreground}}
-      "cursorColor": "#0451a5", // {{light.cursorColor}}
-      "selectionBackground": "#96c6fa", // {{light.selection}}
-      "black": "#000000", // {{light.black}}
-      "blue": "#0033b3", // {{light.blue}}
-      "brightBlack": "#4a4a4a", // {{light.brightBlack}}
-      "brightBlue": "#0051ae", // {{light.brightBlue}}
-      "brightCyan": "#145e5e", // {{light.brightCyan}}
-      "brightGreen": "#106145", // {{light.brightGreen}}
-      "brightPurple": "#8700c1", // {{light.brightPurple}}
-      "brightRed": "#a12626", // {{light.brightRed}}
-      "brightWhite": "#8b8b8b", // {{light.brightWhite}}
-      "brightYellow": "#7f6000", // {{light.brightYellow}}
-      "cyan": "#00416f", // {{light.cyan}}
-      "green": "#004a15", // {{light.green}}
-      "purple": "#6c0099", // {{light.purple}}
-      "red": "#840000", // {{light.red}}
-      "white": "#6d6d6d", // {{light.white}}
-      "yellow": "#775502", // {{light.yellow}}
-    }
-  `;
+  const syDarkScheme = await readSyTheme("windows_terminal", "dark");
+  const syLightScheme = await readSyTheme("windows_terminal", "light");
 
   // ----------------------------------------------------------
   // Default profile appearance

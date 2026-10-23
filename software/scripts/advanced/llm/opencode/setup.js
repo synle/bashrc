@@ -25,6 +25,7 @@
  */
 
 // SOURCE software/scripts/advanced/llm/llm-common.js
+// SOURCE software/scripts/advanced/editor.common.js
 
 /**
  * Stream timeouts, in milliseconds, applied to every provider's `options`. Without
@@ -267,6 +268,45 @@ function _buildOpencodeConfig(providersArray) {
 }
 
 /**
+ * Writes one paired native OpenCode theme without overriding an explicit foreign selection.
+ * @param {string} configHome - Base configuration home.
+ * @param {string|undefined} selected - Existing TUI theme ID.
+ * @returns {Promise<string>} Preserved selection, managed sy ID, or native fallback.
+ * @throws {Error} For invalid paired roles or IO failures; TUI settings are not written here.
+ */
+async function _doOpencodeThemeWork(configHome, selected) {
+  if (selected !== undefined && typeof selected !== "string") throw new Error("Invalid OpenCode theme selection: expected a string");
+  const owned = ["sy", "sy-dark", "sy-light"];
+  if (!shouldInstallCustomTheme("terminal"))
+    return selected === undefined || owned.includes(selected) ? getTheme("opencode").dark : selected;
+  const [dark, light] = await Promise.all([readSyTheme("opencode", "dark"), readSyTheme("opencode", "light")]);
+  if (
+    !dark.theme ||
+    !light.theme ||
+    typeof dark.theme !== "object" ||
+    typeof light.theme !== "object" ||
+    Array.isArray(dark.theme) ||
+    Array.isArray(light.theme) ||
+    !Object.keys(dark.theme).length ||
+    Object.keys(dark.theme).sort().join(",") !== Object.keys(light.theme).sort().join(",")
+  ) {
+    throw new Error("Invalid OpenCode themes: expected matching non-empty native role objects");
+  }
+  const theme = {};
+  for (const key of Object.keys(dark.theme)) {
+    if (![dark.theme[key], light.theme[key]].every((value) => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)))
+      throw new Error("Invalid OpenCode theme role: expected generated hex colors");
+    theme[key] = { dark: dark.theme[key], light: light.theme[key] };
+  }
+  const folder = path.join(configHome, ".config/opencode/themes");
+  const target = path.join(folder, "sy.json");
+  await mkdir(folder);
+  await backupConfigFile(target);
+  await writeJson(target, { $schema: dark.$schema, theme });
+  return selected === undefined || owned.includes(selected) ? "sy" : selected;
+}
+
+/**
  * Writes ~/.config/opencode/tui.json with managed TUI defaults + keybinds.
  * Keybinds belong in tui.json (the TUI config), not in opencode.json (the
  * provider/config schema at https://opencode.ai/config.json which has no
@@ -286,12 +326,14 @@ async function _writeOpencodeTuiConfig(configHome = getLLMConfigHome(), isWindow
   // Strip invalid legacy top-level fields not in the tui.json schema
   delete existing.title;
   delete existing.animations;
+  const theme = await _doOpencodeThemeWork(configHome, existing.theme);
   /** @type {Record<string, any>} */
   const keybinds = await _loadOpencodeKeybinds(isWindowsConfig);
   /** @type {Record<string, any>} */
   const out = {
     $schema: "https://opencode.ai/tui.json",
     ...existing,
+    theme,
     mouse: true,
     // Force single-column stacked diff rendering instead of the default "auto"
     // (which flips to side-by-side on wide terminals). Stacked diffs read
@@ -345,6 +387,7 @@ async function _writeOpencodeTuiConfig(configHome = getLLMConfigHome(), isWindow
   if (keybinds && Object.keys(keybinds).length > 0) {
     out.keybinds = keybinds;
   }
+  await backupConfigFile(tuiPath);
   await writeJson(tuiPath, out);
   log(">> opencode tui.json written:", tuiPath);
 }

@@ -64,7 +64,7 @@
   // Directly serves the "delete leftovers in the refactor PR" rule. Values: 0.0-1.0
   "unnecessary_code_fade": 0.4,
   // Render LSP-reported colors as an inline swatch. The repo edits COLOR_MAP-bound
-  // *-color-{dark,light}.jsonc files constantly. Values: "none", "inlay", "border", "background"
+  // theme/sy/zed_{dark,light}.jsonc files constantly. Values: "none", "inlay", "border", "background"
   "lsp_document_colors": "inlay",
   // Show the error/warning text at the end of the offending line rather than only on hover.
   "diagnostics": { "inline": { "enabled": true } }, // Values: { inline: { enabled: true|false } }

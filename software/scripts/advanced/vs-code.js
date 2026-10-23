@@ -153,8 +153,8 @@ function _getCommandsToSkipShell(keybindings) {
  * `terminal.integrated.commandsToSkipShell` from `keybindings` so OS_KEY+X bindings fire
  * from terminal focus.
  * @param {object} baseConfig - Parsed `vs-code-config.jsonc`.
- * @param {object} darkColors - Parsed `vs-code-color-dark.jsonc` (workbench.colorCustomizations + editor.tokenColorCustomizations).
- * @param {object} lightColors - Parsed `vs-code-color-light.jsonc`.
+ * @param {object} darkColors - Canonical theme/sy/vscode_dark.jsonc customization objects.
+ * @param {object} lightColors - Canonical theme/sy/vscode_light.jsonc customization objects.
  * @param {object[]} keybindings - Resolved keybinding array used to auto-derive the skip-shell list.
  * @param {object} options - Build options.
  * @param {boolean} [options.is_prebuilt_config] - When true, use safe fallback fonts/sizes for shipped artifacts.
@@ -203,13 +203,20 @@ function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_pre
     // customizations, since they ship next to the vs-code-color-{dark,light} artifacts.
     ...(is_prebuilt_config || shouldInstallCustomTheme()
       ? {
-          [`[${VS_CODE_DARK_THEME}]`]: {
-            "workbench.colorCustomizations": darkColors["workbench.colorCustomizations"] || {},
-            "editor.tokenColorCustomizations": darkColors["editor.tokenColorCustomizations"] || {},
+          "workbench.colorCustomizations": {
+            ...baseConfig["workbench.colorCustomizations"],
+            [`[${VS_CODE_DARK_THEME}]`]: darkColors["workbench.colorCustomizations"] || {},
+            [`[${VS_CODE_LIGHT_THEME}]`]: lightColors["workbench.colorCustomizations"] || {},
           },
-          [`[${VS_CODE_LIGHT_THEME}]`]: {
-            "workbench.colorCustomizations": lightColors["workbench.colorCustomizations"] || {},
-            "editor.tokenColorCustomizations": lightColors["editor.tokenColorCustomizations"] || {},
+          "editor.tokenColorCustomizations": {
+            ...baseConfig["editor.tokenColorCustomizations"],
+            [`[${VS_CODE_DARK_THEME}]`]: darkColors["editor.tokenColorCustomizations"] || {},
+            [`[${VS_CODE_LIGHT_THEME}]`]: lightColors["editor.tokenColorCustomizations"] || {},
+          },
+          "editor.semanticTokenColorCustomizations": {
+            ...baseConfig["editor.semanticTokenColorCustomizations"],
+            [`[${VS_CODE_DARK_THEME}]`]: darkColors["editor.semanticTokenColorCustomizations"] || {},
+            [`[${VS_CODE_LIGHT_THEME}]`]: lightColors["editor.semanticTokenColorCustomizations"] || {},
           },
         }
       : {}),
@@ -397,8 +404,8 @@ async function doWork() {
 
   // --- Read source files ---
   const baseConfig = (await readJson`software/scripts/advanced/vs-code-config.jsonc`) || {};
-  const darkColors = (await readJson`software/scripts/advanced/vs-code-color-dark.jsonc`) || {};
-  const lightColors = (await readJson`software/scripts/advanced/vs-code-color-light.jsonc`) || {};
+  const darkColors = await readSyTheme("vscode", "dark");
+  const lightColors = await readSyTheme("vscode", "light");
   const commonKeyBindings = (await readJson`software/scripts/advanced/vs-code-keys.common.jsonc`) || [];
   const windowsKeyBindings = (await readJson`software/scripts/advanced/vs-code-keys.windows.jsonc`) || [];
 

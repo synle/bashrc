@@ -29,21 +29,42 @@
 const IS_CUSTOM_THEME_DISABLED_KEY = "IS_CUSTOM_THEME_DISABLED";
 
 /**
- * Whether to build and install the custom `Sy Dark` / `Sy Light` themes.
- *
- * True only when this machine has a GUI *and* the caller has not opted out. A headless
- * box has no editor or terminal UI to theme, so generating theme files there is pure
- * churn; the opt-out exists so a run can be rehearsed against the stock themes without
- * editing any script.
- *
- * When false, callers use bundled fallbacks from {@link getTheme}, locally supplied
- * adapters (Claude), or an unconditionally installed theme dependency (Vim's Ayu).
- * The flag changes selection, not whether those dependencies are installed.
- *
- * @returns {boolean} True when custom themes should be generated and installed.
+ * Selects custom themes for GUI apps or terminal interfaces, respecting the shared opt-out.
+ * Terminal interfaces remain usable over SSH; GUI callers retain their existing display requirement.
+ * @param {"gui"|"terminal"} [surface="gui"] - Native interface requiring a theme.
+ * @returns {boolean} True when the caller should install Sy themes.
+ * @throws {Error} For an unsupported surface; this function writes no configuration.
  */
-function shouldInstallCustomTheme() {
-  return !!is_gui && !getRuntimeOption(IS_CUSTOM_THEME_DISABLED_KEY, parseBoolean);
+function shouldInstallCustomTheme(surface = "gui") {
+  if (!["gui", "terminal"].includes(surface)) throw new Error("Theme surface must be gui or terminal");
+  return (surface === "terminal" || !!is_gui) && !getRuntimeOption(IS_CUSTOM_THEME_DISABLED_KEY, parseBoolean);
+}
+
+/**
+ * Reads one active native-shaped Sy source, rejecting archives, gaps, and invalid selectors before deployment.
+ * @param {string} app - Lowercase canonical application filename prefix.
+ * @param {"dark"|"light"} mode - Requested appearance.
+ * @returns {Promise<object>} Parsed native configuration or renderer input.
+ * @throws {Error} For unsafe selectors, absent/malformed sources, or unsupported capability records; no files are written.
+ */
+async function readSyTheme(app, mode) {
+  if (typeof app !== "string" || !/^[a-z][a-z0-9_]*$/.test(app) || !["dark", "light"].includes(mode)) {
+    throw new Error("Invalid Sy theme selector: expected a canonical app name and dark or light; retry with a supported source");
+  }
+  const source = await readJson`theme/sy/${app}_${mode}.jsonc`;
+  if (
+    !source ||
+    typeof source !== "object" ||
+    Array.isArray(source) ||
+    Object.keys(source).length === 0 ||
+    "definition" in source ||
+    source.captureStatus === "gap"
+  ) {
+    throw new Error(
+      `Invalid Sy ${app}/${mode} source: expected active native-shaped JSONC, not an archive or capability gap; repair the source before retrying`,
+    );
+  }
+  return source;
 }
 
 // --- Fallback themes ---
@@ -51,7 +72,7 @@ function shouldInstallCustomTheme() {
 /**
  * App name → `[darkTheme, lightTheme]` fallback selection identifiers.
  * Entries name bundled defaults, locally supplied Claude adapters, or Vim's always-installed Ayu.
- * Custom Sy theme definitions stay with their app scripts and JSONC sources.
+ * Custom Sy definitions live in theme/sy/; app scripts only render or deploy those sources.
  * Reuse shouldInstallCustomTheme to choose between Sy themes and these fallbacks.
  *
  * Two things to know before editing:
@@ -93,6 +114,11 @@ const APP_TO_THEMES_MAP = {
 
   // One native scheme provides both appearances through g:ayucolor; Jetpack always installs it.
   vim: ["ayu"],
+
+  // Native CLI fallbacks; explicit foreign user selections remain untouched.
+  pi: ["system"],
+  opencode: ["opencode"],
+  gemini: ["Default", "Default Light"],
 };
 
 /**

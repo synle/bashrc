@@ -48,6 +48,7 @@ const FILES_TO_BUNDLE = [
   "software/bootstrap",
   "software/scripts",
   "software/metadata",
+  "theme/sy", // Active sources are required by local/offline consumers; reference archives are not bundled.
 ];
 
 /**

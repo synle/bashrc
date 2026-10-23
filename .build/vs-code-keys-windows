@@ -6,6 +6,26 @@
 
 [
   {
+    "key": "ctrl+home",
+    "command": "cursorTop",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+end",
+    "command": "cursorBottom",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+home",
+    "command": "cursorTopSelect",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+end",
+    "command": "cursorBottomSelect",
+    "when": "editorTextFocus"
+  },
+  {
     "key": "alt+1",
     "command": "workbench.action.openEditorAtIndex1"
   },

@@ -2,125 +2,65 @@
 // SOURCE software/scripts/advanced/editor.common.js
 
 /**
- * Renders a native Sy Vim colorscheme and its matching Lightline palette from shared JSONC.
- * @param {"dark"|"light"} mode - Target background appearance.
- * @returns {Promise<string>} Vimscript with validated six-digit colors; missing or invalid palette values throw.
+ * Renders canonical Vim highlight, terminal, and Lightline data without a second palette mapping.
+ * @param {"dark"|"light"} mode - Target appearance.
+ * @returns {Promise<string>} Native Vimscript; this renderer reads sources but writes no files.
+ * @throws {Error} For invalid group names, colors, attributes, ANSI entries, or status-line pairs.
  */
 async function _buildVimTheme(mode) {
-  if (!["dark", "light"].includes(mode)) throw new Error("Vim theme mode must be dark or light");
-  const palette = await readJson`software/scripts/vim-color-${mode}.jsonc`;
-  /** @type {string[]} Required shared roles used by editor highlights and Lightline. */
-  const roles = [
-    "background",
-    "foreground",
-    "surface",
-    "muted",
-    "border",
-    "selection",
-    "activeLine",
-    "match",
-    "accent",
-    "comment",
-    "string",
-    "number",
-    "keyword",
-    "flow",
-    "function",
-    "type",
-    "variable",
-    "constant",
-    "tag",
-    "special",
-    "error",
-    "warning",
-  ];
-  if (
-    !palette ||
-    typeof palette !== "object" ||
-    Array.isArray(palette) ||
-    !roles.every((role) => typeof palette[role] === "string" && /^#[0-9a-f]{6}$/.test(palette[role]))
-  ) {
-    throw new Error(`Invalid Vim ${mode} palette: expected all required six-digit hex color roles`);
+  const theme = await readSyTheme("vim", mode);
+  const isHex = (value) => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
+  const isColor = (value) => value === "NONE" || isHex(value);
+  const groups = theme.highlights;
+  if (!groups || typeof groups !== "object" || Array.isArray(groups) || Object.keys(groups).length === 0) {
+    throw new Error(`Invalid Vim ${mode} theme: expected named highlight groups`);
   }
-  /** @type {Record<string, string[]>} Native highlight groups mapped once to semantic palette roles. */
-  const groups = {
-    Normal: [palette.foreground, palette.background],
-    NormalNC: [palette.muted, palette.background],
-    Comment: [palette.comment, "NONE"],
-    String: [palette.string, "NONE"],
-    Number: [palette.number, "NONE"],
-    Constant: [palette.constant, "NONE"],
-    Identifier: [palette.variable, "NONE"],
-    Function: [palette.function, "NONE"],
-    Statement: [palette.keyword, "NONE"],
-    Keyword: [palette.keyword, "NONE"],
-    PreProc: [palette.flow, "NONE"],
-    Type: [palette.type, "NONE"],
-    Special: [palette.special, "NONE"],
-    Tag: [palette.tag, "NONE"],
-    Delimiter: [palette.foreground, "NONE"],
-    Operator: [palette.foreground, "NONE"],
-    LineNr: [palette.muted, palette.background],
-    CursorLineNr: [palette.accent, palette.activeLine],
-    CursorLine: ["NONE", palette.activeLine],
-    ColorColumn: ["NONE", palette.surface],
-    SignColumn: [palette.foreground, palette.background],
-    VertSplit: [palette.border, palette.background],
-    Visual: [palette.foreground, palette.selection],
-    Search: [palette.foreground, palette.match],
-    IncSearch: [palette.foreground, palette.match],
-    MatchParen: [palette.accent, palette.selection],
-    Pmenu: [palette.foreground, palette.surface],
-    PmenuSel: [palette.foreground, palette.selection],
-    Folded: [palette.muted, palette.surface],
-    NonText: [palette.border, "NONE"],
-    SpecialKey: [palette.border, "NONE"],
-    StatusLine: [palette.foreground, palette.surface],
-    StatusLineNC: [palette.muted, palette.surface],
-    TabLine: [palette.foreground, palette.surface],
-    TabLineSel: [palette.foreground, palette.selection],
-    TabLineFill: [palette.muted, palette.surface],
-    ErrorMsg: [palette.error, palette.background],
-    WarningMsg: [palette.warning, palette.background],
-    DiffAdd: [palette.comment, palette.surface],
-    DiffDelete: [palette.error, palette.surface],
-    DiffChange: [palette.accent, palette.surface],
-    DiffText: [palette.foreground, palette.selection],
-  };
-  /** @type {object} Lightline consumes the same palette instead of separate hardcoded mode colors. */
-  const lightline = {
-    normal: {
-      left: [
-        [palette.background, palette.comment],
-        [palette.foreground, palette.surface],
-      ],
-      right: [[palette.foreground, palette.surface]],
-      middle: [[palette.foreground, palette.surface]],
-      error: [[palette.error, palette.surface]],
-      warning: [[palette.warning, palette.surface]],
-    },
-    insert: { left: [[palette.background, palette.accent]] },
-    visual: { left: [[palette.background, palette.flow]] },
-    replace: { left: [[palette.background, palette.error]] },
-    inactive: {
-      left: [[palette.muted, palette.surface]],
-      right: [[palette.muted, palette.surface]],
-      middle: [[palette.muted, palette.surface]],
-    },
-    tabline: {
-      left: [[palette.foreground, palette.surface]],
-      tabsel: [[palette.foreground, palette.selection]],
-      middle: [[palette.foreground, palette.surface]],
-      right: [[palette.foreground, palette.surface]],
-    },
-  };
+  const styles = ["NONE", "underline", "undercurl", "bold", "italic", "reverse"];
+  const lines = [];
+  for (const [name, group] of Object.entries(groups)) {
+    if (
+      !/^[A-Za-z][A-Za-z0-9_]*$/.test(name) ||
+      !group ||
+      typeof group !== "object" ||
+      !isColor(group.foreground) ||
+      !isColor(group.background) ||
+      !styles.includes(group.style) ||
+      (group.special !== undefined && !isColor(group.special))
+    ) {
+      throw new Error(`Invalid Vim ${mode} highlight: expected a safe group, color pair, and supported style`);
+    }
+    const special = group.special === undefined ? "" : ` guisp=${group.special}`;
+    const cterm = group.style === "undercurl" ? "underline" : group.style;
+    lines.push(`highlight ${name} guifg=${group.foreground} guibg=${group.background}${special} gui=${group.style} cterm=${cterm}`);
+  }
+  if (!Array.isArray(theme.terminal) || theme.terminal.length !== 16 || !theme.terminal.every(isHex)) {
+    throw new Error(`Invalid Vim ${mode} theme: expected sixteen terminal colors`);
+  }
+  const lightline = theme.lightline;
+  if (
+    !lightline ||
+    typeof lightline !== "object" ||
+    Array.isArray(lightline) ||
+    !lightline.normal ||
+    !Object.values(lightline).every(
+      (entry) =>
+        entry &&
+        typeof entry === "object" &&
+        !Array.isArray(entry) &&
+        Object.values(entry).every(
+          (segments) => Array.isArray(segments) && segments.every((pair) => Array.isArray(pair) && pair.length === 2 && pair.every(isHex)),
+        ),
+    )
+  ) {
+    throw new Error(`Invalid Vim ${mode} theme: expected Lightline color pairs`);
+  }
   return [
-    '" Generated by vim-config.js from shared COLOR_MAP JSONC. Do not edit.',
-    '" Preserve background: Vim reloads the old scheme before OptionSet selects the new appearance.',
+    '" Generated from theme/sy/vim_' + mode + ".jsonc. Do not edit.",
     "highlight clear",
     "if exists('syntax_on') | syntax reset | endif",
     `let g:colors_name = 'sy-${mode}'`,
-    ...Object.entries(groups).map(([group, [fg, bg]]) => `highlight ${group} guifg=${fg} guibg=${bg} gui=NONE cterm=NONE`),
+    ...lines,
+    `let g:terminal_ansi_colors = ${JSON.stringify(theme.terminal)}`,
     `let g:sy_lightline_palette = ${JSON.stringify(lightline)}`,
     "",
   ].join("\n");
@@ -133,7 +73,7 @@ async function _buildVimTheme(mode) {
  * @returns {Promise<string>} Vimscript selecting Sy or registry fallback; IO and palette errors propagate.
  */
 async function _doVimTheme(vimFolders) {
-  const useCustomTheme = shouldInstallCustomTheme();
+  const useCustomTheme = shouldInstallCustomTheme("terminal");
   const fallback = getTheme("vim");
   if (useCustomTheme || IS_CI) {
     // Render both before writing either so malformed light data cannot leave a partial deployment.
