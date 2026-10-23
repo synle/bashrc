@@ -172,6 +172,8 @@ keybind = alt+shift+down=resize_split:down,10
 keybind = alt+shift+left=resize_split:left,10
 keybind = alt+shift+right=resize_split:right,10
 keybind = alt+shift+\=toggle_split_zoom
+keybind = ctrl+shift+up=scroll_page_up
+keybind = ctrl+shift+down=scroll_page_down
 keybind = alt+ctrl+up=jump_to_prompt:-1
 keybind = alt+ctrl+down=jump_to_prompt:1
 keybind = alt+equal=increase_font_size:1
@@ -180,12 +182,17 @@ keybind = alt+0=reset_font_size
 keybind = alt+c=copy_to_clipboard:mixed
 keybind = alt+v=paste_from_clipboard
 keybind = alt+a=select_all
+keybind = ctrl+shift+a=select_all
 keybind = alt+shift+c=copy_to_clipboard:mixed
 keybind = alt+shift+v=paste_from_clipboard
 keybind = alt+shift+a=select_all
 keybind = alt+shift+f=start_search
 keybind = alt+ctrl+shift+c=copy_to_clipboard:plain
 keybind = alt+y=text:\x1by
+keybind = ctrl+a=csi:H
+keybind = ctrl+e=csi:F
+keybind = ctrl+backspace=text:\x17
+keybind = ctrl+delete=esc:d
 keybind = ctrl+1=text:\x1b1
 keybind = ctrl+2=text:\x1b2
 keybind = ctrl+3=text:\x1b3

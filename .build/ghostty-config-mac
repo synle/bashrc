@@ -202,6 +202,8 @@ keybind = cmd+shift+down=resize_split:down,10
 keybind = cmd+shift+left=resize_split:left,10
 keybind = cmd+shift+right=resize_split:right,10
 keybind = cmd+shift+\=toggle_split_zoom
+keybind = ctrl+shift+up=scroll_page_up
+keybind = ctrl+shift+down=scroll_page_down
 keybind = cmd+ctrl+up=jump_to_prompt:-1
 keybind = cmd+ctrl+down=jump_to_prompt:1
 keybind = cmd+equal=increase_font_size:1
@@ -210,12 +212,17 @@ keybind = cmd+0=reset_font_size
 keybind = cmd+c=copy_to_clipboard:mixed
 keybind = cmd+v=paste_from_clipboard
 keybind = cmd+a=select_all
+keybind = ctrl+shift+a=select_all
 keybind = cmd+shift+c=copy_to_clipboard:mixed
 keybind = cmd+shift+v=paste_from_clipboard
 keybind = cmd+shift+a=select_all
 keybind = cmd+shift+f=start_search
 keybind = cmd+ctrl+shift+c=copy_to_clipboard:plain
 keybind = cmd+y=text:\x1by
+keybind = ctrl+a=csi:H
+keybind = ctrl+e=csi:F
+keybind = ctrl+backspace=text:\x17
+keybind = ctrl+delete=esc:d
 keybind = ctrl+1=text:\x1b1
 keybind = ctrl+2=text:\x1b2
 keybind = ctrl+3=text:\x1b3

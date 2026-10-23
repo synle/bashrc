@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect } from "vitest";
 
 import {
   getIndexFunction,
@@ -9,6 +9,13 @@ import {
   setSandboxGlobal,
   loadScriptHelpers,
 } from "./setup.js";
+
+// Each case owns its platform; Windows/WSL visibility probes must not leak flags into path tests.
+beforeEach(() => {
+  setSandboxGlobal("is_os_windows", false);
+  setSandboxGlobal("is_os_wsl", false);
+  setSandboxGlobal("is_os_mac", false);
+});
 
 const toWindowsPath = getIndexFunction("toWindowsPath");
 
