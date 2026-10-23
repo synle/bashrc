@@ -140,6 +140,20 @@ describe("OpenCode Ollama metadata", () => {
     }
   });
 
+  it("allows one nested dispatcher level without pinning the general agent model", () => {
+    const config = getIndexFunction("_buildOpencodeConfig")([]);
+
+    expect(config.subagent_depth).toBe(2);
+    expect(config.agent.general).toEqual({ permission: { task: "allow" } });
+  });
+
+  it("keeps leaf-agent permissions unchanged when nested dispatch is enabled", () => {
+    const config = getIndexFunction("_buildOpencodeConfig")([]);
+
+    expect(config.agent.review.permission).toEqual({ edit: "deny", bash: "allow" });
+    expect(config.agent).not.toHaveProperty("local");
+  });
+
   it("keeps long pasted input collapsed by default", () => {
     const buildOpencodeConfig = getIndexFunction("_buildOpencodeConfig");
     const config = buildOpencodeConfig([]);

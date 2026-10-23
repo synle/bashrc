@@ -167,6 +167,9 @@ function _buildOpencodeConfig(providersArray) {
     // real tool names (read, edit, bash, …), so `{"*": "allow"}` was a no-op that
     // silently left the defaults in place.
     permission: "allow",
+    // Primary → general dispatcher → worker; depth 2 still blocks further nesting.
+    // The dispatcher also needs an explicit task permission in AGENT_TO_MODEL_MAP.
+    subagent_depth: 2,
     // Compaction stays on with opencode's default tail_turns. An explicit low
     // value (we used to pin 4) throws away almost everything on each compaction,
     // so the model re-reads the same files, refills the window, and compacts
@@ -250,7 +253,7 @@ function _buildOpencodeConfig(providersArray) {
     provider: providers,
   };
 
-  // Per-role agents (build / plan / review / local) come from AGENT_TO_MODEL_MAP in
+  // Per-role agents (build / general / plan / review / local) come from AGENT_TO_MODEL_MAP in
   // llm-common.js — the single registry shared with every other LLM CLI, keyed by CLI
   // folder name so opencode reads its own row and nothing else. The `local` agent
   // resolves against the Ollama providers discovered above and is dropped when no host

@@ -147,10 +147,7 @@ Schedule — <command name>
 - **A wrong sequence number in the title is corrected here, and only here.** Check titles carrying `wave <W> - pr <i>/<N>` for dispatcher-reported out-of-order, duplicated, or stale `<i>` values against `<N>`. Fix reported values in the same `gh pr edit --title` call that drops the prefix. If no prefix needs removal, fix them separately. `<i>` expresses merge order and increases monotonically with the wave; see _A sequence number in a title is MERGE order_. A wrong-direction merge instruction is worse than no number. Never renumber from `createdAt` or the PR number, and never touch a branch to do it.
 - **A follow-up PR cut from a review comment joins the wave set, and the set is reassessed before it is announced.** When Step 7 opens a separate PR to answer a reviewer, place it in the wave its dependencies require, usually this same wave. Never append it last merely because you wrote it last. Re-derive ordering and retitle moved PRs. Update the affected `## Blocked on` sections on both sides. Reply in the requesting thread with the new PR's link **and** current position, preventing superseded numbering. See the _A PR joining the set mid-flight_ rule.
 - **Promote per reason — the other reasons are the author's call.** Check whether WIP or draft state has a stated reason _besides_ the wave block. Examples include open `TODO —` markers, unfinished work in the body, or explicit "keep this draft" instructions. If another reason exists, sync anyway and report the blocker's merge. **Leave the prefix and draft state alone**. Promoting past a reason you did not resolve ships work its author called unfinished.
-- **Idempotent and re-entrant.** Complete only outstanding work each pass. Resume promotions interrupted between steps 3 and 5 next pass without starting over. Never repeat completed actions:
-      - Leave titles without prefixes alone.
-      - Do not re-ready already-ready PRs.
-      - Do not rewrite bodies without a `## Blocked on` section.
+- **Idempotent and re-entrant.** Complete only outstanding work each pass. Resume promotions interrupted between steps 3 and 5 next pass without starting over. Never repeat completed actions: - Leave titles without prefixes alone. - Do not re-ready already-ready PRs. - Do not rewrite bodies without a `## Blocked on` section.
 - **Re-run the Step 2a automerge gate once, on the pass that promotes.** Draft state and WIP titles trigger two Step 2a skip reasons. Promotion clears both. Without this recheck, an expired condition keeps promoted prose-only PRs disqualified.
 - **Report it explicitly** — which blocker landed, which of the five actions ran, and which did not and why: `promoted: blocked-on github.com/acme/api/pull/40 merged → synced, CI green, undrafted, prefix dropped, body updated`, or `blocker landed, WIP kept — 2 open TODO markers`.
 
@@ -186,60 +183,62 @@ Schedule — <command name>
    - `workspace=$WT` — the sync runs in babysit's worktree and never creates, cleans, or removes one; babysit owns its lifecycle across all passes.
    - `server-side=never` — `gh pr update-branch` would merge remotely, leaving the local worktree behind and useless for Steps 6–11.
    - Defaults handle the remaining steps in order:
-  - Resolve the ancestor chain fresh.
-  - Merge the floor, then every ancestor root-most → immediate parent, one merge per source.
-  - Resolve conflicts.
-  - Run the migration-head check.
-  - Run the pre-push gate.
-  - Push.
-   - **Re-invoke it every pass.** The chain is re-resolved each time — parents push, merge, and get retargeted between passes.
-     d. **Consume the sync result block** (`/sy-sync-pr-branch` Step 8) and act on it before continuing:
-   - `flags: stopped-for-human` or `migrations: needs-human` → the branch is **not** synced. Do not proceed to Steps 6–11 as if it were: report what the sync asked for, end the pass, and fall through to the Step 12 loop gate.
-   - `flags: orphaned-base <link>` (an ancestor PR closed without merging) or `retargeted` → carry it into the Step 13 report; the sync already handled the merge itself.
-   - `stack`, `floor`, `sources`, `migrations`, `pushed` → quote them verbatim in the Step 13 report. Babysit does not re-derive the stack shape.
-   - **`migrations: re-parented <what>` + a non-empty `pushed` → re-request review from everyone who already approved.** Re-parenting creates a new commit. With "dismiss stale approvals" branch protection, that commit silently dismisses every approval and removes the PR from `APPROVED`. Left alone, the green PR remains unmergeable until a human notices. The next early-exit sees `reviewDecision != "APPROVED"` and hides the cause by merely reporting missing approval.
-     - Resolve the prior approvers from the Step 4 fetch: `reviews[]` entries with `state == "APPROVED"`, deduped by `user.login`, excluding yourself and bots. None → nothing to do.
-     - Re-request them in one call: `gh pr edit <number> --repo <owner/repo> --add-reviewer <login>[,<login>...]`. If `gh` rejects a login, report it and continue with the rest. Causes include removed collaborators or an API refusal to re-request authors. Never let one bad login skip others.
-     - Post one comment identifying the mechanical change to make re-approval a glance, not a reread:
-  `"Re-parented this branch's migration onto <floor>'s current head (<old> → <new>) after merging <floor> in — no behavior change, no source edits. Re-requesting approval since the new commit dismissed the earlier one(s)."`
-  Use the same body-file transport and memory update as every other comment this command posts.
-     - **Ping once per re-parent, not once per pass.** Record it in the `## State` block's `reping` marker keyed on the re-parent SHA (the same marker Step 7 uses for fix pings). A later pass re-pings only if it pushed a **further** re-parent; three passes must never produce three notifications for one push.
-     - **Only for a re-parent this loop pushed.** `migrations: single-head` means nothing changed and nobody is pinged. `migrations: needs-human` already ended the pass above.
-   - If the push changed what the PR does, re-check the PR body against the new diff and update it — see the _PR body tracks the branch_ rule.
-   - Note: the sync creates regular merge commits on the PR branch. The eventual PR-level merge into the base must still be a **squash merge** per repo policy.
+
+- Resolve the ancestor chain fresh.
+- Merge the floor, then every ancestor root-most → immediate parent, one merge per source.
+- Resolve conflicts.
+- Run the migration-head check.
+- Run the pre-push gate.
+- Push.
+- **Re-invoke it every pass.** The chain is re-resolved each time — parents push, merge, and get retargeted between passes.
+  d. **Consume the sync result block** (`/sy-sync-pr-branch` Step 8) and act on it before continuing:
+- `flags: stopped-for-human` or `migrations: needs-human` → the branch is **not** synced. Do not proceed to Steps 6–11 as if it were: report what the sync asked for, end the pass, and fall through to the Step 12 loop gate.
+- `flags: orphaned-base <link>` (an ancestor PR closed without merging) or `retargeted` → carry it into the Step 13 report; the sync already handled the merge itself.
+- `stack`, `floor`, `sources`, `migrations`, `pushed` → quote them verbatim in the Step 13 report. Babysit does not re-derive the stack shape.
+- **`migrations: re-parented <what>` + a non-empty `pushed` → re-request review from everyone who already approved.** Re-parenting creates a new commit. With "dismiss stale approvals" branch protection, that commit silently dismisses every approval and removes the PR from `APPROVED`. Left alone, the green PR remains unmergeable until a human notices. The next early-exit sees `reviewDecision != "APPROVED"` and hides the cause by merely reporting missing approval.
+  - Resolve the prior approvers from the Step 4 fetch: `reviews[]` entries with `state == "APPROVED"`, deduped by `user.login`, excluding yourself and bots. None → nothing to do.
+  - Re-request them in one call: `gh pr edit <number> --repo <owner/repo> --add-reviewer <login>[,<login>...]`. If `gh` rejects a login, report it and continue with the rest. Causes include removed collaborators or an API refusal to re-request authors. Never let one bad login skip others.
+  - Post one comment identifying the mechanical change to make re-approval a glance, not a reread:
+    `"Re-parented this branch's migration onto <floor>'s current head (<old> → <new>) after merging <floor> in — no behavior change, no source edits. Re-requesting approval since the new commit dismissed the earlier one(s)."`
+    Use the same body-file transport and memory update as every other comment this command posts.
+  - **Ping once per re-parent, not once per pass.** Record it in the `## State` block's `reping` marker keyed on the re-parent SHA (the same marker Step 7 uses for fix pings). A later pass re-pings only if it pushed a **further** re-parent; three passes must never produce three notifications for one push.
+  - **Only for a re-parent this loop pushed.** `migrations: single-head` means nothing changed and nobody is pinged. `migrations: needs-human` already ended the pass above.
+- If the push changed what the PR does, re-check the PR body against the new diff and update it — see the _PR body tracks the branch_ rule.
+- Note: the sync creates regular merge commits on the PR branch. The eventual PR-level merge into the base must still be a **squash merge** per repo policy.
 
 6. **Remediate review comments only when a heavy blocker requires it.**
    - **Preserve approval by default.** Set `comment_remediation_required=1` only when the current PR meets at least one condition:
-  - A completed CI failure.
-  - A base-branch merge conflict.
-  - A stale migration head.
-  - An active non-self `CHANGES_REQUESTED` review.
-  - `<<SY_PR_REVIEW_CHANGE_THRESHOLD>>` or more unresolved actionable change comments from other reviewers. Before counting, read every unresolved review comment and classify it. Count only distinct comments requesting concrete code, configuration, test, documentation, or other PR changes. Exclude reactions, praise, questions, duplicates, and comments explicitly requiring no change. Also exclude your own comments, resolved/outdated threads, and bot noise without concrete actionable findings. A running build, pending human approval, fewer than `<<SY_PR_REVIEW_CHANGE_THRESHOLD>>` change comments, or a green/approved PR does not activate this gate.
-   - When `comment_remediation_required=0`, do not fetch, reply to, resolve, dismiss, or re-request review comments, and do not push code merely to address feedback. Keep the existing approval and use the pass only for status polling, required branch/migration blocker handling, or merge readiness.
-   - When `comment_remediation_required=1`, inspect review comments. Address only comments directly explaining or fixing the active CI failure, merge conflict, migration-head conflict, or requested blocking change. Also address each concrete change requested by comments that triggered the 5-comment threshold. Do not use the trigger as permission to clean up unrelated review feedback; preserve approval everywhere else.
-   - **Fetch once:** review comments `gh api repos/<owner>/<repo>/pulls/<number>/comments` + issue comments `gh api repos/<owner>/<repo>/issues/<number>/comments`. Track each comment's `user.type` / `user.login` to distinguish bots from humans. Identify bots by `user.type == "Bot"` or known patterns: `*[bot]`, `coderabbitai*`, `copilot*`, `dependabot*`, `sonarcloud*`, `github-actions*`, `renovate*`. This affects a suggestion's weight, not whether you respond.
-   - **Disposition only the relevant unresolved comments.** Skip comments already resolved, outdated, unrelated to the active blocker, or on stale SHAs. Capture each fix SHA right after it lands: `SHA=$(git rev-parse --short HEAD)`. Bot suggestions remain proposals, not orders; apply only a clear blocker fix in scope, otherwise reply with the concrete reason. Anything that would reshape the PR or is genuinely ambiguous is a **stop-and-ask**.
-   - **Stop-and-ask remains narrow for active blocker work.** Use it for split requests, repeated stack requests, or changes to the PR's stated scope or public contract. Conflicts / migrations flagged `needs-human` by sync also qualify. Do not broaden this active-blocker pass into general comment cleanup.
-   - **A comment is dispositioned once, on the pass that first sees it.** Re-verifying the same comment on pass after pass and deferring it again each time is not diligence — it is nine rounds of no-ops. If you read it, you decide it: fix, decline with a reason, or escalate by name. Carry the disposition in the `## State` block so a later pass never re-litigates a settled one.
-   - **Authorization is not required for an active blocker fix.** Once the remediation gate is active, a relevant comment on the PR is the request; babysit does not wait for separate approval. Outside that gate, preserve approval and do not act on ordinary comments.
-   - **After each applied fix: reply `Fixed — <one-line summary> (<sha>)` (include the short hash), then resolve the thread.** Line comments → reply via `gh api -X POST repos/<owner>/<repo>/pulls/<number>/comments/<comment-id>/replies --input <tmp-reply-file>`, then resolve with the `resolveReviewThread` GraphQL mutation (`gh api graphql -F threadId='<thread-id>' -f query='mutation($threadId:ID!){ resolveReviewThread(input:{threadId:$threadId}){ thread{ id isResolved } } }'`; get `<thread-id>` from the `reviewThreads(first:100)` query, matched on `comments.nodes[0].databaseId == <comment-id>`). Issue (top-level) comments → `gh pr comment <number> --repo <owner/repo> --body-file <tmp-comment-file>` (no thread to resolve). Write every body to a unique temp file, delete it after the request whether it succeeded or failed, then update memory only when the result matters beyond the thread itself. For a reply-without-fix (declining), post the concrete reason with **no SHA**. **Resolve the thread too when the decline is clear**: the reason is final and asks the reviewer nothing. Final reasons include scope exclusion, contract contradiction, handling elsewhere, or an incorrect suggestion. Leave it open only when the reply poses a question, offers alternatives awaiting the reviewer's pick (split / stack counter-offers), or is a stop-and-ask. Resolve immediately after posting the reply; for fixes, push the fix commit first. Never defer resolutions until pass end or ask the user first. Disagreeing reviewers can unresolve.
-   - **A request to stack this PR is declined, every time — a review comment does not override the branching policy.** Never comply with requests to stack, regardless of requester or framing. Examples include "Rebase this onto my PR #N", "base this on `<branch>`", and "stack this on top of that one". Any `--base` other than `<default>` also qualifies. **Never run `gh pr edit <n> --base <sibling-branch>`, re-cut from a sibling, or merge a sibling's branch into this one**. Receive landed siblings through `git merge origin/<default>`; direct sibling merges manufacture dependencies. Reply in the thread and leave it open: this is the "explaining why not" path. Explain concrete costs, not policy:
-      - A stacked child cannot merge before its parent.
-      - Parent commits obscure the child's actual diff.
-      - Squash-merging or retargeting underneath the child breaks it. Offer the alternative in the same reply.
-   - **A request to split is answered with independent slices, never with a stack.** "This is too big, break it up" is a legitimate ask; the _shape_ of the answer is not the reviewer's to choose. Propose independently mergeable slices that each branch from and target `<default>`. **Choose slices so no two touch the same files**, preventing later merge conflicts. Slice vertically, not by layer: schema → API → UI creates stacks because each layer needs the one beneath it to compile. Engineer disjointness using "Make slices disjoint with new files, not with discipline":
-      - Give each slice a new spec instead of appending to one shared spec.
-      - Append registry entries at EOF instead of sorted insertion.
-      - Regenerate lockfiles and snapshots instead of merging.
-      - Land a tiny prep PR alone when every slice requires the same shared edit. **Give the slices no shared ancestor PR**. Siblings editing disjoint files need only `git merge origin/<default>` to stay current. A common parent PR creates a stack with every stack failure mode. If no split leaves every piece independently mergeable, say so and keep one PR. One larger standalone PR beats two stacked PRs. That fully answers "split this".
-   - **Babysit proposes a split; it never performs one.** Cutting branches, moving commits, and opening sibling PRs restructures user-owned work. A split request surviving the reply above therefore triggers **stop-and-ask**. Apply Step 12 terminate-early for human-judgment review comments. Post the proposed slices in the thread, tell the user, and end the pass. Do not open PRs, re-cut branches, or close this PR in favor of slices.
-   - **Run the Pre-push gate before any push at the end of this step** (Rules section).
+
+- A completed CI failure.
+- A base-branch merge conflict.
+- A stale migration head.
+- An active non-self `CHANGES_REQUESTED` review.
+- `<<SY_PR_REVIEW_CHANGE_THRESHOLD>>` or more unresolved actionable change comments from other reviewers. Before counting, read every unresolved review comment and classify it. Count only distinct comments requesting concrete code, configuration, test, documentation, or other PR changes. Exclude reactions, praise, questions, duplicates, and comments explicitly requiring no change. Also exclude your own comments, resolved/outdated threads, and bot noise without concrete actionable findings. A running build, pending human approval, fewer than `<<SY_PR_REVIEW_CHANGE_THRESHOLD>>` change comments, or a green/approved PR does not activate this gate.
+- When `comment_remediation_required=0`, do not fetch, reply to, resolve, dismiss, or re-request review comments, and do not push code merely to address feedback. Keep the existing approval and use the pass only for status polling, required branch/migration blocker handling, or merge readiness.
+- When `comment_remediation_required=1`, inspect review comments. Address only comments directly explaining or fixing the active CI failure, merge conflict, migration-head conflict, or requested blocking change. Also address each concrete change requested by comments that triggered the 5-comment threshold. Do not use the trigger as permission to clean up unrelated review feedback; preserve approval everywhere else.
+- **Fetch once:** review comments `gh api repos/<owner>/<repo>/pulls/<number>/comments` + issue comments `gh api repos/<owner>/<repo>/issues/<number>/comments`. Track each comment's `user.type` / `user.login` to distinguish bots from humans. Identify bots by `user.type == "Bot"` or known patterns: `*[bot]`, `coderabbitai*`, `copilot*`, `dependabot*`, `sonarcloud*`, `github-actions*`, `renovate*`. This affects a suggestion's weight, not whether you respond.
+- **Disposition only the relevant unresolved comments.** Skip comments already resolved, outdated, unrelated to the active blocker, or on stale SHAs. Capture each fix SHA right after it lands: `SHA=$(git rev-parse --short HEAD)`. Bot suggestions remain proposals, not orders; apply only a clear blocker fix in scope, otherwise reply with the concrete reason. Anything that would reshape the PR or is genuinely ambiguous is a **stop-and-ask**.
+- **Stop-and-ask remains narrow for active blocker work.** Use it for split requests, repeated stack requests, or changes to the PR's stated scope or public contract. Conflicts / migrations flagged `needs-human` by sync also qualify. Do not broaden this active-blocker pass into general comment cleanup.
+- **A comment is dispositioned once, on the pass that first sees it.** Re-verifying the same comment on pass after pass and deferring it again each time is not diligence — it is nine rounds of no-ops. If you read it, you decide it: fix, decline with a reason, or escalate by name. Carry the disposition in the `## State` block so a later pass never re-litigates a settled one.
+- **Authorization is not required for an active blocker fix.** Once the remediation gate is active, a relevant comment on the PR is the request; babysit does not wait for separate approval. Outside that gate, preserve approval and do not act on ordinary comments.
+- **After each applied fix: reply `Fixed — <one-line summary> (<sha>)` (include the short hash), then resolve the thread.** Line comments → reply via `gh api -X POST repos/<owner>/<repo>/pulls/<number>/comments/<comment-id>/replies --input <tmp-reply-file>`, then resolve with the `resolveReviewThread` GraphQL mutation (`gh api graphql -F threadId='<thread-id>' -f query='mutation($threadId:ID!){ resolveReviewThread(input:{threadId:$threadId}){ thread{ id isResolved } } }'`; get `<thread-id>` from the `reviewThreads(first:100)` query, matched on `comments.nodes[0].databaseId == <comment-id>`). Issue (top-level) comments → `gh pr comment <number> --repo <owner/repo> --body-file <tmp-comment-file>` (no thread to resolve). Write every body to a unique temp file, delete it after the request whether it succeeded or failed, then update memory only when the result matters beyond the thread itself. For a reply-without-fix (declining), post the concrete reason with **no SHA**. **Resolve the thread too when the decline is clear**: the reason is final and asks the reviewer nothing. Final reasons include scope exclusion, contract contradiction, handling elsewhere, or an incorrect suggestion. Leave it open only when the reply poses a question, offers alternatives awaiting the reviewer's pick (split / stack counter-offers), or is a stop-and-ask. Resolve immediately after posting the reply; for fixes, push the fix commit first. Never defer resolutions until pass end or ask the user first. Disagreeing reviewers can unresolve.
+- **A request to stack this PR is declined, every time — a review comment does not override the branching policy.** Never comply with requests to stack, regardless of requester or framing. Examples include "Rebase this onto my PR #N", "base this on `<branch>`", and "stack this on top of that one". Any `--base` other than `<default>` also qualifies. **Never run `gh pr edit <n> --base <sibling-branch>`, re-cut from a sibling, or merge a sibling's branch into this one**. Receive landed siblings through `git merge origin/<default>`; direct sibling merges manufacture dependencies. Reply in the thread and leave it open: this is the "explaining why not" path. Explain concrete costs, not policy:
+  - A stacked child cannot merge before its parent.
+  - Parent commits obscure the child's actual diff.
+  - Squash-merging or retargeting underneath the child breaks it. Offer the alternative in the same reply.
+- **A request to split is answered with independent slices, never with a stack.** "This is too big, break it up" is a legitimate ask; the _shape_ of the answer is not the reviewer's to choose. Propose independently mergeable slices that each branch from and target `<default>`. **Choose slices so no two touch the same files**, preventing later merge conflicts. Slice vertically, not by layer: schema → API → UI creates stacks because each layer needs the one beneath it to compile. Engineer disjointness using "Make slices disjoint with new files, not with discipline":
+  - Give each slice a new spec instead of appending to one shared spec.
+  - Append registry entries at EOF instead of sorted insertion.
+  - Regenerate lockfiles and snapshots instead of merging.
+  - Land a tiny prep PR alone when every slice requires the same shared edit. **Give the slices no shared ancestor PR**. Siblings editing disjoint files need only `git merge origin/<default>` to stay current. A common parent PR creates a stack with every stack failure mode. If no split leaves every piece independently mergeable, say so and keep one PR. One larger standalone PR beats two stacked PRs. That fully answers "split this".
+- **Babysit proposes a split; it never performs one.** Cutting branches, moving commits, and opening sibling PRs restructures user-owned work. A split request surviving the reply above therefore triggers **stop-and-ask**. Apply Step 12 terminate-early for human-judgment review comments. Post the proposed slices in the thread, tell the user, and end the pass. Do not open PRs, re-cut branches, or close this PR in favor of slices.
+- **Run the Pre-push gate before any push at the end of this step** (Rules section).
 
 7. **Ping anyone who requested changes only after active-blocker fixes — a `CHANGES_REQUESTED` review is a hard block.** A reviewer who requested changes blocks the merge until _they_ re-review, no matter how green CI is or how many threads you resolved; GitHub does not clear that block automatically. So, once Step 6 has addressed and **pushed** fixes for every one of a given reviewer's comments, tell them and ask for a fresh look.
    - **Identify the blockers.** `gh api repos/<owner>/<repo>/pulls/<number>/reviews` → take the **latest** review per `user.login`, keep only those whose latest `state == "CHANGES_REQUESTED"`, dropping yourself (`gh api user --jq .login`) and any bot (`user.type == "Bot"` or a known bot login pattern). If none remain, skip this step entirely.
    - **Re-request the review** for each such login to return it to their queue:
-  `gh api -X POST repos/<owner>/<repo>/pulls/<number>/requested_reviewers -f 'reviewers[]=<login>'`
-  A 422 "cannot request from the author / already requested" is acceptable; report it and continue.
+     `gh api -X POST repos/<owner>/<repo>/pulls/<number>/requested_reviewers -f 'reviewers[]=<login>'`
+     A 422 "cannot request from the author / already requested" is acceptable; report it and continue.
    - **Post ONE top-level comment @-mentioning all of them together**, after the fixes are pushed. Write it to a unique temporary Markdown file. Post with `gh pr comment <number> --repo <owner/repo> --body-file <tmp-reping-file>`. Capture the result and immediately delete the file, on success or failure. Then update babysit memory with the re-review state. Body (plain prose, never persona-styled — a human reads it):
      `@<login1> @<login2> — I've addressed your review comments (<comma-separated fix SHAs>); the threads are resolved and pushed. Since your review currently requests changes and blocks the merge, could you take another look and re-review when you get a chance? Thanks!`
    - **Net-new only — ping once per set of fixes, not once per pass.** Post it only for reviewers whose threads you actually resolved with a pushed fix _this pass_. Do not re-ping on a later pass unless you pushed further fixes for their comments since the last ping (see the _Every review comment must be net new_ rule). A reviewer you only replied "why not" to — no fix — is **not** pinged; leave their block in place so they can respond. In `pass=single` slot mode, carry a `reping` marker in the `## State` block (which reviewers were pinged at which SHA) so a later round does not re-ping without new fixes.
@@ -320,7 +319,7 @@ Schedule — <command name>
       - Missing dependencies.
       - Build errors in any language. Read the relevant code/config, fix it, and re-run the matching local check from Step 10 to confirm. **Run the Pre-push gate** (Rules section). Commit and push. Increment `attempts[<check-name>]`.
         f. **Go back to Step 3** and re-run the full loop in order:
-      skip-if-running → early-exit → merge → bot comments → human comments → tests → pre-emptive CI fix → local checks → CI monitor.
+        skip-if-running → early-exit → merge → bot comments → human comments → tests → pre-emptive CI fix → local checks → CI monitor.
 
     **Escalation comment template (resumable state).** Write the rendered template to a unique temporary Markdown file and post via `gh pr comment <number> --repo <owner/repo> --body-file <tmp-escalation-file>`. Capture the result, delete the file immediately whether it succeeded or failed, then update babysit memory with the escalation and result. Used on: poll-11 cap, all-failing-checks-at-attempt-cap, or broken-main detection.
 
@@ -359,79 +358,81 @@ Schedule — <command name>
     - **Your own writes are not inbound work.** Exclude comments, reactions, pushes, and status updates this run produced from the change decision, or the loop re-triggers itself forever.
     - **The sleep is a real blocking command, not a note in the report.** Run `sleep <<SY_PR_POLL_INTERVAL_SECONDS>>` in the shell — one foreground, self-terminating command — and let the turn block on it. Never substitute a shorter sleep and never claim elapsed time you did not wait out; if the harness kills the command early, re-issue it for the remainder.
     - **Never end the run because the harness has no detached timer.** None of these conditions is terminal:
-  - "No background job outlives the turn".
-  - "No wall clock has elapsed".
-  - "Two probes were byte-identical".
-  - "The PR is quiescent, re-invoke me later".
+
+- "No background job outlives the turn".
+- "No wall clock has elapsed".
+- "Two probes were byte-identical".
+- "The PR is quiescent, re-invoke me later".
   Use poll sleep for these conditions. Nothing-changed is the expected result of most polls. Never close a turn by asking whether to continue; the answer is yes until the deadline or `MERGED` / `CLOSED`.
-    - **Terminate early ONLY on:** `state == "MERGED"` / `"CLOSED"` (report it and stop; no release is triggered), broken-main escalation, all-checks-at-attempt-cap escalation, poll-cap escalation, or the unreachable-service stop below. Everything else loops — **including a stop-and-ask.**
-    - **A stop-and-ask parks the PR; it does not end the run.** Save Step 2b's `needs_user` block in babysit memory and print it for the operator. Never prompt or mark GitHub. Continue sleeping and polling until the deadline, like any round. While parked, never act on the blocked decision itself. Re-run Step 2b revalidation for every fingerprint change and keepalive. User answers, reviewer withdrawals, pushes, or approvals may clear it. `cleared` → resume normal passes in the same run, naming the comment that cleared it. Still `current` → reprint nothing new, sleep again. The final report repeats the outstanding question. Rationale: the answer usually arrives on GitHub while the run is asleep, and a run that exits on the question can never see it.
-    - **Stop when GitHub or the model service is unreachable, and only after retrying.** One flaky call is not an outage: retry up to `<<SY_PR_RETRY_MAX_FAILURES>>` consecutive times, sleeping `<<SY_PR_RETRY_INTERVAL_SECONDS>>` seconds between attempts. If every attempt fails, stop and report `"GitHub or model service unreachable — stopping with resumable state"`. Never name a local network cause you cannot verify. A single failure that recovers on retry resets the counter and the loop continues.
-    - **Write resumable state to babysit memory on every stop, regardless of reason**. Include `started_at`, `deadline_at`, `last_full_pass_at`, `last_poll_at`, the last fingerprint, `dirty_after_pass`, and the `## State` block below. That is what lets a fresh invocation pick up instead of restarting from zero, and it is the only reason an interrupted run is not lost work.
-    - The poll interval is between rounds and is independent of Step 11's in-pass CI polling — they nest, they don't replace each other.
-    - **`pass=single` — one pass, no clock.** For `pass=single`, run exactly one pass **inline in the calling job; never dispatch a background agent**. See _A pass that runs inside a job runs in that job_. Report and return without sleeping or re-entering Step 3. This lets a **slot driver** holding several PRs own cadence (`/sy-babysit-prs` Step 4). Under the same run budget, it polls and calls each PR when its state changes. The budget is not waived — it moves up to the caller, which is responsible for honoring it. An agent never adds `pass=single` on its own initiative: a human asking "babysit this PR" gets the full budgeted run. If a human types it explicitly, honor it.
+  - **Terminate early ONLY on:** `state == "MERGED"` / `"CLOSED"` (report it and stop; no release is triggered), broken-main escalation, all-checks-at-attempt-cap escalation, poll-cap escalation, or the unreachable-service stop below. Everything else loops — **including a stop-and-ask.**
+  - **A stop-and-ask parks the PR; it does not end the run.** Save Step 2b's `needs_user` block in babysit memory and print it for the operator. Never prompt or mark GitHub. Continue sleeping and polling until the deadline, like any round. While parked, never act on the blocked decision itself. Re-run Step 2b revalidation for every fingerprint change and keepalive. User answers, reviewer withdrawals, pushes, or approvals may clear it. `cleared` → resume normal passes in the same run, naming the comment that cleared it. Still `current` → reprint nothing new, sleep again. The final report repeats the outstanding question. Rationale: the answer usually arrives on GitHub while the run is asleep, and a run that exits on the question can never see it.
+  - **Stop when GitHub or the model service is unreachable, and only after retrying.** One flaky call is not an outage: retry up to `<<SY_PR_RETRY_MAX_FAILURES>>` consecutive times, sleeping `<<SY_PR_RETRY_INTERVAL_SECONDS>>` seconds between attempts. If every attempt fails, stop and report `"GitHub or model service unreachable — stopping with resumable state"`. Never name a local network cause you cannot verify. A single failure that recovers on retry resets the counter and the loop continues.
+  - **Write resumable state to babysit memory on every stop, regardless of reason**. Include `started_at`, `deadline_at`, `last_full_pass_at`, `last_poll_at`, the last fingerprint, `dirty_after_pass`, and the `## State` block below. That is what lets a fresh invocation pick up instead of restarting from zero, and it is the only reason an interrupted run is not lost work.
+  - The poll interval is between rounds and is independent of Step 11's in-pass CI polling — they nest, they don't replace each other.
+  - **`pass=single` — one pass, no clock.** For `pass=single`, run exactly one pass **inline in the calling job; never dispatch a background agent**. See _A pass that runs inside a job runs in that job_. Report and return without sleeping or re-entering Step 3. This lets a **slot driver** holding several PRs own cadence (`/sy-babysit-prs` Step 4). Under the same run budget, it polls and calls each PR when its state changes. The budget is not waived — it moves up to the caller, which is responsible for honoring it. An agent never adds `pass=single` on its own initiative: a human asking "babysit this PR" gets the full budgeted run. If a human types it explicitly, honor it.
 
-      **Argument grammar.** Trailing `key=value` tokens are parameters, the bare token is the PR ref — the same shape Step 5c already uses when delegating (`/sy-sync-pr-branch <PR-URL> workspace=$WT server-side=never report=structured`). Slot mode uses two: `pass=single` and `round=<n>`, plus optional `last=true` on the pass the driver knows is final. All are single whitespace-free tokens. **`pass=single` with no `round=` means `round=1` and `last=true`** — one round, and it is the last one, so cleanup runs normally. This serves humans typing `pass=single` manually. It also defines `completed_round` and the cleanup gate below without requiring a slot-driver-only argument. Unrecognized `key=value` tokens are reported and ignored, never treated as a PR ref.
+    **Argument grammar.** Trailing `key=value` tokens are parameters, the bare token is the PR ref — the same shape Step 5c already uses when delegating (`/sy-sync-pr-branch <PR-URL> workspace=$WT server-side=never report=structured`). Slot mode uses two: `pass=single` and `round=<n>`, plus optional `last=true` on the pass the driver knows is final. All are single whitespace-free tokens. **`pass=single` with no `round=` means `round=1` and `last=true`** — one round, and it is the last one, so cleanup runs normally. This serves humans typing `pass=single` manually. It also defines `completed_round` and the cleanup gate below without requiring a slot-driver-only argument. Unrecognized `key=value` tokens are reported and ignored, never treated as a PR ref.
 
-      **State handoff — the caller is the memory.** Fresh invocations lack prior memory. Resetting `loop_count`, `attempts[<check-name>]`, poll counts, and Step 2c automerge actions each round defeats their caps. A 2-attempt check would retry forever. The command could revoke `--auto` it never enabled. So `pass=single` **returns a state block and accepts it back**:
-      - End every `pass=single` report with a `## State` block. **Pass it as a block inside the job's prompt, never as a `state=` argument token**. Whitespace-splitting argument grammar cannot carry multiline blocks. Single-token encoding invents a useless quoting scheme. The caller pastes the previous round's block into the next round's prompt under a `## Prior state` heading; no prior-state block present means round 1, and say so rather than guessing.
-      - Preserve these fields:
-  - `completed_round`: fully finished rounds, distinct from the current `round=`. Resume a round interrupted by job death; never skip it.
-  - `attempts` per check name, `polls` used, and any `UNFIXABLE_AFTER_2_ATTEMPTS` marks.
-  - `reping`: reviewers pinged and their SHAs. Include change-requesting reviewers after fixes (Step 7) and prior approvers after migration re-parenting (Step 5d). Later rounds must not re-ping without new work.
-  - `migration_head`: the last checked floor head parenting this branch's migration and whether this loop re-parented it. Without this, rounds repeat probes and mistake pushed re-parents for new drift.
-  - **Step 12a probe fields:** `started_at`, `deadline_at`, `last_full_pass_at`, `last_poll_at`, `watch_fingerprint`, `probe_count`, `consecutive_noops`, `dirty_after_pass`, `externally_blocked`. Without them, jobs re-derive clocks every round and turn cheap polls into full passes.
-  - **Step 2b `needs_user` fields:** `needs_user`, `needs_user_reason`, `needs_user_message`, `needs_user_source`, `needs_user_source_id`, `needs_user_source_updated_at`, `needs_user_head_sha`, `needs_user_validation`, `needs_user_next_step`. Only this record survives closed sessions; the next run revalidates it instead of restating it.
-  - The two ownership records below.
-      - **`automerge_decision` is an enum, not a boolean.** Do not act on `false`; it conflates five outcomes requiring different follow-ups:
-  - `enabled_by_me`: the only value permitting this command to revoke automerge.
-  - `deferred_companion`: a companion remains open. **Re-check every round**; the last companion landing clears the block immediately.
-  - `ineligible`: not a standalone prose-only diff. This decision is settled; never reconsider.
-  - `failed`: `--auto` errored; do not retry.
-  - `pre_existing`: the user enabled it; never touch it. Store the value, not a bit.
-      - **`workspace` records path _and_ kind** — `worktree` or `clone` — plus whether this run created it. Their teardowns differ: `git worktree remove "$WT"` vs `rm -rf "$WT"`. A bare "I made it" boolean cannot choose correctly. Using `rm -rf` on a real worktree leaves stale admin records.
-      - **Checkpoint immediately after any ownership-changing action, not only at end of pass.** Automerge, workspace creation, and pushed fixes outlive the job. Job death between enabling automerge and reporting can hide its revocable ownership. Report those the moment they happen so the slot's ledger has them.
-      - If the slot dies and loses the block, use the PR's **resumable escalation comment** as the durable backstop. Escalation paths alone post it. It contains only counters, neither ownership record. It recovers a stalled loop, not ownership; that is why the ledger holds the block.
-      - **Cleanup waits for the last round.** `last=true` tells you whether this is it. Perform Step 5a teardown only if the caller marked this round last or the PR reached terminal state. Earlier rounds must preserve the workspace exactly for reuse.
+    **State handoff — the caller is the memory.** Fresh invocations lack prior memory. Resetting `loop_count`, `attempts[<check-name>]`, poll counts, and Step 2c automerge actions each round defeats their caps. A 2-attempt check would retry forever. The command could revoke `--auto` it never enabled. So `pass=single` **returns a state block and accepts it back**:
+    - End every `pass=single` report with a `## State` block. **Pass it as a block inside the job's prompt, never as a `state=` argument token**. Whitespace-splitting argument grammar cannot carry multiline blocks. Single-token encoding invents a useless quoting scheme. The caller pastes the previous round's block into the next round's prompt under a `## Prior state` heading; no prior-state block present means round 1, and say so rather than guessing.
+    - Preserve these fields:
+- `completed_round`: fully finished rounds, distinct from the current `round=`. Resume a round interrupted by job death; never skip it.
+- `attempts` per check name, `polls` used, and any `UNFIXABLE_AFTER_2_ATTEMPTS` marks.
+- `reping`: reviewers pinged and their SHAs. Include change-requesting reviewers after fixes (Step 7) and prior approvers after migration re-parenting (Step 5d). Later rounds must not re-ping without new work.
+- `migration_head`: the last checked floor head parenting this branch's migration and whether this loop re-parented it. Without this, rounds repeat probes and mistake pushed re-parents for new drift.
+- **Step 12a probe fields:** `started_at`, `deadline_at`, `last_full_pass_at`, `last_poll_at`, `watch_fingerprint`, `probe_count`, `consecutive_noops`, `dirty_after_pass`, `externally_blocked`. Without them, jobs re-derive clocks every round and turn cheap polls into full passes.
+- **Step 2b `needs_user` fields:** `needs_user`, `needs_user_reason`, `needs_user_message`, `needs_user_source`, `needs_user_source_id`, `needs_user_source_updated_at`, `needs_user_head_sha`, `needs_user_validation`, `needs_user_next_step`. Only this record survives closed sessions; the next run revalidates it instead of restating it.
+- The two ownership records below.
+  - **`automerge_decision` is an enum, not a boolean.** Do not act on `false`; it conflates five outcomes requiring different follow-ups:
+- `enabled_by_me`: the only value permitting this command to revoke automerge.
+- `deferred_companion`: a companion remains open. **Re-check every round**; the last companion landing clears the block immediately.
+- `ineligible`: not a standalone prose-only diff. This decision is settled; never reconsider.
+- `failed`: `--auto` errored; do not retry.
+- `pre_existing`: the user enabled it; never touch it. Store the value, not a bit.
+  - **`workspace` records path _and_ kind** — `worktree` or `clone` — plus whether this run created it. Their teardowns differ: `git worktree remove "$WT"` vs `rm -rf "$WT"`. A bare "I made it" boolean cannot choose correctly. Using `rm -rf` on a real worktree leaves stale admin records.
+  - **Checkpoint immediately after any ownership-changing action, not only at end of pass.** Automerge, workspace creation, and pushed fixes outlive the job. Job death between enabling automerge and reporting can hide its revocable ownership. Report those the moment they happen so the slot's ledger has them.
+  - If the slot dies and loses the block, use the PR's **resumable escalation comment** as the durable backstop. Escalation paths alone post it. It contains only counters, neither ownership record. It recovers a stalled loop, not ownership; that is why the ledger holds the block.
+  - **Cleanup waits for the last round.** `last=true` tells you whether this is it. Perform Step 5a teardown only if the caller marked this round last or the PR reached terminal state. Earlier rounds must preserve the workspace exactly for reuse.
 
-      **In slot mode the CI monitor observes and yields — it does not hold the lane.** Step 11's 10-poll / 2.5-hour budget assumes the job owns its own time. Under `pass=single`, it does not. Polling delays other PRs in the lane. Three poll-capped passes delay the slot's third PR five hours, recreating the head-of-line starvation this design removes. With `pass=single`, take **at most one** CI observation and at most one fix attempt per pass, then return. Carry poll counts in `## State`. Let the next slot round observe again. The caps still apply across rounds, they just accrue in the handed-back state instead of inside one long pass. A slot holding exactly one PR may poll normally — nothing is waiting behind it.
+  **In slot mode the CI monitor observes and yields — it does not hold the lane.** Step 11's 10-poll / 2.5-hour budget assumes the job owns its own time. Under `pass=single`, it does not. Polling delays other PRs in the lane. Three poll-capped passes delay the slot's third PR five hours, recreating the head-of-line starvation this design removes. With `pass=single`, take **at most one** CI observation and at most one fix attempt per pass, then return. Carry poll counts in `## State`. Let the next slot round observe again. The caps still apply across rounds, they just accrue in the handed-back state instead of inside one long pass. A slot holding exactly one PR may poll normally — nothing is waiting behind it.
 
 12a. **The read-only state probe — what a poll actually costs, and what counts as a change.** Between passes the loop is a cheap probe, not an agent: two `gh` calls, no worktree, no diff, no writes. This is what makes a one-minute cadence affordable, and it is what fires a full pass the instant a human, a bot, or CI moves the PR. **This is the canonical definition — `/sy-review-pr`, `/sy-babysit-prs`, and `/sy-review-prs` reference it rather than restating it.**
 
     - **A probe is read-only and capped at two `gh` calls for the PR**, plus one `gh pr view <link> --json state --jq .state` per named blocker (wave PR, companion, stacked parent). No worktree, no `gh pr diff`, no comment bodies, no clone, no sub-agent — and nothing that writes: a probe never pushes, posts, reacts, merges, or touches automerge.
     - **Classify a PR as `externally blocked` only when the pass leaves no work behind while waiting externally**, in one of these cases:
-  - (a) Step 3 ended the pass on a blocking build.
-  - (b) Step 4 wave-blocked on an open `## Blocked on` PR.
-  - (c) Step 4 found green + approved with `autoMergeRequest == null`, awaiting a human click.
-  - (d) Step 4 found a stack with an open parent.
-  - (e) Step 2c deferred prose-only automerge for open companions.
-  - (f) Only a pending human review gate classified non-blocking in Step 3 holds the merge. Steps 5–11 found nothing actionable.
-  - (g) Only a parked Step 2b `needs_user` question remains, already printed for the operator. Nothing else counts. The label never changes polling cadence; poll every PR the same way. Fan-out uses it to release this PR's worker slot (`/sy-babysit-prs` Step 4b).
-    - **Never classify a PR as externally blocked while anything remains actionable:**
-  - An undispositioned comment.
-  - A failing check below its attempt cap.
-  - `mergeable != "MERGEABLE"`.
-  - A stale migration head.
-  - Unpushed commits or a dirty workspace.
-  - A stop-and-ask not yet saved to memory and printed. Being unsure means not applying the label.
-    - **The fingerprint — two commands, compared as strings:**
 
-      ```bash
-      gh pr view <number> --repo <owner/repo> --json state,isDraft,title,reviewDecision,mergeable,mergeStateStatus,headRefOid,autoMergeRequest,baseRefName,updatedAt,statusCheckRollup,comments,reviews \
-        --jq '[.state,(.isDraft|tostring),(.reviewDecision//"none"),.mergeable,.mergeStateStatus,.headRefOid[0:7],(if .autoMergeRequest then "auto" else "noauto" end),.baseRefName,.updatedAt,((.statusCheckRollup//[])|map((.name//.context)+"="+((.conclusion//.state//.status)//"?"))|sort|join(",")),((.comments//[])|length|tostring),((.reviews//[])|length|tostring)]|join("|")'
+- (a) Step 3 ended the pass on a blocking build.
+- (b) Step 4 wave-blocked on an open `## Blocked on` PR.
+- (c) Step 4 found green + approved with `autoMergeRequest == null`, awaiting a human click.
+- (d) Step 4 found a stack with an open parent.
+- (e) Step 2c deferred prose-only automerge for open companions.
+- (f) Only a pending human review gate classified non-blocking in Step 3 holds the merge. Steps 5–11 found nothing actionable.
+- (g) Only a parked Step 2b `needs_user` question remains, already printed for the operator. Nothing else counts. The label never changes polling cadence; poll every PR the same way. Fan-out uses it to release this PR's worker slot (`/sy-babysit-prs` Step 4b).
+  - **Never classify a PR as externally blocked while anything remains actionable:**
+- An undispositioned comment.
+- A failing check below its attempt cap.
+- `mergeable != "MERGEABLE"`.
+- A stale migration head.
+- Unpushed commits or a dirty workspace.
+- A stop-and-ask not yet saved to memory and printed. Being unsure means not applying the label.
+  - **The fingerprint — two commands, compared as strings:**
 
-      gh api "repos/<owner>/<repo>/pulls/<number>/comments?per_page=1&sort=updated&direction=desc" \
-        --jq 'if length == 0 then "none" else "\(.[0].id):\(.[0].updated_at)" end'
-      ```
+    ```bash
+    gh pr view <number> --repo <owner/repo> --json state,isDraft,title,reviewDecision,mergeable,mergeStateStatus,headRefOid,autoMergeRequest,baseRefName,updatedAt,statusCheckRollup,comments,reviews \
+      --jq '[.state,(.isDraft|tostring),(.reviewDecision//"none"),.mergeable,.mergeStateStatus,.headRefOid[0:7],(if .autoMergeRequest then "auto" else "noauto" end),.baseRefName,.updatedAt,((.statusCheckRollup//[])|map((.name//.context)+"="+((.conclusion//.state//.status)//"?"))|sort|join(",")),((.comments//[])|length|tostring),((.reviews//[])|length|tostring)]|join("|")'
 
-      `--jq` reduces locally, so the probe costs two short lines of output however large the PR is. The second call catches line comments: **`comments` contains only issue comments**. Watched PRs most often gain new review threads. Sorting by `updated` and taking one row makes it pagination-proof: a PR with 200 line comments still answers in one row, and an edited comment sorts back to the top. `gh pr view` has no `reviewThreads` field — do not look for one.
+    gh api "repos/<owner>/<repo>/pulls/<number>/comments?per_page=1&sort=updated&direction=desc" \
+      --jq 'if length == 0 then "none" else "\(.[0].id):\(.[0].updated_at)" end'
+    ```
 
-    - **Fingerprint changed → run a FULL pass immediately, in this same round.** Reset `consecutive_noops` to 0 and name the field that flipped (`probe: rollup changed — unit-tests SUCCESS→FAILURE — running a full pass`). A probe never judges a change uninteresting; judging is the pass's job.
-    - **Fingerprint identical → the probe IS the round.** Report one line — `probe <N> — no change (<blocker>) · next check <ETA> · <HH:MM> left`, sleep `<<SY_PR_POLL_INTERVAL_SECONDS>>` seconds, and probe again.
-    - **Probes never quietly replace passes.** Always run full passes on round 1 and the **last** round before deadline. Also run full passes at least every `<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>` seconds, even without changes. The fingerprint is a cheap proxy, not a proof.
-    - **Report every probe — a silent probe is indistinguishable from a dropped round.** The probe line prints per round, and Step 13 carries `<N> passes, <M> probes over <elapsed> of <budget>`.
-    - **State fields.** Carry `started_at`, `deadline_at`, `last_full_pass_at`, `last_poll_at`, `watch_fingerprint` (both digest strings, verbatim), `probe_count`, `consecutive_noops`, `dirty_after_pass`, and `externally_blocked` in the `## State` block beside the other counters. Without them a `pass=single` job re-derives its whole clock every round.
-    - **Under `pass=single`, the caller owns the probe**. The per-PR job returns its fingerprint in the state block after its pass. The slot driver owns sleep and comparison. An entirely externally blocked slot costs a handful of `gh` calls per round and holds no worker (`/sy-babysit-prs` Step 4b).
+    `--jq` reduces locally, so the probe costs two short lines of output however large the PR is. The second call catches line comments: **`comments` contains only issue comments**. Watched PRs most often gain new review threads. Sorting by `updated` and taking one row makes it pagination-proof: a PR with 200 line comments still answers in one row, and an edited comment sorts back to the top. `gh pr view` has no `reviewThreads` field — do not look for one.
+
+  - **Fingerprint changed → run a FULL pass immediately, in this same round.** Reset `consecutive_noops` to 0 and name the field that flipped (`probe: rollup changed — unit-tests SUCCESS→FAILURE — running a full pass`). A probe never judges a change uninteresting; judging is the pass's job.
+  - **Fingerprint identical → the probe IS the round.** Report one line — `probe <N> — no change (<blocker>) · next check <ETA> · <HH:MM> left`, sleep `<<SY_PR_POLL_INTERVAL_SECONDS>>` seconds, and probe again.
+  - **Probes never quietly replace passes.** Always run full passes on round 1 and the **last** round before deadline. Also run full passes at least every `<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>` seconds, even without changes. The fingerprint is a cheap proxy, not a proof.
+  - **Report every probe — a silent probe is indistinguishable from a dropped round.** The probe line prints per round, and Step 13 carries `<N> passes, <M> probes over <elapsed> of <budget>`.
+  - **State fields.** Carry `started_at`, `deadline_at`, `last_full_pass_at`, `last_poll_at`, `watch_fingerprint` (both digest strings, verbatim), `probe_count`, `consecutive_noops`, `dirty_after_pass`, and `externally_blocked` in the `## State` block beside the other counters. Without them a `pass=single` job re-derives its whole clock every round.
+  - **Under `pass=single`, the caller owns the probe**. The per-PR job returns its fingerprint in the state block after its pass. The slot driver owns sleep and comparison. An entirely externally blocked slot costs a handful of `gh` calls per round and holds no worker (`/sy-babysit-prs` Step 4b).
 
 13. **Final report:** Include each item below.
 
@@ -454,7 +455,7 @@ Schedule — <command name>
   - `migration head current (<head>)`
   - `re-parented <old> → <new>, re-approval re-requested from @<a>, @<b>`
   - `no migrations in diff`
-  Never call a migration PR green without naming its head.
+    Never call a migration PR green without naming its head.
 - **Stack or split requests declined in Step 7**: `declined stack request from @<reviewer>: <link>` / `proposed <n> independent slices, stopped for human`. A hidden decline is not a stance.
 - Tests added / updated.
 - Coverage tooling detected, or `"no coverage tooling detected"`.
@@ -483,7 +484,7 @@ After producing the report, rewrite babysit memory as the last verified snapshot
   - Step 10: local checks.
   - Step 11: CI monitor. On failure, return to Step 3.
   - Step 12: loop gate for run budget and cheap polling.
-  Use Step 12a's read-only probe between passes. On `state == "MERGED"`: report the merge SHA and stop. **Do NOT trigger a release — `/sy-release` stays manual.**
+    Use Step 12a's read-only probe between passes. On `state == "MERGED"`: report the merge SHA and stop. **Do NOT trigger a release — `/sy-release` stays manual.**
 - **The run is bounded by a clock, not a pass count (Step 12).** A single pass is never "done" unless the PR merged or babysit escalated. Run for `<<SY_PR_RUN_BUDGET_ROUNDS>>` rounds; each round equals one keepalive interval. Probe every `<<SY_PR_POLL_INTERVAL_SECONDS>>` seconds. Run full passes on probe changes, at least every `<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>` seconds, and once finally before deadline. In-pass CI polling (Step 11) nests inside a pass — it does not count as a round. The budget is waived only by `pass=single` (Step 12), which does not shorten it but **moves it to the caller**: a slot driver holding several PRs owns the clock itself.
 - **A round with nothing to do costs two read-only `gh` calls, never a full pass (Step 12a).** Between passes the loop is a probe: any change in that fingerprint fires the real pass on the spot, and no change means the probe was the round. Never let probes write to GitHub or count your writes as inbound changes. Always run full passes on round 1, keepalive, and immediately before deadline. The digest is a proxy, not proof. This is the canonical definition; the other Sy PR commands reference it.
 - **A stop-and-ask is surfaced, never prompted (Step 2b).** It pauses the PR for the operator, not on GitHub. Save `needs_user` in babysit memory and print it. Include the reason, exact message, source, and next step. No interactive question, no blocking wait, no label / status / review / comment posted to record it — the PR stays as mergeable to everyone else as it was.
@@ -511,7 +512,7 @@ After producing the report, rewrite babysit memory as the last verified snapshot
   - "Every PR branches off the default branch".
   - "Split by slice, never by layer".
   - "Overlap is resolved by ordering, never by stacking".
-  Do not restate, re-derive, or renegotiate them here. Babysit only enforces this boundary in the review thread. Decline retargeting and propose independently mergeable slices against `<default>` with **no shared ancestor PR**. Stop-and-ask rather than restructuring. Prevent stacks while _describing_ the split. Do not wait for two branches to diverge on shared files and create real conflicts. Step 4 and delegated ancestor-chain sync maintain **already-stacked** PRs. Neither permits creating stacks. Never interpret "the tooling supports stacks" as "stacking is fine".
+    Do not restate, re-derive, or renegotiate them here. Babysit only enforces this boundary in the review thread. Decline retargeting and propose independently mergeable slices against `<default>` with **no shared ancestor PR**. Stop-and-ask rather than restructuring. Prevent stacks while _describing_ the split. Do not wait for two branches to diverge on shared files and create real conflicts. Step 4 and delegated ancestor-chain sync maintain **already-stacked** PRs. Neither permits creating stacks. Never interpret "the tooling supports stacks" as "stacking is fine".
 - **A green + approved migration PR is not done until its head is current (Step 4).** Run the migration-head override every pass before early-exit. Ready signals can hide a default-breaking merge. Sibling revisions use separate files, leaving `mergeable` at `MERGEABLE`. This branch's CI never tested the head that landed while it waited. PRs with `--auto` merge unattended. Re-check the head on **every poll cycle** of Step 4's wait, not merely on entry. Babysit implements neither checking nor fixing. `/sy-sync-pr-branch` Step 7 owns detection and re-parenting. The override only prevents early-exit so sync runs. Never resolve drift by rebasing, and never `alembic merge` when re-parenting is available.
 - **A re-parent dismisses approvals, so babysit re-requests them (Step 5d).** `migrations: re-parented` plus a push means every prior approval was silently dropped by branch protection and the PR left `APPROVED` with nobody told. Re-request each prior approver by login and post one comment saying the change was mechanical (`<old> → <new>`, no source edits). Once per re-parent SHA, tracked in `reping` — three passes never send three pings for one push.
 - **A wave-blocked PR is a documented skip, never a build to fix (Step 4).** A later-wave branch lacks its required migration or field, producing expected red CI, not a defect. See _Hard dependencies phase into waves, never into a stack_. Skip while `## Blocked on` PRs remain open and re-check every pass. Never rebase onto the blocking PR to resolve a wave block. That creates a forbidden stack.
@@ -529,7 +530,7 @@ After producing the report, rewrite babysit memory as the last verified snapshot
   - `*.kdbx`, `service-account*.json`, `gha-creds-*.json`.
   - `.npmrc` / `.pypirc` / `.netrc` containing auth lines.
   - `.aws/credentials`, `.kube/config`, `.docker/config.json`, `terraform.tfstate*`.
-     - **Content patterns** — check each category:
+    - **Content patterns** — check each category:
   - AWS: `AKIA|ASIA[0-9A-Z]{16}`, `aws_secret_access_key\s*=`.
   - GitHub: `gh[pous]_[A-Za-z0-9]{36,}`, `github_pat_`.
   - Anthropic/OpenAI: `sk-(ant-|proj-)?[A-Za-z0-9_-]{20,}`.
@@ -538,8 +539,8 @@ After producing the report, rewrite babysit memory as the last verified snapshot
   - Private keys: `-----BEGIN .* PRIVATE KEY-----`.
   - JWTs: `eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`.
   - Assignments: `(password|api[_-]?key|token|secret)\s*=\s*["'][^"']{6,}`.
-  Skip placeholders: `<...>` / `xxx` / `***` / `example`.
-     - On hit: redact the value (e.g. `AKIA****REDACTED****`), show path + line + matched pattern, ask the user. **Default = "no"** → STOP, do not push, tell the user to remove the commit (`git reset HEAD~N` or rebase) and re-stage clean. Proceed only on explicit "yes" + user confirms false positive.
+    Skip placeholders: `<...>` / `xxx` / `***` / `example`.
+    - On hit: redact the value (e.g. `AKIA****REDACTED****`), show path + line + matched pattern, ask the user. **Default = "no"** → STOP, do not push, tell the user to remove the commit (`git reset HEAD~N` or rebase) and re-stage clean. Proceed only on explicit "yes" + user confirms false positive.
 - Never skip local checks before pushing — it wastes CI cycles.
 - **Bot comments follow Step 6.** Fix verified, in-scope defects regardless of author; decline unsupported redesigns with a concrete reason, and escalate only the enumerated stop-and-ask cases. Non-trivial does not mean skippable.
 - **Every behavior-changing fix from Step 6 or 7 needs test coverage in Step 8.** Doc/typo/format-only changes are exempt. Coverage verification at the end of Step 8 is best-effort and language-agnostic — skip silently if no entrypoint is detected; do NOT block.

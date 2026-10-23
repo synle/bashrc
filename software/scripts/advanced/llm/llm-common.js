@@ -663,9 +663,9 @@ const LLM_LOCAL_AGENT_MODELS = _getOllamaTierModels("agent", "largestFirst");
  * unsupported", not a gap. A consumer MUST treat `null`/missing as "write nothing":
  * inventing a shape for a CLI that has no such key is how a config file becomes invalid.
  *
- * Permissions are deliberately omitted so every agent inherits the top-level
- * `permission: "allow"`. The one exception is `review`, which is read-only by
- * construction — a reviewer that can edit turns a review into a rewrite.
+ * Permissions normally inherit the top-level `permission: "allow"`. The `general`
+ * dispatcher explicitly permits `task` so OpenCode does not inject a child-session
+ * deny; it leaves the model inherited. The `review` role retains its edit deny.
  *
  * The `local` opencode entry carries `models` (a preference list) instead of `model`,
  * because the winning tag depends on which Ollama host is reachable at setup time.
@@ -687,6 +687,12 @@ const AGENT_TO_MODEL_MAP = {
     // value) when the pin is off, so opencode.json carries no `agent.build` and the model
     // picked in the TUI stands instead of being overridden on every turn.
     opencode: IS_OPENCODE_DEFAULT_MODEL_PINNED ? { mode: "primary", model: OPENCODE_PINNED_DEFAULT_MODEL } : null,
+  },
+  general: {
+    claude: null,
+    copilot: null,
+    gemini: null,
+    opencode: { permission: { task: "allow" } },
   },
   plan: {
     claude: null,
@@ -725,6 +731,7 @@ const AGENT_TO_MODEL_MAP = {
  *      `<providerId>/<tag>` actually served by a discovered provider. No match →
  *      the agent is dropped, so opencode never offers an agent whose model 404s.
  *   2. Roles whose opencode value is `null` are skipped.
+ * Model-less entries pass through so built-in agents retain model inheritance.
  *
  * Returns `{}` when nothing resolves, letting the caller omit the `agent` key entirely.
  *
@@ -739,8 +746,8 @@ function resolveOpencodeAgentConfig(providersArray = []) {
     const entry = perCli && perCli.opencode;
     if (!entry) continue;
 
-    // Concrete model — copy through untouched.
-    if (entry.model) {
+    // Concrete or inherited model — only preference lists need host resolution.
+    if (entry.model || !Array.isArray(entry.models)) {
       agents[role] = { ...entry };
       continue;
     }

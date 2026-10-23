@@ -80,11 +80,12 @@ Rules for the loop: state the hypothesis **and what would disprove it** before m
 Fix the defect, not the observation. Ask explicitly: **why did this reach production / main?** — an unhandled case, a missing invariant, a wrong default, a race. Fix at that level.
 
 These symptom-fix smells mean the cause remains:
-   - Adding a `try/except` around the failing call.
-   - Adding a null check at the crash site.
-   - Wrapping a nondeterministic operation in a retry.
-   - Adding a sleep to a race.
-   - Loosening a test assertion to match the buggy output.
+
+- Adding a `try/except` around the failing call.
+- Adding a null check at the crash site.
+- Wrapping a nondeterministic operation in a retry.
+- Adding a sleep to a race.
+- Loosening a test assertion to match the buggy output.
 
 If the same defect pattern appears in sibling call sites, fix them in the same change — one root cause, one patch. (See the Code Hygiene rule "Fix root causes, not symptoms".)
 

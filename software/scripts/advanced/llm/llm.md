@@ -157,6 +157,24 @@ verified OpenCode scripting API: use the runtime's exposed tool schema instead.
 Neither individual-tool speedups nor Pi-equivalent UI rendering are guaranteed;
 native interactive execution and performance parity remain unverified.
 
+### OpenCode nested dispatch
+
+For OpenCode 1.19.3, bootstrap generates top-level `subagent_depth: 2` and
+`agent.general.permission.task: "allow"`. This permits primary → general dispatcher
+→ worker while blocking further nesting. The general agent inherits its model;
+reviewer and local-agent permissions remain unchanged. Agent policy lives in
+`AGENT_TO_MODEL_MAP` in `llm-common.js`; the depth limit lives in `opencode/setup.js`.
+
+Native `task` is separate from Code Mode, whose discovery covers connected MCP
+tools only. A missing Code Mode entry does not prove that native `task` is absent.
+Refresh with `bash run.sh --files="advanced/llm/opencode/setup.js"` (or the broader
+`bash run.sh --preset=llm`), then restart OpenCode. Existing child sessions may
+retain persisted task-deny rules; configuration changes do not clear those rules.
+Do not recreate existing workers to bypass that restriction. Before resuming an
+existing handle, verify it exists: OpenCode 1.19.3 can create a new child when
+`task_id` lookup fails. This configuration does not enable experimental background
+subagents or resume a stopped watch.
+
 ### Using the MarkItDown CLI
 
 Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) converts documents
