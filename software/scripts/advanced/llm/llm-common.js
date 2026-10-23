@@ -2018,7 +2018,7 @@ async function deploySharedLLMSkills() {
   linkSharedLLMSkills();
 }
 
-// --- Shared Agents (one canonical spec, one native file per CLI) ---
+// --- Shared Agents (one registry, native delivery metadata) ---
 
 /**
  * Repo-relative folder holding the canonical source of every Sy-managed agent.
@@ -2039,21 +2039,16 @@ const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/v_current
 /**
  * The one registry of Sy-managed agents, shared by every LLM CLI setup.
  *
- * Key   = deployed agent name, **without** any extension (e.g. `sy-pr-babysitter`).
+ * Key   = deployed agent name, **without** any extension (e.g. `sy-agent-pr-babysitter`).
  *         Every CLI derives its own filename from this key via the per-CLI
  *         `suffix` in {@link LLM_AGENT_LINK_FOLDERS}, which is what lets one
  *         map serve `~/.config/opencode/agent/<key>.md` and
  *         `~/.copilot/agents/<key>.agent.md` at once.
  * Value = source basename (no `.md`) under {@link LLM_AGENT_SOURCE_FOLDER}.
  *
- * `sy-` prefixed, exactly like {@link LLM_COMMAND_DEPLOY_MAP}. The prefix was
- * briefly omitted on the theory that it only pays off in a command picker, where
- * clustering and collision-avoidance matter, and that an agent name — a **label
- * the harness renders** beside a running worker — should be the shortest honest
- * noun instead. That was wrong in the one place it is actually read: a rendered
- * label is precisely where "is this mine, or something a plugin installed?" needs
- * answering at a glance, and a bare `Pr-Reviewer` sitting beside a vendor agent
- * answers it for nobody. Same prefix, same reason, one convention to remember.
+ * `sy-agent-` distinguishes worker names from `sy-` workflow names in pickers
+ * and dispatch labels. The source remains vendor-neutral; each client supplies
+ * its own invocation syntax.
  *
  * Source filenames stay BARE (`pr-babysitter.md`), exactly like the command
  * sources: the prefix is purely a deploy-time decoration, so editing an agent
@@ -2068,8 +2063,8 @@ const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/v_current
  * @type {Record<string, string>}
  */
 const LLM_AGENT_DEPLOY_MAP = {
-  "sy-pr-babysitter": "pr-babysitter",
-  "sy-pr-reviewer": "pr-reviewer",
+  "sy-agent-pr-babysitter": "pr-babysitter",
+  "sy-agent-pr-reviewer": "pr-reviewer",
 };
 
 /**
@@ -2090,10 +2085,13 @@ const LLM_AGENT_RETIRED_NAMES = [
   // setup.js on a machine still holding them will delete them.
   "pr-babysitter", // renamed to sy-pr-babysitter (2026-08-20)
   "pr-reviewer", // renamed to sy-pr-reviewer (2026-08-20)
+  // 2026-10-23: distinguish worker names from workflow names at deployment.
+  "sy-pr-babysitter", // renamed to sy-agent-pr-babysitter
+  "sy-pr-reviewer", // renamed to sy-agent-pr-reviewer
 ];
 
 /**
- * The ONE physical location of every Sy-managed agent: `<shared-agents-folder>/<name>.md`.
+ * Shared union-format files for every Sy-managed agent: `<shared-agents-folder>/<name>.md`.
  *
  * Sits beside `skills/`, `instructions/`, and `plans/` under
  * {@link LLM_SHARED_ROOT_FOLDER} for the same reason they do: one `ls` of the
@@ -2103,58 +2101,41 @@ const LLM_AGENT_RETIRED_NAMES = [
 const LLM_SHARED_AGENTS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "agents");
 
 /**
- * Every CLI agents folder that receives a symlink to each shared agent.
+ * Native frontmatter additions, separate from destination and content registries.
  *
- * ONE physical file, symlinked everywhere — same model as
- * {@link LLM_SKILL_LINK_FOLDERS}, and for the same reason: a stale per-CLI copy
- * becomes structurally impossible. This corpus briefly rendered a separate file
- * per CLI on the assumption that their frontmatter shapes were irreconcilable.
- * They are not. Claude and Copilot want `name` + `description`; OpenCode wants
- * `description` + `mode: subagent` and takes the name from the filename. All
- * three **ignore keys they do not recognize**, so the union of those keys is a
- * single file every one of them accepts — verified live, see below.
+ * Compatible tools share OpenCode's required `mode` key. Strict consumers use
+ * only `name` and `description`; adding a tool with either shape needs no renderer.
+ * @type {Record<string, string>}
+ */
+const LLM_AGENT_FORMATS = { shared: "\nmode: subagent", portable: "" };
+
+/**
+ * Native destinations for every shared agent, matching the shared skill helpers.
  *
- * The filename difference is absorbed by the link, not the target: a symlink may
- * be named differently from what it points at, so Copilot's `<name>.agent.md`
- * and everyone else's `<name>.md` both resolve to the same shared file.
+ * Defaults are per-agent symlinks and shared union frontmatter. A destination
+ * declares only shape and delivery differences, never agent names or sources.
+ * Never link an entire folder: user- and plugin-authored entries must survive.
  *
- * PER-AGENT links, deliberately NOT a whole-folder symlink — pointing
- * `~/.claude/agents` at the shared folder would hijack the destination and
- * destroy anything a plugin or the user put there. Same tradeoff already made by
- * {@link LLM_SKILL_LINK_FOLDERS} and {@link LLM_SHARED_INSTRUCTION_LINK_FOLDERS}.
+ * Claude, Copilot, OpenCode, and Pi accept the shared file. Gemini 0.64.0 uses
+ * a strict schema and its directory loader accepts only regular files, ignoring
+ * symlinks. Its generated portable adapter is the deliberate exception to linking.
  *
- * Verified destinations (a wrong folder or frontmatter key fails SILENTLY on all
- * of these — the file is read as ordinary documentation and the agent simply
- * never appears, so each entry is earned by a live probe, never by a doc):
- *   - claude   — `~/.claude/agents/<name>.md`, Claude Code 2.1.223.
- *   - copilot  — `~/.copilot/agents/<name>.agent.md`, Copilot CLI 1.0.81. A
- *     plain `<name>.md` also resolves; `.agent.md` is the documented form.
- *   - opencode — `~/.config/opencode/agent/<name>.md`, opencode 1.18.18.
- *
- * The probe is free — claude and copilot both enumerate every agent they
- * resolved when handed one that does not exist, before spending a model turn:
- *
- *   claude  --agent zz-nope -p x     # -> "not found. Available agents: ..."
- *   copilot --agent zz-nope -p x     # -> "No such agent: zz-nope, available: ..."
- *   opencode agent list              # -> "<name> (subagent)"
- *
- * Deliberately absent: gemini. Version 0.55.1 exposes `gemini skills` but no
- * agents subcommand and no `--agent` flag, so there is nothing to link into and
- * nothing that could confirm a link landed.
- *
- * OpenCode's discovery lags a file write by several seconds — a check run
- * immediately after deploy is a false negative, not a failure.
- * @type {Array<{folder: string, suffix: string}>}
+ * Probe destinations through native discovery before adding them. Existing probes:
+ * `claude --agent zz-nope -p x`, `copilot --agent zz-nope -p x`,
+ * `opencode agent list`, Gemini's `loadAgentsFromDirectory`, and Pi's agent list.
+ * OpenCode discovery may lag a write; recheck before diagnosing a missing entry.
+ * @type {Array<{folder: string, suffix: string, delivery?: "file", format?: string}>}
  */
 const LLM_AGENT_LINK_FOLDERS = [
   { folder: path.join(BASE_HOMEDIR_LINUX, ".claude", "agents"), suffix: ".md" },
   { folder: path.join(BASE_HOMEDIR_LINUX, ".copilot", "agents"), suffix: ".agent.md" },
   { folder: path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "agent"), suffix: ".md" },
+  { folder: path.join(BASE_HOMEDIR_LINUX, ".gemini", "agents"), suffix: ".md", delivery: "file", format: "portable" },
+  { folder: path.join(BASE_HOMEDIR_LINUX, ".pi", "agent", "agents"), suffix: ".md" },
 ];
 
 /**
- * Frontmatter written above every shared agent body — the union of what each
- * CLI requires, since every one of them ignores the keys it does not know.
+ * Builds native frontmatter without changing the vendor-neutral agent body.
  *
  * `name` is REQUIRED by Claude Code (a file carrying only `description` is
  * silently skipped) and used by Copilot; OpenCode ignores it and takes the name
@@ -2164,10 +2145,15 @@ const LLM_AGENT_LINK_FOLDERS = [
  *
  * @param {string} name - Deployed agent name (a {@link LLM_AGENT_DEPLOY_MAP} key).
  * @param {string} description - Derived, YAML-safe trigger description.
+ * @param {string} [format="shared"] - Registered frontmatter shape.
  * @returns {string} The YAML block, without its enclosing `---` fences.
+ * @throws {Error} If the format is not registered; no files are written.
  */
-function buildLLMAgentFrontmatter(name, description) {
-  return `name: ${name}\ndescription: "${description}"\nmode: subagent`;
+function buildLLMAgentFrontmatter(name, description, format = "shared") {
+  if (!Object.prototype.hasOwnProperty.call(LLM_AGENT_FORMATS, format)) {
+    throw new Error(`Unknown agent format: ${format}`);
+  }
+  return `name: ${name}\ndescription: "${description}"${LLM_AGENT_FORMATS[format]}`;
 }
 
 /**
@@ -2238,19 +2224,16 @@ function _pruneStaleSharedAgents() {
  * Removes every Sy-owned agent artifact in the CLI link folders that the registry
  * no longer justifies.
  *
- * Runs BEFORE the write/link pass, mirroring the instructions corpus: the link
- * pass then stays pure and may treat any surviving non-symlink as genuinely
- * foreign. Inlining this cleanup into the link loop is what previously forced
- * that loop to carve out an exception for its own leftovers.
+ * Runs BEFORE the write/link pass, mirroring the instructions corpus. Remove
+ * obsolete owned artifacts while retaining expected native files for idempotent
+ * updates. The delivery pass preserves all surviving foreign artifacts.
  *
  * Three classes of leftover are swept, each ours by evidence rather than by path,
  * so a user- or plugin-authored entry matches none and survives:
  *   1. Dangling links (target gone) that pointed into a shared agents folder.
  *   2. Stale links, including ones under a root we have since moved away from.
- *   3. Real files still carrying our `[Sy] ` marker — leftovers from the earlier
- *      render-per-CLI model, which wrote real files at exactly these paths.
- *      Without this, a machine that ran that version keeps them forever and never
- *      links, because the link pass correctly refuses to touch real files.
+ *   3. Marked real files left by the old renderer, except expected native files.
+ *      Expected owned symlinks also go when the destination now requires a file.
  *
  * `lstat` / `readlink` are used throughout rather than `existsSync`, so a dangling
  * link is inspected rather than skipped as absent.
@@ -2261,7 +2244,7 @@ function pruneOrphanedSharedLLMAgents() {
   /** @type {number} Artifacts removed this run, across every folder. */
   let removed = 0;
 
-  for (const { folder: destFolder, suffix } of LLM_AGENT_LINK_FOLDERS) {
+  for (const { folder: destFolder, suffix, delivery } of LLM_AGENT_LINK_FOLDERS) {
     if (!fs.existsSync(destFolder)) continue;
 
     /** @type {Set<string>} Link basenames the registry still justifies in this folder. */
@@ -2299,13 +2282,16 @@ function pruneOrphanedSharedLLMAgents() {
         if (!isSharedLLMArtifactTarget(target, "agents")) continue;
         if (!fs.existsSync(target)) reason = "dangling link";
         else if (!expected.has(entry)) reason = "stale link";
+        else if (delivery === "file") reason = "native file required";
       } else if (stat.isFile()) {
         // A real file is ours only when it still carries our own marker — the
         // render-per-CLI leftover case. Unreadable or unmarked fails closed.
         try {
           /** @type {string} First body line, past any generated frontmatter fence. */
           const firstLine = _readSkillBodyFirstLine(fs.readFileSync(entryPath, "utf-8"));
-          if (LLM_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "prior rendered copy";
+          if (LLM_SKILL_MARKERS.some((m) => firstLine.startsWith(m)) && !(delivery === "file" && expected.has(entry))) {
+            reason = "prior rendered copy";
+          }
         } catch {}
       }
 
@@ -2325,23 +2311,22 @@ function pruneOrphanedSharedLLMAgents() {
 }
 
 /**
- * Symlinks every agent currently in {@link LLM_SHARED_AGENTS_FOLDER} into every
- * folder in {@link LLM_AGENT_LINK_FOLDERS}, renaming each link to carry that
- * CLI's suffix.
+ * Delivers shared agents using each destination's suffix, format, and delivery mode.
+ * Symlinks are the default; strict regular-file consumers receive generated adapters.
  *
  * Reads the shared folder rather than the registry on purpose — the link pass is
  * then dynamic, picking up a hand-authored agent dropped into the shared folder
  * with no code change, and it links what actually exists rather than what was
  * declared.
  *
- * Idempotent: a link already pointing at the right target is left alone, a link
- * pointing at a stale target is replaced, and anything that is not a symlink is
- * never touched — our own leftovers were already cleared by
- * {@link pruneOrphanedSharedLLMAgents}.
+ * Idempotent: correct links and unchanged native files stay untouched.
+ * Preserve foreign symlinks; replace native files only when marked as ours.
+ * {@link pruneOrphanedSharedLLMAgents} clears owned obsolete artifacts first.
  *
- * @returns {void}
+ * @returns {Promise<void>} Resolves after links and native files are reconciled.
+ * @throws {Error} If native file reading, rendering, or writing fails.
  */
-function linkSharedLLMAgents() {
+async function linkSharedLLMAgents() {
   if (!fs.existsSync(LLM_SHARED_AGENTS_FOLDER)) return;
 
   /** @type {string[]} Agent basenames (no extension) that actually exist in the shared folder. */
@@ -2351,10 +2336,10 @@ function linkSharedLLMAgents() {
     .map((entry) => path.basename(entry, ".md"))
     .sort();
 
-  for (const { folder: destFolder, suffix } of LLM_AGENT_LINK_FOLDERS) {
+  for (const { folder: destFolder, suffix, delivery, format } of LLM_AGENT_LINK_FOLDERS) {
     fs.mkdirSync(destFolder, { recursive: true });
 
-    /** @type {number} Links created or repaired this run. */
+    /** @type {number} Links or native files created or repaired this run. */
     let linked = 0;
     /** @type {number} Destinations skipped because a real file already occupies them. */
     let skippedForeign = 0;
@@ -2371,6 +2356,28 @@ function linkSharedLLMAgents() {
         stat = fs.lstatSync(destPath);
       } catch {}
 
+      if (delivery === "file") {
+        if (
+          stat &&
+          (!stat.isFile() ||
+            !LLM_SKILL_MARKERS.some((marker) => _readSkillBodyFirstLine(fs.readFileSync(destPath, "utf-8")).startsWith(marker)))
+        ) {
+          skippedForeign++;
+          continue;
+        }
+        /** @type {string} Expanded body from the shared artifact; never a second authored source. */
+        const body = fs
+          .readFileSync(sourcePath, "utf-8")
+          .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n\r?\n?/, "")
+          .trimEnd();
+        /** @type {string} Native artifact rebuilt through the shared frontmatter renderer. */
+        const content = `---\n${buildLLMAgentFrontmatter(agentName, buildLLMSkillDescription(body), format)}\n---\n\n${body}\n`;
+        if (stat && fs.readFileSync(destPath, "utf-8") === content) continue;
+        await writeText(destPath, content);
+        linked++;
+        continue;
+      }
+
       if (stat && !stat.isSymbolicLink()) {
         // Anything still a real file here belongs to a plugin or the user.
         skippedForeign++;
@@ -2386,6 +2393,10 @@ function linkSharedLLMAgents() {
           existing = path.isAbsolute(raw) ? raw : path.resolve(destFolder, raw);
         } catch {}
         if (existing === sourcePath) continue;
+        if (!isSharedLLMArtifactTarget(existing, "agents")) {
+          skippedForeign++;
+          continue;
+        }
         try {
           fs.unlinkSync(destPath);
         } catch {}
@@ -2396,7 +2407,7 @@ function linkSharedLLMAgents() {
     }
 
     log(
-      `>> shared agents: linked ${linked} agent(s) into ${destFolder}` +
+      `>> shared agents: deployed ${linked} agent(s) into ${destFolder}` +
         (skippedForeign ? ` (skipped ${skippedForeign} foreign / user-authored entries)` : ""),
     );
   }
@@ -2404,10 +2415,10 @@ function linkSharedLLMAgents() {
 
 /**
  * Writes every {@link LLM_AGENT_DEPLOY_MAP} entry into
- * `<shared-agents-folder>/<name>.md`, prunes orphans, then symlinks the result
- * into every CLI agents folder.
+ * `<shared-agents-folder>/<name>.md`, prunes orphans, then delivers native artifacts
+ * into every CLI agents folder according to the destination metadata.
  *
- * Called by all four setup scripts. Writing the same bytes from each is
+ * Called by all five setup scripts. Writing the same bytes from each is
  * intentional and safe — the content is byte-identical, so whichever CLI runs
  * first does the work and the rest are no-ops. That keeps every CLI
  * independently able to repair the shared corpus without one being a prerequisite.
@@ -2424,8 +2435,7 @@ async function deploySharedLLMAgents() {
   log(">> Shared LLM Agents:", LLM_SHARED_AGENTS_FOLDER);
 
   // Clear our own leftovers first — dangling links, links under a retired name,
-  // and real files from the earlier render-per-CLI model — so the link pass below
-  // can treat every surviving non-symlink as genuinely foreign.
+  // and obsolete marked files. Expected native adapters remain for no-op writes.
   pruneOrphanedSharedLLMAgents();
 
   /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
@@ -2445,5 +2455,5 @@ async function deploySharedLLMAgents() {
   }
 
   _pruneStaleSharedAgents();
-  linkSharedLLMAgents();
+  await linkSharedLLMAgents();
 }

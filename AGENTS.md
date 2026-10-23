@@ -757,23 +757,31 @@ sources `_common/v_current/agents/<name>.md`.
   never-touch list, reporting style. Steps/cadence/safety stay in the matching `SKILL.md`.
 - Same portability contract as skills (§13.0); each opens with the `[Sy] <what this is>`
   first-line marker.
-- **One physical file, symlinked everywhere** (`LLM_AGENT_LINK_FOLDERS`), carrying the
-  union frontmatter `name` + `description` + `mode: subagent`.
-- **Never drop a union key**: `name` is REQUIRED by Claude Code (silently skipped
-  otherwise), `mode: subagent` makes OpenCode classify it dispatchable. Each removal
-  breaks exactly one CLI, silently.
-- **Per-agent links, never a folder symlink** (same destination-hijack tradeoff as
-  skills). A real file at a link destination stays unless it carries our `[Sy] ` marker.
-- **Agent names ARE `sy-` prefixed** — a picker label beside a running worker is where
-  "mine or a plugin's?" gets answered.
+- **One authoritative role, native delivery metadata**: `deploySharedLLMAgents()` writes
+  shared files and delivers through `LLM_AGENT_LINK_FOLDERS`. Claude, Copilot, OpenCode,
+  and Pi use symlinks with `name` + `description` + `mode: subagent` frontmatter.
+- **Never drop a shared union key**: Claude requires `name`; OpenCode needs
+  `mode: subagent`. Gemini 0.64.0 rejects `mode` and ignores symlinks, so its destination
+  selects `delivery: "file"` and `format: "portable"` from `LLM_AGENT_FORMATS`.
+  Generate that regular-file adapter from the same role body; never maintain a second source.
+- **Per-agent artifacts, never a folder symlink**. Preserve foreign files, folders,
+  and symlinks. Update or remove regular files only when their body carries our `[Sy] ` marker.
+- **Extend metadata, not content lists**: a new worker needs one role source and one
+  `LLM_AGENT_DEPLOY_MAP` entry. A new client needs destination metadata and an awaited
+  `deploySharedLLMAgents()` call. Add native formats only after verifying a loader contract.
+- **Agent names use `sy-agent-`** — distinguish worker roles from `sy-` workflows
+  in pickers and dispatch labels. Source filenames stay bare.
 - **A new CLI entry requires a live probe** — wrong folder/key fails silently everywhere.
   Probes enumerate available agents for free:
   `claude --agent zz-nope -p x`, `copilot --agent zz-nope -p x`, `opencode agent list`.
   Verified: claude 2.1.223 (`~/.claude/agents/<name>.md`), copilot 1.0.81
   (`~/.copilot/agents/<name>.agent.md`), opencode 1.18.18
-  (`~/.config/opencode/agent/<name>.md`, name from FILENAME). Gemini has no agent
-  surface — absent deliberately. OpenCode discovery lags a write by seconds: an
-  immediate check is a false negative.
+  (`~/.config/opencode/agent/<name>.md`, name from FILENAME). Gemini uses
+  `~/.gemini/agents/<name>.md`; inspect `/agents`, then invoke `@sy-agent-pr-reviewer`.
+  Preserve explicit `experimental.enableAgents: false`. Pi's `pi-subagents` extension
+  reads `~/.pi/agent/agents/<name>.md`; inspect `/subagents`, then use `/run sy-agent-pr-reviewer`.
+  Pi core alone does not discover these workers. OpenCode discovery can lag a write;
+  restart clients before checking inventories. Invocation and extension details live in `llm.md`.
 - **Never name an agent inside a skill body** — select workers by behavior. Renames/
   deletions add the old name to `LLM_AGENT_RETIRED_NAMES` in the same commit.
 

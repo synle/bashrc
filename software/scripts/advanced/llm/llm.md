@@ -126,10 +126,67 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 
 - **Instructions / rules**: edit `_common/v_current/instructions.md`, then re-run all four setup scripts (or `bash run.sh --preset=llm`).
 - **Slash commands**: edit a file under `_common/v_current/skills/<name>.md` — every deploy (Claude direct + Copilot skills + OpenCode symlink) picks it up on the next setup run. **Adding / renaming / retiring** one is a single edit to `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` — that one map is the registry every CLI setup reads, so there is no per-CLI list to keep in sync.
-- **Named agents**: edit a file under `_common/v_current/agents/<name>.md` — one vendor-neutral **worker persona** per file (who the worker is, what it owns, what it must never touch), never the workflow, which stays in the matching skill. **Adding / renaming / retiring** one is a single edit to `LLM_AGENT_DEPLOY_MAP` (or `LLM_AGENT_RETIRED_NAMES`) in `llm-common.js`. Like skills, an agent is ONE physical file under `<<LLM_ROOT_FOLDER>>/agents/` symlinked into every CLI; `LLM_AGENT_LINK_FOLDERS` holds only the destination folder and filename suffix. The frontmatter is the union of what each CLI needs (`name` + `description` + `mode: subagent`) — they all ignore keys they do not know, and dropping any one key silently breaks exactly one CLI. **Adding a CLI requires a live probe first**: a wrong folder or frontmatter key fails silently, so confirm with `claude --agent zz-nope -p x` / `copilot --agent zz-nope -p x` (both enumerate what they resolved, before spending a model turn) or `opencode agent list`.
+- **Named agents**: edit `_common/v_current/agents/<name>.md` for the vendor-neutral worker role: responsibilities, ownership, and forbidden actions. Keep workflow steps in the matching skill. Register additions in `LLM_AGENT_DEPLOY_MAP`; record retired names in `LLM_AGENT_RETIRED_NAMES`. Deployment and native-format details appear below.
+- **Worker names**: use `sy-agent-` for deployed workers and `sy-` for workflows. Keep source filenames bare; the PR workers deploy as `sy-agent-pr-babysitter` and `sy-agent-pr-reviewer`.
 - **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.- **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
+
+### Shared workers and skills
+
+A **skill** defines the workflow; a **worker** supplies the role and its boundaries.
+`sy-agent-pr-reviewer` reviews other people's pull requests; `sy-agent-pr-babysitter` maintains
+your own. Their roles do not grant permissions or enforce a security sandbox.
+Ask the selected worker to follow the matching skill with an explicit target.
+
+| Client   | Worker destination                   | Delivery and discovery                                                                  |
+| -------- | ------------------------------------ | --------------------------------------------------------------------------------------- |
+| Claude   | `~/.claude/agents/<name>.md`         | Shared symlink; `claude --agent sy-agent-pr-reviewer`                                   |
+| Copilot  | `~/.copilot/agents/<name>.agent.md`  | Shared symlink; `copilot --agent sy-agent-pr-reviewer`                                  |
+| OpenCode | `~/.config/opencode/agent/<name>.md` | Shared symlink; `opencode agent list`, then `@sy-agent-pr-reviewer`                     |
+| Gemini   | `~/.gemini/agents/<name>.md`         | Generated regular file; `/agents`, then `@sy-agent-pr-reviewer`                         |
+| Pi       | `~/.pi/agent/agents/<name>.md`       | Shared symlink; requires `pi-subagents`; `/subagents`, then `/run sy-agent-pr-reviewer` |
+
+In Gemini or OpenCode, submit this prompt:
+
+```text
+@sy-agent-pr-reviewer Follow the sy-review-pr skill for https://github.com/acme/widget-store/pull/123.
+```
+
+In Pi, use either the skill directly or a named worker:
+
+```text
+/skill:sy-review-pr https://github.com/acme/widget-store/pull/123
+/run sy-agent-pr-reviewer Follow the sy-review-pr skill for https://github.com/acme/widget-store/pull/123.
+```
+
+Pi's built-in `reviewer` is separate from `sy-agent-pr-reviewer`. Pi core discovers
+shared skills through `~/.agents/skills/`; named workers require the installed
+`pi-subagents` extension. MCP-dependent Pi workers need background execution
+(`async: true`); foreground children do not load ambient parent extensions.
+Restart clients after deployment before checking their inventories. Gemini's
+explicit `experimental.enableAgents: false` setting remains unchanged.
+
+`LLM_AGENT_DEPLOY_MAP` is the sole worker-content registry. `deploySharedLLMAgents()`
+writes the authoritative role under `<<LLM_ROOT_FOLDER>>/agents/`, then delivers
+it through `LLM_AGENT_LINK_FOLDERS`. Claude, Copilot, OpenCode, and Pi share
+`name`, `description`, and `mode: subagent` frontmatter. Gemini 0.64.0 rejects
+`mode` and ignores symlinks, so its metadata selects `delivery: "file"` and
+`format: "portable"`. That adapter keeps the same role body with only `name`
+and `description`. Do not edit generated destination files.
+
+Extend the existing registries rather than adding per-client content lists:
+
+- **New worker:** add its role source and one `LLM_AGENT_DEPLOY_MAP` entry. All destinations receive it automatically.
+- **New skill:** add its command source and one `LLM_COMMAND_DEPLOY_MAP` entry. Existing `deploySharedLLMSkills()` delivery remains unchanged.
+- **New client:** add destination metadata to `LLM_AGENT_LINK_FOLDERS` and call `await deploySharedLLMAgents()` from its setup.
+- **Strict client format:** reuse `delivery: "file"` with a registered `LLM_AGENT_FORMATS` format. Add a format only when a verified loader contract requires it.
+- **Skill support for a new client:** add its native skill destination to `LLM_SKILL_LINK_FOLDERS` only if existing discovery roots do not already cover it.
+
+Use per-worker artifacts, never a destination-folder symlink. The common deployer
+preserves foreign files, folders, and links; it updates or removes only owned
+artifacts. Verify native discovery without launching model tasks after adding
+any client. File presence alone does not prove loader compatibility.
 
 ### OpenCode experimental Code Mode
 
