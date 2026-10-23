@@ -142,7 +142,6 @@ installAptPackage shellcheck # used by `make ci_test_shellcheck`
 installAptPackage yq
 installAptPackage git-delta
 installAptPackage zoxide
-installAptPackage eza
 installAptPackage fd-find
 installAptPackage tree
 installAptPackage tldr

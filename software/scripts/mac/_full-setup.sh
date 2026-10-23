@@ -299,7 +299,6 @@ installBrewPackage shellcheck # used by `make ci_test_shellcheck`
 installBrewPackage yq
 installBrewPackage git-delta
 installBrewPackage zoxide
-installBrewPackage eza
 installBrewPackage fd
 installBrewPackage tree
 installBrewPackage tldr

@@ -267,9 +267,9 @@ function is_runnable_command() {
 #                  --select-alias='^fuzzy_' --env='FZF_CASE_MODE=insensitive'`
 #                 gives ifuzzy_cd / ifcd / ifcat / iglog (see bash-fzf.profile.bash).
 #
-# A decorator can only ADD. It cannot express a variant that REMOVES a flag,
-# which is why `ls_newest` / `ls_newest_last` (the second drops --reverse, and
-# eza has no counter-flag) is NOT a candidate and stays hand-written.
+# A decorator can only ADD. It cannot express a variant that REMOVES a flag.
+# Native ls treats repeated -r flags as one reversal, so paired listing orders
+# stay explicit rather than decorating an already-reversed command.
 
 # Registry of everything generated this session: `<variant>\t<expansion>` lines.
 # Generated names appear in no source file, so `command_variants` is the only
@@ -662,14 +662,23 @@ function lsfa() {
 }
 
 alias grep='command grep --color=auto'
-if ls --version 2> /dev/null | command grep -q GNU; then
-  # GNU ls uses --color=auto (requires =value)
-  alias ls="ls -1 -F --color=auto"
+# --- Aliases: File Listing (native ls) ---
+# TODO: DECOMMISSION / DEPRECATED: eza is retired; remove legacy local installations manually.
+# Keep ls native: no wrapper, alias, or injected defaults. Clear the old profile
+# definitions so reloading an existing shell also retires the former backend.
+unalias ls 2> /dev/null || true
+unset -f ls ls_newest_first ls_biggest_first
+if command ls --version 2> /dev/null | command grep -q GNU; then
+  alias ll="command ls -lahF --color=auto"
 else
-  # BSD ls (macOS) — --color is a standalone flag (no =value)
-  alias ls="ls -1 -F --color"
+  alias ll="command ls -lahFG"
 fi
-alias ll="ls -lah"
+# The base shortcuts keep the interesting entries nearest the prompt.
+# Define both orders directly: repeating -r does not cancel a reversal.
+alias ls_newest="ll -tr"       # newest last
+alias ls_newest_first="ll -t"  # newest first
+alias ls_biggest="ll -Sr"      # biggest last
+alias ls_biggest_first="ll -S" # biggest first
 if type -P colordiff &> /dev/null; then
   alias diff="colordiff"
 elif diff --version 2> /dev/null | command grep -q GNU; then

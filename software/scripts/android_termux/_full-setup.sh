@@ -144,7 +144,6 @@ installPkgPackage shfmt
 installPkgPackage yq
 installPkgPackage git-delta
 installPkgPackage zoxide
-installPkgPackage eza
 installPkgPackage fd
 installPkgPackage tree
 installPkgPackage tldr

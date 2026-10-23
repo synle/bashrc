@@ -131,7 +131,6 @@ installPacmanPackage shellcheck # used by `make ci_test_shellcheck`
 installPacmanPackage yq
 installPacmanPackage git-delta
 installPacmanPackage zoxide
-installPacmanPackage eza
 installPacmanPackage fd
 installPacmanPackage tree
 installPacmanPackage tldr

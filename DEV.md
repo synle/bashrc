@@ -189,6 +189,19 @@ make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, n
 The formatter is **oxfmt** (`npm run format`), not prettier, despite the
 `format_prettier` target name. Shell formatting is `shfmt -w -i 2 -bn -sr`.
 
+## Native file listing
+
+`ls` uses the native executable without an alias, wrapper, or injected arguments.
+Reloading the profile removes the retired listing alias and function.
+`ll` provides a colored native long listing with hidden files, readable sizes, and file-type indicators.
+
+- `ls_newest` / `ls_newest_first`: newest entries last / first.
+- `ls_biggest` / `ls_biggest_first`: largest entries last / first.
+
+These shortcuts are explicit aliases, not generated command variants.
+Native timestamps and permission columns replace the retired backend's custom formatting.
+The retired package is no longer installed or registered for completion; existing machine installations are not automatically uninstalled.
+
 ## Shared theme sources
 
 `theme/sy/_palette_{dark,light}.jsonc` owns foundation colors, aliases, and `{from, over, alpha}` recipes.

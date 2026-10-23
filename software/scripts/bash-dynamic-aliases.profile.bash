@@ -2,13 +2,11 @@
 ################################################################################
 # --- Dynamic alias / command-variant cache ---
 #
-# Three generators build decorated command families, each by iterating over the
-# live shell's aliases/functions and forking grep/type per entry — together
-# ~0.5s if run on every shell start:
+# Two generators build decorated command families by inspecting the live
+# shell's aliases/functions. Cache them rather than rebuilding on shell start:
 #
-#   1. ls_*_first  — reversed twins of the eza ls_* listing aliases
-#   2. i-prefixed  — case-insensitive twins of every fuzzy_* picker
-#   3. snip        — transparent wrappers for snip-supported build commands
+#   1. i-prefixed  — case-insensitive twins of every fuzzy_* picker
+#   2. snip        — transparent wrappers for snip-supported build commands
 #
 # Their output is deterministic for a given profile, so run them ONCE at deploy
 # time and cache the resulting function definitions + the _COMMAND_VARIANTS
@@ -28,19 +26,13 @@
 _BASH_SYLE_DYNAMIC_CACHE="$HOME/.bash_syle_cache"
 
 # _build_dynamic_aliases: run every dynamic generator once. Safe to call only
-# after all of their inputs (ls_* aliases, fuzzy_* functions, snip base
-# commands) are defined, which is why this partial sources last.
+# after fuzzy_* functions and snip base commands are defined. Returns the final
+# generator status and defines their generated wrappers in the current shell.
 function _build_dynamic_aliases() {
-  # 1. ls_*_first — same eza listing, reversed (--reverse after "$@").
-  register_command_variants \
-    --suffix=_first \
-    --select-alias-name='^ls_[a-z]*$' \
-    --args='--reverse'
-
-  # 2. i-prefixed case-insensitive twins of every fuzzy_* picker.
+  # 1. i-prefixed case-insensitive twins of every fuzzy_* picker.
   fzf_register_case_variants
 
-  # 3. snip transparent wrappers — only worth defining when snip is installed;
+  # 2. snip transparent wrappers — only worth defining when snip is installed;
   #    without it every wrapper would just pass through to the raw binary.
   if type -P snip > /dev/null 2>&1; then
     _register_snip_wrappers
@@ -92,8 +84,8 @@ function _dump_dynamic_aliases_cache() {
 
 # The cache is built once at deploy time, never on an interactive shell start.
 # run.sh sets BASHRC_BUILD_DYNAMIC_CACHE=1 around its final `. ~/.bash_syle` — the
-# one point where the profile is fully written and every generator input (ls_*
-# aliases, fuzzy_* pickers, snip base commands) exists — so this partial builds
+# one point where the profile is fully written and every generator input
+# (fuzzy_* pickers, snip base commands) exists — so this partial builds
 # and dumps the cache there. On a normal shell start the flag is unset, so this
 # partial only defines the generators and does no work; the ~/.bashrc entry point
 # just safe_sources the ready cache file.

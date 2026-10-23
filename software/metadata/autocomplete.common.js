@@ -322,10 +322,6 @@ const SPEC_COMMANDS = [
     specFile: "software/metadata/autocomplete-complete-spec/cd",
   },
   {
-    command: "eza",
-    specFile: "software/metadata/autocomplete-complete-spec/eza",
-  },
-  {
     command: "ls",
     specFile: "software/metadata/autocomplete-complete-spec/ls",
   },

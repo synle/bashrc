@@ -179,7 +179,6 @@ winget_packages=(
   "sharkdp.fd"
   "dandavison.delta"
   "ajeetdsouza.zoxide"
-  "eza-community.eza"
   "dbrgn.tealdeer"
   "astral-sh.uv"
   "Cloudflare.cloudflared"

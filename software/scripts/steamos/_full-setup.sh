@@ -139,7 +139,6 @@ installPacmanPackage shfmt
 installPacmanPackage yq
 installPacmanPackage git-delta
 installPacmanPackage zoxide
-installPacmanPackage eza
 installPacmanPackage fd
 installPacmanPackage tree
 installPacmanPackage tldr

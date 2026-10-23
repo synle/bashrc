@@ -1167,41 +1167,6 @@ alias clear='printf "\033[H\033[2J\033[3J"'
 
 # cd is provided by zoxide (init bash --cmd cd) — no wrapper needed.
 
-# --- Aliases: File Listing (eza override) ---
-if type -P eza &> /dev/null; then
-  function ls() { command eza -1 -F --color=always "$@"; }
-  # --time-style: eza's default drops the year ("5 Aug 09:30"), so a file from
-  # last August is indistinguishable from one from this week. This renders
-  # "2026/08/20 6:35PM" — full year first and zero-padded month/day so every
-  # date is the same width and the column scans as a block; the hour keeps no
-  # leading zero so it reads as a clock rather than a second padded number.
-  # --no-permissions: the "drwxr-xr-x@" column is 11 characters of noise on
-  # every row; reach for `ls -l` or `stat` on the rare occasion a mode matters.
-  # eza cannot reorder columns (the name is always last in long view), so
-  # trimming columns is the only lever on the layout.
-  alias ll="ls -lah --no-permissions --time-style='+%Y/%m/%d %-I:%M%p'"
-  # eza sorts ASCENDING by default, so a bare --sort=modified puts the newest
-  # entry LAST and --sort=size puts the biggest LAST. eza's own --sort=newest
-  # is the opposite of what it reads like (it lists oldest first) — don't use it.
-  #
-  # The BASE alias is the ascending one, which is also the useful default in a
-  # terminal: the interesting row lands next to the prompt instead of scrolling
-  # off the top. The `_first` twin is then the base plus --reverse, so it is
-  # purely ADDITIVE and register_command_variants can generate it (see the
-  # ls_*_first block right below). The old `_last` names are gone — `_last` is
-  # now what the bare name does.
-  alias ls_newest="ll --sort=modified" # newest last (oldest first)
-  alias ls_biggest="ll --sort=size"    # biggest last (smallest first)
-
-  # ls_newest_first / ls_biggest_first — the same listing, reversed. Generated
-  # rather than written out so a new ls_* alias picks up its reversed twin for
-  # free. --reverse is appended after "$@", and applying it twice does NOT
-  # cancel, which is exactly why the base must stay unreversed.
-  # `command_variants ls_` shows what came out. The generator call moved to
-  # bash-dynamic-aliases.profile.bash (sourced last, cached) — the ls_* aliases
-  # just need to exist by then, which they do.
-fi
-
 # --- find (fd wrapper) ---
 # `fd` is guaranteed on PATH by ensure_binary_alias (apt's fd-find installs as
 # fdfind; we symlink $HOME/.local/bin/fd). Other distros ship `fd` directly.
