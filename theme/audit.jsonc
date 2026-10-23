@@ -233,10 +233,16 @@ Original measurements remain explicitly historical, not current failures.
     {
       "id": "opacity_and_dimming",
       "priority": "P1",
-      "status": "unverified",
+      "status": "partial",
       "title": "Actual opacity/dimming contrast",
-      "remaining": "Check Ghostty background/inactive-split/cursor composition and Zed faded code against their actual backdrops. Opaque pair tests do not establish native visibility.",
-      "evidence": ["software/scripts/advanced/ghostty.js", "software/scripts/advanced/zed-config.jsonc"],
+      "resolution": "Reproduced composed failures. Ghostty now uses background opacity 0.99, inactive opacity 0.98, and opaque cursor; Zed unnecessary-code fade is zero. Dark/light source-stack screens pass.",
+      "remaining": "Ghostty parser/readback and version-matched Zed renderer source establish consumption/composition semantics, not native visual closure. Display P3, antialiasing, real split focus, and compositor screenshots remain unverified.",
+      "evidence": [
+        "software/scripts/advanced/ghostty.js",
+        "software/scripts/advanced/zed-config.jsonc",
+        "software/tests/themeComposition.spec.js",
+        "theme/NATIVE-VERIFICATION.md",
+      ],
     },
     {
       "id": "native_token_consumption",

@@ -62,7 +62,7 @@
     "enabled": true
   },
   "show_wrap_guides": true,
-  "unnecessary_code_fade": 0.4,
+  "unnecessary_code_fade": 0,
   "lsp_document_colors": "inlay",
   "diagnostics": {
     "inline": {

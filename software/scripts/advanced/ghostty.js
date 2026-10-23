@@ -115,7 +115,7 @@ function _renderKeybindLines(bindings) {
 
 /**
  * Builds the full Ghostty config text: base settings (font, theme, scrollback, etc.)
- * followed by the resolved keybind lines for the target platform.
+ * followed by platform keybindings. Limits transparency/dimming to preserve composed text contrast.
  * @param {boolean} isOsMac - Render the macOS variant (cmd) when true, Linux (alt) when false.
  * @param {object} [options] - Build options.
  * @param {boolean} [options.is_prebuilt_config] - When true, always name the custom `Sy Dark` /
@@ -277,9 +277,9 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # Even padding on both sides of a split, regardless of split orientation.
     # window-padding-balance = true
     window-save-state = always
-    # Slightly translucent background. Pairs with macOS background-blur
-    # (set in the mac-only block); on Linux it relies on the compositor.
-    background-opacity = 0.9
+    # Limit desktop bleed-through: 0.9 fails light ANSI text over a black desktop.
+    # Composed text is screened in themeComposition.spec.js, not only opaque pairs.
+    background-opacity = 0.99
     # Apply that opacity to cells that set their OWN background color, not just to
     # the default background. Without it, any full-screen TUI that paints a bg
     # (vim, tmux status, fzf, bat, htop) renders as an opaque rectangle and the
@@ -298,9 +298,9 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     custom-shader-animation = false
 
     # ---- Splits (focus visibility) ----
-    # Aggressive dimming on unfocused splits so the active pane is obvious in
-    # both light and dark modes. Default is ~0.7; lower = more contrast.
-    unfocused-split-opacity = 0.65
+    # The fill overlays BOTH glyphs and backgrounds; 0.65 loses readable contrast.
+    # Keep a subtle tint plus the divider without washing out inactive ANSI text.
+    unfocused-split-opacity = 0.98
     # Mid-tone gray fill so unfocused panes are visibly tinted in BOTH modes:
     # in light mode the gray darkens them, in dark mode it lightens them.
     # (Ghostty has no light:/dark: variant for this setting, so we need a
@@ -316,8 +316,8 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # Steady (non-blinking) block — no animation, easier on the eyes.
     cursor-style = block
     cursor-style-blink = false
-    # Dim the cursor slightly so it doesn't dominate the active line.
-    cursor-opacity = 0.8
+    # Keep the block fill opaque so cursor-text retains its configured contrast.
+    cursor-opacity = 1
     ${macOnlyBlock}
 
     # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----

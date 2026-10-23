@@ -32,8 +32,8 @@ This is the current issue ledger, synchronized with `audit.jsonc`. Original stat
 
 ## Current remaining issues and limits
 
-- [ ] **P1: Actual opacity/dimming contrast** — **unverified** (`opacity_and_dimming`)
-      Check Ghostty background/inactive-split/cursor composition and Zed faded code against their actual backdrops. Opaque pair tests do not establish native visibility.
+- [ ] **P1: Actual opacity/dimming contrast** — **partial** (`opacity_and_dimming`)
+      Composed failures reproduced and settings fixed; dark/light stack screens now pass. Ghostty native parser/readback and Zed renderer source establish semantics. Native Display P3/compositor/focus screenshots remain unverified; see `NATIVE-VERIFICATION.md`.
 
 - [ ] **P1: Native token consumption, semantic overrides, and inheritance** — **unverified** (`native_token_consumption`)
       Inspect real app/version behavior, especially VS Code semantic precedence and Claude tokens ignored silently by older renderers.
