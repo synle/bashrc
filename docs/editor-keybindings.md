@@ -273,9 +273,10 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 
 ## Terminal Emulators
 
-### Windows Terminal Line Editing
+### Windows Terminal & Ghostty Line Editing
 
-These mappings apply only to Windows Terminal (`windows-terminal-keys.jsonc`).
+These mappings apply to Windows Terminal (`windows-terminal-keys.jsonc`) and Ghostty
+on macOS/Linux (`advanced/ghostty-keys.common.jsonc`). They use literal `ctrl`, not `OS_KEY`.
 
 | Key              | Action               | Input sent          |
 | ---------------- | -------------------- | ------------------- |
@@ -286,6 +287,8 @@ These mappings apply only to Windows Terminal (`windows-terminal-keys.jsonc`).
 
 The active shell or application interprets the forwarded input. Word deletion uses
 the existing Bash/readline and PowerShell profile shortcuts; other applications may interpret them differently.
+On Mac keyboards, `ctrl+backspace` uses the key labeled Delete; `ctrl+delete` uses
+forward Delete (`ctrl+fn+delete` on compact keyboards).
 
 ### Tabs & Windows
 

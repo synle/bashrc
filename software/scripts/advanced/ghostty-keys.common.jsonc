@@ -85,6 +85,13 @@
   // reads it as yank-pop.
   { "key": "OS_KEY+y", "action": "text:\\x1by" },
 
+  // ---- Line editing ----
+  // Match Windows Terminal: Home/End and shell word-deletion shortcuts.
+  { "key": "ctrl+a", "action": "csi:H" },
+  { "key": "ctrl+e", "action": "csi:F" },
+  { "key": "ctrl+backspace", "action": "text:\\x17" },
+  { "key": "ctrl+delete", "action": "esc:d" },
+
   // ---- tmux ctrl twins ----
   // ctrl+<key> re-sent as alt+<key> (ESC <key>), so tmux's alt chords also answer
   // to ctrl: ctrl+1-9 = window N, ctrl+shift+1-9 = pane N, ctrl+, / ctrl+. =

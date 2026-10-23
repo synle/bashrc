@@ -12,25 +12,26 @@ au BufNewFile,BufRead *.ts,*.js,*.tsx,*.jsx set filetype=typescript.tsx " Treat 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " TSX / React Syntax Colors
 """""""""""""""""""""""""""""""""""""""""""""""""
-" Wrapped in a function + ColorScheme autocmd so a later :colorscheme does not wipe them.
+" Link syntax roles to the selected palette after every colorscheme change; no independent hex colors.
+" No arguments or return value. Updates TSX/React highlight links only.
 function! s:ApplyCustomHighlights() abort
-hi tsxTagName guifg=#ee0000                                         " JSX tag names in red
-hi tsxCloseString guifg=#f99575                                     " Closing tag slash
-hi tsxCloseTag guifg=#f99575                                        " Closing tag bracket
-hi tsxCloseTagName guifg=#f99575                                    " Closing tag name
-hi tsxAttributeBraces guifg=#f99575                                 " Attribute value braces {…}
-hi tsxEqual guifg=#f99575                                           " Attribute equals sign
-hi tsxAttrib guifg=#f8bd7f cterm=italic                             " JSX attribute names in italic
-hi tsxTypeBraces guifg=#999999                                      " TypeScript generic braces <T>
-hi tsxTypes guifg=#666666                                           " TypeScript type annotations
-hi ReactState guifg=#c176a7                                         " React state variables
-hi ReactProps guifg=#d19a66                                         " React props
-hi ApolloGraphQL guifg=#cb886b                                      " Apollo/GraphQL keywords
-hi Events ctermfg=204 guifg=#56b6c2                                 " DOM event handlers
-hi ReduxKeywords ctermfg=204 guifg=#c678dd                          " Redux action/dispatch keywords
-hi ReduxHooksKeywords ctermfg=204 guifg=#c176a7                     " Redux hooks (useSelector, useDispatch)
-hi WebBrowser ctermfg=204 guifg=#56b6c2                             " Browser API keywords
-hi ReactLifeCycleMethods ctermfg=204 guifg=#d19a66                  " React lifecycle methods (componentDidMount, etc.)
+  highlight! link tsxTagName Tag
+  highlight! link tsxCloseString Delimiter
+  highlight! link tsxCloseTag Delimiter
+  highlight! link tsxCloseTagName Tag
+  highlight! link tsxAttributeBraces Delimiter
+  highlight! link tsxEqual Operator
+  highlight! link tsxAttrib Identifier
+  highlight! link tsxTypeBraces Delimiter
+  highlight! link tsxTypes Type
+  highlight! link ReactState Identifier
+  highlight! link ReactProps Identifier
+  highlight! link ApolloGraphQL Statement
+  highlight! link Events Function
+  highlight! link ReduxKeywords Keyword
+  highlight! link ReduxHooksKeywords Function
+  highlight! link WebBrowser Type
+  highlight! link ReactLifeCycleMethods Function
 endfunction
 augroup SyCustomHighlights
   autocmd!
@@ -42,10 +43,10 @@ call s:ApplyCustomHighlights()
 " Plugin Settings
 """""""""""""""""""""""""""""""""""""""""""""""""
 filetype plugin indent on                                           " Re-enable filetype detection + ftplugins + indent rules after plugin manager init
-" lightline: codedark theme (ships with vim-code-dark) + open buffers as tabs via lightline-bufferline
-" Modified buffers show a red filename and * using CodeDark's ErrorMsg foreground.
+" Lightline follows the selected editor palette; open buffers remain tabs via lightline-bufferline.
+" Modified buffers use the selected theme's ErrorMsg foreground and an asterisk.
 let g:lightline = {
-  \ 'colorscheme': 'codedark',
+  \ 'colorscheme': 'default',
   \ 'active': {
   \   'left': [ [ 'mode', 'paste' ], [ 'readonly', 'filename' ] ],
   \   'right': [ [ 'lineinfo' ], [ 'filetype' ] ],
@@ -64,22 +65,29 @@ function! SyLightlineFiletype() abort
   return &filetype ==# '' ? '' : &filetype
 endfunction
 
-" Keep distinct codedark backgrounds for Normal, Insert, and Visual mode badges.
+" Refresh Lightline from Sy's generated palette or Ayu's supplied dark/light palette.
+" No arguments or return value. Reinitializes status highlights without changing their layout.
 function! SyLightlineSetModeColors() abort
-  if !exists('g:lightline#colorscheme#codedark#palette')
+  if !exists('*lightline#init')
     return
   endif
-  let l:palette = g:lightline#colorscheme#codedark#palette
-  let l:palette.normal.left[0] = ['#262626', '#608B4E', 235, 65, 'bold']
-  let l:palette.insert.left[0] = ['#262626', '#569CD6', 235, 75, 'bold']
-  let l:palette.visual.left[0] = ['#262626', '#C586C0', 235, 170, 'bold']
-  call lightline#highlight('normal')
+  if get(g:, 'colors_name', '') =~# '^sy-'
+    let g:lightline.colorscheme = 'sy'
+    let g:lightline#colorscheme#sy#palette = lightline#colorscheme#fill(g:sy_lightline_palette)
+  elseif get(g:, 'colors_name', '') ==# 'ayu'
+    let g:lightline.colorscheme = 'ayu'
+    runtime autoload/lightline/colorscheme/ayu.vim
+  else
+    let g:lightline.colorscheme = 'default'
+  endif
+  call lightline#init()
+  call lightline#colorscheme()
   call lightline#update()
 endfunction
 
 augroup SyLightlineModeColors
   autocmd!
-  autocmd VimEnter * call SyLightlineSetModeColors()
+  autocmd VimEnter,ColorScheme * call SyLightlineSetModeColors()
 augroup END
 set showtabline=2                                                   " Always show the buffer tabline
 let g:xml_syntax_folding = 1                                        " Enable syntax-based folding for XML files

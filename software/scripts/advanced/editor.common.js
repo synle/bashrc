@@ -36,9 +36,9 @@ const IS_CUSTOM_THEME_DISABLED_KEY = "IS_CUSTOM_THEME_DISABLED";
  * churn; the opt-out exists so a run can be rehearsed against the stock themes without
  * editing any script.
  *
- * When false, callers use bundled fallbacks from {@link getTheme}, or a locally supplied
- * upstream adapter when the app has no matching native theme (Claude). No fallback
- * requires installing an extension or package.
+ * When false, callers use bundled fallbacks from {@link getTheme}, locally supplied
+ * adapters (Claude), or an unconditionally installed theme dependency (Vim's Ayu).
+ * The flag changes selection, not whether those dependencies are installed.
  *
  * @returns {boolean} True when custom themes should be generated and installed.
  */
@@ -50,7 +50,7 @@ function shouldInstallCustomTheme() {
 
 /**
  * App name → `[darkTheme, lightTheme]` fallback selection identifiers.
- * Entries name bundled defaults, or a locally supplied upstream adapter for Claude.
+ * Entries name bundled defaults, locally supplied Claude adapters, or Vim's always-installed Ayu.
  * Custom Sy theme definitions stay with their app scripts and JSONC sources.
  * Reuse shouldInstallCustomTheme to choose between Sy themes and these fallbacks.
  *
@@ -64,8 +64,8 @@ function shouldInstallCustomTheme() {
  *
  * Ayu is the preferred family (measured worst-case ANSI hue 6.34:1 dark — the strongest of
  * the families bundled by more than one of these apps), but it only ships with Ghostty and
- * Zed. VS Code, Sublime, Windows Terminal and vim have no bundled Ayu, so each falls back
- * to its own highest-contrast built-in instead of pulling in a download.
+ * Zed. Vim installs Ayu through Jetpack regardless of the custom-theme flag.
+ * VS Code, Sublime and Windows Terminal retain their bundled fallbacks.
  */
 const APP_TO_THEMES_MAP = {
   // Bundled with Ghostty. Note the dark variant is plain "Ayu", not "Ayu Dark".
@@ -91,10 +91,8 @@ const APP_TO_THEMES_MAP = {
   // Ayu fallback adapters defined by CLAUDE_THEME_PALETTES_AYU_THEMES in Claude setup.
   claude: ["custom:ayu-dark", "custom:ayu-light"],
 
-  // Single-entry form: vim ships no high-contrast light scheme worth pairing here, so the
-  // one value is reused for both modes by getTheme() rather than being padded with a
-  // second, worse pick. `industry` is a vim built-in.
-  vim: ["industry"],
+  // One native scheme provides both appearances through g:ayucolor; Jetpack always installs it.
+  vim: ["ayu"],
 };
 
 /**

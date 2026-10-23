@@ -17,6 +17,6 @@ curl -fsSL "$JETPACK_URL" -o "$JETPACK_DEST"
 echo ">> Installing vim plugins via :JetpackSync"
 echo "   Manual fallback: vim -E -s -u ~/.vimrc +JetpackSync +qall"
 # Foreground (not `&`) — backgrounding made run.sh return before the plugin
-# clones finished, leaving the plugin folder empty and colorscheme codedark missing.
+# clones finished, leaving the plugin folder empty and the fallback colorscheme missing.
 # Keep stderr visible per CLAUDE.md rule on standalone install commands.
 vim -E -s -u ~/.vimrc +JetpackSync +qall > /dev/null
