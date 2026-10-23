@@ -189,6 +189,17 @@ make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, n
 The formatter is **oxfmt** (`npm run format`), not prettier, despite the
 `format_prettier` target name. Shell formatting is `shfmt -w -i 2 -bn -sr`.
 
+## Shared theme sources
+
+`theme/sy/_palette_{dark,light}.jsonc` owns foundation colors, aliases, and `{from, over, alpha}` recipes.
+`software/tools/build-include.js` generates RGB, alpha, tint/shade variants and updates native-shaped `theme/sy/<app>_<mode>.jsonc` templates.
+
+Use `// {{dark.key}}` or `// {{light.key}}` after color values. Multi-color strings retain a `// {{template: "...{{dark.key}}..."}}` recipe comment.
+Run `make format_build_include` after source/marker changes; a second run must report no updates. Unknown, malformed, or unbound active markers fail before writes.
+
+Baseline references and historical audit files under `theme/` are not regeneration targets. The formatter also preserves baseline bytes.
+See `theme/README.md` for native shapes and capability limits.
+
 ## Helper API Reference
 
 Every function below is a **global** inside `software/scripts/*.js` — no `require`, no

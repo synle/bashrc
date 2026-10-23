@@ -37,6 +37,9 @@
  */
 const fs = require("fs");
 const path = require("path");
+const ts = require("typescript");
+/** @type {string} Canonical palette foundations and active application templates. */
+const THEME_SOURCE_FOLDER = path.resolve(__dirname, "../../theme/sy");
 const { TEXT_BLOCK_START_MARKER, TEXT_BLOCK_END_MARKER, replaceBlock } = require("../common.js");
 
 /** Comment style per file extension */
@@ -212,141 +215,142 @@ function _hexToFloatRgb(hex) {
   };
 }
 
-/** Generate derived color variants for all hex colors in a theme object.
- * - Float RGB: _R, _G, _B (for iTerm plist format)
- * - Alpha hex: _alpha10, then _alpha0 through _alpha100 in 20% steps (for VS Code, Zed, etc.)
- *
- * `_alpha10` matches upstream Zed's own convention for diagnostic/diff fills (`1a`): a 20% tint of a
- * mid-tone color drops below 4.5:1 against that same color used as the text on top of it.
+/**
+ * Composites validated opaque sRGB colors without changing their hues.
+ * @param {string} from - Foreground six-digit hex.
+ * @param {string} over - Background six-digit hex.
+ * @param {number} alpha - Foreground fraction in [0, 1].
+ * @returns {string} Opaque lowercase hex color.
+ */
+function _blendHex(from, over, alpha) {
+  return (
+    "#" +
+    [1, 3, 5]
+      .map((offset) =>
+        Math.round(parseInt(from.slice(offset, offset + 2), 16) * alpha + parseInt(over.slice(offset, offset + 2), 16) * (1 - alpha))
+          .toString(16)
+          .padStart(2, "0"),
+      )
+      .join("")
+  );
+}
+
+/**
+ * Resolves foundation literals, aliases, and compositing recipes without mutating their source.
+ * @param {object} palette - Named hex colors, {ref}, or {from, over, alpha} recipes.
+ * @param {string} [label="palette"] - Source label used in actionable validation errors.
+ * @returns {object} Theme name and resolved six-digit colors.
+ * @throws {TypeError} For invalid shapes, references, cycles, or alpha outside [0, 1].
+ */
+function resolvePalette(palette, label = "palette") {
+  if (
+    !palette ||
+    typeof palette !== "object" ||
+    Array.isArray(palette) ||
+    typeof palette.themeName !== "string" ||
+    !palette.themeName.trim()
+  ) {
+    throw new TypeError(`Invalid ${label}: expected a palette object with a non-empty themeName`);
+  }
+  const keys = Object.keys(palette);
+  if (keys.some((key) => !/^[A-Za-z][A-Za-z0-9]*$/.test(key) || ["constructor", "prototype"].includes(key))) {
+    throw new TypeError(`Invalid ${label}: role names must be safe alphanumeric identifiers`);
+  }
+  const resolved = { themeName: palette.themeName };
+  const visiting = new Set();
+
+  /** Resolve one literal/reference; active roles detect circular dependencies. */
+  function resolve(reference) {
+    if (typeof reference !== "string") throw new TypeError(`Invalid ${label}: color reference must be a string`);
+    if (/^#[0-9a-f]{6}$/i.test(reference)) return reference.toLowerCase();
+    if (reference === "themeName" || !Object.prototype.hasOwnProperty.call(palette, reference)) {
+      throw new TypeError(`Invalid ${label}.${reference}: unknown color role`);
+    }
+    if (Object.prototype.hasOwnProperty.call(resolved, reference)) return resolved[reference];
+    if (visiting.has(reference)) throw new TypeError(`Invalid ${label}.${reference}: circular color recipe`);
+    visiting.add(reference);
+    const value = palette[reference];
+    let color;
+    if (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)) {
+      color = value.toLowerCase();
+    } else if (value && typeof value === "object" && !Array.isArray(value)) {
+      const fields = Object.keys(value).sort().join(",");
+      if (fields === "ref") {
+        color = resolve(value.ref);
+      } else if (
+        fields === "alpha,from,over" &&
+        typeof value.alpha === "number" &&
+        Number.isFinite(value.alpha) &&
+        value.alpha >= 0 &&
+        value.alpha <= 1
+      ) {
+        color = _blendHex(resolve(value.from), resolve(value.over), value.alpha);
+      }
+    }
+    if (!color) throw new TypeError(`Invalid ${label}.${reference}: expected hex, {ref}, or {from, over, alpha in [0, 1]}`);
+    resolved[reference] = color;
+    visiting.delete(reference);
+    return color;
+  }
+
+  for (const key of keys) if (key !== "themeName") resolve(key);
+  return resolved;
+}
+
+/**
+ * Derives RGB channels, alpha, tint, and shade variants from resolved foundation colors.
+ * @param {object} theme - Resolved six-digit colors and display name.
+ * @returns {object} Derived values; no variants are generated recursively.
  */
 function _generateColorVariants(theme) {
-  const alphaSteps = { _alpha0: "00", _alpha10: "1a", _alpha20: "33", _alpha40: "66", _alpha60: "99", _alpha80: "CC", _alpha100: "FF" };
+  const alphaSteps = [0, 5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100];
   const variants = {};
   for (const [key, value] of Object.entries(theme)) {
-    if (typeof value === "string" && /^#[0-9A-Fa-f]{6}$/.test(value)) {
-      const { R, G, B } = _hexToFloatRgb(value);
-      variants[`${key}_R`] = R;
-      variants[`${key}_G`] = G;
-      variants[`${key}_B`] = B;
-      for (const [suffix, hex] of Object.entries(alphaSteps)) {
-        variants[`${key}${suffix}`] = `${value}${hex}`;
-      }
+    if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) continue;
+    const { R, G, B } = _hexToFloatRgb(value);
+    variants[`${key}_R`] = R;
+    variants[`${key}_G`] = G;
+    variants[`${key}_B`] = B;
+    for (const percent of alphaSteps)
+      variants[`${key}_alpha${percent}`] =
+        value +
+        Math.round((percent * 255) / 100)
+          .toString(16)
+          .padStart(2, "0");
+    for (const percent of [10, 20]) {
+      variants[`${key}_tint${percent}`] = _blendHex("#ffffff", value, percent / 100);
+      variants[`${key}_shade${percent}`] = _blendHex("#000000", value, percent / 100);
     }
   }
   return variants;
 }
 
 /**
- * Central color map for dark and light themes.
- * Colors shared across Windows Terminal, Sublime Text, VS Code, Zed, and iTerm config files.
- * Referenced via inline markers in JSONC files: // {{dark.key}} or // {{light.key}}
- * Derived variants are auto-generated from hex values:
- * - Float RGB (e.g. dark.red_R, dark.red_G, dark.red_B) for iTerm plist format
- * - Alpha hex (e.g. dark.red_alpha0 through dark.red_alpha100) in 20% steps
- *
- * Keys are split into three roles — never mix them, or text ends up painted on a
- * same-luminance fill (see `software/tests/buildInclude.spec.js` > "COLOR_MAP contrast"):
- * - FILL: painted behind text — `background`, `surface`, `activeLine`, `gray`,
- *   `pressed`, `selection`, `matchHighlight`. Each must keep `foreground` at >= 7:1.
- *   The interactive fills form a ladder that must stay perceptually separated:
- *   `surface` < `gray` (hover) < `pressed` (active), each >= 1.25:1 against the last.
- *   `activeLine` is editor-only — it is tuned against `background`, so reusing it for
- *   chrome states lands it on `surface` where it all but disappears.
- * - STROKE: 1px lines only, never a fill. `brightGray` (borders, active guides) must
- *   clear 3:1 vs `background` for WCAG non-text contrast; `guide` is the deliberately
- *   faint rule (indent/wrap guides, invisibles, disabled borders) at ~2:1, high enough
- *   to see and low enough not to compete with text.
- * - FOREGROUND: everything else. Tuned to >= 7:1 vs `background`, except the warm
- *   light-theme hues (`yellow`, `brightYellow`) at >= 5.5:1 — a 7:1 yellow on white
- *   reads as brown — the dimmed `textDisabled` at >= 4.5:1, and the ANSI ramp anchors
- *   (`black`, `white`, `brightWhite`), which are fixed by terminal convention.
- *
- * The ANSI ramp additionally requires every `brightX` to sit above its `X` in relative
- * luminance, so tools that dim with the base color render dimmer rather than brighter.
- * On the light theme that means the bases are deepened to ~10:1 and the brights sit at
- * the 7:1 floor; on the dark theme the bases sit at 7:1 and the brights climb above it.
+ * Loads both JSONC foundations before exposing a compatible expanded COLOR_MAP.
+ * @param {string} [folder=THEME_SOURCE_FOLDER] - Folder containing the two _palette files.
+ * @returns {{dark: object, light: object}} Resolved colors and derived variants.
+ * @throws {Error} For unreadable/malformed files or mismatched appearance roles; no files are written.
  */
-const _lightHex = {
-  themeName: "Sy Light",
-  background: "#F8F8F8", // FILL: editor bg, panels, title bar, gutter, tab bar, status bar
-  surface: "#ECECEC", // FILL: elevated/secondary bg — code blocks, inputs, popovers, inactive tabs
-  activeLine: "#CFE0F7", // FILL: current-line + highlighted-line band (editor only — chrome uses `pressed`)
-  matchHighlight: "#FFBE3D", // FILL: search / find-match band
-  gray: "#CACACA", // FILL: hover state
-  pressed: "#B0B0B0", // FILL: active/pressed state (one step past `gray`)
-  selection: "#96C6FA", // FILL: selection bg, selected items, drop target, highlight
-  brightGray: "#262626", // STROKE: borders, active guides, scrollbar (never a fill)
-  guide: "#A4A4A4", // STROKE: faint rules — indent/wrap guides, invisibles, disabled borders
-  foreground: "#1E1E1E", // editor text, operators, punctuation, brackets
-  textDisabled: "#5a5a5a", // disabled/placeholder text, ghost/predictive text, unreachable code
-  cursorColor: "#0451A5", // cursor
-  black: "#000000", // terminal black, shadow
-  blue: "#0033B3", // keywords, storage, constants, links, accent, borders (focused), info, modified, renamed
-  brightBlack: "#4A4A4A", // muted/disabled text, placeholders, scrollbar, predictive, unreachable
-  brightBlue: "#0051AE", // terminal bright blue
-  brightCyan: "#145E5E", // types, constructors, enums, hints, terminal bright cyan
-  brightGreen: "#106145", // terminal bright green
-  brightPurple: "#8700C1", // imports/exports, control flow, preprocessor, terminal bright magenta
-  brightRed: "#A12626", // strings, embedded, links, terminal bright red
-  brightWhite: "#8B8B8B", // terminal bright white (kept below bg luminance so it stays visible on a light bg)
-  brightYellow: "#7F6000", // terminal bright yellow
-  cyan: "#00416F", // syntax constants, terminal cyan
-  green: "#004A15", // comments, created/success, diff added, terminal green
-  purple: "#6C0099", // terminal magenta
-  red: "#840000", // errors, deleted, diff deleted, terminal red
-  white: "#6D6D6D", // terminal white
-  yellow: "#775502", // warnings, terminal yellow
-  lightBlue: "#245690", // (light equivalent of dark.lightBlue)
-  lightGreen: "#05623B", // (light equivalent of dark.lightGreen)
-  orange: "#8A3F20", // (light equivalent of dark.orange)
-  gold: "#734E06", // (light equivalent of dark.gold)
-  darkBlue: "#001080", // variables, properties, attributes, labels
-  linkBlue: "#0252AD", // link URIs, accent, minimap border, selection border, fold marker
-  darkGreen: "#03623A", // numbers
-  brown: "#6A5100", // functions, conflicts
-  darkRed: "#9B2C2C", // regex, escape chars, special punctuation, tags, string specials, titles
-};
-const _darkHex = {
-  themeName: "Sy Dark",
-  background: "#0A0A0A", // FILL: editor bg, panels, title bar, gutter, tab bar, status bar
-  surface: "#161616", // FILL: elevated/secondary bg — code blocks, inputs, popovers, inactive tabs
-  activeLine: "#1F2A38", // FILL: current-line + highlighted-line band (editor only — chrome uses `pressed`)
-  matchHighlight: "#5C4300", // FILL: search / find-match band
-  gray: "#2B2B2B", // FILL: hover state
-  pressed: "#3D3D3D", // FILL: active/pressed state (one step past `gray`)
-  selection: "#1B3C5E", // FILL: selection bg, selected items, drop target, highlight
-  brightGray: "#6E6E6E", // STROKE: borders, active guides, scrollbar (never a fill)
-  guide: "#464646", // STROKE: faint rules — indent/wrap guides, invisibles, disabled borders
-  foreground: "#E8E8E8", // editor text, operators, punctuation, brackets
-  textDisabled: "#8f8f8f", // disabled/placeholder text, ghost/predictive text, unreachable code
-  cursorColor: "#5CA0D7", // cursor
-  black: "#000000", // terminal black, shadow
-  blue: "#5CA0D7", // keywords, storage, constants, tags, links, accent, borders (focused), info, modified, renamed
-  brightBlack: "#A0A0A0", // muted/disabled text, placeholders, scrollbar, predictive, unreachable
-  brightBlue: "#4FC1FF", // terminal bright blue, syntax constants
-  brightCyan: "#A4FFFF", // terminal bright cyan
-  brightGreen: "#69FF94", // terminal bright green
-  brightPurple: "#FF92DF", // terminal bright magenta
-  brightRed: "#FF6E6E", // terminal bright red
-  brightWhite: "#FFFFFF", // terminal bright white, bright foreground
-  brightYellow: "#FFFFA5", // terminal bright yellow
-  cyan: "#4EC9B0", // types, constructors, enums, hints
-  green: "#76A762", // comments, created/success, diff added, terminal green
-  purple: "#C586C0", // imports/exports, control flow, preprocessor, terminal magenta
-  red: "#F67070", // errors, deleted, diff deleted, terminal red
-  white: "#CCCCCC", // terminal white
-  yellow: "#DCDCAA", // functions, warnings, diff modified, terminal yellow
-  lightBlue: "#9CDCFE", // variables, properties, attributes, labels
-  lightGreen: "#B5CEA8", // numbers
-  orange: "#CE9178", // strings, embedded, links, conflicts
-  gold: "#D7BA7D", // escape chars, special punctuation, string specials
-  darkBlue: "#9CDCFE", // (dark equivalent of light.darkBlue)
-  linkBlue: "#4FC1FF", // (dark equivalent of light.linkBlue)
-  darkGreen: "#8FBF7A", // (dark equivalent of light.darkGreen)
-  brown: "#D7BA7D", // (dark equivalent of light.brown)
-  darkRed: "#D98282", // regex
-};
-/** Normalizes hex color values to lowercase for consistency. */
+function loadColorMap(folder = THEME_SOURCE_FOLDER) {
+  const result = {};
+  for (const mode of ["dark", "light"]) {
+    const file = path.join(folder, `_palette_${mode}.jsonc`);
+    const parsed = ts.parseConfigFileTextToJson(file, fs.readFileSync(file, "utf8"));
+    if (parsed.error) throw new TypeError(`Invalid ${file}: ${ts.flattenDiagnosticMessageText(parsed.error.messageText, " ")}`);
+    const base = resolvePalette(parsed.config, file);
+    result[mode] = _normalizeHexCase({ ...base, ..._generateColorVariants(base) });
+  }
+  if (Object.keys(result.dark).sort().join(",") !== Object.keys(result.light).sort().join(",")) {
+    throw new TypeError("Invalid theme foundations: dark and light roles must match");
+  }
+  return result;
+}
+
+/**
+ * Normalizes generated hex values while preserving numeric RGB channels and theme names.
+ * @param {object} theme - Foundation and derived values.
+ * @returns {object} A normalized copy; the input is unchanged.
+ */
 function _normalizeHexCase(theme) {
   const normalized = {};
   for (const [key, value] of Object.entries(theme)) {
@@ -355,10 +359,8 @@ function _normalizeHexCase(theme) {
   return normalized;
 }
 
-const COLOR_MAP = {
-  dark: _normalizeHexCase({ ..._darkHex, ..._generateColorVariants(_darkHex) }),
-  light: _normalizeHexCase({ ..._lightHex, ..._generateColorVariants(_lightHex) }),
-};
+/** @type {{dark: object, light: object}} Foundation colors and deterministic derived variants. */
+const COLOR_MAP = loadColorMap();
 
 /**
  * Regex matching a color literal (hex string | boolean | null | number) followed by // {{map.key}}.
@@ -376,66 +378,127 @@ const COLOR_MAP = {
 const INLINE_MARKER_REGEX =
   /("((?:#[0-9a-fA-F]{3,8})?)"|'((?:#[0-9a-fA-F]{3,8})?)'|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)((?:\s*[}\])]\s*,?)*\s*[,;]?\s*)\/\/ \{\{(\w+)\.(\w+)\}\}/g;
 
-/** Serialize a JS value to its literal form, preserving original quote style */
+/** Display names have arbitrary string values; their explicit role avoids rewriting font styles. */
+const THEME_NAME_MARKER_REGEX = /("(?:\\.|[^"\\])*")([ \t]*[,;]?[ \t]*)\/\/ \{\{(\w+)\.(themeName)\}\}/g;
+/** Stable JSON-string recipes keep every embedded color regeneratable after palette edits. */
+const STRING_TEMPLATE_MARKER_REGEX =
+  /^([ \t]*"(?:\\.|[^"\\])*"[ \t]*:[ \t]*)("(?:\\.|[^"\\])*")([ \t]*,?[ \t]*)\/\/ \{\{template: ("(?:\\.|[^"\\])*")\}\}[ \t]*$/gm;
+
+/**
+ * Serializes a marker value without losing string escapes or the existing quote style.
+ * @param {*} value - Scalar marker value.
+ * @param {string} [quoteChar='"'] - Original string delimiter.
+ * @returns {string} Source literal; this function has no side effects.
+ */
 function toJsonLiteral(value, quoteChar) {
-  if (typeof value === "string") return `${quoteChar || '"'}${value}${quoteChar || '"'}`;
-  return String(value);
+  if (typeof value !== "string") return String(value);
+  if (quoteChar === "'") return "'" + value.replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
+  return JSON.stringify(value);
 }
 
 /**
- * Process inline markers in JSONC content, replacing values from the provided map.
- * Returns { content, changed } where changed indicates if any values were updated.
+ * Renders color literals, display names, and repeatable string-template comments.
+ * @param {string} content - Source bytes; marker comments remain in the result.
+ * @param {object} colorMap - Expanded named palettes and existing non-color maps.
+ * @param {string} targetName - Source label included in diagnostics.
+ * @returns {{content: string, changed: boolean, warnings: string[]}} Rendered bytes and diagnostics.
  */
 function processInlineMarkers(content, colorMap, targetName) {
-  let changed = false;
   const warnings = [];
 
-  const updated = content.replace(INLINE_MARKER_REGEX, (match, rawValue, dblInner, sglInner, trailing, map, key) => {
-    const mapObj = colorMap[map];
-    if (!mapObj || !(key in mapObj)) {
+  /** Resolve only owned keys, preserving valid zero/false/null values. */
+  function lookup(map, key) {
+    const values = colorMap && Object.prototype.hasOwnProperty.call(colorMap, map) ? colorMap[map] : null;
+    if (!values || !Object.prototype.hasOwnProperty.call(values, key) || values[key] === undefined) {
       warnings.push(`>> Warning: unknown inline marker {{${map}.${key}}} in ${targetName}`);
-      return match;
+      return undefined;
     }
-    const newValue = mapObj[key];
-    // Preserve original quote style: single quotes if matched via single-quote group
+    return values[key];
+  }
+
+  let updated = content.replace(INLINE_MARKER_REGEX, (match, rawValue, dblInner, sglInner, trailing, map, key) => {
+    const value = lookup(map, key);
+    if (value === undefined) return match;
     const quoteChar = sglInner !== undefined ? "'" : '"';
-    const newLiteral = toJsonLiteral(newValue, quoteChar);
-    if (rawValue !== newLiteral) {
-      changed = true;
-    }
-    return `${newLiteral}${trailing}// {{${map}.${key}}}`;
+    return `${toJsonLiteral(value, quoteChar)}${trailing}// {{${map}.${key}}}`;
   });
 
-  return { content: updated, changed, warnings };
+  // Only display-name markers accept arbitrary strings; color markers retain the font/style safety guard.
+  updated = updated.replace(THEME_NAME_MARKER_REGEX, (match, literal, trailing, map, key) => {
+    const value = lookup(map, key);
+    return typeof value === "string" ? `${JSON.stringify(value)}${trailing}// {{${map}.${key}}}` : match;
+  });
+
+  // Persist the original string template in a comment so later palette edits can rerender every embedded color.
+  updated = updated.replace(STRING_TEMPLATE_MARKER_REGEX, (match, prefix, literal, trailing, template) => {
+    let decoded;
+    try {
+      decoded = JSON.parse(template);
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      warnings.push(`>> Warning: invalid JSON string template in ${targetName}; repair its escapes before retrying`);
+      return match;
+    }
+    const before = warnings.length;
+    const rendered = decoded.replace(/\{\{(\w+)\.(\w+)\}\}/g, (marker, map, key) => {
+      const value = lookup(map, key);
+      return value === undefined ? marker : String(value);
+    });
+    if (warnings.length !== before) return match;
+    return `${prefix}${JSON.stringify(rendered)}${trailing}// {{template: ${template}}}`;
+  });
+
+  return { content: updated, changed: updated !== content, warnings };
 }
 
 /**
- * Clean inline markers in content, replacing values with type-appropriate defaults.
- * Strings become "", booleans become false, numbers become 0, null stays null.
- * Returns { content, changed } where changed indicates if any values were updated.
+ * Validates native JSONC and rejects marker comments that do not bind to an editable value.
+ * @param {string} content - Active Sy JSONC source.
+ * @param {object} colorMap - Expanded foundation palettes.
+ * @param {string} targetName - Diagnostic source label.
+ * @returns {{content: string, changed: boolean, warnings: string[]}} Rendered source; callers must reject warnings before writes.
+ */
+function compileThemeTemplate(content, colorMap, targetName) {
+  const result = processInlineMarkers(content, colorMap, targetName);
+  const bound = new Set();
+  for (const match of content.matchAll(INLINE_MARKER_REGEX)) bound.add(match.index + match[1].length + match[4].length);
+  for (const match of content.matchAll(THEME_NAME_MARKER_REGEX)) bound.add(match.index + match[1].length + match[2].length);
+  for (const match of content.matchAll(STRING_TEMPLATE_MARKER_REGEX))
+    bound.add(match.index + match[1].length + match[2].length + match[3].length);
+  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, content);
+  let token;
+  while ((token = scanner.scan()) !== ts.SyntaxKind.EndOfFileToken) {
+    if (token !== ts.SyntaxKind.SingleLineCommentTrivia) continue;
+    if (/^\/\/\s*\{\{(?:\w+\.\w+|template:)/.test(scanner.getTokenText()) && !bound.has(scanner.getTokenPos())) {
+      result.warnings.push(`>> Warning: unbound theme marker in ${targetName}; put the marker immediately after its color value`);
+    }
+  }
+  const parsed = ts.parseConfigFileTextToJson(targetName, result.content);
+  if (parsed.error)
+    result.warnings.push(`>> Warning: invalid JSONC in ${targetName}: ${ts.flattenDiagnosticMessageText(parsed.error.messageText, " ")}`);
+  return result;
+}
+
+/**
+ * Clears rendered colors/names/templates while preserving the regeneration contract.
+ * @param {string} content - Source containing inline marker comments.
+ * @returns {{content: string, changed: boolean}} Cleared source; non-marker values remain untouched.
  */
 function cleanInlineMarkers(content) {
-  let changed = false;
-
-  const updated = content.replace(INLINE_MARKER_REGEX, (match, rawValue, dblInner, sglInner, trailing, map, key) => {
+  let updated = content.replace(INLINE_MARKER_REGEX, (match, rawValue, dblInner, sglInner, trailing, map, key) => {
     const quoteChar = sglInner !== undefined ? "'" : '"';
-    let defaultLiteral;
-    if (dblInner !== undefined || sglInner !== undefined) {
-      defaultLiteral = `${quoteChar}${quoteChar}`;
-    } else if (rawValue === "true" || rawValue === "false") {
-      defaultLiteral = "false";
-    } else if (rawValue === "null") {
-      defaultLiteral = "null";
-    } else {
-      defaultLiteral = "0";
-    }
-    if (rawValue !== defaultLiteral) {
-      changed = true;
-    }
-    return `${defaultLiteral}${trailing}// {{${map}.${key}}}`;
+    let literal = "0";
+    if (dblInner !== undefined || sglInner !== undefined) literal = quoteChar + quoteChar;
+    else if (rawValue === "true" || rawValue === "false") literal = "false";
+    else if (rawValue === "null") literal = "null";
+    return `${literal}${trailing}// {{${map}.${key}}}`;
   });
-
-  return { content: updated, changed };
+  updated = updated.replace(THEME_NAME_MARKER_REGEX, (match, literal, trailing, map, key) => `""${trailing}// {{${map}.${key}}}`);
+  updated = updated.replace(
+    STRING_TEMPLATE_MARKER_REGEX,
+    (match, prefix, literal, trailing, recipe) => `${prefix}""${trailing}// {{template: ${recipe}}}`,
+  );
+  return { content: updated, changed: updated !== content };
 }
 
 /** Regex matching a CSS property value between : and ; followed by // {{map.key}} in SCSS files */
@@ -495,6 +558,8 @@ if (typeof module !== "undefined" && require.main !== module) {
     DEFAULT_COMMENT_STYLE,
     CODE_FENCE_LANGUAGES,
     COLOR_MAP,
+    resolvePalette,
+    loadColorMap,
     INLINE_MARKER_REGEX,
     getCommentStyle,
     stripShebang,
@@ -506,6 +571,7 @@ if (typeof module !== "undefined" && require.main !== module) {
     getRawBlockContent,
     toJsonLiteral,
     processInlineMarkers,
+    compileThemeTemplate,
     cleanInlineMarkers,
     SCSS_INLINE_MARKER_REGEX,
     processSCSSInlineMarkers,
@@ -519,7 +585,7 @@ if (typeof module !== "undefined" && require.main !== module) {
 (function runCliIfMain() {
   if (require.main !== module) return;
   // ---- CLI entry point ----
-  const { execSync } = require("child_process");
+  const { execFileSync } = require("child_process");
 
   /**
    * Explicit inclusions for keys that aren't file paths or need transforms.
@@ -547,25 +613,52 @@ if (typeof module !== "undefined" && require.main !== module) {
 
   // Determine target files: CLI args (excluding flags) or auto-scan git-tracked *.sh and *.md files
   const cliTargets = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
-  const trackedFiles = execSync(
-    'git ls-files "*.sh" "*.md" "*.js" "*.jsx" "*.ts" "*.tsx" "*.mjs" "*.jsonc" "*.scss" "*.ps1.bash" "Makefile"',
-    {
-      encoding: "utf8",
-    },
-  )
-    .trim()
-    .split("\n")
-    .filter((f) => f && !f.startsWith("software/tests/"));
+  let trackedFiles = [];
+  if (cliTargets.length === 0) {
+    try {
+      trackedFiles = execFileSync(
+        "git",
+        ["ls-files", "*.sh", "*.md", "*.js", "*.jsx", "*.ts", "*.tsx", "*.mjs", "*.jsonc", "*.scss", "*.ps1.bash", "Makefile"],
+        { encoding: "utf8" },
+      )
+        .trim()
+        .split("\n")
+        .filter((file) => file && !file.startsWith("software/tests/"));
+    } catch (error) {
+      if (error.code !== "ENOENT" && !Number.isInteger(error.status)) throw error;
+      throw new Error("Tracked target discovery failed: run from a Git checkout or pass explicit file paths; retry is safe", {
+        cause: error,
+      });
+    }
+  }
   const inclusionTargets = INCLUSIONS.flatMap((inc) => inc.targets);
+  // Active themes also participate before Git staging; foundation inputs and archived evidence never do.
+  const themeTargets = fs
+    .readdirSync(THEME_SOURCE_FOLDER)
+    .filter((name) => name.endsWith(".jsonc") && !name.startsWith("_"))
+    .map((name) => path.relative(process.cwd(), path.join(THEME_SOURCE_FOLDER, name)));
   /** @type {string[]} Repository-relative folders that must never be regenerated, even through explicit targets. */
   const excludedTargetFolders = ["software/scripts/advanced/llm/_common/v1", "software/scripts/advanced/llm/_common/v2"].map(
     (folder) => path.resolve(__dirname, "../..", folder) + path.sep,
   );
-  const targetFiles = (cliTargets.length > 0 ? cliTargets : [...new Set([...trackedFiles, ...inclusionTargets])]).filter((target) => {
-    // Resolve filesystem aliases (including macOS /var -> /private/var) before matching folder boundaries.
-    const resolved = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
-    return !excludedTargetFolders.some((folder) => resolved.startsWith(folder));
-  });
+  const targetFiles = (cliTargets.length > 0 ? cliTargets : [...new Set([...themeTargets, ...trackedFiles, ...inclusionTargets])]).filter(
+    (target) => {
+      // Resolve filesystem aliases (including macOS /var -> /private/var) before matching folder boundaries.
+      const resolved = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
+      const themeRoot = path.dirname(THEME_SOURCE_FOLDER) + path.sep;
+      if (resolved.startsWith(themeRoot) && !resolved.startsWith(THEME_SOURCE_FOLDER + path.sep)) return false;
+      if (path.dirname(resolved) === THEME_SOURCE_FOLDER && path.basename(resolved).startsWith("_")) return false;
+      return !excludedTargetFolders.some((folder) => resolved.startsWith(folder));
+    },
+  );
+  if (!isCleanMode) {
+    // Validate every active template before any file is rewritten; unknown roles must never become silent omissions.
+    for (const target of targetFiles.filter((file) => path.resolve(file).startsWith(THEME_SOURCE_FOLDER + path.sep))) {
+      if (!fs.existsSync(target)) continue;
+      const result = compileThemeTemplate(fs.readFileSync(target, "utf8"), COLOR_MAP, target);
+      if (result.warnings.length) throw new Error(result.warnings.join("\n"));
+    }
+  }
 
   let totalUpdated = 0;
 

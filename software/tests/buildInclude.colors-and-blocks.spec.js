@@ -36,7 +36,25 @@ function contrastRatio(a, b) {
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
-const FILL_KEYS = ["background", "surface", "activeLine", "gray", "pressed", "selection", "matchHighlight"];
+const FILL_KEYS = [
+  "background",
+  "surface",
+  "activeLine",
+  "gray",
+  "pressed",
+  "selection",
+  "matchHighlight",
+  "selectionSyntax",
+  "matchHighlightSyntax",
+  "activeMatchSyntax",
+  "diffAddedBackground",
+  "diffRemovedBackground",
+  "diffAddedWordBackground",
+  "diffRemovedWordBackground",
+  "diffAddedMutedBackground",
+  "diffRemovedMutedBackground",
+  "warningBackground",
+];
 
 const FILL_LADDER = ["surface", "gray", "pressed"];
 
@@ -48,6 +66,7 @@ const CONTRAST_EXEMPT_KEYS = new Set([
   ...FILL_KEYS,
   ...STROKE_KEYS,
   "black",
+  "terminalBlack", // ANSI anchor, tested separately against terminal surfaces rather than as a syntax foreground.
   "white",
   "brightWhite",
   "cursorColor",

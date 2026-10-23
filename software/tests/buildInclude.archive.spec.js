@@ -33,6 +33,12 @@ function createFixture() {
     fs.readFileSync(path.join(ROOT, "software/tools/build-include.js")),
   );
   fs.writeFileSync(path.join(folder, "software/common.js"), fs.readFileSync(path.join(ROOT, "software/common.js")));
+  fs.mkdirSync(path.join(folder, "theme/sy"), { recursive: true });
+  for (const mode of ["dark", "light"])
+    fs.writeFileSync(
+      path.join(folder, `theme/sy/_palette_${mode}.jsonc`),
+      fs.readFileSync(path.join(ROOT, `theme/sy/_palette_${mode}.jsonc`)),
+    );
   fs.writeFileSync(path.join(folder, "source.md"), "Fresh source\n");
   fs.writeFileSync(path.join(folder, ARCHIVE, "instructions.md"), "<!-- BEGIN source.md -->\nFrozen source\n<!-- END source.md -->\n");
   fs.writeFileSync(path.join(folder, "active.md"), "<!-- BEGIN source.md -->\nOld active\n<!-- END source.md -->\n");
@@ -52,6 +58,7 @@ describe("build-include archive protection (subprocess)", () => {
     const frozen = fs.readFileSync(path.join(folder, ARCHIVE, "instructions.md"));
     const output = execFileSync(process.execPath, ["software/tools/build-include.js", ...args], {
       cwd: folder,
+      env: { ...process.env, NODE_PATH: path.join(ROOT, "node_modules") },
       encoding: "utf8",
       timeout: 10000,
     });
@@ -76,7 +83,7 @@ describe("build-include archive protection (subprocess)", () => {
         "active.md",
         "missing.md",
       ],
-      { cwd: folder, encoding: "utf8", timeout: 10000 },
+      { cwd: folder, env: { ...process.env, NODE_PATH: path.join(ROOT, "node_modules") }, encoding: "utf8", timeout: 10000 },
     );
     expect(fs.readFileSync(path.join(folder, archiveFile))).toEqual(frozen);
     expect(output).toContain("1 file(s) updated");

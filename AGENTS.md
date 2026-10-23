@@ -118,6 +118,8 @@ by `run.sh` into `PRESETS_JSON`), `metadata/ci-binaries.json` (CI binary verific
 `expandSpecMacros`), `metadata/script-list.config` (canonical sorted script list),
 `bootstrap/common-env.sh` (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`; inlined into `run.sh`
 via BEGIN/END), `tools/build-include.js` (BEGIN/END engine + `{{map.key}}`),
+`theme/sy/_palette_{dark,light}.jsonc` (foundation colors and validated recipes),
+`theme/sy/<app>_{dark,light}.jsonc` (native-shaped Sy templates),
 `tools/generate-ci-binary-list.js` (the `ci-binary-checks` block in `action.yml`),
 `vitest.config.js` (coverage thresholds, authoritative), and
 `$BASHRC_TEMP_DIR/run_timing.json` (per-run timing/status, read by CI).

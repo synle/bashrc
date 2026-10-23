@@ -1,5 +1,5 @@
 {
   "printWidth": 140,
   "tabWidth": 2,
-  "ignorePatterns": ["/software/scripts/advanced/llm/_common/v1/", "/software/scripts/advanced/llm/_common/v2/"]
+  "ignorePatterns": ["/software/scripts/advanced/llm/_common/v1/", "/software/scripts/advanced/llm/_common/v2/", "/theme/baseline/"]
 }

@@ -30,7 +30,8 @@ Also ships a Vite + React webapp (`webapp/`, sources in `src/`) at https://synle
 - **`software/common.js`** — Helpers shared with individual scripts.
 - **`software/bootstrap/common-env.sh`** — Sets `REPO_PATH_IDENTIFIER`, `REPO_BRANCH_NAME`, `ALL_OS_FLAGS`; consumed by engine and `vite.config.js`.
 - **`software/scripts/_init.js` / `~cleanup.js` / `~wrapup.sh`** — Lifecycle brackets: init preamble; cleanup flushes profile blocks, strips unfilled markers, finalizes `~/.bash_syle`.
-- **`software/tools/build-include.js`** — Marker-based include system + `// {{theme.key}}` color tokens in JSONC.
+- **`software/tools/build-include.js`** — Include/marker compiler; resolves `theme/sy/_palette_{dark,light}.jsonc` and renders native-shaped Sy templates.
+- **`theme/sy/` / `theme/baseline/`** — Active palette/template sources / immutable reference captures; historical audit metadata is not application configuration.
 - **`install.sh`** — Public installer wrapper (`curl | bash`).
 - **`vitest.config.js` (+ 4 sibling configs)** — One config per test suite.
 - **`AGENTS.md` / `DEV.md` / `README.md`** — Rules / dev quick-start / user overview.
