@@ -9,6 +9,32 @@
  * Run: `bash run.sh --files="opencode/setup.js"` (or any other llm/<name>/setup.js).
  */
 
+// --- PR Workflow Configuration ---
+
+/**
+ * Shared PR workflow tuning, resolved into deployed guidance by resolveLLMDocPlaceholders.
+ * Change values here and redeploy; callers never maintain separate timing defaults.
+ * Interval values use seconds; budget and threshold values use counts.
+ * Numeric tokens stay separate from LLM_DOC_PATH_PLACEHOLDERS, which holds absolute folders.
+ * @type {Record<string, string>}
+ */
+const LLM_DOC_TUNING_PLACEHOLDERS = {
+  /** Run duration in keepalive rounds, unless the invocation overrides it. */
+  "<<SY_PR_RUN_BUDGET_ROUNDS>>": "12", // 4 hours at the default keepalive
+  /** How often a quiet PR is re-probed read-only for a state change. */
+  "<<SY_PR_POLL_INTERVAL_SECONDS>>": "60", // 1 minute
+  /** Maximum interval between full passes, even when no state changed. */
+  "<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>": "1200", // 20 minutes
+  /** Minimum interval between ordinary babysit syncs; approval vetoes them. */
+  "<<SY_PR_SYNC_INTERVAL_SECONDS>>": "7200", // 2 hours
+  /** How long to wait between retries of an unreachable GitHub / model call. */
+  "<<SY_PR_RETRY_INTERVAL_SECONDS>>": "15",
+  /** How many consecutive unreachable retries end the run. */
+  "<<SY_PR_RETRY_MAX_FAILURES>>": "5",
+  /** How many actionable review comments activate babysit remediation. */
+  "<<SY_PR_REVIEW_CHANGE_THRESHOLD>>": "5",
+};
+
 // --- OS Modifier Keys (local mirror of editor.common.js bits the LLM scripts need) ---
 
 /**
@@ -831,42 +857,6 @@ const LLM_SHARED_ROOT_FOLDER = process.env.LLM_ROOT_FOLDER;
  */
 const LLM_DOC_PATH_PLACEHOLDERS = {
   "<<LLM_ROOT_FOLDER>>": LLM_SHARED_ROOT_FOLDER,
-};
-
-/**
- * The tuning constants the PR loop commands read, declared ONCE here instead of
- * being spelled as a bare number in every command source.
- *
- * `/sy-babysit-pr`, `/sy-review-pr`, and both fan-out wrappers all share one
- * cadence: a run budget, a cheap poll interval, and a retry window for a
- * GitHub or model service that has gone unreachable. Writing `60` into four
- * markdown files is four places to miss when the number changes, and a doc
- * whose cadence disagrees with its sibling is a scheduler bug nobody can see.
- *
- * Values are seconds so a doc never has to state a unit conversion, and the
- * token name says the unit outright.
- *
- * These are deliberately NOT in {@link LLM_DOC_PATH_PLACEHOLDERS}: that map is
- * asserted to hold absolute folder paths, and a number is neither.
- * @type {Record<string, string>}
- */
-const LLM_DOC_TUNING_PLACEHOLDERS = {
-  /**
-   * How many rounds one babysit / review run keeps working before it stops on
-   * its own. One round = one keepalive interval, so the wall-clock budget is
-   * rounds x SY_PR_KEEPALIVE_INTERVAL_SECONDS (10 x 20m = 3h20m).
-   */
-  "<<SY_PR_RUN_BUDGET_ROUNDS>>": "10",
-  /** How often a quiet PR is re-probed read-only for a state change. */
-  "<<SY_PR_POLL_INTERVAL_SECONDS>>": "60",
-  /** How long a full pass is forced even when nothing in the digest moved. */
-  "<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>": "1200",
-  /** How long to wait between retries of an unreachable GitHub / model call. */
-  "<<SY_PR_RETRY_INTERVAL_SECONDS>>": "15",
-  /** How many consecutive unreachable retries end the run. */
-  "<<SY_PR_RETRY_MAX_FAILURES>>": "5",
-  /** How many actionable review comments activate babysit remediation. */
-  "<<SY_PR_REVIEW_CHANGE_THRESHOLD>>": "5",
 };
 
 /**
