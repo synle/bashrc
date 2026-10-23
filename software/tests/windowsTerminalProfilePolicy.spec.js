@@ -38,14 +38,14 @@ describe("Windows Terminal profile policy", () => {
     ).toEqual([true, true, true, false]);
   });
 
-  it("hides miscellaneous profiles without WSL while retaining Command Prompt's scheme", () => {
+  it("hides miscellaneous profiles without WSL while preserving each profile's color scheme", () => {
     expect(
       prioritizeProfiles([
         { name: "Custom", colorScheme: "old" },
         { name: "Command Prompt", colorScheme: "Campbell" },
       ]),
     ).toEqual([
-      { name: "Custom", hidden: true },
+      { name: "Custom", colorScheme: "old", hidden: true },
       { name: "Command Prompt", colorScheme: "Campbell", hidden: true },
     ]);
   });
