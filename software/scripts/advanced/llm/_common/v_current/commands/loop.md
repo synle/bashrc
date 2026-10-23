@@ -2,8 +2,6 @@
 
 Argument: $ARGUMENTS (the goal — "fix all failing tests", "migrate every call site off the old client", a plan file path, or a plain-English objective. May end with `max=<n>` to override the iteration cap. If the placeholder arrives unexpanded or empty, ask for the goal and the command that proves it done, then stop.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
 - A goal that is one sentence to state and many small edits to reach: fix every failing test, remove a deprecated API from every call site, add missing docstrings across a module, work a checklist someone already wrote.
@@ -23,8 +21,8 @@ Do **not** use this for: a single edit (just make it), design work with no verif
 - **A green batch is a progress line, not a stop.** While any item is neither fixed, deferred with a reason, nor failed with evidence, keep going; only a user-owned decision or an explicit stop ends the turn early.
 - **The durable file is the state; the conversation is not.** Persist goal, done/remaining lists, check command, and iteration number after each iteration; reread before the next, including after compaction or restart.
 - **One writer owns shared state.** The orchestrator alone rewrites the durable file. Parallel workers use separate ledgers or assigned artifacts and report back; two stale writers can silently erase each other's progress.
-- **One task per iteration, verified before the next begins.** Batching five tasks creates five suspects on failure. Fix or revert a red iteration within that iteration—never carry it forward.
-- **The remaining list only shrinks.** Record work discovered mid-run as a follow-up; do not adopt it or expand scope.
+- **One task per iteration, verified before the next begins.** Batching five tasks to "save time" converts one failing iteration into five suspects, exactly as in a bug hunt. An iteration that ends red is reverted or fixed inside that same iteration — never carried forward.
+- **The remaining list only shrinks.** Work discovered mid-run is recorded as a follow-up, not adopted. A loop that grows its own scope has no exit condition, and it is the single most common way this pattern burns an afternoon.
 - **Every iteration must move the number.** Two consecutive iterations with no measurable progress is a stall — stop and report, never a third attempt at the same wall.
 - **Bounded by default.** The cap is 20 iterations unless `max=<n>` says otherwise. Hitting the cap is a normal, reportable outcome, not a failure to hide.
 - **Never fake green.** Loosening an assertion, skipping a test, deleting a case, or widening a type to make the check pass ends the run immediately and is reported as a stop, not a completion. The check command is the referee; editing the referee is cheating.
@@ -66,7 +64,7 @@ Stop the loop the moment any of these is true, and say which one:
 
 ### Phase 2 — Prove and close
 
-Run the **full** original check command one final time and paste its output beside the Phase 0 baseline. Without that rerun, the loop is not finished.
+Run the **full** check command one final time and paste its output beside the Phase 0 baseline. A loop that never re-ran the original check has not finished; it has merely run out of ideas.
 
 Then emit the completion sentinel on its own line, so an outer driver or a reader can grep for it:
 
@@ -74,7 +72,7 @@ Then emit the completion sentinel on its own line, so an outer driver or a reade
 <promise>DONE</promise>
 ```
 
-Emit it **only** on the success exit — remaining list empty and the check green. Every other exit ends with the stop reason instead, and never with the sentinel. A false sentinel can mislead an outer driver.
+Emit it **only** on the success exit — remaining list empty and the check green. Every other exit ends with the stop reason instead, and never with the sentinel. A sentinel printed on a partial run is a lie a script will act on.
 
 ## Report format
 
@@ -91,6 +89,6 @@ End every run with this, whatever the exit was:
 
 ## Notes
 
-- **Resuming is re-running.** Resume from the same durable file's next unfinished item. The file, not the session, carries state; rewrite it every iteration, not only at the end.
+- **Resuming is re-running.** Point a fresh run at the same durable file and it picks up at the next unfinished item; the file, not the session, is what makes that work. This is also why the file is rewritten every iteration rather than at the end.
 - **A shorter cap is usually the right call.** `max=5` on an unfamiliar goal surfaces a bad framing after five cheap iterations instead of twenty expensive ones.
 - **The loop follows the repo's own rules, not looser ones.** Validation cadence, commit and branch conventions, and test quality apply exactly as they would to a single hand-made change; iterating is not a reason to batch a gate away or skip a regression test.

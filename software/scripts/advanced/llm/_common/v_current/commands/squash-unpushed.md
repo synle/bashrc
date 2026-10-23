@@ -1,10 +1,8 @@
 [Sy] Combine all unpushed commits on the current branch into a single commit with a fresh one-line-plus-description message. Local history only — never rewrites, force-pushes, or touches anything already on the remote.
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## Scope
 
-Squashes the run of commits that exist locally but are **not yet on the remote** into one clean commit, so a messy work-in-progress history (`wip`, `fix`, `typo`, `address review`) collapses into a single reviewable change before it is pushed. It rewrites **only unpushed history**. It does NOT push, open a PR, rebase onto, or sync with the base branch; pushing and PR work remain explicit (`/sy-create-pr`, `git push`). Combining already-pushed commits requires a human decision about shared-history rewriting, not this tool.
+Squashes the run of commits that exist locally but are **not yet on the remote** into one clean commit, so a messy work-in-progress history (`wip`, `fix`, `typo`, `address review`) collapses into a single reviewable change before it is pushed. It rewrites **only unpushed history**, so there is nothing for anyone else to reconcile. It does NOT push, does NOT open a PR, and does NOT rebase onto or sync with the base branch — pushing and PR work stay explicit (`/sy-create-pr`, `git push`). For combining commits that are already pushed, this is the wrong tool: that is a shared-history rewrite and needs a human decision.
 
 ## Inputs
 
@@ -24,7 +22,7 @@ Single-repo, foreground, one shot — no background agent, no multi-pass loop.
    - Resolve `<owner>/<repo>` via `git remote get-url origin` for the report (never from the folder name — see Repo Identification).
 
 2. **Determine the unpushed range `<base>..HEAD`.**
-   - **Upstream set** — `git rev-parse --abbrev-ref --symbolic-full-name @{upstream}` succeeds → `BASE=@{upstream}`. Only commits not yet pushed to the tracked remote branch may be rewritten.
+   - **Upstream set** — `git rev-parse --abbrev-ref --symbolic-full-name @{upstream}` succeeds → `BASE=@{upstream}`. This is the exact set of commits not yet pushed to the tracked remote branch, which is precisely what may be rewritten.
    - **No upstream** (branch never pushed) — resolve the default branch and use the divergence point:
      ```bash
      DEF=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
@@ -35,7 +33,7 @@ Single-repo, foreground, one shot — no background agent, no multi-pass loop.
    - Record the pre-squash tip for recovery: `PRE=$(git rev-parse HEAD)`.
    - List what will be combined: `git log --oneline "${BASE}..HEAD"`.
 
-3. **Guard — stop and ask (or stop and report) rather than rewrite blindly.** Every guard is a hard stop; do not proceed after failure without explicit user approval.
+3. **Guard — stop and ask (or stop and report) rather than rewrite blindly.** Every one of these is a hard stop; do not proceed past a failing guard without the user's explicit go-ahead.
    - **Zero commits in range** → nothing to combine. Report `"No unpushed commits on <branch> — nothing to squash."` and stop.
    - **Exactly one commit in range** → already a single commit. Report it and stop (this command combines, it does not reword — use `git commit --amend` for that).
    - **Dirty working tree** (`git status --porcelain` non-empty) → there are uncommitted changes. **Stop and ask** whether to (a) commit them first, (b) stash them out of the way, or (c) abort. Never silently fold uncommitted work into the squash.
@@ -55,7 +53,7 @@ Single-repo, foreground, one shot — no background agent, no multi-pass loop.
 
 6. **Squash.**
    - `git reset --soft "${BASE}"` — moves HEAD to the base and leaves the entire net change **staged**; no file contents change, nothing is lost.
-   - **Run the Commit-author identity check** (see Source Control & PRs) before committing — compare the pending author to local `.gitconfig`; reset+commit uses the current identity and could introduce a harness identity.
+   - **Run the Commit-author identity check** (see Source Control & PRs) before committing — compare the pending author to local `.gitconfig`; the reset+commit uses the current identity, so this is where a wrong harness identity would sneak in.
    - `git commit -F <tmp-message-file>` — one commit carrying the whole range.
    - Delete the temporary message file whether the commit succeeded or failed.
 

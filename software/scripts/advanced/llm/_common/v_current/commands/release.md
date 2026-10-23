@@ -1,10 +1,8 @@
 [Sy] Trigger a release. Defaults to OFFICIAL from the default branch; routes to BETA only on explicit signal (`beta` keyword, validated SHA, or non-default branch).
 
-Use `$ARGUMENTS` for channel intent; do not create per-channel aliases.
+One release command accepts channel intent through `$ARGUMENTS`; do not create per-channel aliases.
 
-"release", "release from main", "ship a release", "cut a release", "release official", "release stable", and "release prod" map to OFFICIAL. Only an explicit `beta` keyword, a validated SHA, or a non-default branch name routes to BETA.
-
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+Free-form phrasing such as "release", "release from main", "ship a release", "cut a release", "release official", "release stable", "release prod" — all map to the OFFICIAL path. Only an explicit `beta` keyword, a validated SHA, or a non-default branch name routes to BETA.
 
 ## Inputs
 
@@ -35,7 +33,7 @@ For each whitespace-separated token in `$ARGUMENTS` (in left-to-right order):
 **(a) Keyword tokens — no ref meaning, may flip intent:**
 
 - If token (case-insensitive) is `"beta"` → set `intent = "beta"`.
-- If token (case-insensitive) is one of `{"official", "stable", "main", "master", "release", "prod", "ship"}` → keyword only; no ref change. (Do not override earlier beta intent; only an explicit `beta` keyword, a SHA, or a non-default branch can select beta.)
+- If token (case-insensitive) is one of `{"official", "stable", "main", "master", "release", "prod", "ship"}` → keyword only; no ref change. (These reinforce official intent but do not override an earlier-set beta intent — only an explicit `beta` keyword, a SHA, or a non-default branch can change intent to beta.)
 - If token is the owner/repo identifier already consumed in Step 1 → skip.
 
 **(b) SHA-shaped token** — matches the regex `^[0-9a-f]{7,40}$` (case-insensitive):

@@ -2,8 +2,6 @@
 
 Argument: $ARGUMENTS (optional — a period like `today`, `yesterday`, `week`, `2w`, `month`, `since 2026-05-01`, or a date range. Add `all` to include every author, `slack` for a paste-ready message, or a repo name to scope to one. Default: `week`, your work only, terminal format.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
 - Standup, weekly sync, or a status update.
@@ -14,7 +12,7 @@ Argument: $ARGUMENTS (optional — a period like `today`, `yesterday`, `week`, `
 ## Hard rules
 
 - **Every line traces to a commit, PR, issue, or review.** No inferring intent, no inflating a one-line config change into "improved system reliability", no reporting a WIP PR as shipped. (See the Epistemic Honesty rules.)
-- **Merged ≠ shipped when the repo has a release step.** If merges require a release workflow, say "merged" and report whether it released.
+- **Merged ≠ shipped when the repo has a release step.** If merges land behind a release workflow, say "merged" and note whether it released. Reporting unreleased work as shipped is the most common way a standup misleads.
 - **Never invent a PR number, issue number, or SHA.** Every reference comes from a `gh` or `git` response in this session, and every link is a full clickable path (see the PR-link rules).
 - **Say what is missing.** Work done outside git — design docs, reviews on other teams' repos, incident response, mentoring, meetings — is invisible here. Flag the blind spot rather than implying the git log is the whole contribution.
 - **Show authors when the list is not all yours.** If `all` was requested or a repo has mixed authorship, label the author on every row (see the PR-author rules).
@@ -68,7 +66,7 @@ Also worth checking, when the repo has them: releases cut in the period (`gh rel
 
 ### 3. Group by outcome, not by repo
 
-Group by outcome:
+The reader cares what got done, not which directory it lived in. Group into:
 
 - **Shipped** — merged (and released, if the repo has a release step).
 - **In flight** — open PRs, each with its actual state: draft, awaiting review, changes requested, CI red, conflicts.
@@ -76,13 +74,13 @@ Group by outcome:
 - **Investigated / no code** — spikes, triage, incidents. Only when there is real evidence.
 - **Blocked** — anything stalled, with what it is waiting on.
 
-Within each group, order by impact, not timestamp: a one-line release unblock outranks a large mechanical refactor.
+Within each group, order by impact, not by timestamp. A one-line fix that unblocked a release outranks a large mechanical refactor, and reverse-chronological ordering buries it.
 
 Collapse mechanical noise: fifteen dependency bumps are one line ("15 dependency bumps"), not fifteen.
 
 ### 4. Write it
 
-One line per item: what changed and why it mattered, in plain language, followed by the full link. Do not copy the PR title verbatim; write for readers without the diff.
+One line per item: what changed and why it mattered, in plain language, followed by the full link. Not the PR title verbatim — a title is written for reviewers who have the diff open, and a standup reader does not.
 
 - Good: `Fixed the token refresh race that logged users out mid-session — github.com/acme/widget-store/pull/413`
 - Bad: `Merged PR #413: refactor(auth): update token refresh handler`
@@ -101,4 +99,4 @@ End with the caveats:
 - Repos scanned versus repos skipped, and why any were skipped (no remote, no access, not a git repo).
 - **Merged but not released**, if the repo gates on a release step.
 - **Blind spots** — work that leaves no git trace, and any repo you could not query.
-- Do not pad a light period; report it honestly so staffing and priority decisions use accurate evidence.
+- Nothing padded. A light period reported honestly is more useful than a padded one; the reader is making staffing and priority decisions from this.

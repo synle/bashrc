@@ -2,8 +2,6 @@
 
 Argument: $ARGUMENTS (optional paths or glob; if empty or unexpanded, use the scope in the request, otherwise the repo's complete source guidance corpus).
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
 - Reduce context load after additions or before a budget overflow.
@@ -26,7 +24,7 @@ Inventory repo rules, shared/on-demand instructions, local/deployed skill source
 
 ### 2. Hunt no-ops, sentence by sentence
 
-Apply the **no-op test**: does this sentence add behavior beyond another authoritative rule? Cut rationale and examples that add no boundary. Model defaults or upstream silence do not prove a local rule obsolete; verify local evidence before removal.
+Apply the **no-op test**: does this sentence add behavior beyond another authoritative rule? Cut repeated rationale and examples that teach no additional boundary. Model defaults or upstream silence alone do not prove a local rule obsolete; verify local evidence before removing it.
 
 - **Restatement tail:** remove explanation that adds no constraint or useful failure case.
 - **Weak leading word:** replace vague encouragement with its existing observable requirement, not a stronger adjective.
@@ -63,8 +61,8 @@ Never:
 - Edit a generated/deployed copy instead of the source (the deployed corpus regenerates; the source is the single home).
 - Bypass a size gate by trimming a code fence, a required value, or a load-bearing example.
 
-Stop and ask when a section exceeds its budget with no restatement to cut and no clean split boundary. The human must decide which rules move and where.
+Stop and ask when a section is over budget with no restatement left to cut and no clean split boundary — the fix is a design call (which rules move, which file they land in) the human should make.
 
 ## Verification
 
-Report coverage for every in-scope file, changed and unchanged; size deltas; preserved or merged named rules; contradiction resolutions; actual checks and deploy output; and remaining gaps. Do not claim a partial audit or prompt-only persona reinforcement guarantees compliance.
+Report coverage for every in-scope file, changed and unchanged; size deltas; preserved or merged named rules; contradiction resolutions; actual checks and deploy output; and remaining gaps. Do not present a partial audit or prompt-only persona reinforcement as guaranteed compliance.

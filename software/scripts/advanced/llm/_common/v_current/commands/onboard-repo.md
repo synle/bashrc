@@ -2,15 +2,13 @@
 
 Argument: $ARGUMENTS (optional — a repo path, or which docs to generate: `rules`, `architecture`, `dev`, or `all`. Default: the current repo, `all`, skipping any doc that already exists.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
 - A repo has no `AGENTS.md` / `CLAUDE.md`, so every agent session rediscovers its conventions from scratch and gets them subtly wrong.
 - A repo has rules but no map (`ARCHITECTURE.md`, `DEV.md`), which is the combination that produces locally-correct, architecturally-wrong changes.
 - Onboarding a human and realizing nothing written down explains how the thing is built or run.
 
-Do **not** rewrite maintained rules files. Extend existing docs through normal edits; they override anything inferred here.
+Do **not** use this to rewrite a rules file someone maintains. This fills a hole; extending an existing doc is a normal edit, and an existing doc is authoritative over anything inferred here.
 
 ## Hard rules
 
@@ -37,7 +35,7 @@ ls .github/workflows/ 2>/dev/null
 
 Read every manifest and config found: `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `pom.xml`, `build.gradle`, `Makefile`, `justfile`, `Dockerfile`, `docker-compose.yml`, CI workflows, linter and formatter configs, `.editorconfig`, test configs, and any existing `README` / `CONTRIBUTING` / `docs/`.
 
-**Report the survey before generating anything** — entry points, languages, frameworks, test runner, package manager, CI, roughly how big. For a monorepo, report that fact and ask (or decide in autopilot) whether to document the root or one workspace; a blended doc obscures package-specific conventions.
+**Report the survey before generating anything** — entry points, languages, frameworks, test runner, package manager, CI, roughly how big. If the repo is a monorepo, say so and ask (or decide, in autopilot) whether to document the root or one workspace; a single blended doc for eight packages helps nobody.
 
 ### 2. Detect conventions from evidence, not vibes
 
@@ -55,7 +53,7 @@ For each of these, find the evidence or write nothing:
 | Branch / PR flow            | branch names in `git branch -a`, PR templates, `CODEOWNERS`, required checks                       |
 | Solo vs team                | the author histogram from Step 1                                                                   |
 
-Read representative source files end-to-end, not just grep matches.
+Read representative source files end-to-end. Three files read fully teach more about a codebase's real conventions than thirty files grepped.
 
 ### 3. Write the docs
 

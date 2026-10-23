@@ -2,8 +2,6 @@
 
 Argument: $ARGUMENTS (optional — a PR number/URL, a commit range like `main..HEAD`, a path, or `staged` / `unstaged`. If empty, use the current branch versus its base. Add `loop` to work the list to empty through `/sy-loop` — see **Loop mode**.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
 - Before opening a PR, to find what you forgot to test.
@@ -14,7 +12,7 @@ Argument: $ARGUMENTS (optional — a PR number/URL, a commit range like `main..H
 ## Hard rules
 
 - **Coverage percentage is a smoke detector, not a goal** (Test Quality). Rank untested behavior by failure impact, not file percentage.
-- **Never write a test purely to move the number.** Getter/setter round-trip assertions add maintenance without defending behavior.
+- **Never write a test purely to move the number.** A test asserting that a getter returns what was set is coverage theater — it costs maintenance forever and defends nothing.
 - **Every test written here must be able to fail.** Verify it: break the code it covers, watch the test go red, restore. A test never seen red proves nothing (see the Test Quality rules).
 - **Report gaps you chose not to fill.** A silent skip reads as "covered".
 
@@ -42,7 +40,7 @@ gh pr diff <n> --repo <owner/repo> --name-only     # when targeting a PR
 
 Split the file list into **source** and **test** using the repo's own layout, not a guess (check the test config: `vitest.config`, `jest.config`, `pytest.ini`, `go` `_test.go` convention, `Cargo.toml`).
 
-Report changed source files with **no** corresponding test file touched immediately as the first cheap signal.
+The first cheap signal: source files changed with **no** corresponding test file touched. Report that list immediately — it is usually most of the answer.
 
 ### 2. Find what actually runs the changed code
 
@@ -72,7 +70,7 @@ Not all uncovered code deserves a test. Rank the gaps:
 | **Low**      | Straight-line orchestration already covered indirectly by an integration test                                                   |
 | **Skip**     | Generated code, trivial getters/setters/re-exports, pure config, logging-only lines, framework glue with no logic               |
 
-Weight error paths accordingly: manually checked happy paths can leave production-only `catch` blocks untested.
+Error paths are the systematic blind spot: happy paths get written first and tested by hand, while the `catch` block that only fires in production is the code nobody ever ran. Weight them accordingly.
 
 ### 4. Report the gap analysis before writing anything
 
@@ -80,7 +78,7 @@ For each gap: file, function, what specifically is untested (branch / error path
 
 ### 5. Write the tests
 
-Match the repo's test conventions: file location, naming, fixture and factory helpers, assertion style, setup, and teardown.
+Follow the repo's existing test conventions exactly: file location, naming, fixture and factory helpers, assertion style, setup and teardown. A test that is technically correct but structurally foreign is a maintenance burden.
 
 Apply the Test Quality rules to everything written here — behavior not implementation, literal expected values, one reason to fail per test, no logic in tests, don't mock what you don't own, deterministic.
 
@@ -100,4 +98,4 @@ Re-run the coverage command and report the delta for the changed files only. Rep
 - **Coverage delta** on changed files, as supporting evidence.
 - **Deliberately skipped**, with reasons — generated, trivial, or genuinely covered elsewhere.
 - **Pre-existing debt** noticed but out of scope for this change, listed separately so it does not read as new.
-- **Untestable as written** — any gap that could not be tested without a refactor. Report the design problem blocking the test.
+- **Untestable as written** — any gap that could not be tested without a refactor. That finding is usually more valuable than the tests: code that cannot be tested is code with a design problem, and naming it is the first step to fixing it.

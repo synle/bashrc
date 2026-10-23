@@ -2,8 +2,6 @@
 
 Argument: $ARGUMENTS (optional — a run URL, a run ID, a workflow name, or a branch. If empty, take the most recent failing run on the default branch.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
 - The default branch is red and there is no PR to babysit.
@@ -11,11 +9,11 @@ Argument: $ARGUMENTS (optional — a run URL, a run ID, a workflow name, or a br
 - A release or publish workflow failed after a merge.
 - CI is red on a branch nobody has opened a PR for yet.
 
-For a red PR, use `/sy-babysit-pr` — it owns the address-comments + drive-CI-green loop. Use this command when no PR exists.
+For a red PR, use `/sy-babysit-pr` — it owns the address-comments + drive-CI-green loop. This command covers the gap where no PR exists, so there is nothing to babysit.
 
 ## Priority rule
 
-**A red default branch blocks everyone.** It spreads broken baselines and unrelated failures. Restoring green outranks elegance: if a short pass does not establish the cause, **revert first and investigate after**. A revert unblocks others without a speculative forward fix.
+**A red default branch blocks everyone.** Every minute it stays red, someone branches from broken code, someone's unrelated PR shows a failure they did not cause, and the signal everyone relies on stops meaning anything. Restoring green outranks fixing it elegantly: if the cause is not understood within a short pass, **revert first and investigate after** — a revert is cheap, reversible, and immediately unblocks everyone, while a forward-fix authored under pressure is how the second outage starts.
 
 ## Steps
 
@@ -41,7 +39,7 @@ Establish immediately, and report it:
 gh run view <run-id> --repo <owner/repo> --log-failed
 ```
 
-**Read the FIRST failure, not the last** (see the Debugging Discipline rules) — later errors may only summarize earlier failures. Extract the first error verbatim; never paraphrase it.
+**Read the FIRST failure, not the last** (see the Debugging Discipline rules) — CI logs cascade, and the final lines are usually a summary step reporting that an earlier step failed. Extract the error verbatim; never paraphrase it.
 
 Classify before acting, because the response differs sharply:
 
@@ -102,7 +100,7 @@ Never close a flake by re-running until green — that trains everyone to click 
 
 ### 7. Fix forward or revert
 
-**Revert when:** the cause is a single identifiable commit and the fix is not obvious within a short pass; the default branch has been red for a while; a release is blocked; or the author is unavailable. Restore green first; reland the change with its fix.
+**Revert when:** the cause is a single identifiable commit and the fix is not obvious within a short pass; the default branch has been red for a while; a release is blocked; or the author is unavailable. Reverting someone's commit is not an insult — it is the cheapest path back to green, and their change relands with the fix included.
 
 ```bash
 git revert <sha>          # or: gh pr revert
@@ -129,5 +127,5 @@ Report:
 - **Class** — code break / flake / environment / dependency / infra.
 - **Action** — reverted or fixed forward, and why that choice.
 - **Red for** — how long, and how many runs failed.
-- **Prevention** — the pin, the test, or the check that would have caught it. Name any missing pre-merge gate that would have caught it.
+- **Prevention** — the pin, the test, or the check that would have caught it. If a pre-merge gate would have caught this and does not exist, say so; that is usually the most valuable output of the whole triage.
 - **Still unknown** — anything unexplained. A run that went green without an understood cause is reported as exactly that, never as "fixed".

@@ -1,20 +1,12 @@
 [Sy] List open pull requests across repos, grouped by readiness. Defaults to `short` format (just full links).
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
-## Skill references and rendering
-
-**Skill references are instructions, not executables.** A reference such as `/sy-list-prs table <scope>` means read `<<LLM_ROOT_FOLDER>>/skills/sy-list-prs/SKILL.md` and apply its parsing, collection, and output contract to that scope. Native skill invocation is optional; when unavailable, read the file and perform the same steps directly. Do not run the slash-command text in a shell or infer a missing tool from an absent slash-command entry point. This applies to callers delegating collection or rendering here and to their per-PR skill references.
-
-**Collection and rendering are separate.** `table` and `pingpong` are output contracts in this file, not required executable names or CLI flags. Collect JSON with the scope, audience, and ready-PR flags below (or the equivalent manual `gh` fallback), then render the specified Markdown using the fetched rows and caller ledger. A missing optional renderer does not block the table or baseline board and is not evidence that `list_prs` is unavailable. Use the documented unknown/no-ledger forms for missing data; never invent agent activity or substitute a reduced format.
-
 ## Inputs
 
 `$ARGUMENTS` is a free-form string that may carry three independent dimensions: a **format keyword**, a **scope**, and an **author**.
 
 - **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `clusters`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `clusters` (aliases `cluster`, `grouped`, `feature`) prints the same URLs bucketed by **feature cluster** — one feature that spans several repos reads as one block — with a running `pr<N>` handle on every line; it is what `/sy-list-prs-pending` renders. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`, grouped by feature set / dispatch slot so a cross-repo feature reads as one block.
 - **Scope** — pick exactly one (first match wins):
-  - **PWD** (default, no scope token present) — scan git repos at or below cwd, two levels deep, and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
+  - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
   - **PWD keyword** — one of the PWD keyword set (see below, case-insensitive). Same as default PWD scope above.
   - **Explicit PR refs** — one or more PR refs: full URL (`https://github.com/<owner>/<repo>/pull/<n>`), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name — see Repo Identification). Explicit-refs scope is author-agnostic (you asked for those PRs).
@@ -60,29 +52,24 @@ Examples:
 
 ## Fetch PR data
 
-**Fast path — one call instead of one-per-PR.** `list_prs` is the canonical executable for this section's repo discovery, open-PR search, CI rollup, review decision, review threads, and mergeability. Its source is `software/scripts/git.pr_list.cjs`; it deploys to `~/.local/bin/list_prs`. The `pr_list_*` functions and `pr_list` alias are optional shell conveniences, not prerequisites. Discover the executable itself:
+**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with four shell wrappers (`pr_list_my_open` / `pr_list_my_need_attention` / `pr_list_other_open` / `pr_list_other_need_attention`, plus `pr_list` as a bare alias for the first). It enriches up to three PRs concurrently, keeps successful rows in search order before display sorting, normalizes leading WIP / DO NOT MERGE / DNM markers to one `WIP: ` prefix, and places WIP rows after non-WIP rows. Check for it first:
 
 ```bash
-type -P list_prs
-test -x "$HOME/.local/bin/list_prs"
+type pr_list_my_open
 ```
 
-Use the PATH result, or invoke `"$HOME/.local/bin/list_prs"` directly when only the second check succeeds. A missing `pr_list_*` wrapper does **not** mean `list_prs` is missing; noninteractive shells may not load those functions. Before declaring the collector unavailable, check both locations and inspect the installed source for supported arguments. Report the exact failed check or invocation; distinguish executable absence from an execution, authentication, or API failure.
-
-The collector enriches up to three PRs concurrently, keeps successful rows in search order before display sorting, normalizes leading WIP / DO NOT MERGE / DNM markers to one `WIP: ` prefix, and places WIP rows after non-WIP rows. When present, one call returns the enriched JSON set with all fields below—no `gh search prs`, per-PR `gh pr view`, or per-PR GraphQL:
+When it exists, one call returns the whole set as JSON and every field below is already in it — no `gh search prs`, no per-PR `gh pr view`, no per-PR GraphQL:
 
 ```bash
-list_prs --all --me=1 --json                              # scope = all (every repo you have a PR in)
-list_prs --all --me=1 --json --cwd                        # scope = pwd (your PRs in repos at/below cwd)
-list_prs --all --me=1 --json --activity                   # opt-in scheduler data; default output stays unchanged
-list_prs --all --me=1 --json acme/api acme/web             # explicit repo list, your PRs only
-list_prs --all --json --author=alice acme/api acme/web     # explicit repo list, one named author
-list_prs --all --me=0 --json --cwd                        # everyone else's PRs in repos below cwd
+pr_list_my_open --json                                  # scope = all  (every repo you have a PR in)
+pr_list_my_open --json --cwd                            # scope = pwd  (git repos discovered at/below cwd)
+pr_list_my_open --json --activity                       # opt-in scheduler data; default output stays unchanged
+pr_list_my_open --json <owner>/<repo> <owner>/<repo>    # explicit repo list
+pr_list_my_open --json --author=<handle>                # same scopes, one named author
+pr_list_other_open --json --cwd                         # everyone else's PRs in the repos below cwd
 ```
 
-**Preserve the caller's scope and audience.** Bare `list_prs` defaults are not this skill's defaults: pass `--me=1 --cwd` for this skill's PWD scope, and keep the resolved repo list and author filters for other callers. For multiple requested handles, query each separately with `--author`, then union by PR URL; never widen to everyone or silently drop a handle. `--all` includes fully-clear PRs; it does not mean global repo scope.
-
-`pr_list_my_open` is equivalent to `list_prs --all --me=1` — every open PR, ready-to-merge ones included. The sibling `pr_list_my_need_attention` (`list_prs --me=1`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may omit `--all` (or use that wrapper when available) and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` a mine-only search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. Audience is `--me=1` (yours) / `--me=0` (everyone but you) / omitted (everyone), and anything wider than yourself implies `--cwd`, since an unscoped search of everyone's PRs is all of GitHub. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
+`pr_list_my_open` is `list_prs --all --me=1` — every open PR, ready-to-merge ones included. Use it here: the sibling `pr_list_my_need_attention` (`list_prs --me=1`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `pr_list_my_need_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` a mine-only search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. Audience is `--me=1` (yours) / `--me=0` (everyone but you) / omitted (everyone), and anything wider than yourself implies `--cwd`, since an unscoped search of everyone's PRs is all of GitHub. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
 
 Each JSON row normally carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group signal color reasonIcon reasonTag autoMerge autoMergeMethod ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status`. With opt-in `--activity`, it additionally carries `activityAt` (the newest observed PR, commit, issue-comment, review, review-thread-comment, or CI timestamp). The default row shape, GraphQL query, and wrapper behavior stay unchanged. `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return) are already present on the normal fast path. `group` is already this file's Classification; `signal` (aliased as `color`) is its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
 
@@ -120,7 +107,7 @@ Each JSON row normally carries `url repo number title author createdAt updatedAt
 
 **The head branch prefixes the title, in cyan, separated by `:`.** It is the handle every local command takes (`worktree_create`, `git checkout`, `git log`), and the only field that says _where_ the work lives — a URL alone forces a click to find out. Cyan because every other slot is spoken for (red / yellow / green by the roll-up signal, blue by the URL line, magenta by the running marker) and because a branch is an address you retype, not a footnote — dim would hide the one field you copy out of the render. It goes **after** the tags and **before** the title so the reason column stays flush, and it is render-only: `headRefName` is already its own JSON field and `title` stays clean, so nothing matching a PR by name ever sees it. Omitted when `headRefName` is empty (the explicit-refs fallback path), never replaced by a placeholder.
 
-**The fast path covers all three repo scopes, not explicit PR refs.** `list_prs --all --me=1 --json` serves **all** scope (global search), adding `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` / `--me` change only whose PRs it looks for. Fall through to the manual `gh` steps below whenever the executable is absent after both discovery checks, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers). Preserve the same scope and audience in the fallback; missing wrappers alone never trigger it.
+**The fast path covers all three repo scopes, not explicit PR refs.** Plain `pr_list_my_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` / `--me` change only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the command is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
 
 1. **Fetch the open PR list — branch on scope:**
 
@@ -219,7 +206,7 @@ Score each PR into exactly one tier, highest first (first match wins). The name 
 | **P3** | Stale against base         | `mergeStateStatus == "BEHIND"`, or (on a stack) behind any ancestor, with no other flag. `BEHIND` is only reported where the repo requires branches to be up to date — elsewhere compare the head against the base directly | A sync fixes it, and it turns into P2 if left                                                                                                 |
 | **P4** | Bot nits only              | Unresolved threads, every one of them opened by a `Bot` (`author.__typename`), no human blocker                                                                                                                             | Real work, low stakes, no human waiting                                                                                                       |
 | **P5** | Waiting on someone else    | Green and approved awaiting merge, awaiting first review, any check still unfinished (running, queued, or stalled), or held by a non-blocking human approval gate (`/sy-babysit-pr` Step 3)                                 | Nothing to do until another party moves; a pass here mostly re-reads                                                                          |
-| **P6** | Nothing owed               | Draft, `WIP` / `DO NOT MERGE` / `DNM` title — reviewer passes skip; author passes follow babysit gates                                                                                                                      | Cheapest possible pass; safe to service last                                                                                                  |
+| **P6** | Nothing owed               | Draft, `WIP` / `DO NOT MERGE` / `DNM` title — every pass is a documented skip                                                                                                                                               | Cheapest possible pass; safe to service last                                                                                                  |
 
 **Activity breaks ties before age does.** Scheduler callers opt in with `pr_list ... --json --activity`; ordinary `pr_list` callers do not pay the extra GraphQL fields and do not receive a new JSON key. Within equal attention keys and equal work-owed tier, compute `activityAt` as the newest observed PR update, commit, issue comment, review, review-thread comment, or CI timestamp. A PR is **active** when `activityAt` is less than `14` days old and **stale** when it is `14` days or older. Active PRs run first, newest `activityAt` first. Stale PRs run last, oldest `activityAt` first. This makes a recently changed PR beat an abandoned peer without letting a low-urgency fresh PR jump ahead of urgent work. If `activityAt` is unavailable, fall back to `updatedAt` and mark the activity signal as incomplete in the ledger; never pretend the evidence is complete.
 
@@ -264,7 +251,7 @@ e. **Stable URL order** — final deterministic tie-break.
 
 **P0 is checked locally and costs nothing.** `worktree_create --path-only <head-branch>` prints the canonical path without creating anything, so the dispatcher can probe a PR's branch worktree before dispatching, without an API call and without touching the user's checkout. A path that does not exist is simply not P0.
 
-**Ranking never drops a PR.** It decides _order_, never _membership_ — a P6 draft is still dispatched, still gets its passes, and still appears in every render. Anything that uses this ranking to skip a PR is misusing it. **P6 is dead last under both lenses and no attention key can lift it**: a draft / `WIP` / `DO NOT MERGE` / `DNM` PR is ranked last even when it is the newest arrival (`R0`) or names me directly (`R1`) — an author who marks a PR not-ready has said so more loudly than a mention says otherwise. It is dispatched anyway. **Reviewer passes** are documented skips that post nothing (`/sy-review-pr` Step 3), so later rounds catch readiness changes. **Author passes** follow `/sy-babysit-pr`'s gates: WIP/draft and open wave blockers prevent promotion, not CI diagnosis or safe independent fixes (Steps 4 and 9). Ranking never supplies a blanket author-side skip.
+**Ranking never drops a PR.** It decides _order_, never _membership_ — a P6 draft is still dispatched, still gets its passes, and still appears in every render. Anything that uses this ranking to skip a PR is misusing it. **P6 is dead last under both lenses and no attention key can lift it**: a draft / `WIP` / `DO NOT MERGE` / `DNM` PR is ranked last even when it is the newest arrival (`R0`) or names me directly (`R1`) — an author who marks a PR not-ready has said so more loudly than a mention says otherwise. It is dispatched anyway, and every pass on it is a **documented skip that posts nothing** (`/sy-review-pr` Step 3), purely so a PR marked ready between rounds gets caught in the round after.
 
 ## Feature clustering
 

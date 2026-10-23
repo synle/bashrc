@@ -2,11 +2,9 @@
 
 Argument: $ARGUMENTS (optional — a target repo path or owner/repo. Defaults to current folder.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
-- A checkout retains remotely deleted branches, its default is behind origin, or feature branches need current default-branch commits.
+- A local checkout has drifted behind its remote — branches deleted on the remote still exist locally, the default branch is behind origin, or feature branches need the latest default-branch commits.
 - Before starting work in a repo, so you branch from an up-to-date default.
 - Part of a larger cleanup (see `/sy-sync-and-clean-repos` for multi-repo).
 
@@ -24,11 +22,11 @@ This skill owns single-repo maintenance sequencing. Shared PR instructions own s
 
 1. **Resolve target.** If an `<owner>/<repo>`: `gh repo view <owner/repo> --json nameWithOwner,sshUrl --jq '.sshUrl'` to get the clone URL. If the folder doesn't exist, `git clone <url> <path>` into a temp location. If a path: `cd` there and verify `.git` exists.
 
-2. **Fetch + prune.** `git fetch --all --prune` — updates remote-tracking branches and prunes remotely deleted refs.
+2. **Fetch + prune.** `git fetch --all --prune` — updates all remote-tracking branches and removes refs for branches deleted on the remote.
 
 3. **Drop `[gone]` local branches.** Follow shared Merging and cleanup: inspect candidates and run `git clean-stale-branches`, not a hand-built `branch -D` pipeline. Preserve default/current branches and unpushed work; a missing upstream alone does not prove commits recoverable. Follow Destructive Commands for any unrecoverable candidate.
 
-4. **Prune worktree records.** `git worktree prune` — removes stale records for worktrees deleted without `git worktree remove`.
+4. **Prune worktree records.** `git worktree prune` — removes stale administrative entries for worktrees that were deleted without `git worktree remove`.
 
 5. **Fast-forward default branch.** Resolve the default branch (`git symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##'`). If the local default branch exists and is behind its upstream, `git checkout <default>` then `git merge --ff-only @{u}`. If it doesn't exist locally, create it tracking the remote. If it has local commits not on the remote, report and skip the fast-forward (requires manual resolution).
 

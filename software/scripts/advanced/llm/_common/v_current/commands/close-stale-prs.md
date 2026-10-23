@@ -2,8 +2,6 @@
 
 Argument: $ARGUMENTS (optional — `<days>` threshold, `<owner>/<repo>` scope, `me` / `mine` to filter to your own PRs, or a combination. Defaults to all open PRs authored by `@me` across all repos, 60-day staleness threshold.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
 - After a project pivot leaves a backlog of WIP PRs nobody will finish.
@@ -22,10 +20,10 @@ For a single PR, use the normal close operation with the shared file-backed Payl
 
 2. **Fetch candidates:**
    `gh search prs --state=open --author=<author> [--repo <r>...] --limit 1000 --json number,title,url,repository,updatedAt,author,isDraft,labels,createdAt`
-   - **`gh search prs` does not accept the same `--json` fields as `gh pr view`** — it has no `headRefName`, `baseRefName`, `reviews`, `statusCheckRollup`, `commits`, or `mergeStateStatus`, and requesting any exits 1 with `Unknown JSON field` before listing candidates (see the accepted list in the `gh` field traps in `/sy-list-prs`). Fetch these fields through `gh pr view` only for PRs passing the `staleDays` filter below, avoiding hundreds of calls for wide scopes:
+   - **`gh search prs` does not accept the same `--json` fields as `gh pr view`** — it has no `headRefName`, `baseRefName`, `reviews`, `statusCheckRollup`, `commits`, or `mergeStateStatus`, and asking for any of them exits 1 with `Unknown JSON field`, killing the run before a single candidate is listed (the full accepted list is in the `gh` field traps in `/sy-list-prs`). Those all live on `gh pr view`, so fetch them per PR — and only for the PRs that survive the `staleDays` filter below, which is what keeps a wide scope from turning into hundreds of calls:
      `gh pr view <url> --json headRefName,baseRefName,reviews,statusCheckRollup,commits,mergeStateStatus`
      Step 3 renders the last commit author and Step 4 shows the last commit subject and current `mergeStateStatus`, so `commits` and `mergeStateStatus` are required, not optional.
-   - Pass `--limit` explicitly; otherwise search stops at 30. If the count equals the limit, report possible truncation.
+   - Pass `--limit` explicitly or the search silently stops at 30, quietly under-reporting how much is stale. If the count comes back exactly at the limit, treat the set as possibly truncated and say so.
    - Compute `staleDays = (now - updatedAt) / 86400`. Keep only PRs with `staleDays >= <threshold>`.
    - **Always skip** PRs with: an open `APPROVED` review whose state still holds (they're ready to merge — close requires a different decision), title containing `BLOCKED` / `KEEP-OPEN` / `pinned`, or label `do-not-close` / `pinned` / `keep-open`.
 
@@ -54,7 +52,7 @@ For a single PR, use the normal close operation with the shared file-backed Payl
 ## Rules
 
 - **No bulk close without per-PR consent.** Every candidate requires an explicit `y` before closing. `s` / `q` aborts the rest; default on Enter is `n`.
-- **Never delete the branch.** `gh pr close` leaves the remote branch available for recovery with `gh pr reopen`. Branch deletion requires a separate, explicit follow-up.
+- **Never delete the branch.** `gh pr close` alone leaves the branch on the remote, which means `gh pr reopen` is a one-liner if the close was a mistake. Branch deletion is a separate, explicit follow-up.
 - **Respect pinned / approved PRs.** Always-skip filters in step 2 are hard exclusions — do not present them as candidates even with confirmation.
 - **Resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name (see Repo Identification).**
 - **One staleness threshold per invocation.** Don't try to compute different thresholds per repo; rerun the skill if you need different cutoffs for different scopes.

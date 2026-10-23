@@ -2,8 +2,6 @@
 
 Argument: $ARGUMENTS (optional — topic to grill. If empty, asks what to grill.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## Rules
 
 - Ask one question at a time.
@@ -22,7 +20,7 @@ If topic not clear from $ARGUMENTS or context:
 > What plan, design, or decision should I grill?
 > Recommended answer: concrete goal, current approach, constraints, decision needed.
 
-If the plan is in context, summarize in 3-6 bullets and ask for correction.
+If context already contains the plan, summarize in 3-6 bullets and ask for correction.
 
 ### Phase 2 — Calibration
 
@@ -39,11 +37,11 @@ Default: Knowledge=Working, Pressure=Standard.
 
 ### Phase 3 — Build Decision Map
 
-Privately track Goal, User/Customer, Constraints, Options, Dependencies, Risks, Validation, Rollback to choose the next question. Don't share unless asked.
+Track privately: Goal, User/Customer, Constraints, Options, Dependencies, Risks, Validation, Rollback. Use to choose next question. Don't dump unless asked.
 
 ### Phase 4 — Question Ladder
 
-Advance through these tiers until the plan is firm.
+Move through these tiers. Stop early when plan firms up.
 
 1. **Goal Fit** — What outcome matters most? What makes this not worth doing? What problem, for whom?
 2. **Constraint Reality** — What hard constraint can't move? What resource bottleneck decides the plan? What assumption kills the plan if false?

@@ -2,8 +2,6 @@
 
 Argument: $ARGUMENTS (optional — the bug: a failing test name, an error string, a stack trace, a PR/issue link, or a plain-English symptom. If empty, ask for the symptom and the command that triggers it.)
 
-**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying; apply **Meaning never dropped** and **No theater**. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
-
 ## When to use
 
 - A test, build, or CI job is red and the cause is not obvious on the first read.
@@ -34,7 +32,7 @@ Record, before touching anything:
 - Environment: OS, runtime version, branch, dirty-or-clean working tree (`git status --short`).
 - When it last worked, if known (a commit, a date, a release).
 
-Keep the error verbatim: it is a search key.
+Paraphrasing the error here is the single most common way a bug hunt goes wrong — an error message is a search key, and a reworded one matches nothing.
 
 ### Phase 1 — Reproduce
 
@@ -50,9 +48,9 @@ Stop and report if none of these produce a repro. A hunt without a repro is over
 
 ### Phase 2 — Shrink
 
-Reduce the reproduction to the smallest failing case: one test, input, or function call instead of a suite, fixture file, or request. Each removal that preserves the failure eliminates a suspect.
+Cut the reproduction down to the smallest thing that still fails: one test instead of a suite, one input instead of a fixture file, one function call instead of a request. Each removal that keeps the failure alive removes a suspect.
 
-Stop shrinking when any further removal hides the failure. Record the minimal repro's runtime; later phases repeat it.
+Shrinking is finished when removing any remaining piece makes the failure disappear. Note the total time the minimal repro takes — every later phase runs it repeatedly, so seconds here are worth minutes later.
 
 ### Phase 3 — Locate
 
@@ -73,7 +71,7 @@ Keep a running table and show it in the final report:
 | --- | ---------- | ---------- | --------------------- |
 | 1   | ...        | ...        | ruled out / confirmed |
 
-Rules for the loop: state the hypothesis **and what would disprove it** before making a change; change exactly one thing; observe; revert if it did not prove out. Reformulate any hypothesis that cannot be disproved.
+Rules for the loop: state the hypothesis **and what would disprove it** before making a change; change exactly one thing; observe; revert if it did not prove out. A hypothesis that cannot be disproved is not a hypothesis — reformulate it.
 
 **After three consecutive ruled-out hypotheses, question the premise instead of forming a fourth.** Candidates for the wrong premise: the failing code is not the code being read (stale build, wrong file, shadowed module, cached artifact, wrong branch checked out), the test asserts something different than assumed, the "good" baseline was never actually good, or the environment differs from the assumption. Verify one of those before continuing.
 
@@ -95,7 +93,7 @@ Three checks, all required:
 
 ### Phase 7 — Lock it in
 
-- **Write a regression test that fails without the fix and passes with it.** Verify both directions; a test that passes before the fix is not a regression test.
+- **Write a regression test that fails without the fix and passes with it.** Verify both directions — a test that passes before the fix is not a regression test, it is decoration.
 - Name the test after the defect's cause, not the ticket number.
 - If the bug survived an existing test, say why that test missed it; that gap is usually the more valuable finding.
 - Follow the repo's own conventions for commit message, branch, and PR (see the Source Control & PRs rules).
