@@ -1,5 +1,6 @@
-/** Claude Code setup: settings, keybindings, and telemetry opt-out. Run: `bash run.sh --files="setup.js"` */
+/** Claude Code setup: settings, JSONC-backed Sy or inline Ayu themes, keybindings, and shared guidance. */
 // SOURCE software/scripts/advanced/llm/llm-common.js
+// SOURCE software/scripts/advanced/editor.common.js
 
 /** @type {string} Claude Code OS modifier key on macOS (meta = cmd in terminals). */
 const CLAUDE_MAC_OS_KEY = "meta";
@@ -121,6 +122,160 @@ async function _doKeysWork(targetDir) {
   await writeJson(targetPath, ourConfig);
 }
 
+// --- Themes ---
+
+/**
+ * Creates the theme folder, deploys the selected Sy or Ayu adapters, and resolves the native selection ID.
+ * Uses the shared custom-theme routine for Sy/Ayu selection; headless hosts retain native themes.
+ * Preserves light appearance across family changes.
+ * @param {string} targetFolder - Claude user configuration folder.
+ * @param {string|undefined} selectedTheme - Existing settings.json theme selection.
+ * @returns {Promise<string>} Adapter ID or built-in fallback; source/backup/write errors propagate.
+ */
+async function _doClaudeTheme(targetFolder, selectedTheme) {
+  const fallbackThemes = getTheme("claude");
+  // Preserve light appearance when migrating the former Catppuccin fallback.
+  const appearance = [
+    "light",
+    "light-ansi",
+    "light-daltonized",
+    "custom:sy-light",
+    "custom:catppuccin-latte",
+    fallbackThemes.light,
+  ].includes(selectedTheme)
+    ? "light"
+    : "dark";
+  if (!is_gui) return appearance;
+  const useCustomTheme = shouldInstallCustomTheme();
+
+  /**
+   * Ayu Dark and Light palette defaults, separate from placeholder-generated Sy JSONC.
+   * Source: https://github.com/ayu-theme/ayu-colors/tree/master/themes.
+   * Selection alpha is flattened against editor.bg; light hover is flattened against ui.bg.
+   * @type {Record<string, object>}
+   */
+  const CLAUDE_THEME_PALETTES_AYU_THEMES = {
+    dark: {
+      name: "Ayu Dark",
+      foreground: "#bfbdb6",
+      muted: "#5a6378",
+      border: "#5a6378",
+      accent: "#e6b450",
+      shimmer: "#ffb454",
+      info: "#73b8ff",
+      success: "#70bf56",
+      error: "#d95757",
+      warning: "#ffb454",
+      background: "#10141c",
+      surface: "#141821",
+      hover: "#1b1f29",
+      selection: "#193155",
+    },
+    light: {
+      name: "Ayu Light",
+      foreground: "#5c6166",
+      muted: "#828e9f",
+      border: "#828e9f",
+      accent: "#f29718",
+      shimmer: "#eba400",
+      info: "#478acc",
+      success: "#6cbf43",
+      error: "#e65050",
+      warning: "#eba400",
+      background: "#fcfcfc",
+      surface: "#f8f9fa",
+      hover: "#e7eaed",
+      selection: "#d7e4f6",
+    },
+  };
+
+  /** @type {Record<string, object>|undefined} Sy colors loaded only when selected; Ayu never depends on generated JSONC. */
+  const CLAUDE_THEME_PALETTES_SY_THEMES = useCustomTheme
+    ? {
+        dark: await readJson`software/scripts/advanced/llm/claude/claude-color-dark.jsonc`,
+        light: await readJson`software/scripts/advanced/llm/claude/claude-color-light.jsonc`,
+      }
+    : undefined;
+  const palettes = useCustomTheme ? CLAUDE_THEME_PALETTES_SY_THEMES : CLAUDE_THEME_PALETTES_AYU_THEMES;
+  const themeIds = Object.fromEntries(
+    Object.keys(palettes).map((mode) => [mode, useCustomTheme ? `custom:sy-${mode}` : fallbackThemes[mode]]),
+  );
+
+  /** @type {string[]} Required semantic palette roles; validate both appearances before any write. */
+  const requiredColorRoles = [
+    "foreground",
+    "muted",
+    "border",
+    "accent",
+    "shimmer",
+    "info",
+    "success",
+    "error",
+    "warning",
+    "background",
+    "surface",
+    "hover",
+    "selection",
+  ];
+  // readJson returns an empty object on malformed JSONC; never deploy incomplete adapters.
+  for (const [mode, palette] of Object.entries(palettes)) {
+    if (!palette || typeof palette !== "object" || Array.isArray(palette)) {
+      throw new Error(`Invalid Claude ${mode} palette: expected a JSONC palette object; retry after repairing the source`);
+    }
+    const { name, ...colors } = palette;
+    if (
+      typeof name !== "string" ||
+      name.length === 0 ||
+      Object.keys(colors).length !== requiredColorRoles.length ||
+      !requiredColorRoles.every((role) => typeof colors[role] === "string" && /^#[0-9a-f]{6}$/.test(colors[role]))
+    ) {
+      throw new Error(
+        `Invalid Claude ${mode} palette: expected a name and required six-digit hex color roles; retry after repairing the source`,
+      );
+    }
+  }
+
+  const themesFolder = path.join(targetFolder, "themes");
+  await mkdir(themesFolder);
+  for (const [mode, palette] of Object.entries(palettes)) {
+    const targetPath = path.join(themesFolder, `${themeIds[mode].slice("custom:".length)}.json`);
+    /** @type {object} Native Claude theme; unmapped syntax and diff tokens inherit the built-in base. */
+    const theme = {
+      name: palette.name,
+      base: mode,
+      overrides: {
+        claude: palette.accent,
+        claudeShimmer: palette.shimmer,
+        text: palette.foreground,
+        inverseText: palette.background,
+        inactive: palette.muted,
+        subtle: palette.border,
+        permission: palette.info,
+        permissionShimmer: palette.accent,
+        promptBorder: palette.accent,
+        promptBorderShimmer: palette.shimmer,
+        planMode: palette.info,
+        autoAccept: palette.success,
+        success: palette.success,
+        error: palette.error,
+        warning: palette.warning,
+        warningShimmer: palette.warning,
+        remember: palette.accent,
+        userMessageBackground: palette.surface,
+        userMessageBackgroundHover: palette.hover,
+        bashMessageBackgroundColor: palette.surface,
+        memoryBackgroundColor: palette.surface,
+        selectionBg: palette.selection,
+        composerSidebarBackground: palette.background,
+      },
+    };
+    await backupConfigFile(targetPath);
+    await writeJson(targetPath, theme);
+  }
+
+  return themeIds[appearance];
+}
+
 // --- Settings ---
 
 /**
@@ -158,8 +313,8 @@ const CLAUDE_MANAGED_SETTINGS = {
 };
 
 /**
- * Merges managed defaults and migrates the exact former managed [1m] model selection.
- * Preserves other explicit user model choices and unrelated settings.
+ * Merges managed defaults, deploys Sy themes, and migrates the former managed [1m] model selection.
+ * Preserves explicit user model choices and unrelated settings; replaces the theme selection.
  * @param {string} targetDir - Path to the ~/.claude folder.
  * @returns {Promise<void>} Resolves after backing up and writing settings; write errors propagate.
  */
@@ -178,6 +333,7 @@ async function _doSettingsWork(targetDir) {
   const merged = { ...CLAUDE_MANAGED_SETTINGS, ...existing };
   // Retire only our former default, not arbitrary user-selected context variants.
   if (merged.model === "claude-opus-4-7[1m]") merged.model = CLAUDE_MANAGED_SETTINGS.model;
+  merged.theme = await _doClaudeTheme(targetDir, existing.theme);
 
   mergeLLMHookEntry(merged, "UserPromptSubmit", {
     hooks: [

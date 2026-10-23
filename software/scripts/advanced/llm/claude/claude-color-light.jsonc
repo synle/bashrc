@@ -1,0 +1,17 @@
+{
+  // Sy palette bound to COLOR_MAP, matching Sublime. Refresh with make format_build_include.
+  "name": "Sy Light", // {{light.themeName}}
+  "foreground": "#1e1e1e", // {{light.foreground}}
+  "muted": "#5a5a5a", // {{light.textDisabled}}
+  "border": "#262626", // {{light.brightGray}}
+  "accent": "#0252ad", // {{light.linkBlue}}
+  "shimmer": "#0051ae", // {{light.brightBlue}}
+  "info": "#0033b3", // {{light.blue}}
+  "success": "#004a15", // {{light.green}}
+  "error": "#840000", // {{light.red}}
+  "warning": "#775502", // {{light.yellow}}
+  "background": "#f8f8f8", // {{light.background}}
+  "surface": "#ececec", // {{light.surface}}
+  "hover": "#cacaca", // {{light.gray}}
+  "selection": "#96c6fa", // {{light.selection}}
+}

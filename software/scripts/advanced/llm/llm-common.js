@@ -1,10 +1,8 @@
 /**
  * Shared constants and helpers for LLM CLI setup scripts (claude, copilot, gemini, opencode, pi).
  *
- * Lives here (instead of pulling from software/scripts/advanced/editor.common.js) so the
- * llm/* setup scripts are self-contained — none of them SOURCE editor.common.js anymore.
- * Anything that the editor.common.js helpers used to expose AND that an llm/* script still
- * needs lives below as a local copy.
+ * Shared keybinding helpers remain independent of editor setup. Claude additionally
+ * imports editor.common.js for the shared custom-theme gate and built-in fallback registry.
  *
  * Run: `bash run.sh --files="opencode/setup.js"` (or any other llm/<name>/setup.js).
  */

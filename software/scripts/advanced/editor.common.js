@@ -36,9 +36,9 @@ const IS_CUSTOM_THEME_DISABLED_KEY = "IS_CUSTOM_THEME_DISABLED";
  * churn; the opt-out exists so a run can be rehearsed against the stock themes without
  * editing any script.
  *
- * When false, callers must fall back to {@link getTheme}, which names only themes that
- * ship with each app — so the fallback path never depends on an extension or package
- * being installed first.
+ * When false, callers use bundled fallbacks from {@link getTheme}, or a locally supplied
+ * upstream adapter when the app has no matching native theme (Claude). No fallback
+ * requires installing an extension or package.
  *
  * @returns {boolean} True when custom themes should be generated and installed.
  */
@@ -49,10 +49,10 @@ function shouldInstallCustomTheme() {
 // --- Fallback themes ---
 
 /**
- * App name → `[darkTheme, lightTheme]`, naming **only themes that ship with the app**.
- * This is the fallback used whenever {@link shouldInstallCustomTheme} is false, so every
- * entry here must work with a stock install — no extension, no Package Control, no
- * marketplace download.
+ * App name → `[darkTheme, lightTheme]` fallback selection identifiers.
+ * Entries name bundled defaults, or a locally supplied upstream adapter for Claude.
+ * Custom Sy theme definitions stay with their app scripts and JSONC sources.
+ * Reuse shouldInstallCustomTheme to choose between Sy themes and these fallbacks.
  *
  * Two things to know before editing:
  *
@@ -87,6 +87,9 @@ const APP_TO_THEMES_MAP = {
 
   // Windows Terminal bundles no Ayu; One Half is its only built-in dark/light pair.
   "windows-terminal": ["One Half Dark", "One Half Light"],
+
+  // Ayu fallback adapters defined by CLAUDE_THEME_PALETTES_AYU_THEMES in Claude setup.
+  claude: ["custom:ayu-dark", "custom:ayu-light"],
 
   // Single-entry form: vim ships no high-contrast light scheme worth pairing here, so the
   // one value is reused for both modes by getTheme() rather than being padded with a
