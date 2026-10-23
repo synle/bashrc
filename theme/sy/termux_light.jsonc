@@ -1,20 +1,27 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy light native template. Colors are generated from _palette_light.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "termux",
-  "appearance": "light",
-  "captureStatus": "gap",
-  "kind": "capability-record",
-  "source": {
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
-    "path": "software/scripts/android_termux/termux-colors.js",
-  },
-  "definition": {
-    "app": "termux",
-    "appearance": "light",
-    "captureStatus": "unavailable",
-    "reason": "No Sy Light Termux palette exists in the captured repository source.",
-  },
+  "background": "#f8f8f8", // {{light.background}}
+  "foreground": "#1e1e1e", // {{light.foreground}}
+  "cursor": "#0451a5", // {{light.cursorColor}}
+  "palette": [
+    "#000000", // {{light.terminalBlack}}
+    "#840000", // {{light.red}}
+    "#004a15", // {{light.green}}
+    "#775502", // {{light.yellow}}
+    "#0033b3", // {{light.blue}}
+    "#6c0099", // {{light.purple}}
+    "#00416f", // {{light.cyan}}
+    "#6d6d6d", // {{light.white}}
+    "#4a4a4a", // {{light.brightBlack}}
+    "#a12626", // {{light.brightRed}}
+    "#106145", // {{light.brightGreen}}
+    "#7f6000", // {{light.brightYellow}}
+    "#0051ae", // {{light.brightBlue}}
+    "#8700c1", // {{light.brightPurple}}
+    "#145e5e", // {{light.brightCyan}}
+    "#8b8b8b", // {{light.brightWhite}}
+  ],
 }

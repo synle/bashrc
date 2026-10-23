@@ -1,106 +1,110 @@
-# Theme reference and Sy backups
+# Shared Sy themes and baseline references
 
-This folder contains inert theme backups and an evidence-backed comparison report. Nothing here is installed automatically.
+`sy/` contains active theme sources. `baseline/` contains immutable reference captures; it is not deployment configuration.
 
-## Layout
+## Ownership
 
-```text
-theme/
-  baseline/<app>_dark.jsonc
-  baseline/<app>_light.jsonc
-  sy/<app>_dark.jsonc
-  sy/<app>_light.jsonc
-  sy/_palette_dark.jsonc
-  sy/_palette_light.jsonc
-  manifest.jsonc
-  audit.jsonc
-  mappings.jsonc
-  AUDIT.md
+- `sy/_palette_dark.jsonc` and `sy/_palette_light.jsonc` are the only foundation palettes.
+- `software/tools/build-include.js` resolves foundation recipes and renders application color markers.
+- `sy/<app>_<dark|light>.jsonc` contains native-shaped configuration or the documented Vim/terminal renderer input.
+- `baseline/` preserves the earlier reference captures, including inline non-JSON source and explicit unavailable exports.
+- `manifest.jsonc` preserves reference provenance and checksums. Mutable Sy sources are validated by tests and generation, not snapshot hashes.
+- `AUDIT.md`, `audit.jsonc`, and `mappings.jsonc` retain the historical audit evidence and original proposals. Current source and regression tests supersede proposal status.
+
+The first integration commit adds the source/compiler contract while legacy consumers remain intact. The second commit migrates consumers and removes their replaced definitions.
+
+## Foundation recipes
+
+Foundation values are six-digit hex colors or validated references/compositing recipes:
+
+```jsonc
+{
+  "themeName": "Example",
+  "foreground": "#e8e8e8",
+  "brightBlack": "#a0a0a0",
+  "background": "#0a0a0a",
+  "brightGray": "#6e6e6e",
+  "textSecondary": { "from": "foreground", "over": "brightBlack", "alpha": 0.25 },
+  "terminalBlack": { "ref": "brightGray" },
+}
 ```
 
-- `baseline/` contains the selected native/default reference pairs. Some selected themes are bundled alternatives rather than factory defaults.
-- `sy/` contains current Sy definitions, not the proposed improved colors.
-- Shared palettes use the `_palette_` prefix so they sort before application files.
-- `manifest.jsonc` records provenance, captured versions, source hashes, file hashes, licensing reviews, and explicit gaps.
-- `audit.jsonc` contains static measurements and coverage comparisons.
-- `mappings.jsonc` contains proposed bindings and measured core-color candidates. It is not deployment configuration.
-- `AUDIT.md` explains the findings, concrete palette recommendations, per-app leads, and verification limits.
+References can point forward. Unknown roles, cycles, malformed objects, invalid colors, mismatched appearance roles, and alpha outside `[0, 1]` fail generation.
 
-## Reading a backup
+The compiler derives `_R`, `_G`, `_B` channels, `_alpha0` through `_alpha100` in ten-percent steps, plus `_alpha5` and `_alpha15`.
 
-Every application file is a JSONC archive with capture metadata and a `definition` field. It is not necessarily an installable theme file.
+It also derives `_tint10`, `_tint20`, `_shade10`, and `_shade20`. Variants are generated once from resolved colors, not recursively from other variants.
 
-Native Vimscript, Ghostty configuration, Termux properties, and Gemini TypeScript are inline under `sourceText`, `definition.sourceText`, or `inlineSources`.
+Normal foregrounds retain the existing contrast policies. Semantic backgrounds and terminal anchors have separate, tested roles; never treat a fill as a text color.
 
-Original source comments and palette markers remain inside quoted source strings. They are not active regeneration markers in the archival JSONC.
+## Color markers
 
-A file with `captureStatus: "gap"` is a capability record, not a color definition. Do not import it or count it as a captured theme.
+Change the role comment or foundation recipe, not an application's generated hex literal:
 
-Combined native theme families remain complete. Use the recorded selector to select the intended dark or light appearance.
+```jsonc
+{
+  "foreground": "#4fc1ff", // {{dark.brightBlue}}
+  "placeholder": "#b2b2b2", // {{dark.textSecondary}}
+  "border": "#5ca0d733", // {{dark.blue_alpha20}}
+}
+```
 
-## Captured inventory
+An empty string before a marker is also a valid seed. The compiler replaces it and preserves the comment for subsequent regeneration.
 
-| App              | Baseline pair                                       | Current Sy pair                                  |
-| ---------------- | --------------------------------------------------- | ------------------------------------------------ |
-| VS Code          | Default High Contrast / Default High Contrast Light | Both                                             |
-| Sublime Text     | Mariana / Breakers, local backup only               | Both                                             |
-| Zed              | Ayu Dark / Ayu Light                                | Both                                             |
-| Vim              | Ayu dark / light                                    | Both; rendered Vimscript is inline               |
-| Windows Terminal | One Half Dark / One Half Light                      | Both                                             |
-| Ghostty          | Ayu / Ayu Light                                     | Both                                             |
-| Termux           | Solarized dark / light                              | Dark only; light is a gap record                 |
-| Claude Code      | Native presets not exported; gap records            | Both; emitted native override objects are inline |
-| OpenCode         | Native CLI theme, both appearances                  | No adapter; gap records                          |
-| Pi               | Native dark / light                                 | No adapter; gap records                          |
-| Gemini           | Default / Default Light                             | No adapter; gap records                          |
-| Copilot CLI      | Native palette definition unavailable; gap records  | No adapter; gap records                          |
+Display names use `// {{dark.themeName}}` or `// {{light.themeName}}`. Font-style and weight siblings are never interpreted as colors.
 
-The inventory contains 20 captured baseline definitions, 15 captured Sy definitions, 13 capability records, and two shared palette files.
+For strings containing several colors, preserve the original recipe in a string-template comment:
 
-## Limits and licensing
+```jsonc
+{
+  "popup_css": "", // {{template: "html { color: {{dark.foreground}}; background-color: {{dark.surface}}; }"}}
+}
+```
 
-The report contains static source-pair evidence, not screenshots or proof of native rendering. No core colors or application mappings were changed.
+The comment remains after rendering. Later foundation edits can therefore regenerate every embedded color without retaining stale CSS literals.
 
-License banners are left-aligned block comments of at most four lines, including delimiters. Known copyright notices are retained; full-text source links appear in the manifest.
+## Generate and check
 
-Short attribution does not establish that all redistribution conditions are satisfied. Sublime references are local-only; verify their terms before publishing them.
-
-Ghostty's collection license explicitly distinguishes collection rights from individual-theme rights. Resolve the recorded per-asset review before redistribution.
-
-No repository license file was found for the Sy sources. This archive does not infer a license that the source does not declare.
-
-## Integrity check
-
-Run from the repository root with its existing development dependencies installed:
+From the repository root:
 
 ```bash
-node <<'NODE'
-const fs = require("fs");
-const crypto = require("crypto");
-const ts = require("typescript");
-const parse = (file) => {
-  const result = ts.parseConfigFileTextToJson(file, fs.readFileSync(file, "utf8"));
-  if (result.error) throw new Error(file + ": invalid JSONC");
-  return result.config;
-};
-const manifest = parse("theme/manifest.jsonc");
-for (const entry of manifest.files) {
-  const file = "theme/" + entry.file;
-  const bytes = fs.readFileSync(file);
-  const hash = crypto.createHash("sha256").update(bytes).digest("hex");
-  if (hash !== entry.sha256 || bytes.length !== entry.bytes) throw new Error(file + ": integrity mismatch");
-  if (file.endsWith(".jsonc")) parse(file);
-}
-console.log("Theme inventory, JSONC, and file hashes verified.");
-NODE
+make format_build_include
+npx vitest run --config vitest.config.js software/tests/themePalette.spec.js software/tests/themeMarkers.spec.js software/tests/themeTemplates.spec.js software/tests/themeCli.spec.js
 ```
 
-The manifest excludes its own hash to avoid a circular checksum.
+For one template:
 
-## Canonical plan
+```bash
+node software/tools/build-include.js theme/sy/vscode_dark.jsonc
+```
 
-The loaded plan-placement rule requires the implementation plan to remain outside the checkout:
+Explicit targets work without a Git checkout. Automatic discovery combines tracked files and active Sy templates, including templates not yet staged.
 
-`/Users/syle/_extra/ai_llm/plans/bashrc-theme_mapping_audit.md`
+Foundation inputs, reference captures, and historical audit/metadata files are excluded even when supplied explicitly. All active inputs are checked before any template is rewritten.
 
-`AUDIT.md` and `mappings.jsonc` consolidate the actionable findings inside this folder. The canonical plan includes the corresponding implementation leads and acceptance criteria.
+## Native shapes and capability limits
+
+- VS Code, Sublime, Zed, Windows Terminal, Claude, Pi, OpenCode, and Gemini sources retain their application-specific shapes.
+- Vim stores highlight groups, terminal ANSI colors, and Lightline data in JSONC; its setup script renders native Vimscript.
+- Ghostty and Termux store terminal palette data in JSONC; their setup scripts render native config/properties syntax.
+- Pi and OpenCode role sets are checked against the captured native reference definitions.
+- Copilot custom theme import was not verified. Its Sy records remain explicit capability gaps, not invented native themes.
+- A Termux light source exists, but native automatic light/dark switching is not assumed.
+
+Static contrast checks do not prove native rendering under transparency, dimming, selection precedence, remote terminals, or unsupported app versions.
+
+## Baseline licensing and integrity
+
+Baseline files retain short, left-aligned license comments of at most four lines. Full-text source links and unresolved redistribution reviews remain in `manifest.jsonc`.
+
+Sublime native references are local-only backups with unverified redistribution terms. Collection licensing does not automatically settle each Ghostty theme's individual rights.
+
+Short attribution does not establish that all redistribution conditions are satisfied. No new license is inferred for Sy source that has no declared repository license.
+
+The baseline reference bytes and their original source hashes remain unchanged. Active template literals are intentionally regenerated and are not immutable backups.
+
+## Implementation plan
+
+The canonical implementation plan follows the loaded external-placement rule:
+
+`/Users/syle/_extra/ai_llm/plans/bashrc-theme_pipeline_integration.md`

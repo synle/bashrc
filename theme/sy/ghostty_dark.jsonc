@@ -1,43 +1,30 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy dark native template. Colors are generated from _palette_dark.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "ghostty",
-  "appearance": "dark",
-  "captureStatus": "captured",
-  "kind": "source-palette",
-  "source": {
-    "kind": "local-source",
-    "path": "software/scripts/advanced/ghostty-color-dark.jsonc",
-    "sha256": "0b510fc40e4e94530f61eea4e94f400d4a94f0fc18f37b606140db7f8c016f1e",
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
-  },
-  "definition": {
-    "palette": [
-      "#000000",
-      "#f67070",
-      "#76a762",
-      "#dcdcaa",
-      "#5ca0d7",
-      "#c586c0",
-      "#4ec9b0",
-      "#cccccc",
-      "#a0a0a0",
-      "#ff6e6e",
-      "#69ff94",
-      "#ffffa5",
-      "#4fc1ff",
-      "#ff92df",
-      "#a4ffff",
-      "#ffffff",
-    ],
-    "background": "#0a0a0a",
-    "foreground": "#e8e8e8",
-    "cursor-color": "#5ca0d7",
-    "cursor-text": "#0a0a0a",
-    "selection-background": "#1b3c5e",
-    "selection-foreground": "#e8e8e8",
-  },
-  "sourceText": "{\n  // Sy Dark — Ghostty theme source. Rendered to ~/.config/ghostty/themes/Sy Dark\n  // by software/scripts/advanced/ghostty.js as `key = value` lines.\n  //\n  // Every literal here is stamped from COLOR_MAP in software/tools/build-include.js\n  // by `make format_build_include`. Edit COLOR_MAP, never these values.\n  // software/tests/terminalThemes.spec.js fails if a literal drifts off its marker.\n\n  // --- ANSI ramp ---\n  // Index order is fixed by terminal convention: 0-7 normal, 8-15 bright.\n  // `black` and `brightWhite` are the ramp anchors and are intentionally exempt\n  // from the 7:1 floor — every other index is tuned against `background`.\n  \"palette\": [\n    \"#000000\", // {{dark.black}}\n    \"#f67070\", // {{dark.red}}\n    \"#76a762\", // {{dark.green}}\n    \"#dcdcaa\", // {{dark.yellow}}\n    \"#5ca0d7\", // {{dark.blue}}\n    \"#c586c0\", // {{dark.purple}}\n    \"#4ec9b0\", // {{dark.cyan}}\n    \"#cccccc\", // {{dark.white}}\n    \"#a0a0a0\", // {{dark.brightBlack}}\n    \"#ff6e6e\", // {{dark.brightRed}}\n    \"#69ff94\", // {{dark.brightGreen}}\n    \"#ffffa5\", // {{dark.brightYellow}}\n    \"#4fc1ff\", // {{dark.brightBlue}}\n    \"#ff92df\", // {{dark.brightPurple}}\n    \"#a4ffff\", // {{dark.brightCyan}}\n    \"#ffffff\", // {{dark.brightWhite}}\n  ],\n\n  // --- Surfaces ---\n  \"background\": \"#0a0a0a\", // {{dark.background}}\n  \"foreground\": \"#e8e8e8\", // {{dark.foreground}}\n\n  // --- Cursor ---\n  // cursor-text is the background so the glyph under a block cursor inverts cleanly.\n  \"cursor-color\": \"#5ca0d7\", // {{dark.cursorColor}}\n  \"cursor-text\": \"#0a0a0a\", // {{dark.background}}\n\n  // --- Selection ---\n  // Explicit foreground: without it Ghostty keeps the cell's own color, which can\n  // land a dim ANSI hue on the selection fill.\n  \"selection-background\": \"#1b3c5e\", // {{dark.selection}}\n  \"selection-foreground\": \"#e8e8e8\", // {{dark.foreground}}\n}\n",
+  "palette": [
+    "#6e6e6e", // {{dark.terminalBlack}}
+    "#f67070", // {{dark.red}}
+    "#76a762", // {{dark.green}}
+    "#dcdcaa", // {{dark.yellow}}
+    "#5ca0d7", // {{dark.blue}}
+    "#c586c0", // {{dark.purple}}
+    "#4ec9b0", // {{dark.cyan}}
+    "#cccccc", // {{dark.white}}
+    "#a0a0a0", // {{dark.brightBlack}}
+    "#ff6e6e", // {{dark.brightRed}}
+    "#69ff94", // {{dark.brightGreen}}
+    "#ffffa5", // {{dark.brightYellow}}
+    "#4fc1ff", // {{dark.brightBlue}}
+    "#ff92df", // {{dark.brightPurple}}
+    "#a4ffff", // {{dark.brightCyan}}
+    "#ffffff", // {{dark.brightWhite}}
+  ],
+  "background": "#0a0a0a", // {{dark.background}}
+  "foreground": "#e8e8e8", // {{dark.foreground}}
+  "cursor-color": "#5ca0d7", // {{dark.cursorColor}}
+  "cursor-text": "#0a0a0a", // {{dark.background}}
+  "selection-background": "#1b3c5e", // {{dark.selection}}
+  "selection-foreground": "#e8e8e8", // {{dark.foreground}}
 }

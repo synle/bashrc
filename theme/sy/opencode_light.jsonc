@@ -1,20 +1,59 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy light native template. Colors are generated from _palette_light.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "opencode",
-  "appearance": "light",
-  "captureStatus": "gap",
-  "kind": "capability-record",
-  "source": {
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
-    "path": "software/scripts/advanced/llm/opencode/setup.js",
-  },
-  "definition": {
-    "app": "opencode",
-    "appearance": "light",
-    "captureStatus": "unavailable",
-    "reason": "No Sy theme adapter exists in the inspected setup source; no adapter was invented for this backup.",
+  "$schema": "https://opencode.ai/theme.json",
+  "theme": {
+    "primary": "#0033b3", // {{light.blue}}
+    "secondary": "#6c0099", // {{light.purple}}
+    "accent": "#0252ad", // {{light.linkBlue}}
+    "error": "#840000", // {{light.red}}
+    "warning": "#775502", // {{light.yellow}}
+    "success": "#004a15", // {{light.green}}
+    "info": "#0033b3", // {{light.blue}}
+    "text": "#1e1e1e", // {{light.foreground}}
+    "textMuted": "#3f3f3f", // {{light.textSecondary}}
+    "background": "#f8f8f8", // {{light.background}}
+    "backgroundPanel": "#ececec", // {{light.surface}}
+    "backgroundElement": "#cacaca", // {{light.gray}}
+    "border": "#262626", // {{light.brightGray}}
+    "borderActive": "#0033b3", // {{light.blue}}
+    "borderSubtle": "#a4a4a4", // {{light.guide}}
+    "diffAdded": "#004a15", // {{light.green}}
+    "diffRemoved": "#840000", // {{light.red}}
+    "diffContext": "#3f3f3f", // {{light.textSecondary}}
+    "diffHunkHeader": "#0033b3", // {{light.blue}}
+    "diffHighlightAdded": "#004a15", // {{light.green}}
+    "diffHighlightRemoved": "#840000", // {{light.red}}
+    "diffAddedBg": "#dfe7e1", // {{light.diffAddedBackground}}
+    "diffRemovedBg": "#ecdfdf", // {{light.diffRemovedBackground}}
+    "diffContextBg": "#ececec", // {{light.surface}}
+    "diffLineNumber": "#3f3f3f", // {{light.textSecondary}}
+    "diffAddedLineNumberBg": "#dfe7e1", // {{light.diffAddedBackground}}
+    "diffRemovedLineNumberBg": "#ecdfdf", // {{light.diffRemovedBackground}}
+    "markdownText": "#1e1e1e", // {{light.foreground}}
+    "markdownHeading": "#0033b3", // {{light.blue}}
+    "markdownLink": "#0252ad", // {{light.linkBlue}}
+    "markdownLinkText": "#0252ad", // {{light.linkBlue}}
+    "markdownCode": "#a12626", // {{light.brightRed}}
+    "markdownBlockQuote": "#3f3f3f", // {{light.textSecondary}}
+    "markdownEmph": "#a12626", // {{light.brightRed}}
+    "markdownStrong": "#0033b3", // {{light.blue}}
+    "markdownHorizontalRule": "#a4a4a4", // {{light.guide}}
+    "markdownListItem": "#0033b3", // {{light.blue}}
+    "markdownListEnumeration": "#0033b3", // {{light.blue}}
+    "markdownImage": "#0252ad", // {{light.linkBlue}}
+    "markdownImageText": "#0252ad", // {{light.linkBlue}}
+    "markdownCodeBlock": "#1e1e1e", // {{light.foreground}}
+    "syntaxComment": "#004a15", // {{light.green}}
+    "syntaxKeyword": "#0033b3", // {{light.blue}}
+    "syntaxFunction": "#6a5100", // {{light.brown}}
+    "syntaxVariable": "#001080", // {{light.darkBlue}}
+    "syntaxString": "#a12626", // {{light.brightRed}}
+    "syntaxNumber": "#03623a", // {{light.darkGreen}}
+    "syntaxType": "#145e5e", // {{light.brightCyan}}
+    "syntaxOperator": "#1e1e1e", // {{light.foreground}}
+    "syntaxPunctuation": "#1e1e1e", // {{light.foreground}}
   },
 }

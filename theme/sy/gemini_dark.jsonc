@@ -1,20 +1,45 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy dark native template. Colors are generated from _palette_dark.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "gemini",
-  "appearance": "dark",
-  "captureStatus": "gap",
-  "kind": "capability-record",
-  "source": {
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
-    "path": "software/scripts/advanced/llm/gemini/setup.js",
+  "name": "Sy Dark", // {{dark.themeName}}
+  "type": "custom",
+  "text": {
+    "primary": "#e8e8e8", // {{dark.foreground}}
+    "secondary": "#b2b2b2", // {{dark.textSecondary}}
+    "link": "#4fc1ff", // {{dark.linkBlue}}
+    "accent": "#5ca0d7", // {{dark.blue}}
+    "response": "#e8e8e8", // {{dark.foreground}}
   },
-  "definition": {
-    "app": "gemini",
-    "appearance": "dark",
-    "captureStatus": "unavailable",
-    "reason": "No Sy theme adapter exists in the inspected setup source; no adapter was invented for this backup.",
+  "background": {
+    "diff": {
+      "added": "#151a13", // {{dark.diffAddedBackground}}
+      "removed": "#221414", // {{dark.diffRemovedBackground}}
+    },
+    "primary": "#0a0a0a", // {{dark.background}}
+    "message": "#161616", // {{dark.surface}}
+    "input": "#2b2b2b", // {{dark.gray}}
+    "focus": "#1b3c5e", // {{dark.selection}}
+  },
+  "border": {
+    "default": "#6e6e6e", // {{dark.brightGray}}
+  },
+  "status": {
+    "error": "#f67070", // {{dark.red}}
+    "success": "#76a762", // {{dark.green}}
+    "warning": "#dcdcaa", // {{dark.yellow}}
+  },
+  "ui": {
+    "comment": "#76a762", // {{dark.green}}
+    "symbol": "#e8e8e8", // {{dark.foreground}}
+    "active": "#5ca0d7", // {{dark.blue}}
+    "dark": "#464646", // {{dark.guide}}
+    "focus": "#5ca0d7", // {{dark.blue}}
+    "gradient": [
+      "#5ca0d7", // {{dark.blue}}
+      "#4ec9b0", // {{dark.cyan}}
+      "#c586c0", // {{dark.purple}}
+    ],
   },
 }

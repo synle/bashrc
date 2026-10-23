@@ -1,20 +1,72 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy dark native template. Colors are generated from _palette_dark.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "pi",
+  "$schema": "https://pi.dev/schemas/theme.schema.json",
+  "name": "Sy Dark", // {{dark.themeName}}
   "appearance": "dark",
-  "captureStatus": "gap",
-  "kind": "capability-record",
-  "source": {
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
-    "path": "software/scripts/advanced/llm/pi/setup.js",
+  "colors": {
+    "accent": "#5ca0d7", // {{dark.blue}}
+    "border": "#6e6e6e", // {{dark.brightGray}}
+    "borderAccent": "#5ca0d7", // {{dark.blue}}
+    "borderMuted": "#464646", // {{dark.guide}}
+    "success": "#76a762", // {{dark.green}}
+    "error": "#f67070", // {{dark.red}}
+    "warning": "#dcdcaa", // {{dark.yellow}}
+    "muted": "#b2b2b2", // {{dark.textSecondary}}
+    "dim": "#8f8f8f", // {{dark.textDisabled}}
+    "text": "#e8e8e8", // {{dark.foreground}}
+    "thinkingText": "#b2b2b2", // {{dark.textSecondary}}
+    "selectedBg": "#1b3c5e", // {{dark.selection}}
+    "scrollbarTrack": "#161616", // {{dark.surface}}
+    "scrollbarThumb": "#6e6e6e", // {{dark.brightGray}}
+    "searchMatchBg": "#5c4300", // {{dark.matchHighlight}}
+    "searchMatchText": "#e8e8e8", // {{dark.foreground}}
+    "userMessageBg": "#161616", // {{dark.surface}}
+    "userMessageText": "#e8e8e8", // {{dark.foreground}}
+    "customMessageBg": "#161616", // {{dark.surface}}
+    "customMessageText": "#e8e8e8", // {{dark.foreground}}
+    "customMessageLabel": "#c586c0", // {{dark.purple}}
+    "toolPendingBg": "#161616", // {{dark.surface}}
+    "toolSuccessBg": "#151a13", // {{dark.diffAddedBackground}}
+    "toolErrorBg": "#221414", // {{dark.diffRemovedBackground}}
+    "toolTitle": "#e8e8e8", // {{dark.foreground}}
+    "toolOutput": "#b2b2b2", // {{dark.textSecondary}}
+    "mdHeading": "#5ca0d7", // {{dark.blue}}
+    "mdLink": "#4fc1ff", // {{dark.linkBlue}}
+    "mdLinkUrl": "#4fc1ff", // {{dark.linkBlue}}
+    "mdCode": "#ce9178", // {{dark.orange}}
+    "mdCodeBlock": "#ce9178", // {{dark.orange}}
+    "mdCodeBlockBorder": "#6e6e6e", // {{dark.brightGray}}
+    "mdQuote": "#b2b2b2", // {{dark.textSecondary}}
+    "mdQuoteBorder": "#6e6e6e", // {{dark.brightGray}}
+    "mdHr": "#464646", // {{dark.guide}}
+    "mdListBullet": "#5ca0d7", // {{dark.blue}}
+    "toolDiffAdded": "#76a762", // {{dark.green}}
+    "toolDiffRemoved": "#f67070", // {{dark.red}}
+    "toolDiffContext": "#b2b2b2", // {{dark.textSecondary}}
+    "syntaxComment": "#76a762", // {{dark.green}}
+    "syntaxKeyword": "#5ca0d7", // {{dark.blue}}
+    "syntaxFunction": "#dcdcaa", // {{dark.yellow}}
+    "syntaxVariable": "#9cdcfe", // {{dark.lightBlue}}
+    "syntaxString": "#ce9178", // {{dark.orange}}
+    "syntaxNumber": "#b5cea8", // {{dark.lightGreen}}
+    "syntaxType": "#4ec9b0", // {{dark.cyan}}
+    "syntaxOperator": "#e8e8e8", // {{dark.foreground}}
+    "syntaxPunctuation": "#e8e8e8", // {{dark.foreground}}
+    "thinkingOff": "#6e6e6e", // {{dark.brightGray}}
+    "thinkingMinimal": "#a0a0a0", // {{dark.brightBlack}}
+    "thinkingLow": "#5ca0d7", // {{dark.blue}}
+    "thinkingMedium": "#4ec9b0", // {{dark.cyan}}
+    "thinkingHigh": "#c586c0", // {{dark.purple}}
+    "thinkingXhigh": "#ce9178", // {{dark.orange}}
+    "thinkingMax": "#f67070", // {{dark.red}}
+    "bashMode": "#76a762", // {{dark.green}}
   },
-  "definition": {
-    "app": "pi",
-    "appearance": "dark",
-    "captureStatus": "unavailable",
-    "reason": "No Sy theme adapter exists in the inspected setup source; no adapter was invented for this backup.",
+  "export": {
+    "pageBg": "#0a0a0a", // {{dark.background}}
+    "cardBg": "#161616", // {{dark.surface}}
+    "infoBg": "#161616", // {{dark.surface}}
   },
 }

@@ -1,73 +1,73 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy dark native template. Colors are generated from _palette_dark.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "claude",
-  "appearance": "dark",
-  "captureStatus": "captured",
-  "kind": "source-palette",
-  "source": {
-    "kind": "local-source",
-    "path": "software/scripts/advanced/llm/claude/claude-color-dark.jsonc",
-    "sha256": "7cb324556bafff301343e445f5ffee40e5fac91cf02cc13de369de851bb620b5",
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
+  "name": "Sy Dark", // {{dark.themeName}}
+  "base": "dark",
+  "overrides": {
+    "claude": "#5ca0d7", // {{dark.blue}}
+    "claudeShimmer": "#4fc1ff", // {{dark.brightBlue}}
+    "text": "#e8e8e8", // {{dark.foreground}}
+    "inverseText": "#0a0a0a", // {{dark.background}}
+    "inactive": "#b2b2b2", // {{dark.textSecondary}}
+    "subtle": "#6e6e6e", // {{dark.brightGray}}
+    "permission": "#5ca0d7", // {{dark.blue}}
+    "permissionShimmer": "#5ca0d7", // {{dark.blue}}
+    "promptBorder": "#5ca0d7", // {{dark.blue}}
+    "promptBorderShimmer": "#4fc1ff", // {{dark.brightBlue}}
+    "planMode": "#5ca0d7", // {{dark.blue}}
+    "autoAccept": "#76a762", // {{dark.green}}
+    "success": "#76a762", // {{dark.green}}
+    "error": "#f67070", // {{dark.red}}
+    "warning": "#dcdcaa", // {{dark.yellow}}
+    "warningShimmer": "#dcdcaa", // {{dark.yellow}}
+    "remember": "#5ca0d7", // {{dark.blue}}
+    "userMessageBackground": "#161616", // {{dark.surface}}
+    "userMessageBackgroundHover": "#2b2b2b", // {{dark.gray}}
+    "bashMessageBackgroundColor": "#161616", // {{dark.surface}}
+    "memoryBackgroundColor": "#161616", // {{dark.surface}}
+    "selectionBg": "#1b3c5e", // {{dark.selection}}
+    "composerSidebarBackground": "#0a0a0a", // {{dark.background}}
+    "suggestion": "#5ca0d7", // {{dark.blue}}
+    "bashBorder": "#76a762", // {{dark.green}}
+    "ide": "#4ec9b0", // {{dark.cyan}}
+    "fastMode": "#ce9178", // {{dark.orange}}
+    "fastModeShimmer": "#d7ba7d", // {{dark.gold}}
+    "inactiveShimmer": "#b2b2b2", // {{dark.textSecondary}}
+    "merged": "#c586c0", // {{dark.purple}}
+    "diffAdded": "#151a13", // {{dark.diffAddedBackground}}
+    "diffRemoved": "#221414", // {{dark.diffRemovedBackground}}
+    "diffAddedDimmed": "#0f120e", // {{dark.diffAddedMutedBackground}}
+    "diffRemovedDimmed": "#160f0f", // {{dark.diffRemovedMutedBackground}}
+    "diffAddedWord": "#20291c", // {{dark.diffAddedWordBackground}}
+    "diffRemovedWord": "#391e1e", // {{dark.diffRemovedWordBackground}}
+    "rate_limit_fill": "#5ca0d7", // {{dark.blue}}
+    "rate_limit_empty": "#464646", // {{dark.guide}}
+    "briefLabelYou": "#5ca0d7", // {{dark.blue}}
+    "briefLabelClaude": "#c586c0", // {{dark.purple}}
+    "effortUltra": "#d7ba7d", // {{dark.gold}}
+    "rainbow_red": "#f67070", // {{dark.red}}
+    "rainbow_red_shimmer": "#f77e7e", // {{dark.red_tint10}}
+    "rainbow_orange": "#ce9178", // {{dark.orange}}
+    "rainbow_orange_shimmer": "#d39c86", // {{dark.orange_tint10}}
+    "rainbow_yellow": "#dcdcaa", // {{dark.yellow}}
+    "rainbow_yellow_shimmer": "#e0e0b3", // {{dark.yellow_tint10}}
+    "rainbow_green": "#76a762", // {{dark.green}}
+    "rainbow_green_shimmer": "#84b072", // {{dark.green_tint10}}
+    "rainbow_blue": "#5ca0d7", // {{dark.blue}}
+    "rainbow_blue_shimmer": "#6caadb", // {{dark.blue_tint10}}
+    "rainbow_indigo": "#4fc1ff", // {{dark.brightBlue}}
+    "rainbow_indigo_shimmer": "#61c7ff", // {{dark.brightBlue_tint10}}
+    "rainbow_violet": "#c586c0", // {{dark.purple}}
+    "rainbow_violet_shimmer": "#cb92c6", // {{dark.purple_tint10}}
+    "red_FOR_SUBAGENTS_ONLY": "#f67070", // {{dark.red}}
+    "blue_FOR_SUBAGENTS_ONLY": "#5ca0d7", // {{dark.blue}}
+    "green_FOR_SUBAGENTS_ONLY": "#76a762", // {{dark.green}}
+    "yellow_FOR_SUBAGENTS_ONLY": "#dcdcaa", // {{dark.yellow}}
+    "purple_FOR_SUBAGENTS_ONLY": "#c586c0", // {{dark.purple}}
+    "orange_FOR_SUBAGENTS_ONLY": "#ce9178", // {{dark.orange}}
+    "pink_FOR_SUBAGENTS_ONLY": "#ff92df", // {{dark.brightPurple}}
+    "cyan_FOR_SUBAGENTS_ONLY": "#4ec9b0", // {{dark.cyan}}
   },
-  "definition": {
-    "name": "Sy Dark",
-    "foreground": "#e8e8e8",
-    "muted": "#8f8f8f",
-    "border": "#6e6e6e",
-    "accent": "#5ca0d7",
-    "shimmer": "#4fc1ff",
-    "info": "#5ca0d7",
-    "success": "#76a762",
-    "error": "#f67070",
-    "warning": "#dcdcaa",
-    "background": "#0a0a0a",
-    "surface": "#161616",
-    "hover": "#2b2b2b",
-    "selection": "#1b3c5e",
-  },
-  "sourceText": "{\n  // Sy palette bound to COLOR_MAP, matching Sublime. Refresh with make format_build_include.\n  \"name\": \"Sy Dark\", // {{dark.themeName}}\n  \"foreground\": \"#e8e8e8\", // {{dark.foreground}}\n  \"muted\": \"#8f8f8f\", // {{dark.textDisabled}}\n  \"border\": \"#6e6e6e\", // {{dark.brightGray}}\n  \"accent\": \"#5ca0d7\", // {{dark.blue}}\n  \"shimmer\": \"#4fc1ff\", // {{dark.brightBlue}}\n  \"info\": \"#5ca0d7\", // {{dark.blue}}\n  \"success\": \"#76a762\", // {{dark.green}}\n  \"error\": \"#f67070\", // {{dark.red}}\n  \"warning\": \"#dcdcaa\", // {{dark.yellow}}\n  \"background\": \"#0a0a0a\", // {{dark.background}}\n  \"surface\": \"#161616\", // {{dark.surface}}\n  \"hover\": \"#2b2b2b\", // {{dark.gray}}\n  \"selection\": \"#1b3c5e\", // {{dark.selection}}\n}\n",
-  "inlineSources": [
-    {
-      "originalFilename": "sy_claude_dark.native.jsonc",
-      "kind": "extracted-native-json",
-      "source": {
-        "kind": "local-source",
-        "path": "software/scripts/advanced/llm/claude/setup.js",
-        "sha256": "da6eb0ba3f54fc4f609a765bce05231c67681e98b11246faacd6970d7e42a52b",
-      },
-      "definition": {
-        "name": "Sy Dark",
-        "base": "dark",
-        "overrides": {
-          "claude": "#5ca0d7",
-          "claudeShimmer": "#4fc1ff",
-          "text": "#e8e8e8",
-          "inverseText": "#0a0a0a",
-          "inactive": "#8f8f8f",
-          "subtle": "#6e6e6e",
-          "permission": "#5ca0d7",
-          "permissionShimmer": "#5ca0d7",
-          "promptBorder": "#5ca0d7",
-          "promptBorderShimmer": "#4fc1ff",
-          "planMode": "#5ca0d7",
-          "autoAccept": "#76a762",
-          "success": "#76a762",
-          "error": "#f67070",
-          "warning": "#dcdcaa",
-          "warningShimmer": "#dcdcaa",
-          "remember": "#5ca0d7",
-          "userMessageBackground": "#161616",
-          "userMessageBackgroundHover": "#2b2b2b",
-          "bashMessageBackgroundColor": "#161616",
-          "memoryBackgroundColor": "#161616",
-          "selectionBg": "#1b3c5e",
-          "composerSidebarBackground": "#0a0a0a",
-        },
-      },
-    },
-  ],
 }

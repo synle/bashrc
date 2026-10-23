@@ -1,5 +1,12 @@
 # Theme mapping audit
 
+## Historical evidence and current implementation
+
+This report records the pre-integration snapshot identified below. Its measured counts and candidate literals are historical evidence, not current active-template results.
+
+Active sources now live in `theme/sy/`, use foundation-derived recipes, and have marker/contrast regression checks in `software/tests/theme*.spec.js`.
+Consumer migration is a separate commit. Native visual verification and unsupported Copilot import remain explicit limits.
+
 ## Scope and evidence
 
 This report compares the captured native references with the captured Sy definitions. It recommends changes; it does not deploy them.

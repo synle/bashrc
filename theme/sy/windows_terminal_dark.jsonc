@@ -1,40 +1,27 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy dark native template. Colors are generated from _palette_dark.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "windows_terminal",
-  "appearance": "dark",
-  "captureStatus": "captured",
-  "kind": "extracted-native-jsonc",
-  "source": {
-    "kind": "local-source",
-    "path": "software/scripts/windows-terminal.js",
-    "sha256": "1aeebdd401ed634716f4c8258c8b63594e9faac5b3eda6db16480297398b4757",
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
-  },
-  "definition": {
-    "name": "Sy Dark",
-    "background": "#0a0a0a",
-    "foreground": "#e8e8e8",
-    "cursorColor": "#5ca0d7",
-    "selectionBackground": "#1b3c5e",
-    "black": "#6e6e6e",
-    "blue": "#5ca0d7",
-    "brightBlack": "#a0a0a0",
-    "brightBlue": "#4fc1ff",
-    "brightCyan": "#a4ffff",
-    "brightGreen": "#69ff94",
-    "brightPurple": "#ff92df",
-    "brightRed": "#ff6e6e",
-    "brightWhite": "#ffffff",
-    "brightYellow": "#ffffa5",
-    "cyan": "#4ec9b0",
-    "green": "#76a762",
-    "purple": "#c586c0",
-    "red": "#f67070",
-    "white": "#cccccc",
-    "yellow": "#dcdcaa",
-  },
-  "sourceText": "{\n      \"name\": \"Sy Dark\", // {{dark.themeName}}\n      \"background\": \"#0a0a0a\", // {{dark.background}}\n      \"foreground\": \"#e8e8e8\", // {{dark.foreground}}\n      \"cursorColor\": \"#5ca0d7\", // {{dark.cursorColor}}\n      \"selectionBackground\": \"#1b3c5e\", // {{dark.selection}}\n      \"black\": \"#6e6e6e\", // {{dark.brightGray}}\n      \"blue\": \"#5ca0d7\", // {{dark.blue}}\n      \"brightBlack\": \"#a0a0a0\", // {{dark.brightBlack}}\n      \"brightBlue\": \"#4fc1ff\", // {{dark.brightBlue}}\n      \"brightCyan\": \"#a4ffff\", // {{dark.brightCyan}}\n      \"brightGreen\": \"#69ff94\", // {{dark.brightGreen}}\n      \"brightPurple\": \"#ff92df\", // {{dark.brightPurple}}\n      \"brightRed\": \"#ff6e6e\", // {{dark.brightRed}}\n      \"brightWhite\": \"#ffffff\", // {{dark.brightWhite}}\n      \"brightYellow\": \"#ffffa5\", // {{dark.brightYellow}}\n      \"cyan\": \"#4ec9b0\", // {{dark.cyan}}\n      \"green\": \"#76a762\", // {{dark.green}}\n      \"purple\": \"#c586c0\", // {{dark.purple}}\n      \"red\": \"#f67070\", // {{dark.red}}\n      \"white\": \"#cccccc\", // {{dark.white}}\n      \"yellow\": \"#dcdcaa\", // {{dark.yellow}}\n    }\n",
+  "name": "Sy Dark", // {{dark.themeName}}
+  "background": "#0a0a0a", // {{dark.background}}
+  "foreground": "#e8e8e8", // {{dark.foreground}}
+  "cursorColor": "#5ca0d7", // {{dark.cursorColor}}
+  "selectionBackground": "#1b3c5e", // {{dark.selection}}
+  "black": "#6e6e6e", // {{dark.terminalBlack}}
+  "blue": "#5ca0d7", // {{dark.blue}}
+  "brightBlack": "#a0a0a0", // {{dark.brightBlack}}
+  "brightBlue": "#4fc1ff", // {{dark.brightBlue}}
+  "brightCyan": "#a4ffff", // {{dark.brightCyan}}
+  "brightGreen": "#69ff94", // {{dark.brightGreen}}
+  "brightPurple": "#ff92df", // {{dark.brightPurple}}
+  "brightRed": "#ff6e6e", // {{dark.brightRed}}
+  "brightWhite": "#ffffff", // {{dark.brightWhite}}
+  "brightYellow": "#ffffa5", // {{dark.brightYellow}}
+  "cyan": "#4ec9b0", // {{dark.cyan}}
+  "green": "#76a762", // {{dark.green}}
+  "purple": "#c586c0", // {{dark.purple}}
+  "red": "#f67070", // {{dark.red}}
+  "white": "#cccccc", // {{dark.white}}
+  "yellow": "#dcdcaa", // {{dark.yellow}}
 }

@@ -1,20 +1,72 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy light native template. Colors are generated from _palette_light.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "pi",
+  "$schema": "https://pi.dev/schemas/theme.schema.json",
+  "name": "Sy Light", // {{light.themeName}}
   "appearance": "light",
-  "captureStatus": "gap",
-  "kind": "capability-record",
-  "source": {
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
-    "path": "software/scripts/advanced/llm/pi/setup.js",
+  "colors": {
+    "accent": "#0033b3", // {{light.blue}}
+    "border": "#262626", // {{light.brightGray}}
+    "borderAccent": "#0033b3", // {{light.blue}}
+    "borderMuted": "#a4a4a4", // {{light.guide}}
+    "success": "#004a15", // {{light.green}}
+    "error": "#840000", // {{light.red}}
+    "warning": "#775502", // {{light.yellow}}
+    "muted": "#3f3f3f", // {{light.textSecondary}}
+    "dim": "#5a5a5a", // {{light.textDisabled}}
+    "text": "#1e1e1e", // {{light.foreground}}
+    "thinkingText": "#3f3f3f", // {{light.textSecondary}}
+    "selectedBg": "#96c6fa", // {{light.selection}}
+    "scrollbarTrack": "#ececec", // {{light.surface}}
+    "scrollbarThumb": "#262626", // {{light.brightGray}}
+    "searchMatchBg": "#ffbe3d", // {{light.matchHighlight}}
+    "searchMatchText": "#1e1e1e", // {{light.foreground}}
+    "userMessageBg": "#ececec", // {{light.surface}}
+    "userMessageText": "#1e1e1e", // {{light.foreground}}
+    "customMessageBg": "#ececec", // {{light.surface}}
+    "customMessageText": "#1e1e1e", // {{light.foreground}}
+    "customMessageLabel": "#6c0099", // {{light.purple}}
+    "toolPendingBg": "#ececec", // {{light.surface}}
+    "toolSuccessBg": "#dfe7e1", // {{light.diffAddedBackground}}
+    "toolErrorBg": "#ecdfdf", // {{light.diffRemovedBackground}}
+    "toolTitle": "#1e1e1e", // {{light.foreground}}
+    "toolOutput": "#3f3f3f", // {{light.textSecondary}}
+    "mdHeading": "#0033b3", // {{light.blue}}
+    "mdLink": "#0252ad", // {{light.linkBlue}}
+    "mdLinkUrl": "#0252ad", // {{light.linkBlue}}
+    "mdCode": "#a12626", // {{light.brightRed}}
+    "mdCodeBlock": "#a12626", // {{light.brightRed}}
+    "mdCodeBlockBorder": "#262626", // {{light.brightGray}}
+    "mdQuote": "#3f3f3f", // {{light.textSecondary}}
+    "mdQuoteBorder": "#262626", // {{light.brightGray}}
+    "mdHr": "#a4a4a4", // {{light.guide}}
+    "mdListBullet": "#0033b3", // {{light.blue}}
+    "toolDiffAdded": "#004a15", // {{light.green}}
+    "toolDiffRemoved": "#840000", // {{light.red}}
+    "toolDiffContext": "#3f3f3f", // {{light.textSecondary}}
+    "syntaxComment": "#004a15", // {{light.green}}
+    "syntaxKeyword": "#0033b3", // {{light.blue}}
+    "syntaxFunction": "#6a5100", // {{light.brown}}
+    "syntaxVariable": "#001080", // {{light.darkBlue}}
+    "syntaxString": "#a12626", // {{light.brightRed}}
+    "syntaxNumber": "#03623a", // {{light.darkGreen}}
+    "syntaxType": "#145e5e", // {{light.brightCyan}}
+    "syntaxOperator": "#1e1e1e", // {{light.foreground}}
+    "syntaxPunctuation": "#1e1e1e", // {{light.foreground}}
+    "thinkingOff": "#262626", // {{light.brightGray}}
+    "thinkingMinimal": "#4a4a4a", // {{light.brightBlack}}
+    "thinkingLow": "#0033b3", // {{light.blue}}
+    "thinkingMedium": "#00416f", // {{light.cyan}}
+    "thinkingHigh": "#6c0099", // {{light.purple}}
+    "thinkingXhigh": "#8a3f20", // {{light.orange}}
+    "thinkingMax": "#840000", // {{light.red}}
+    "bashMode": "#004a15", // {{light.green}}
   },
-  "definition": {
-    "app": "pi",
-    "appearance": "light",
-    "captureStatus": "unavailable",
-    "reason": "No Sy theme adapter exists in the inspected setup source; no adapter was invented for this backup.",
+  "export": {
+    "pageBg": "#f8f8f8", // {{light.background}}
+    "cardBg": "#ececec", // {{light.surface}}
+    "infoBg": "#ececec", // {{light.surface}}
   },
 }

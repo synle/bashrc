@@ -1,20 +1,59 @@
 /*
-Sy source snapshot.
-No repository license file was found; no redistribution license is inferred.
+Sy dark native template. Colors are generated from _palette_dark.jsonc.
+Edit marker roles, then run make format_build_include; do not edit generated literals.
 */
 {
-  "app": "opencode",
-  "appearance": "dark",
-  "captureStatus": "gap",
-  "kind": "capability-record",
-  "source": {
-    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
-    "path": "software/scripts/advanced/llm/opencode/setup.js",
-  },
-  "definition": {
-    "app": "opencode",
-    "appearance": "dark",
-    "captureStatus": "unavailable",
-    "reason": "No Sy theme adapter exists in the inspected setup source; no adapter was invented for this backup.",
+  "$schema": "https://opencode.ai/theme.json",
+  "theme": {
+    "primary": "#5ca0d7", // {{dark.blue}}
+    "secondary": "#c586c0", // {{dark.purple}}
+    "accent": "#4fc1ff", // {{dark.linkBlue}}
+    "error": "#f67070", // {{dark.red}}
+    "warning": "#dcdcaa", // {{dark.yellow}}
+    "success": "#76a762", // {{dark.green}}
+    "info": "#5ca0d7", // {{dark.blue}}
+    "text": "#e8e8e8", // {{dark.foreground}}
+    "textMuted": "#b2b2b2", // {{dark.textSecondary}}
+    "background": "#0a0a0a", // {{dark.background}}
+    "backgroundPanel": "#161616", // {{dark.surface}}
+    "backgroundElement": "#2b2b2b", // {{dark.gray}}
+    "border": "#6e6e6e", // {{dark.brightGray}}
+    "borderActive": "#5ca0d7", // {{dark.blue}}
+    "borderSubtle": "#464646", // {{dark.guide}}
+    "diffAdded": "#76a762", // {{dark.green}}
+    "diffRemoved": "#f67070", // {{dark.red}}
+    "diffContext": "#b2b2b2", // {{dark.textSecondary}}
+    "diffHunkHeader": "#5ca0d7", // {{dark.blue}}
+    "diffHighlightAdded": "#76a762", // {{dark.green}}
+    "diffHighlightRemoved": "#f67070", // {{dark.red}}
+    "diffAddedBg": "#151a13", // {{dark.diffAddedBackground}}
+    "diffRemovedBg": "#221414", // {{dark.diffRemovedBackground}}
+    "diffContextBg": "#161616", // {{dark.surface}}
+    "diffLineNumber": "#b2b2b2", // {{dark.textSecondary}}
+    "diffAddedLineNumberBg": "#151a13", // {{dark.diffAddedBackground}}
+    "diffRemovedLineNumberBg": "#221414", // {{dark.diffRemovedBackground}}
+    "markdownText": "#e8e8e8", // {{dark.foreground}}
+    "markdownHeading": "#5ca0d7", // {{dark.blue}}
+    "markdownLink": "#4fc1ff", // {{dark.linkBlue}}
+    "markdownLinkText": "#4fc1ff", // {{dark.linkBlue}}
+    "markdownCode": "#ce9178", // {{dark.orange}}
+    "markdownBlockQuote": "#b2b2b2", // {{dark.textSecondary}}
+    "markdownEmph": "#ce9178", // {{dark.orange}}
+    "markdownStrong": "#5ca0d7", // {{dark.blue}}
+    "markdownHorizontalRule": "#464646", // {{dark.guide}}
+    "markdownListItem": "#5ca0d7", // {{dark.blue}}
+    "markdownListEnumeration": "#5ca0d7", // {{dark.blue}}
+    "markdownImage": "#4fc1ff", // {{dark.linkBlue}}
+    "markdownImageText": "#4fc1ff", // {{dark.linkBlue}}
+    "markdownCodeBlock": "#e8e8e8", // {{dark.foreground}}
+    "syntaxComment": "#76a762", // {{dark.green}}
+    "syntaxKeyword": "#5ca0d7", // {{dark.blue}}
+    "syntaxFunction": "#dcdcaa", // {{dark.yellow}}
+    "syntaxVariable": "#9cdcfe", // {{dark.lightBlue}}
+    "syntaxString": "#ce9178", // {{dark.orange}}
+    "syntaxNumber": "#b5cea8", // {{dark.lightGreen}}
+    "syntaxType": "#4ec9b0", // {{dark.cyan}}
+    "syntaxOperator": "#e8e8e8", // {{dark.foreground}}
+    "syntaxPunctuation": "#e8e8e8", // {{dark.foreground}}
   },
 }
