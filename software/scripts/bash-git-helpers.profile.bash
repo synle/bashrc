@@ -1206,8 +1206,10 @@ function _git_patch_create_unpushed() {
 }
 
 # patch: one word for the whole transfer pair — apply when there is something to
-# apply, otherwise cut a fresh patch. This shadows /usr/bin/patch in shells that
-# load the profile; reach the binary with `command patch`.
+# apply, otherwise export commits without changing HEAD, the index, or local files.
+# Accepts [-y] [count | patch_file]; returns the selected operation's status.
+# Creation copies/saves/sends the patch; application can modify files and commit.
+# This shadows /usr/bin/patch; reach the binary with `command patch`.
 function patch() {
   if is_help_arg "${1:-}"; then
     echo "patch: apply a patch when one is at hand, otherwise cut a new one
@@ -1221,6 +1223,8 @@ function patch() {
     1. <patch_file>, when given       -> git_patch_apply <patch_file>
     2. clipboard reads like a diff    -> asks first, then applies it
     3. declined, empty, or not a diff -> export every commit ahead of upstream
+  Creation exports committed changes only; staged, unstaged, and untracked work
+  stays untouched. No stash, staging, or commit is needed to create a patch.
   After a successful apply it copies the patch's own commit message (minus any
   Co-authored-by trailer) to the clipboard, then runs 'git add -u && git commit'
   so the message can be pasted straight into the editor.
@@ -1288,8 +1292,6 @@ function patch() {
   status=$?
   if [ "$status" -eq 0 ]; then
     _git_patch_outcome_line copied
-    echo ">>> staging tracked changes and committing — paste the message in the editor"
-    git add -u && git commit
   fi
   return "$status"
 }

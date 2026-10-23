@@ -51,6 +51,68 @@ afterEach(() => {
   fs.rmSync(folder, { recursive: true, force: true });
 });
 
+/** Public creation path with local clipboard storage and no external transports. */
+const CREATE_PATCH = `
+  function is_help_arg() { return 1; }
+  function paste() { printf 'not a patch\\n'; }
+  function copy() { command cp "$2" "$PWD/.git/copied.patch"; }
+  function _git_patch_temp_file() { printf '%s\\n' "$PWD/.git/export.patch"; }
+  function _dropbox_folder() { return 1; }
+  function print_action_summary() { :; }
+  is_work_profile=1
+  export GIT_EDITOR=false
+`;
+
+describe("Git patch creation integration", () => {
+  it.each(["clean", "unstaged", "staged and unstaged", "declined clipboard"])(
+    "exports only committed changes and preserves repository state with %s work",
+    (state) => {
+      git("update-ref", "refs/remotes/origin/main", "HEAD~1");
+      git("config", "branch." + git("branch", "--show-current") + ".remote", "origin");
+      git("config", "branch." + git("branch", "--show-current") + ".merge", "refs/heads/main");
+      if (state === "staged and unstaged") {
+        fs.writeFileSync(path.join(folder, "note.txt"), "base\nfirst\nstaged draft\n");
+        git("add", "note.txt");
+      }
+      if (state !== "clean") {
+        fs.writeFileSync(path.join(folder, "note.txt"), "base\nfirst\nunfinished draft\n");
+        fs.writeFileSync(path.join(folder, "untracked.txt"), "untracked draft\n");
+      }
+      const head = git("rev-parse", "HEAD");
+      const status = git("status", "--porcelain");
+      const staged = git("diff", "--cached", "--binary");
+      const unstaged = git("diff", "--binary");
+      const stashes = git("stash", "list");
+      const clipboard =
+        state === "declined clipboard"
+          ? "function paste() { git format-patch -1 --stdout; }; function prompt_yes_no() { return 1; }; "
+          : "";
+
+      const result = shell(CREATE_PATCH + clipboard + "patch");
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toContain("Latest Patch copied to clipboard");
+      const exported = fs.readFileSync(path.join(folder, ".git/copied.patch"), "utf8");
+      expect(exported).toContain("Subject: [PATCH] First change");
+      expect(exported).toContain("+first\n");
+      expect(exported).not.toContain("draft");
+      const repeated = shell(CREATE_PATCH + clipboard + "patch");
+      expect(repeated.status, repeated.stderr).toBe(0);
+      expect(repeated.stdout).toContain("Latest Patch copied to clipboard");
+      expect(fs.readFileSync(path.join(folder, ".git/copied.patch"), "utf8")).toBe(exported);
+      if (state !== "clean") {
+        expect(fs.readFileSync(path.join(folder, "untracked.txt"), "utf8")).toBe("untracked draft\n");
+      }
+      expect(git("rev-parse", "HEAD")).toBe(head);
+      expect(git("status", "--porcelain")).toBe(status);
+      expect(git("diff", "--cached", "--binary")).toBe(staged);
+      expect(git("diff", "--binary")).toBe(unstaged);
+      expect(git("stash", "list")).toBe(stashes);
+      expect(result.stdout).not.toContain("staging tracked changes and committing");
+    },
+  );
+});
+
 describe("Git patch boundary integration", () => {
   it.each([
     "https://github.com/acme/widget-store.git",
