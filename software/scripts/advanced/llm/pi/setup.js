@@ -115,15 +115,19 @@ const PI_OLLAMA_COMPAT = {
 };
 
 /**
- * Converts the shared Copilot extension registry into Pi's provider model shape.
- * @returns {Array<{id: string, name: string, headers?: Record<string, string>}>} Pi model entries.
+ * Builds display-name and header overrides without replacing Pi's native model capabilities.
+ * @returns {Record<string, {name: string, headers?: Record<string, string>}>} Overrides keyed by model ID; no IO.
  */
-function _getPiCopilotModels() {
-  return Object.entries(LLM_COPILOT_MODEL_EXTENSIONS).map(([id, config]) => ({
-    id,
-    name: `GitHub Copilot / ${id}`,
-    ...(config.fast ? { headers: config.fast.headers } : {}),
-  }));
+function _getPiCopilotModelOverrides() {
+  return Object.fromEntries(
+    Object.entries(LLM_COPILOT_MODEL_EXTENSIONS).map(([id, config]) => [
+      id,
+      {
+        name: `GitHub Copilot / ${id}`,
+        ...(config.fast ? { headers: config.fast.headers } : {}),
+      },
+    ]),
+  );
 }
 
 /**
@@ -217,12 +221,12 @@ async function _doPiKeybindingsWork(agentDir) {
 }
 
 /**
- * Replaces discovered Ollama providers and refreshes GitHub Copilot models in one pi models.json under `providers`,
- * preserving user-managed provider settings and adding Copilot's required IDE-auth header.
+ * Replaces discovered Ollama providers and migrates managed Copilot names and headers to modelOverrides.
+ * Preserves custom definitions, explicit overrides, and provider headers without replacing native model capabilities.
  * Always writes the Copilot header configuration, even when no Ollama host is reachable.
  * @param {string} agentDir - Target pi agent folder.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providerInputs - Discovered reachable Ollama hosts.
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Resolves after backing up and writing models.json; write errors propagate.
  */
 async function _doPiModelsWork(agentDir, providerInputs) {
   // Keep the historical one-argument helper shape for existing callers and tests.
@@ -234,7 +238,8 @@ async function _doPiModelsWork(agentDir, providerInputs) {
 
   /** @type {Record<string, any>} Providers discovered this run. */
   const discovered = _buildPiOllamaProviders(providerInputs);
-  const copilotModels = _getPiCopilotModels();
+  /** @type {Record<string, any>} Managed display names and model headers. */
+  const copilotOverrides = _getPiCopilotModelOverrides();
 
   log(">> pi Models:", targetPath);
 
@@ -250,9 +255,37 @@ async function _doPiModelsWork(agentDir, providerInputs) {
   const existingCopilotHeaders = existingCopilot?.headers && typeof existingCopilot.headers === "object" ? existingCopilot.headers : {};
   discovered[LLM_COPILOT_PROVIDER_ID] = {
     ...(existingCopilot && typeof existingCopilot === "object" ? existingCopilot : {}),
-    ...(copilotModels.length > 0 ? { models: copilotModels } : {}),
     headers: { ...existingCopilotHeaders, ...PI_COPILOT_HEADERS },
   };
+  /** @type {Record<string, any>} Copilot configuration retaining unrelated user settings. */
+  const copilot = discovered[LLM_COPILOT_PROVIDER_ID];
+  /** @type {Record<string, any>} Existing explicit overrides take precedence over legacy entries. */
+  const modelOverrides = { ...copilot.modelOverrides };
+
+  // Only migrate our former name/header-only entries; explicit custom model capabilities remain untouched.
+  if (Array.isArray(copilot.models)) {
+    copilot.models = copilot.models.filter((model) => {
+      if (model.name !== `GitHub Copilot / ${model.id}` || !Object.keys(model).every((key) => ["id", "name", "headers"].includes(key)))
+        return true;
+      const previous = modelOverrides[model.id];
+      modelOverrides[model.id] = {
+        name: model.name,
+        ...previous,
+        ...(model.headers || previous?.headers ? { headers: { ...model.headers, ...previous?.headers } } : {}),
+      };
+      return false;
+    });
+    if (copilot.models.length === 0) delete copilot.models;
+  }
+  for (const [id, override] of Object.entries(copilotOverrides)) {
+    const previous = modelOverrides[id];
+    modelOverrides[id] = {
+      ...previous,
+      ...override,
+      ...(previous?.headers || override.headers ? { headers: { ...previous?.headers, ...override.headers } } : {}),
+    };
+  }
+  if (Object.keys(modelOverrides).length > 0) copilot.modelOverrides = modelOverrides;
 
   // `ollama-*` is reserved for providers generated from ip-address.config. Rebuild
   // that namespace from current discovery so removed models and unavailable hosts
