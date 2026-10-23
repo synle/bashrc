@@ -163,7 +163,18 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
 
     const result = JSON.parse(fileSystem[target]);
     expect(result.customSetting).toBe("kept");
-    expect(Object.keys(result[key]).sort()).toEqual(["anydoc", "codegraph", "context7", "personal", "playwright"]);
+    expect(Object.keys(result[key]).sort()).toEqual(
+      cli === "pi"
+        ? ["anydoc", "codegraph", "context7", "personal", "playwright"]
+        : ["anydoc", "codegraph", "context7", "personal", "pi-lens", "playwright"],
+    );
+    expect(result[key]["pi-lens"]).toEqual(
+      cli === "pi"
+        ? undefined
+        : cli === "opencode"
+          ? { type: "local", command: ["pi-lens-mcp"], enabled: true }
+          : { command: "pi-lens-mcp", args: [] },
+    );
     expect(result[key].codegraph).toEqual(REQUESTED_SERVERS[key].codegraph);
     expect(result[key].personal).toEqual({ command: "personal-server" });
     expect(result[key].context7).toEqual(REQUESTED_SERVERS[key].context7);

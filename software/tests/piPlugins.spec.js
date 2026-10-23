@@ -8,7 +8,12 @@ import { getIndexFunction } from "./setup.js";
 /** Repository root, used to keep fake persistent executables outside /tmp. */
 const ROOT = path.resolve(import.meta.dirname, "../..");
 /** Installer exercised directly with the real binary-discovery helper. */
-const INSTALLER = fs.readFileSync(path.join(ROOT, "software/scripts/advanced/llm/pi/setup-plugins.sh"), "utf8");
+const INSTALLER = fs
+  .readFileSync(path.join(ROOT, "software/scripts/advanced/llm/pi/setup-plugins.sh"), "utf8")
+  .replace(
+    "# SOURCE software/scripts/advanced/llm/_common/pi-lens.common.bash",
+    fs.readFileSync(path.join(ROOT, "software/scripts/advanced/llm/_common/pi-lens.common.bash"), "utf8"),
+  );
 /** The production discovery helper; sourcing the whole bootstrap would add unrelated effects. */
 const BINARY_HELPER = fs
   .readFileSync(path.join(ROOT, "software/bootstrap/common-functions.bash"), "utf8")

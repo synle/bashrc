@@ -129,8 +129,51 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 - **Named agents**: edit `_common/v_current/agents/<name>.md` for the vendor-neutral worker role: responsibilities, ownership, and forbidden actions. Keep workflow steps in the matching skill. Register additions in `LLM_AGENT_DEPLOY_MAP`; record retired names in `LLM_AGENT_RETIRED_NAMES`. Deployment and native-format details appear below.
 - **Worker names**: use `sy-agent-` for deployed workers and `sy-` for workflows. Keep source filenames bare; the PR workers deploy as `sy-agent-pr-babysitter` and `sy-agent-pr-reviewer`.
 - **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.- **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
-- **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
+- **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys eligible entries additively and preserves user-only entries. Registry-only `excludeClients` omits named clients and never reaches native configuration. Removing or excluding a name does not delete existing deployed entries.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
+
+### Experimental pi-lens MCP
+
+**TODO: EXPERIMENTAL pi-lens MCP** — verify workspace selection and semantic diagnostics
+in each interactive client and on Linux/WSL/Windows before treating this as a production integration.
+Automatic per-edit and turn-end hooks remain deferred.
+
+`pi-lens.sh` installs the standalone `pi-lens-mcp` executable without requiring Pi.
+The installer and Pi plugin bootstrap share the reviewed package pin in
+`_common/pi-lens.common.bash`. The standalone installer also provisions pinned TUI and
+schema peers because the published MCP server imports them despite optional peer metadata.
+Node >=22.19.0 is required. npm lifecycle scripts remain disabled; the installer forwards
+that policy through WSLENV for mirrored Windows installs.
+The shared registry enables MCP for Claude, Copilot, Gemini, and OpenCode.
+Pi keeps its native extension; registry exclusions prevent adding duplicate MCP tools.
+Existing user-created Pi MCP entries remain untouched.
+
+Install and deploy narrowly:
+
+```bash
+bash run.sh --files="pi-lens.sh,claude/setup.js,copilot/setup.js,gemini/setup.js,opencode/setup.js,pi/setup.js"
+```
+
+The broad installation alternative is `bash run.sh --preset=llm`.
+Run the narrow command twice to check repeatability, then restart the affected clients.
+
+The server uses its launch working folder unless `--cwd=` or `PI_LENS_MCP_CWD` overrides it.
+Do not put a fixed checkout in global configuration.
+Verify the reported workspace before analysis; use an explicit absolute `cwd` in tools that accept it.
+A connected server or successful tools/list response does not prove correct workspace selection.
+
+For clients using MCP, request semantic navigation with `pilens_lsp_navigation`,
+read symbols with `pilens_read_symbol`, and check edited files with `pilens_diagnostics`
+using `source: "lsp"`.
+Use `pilens_session_start` to initialize the project and keep the server warm.
+MCP provides callable tools, not Pi's automatic edit-time findings injection.
+Cold, timed-out, skipped, or unsupported analysis is not a clean result.
+Keep ordinary tests and build checks; semantic diagnostics do not replace them.
+
+Acceptance check: use a disposable typed project, find a known symbol, and report a seeded
+type error from the same workspace.
+Repeat in each client; record untested clients and platforms explicitly.
+Do not invoke MCP rebuild or mutation tools merely to test connectivity.
 
 ### Shared workers and skills
 

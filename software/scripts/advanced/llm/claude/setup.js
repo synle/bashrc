@@ -249,7 +249,7 @@ async function doWork() {
 
   await _doSettingsWork(targetDir);
   // User-scoped MCP belongs in ~/.claude.json, not ~/.claude/settings.json.
-  await deploySharedMcpServers(path.join(BASE_HOMEDIR_LINUX, ".claude.json"));
+  await deploySharedMcpServers(path.join(BASE_HOMEDIR_LINUX, ".claude.json"), {}, "standard", "claude");
   await _doKeysWork(targetDir);
   // Skills are written once to $LLM_ROOT_FOLDER/skills and symlinked into
   // ~/.claude/skills — no CLI-local copy of a command body exists anymore.

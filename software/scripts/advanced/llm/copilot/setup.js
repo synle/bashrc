@@ -606,7 +606,7 @@ async function doWork() {
   log(">> Configuring GitHub Copilot CLI:", targetDir);
 
   await _doCopilotSettingsWork(targetDir);
-  await deploySharedMcpServers(path.join(targetDir, "mcp-config.json"));
+  await deploySharedMcpServers(path.join(targetDir, "mcp-config.json"), {}, "standard", "copilot");
   await _doCopilotKeysWork(targetDir);
   // Shared on-demand instruction files must exist before the always-loaded block
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.

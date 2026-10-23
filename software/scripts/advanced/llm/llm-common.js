@@ -112,6 +112,9 @@ const LLM_INSTRUCTIONS_LEGACY_MARKER = "managed-rules";
  */
 const SHARED_MCP_REGISTRY_PATH = "software/scripts/advanced/llm/_common/mcp-servers.jsonc";
 
+/** @type {string[]} Supported deployment identities for registry-only client exclusions. */
+const SHARED_MCP_CLIENTS = ["claude", "copilot", "gemini", "opencode", "pi"];
+
 /**
  * Loads the shared MCP server registry from `_common/mcp-servers.jsonc` and
  * returns the inner `mcpServers` map (an object of `name → server-config`).
@@ -120,12 +123,16 @@ const SHARED_MCP_REGISTRY_PATH = "software/scripts/advanced/llm/_common/mcp-serv
  * additional guards.
  *
  * Resolves the registry-only `argsOnMac` key: on macOS it replaces `args`,
- * elsewhere it is ignored. It is always stripped, so no CLI ever sees it.
+ * elsewhere it is ignored. Registry-only excludeClients filters named clients.
+ * Both metadata keys are stripped before native configuration is returned.
  *
  * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global `is_os_mac` flag.
- * @returns {Promise<Record<string, any>>} Map of server name to server config (standard shape).
+ * @param {string} [client="all"] - Deployment identity; all returns the unfiltered inventory.
+ * @returns {Promise<Record<string, any>>} Eligible server configs in standard shape.
+ * @throws {TypeError} On an unknown client or malformed excludeClients metadata; no configuration is written.
  */
-async function loadSharedMcpServers(isOsMac) {
+async function loadSharedMcpServers(isOsMac, client = "all") {
+  if (client !== "all" && !SHARED_MCP_CLIENTS.includes(client)) throw new TypeError("Unknown MCP deployment client");
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
   /** @type {{ mcpServers?: Record<string, any> } | null} */
   const json = await readJson`${SHARED_MCP_REGISTRY_PATH}`;
@@ -135,11 +142,18 @@ async function loadSharedMcpServers(isOsMac) {
   /** @type {Record<string, any>} */
   const resolved = {};
   for (const [name, entry] of Object.entries(servers)) {
-    if (!entry || typeof entry !== "object" || !("argsOnMac" in entry)) {
+    if (!entry || typeof entry !== "object") {
       resolved[name] = entry;
       continue;
     }
-    const { argsOnMac, ...rest } = entry;
+    const { argsOnMac, excludeClients, ...rest } = entry;
+    if (
+      excludeClients !== undefined &&
+      (!Array.isArray(excludeClients) || excludeClients.some((item) => !SHARED_MCP_CLIENTS.includes(item)))
+    ) {
+      throw new TypeError("MCP excludeClients must be an array of supported client names");
+    }
+    if (excludeClients?.includes(client)) continue;
     resolved[name] = isMac && Array.isArray(argsOnMac) ? { ...rest, args: argsOnMac } : rest;
   }
   return resolved;
@@ -209,18 +223,19 @@ function translateMcpServersForOpencode(servers) {
  * @param {string} targetPath - Native user config file to read, back up, and write.
  * @param {Record<string, any>} [managedConfig={}] - Other managed top-level settings.
  * @param {"standard" | "opencode"} [format="standard"] - Native MCP schema.
+ * @param {string} [client="all"] - Deployment identity used to apply registry exclusions without deleting existing entries.
  * @returns {Promise<void>} Resolves after deployment or an empty-registry skip.
  * @throws {Error} On unreadable or malformed existing config, unsupported format,
  * backup failure, or write failure. Invalid existing files are never overwritten.
  */
-async function deploySharedMcpServers(targetPath, managedConfig = {}, format = "standard") {
+async function deploySharedMcpServers(targetPath, managedConfig = {}, format = "standard", client = "all") {
   if (format !== "standard" && format !== "opencode") {
     throw new TypeError("Unsupported MCP config format");
   }
   /** @type {string} Native server-map key. */
   const key = format === "opencode" ? "mcp" : "mcpServers";
   /** @type {Record<string, any>} Resolved standard-shape registry entries. */
-  const servers = await loadSharedMcpServers();
+  const servers = await loadSharedMcpServers(undefined, client);
   if (Object.keys(servers).length === 0 && Object.keys(managedConfig).length === 0) return;
 
   /** @type {string} Raw local bytes; readJson's parse-error fallback would lose user data. */

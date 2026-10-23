@@ -442,7 +442,7 @@ async function doWork() {
   await mkdir(piAgentDir);
 
   await _doPiSettingsWork(piAgentDir);
-  await deploySharedMcpServers(path.join(piAgentDir, "mcp.json"));
+  await deploySharedMcpServers(path.join(piAgentDir, "mcp.json"), {}, "standard", "pi");
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
   const providerInputs = await getOllamaProviderInputs();

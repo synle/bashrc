@@ -287,6 +287,10 @@ describe("profile bashrc syntax check", () => {
 });
 
 describe("Pi plugin setup syntax check", () => {
+  it("pi-lens.sh - no syntax errors", () => {
+    assertNoSyntaxErrors(path.join(ROOT_DIR, "software/scripts/advanced/llm/pi-lens.sh"));
+  });
+
   it("setup-plugins.sh - no syntax errors", () => {
     assertNoSyntaxErrors(path.join(ROOT_DIR, "software/scripts/advanced/llm/pi/setup-plugins.sh"));
   });

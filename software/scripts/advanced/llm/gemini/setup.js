@@ -361,7 +361,7 @@ async function doWork() {
   log(">> Configuring Gemini CLI:", targetDir);
 
   // Validate and preserve MCP before the settings writer reads the same file.
-  await deploySharedMcpServers(path.join(targetDir, "settings.json"));
+  await deploySharedMcpServers(path.join(targetDir, "settings.json"), {}, "standard", "gemini");
   await _doGeminiSettingsWork(targetDir);
   await _doGeminiKeysWork(targetDir);
   // Shared on-demand instruction files must exist before the always-loaded block

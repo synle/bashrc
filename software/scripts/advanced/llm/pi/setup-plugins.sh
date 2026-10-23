@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SOURCE software/bootstrap/common-functions.bash
+# SOURCE software/scripts/advanced/llm/_common/pi-lens.common.bash
 
 # Install the managed Pi extensions globally. The existing install.sh owns Pi itself;
 # skip when no persistent executable exists, even if a pi shell function is defined.
@@ -14,7 +15,7 @@ pi_plugins=(
   'npm:pi-web-access@0.44.0'
   'npm:pi-subagents@0.80.0'
   'npm:pi-powerline-footer@0.20.2'
-  'npm:pi-lens@4.4.4'
+  "npm:$PI_LENS_PACKAGE"
 )
 
 for pi_plugin in "${pi_plugins[@]}"; do

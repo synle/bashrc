@@ -60,6 +60,7 @@
     "files": [
       "git-functions.js",
       "advanced/llm/codegraph.sh",
+      "advanced/llm/pi-lens.sh",
       "advanced/llm/ollama.personal.sh",
       "advanced/llm/ollama-models.personal.js",
       "advanced/llm/claude/install.sh",

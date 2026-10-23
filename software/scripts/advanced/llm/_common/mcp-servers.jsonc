@@ -1,7 +1,7 @@
 {
   // Source-of-truth MCP server registry for all five LLM CLIs (Claude Code,
   // GitHub Copilot CLI, Google Gemini CLI, OpenCode, Pi). Each named entry below
-  // is deployed to every CLI's native MCP config location on the next setup
+  // is deployed to each eligible CLI's native MCP config location on the next setup
   // run via `bash run.sh --preset=llm` (or any per-CLI `<cli>/setup.js`).
   //
   // Format: the standard `mcpServers` shape that Claude / Copilot / Gemini / Pi
@@ -29,6 +29,8 @@
   // Legacy Claude settings.json entries are left untouched; user-scoped MCP
   // belongs in ~/.claude.json.
   //
+  // Registry-only excludeClients omits named clients and is stripped before deploy.
+  // Exclusions preserve already-existing user entries; they do not delete them.
   // Removal: dropping a name from this file does NOT auto-remove it from
   // the deployed configs (additive overlay only). Delete by hand if needed.
   //
@@ -42,6 +44,14 @@
   //   - Remote servers must be reachable from every machine that runs setup —
   //     a corp-VPN-only endpoint will break setup on a laptop without VPN.
   "mcpServers": {
+    // TODO: EXPERIMENTAL pi-lens MCP — verify every client launches in its active
+    // workspace and reports incomplete/cold diagnostics honestly before adding hooks.
+    // Installed by pi-lens.sh; Pi keeps its native extension without duplicate tools.
+    "pi-lens": {
+      "command": "pi-lens-mcp",
+      "args": [],
+      "excludeClients": ["pi"],
+    },
     // CodeGraph — pinned executable provisioned by codegraph.sh. Resolve the
     // active client worktree, never a fixed checkout; each owns .codegraph/.
     // Keep the shared daemon enabled for concurrent clients on the same tree.

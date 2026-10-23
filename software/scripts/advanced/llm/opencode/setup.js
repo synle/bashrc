@@ -756,7 +756,7 @@ async function doWork() {
   // self-corrects on the second run.
   await deploySharedLLMInstructions();
 
-  await deploySharedMcpServers(targetPath, _buildOpencodeConfig(providerInputs), "opencode");
+  await deploySharedMcpServers(targetPath, _buildOpencodeConfig(providerInputs), "opencode", "opencode");
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();
