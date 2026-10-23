@@ -42,7 +42,7 @@ const bootstrapFiles = listFiles(path.join(ROOT_DIR, "software/bootstrap"), (n) 
 const rootScriptFiles = listFiles(ROOT_DIR, (n) => n.endsWith(".sh"));
 
 const fullSetupFiles = walkFiles(path.join(ROOT_DIR, "software/scripts"), (n) =>
-  /^_full-setup(\.common\.linux|\.touchid)?\.(sh|bash)$/.test(n),
+  /^_full-setup(\.common\.linux|\.touchid|\.docker-uninstall)?\.(sh|bash)$/.test(n),
 );
 
 const profilePartialFiles = listFiles(path.join(ROOT_DIR, "software/scripts"), (n) => n.endsWith(".profile.bash"));

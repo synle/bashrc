@@ -494,7 +494,7 @@ installBrewPackageInBackground --cask --app="balenaEtcher.app" balenaetcher
 installBrewPackageInBackground --cask --app="Blender.app" blender
 installBrewPackageInBackground --cask --app="VLC.app" vlc
 installBrewPackageInBackground --cask --app="Keka.app" keka
-installBrewPackageInBackground --cask --app="Docker.app" docker
+installBrewPackageInBackground --cask --app="OrbStack.app" orbstack
 
 ################################################################################
 # --- Shell Setup (default shell) ---
