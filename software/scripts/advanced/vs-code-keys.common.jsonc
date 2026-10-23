@@ -1,6 +1,11 @@
 // Common keybindings shared across all platforms.
 // OS_KEY = COMMAND (cmd) key on macOS, ALT key on Windows/Linux.
 [
+  // Whole-buffer navigation uses literal Ctrl on every platform.
+  { "key": "ctrl+home", "command": "cursorTop", "when": "editorTextFocus" },
+  { "key": "ctrl+end", "command": "cursorBottom", "when": "editorTextFocus" },
+  { "key": "ctrl+shift+home", "command": "cursorTopSelect", "when": "editorTextFocus" },
+  { "key": "ctrl+shift+end", "command": "cursorBottomSelect", "when": "editorTextFocus" },
   { "key": "OS_KEY+1", "command": "workbench.action.openEditorAtIndex1" },
   { "key": "OS_KEY+2", "command": "workbench.action.openEditorAtIndex2" },
   { "key": "OS_KEY+3", "command": "workbench.action.openEditorAtIndex3" },

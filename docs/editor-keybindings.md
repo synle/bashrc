@@ -175,6 +175,20 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Navigation (cursor movement)
 
+Whole-buffer shortcuts use literal **Ctrl** on every OS, including macOS:
+
+| Key               | Action                        | VS Code | Sublime Text | Zed | Vim / MacVim |
+| ----------------- | ----------------------------- | :-----: | :----------: | :-: | :----------: |
+| `ctrl+home`       | Move to beginning of buffer   |   ✅    |      ✅      | ✅  |      ✅      |
+| `ctrl+end`        | Move to end of buffer         |   ✅    |      ✅      | ✅  |      ✅      |
+| `ctrl+shift+home` | Select to beginning of buffer |   ✅    |      ✅      | ✅  |      ✅      |
+| `ctrl+shift+end`  | Select to end of buffer       |   ✅    |      ✅      | ✅  |      ✅      |
+
+Vim supports Normal, Insert, and Visual modes. Shift starts a characterwise Visual
+selection or extends its existing anchor; unshifted navigation leaves Visual mode.
+Terminal Vim requires the terminal and tmux to forward distinct modified Home/End keys.
+These bindings navigate editor text, not terminal scrollback or Sublime Merge's diff interface.
+
 | Key                      | Action                  | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ------------------------ | ----------------------- | :-----: | :-------: | :--------: | :-: | :-: |
 | `OS_KEY+up`              | Page up                 |   ✅    |    ✅     |     ❌     | ✅  | ✅  |

@@ -404,6 +404,20 @@ nnoremap <silent> ,q :qa!<CR>
 nnoremap <silent> ,x <c-w>q
 
 " Ctrl+Arrow for editor-style text navigation; ,Arrow remains split navigation.
+" Ctrl+Home/End move across the buffer; Shift starts or extends Visual selection.
+" Insert-mode Ctrl-O preserves the insertion position when starting selection.
+nnoremap <silent> <C-Home> gg0
+nnoremap <silent> <C-End> G$
+inoremap <silent> <C-Home> <C-o><C-Home>
+inoremap <silent> <C-End> <C-o><C-End>
+xnoremap <silent> <C-Home> <Esc>gg0
+xnoremap <silent> <C-End> <Esc>G$
+nnoremap <silent> <C-S-Home> v<C-Home>
+nnoremap <silent> <C-S-End> v<C-End>
+inoremap <silent> <C-S-Home> <C-o>v<C-Home>
+inoremap <silent> <C-S-End> <C-o>v<C-End>
+xnoremap <silent> <C-S-Home> <C-Home>
+xnoremap <silent> <C-S-End> <C-End>
 nnoremap <silent> <C-Right> w
 nnoremap <silent> <C-Left> b
 nnoremap <silent> <C-Up> <C-b>

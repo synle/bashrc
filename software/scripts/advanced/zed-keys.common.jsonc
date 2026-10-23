@@ -139,6 +139,11 @@
       "shift-enter": "editor::FindAllReferences",
 
       // ---- Cursor movement (mirrors VS Code's Windows alt+arrow set) ----
+      // Whole-buffer navigation uses literal Ctrl on every platform.
+      "ctrl-home": "editor::MoveToBeginning",
+      "ctrl-end": "editor::MoveToEnd",
+      "ctrl-shift-home": "editor::SelectToBeginning",
+      "ctrl-shift-end": "editor::SelectToEnd",
       // page up / down — matches VS Code `cursorPage{Up,Down}` (alt+up / alt+down)
       "OS_KEY-up": "editor::MovePageUp",
       "OS_KEY-down": "editor::MovePageDown",
