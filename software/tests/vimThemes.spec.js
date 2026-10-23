@@ -37,7 +37,7 @@ beforeEach(() => {
  * Loads generated themes and selection in isolated Vim, then observes native highlight resolution.
  * @param {string} selection - Generated family-selection Vimscript.
  * @param {string} appearance - Initial native background setting.
- * @param {string[]} commands - Commands executed after startup, when OptionSet events are enabled.
+ * @param {string[]} commands - Commands dispatched by a zero-delay timer after startup, when OptionSet events are enabled.
  * @param {object} extraSchemes - Optional owned fixture colorschemes, not third-party API mocks.
  * @returns {Promise<object>} Persisted observations; process errors and assertion failures surface directly.
  */
@@ -58,16 +58,17 @@ async function probeTheme(selection, appearance, commands = [], extraSchemes = {
       `set background=${appearance}`,
       `execute 'source ' . fnameescape(${JSON.stringify(settingsPath)})`,
       selection,
-      "function! RunThemeProbe() abort",
+      "function! RunThemeProbe(timer) abort",
       ...commands,
       "let g:result = {'scheme': g:colors_name, 'background': &background, 'ayu': get(g:, 'ayucolor', ''), 'foreground': synIDattr(synIDtrans(hlID('Normal')), 'fg', 'gui'), 'tag': synIDattr(synIDtrans(hlID('tsxTagName')), 'fg', 'gui'), 'mode': get(get(g:, 'sy_lightline_palette', {}), 'insert', {})}",
       `call writefile([json_encode(g:result)], ${JSON.stringify(output)})`,
       "qall!",
       "endfunction",
-      "autocmd VimEnter * call RunThemeProbe()",
+      // OptionSet is suppressed during startup, including VimEnter handlers; dispatch from the main loop instead.
+      "autocmd VimEnter * call timer_start(0, function('RunThemeProbe'))",
     ].join("\n"),
   );
-  const result = spawnSync("vim", ["-N", "-u", "NONE", "-i", "NONE", "-n", "-es", "-S", script], {
+  const result = spawnSync("vim", ["-N", "-u", "NONE", "-i", "NONE", "-n", "--not-a-term", "-S", script], {
     env: { ...process.env, HOME: folder },
     encoding: "utf-8",
     timeout: 5000,

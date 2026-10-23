@@ -42,8 +42,9 @@ const indexSource = fs.readFileSync(INDEX_JS_PATH, "utf-8");
 const iifeStart = indexSource.indexOf("\n(async function () {");
 const librarySource = iifeStart > 0 ? indexSource.substring(0, iifeStart) : indexSource;
 
-// replace const/let with var so declarations become sandbox properties
-const varSource = librarySource.replace(/^(const|let) /gm, "var ");
+// Expose declarations as sandbox properties, including OS flags following inline JSDoc.
+// Otherwise a lexical const shadows setSandboxGlobal() even though sandbox[name] changes.
+const varSource = librarySource.replace(/^(\/\*\*[^\n]*?\*\/\s*)?(const|let) /gm, "$1var ");
 
 /**
  * Instrument the library source with istanbul — but only when coverage is actually on.
