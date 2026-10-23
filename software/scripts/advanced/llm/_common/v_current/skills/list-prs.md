@@ -9,7 +9,7 @@
   - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
   - **PWD keyword** — one of the PWD keyword set (see below, case-insensitive). Same as default PWD scope above.
-  - **Explicit PR refs** — one or more PR refs: full URL (`https://github.com/<owner>/<repo>/pull/<n>`), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name — see Repo Identification). Explicit-refs scope is author-agnostic (you asked for those PRs).
+  - **Explicit PR refs** — one or more PR refs: full URL (`http://github.com/<owner>/<repo>/pull/<n>` or the HTTPS equivalent), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name — see Repo Identification). Explicit-refs scope is author-agnostic (you asked for those PRs).
 - **Author** (only meaningful in `all` scope): a GitHub handle, a full name, or one of `me`/`mine`/`self` (= current user). Defaults to `@me`.
 
 **PWD keyword set:** `pwd`, `.`, `./`, `here`, `cwd`, `this folder`, `this-folder` (case-insensitive, trimmed). This vocabulary is defined here and referenced by `/sy-babysit-prs`.
@@ -285,6 +285,8 @@ Standalone PRs always come last, ordered by the normal group display order and w
 
 ## Output format
 
+**GitHub links in every format follow Writing Rules' GitHub link display.** Render the verified PR URL as bare `http://github.com/<owner>/<repo>/pull/<number>`, including in tables, pulse sentences, and queue references. This is presentation only: do not change CLI JSON, API requests, or stored canonical URLs. Consumers of `short`, `links`, and `clusters` must accept both HTTP and HTTPS, normalize to HTTPS before requests and de-duplication, and ignore headings.
+
 Print groups in this fixed display order. Skip empty groups (don't print the heading if `N == 0`). Each group heading is `## <Group Name> (N)`.
 
 ### Mixed-author disclosure
@@ -321,11 +323,11 @@ For each PR in each group, print just the full URL on its own line:
 
 ```
 ## NEEDS ATTENTION (2)
-https://github.com/owner/repo-a/pull/123
-https://github.com/owner/repo-b/pull/456
+http://github.com/owner/repo-a/pull/123
+http://github.com/owner/repo-b/pull/456
 
 ## READY TO MERGE (1)
-https://github.com/owner/repo-c/pull/789
+http://github.com/owner/repo-c/pull/789
 ```
 
 Mixed-author lists carry the breakdown in the heading; the URL lines are unchanged:
@@ -334,8 +336,8 @@ Mixed-author lists carry the breakdown in the heading; the URL lines are unchang
 Mixed authors: @me (1), @alice (1)
 
 ## NEEDS ATTENTION (2 — @me 1, @alice 1)
-https://github.com/owner/repo-a/pull/123
-https://github.com/owner/repo-b/pull/456
+http://github.com/owner/repo-a/pull/123
+http://github.com/owner/repo-b/pull/456
 ```
 
 ### Format: `long`
@@ -345,14 +347,14 @@ For each PR, print a short description line, then the full URL, then a blank lin
 ```
 ## NEEDS ATTENTION (2)
 #123 [owner/repo-a] Add user signup flow — 🔴 CI FAILED — unit-tests
-https://github.com/owner/repo-a/pull/123
+http://github.com/owner/repo-a/pull/123
 
 #456 [owner/repo-b] Refactor auth middleware — 🔴 CHANGES REQUESTED
-https://github.com/owner/repo-b/pull/456
+http://github.com/owner/repo-b/pull/456
 
 ## READY TO MERGE (1)
 #789 [owner/repo-c] Bump deps to latest — 🟢 CI PASSED · APPROVED
-https://github.com/owner/repo-c/pull/789
+http://github.com/owner/repo-c/pull/789
 ```
 
 The short description line is: `#<number> [<owner/repo>] <title> — <color emoji> <status>`. On a mixed-author list, insert the author after the repo: `#<number> [<owner/repo>] @<author> — <title> — <color emoji> <status>`. Strip a leading `[<repo>] ` prefix from `<title>` when it matches the repo already printed on that line — the repo is its own field, so keeping it in the title prints it twice.
@@ -379,14 +381,14 @@ On a mixed-author list, insert an `Author` column immediately after `Repo`, fill
 A bare bullet list of PR URLs — one `- <url>` per line. **Nothing else** — no group headings, no counts, no blank lines between groups, no `Mixed authors:` line, no titles, no status. The whole output is a clean link list you can paste into Slack, a PR body, or notes, and that another command can read line-by-line after stripping the `- ` prefix.
 
 ```
-- https://github.com/owner/repo-a/pull/123
-- https://github.com/owner/repo-b/pull/456
-- https://github.com/owner/repo-c/pull/789
+- http://github.com/owner/repo-a/pull/123
+- http://github.com/owner/repo-b/pull/456
+- http://github.com/owner/repo-c/pull/789
 ```
 
 - Every line is exactly `- ` followed by the URL. No numbering, no nesting, no indentation, no trailing punctuation.
 - Classification still runs — it only drives the **order**. Emit the groups in the same display order as every other format (NEEDS ATTENTION → READY TO MERGE → READY TO MERGE (with comments) → NEED APPROVAL → NOT READY / WIP / DRAFT), with the same within-group sort, then flatten to one bullet per line.
-- Print the full `https://github.com/<owner>/<repo>/pull/<number>` form here — `links` output is meant to be consumed by other commands, and the scheme keeps every consumer happy.
+- Print the full `http://github.com/<owner>/<repo>/pull/<number>` display form. Consumers accept both schemes and normalize to HTTPS before requests.
 - Zero PRs → print nothing at all (empty output). No "no PRs found" line: an empty list is the correct machine answer, and a prose line would be parsed as a link by whatever is reading.
 - `links` is the strictest machine-input format in this file. The `- ` prefix is the only decoration — never add a handle, title, status, annotation, or code fence.
 
@@ -396,17 +398,17 @@ The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see 
 
 ```
 ### oauth-migration (3) — acme/api, acme/web, acme/widget-store
-- https://github.com/acme/api/pull/51 — pr1 — issue refresh tokens on the token endpoint — 🔴 CI FAILED — unit-tests
-- https://github.com/acme/web/pull/7 — pr2 — swap the login form to the new flow — 🟡 AWAITING REVIEW
-- https://github.com/acme/widget-store/pull/109 — pr3 — drop the old session cookie reader — 🟢 CI PASSED · APPROVED
+- http://github.com/acme/api/pull/51 — pr1 — issue refresh tokens on the token endpoint — 🔴 CI FAILED — unit-tests
+- http://github.com/acme/web/pull/7 — pr2 — swap the login form to the new flow — 🟡 AWAITING REVIEW
+- http://github.com/acme/widget-store/pull/109 — pr3 — drop the old session cookie reader — 🟢 CI PASSED · APPROVED
 
 ### ABC-1234 (2) — acme/api, acme/web
-- https://github.com/acme/api/pull/60 — pr4 — add the org-fields column to the sync payload — 🟡 BUILD IN PROGRESS (2 running)
-- https://github.com/acme/web/pull/18 — pr5 — render org fields on the profile card — 🟡 AWAITING REVIEW
+- http://github.com/acme/api/pull/60 — pr4 — add the org-fields column to the sync payload — 🟡 BUILD IN PROGRESS (2 running)
+- http://github.com/acme/web/pull/18 — pr5 — render org fields on the profile card — 🟡 AWAITING REVIEW
 
 ### Standalone (2)
-- https://github.com/acme/widget-store/pull/113 — pr6 — retry token refresh on 401 — 🔴 MERGE CONFLICT
-- https://github.com/acme/api/pull/42 — pr7 — drop the legacy /v1 search endpoint — 🟢 CI PASSED · APPROVED
+- http://github.com/acme/widget-store/pull/113 — pr6 — retry token refresh on 401 — 🔴 MERGE CONFLICT
+- http://github.com/acme/api/pull/42 — pr7 — drop the legacy /v1 search endpoint — 🟢 CI PASSED · APPROVED
 ```
 
 - **Cluster heading**: `### <label> (<n>) — <repo>, <repo>, …`, repos comma-separated in the order their PRs appear. The repo list is the whole point of the heading: it answers "which repos does this feature still need" without reading a single URL. Single-repo clusters (two PRs in the same repo) still print the repo once.
@@ -416,7 +418,7 @@ The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see 
 - **Every line says what its PR does** — `<description>` is ≤8 words of plain English written from that PR's title and body, never the title pasted verbatim, never the branch name, never a restatement of the status. Without it a reader gets a bare number and a color and has to open every link to triage. Cannot tell from title and body what it does → say the narrowest true thing (`config change in the ingest job`), never invent a purpose.
 - **Inside a cluster, `<description>` is what that PR contributes, not what the feature is** — the `###` heading already said the feature, so repeating it on all three lines burns the one field that could tell them apart. Write the differentiator: `issue refresh tokens on the token endpoint`, not `oauth migration`.
 - **Numbering is global, continuous, and display-ordered** — `pr1` through `pr<N>` across the whole render, never restarting per cluster. The handle is stable only within one render; it is a pointer for the next message, not an identifier to store.
-- **Consumers read the `https://` token from each line.** That token is always the full `https://github.com/<owner>/<repo>/pull/<number>` form and always the second whitespace-separated field, immediately after the `- `. Heading lines carry no `https://` token, so a URL-extracting parser skips them for free — the same property that lets `/sy-babysit-prs` read `short` past its `##` headings.
+- **Consumers read the URL token from each line.** It is the second whitespace-separated field, immediately after `- `, displayed as `http://github.com/<owner>/<repo>/pull/<number>`. Accept both HTTP and HTTPS input; normalize to HTTPS before requests, identity comparisons, and de-duplication. Heading lines carry no URL token and are skipped.
 - **Ordering is Feature clustering's, not this section's** — cluster rank by most-urgent member, then size, then age; within a cluster, dependency order first. Do not re-sort here.
 - When a cluster came from inference (Feature clustering signals 4–5), append ` — grouped by <signal>` to its heading, e.g. `### retry-token-refresh (2) — acme/api, acme/web — grouped by matching branch name`. A guess says it's a guess.
 - Zero PRs → print nothing at all, same as `links`.
@@ -440,13 +442,13 @@ PRs Scanned (5):
 Pulse (2 moved, 2 steady, 1 new):
 
 **oauth-migration** — slots 1–2 · 3 PRs · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
-- Δ github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
-- ▫️ github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
-- 🆕 github.com/acme/api/pull/51 — new to the board, CI still running; second in slot 2, first pass not yet run.
+- Δ http://github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
+- ▫️ http://github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
+- 🆕 http://github.com/acme/api/pull/51 — new to the board, CI still running; second in slot 2, first pass not yet run.
 
 **Standalone** — 2 PRs · acme/widget-store, acme/api
-- ▫️ github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
-- Δ github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
+- ▫️ http://github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
+- Δ http://github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
 
 ### 🌊 oauth-migration (3) — slots 1–2 · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
 
@@ -454,7 +456,7 @@ Pulse (2 moved, 2 steady, 1 new):
 | --- | --- | --- | --- |
 | http://github.com/acme/widget-store/pull/109 | **@alice** · `alice/oauth-migration/token-retry` · **Retry token refresh on 401** · created 2026-10-20 · auto-merge off | Δ 🔴 CI FAILED — `unit-tests` · AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) · slot 1 · started 17:12 · running 22m · 💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
 | http://github.com/acme/web/pull/7 | `@me` · `syle/oauth-migration/split-auth-middleware` · **WIP: Split auth middleware** · created 2026-10-19 · auto-merge off | ▫️ 🔴 CI PASSED · CHANGES REQUESTED · MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) · slot 1 · stopped 17:01 · ran 19m — needs human · 💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
-| http://github.com/acme/api/pull/51 | **@bob** · `bob/signup-flow` · **Add signup flow** · created 2026-10-22 · 🤖 auto-merge (squash) | 🆕 🟡 BUILD IN PROGRESS (3 running) · AWAITING REVIEW | ⚪ NOT STARTED · slot 2, position 2 of 2 · behind github.com/acme/web/pull/7 · 💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
+| http://github.com/acme/api/pull/51 | **@bob** · `bob/signup-flow` · **Add signup flow** · created 2026-10-22 · 🤖 auto-merge (squash) | 🆕 🟡 BUILD IN PROGRESS (3 running) · AWAITING REVIEW | ⚪ NOT STARTED · slot 2, position 2 of 2 · behind http://github.com/acme/web/pull/7 · 💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
 
 ### 🌊 Standalone (2) — acme/widget-store, acme/api
 
@@ -507,7 +509,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 **Use a bare URL in the PR cell; use inline code, bold, and plain text to distinguish Description fields.** The renderer controls theme colors. Never emit ANSI, an HTML `<span>`, or a color name inside a cell.
 
-- **PR** — exactly one bare URL: `http://github.com/<owner>/<repo>/pull/<number>`, with no label, parentheses, Markdown link wrapper, bold, or backticks in the output. Never emit `[github.com/...](https://github.com/...)` or `github.com/... (https://github.com/...)`; those repeat the same address. Preserve the verified URL's host, owner, repo, path, and number; change only its scheme to `http` for this display cell. This is a user-requested display exception to the canonical-URL rule, not a change to API requests, stored URLs, or machine-input formats. Never abbreviate any path segment.
+- **PR** — exactly one bare `http://github.com/<owner>/<repo>/pull/<number>` URL, following Writing Rules' **GitHub link display**. No other field belongs in this cell.
 
 - **Description** — everything that says _what this PR is_, one line, `·`-separated, in this fixed order: `<author> · `<head branch>` · **<title>** · created YYYY-MM-DD · <auto-merge>`.
 

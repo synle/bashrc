@@ -166,7 +166,7 @@ Share caches and runtimes, isolate environments and output. Apply these three la
 
 ## Links and references
 
-- **Never hand-build a PR/issue URL** — emit the `url`/`.html_url` field verbatim. Web path is singular `/pull/<n>`; `/pulls/<n>` is REST and 404s on github.com. Issues are `/issues/<n>` on both.
+- **Never hand-build a PR/issue URL** — take its identity from the verified `url`/`.html_url` field, never guessed segments. Apply Writing Rules' **GitHub link display** only when rendering it. Keep the canonical URL unchanged for requests and stored identity. Web paths use singular `/pull/<n>`; REST uses `/pulls/<n>`. Issues use `/issues/<n>` on both.
 - **A link is four independent facts — owner, repo, `pull` vs `issues`, number — each verified.** Well-formed ≠ correct. Never derive `<repo>` from a folder basename, product name, ticket text, or a sibling repo (`-ui`/`-api`/`-service`/`-web` are _different_ repos with independent numbering) — resolve per Repo Identification. Never guess type; numbering is shared, so `<n>` is at most one of the two. One probe checks all four, and its output is what you print:
 
   ```bash
@@ -176,7 +176,7 @@ Share caches and runtimes, isolate environments and output. Apply these three la
   `.pull_request` is the type discriminator, `.html_url` the canonical path. A `404` means a wrong segment — try the sibling repo, say which candidates you tried, never print an unresolved link. Re-probe any link from memory, a paste, an earlier turn, a ticket, or a commit message — someone else's link is a hypothesis.
 
 - **A bare `#<number>` is a rendering bug, not shorthand.** Clients and GitHub auto-link it relative to the repo in context — for an agent, the cwd, routinely an unrelated workspace repo. This applies to every word you emit, not just link lists: the common slip is a careful list of full URLs then "fixed in #1731". If a number sits next to `#`, write the full path instead, or name the PR with no number. Scan for `#`+digits before sending.
-- **Render every reference as a full clickable URL** — `https://github.com/<owner>/<repo>/pull/<number>`, scheme always included: terminal UIs auto-linkify only text starting `https://`, so a schemeless `github.com/...` prints as dead text. Print the URL bare — never wrapped in `**bold**`, `_italics_`, or backticks, never as `[label](url)` (a TUI renders the markup and loses the link target). Only `www.` may drop. One per line in lists, path first (trailing context like `— retry on token refresh` is fine). Shorthand is allowed only in prose written _into_ GitHub itself.
+- **Render every reference as a full clickable URL** — follow Writing Rules' **GitHub link display** for PRs, issues, commits, repositories, and other GitHub pages. Keep the scheme and complete path, including the owner. In lists, put one URL per line, first; trailing context such as `— retry on token refresh` is allowed. Apply the same display rule inside GitHub prose.
 - **Show authors when a list isn't all yours** — request `author` in the `gh --json` fields. All yours → omit as noise. Even one different → label the author on every row and say who in the summary. Machine-parseable bare-URL output stays untouched; put the breakdown in surrounding prose.
 
 ## Reviewing and babysitting

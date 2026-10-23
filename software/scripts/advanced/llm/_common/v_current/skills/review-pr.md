@@ -33,7 +33,7 @@ Schedule — <command name>
 ## Steps
 
 1. **Determine which PR to review:**
-   - If `$ARGUMENTS` is provided (a PR URL like `https://github.com/<owner>/<repo>/pull/123` or a PR number), use that.
+   - If `$ARGUMENTS` is provided (a PR URL like `https://github.com/<owner>/<repo>/pull/123` or a PR number), use that. Accept both HTTP and HTTPS URLs; normalize to HTTPS before requests and identity comparisons.
    - If `$ARGUMENTS` is empty, detect from the current working directory:
      - `git remote get-url origin` → resolve the authoritative `<owner>/<repo>` (see Repo Identification).
      - `git branch --show-current` → current branch.

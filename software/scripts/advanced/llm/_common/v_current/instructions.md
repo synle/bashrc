@@ -51,6 +51,8 @@ Apply these rules to newly written or revised prose, including instructions, ski
 - **Sentence structure.** Express one idea per prose sentence. Use at most 30 words per prose sentence. Keep each condition and exception explicitly attached to its action when splitting sentences. Do not rewrite code, commands, quoted payloads, identifiers, paths, URLs, or machine-readable data merely to meet the word limit.
 - **Active voice and consistent terminology.** Name the actor and action directly when known. Use the same established term for the same concept. Preserve exact technical identifiers. Never invent an actor, certainty, or a new requirement to force active voice.
 
+- **GitHub link display.** In human-facing replies and written deliverables, show each GitHub link once as a bare `http://github.com/...` URL. Never use schemeless paths, Markdown labels, duplicate parenthesized targets, bold, or backticks around displayed URLs. Change only the verified canonical URL's scheme; preserve every other component. Keep HTTPS for requests, downloads, clones, stored canonical URLs, and machine-only output such as CLI JSON.
+
 Meaning and safety take precedence over brevity or sentence limits. Before sending or saving prose, check these rules; sentence counts alone do not prove semantic preservation.
 
 ## Epistemic Honesty

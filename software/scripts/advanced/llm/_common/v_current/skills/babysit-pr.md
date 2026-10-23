@@ -27,7 +27,7 @@ Schedule — <command name>
 ## Steps
 
 1. **Determine which PR to babysit:**
-   - If `$ARGUMENTS` is provided (a PR URL like `https://github.com/org/repo/pull/123` or a PR number), use that.
+   - If `$ARGUMENTS` is provided (a PR URL like `https://github.com/org/repo/pull/123` or a PR number), use that. Accept both HTTP and HTTPS URLs; normalize to HTTPS before requests and identity comparisons.
    - If `$ARGUMENTS` is empty, detect from the current working directory:
      - `git remote get-url origin` to determine the repo.
      - `git branch --show-current` to get the current branch.
@@ -130,7 +130,7 @@ Schedule — <command name>
 - **Promote per reason — the other reasons are the author's call.** When the WIP prefix or the draft state has a stated reason _besides_ the wave block (an open `TODO —` marker, unfinished work named in the body, an explicit "keep this draft"), apply Step 5c's sync gate, report that the blocker landed, and **leave the prefix and the draft state alone**. Promoting past a reason you did not resolve ships work its author called unfinished.
 - **Idempotent and re-entrant.** Each pass completes only what is still outstanding, so a promotion interrupted between steps 3 and 5 finishes next pass instead of starting over — and nothing runs twice: a title with no prefix is left alone, an already-ready PR is not re-readied, a body with no `## Blocked on` section is not rewritten.
 - **Re-run the Step 2a automerge gate once, on the pass that promotes.** Draft state and a WIP title are two of Step 2a's skip reasons, and promotion is the one event that makes them false — without this, a promoted prose-only PR stays disqualified by a condition that expired hours ago.
-- **Report it explicitly** — which blocker landed, which of the five actions ran, and which did not and why: `promoted: blocked-on github.com/acme/api/pull/40 merged → synced, CI green, undrafted, prefix dropped, body updated`, or `blocker landed, WIP kept — 2 open TODO markers`.
+- **Report it explicitly** — which blocker landed, which of the five actions ran, and which did not and why: `promoted: blocked-on http://github.com/acme/api/pull/40 merged → synced, CI green, undrafted, prefix dropped, body updated`, or `blocker landed, WIP kept — 2 open TODO markers`.
 
 5. **Set up the workspace, then DELEGATE an eligible sync to `/sy-sync-pr-branch`.** Babysit does not implement branch syncing — the ancestor walk, the merge order, the conflict resolver, the migration-head check, and the pre-push gate all live in `/sy-sync-pr-branch`, which is the single implementation every Sy command shares. Babysit owns the workspace (Steps 6–11 keep using it) and consumes the sync's result block.
    **⚠️ MERGE ONLY — NEVER REBASE**, in this step and every later one. `git pull --rebase`, `git rebase`, and `--squash` rewrite pushed history and force `--force-with-lease` on the next push.
