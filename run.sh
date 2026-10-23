@@ -5,6 +5,8 @@
 # Usage:
 #   bash run.sh                                    # Full run (auto-detects local repo or fetches from GitHub)
 #   bash run.sh --files="git.js"                   # Run specific file(s)
+#   bash run.sh --file git.js                      # Singular alias; separate values also work
+#   bash run.sh 'vim*'                             # Run all scripts with this basename prefix
 #   bash run.sh --files="vim.js,git.js"            # Multiple files (comma-separated)
 #   bash run.sh --files="""                        # Multiple files (multiline)
 #     vim.js
@@ -16,6 +18,8 @@
 #   bash run.sh --force-refresh                    # Force refresh node and reinstall
 #   bash run.sh -f                                 # Shorthand for --force-refresh
 #   bash run.sh --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.jsonc
+#   bash run.sh --presets lightweight              # Plural alias; separate values also work
+#   bash run.sh '#llm*'                            # Run all presets with this prefix (quote # and *)
 #   bash run.sh --preset=lightweight,heavyweight   # Multiple presets compose (file lists union)
 #   bash run.sh --preset=editor                    # Partial match (case-insensitive substring); 1 hit auto-resolves, 2+ hits errors with suggestions
 #   bash run.sh @llm                               # Bare @-marker → strict preset lookup (skip script search)
@@ -28,6 +32,7 @@
 #   bash run.sh --remove --files="fzf.js"          # Remove a script's config (runs undoWork)
 #
 # Single dash also works: -files=..., -force-refresh, -f, -preset=..., -debug, -D, -verbose, -V, -dryrun, -remove
+# No short file/preset aliases: -f remains force refresh; -p is not a preset selector.
 ################################################################################
 
 ################################################################################

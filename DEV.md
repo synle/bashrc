@@ -68,13 +68,20 @@ git diff --check
 
 ## Running a Subset
 
-`run.sh` takes narrow `--files=` and broad `--preset=`; both fuzzy-match case-insensitively (1 hit auto-resolves, more print suggestions).
+`run.sh` accepts `--file` / `--files` and `--preset` / `--presets`, with either `=value` or a separate value.
+Both selector types fuzzy-match case-insensitively: one hit auto-resolves; multiple hits print suggestions.
+Trailing `*` selects every case-insensitive prefix match instead. Quote hash-prefixed selectors and wildcards so the shell passes them unchanged.
+There are no short file/preset aliases; existing `-f` still means force refresh.
 
 ```bash
 bash run.sh --files=git.js              # one script
+bash run.sh --file git.js               # singular alias, separate value
+bash run.sh 'vim*'                      # all scripts with this basename prefix
 bash run.sh --files=vim                 # fuzzy match
 bash run.sh --preset=lightweight        # named preset
 bash run.sh --preset=terminal,prompt    # union
+bash run.sh --presets terminal         # plural alias, separate value
+bash run.sh '#llm*'                     # all presets with this prefix
 bash run.sh @llm                        # strict preset lookup
 bash run.sh editors                     # bare arg: script-first, preset fallback
 bash run.sh --refresh="fzf.js,fonts.js" # force-refresh specific scripts
@@ -84,7 +91,9 @@ bash run.sh --remove --files=fzf.js     # undoWork for one script
 
 Presets live in `software/metadata/presets.jsonc` (JSONC). Each entry declares `files[]` and/or recursive `presets[]`; cycles rejected at parse time by `expandPresetFiles`, guarded by `software/tests/presets.spec.js`. Composites: `lightweight` / `heavyweight`. Building blocks: `editors`, `emulators`, `apps`, `browsers`, `terminal`, `prompt`, `llm`.
 
-Resolution priority: `--files=` strict script-only; `--preset=` strict with substring fallback; bare `<x>` script-first then preset (`_resolveBareArgPresetFallback`); bare `@<x>` preset only. Collision → script wins (`bash run.sh llm` hits `llm-common.js`; use `@llm`).
+Resolution priority: file flags are script-only; preset flags are preset-only with substring fallback; bare `<x>` searches scripts first, then presets.
+Bare `@<x>` and quoted `'#<x>'` search presets only. Collision → script wins (`bash run.sh llm` hits `llm-common.js`; use `'#llm'`).
+Missing separate option values fail before selection. Existing empty `--files=` and `--preset=` values remain no-ops.
 
 ## Testing
 

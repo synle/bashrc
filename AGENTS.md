@@ -147,6 +147,12 @@ Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
 
 **CLI resolution.** `--files=<x>` strict script — typo fails loudly, on purpose. `--preset=<x>` strict preset with case-insensitive substring fallback. Bare `<x>` script-first, preset fallback (`_resolveBareArgPresetFallback`, driven by `BASHRC_BARE_ARGS`). Bare `@<x>` skips script search. Script matching (`_resolveScriptFile`): exact path → basename sans extension → regex partial. 1 hit auto-resolves; 2+ print suggestions; 0 errors. Script wins collisions — `bash run.sh llm` hits `llm-common.js`; use `@llm` to force the preset.
 
+**Selector aliases.** `--file` / `--files` and `--preset` / `--presets` accept `=value` or a separate value; single-dash long forms remain supported.
+No short selector aliases are added: `-f` remains force refresh, and `-p` is not a preset selector.
+Quoted `'#<name>'` forces preset lookup like `@<name>`. Quote hash and wildcard arguments so the shell passes them unchanged.
+Trailing `*` selects every case-insensitive prefix match: script basenames for file selectors, preset names for explicit preset selectors.
+Missing separate values fail before selection; existing empty equals-values remain no-ops.
+
 **When sharing a command, offer both forms when both apply** — narrow `--files=bash-keys` and broad `--preset=terminal`.
 
 **Output lands in** `$BASHRC_TEMP_DIR` = `<temp root>/synle/bashrc/<YYYY_MM_DD_HH_MM>/`: `run.sh` (re-runnable emitted bash), `run.log`, `run_timing.json`, snapshots, `fullsetup.log`, `url_cache/`. Temp root `$BASHRC_TEMP_ROOT_DIR`; never hardcode `/tmp/...` (falls back to `$HOME/tmp` on locked-down hosts).

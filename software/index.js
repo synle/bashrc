@@ -210,7 +210,7 @@ function expandPresetFiles(name, presetMap, visited = new Set(), chain = []) {
 /**
  * Resolves a user-supplied preset name against the loaded preset map.
  * Exact match wins; otherwise falls back to case-insensitive substring match.
- * Shared by `parseRawArgs` (handling `--preset=` / `@bare-arg`) and
+ * Shared by `parseRawArgs` (handling preset flags and `@` / `#` markers) and
  * `_resolveBareArgPresetFallback` (handling plain bare args that miss the script lookup).
  *
  * @param {string} name - User-supplied preset name (may be partial or wrong case).
@@ -229,7 +229,7 @@ function _resolvePresetName(name, presetMap, opts = {}) {
   const matches = known.filter((k) => k.toLowerCase().includes(needle));
   if (matches.length === 1) return matches[0];
   if (matches.length > 1) {
-    const suggestions = matches.map((m) => `  bash run.sh ${flag}${m}`).join("\n");
+    const suggestions = matches.map((m) => `  bash run.sh ${flag === "#" ? `'${flag}${m}'` : `${flag}${m}`}`).join("\n");
     throw new Error(
       `Preset "${name}" is ambiguous — matched ${matches.length}: ${matches.join(", ")}.\n` + `Pick one and re-run:\n${suggestions}`,
     );
@@ -242,7 +242,9 @@ function _resolvePresetName(name, presetMap, opts = {}) {
  * Sets process.env variables (TEST_SCRIPT_FILES, IS_FORCE_REFRESH, etc.)
  * so that subsequent getRuntimeOption() calls pick them up.
  * Must be called before any getRuntimeOption() reads of flag env vars.
+ * File/preset aliases accept either `=value` or a separate value; trailing `*` selects preset prefixes.
  * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean, bareArgs: string[] }}
+ * @throws {Error} When selector values are missing or preset names are unknown, ambiguous, or cyclic.
  */
 function parseRawArgs() {
   const rawJson = process.env.BASHRC_RAW_ARGS || "[]";
@@ -261,25 +263,38 @@ function parseRawArgs() {
   let dryrun = false;
   let remove = false;
   /**
-   * @type {Array<{ name: string, viaAtMarker: boolean }>} Preset requests collected from
-   *   `--preset=` (viaAtMarker=false → ambiguity suggestions use `--preset=` form) and
-   *   `@bare-arg` (viaAtMarker=true → suggestions use `@` form). Flattened to a plain
-   *   `string[]` of canonical names (`presets`) below.
+   * @type {Array<{ name: string, suggestionFlag: string }>} Preset requests with their
+   *   originating flag or marker for ambiguity suggestions. Canonical names populate `presets` below.
    */
   const presetRequests = [];
   /** @type {string[]} Canonical preset names actually expanded (one per request, in order). */
   const presets = [];
   /**
-   * @type {string[]} Plain bare-arg names (no leading @, no --files= flag) — eligible for
+   * @type {string[]} Plain bare-arg names (no leading @ or #, no file flag) — eligible for
    *   the script→preset fallback in `_resolveBareArgPresetFallback`. `--files=` values and
    *   preset-expanded files are NOT included; only those entries fall back to preset lookup
    *   when script resolution fails.
    */
   const bareArgs = [];
 
-  for (const arg of args) {
-    if (/^-?-files=/.test(arg)) {
-      const val = arg.replace(/^-?-files=/, "").trim();
+  for (let index = 0; index < args.length; index++) {
+    let arg = args[index];
+    // Normalize selector aliases once so every spelling shares value handling and validation.
+    const selector = arg.match(/^-{1,2}(files?|presets?)(?:=|$)/);
+    if (selector) {
+      const flag = selector[1].startsWith("f") ? "--files=" : "--preset=";
+      let value;
+      if (arg.includes("=")) {
+        value = arg.slice(arg.indexOf("=") + 1);
+      } else {
+        value = args[index + 1];
+        if (value === undefined || !value.trim() || value.startsWith("-")) throw new Error(`${arg} requires a value.`);
+        index++;
+      }
+      arg = `${flag}${value}`;
+    }
+    if (arg.startsWith("--files=")) {
+      const val = arg.slice("--files=".length).trim();
       if (val) files = files ? `${files},${val}` : val;
     } else if (/^-?-refresh=/.test(arg)) {
       const val = arg.replace(/^-?-refresh=/, "").trim();
@@ -297,13 +312,10 @@ function parseRawArgs() {
           .split(/[,;\s]/)
           .map((s) => s.trim())
           .filter(Boolean)) {
-          // Strip leading `@` so `--preset=@llm` and `--preset=llm` resolve identically.
-          // The marker is the bare-arg disambiguator (see below); on the explicit
-          // --preset= flag it's just symmetric noise. Origin stays `--preset=` so
-          // ambiguity error messages use `--preset=` formatted suggestions.
+          // Explicit preset flags accept either marker without changing suggestion syntax.
           presetRequests.push({
-            name: name.replace(/^@/, ""),
-            viaAtMarker: false,
+            name: name.replace(/^[@#]/, ""),
+            suggestionFlag: "--preset=",
           });
         }
       }
@@ -317,13 +329,11 @@ function parseRawArgs() {
       remove = true;
     } else if (/^-?-no-color$/.test(arg)) {
       process.env.NO_COLOR = "1";
-    } else if (arg.startsWith("@")) {
-      // Bare-arg `@xxx` → strict preset lookup (skip script search entirely).
-      // The `@` marker disambiguates intent on bare args, where script-vs-preset
-      // would otherwise be ambiguous. Routes to the same fuzzy-substring preset
-      // matcher used by --preset=, but ambiguity messages use `@` suggestions.
+    } else if (arg.startsWith("@") || arg.startsWith("#")) {
+      // Marked bare arguments bypass script lookup; preserve the marker in suggestions.
       const stripped = arg.slice(1).trim();
-      if (stripped) presetRequests.push({ name: stripped, viaAtMarker: true });
+      if (!stripped && arg.startsWith("#")) throw new Error("# requires a preset name.");
+      if (stripped) presetRequests.push({ name: stripped, suggestionFlag: arg[0] });
     } else if (!arg.startsWith("-")) {
       // Plain bare arg → tentatively a file (script-first priority). If script
       // resolution later returns not_found, `_resolveBareArgPresetFallback`
@@ -340,24 +350,24 @@ function parseRawArgs() {
   if (presetRequests.length > 0) {
     const presetMap = loadPresets();
     const known = Object.keys(presetMap);
-    for (const { name, viaAtMarker } of presetRequests) {
-      const suggestionFlag = viaAtMarker ? "@" : "--preset=";
-      const resolvedName = _resolvePresetName(name, presetMap, {
-        suggestionFlag,
-      });
-      if (!resolvedName) {
+    for (const { name, suggestionFlag } of presetRequests) {
+      const wildcard = name.endsWith("*");
+      const prefix = name.slice(0, -1).toLowerCase();
+      const resolvedNames = wildcard
+        ? known.filter((key) => prefix.length > 0 && key.toLowerCase().startsWith(prefix))
+        : [_resolvePresetName(name, presetMap, { suggestionFlag })].filter(Boolean);
+      if (resolvedNames.length === 0) {
         const list = known.length ? known.join(", ") : "(none defined)";
         throw new Error(`Unknown preset "${name}". Available presets: ${list}`);
       }
 
-      // Track canonical names so debug output / printRunInfo reflect what actually ran.
-      presets.push(resolvedName);
-
-      // Recursively expand: a preset may pull in other presets via `presets:` for composition.
-      // expandPresetFiles handles cycle detection and unknown-ref errors.
-      const expandedFiles = expandPresetFiles(resolvedName, presetMap);
-      for (const f of expandedFiles) {
-        if (f) files = files ? `${files},${f}` : f;
+      for (const resolvedName of resolvedNames) {
+        // Track canonical names and reuse recursive expansion, including its cycle checks.
+        presets.push(resolvedName);
+        const expandedFiles = expandPresetFiles(resolvedName, presetMap);
+        for (const f of expandedFiles) {
+          if (f) files = files ? `${files},${f}` : f;
+        }
       }
     }
   }
@@ -370,7 +380,7 @@ function parseRawArgs() {
   if (dryrun) process.env.IS_DRY_RUN = "1";
   if (remove) process.env.IS_REMOVE_MODE = "1";
   // Propagate bare-arg list to downstream resolution (_resolveBareArgPresetFallback).
-  // Only plain bare args (no leading `@`, no --files= flag) are fallback-eligible —
+  // Only plain bare args (no leading `@` or `#`, no file flag) are fallback-eligible —
   // explicit flags stay strict so typos surface loudly.
   if (bareArgs.length > 0) process.env.BASHRC_BARE_ARGS = bareArgs.join(",");
 

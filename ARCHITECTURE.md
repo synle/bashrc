@@ -78,7 +78,11 @@ Rule: shipped-at-build-time config → BEGIN/END; live shell refreshed each run 
 
 `presets.jsonc` is JSONC (stripped by `stripJsoncComments` before parse). Each entry: optional `files[]`, recursive `presets[]`, `description`. `expandPresetFiles()` flattens with cycle detection; cycles throw at parse time (`presets.spec.js` guards).
 
-CLI resolution precedence (`parseRawArgs`): `--files=` strict script (three tiers: exact path → basename → partial regex); `--preset=` strict with substring fuzzy fallback; bare `<x>` script-first then preset; bare `@<x>` strict preset. Script wins collisions — use `@llm` to force the preset.
+CLI resolution (`parseRawArgs`): `--file` / `--files` select scripts; `--preset` / `--presets` select presets. Both accept `=value` or separate values.
+Scripts resolve exact path → basename → partial regex; presets resolve exact name → case-insensitive substring.
+Bare `<x>` searches scripts first, then presets; `@<x>` and quoted `'#<x>'` force preset lookup.
+Trailing `*` selects all case-insensitive prefix matches. File wildcards expand before bare-name fallback; explicit preset wildcards expand during parsing.
+No short selector aliases are added; `-f` retains force-refresh behavior.
 
 Composites: `lightweight`, `heavyweight` (= all building blocks: `editors`, `emulators`, `apps`, `browsers`, `terminal`, `prompt`, `llm`).
 
