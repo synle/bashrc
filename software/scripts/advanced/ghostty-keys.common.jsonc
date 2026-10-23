@@ -67,6 +67,7 @@
   { "key": "OS_KEY+c", "action": "copy_to_clipboard:mixed" },
   { "key": "OS_KEY+v", "action": "paste_from_clipboard" },
   { "key": "OS_KEY+a", "action": "select_all" },
+  { "key": "ctrl+shift+a", "action": "select_all" },
   // Escape hatch: OS_KEY+shift+<key> does the same thing, for when the plain
   // chord is taken by an app inside the terminal (on Linux OS_KEY is alt, which
   // tmux / vim / readline may want). Overrides two Ghostty defaults:

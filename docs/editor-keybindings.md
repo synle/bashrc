@@ -285,6 +285,9 @@ on macOS/Linux (`advanced/ghostty-keys.common.jsonc`). They use literal `ctrl`, 
 | `ctrl+backspace` | Delete previous word | `ctrl+w` (`U+0017`) |
 | `ctrl+delete`    | Delete next word     | `alt+d` (`ESC d`)   |
 
+`ctrl+shift+a` selects the entire terminal buffer, including scrollback, using each
+terminal's native select-all action. It does not send input to the running application.
+
 The active shell or application interprets the forwarded input. Word deletion uses
 the existing Bash/readline and PowerShell profile shortcuts; other applications may interpret them differently.
 On Mac keyboards, `ctrl+backspace` uses the key labeled Delete; `ctrl+delete` uses

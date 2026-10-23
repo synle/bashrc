@@ -175,6 +175,7 @@
     "keys": "f2",
   },
   { "command": "selectAll", "keys": "alt+a" },
+  { "command": "selectAll", "keys": "ctrl+shift+a" },
   // Escape hatch: alt+shift+<key> does the same thing, for when the plain alt
   // chord is taken by an app inside the terminal (tmux / vim / readline).
   { "command": "copy", "keys": "alt+shift+c" },
