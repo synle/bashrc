@@ -273,6 +273,20 @@ clobber Zed's real Terminal defaults. These are therefore declared explicitly in
 
 ## Terminal Emulators
 
+### Windows Terminal Line Editing
+
+These mappings apply only to Windows Terminal (`windows-terminal-keys.jsonc`).
+
+| Key              | Action               | Input sent          |
+| ---------------- | -------------------- | ------------------- |
+| `ctrl+a`         | Move to line start   | Home (`ESC[H`)      |
+| `ctrl+e`         | Move to line end     | End (`ESC[F`)       |
+| `ctrl+backspace` | Delete previous word | `ctrl+w` (`U+0017`) |
+| `ctrl+delete`    | Delete next word     | `alt+d` (`ESC d`)   |
+
+The active shell or application interprets the forwarded input. Word deletion uses
+the existing Bash/readline and PowerShell profile shortcuts; other applications may interpret them differently.
+
 ### Tabs & Windows
 
 | Key                | Action                          | Windows Terminal | tmux | Ghostty |

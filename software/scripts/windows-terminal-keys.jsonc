@@ -182,6 +182,12 @@
   { "command": "find", "keys": "alt+shift+f" },
   { "command": "selectAll", "keys": "alt+shift+a" },
   { "command": { "action": "newWindow" }, "keys": "alt+n" },
+  // Line editing: Home/End sequences plus shell word-deletion shortcuts.
+  // sendInput forwards these directly instead of invoking Terminal UI actions.
+  { "command": { "action": "sendInput", "input": "\u001b[H" }, "keys": "ctrl+a" },
+  { "command": { "action": "sendInput", "input": "\u001b[F" }, "keys": "ctrl+e" },
+  { "command": { "action": "sendInput", "input": "\u0017" }, "keys": "ctrl+backspace" },
+  { "command": { "action": "sendInput", "input": "\u001bd" }, "keys": "ctrl+delete" },
   // tmux ctrl twins: ctrl+<key> re-sent as alt+<key> (ESC <key>) so tmux's alt
   // chords also answer to ctrl - ctrl+1-9 = tmux window N, ctrl+shift+1-9 = pane
   // N, ctrl+, / ctrl+. = prev / next window, ctrl+' = split. Mirrors
