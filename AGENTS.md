@@ -73,6 +73,10 @@ OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chr
 
 ---
 
+## CodeGraph lifecycle
+
+`advanced/llm/codegraph.sh` provisions a pinned CodeGraph executable; the shared MCP registry owns client configuration, not CodeGraph's installer. `codegraph_refresh <absolute-worktree-root>` initializes or incrementally syncs one local index and emits JSON readiness separately from Git success. `worktree_create` calls it on creation/reuse while keeping stdout path-only; `--path-only` never indexes. Active shared instructions and sync/merge skills require a final refresh after stable Git operations. Indexes must remain local and untracked; failed or deferred refresh requires direct source tools. Windows-mounted Linux worktrees are deferred to avoid sharing an index with Windows; use a Linux-native checkout. The installer skips Termux because no supported build exists.
+
 ## 4. Layout
 
 Active shared LLM instructions, commands, and agents live in

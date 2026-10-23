@@ -9,6 +9,7 @@
 
 /** @type {Array<{source: string, command: string}>} Git CLI payloads to install. */
 const GIT_FUNCTION_PAYLOADS = [
+  { source: `software/scripts/git.codegraph_refresh.cjs`, command: `codegraph_refresh` },
   { source: `software/scripts/git.checkout.cjs`, command: `git_checkout` },
   { source: `software/scripts/git.pr_list.cjs`, command: `list_prs` },
   { source: `software/scripts/git.worktree_clean.cjs`, command: `worktree_clean` },

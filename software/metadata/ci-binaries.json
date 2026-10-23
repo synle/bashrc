@@ -24,6 +24,7 @@
     "starship"
   ],
   "warn": [
+    { "name": "codegraph", "version_cmd": "codegraph --version" },
     { "name": "pwsh", "version_cmd": "pwsh --version" },
     { "name": "ollama", "version_cmd": "ollama --version" },
     { "name": "psql", "version_cmd": "psql --version" },

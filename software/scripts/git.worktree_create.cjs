@@ -161,8 +161,25 @@ function addWorktree(folder, branch) {
 }
 
 /**
- * Create or reuse a worktree.
- * @returns {number}
+ * Refresh a resolved worktree without changing the path-only stdout contract.
+ * @param {string} folder Existing worktree root.
+ * @returns {void} Diagnostics go to stderr; graph failure does not undo Git success.
+ */
+function refreshCodeGraph(folder) {
+  const result = spawnSync("codegraph_refresh", [folder], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+    timeout: 310000,
+  });
+  if (result.stdout) process.stderr.write(result.stdout);
+  if (result.error || result.status !== 0) {
+    info(`worktree_create: CodeGraph not ready; run codegraph_refresh on this worktree before graph-backed exploration`);
+  }
+}
+
+/**
+ * Create or reuse a worktree and refresh its local graph unless only resolving a path.
+ * @returns {number} Git creation status, independent of reported graph readiness.
  */
 function main() {
   const args = process.argv.slice(2);
@@ -190,6 +207,7 @@ function main() {
   const reused = existingWorktree(branch, primary);
   if (reused) {
     info(`  -> reusing worktree already on '${branch}': ${reused}`);
+    refreshCodeGraph(reused);
     process.stdout.write(`${reused}\n`);
     return 0;
   }
@@ -197,6 +215,7 @@ function main() {
     info(`worktree_create: could not create '${folder}' for branch '${branch}'`);
     return 1;
   }
+  refreshCodeGraph(folder);
   process.stdout.write(`${folder}\n`);
   return 0;
 }

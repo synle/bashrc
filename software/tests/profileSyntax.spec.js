@@ -41,6 +41,13 @@ const bootstrapFiles = listFiles(path.join(ROOT_DIR, "software/bootstrap"), (n) 
 
 const rootScriptFiles = listFiles(ROOT_DIR, (n) => n.endsWith(".sh"));
 
+/** CodeGraph provisioning is parsed even without generated profiles. */
+const codegraphInstaller = path.join(ROOT_DIR, "software/scripts/advanced/llm/codegraph.sh");
+
+describe("CodeGraph installer syntax", () => {
+  it("parses under both supported shells", () => assertNoSyntaxErrors(codegraphInstaller));
+});
+
 /** Setup scripts included in cross-platform shell syntax checks. */
 const fullSetupFiles = walkFiles(path.join(ROOT_DIR, "software/scripts"), (n) =>
   /^_full-setup(\.common\.linux|\.touchid)?\.(sh|bash)$/.test(n),

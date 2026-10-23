@@ -36,9 +36,10 @@ const SHIPPED_REGISTRY = JSON.stringify(
   getIndexFunction("parseJsonWithComments")(readFileSync("software/scripts/advanced/llm/_common/mcp-servers.jsonc", "utf8")),
 );
 
-/** Independent native config expectations for the requested npm MCP launchers. */
+/** Independent native config expectations for the managed MCP launchers. */
 const REQUESTED_SERVERS = {
   mcpServers: {
+    codegraph: { command: "codegraph", args: ["serve", "--mcp"], env: { CODEGRAPH_TELEMETRY: "0" } },
     context7: {
       command: "npx",
       args: ["-y", "@upstash/context7-mcp@latest"],
@@ -51,6 +52,7 @@ const REQUESTED_SERVERS = {
     },
   },
   mcp: {
+    codegraph: { type: "local", command: ["codegraph", "serve", "--mcp"], environment: { CODEGRAPH_TELEMETRY: "0" }, enabled: true },
     context7: {
       type: "local",
       command: ["npx", "-y", "@upstash/context7-mcp@latest"],
@@ -147,7 +149,7 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
     expect(fileSystem[target]).toBe(first);
   });
 
-  it.each([false, true])("deploys shipped Context7 and AnyDoc servers safely and idempotently (macOS: %s)", async (isMac) => {
+  it.each([false, true])("deploys shipped CodeGraph, Context7, and AnyDoc servers safely and idempotently (macOS: %s)", async (isMac) => {
     loadClient(cli);
     setSandboxGlobal("is_os_mac", isMac);
     fetchResponses["software/scripts/advanced/llm/_common/mcp-servers.jsonc"] = SHIPPED_REGISTRY;
@@ -161,7 +163,8 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
 
     const result = JSON.parse(fileSystem[target]);
     expect(result.customSetting).toBe("kept");
-    expect(Object.keys(result[key]).sort()).toEqual(["anydoc", "context7", "personal", "playwright"]);
+    expect(Object.keys(result[key]).sort()).toEqual(["anydoc", "codegraph", "context7", "personal", "playwright"]);
+    expect(result[key].codegraph).toEqual(REQUESTED_SERVERS[key].codegraph);
     expect(result[key].personal).toEqual({ command: "personal-server" });
     expect(result[key].context7).toEqual(REQUESTED_SERVERS[key].context7);
     expect(result[key].anydoc).toEqual(REQUESTED_SERVERS[key].anydoc);

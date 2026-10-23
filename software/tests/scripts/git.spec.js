@@ -45,6 +45,8 @@ describe("git.js doWork", () => {
     expect(gitignore).toContain(".worktree*/");
     expect(gitignore).toContain("worktree*/");
     expect(gitignore).toContain(".wt/");
+    expect(gitignore).toContain(".codegraph/");
+    expect(gitignore).toContain(".codegraph-wsl/");
   });
 
   it("should include numbered alias snippets in gitconfig", async () => {

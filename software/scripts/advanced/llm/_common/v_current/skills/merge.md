@@ -32,9 +32,11 @@ Use when the user asks in plain English to pull or merge the latest code into a 
    - `git fetch upstream <upstream-default>`
    - `git merge --no-edit upstream/<upstream-default>`
    - Resolve conflicts before doing anything else. Never start another merge while one is in progress.
-   - If there is no upstream remote, or `upstream` is the same repo as `origin`, report `upstream: none` and finish.
+   - If there is no upstream remote, or `upstream` is the same repo as `origin`, report `upstream: none` and proceed to Step 5.
 
-5. **Report exactly what happened.**
+5. **Refresh the final local CodeGraph state and report exactly what happened.**
+   - After the upstream merge and any conflict resolution, run `codegraph_refresh "<absolute-worktree-root>"` again: the earlier repo-local result predates this final merge. With no upstream merge, retain the delegated graph result.
+   - Report the final graph JSON status and reason separately from Git success. A remote-only update stays deferred until the intended local worktree is synchronized; never index unrelated files. Failure or unavailability requires direct source tools, not a fabricated ready result.
    - Name the target branch or PR.
    - Quote the `/sy-sync-pr-branch` result block for the repo-local part.
    - Then append one upstream line: `upstream: none`, `upstream: already up to date`, `upstream: merged <branch>`, or `upstream: conflicts resolved (<n> files)`.

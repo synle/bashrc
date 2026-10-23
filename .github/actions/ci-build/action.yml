@@ -348,6 +348,7 @@ runs:
         check_binary_required ansible "ansible --version"
         check_binary_required btop "btop --version"
         check_binary_required starship
+        check_binary_warn codegraph "codegraph --version"
         check_binary_warn pwsh "pwsh --version"
         check_binary_warn ollama "ollama --version"
         check_binary_warn psql "psql --version"

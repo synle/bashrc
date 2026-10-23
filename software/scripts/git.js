@@ -99,7 +99,7 @@ function _extractEmail(config) {
 }
 
 /**
- * Returns the global gitignore content with common OS, editor, and worktree-folder exclusions.
+ * Returns global ignore rules for OS files, editors, dependencies, worktrees, and local CodeGraph indexes.
  * @returns {string} The global gitignore content.
  */
 function _getGlobalGitIgnore() {
@@ -140,6 +140,8 @@ function _getGlobalGitIgnore() {
     .nyc_output/
 
     # Cache
+    .codegraph/
+    .codegraph-wsl/
     .cache/
     .parcel-cache/
     .prettier-cache

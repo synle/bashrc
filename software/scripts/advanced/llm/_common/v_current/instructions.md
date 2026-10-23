@@ -95,6 +95,11 @@ Governs every other section.
 - `<title>` = optional context prefix + `<state> — <milestone>`. Prefix it with the wave/PR the run is on so a glance at the tab says which slice of a fan-out is live: `wave <W>/<N> · <state> <milestone>` inside a wave, `pr #<n> · <state> <milestone>` babysitting or reviewing one PR, `pr <i>/<M> · <state> <milestone>` walking a batch. No wave or PR context → drop the prefix, use the bare `<state> — <milestone>`.
 - Major milestones: starting significant implementation, moving implementation→testing, starting debugging, starting review/refactoring, completing a significant feature, crossing a wave/PR boundary in a fan-out, becoming blocked or waiting for user input.
 
+## CodeGraph
+
+- Use CodeGraph for indexed code navigation, source context, and impact analysis; keep LSP diagnostics and tests. Graph results do not override source verification or repository rules.
+- After worktree creation/reuse or completed Git operations, run `codegraph_refresh "<absolute-worktree-root>"` before graph-backed exploration. Keep one local index per worktree. Follow **CodeGraph freshness** in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` for failures, deferred remote updates, and lifecycle details.
+
 ## Context Hygiene & Handoff
 
 - Read narrow, then widen. Locate first, read the enclosing scope, and widen only for a named question; do not spend a 5k-line file on one function by chance.

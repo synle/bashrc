@@ -42,6 +42,14 @@
   //   - Remote servers must be reachable from every machine that runs setup —
   //     a corp-VPN-only endpoint will break setup on a laptop without VPN.
   "mcpServers": {
+    // CodeGraph — pinned executable provisioned by codegraph.sh. Resolve the
+    // active client worktree, never a fixed checkout; each owns .codegraph/.
+    // Keep the shared daemon enabled for concurrent clients on the same tree.
+    "codegraph": {
+      "command": "codegraph",
+      "args": ["serve", "--mcp"],
+      "env": { "CODEGRAPH_TELEMETRY": "0" },
+    },
     // Microsoft Playwright — browser automation over STDIO: navigate, click,
     // fill forms, screenshot, and capture accessibility snapshots. Useful for
     // debugging the repo's own webapp/ and any web work. `npx` (Node installed
