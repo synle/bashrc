@@ -309,6 +309,7 @@ function _modernizeWindowsTerminalProfileFont(profile) {
 
 /**
  * Applies the shared content scheme without changing tab/title-bar or non-color appearance controls.
+ * Scheme colors come from theme/sy/windows_terminal_<mode>.jsonc markers; profile normalization must not introduce local color literals.
  * @param {object} profile - Existing profile or inherited defaults.
  * @param {{dark: string, light: string}} schemes - Selected Sy or native fallback scheme pair.
  * @returns {object} Copied profile with normalized focused/unfocused content colors; input objects are not mutated.

@@ -1,6 +1,11 @@
 /**
  * build-include.js - Generic BEGIN/END block substitution engine.
  *
+ * Managed theme flow: theme/sy/_palette_{dark,light}.jsonc -> resolved semantic/derived colors
+ * -> marker-bound theme/sy/<app>_<mode>.jsonc -> readSyTheme -> native renderer/deployer -> product.
+ * New feature colors belong in both foundations and app marker bindings, never in a second script-local palette.
+ * See theme/README.md for the authoritative workflow; baseline/audit evidence is not a regeneration target.
+ *
  * Supports two modes:
  *
  * 1. Auto mode (file path markers) - no config needed:

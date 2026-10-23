@@ -20,7 +20,7 @@ const _TERMUX_COLORS_PATH = `${BASE_HOMEDIR_LINUX}/.termux/colors.properties`;
  *
  * Termux's format is `key: value` per line, with the ANSI ramp as `color<N>: #hex`.
  * Values are never hardcoded here — they come from the JSONC, which build-include stamps
- * from COLOR_MAP.
+ * from COLOR_MAP. New feature colors must be bound in both canonical Termux templates and shared foundations, not selected in this renderer.
  *
  * @param {"dark"|"light"} [mode="dark"] - Requested appearance; automatic native switching is not assumed.
  * @returns {Promise<string>} Full text of `~/.termux/colors.properties`.

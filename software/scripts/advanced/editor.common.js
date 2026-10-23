@@ -42,6 +42,8 @@ function shouldInstallCustomTheme(surface = "gui") {
 
 /**
  * Reads one active native-shaped Sy source, rejecting archives, gaps, and invalid selectors before deployment.
+ * Color ownership stays in paired foundations and app placeholders; this reader and downstream deployers must not invent another palette.
+ * Add new feature bindings through theme/README.md's workflow, then generate before loading native output.
  * @param {string} app - Lowercase canonical application filename prefix.
  * @param {"dark"|"light"} mode - Requested appearance.
  * @returns {Promise<object>} Parsed native configuration or renderer input.
