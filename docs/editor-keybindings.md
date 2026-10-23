@@ -790,6 +790,12 @@ before vim sees it, so there it stays the terminal's text paste.
 
 ---
 
+## Pi Coding Agent
+
+`advanced/llm/pi/setup.js` merges `advanced/llm/pi/pi-keys.common.jsonc` into `~/.pi/agent/keybindings.json`, preserving unrelated user bindings.
+The managed `tui.editor.deleteWordBackward` action binds `ctrl+w`, `ctrl+backspace`, and upstream `alt+backspace`.
+Run `/reload` in an existing Pi session after deployment to apply the keybindings.
+
 ## AI CLI Assistants
 
 Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub Copilot CLI** (the [official `gh.io/copilot-install` distribution](https://gh.io/copilot-install), not the deprecated `@github/copilot-cli` package), and **Google Gemini CLI**. Where possible the input-layer chords are aligned to Claude's conventions so muscle memory carries across tools.

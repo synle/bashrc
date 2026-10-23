@@ -23,8 +23,10 @@
  *                             `terminal.showTerminalProgress`, `terminal.hyperlinks`,
  *                             `autocompleteMaxVisible`, `images.blockImages`,
  *                             `collapseChangelog`, `enableInstallTelemetry`,
- *                             `hideThinkingBlock`) into the user's settings; only
- *                             managed keys are touched.
+ *                             `hideThinkingBlock`, `showHardwareCursor`) into the user's
+ *                             settings; the redundant system-theme pair is normalized.
+ *   ~/.pi/agent/keybindings.json — managed word-deletion chords merged while
+ *                             preserving unrelated user bindings.
  *   ~/.pi/agent/mcp.json — shared MCP servers, merged additively while
  *                             preserving user-only servers and other keys.
  *   ~/.pi/agent/agents/*.md — shared named workers linked by the common deployer;
@@ -78,7 +80,7 @@ const PI_COPILOT_HEADERS = {
  * startup, quiet startup, wider inline images, terminal progress shown,
  * forced terminal hyperlinks, more visible autocomplete rows, outbound image
  * sending left enabled, condensed changelogs, install telemetry disabled,
- * and thinking blocks hidden. No provider or model is pinned here — Pi keeps
+ * hardware cursor enabled, and thinking blocks hidden. No provider or model is pinned here — Pi keeps
  * its own automatic startup selection unless the user already chose something
  * on disk.
  *
@@ -99,6 +101,7 @@ const PI_MANAGED_SETTINGS = {
   collapseChangelog: true,
   enableInstallTelemetry: false,
   hideThinkingBlock: true,
+  showHardwareCursor: true,
   doubleEscapeAction: "none",
 };
 
@@ -168,9 +171,9 @@ function _buildPiOllamaProviders(providerInputs) {
 }
 
 /**
- * Merges managed defaults into one pi settings.json, preserving existing user settings.
- * @param {string} agentDir - Target pi agent folder.
- * @returns {Promise<void>}
+ * Merges managed defaults and normalizes only the redundant system-theme pair, preserving other user settings.
+ * @param {string} agentDir - Target Pi agent folder.
+ * @returns {Promise<void>} Resolves after backing up and writing settings; IO errors propagate.
  */
 async function _doPiSettingsWork(agentDir) {
   const targetPath = path.join(agentDir, "settings.json");
@@ -182,6 +185,9 @@ async function _doPiSettingsWork(agentDir) {
   try {
     existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
   } catch (e) {}
+
+  // Collapse the redundant automatic pair without replacing a custom theme.
+  if (existing.theme === "system/system") existing.theme = "system";
 
   // Managed keys are defaults: a user value already on disk wins.
   const merged = {
@@ -425,7 +431,7 @@ export default function (pi) {
 }
 
 /**
- * Orchestrates pi setup: settings, native MCP, Ollama providers, shared instructions,
+ * Orchestrates Pi setup: settings, keybindings, native MCP, Ollama providers, shared instructions,
  * APPEND_SYSTEM persona reinforcement, collapsed tool output, shared skills, and agents.
  * Skips entirely when pi is not installed.
  * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
@@ -442,6 +448,7 @@ async function doWork() {
   await mkdir(piAgentDir);
 
   await _doPiSettingsWork(piAgentDir);
+  await _doPiKeybindingsWork(piAgentDir);
   await deploySharedMcpServers(path.join(piAgentDir, "mcp.json"), {}, "standard", "pi");
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */

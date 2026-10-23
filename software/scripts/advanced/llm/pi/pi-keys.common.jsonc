@@ -1,6 +1,6 @@
 // Pi keybindings shared across all platforms.
-// Keep both readline muscle-memory chords for deleting the previous word.
+// Keep both managed chords and upstream Alt+Backspace for deleting the previous word.
 {
   "$schema": "https://pi.dev/schemas/keybindings.schema.json",
-  "tui.editor.deleteWordBackward": ["ctrl+w", "ctrl+backspace"],
+  "tui.editor.deleteWordBackward": ["ctrl+w", "ctrl+backspace", "alt+backspace"],
 }
