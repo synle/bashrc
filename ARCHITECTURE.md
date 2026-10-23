@@ -36,6 +36,14 @@ Also ships a Vite + React webapp (`webapp/`, sources in `src/`) at https://synle
 - **`vitest.config.js` (+ 4 sibling configs)** — One config per test suite.
 - **`AGENTS.md` / `DEV.md` / `README.md`** — Rules / dev quick-start / user overview.
 
+## Theme data flow
+
+Managed Sy colors have one source: paired foundations in `theme/sy/`. The compiler resolves recipes/variants and replaces app placeholder literals.
+Setup consumers load the paired app sources through `readSyTheme`, then render native syntax or deploy native JSON/settings. The installer bundles active sources for offline use.
+
+New feature colors follow `theme/README.md` → Required workflow for new feature colors; do not add another app-local palette.
+Tab/title-bar identity and native fallback choices remain separate from shared terminal content colors. Baseline references are immutable; current audit statuses are not historical measurement counts.
+
 ## Execution Pipeline
 
 1. **Bootstrap.** `run.sh` detects local vs remote mode (presence of `software/index.js`). Remote fetches `run.sh` + `software/` from raw.githubusercontent into `$BASHRC_TEMP_DIR` (rooted at `$BASHRC_TEMP_ROOT_DIR`, `/tmp` with mktemp fallback on locked-down hosts) and re-execs.

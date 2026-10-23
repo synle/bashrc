@@ -12,7 +12,9 @@ When custom themes are disabled, it selects the installed Ayu theme instead.
 The flag never removes Ayu's Jetpack declaration.
 
 `theme/sy/vim_dark.jsonc` and `vim_light.jsonc` store native highlight groups, terminal ANSI colors, and Lightline data with shared `COLOR_MAP` markers.
-Run `make format_build_include` after changing their marker mappings or shared colors.
+For new highlight or status-line features, follow `theme/README.md` → Required workflow for new feature colors.
+Reuse or add a role in both shared foundations, bind it in both Vim templates, and run `make format_build_include`.
+The Vim renderer converts that data to native commands; do not add hex colors or another palette to the renderer.
 Lightline uses the same generated Sy palette or Ayu's supplied palette.
 TSX and React groups link to standard syntax roles rather than independent hex overrides.
 

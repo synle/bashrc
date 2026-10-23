@@ -9,11 +9,42 @@
 - `sy/<app>_<dark|light>.jsonc` contains native-shaped configuration or the documented Vim/terminal renderer input.
 - `baseline/` preserves the earlier reference captures, including inline non-JSON source and explicit unavailable exports.
 - `manifest.jsonc` preserves reference provenance and checksums. Mutable Sy sources are validated by tests and generation, not snapshot hashes.
-- `AUDIT.md`, `audit.jsonc`, and `mappings.jsonc` retain the historical audit evidence and original proposals. Current source and regression tests supersede proposal status.
+- `AUDIT.md` and `audit.jsonc` are the current closure ledger: implemented code fixes are checked off, while partial, unverified, and capability-limit items stay explicit.
+- Legacy measurements inside `audit.jsonc` and original proposals in `mappings.jsonc` remain historical evidence, not current failure counts.
 
 Supported setup consumers read canonical active sources directly. Legacy app-specific Sy JSONC inputs are removed; existing generated/native output names remain stable.
 Pi, OpenCode, and Gemini preserve explicit foreign selections. GUI defaults retain display gating; terminal consumers support SSH/headless use.
-Termux defaults to dark; `TERMUX_THEME_MODE=light` selects its light source on Termux. Native automatic switching is not assumed.
+Windows Terminal uses one selected content pair for every profile, including explicit unfocused appearances. Saved tab colors, tab titles, and title-bar theme selection remain distinct.
+Termux defaults to dark; `TERMUX_THEME_MODE=light` selects its light source. `IS_CUSTOM_THEME_DISABLED=1` leaves existing files untouched and performs no color IO.
+Native automatic switching on Termux is not assumed.
+
+## Required workflow for new feature colors
+
+Treat this folder as the source of truth for managed Sy colors. Do not create a feature-local palette or choose application literals independently.
+
+```text
+sy/_palette_dark.jsonc + sy/_palette_light.jsonc
+  -> build-include resolves semantic recipes and derived variants
+  -> sy/<app>_dark.jsonc + sy/<app>_light.jsonc marker bindings
+  -> readSyTheme(app, mode)
+  -> application renderer/deployer
+  -> native configuration, theme files, or settings in the product
+```
+
+1. Identify the native component, state, actual foreground/background pair, and supported property. Unsupported properties remain explicit gaps.
+2. Reuse an existing semantic role first. If necessary, add the same new role to both foundations; prefer a recipe or existing alpha/tint/shade variant over another hue.
+3. Add the native property or renderer data to both application templates. Bind each color with `// {{dark.role}}` / `// {{light.role}}`; do not author the final application hex by hand.
+4. For multi-color strings, retain a `// {{template: "..."}}` recipe so later palette changes can regenerate every value.
+5. Run `make format_build_include`. Rerun it to establish a fixed point; generated literals change while their role comments remain.
+6. If a new native field needs renderer support, extend the responsible renderer. Load canonical sources with `readSyTheme`; never recreate palette values or role tables in setup code.
+7. Check emitted native configuration and the reachable state pairs in both appearances. Verify opt-out, explicit user-choice preservation, repeated deployment, and source availability in the installer.
+8. Update `audit.jsonc` / `AUDIT.md` with evidence and remaining limits. Source generation or schema acceptance alone does not close native visual verification.
+
+New applications follow the same route: one dark/light source pair, verified native shape, responsible consumer, and regression evidence. The installer already bundles the active source folder.
+
+Saved tab/title-bar identity is separate from the shared terminal **content** palette. Preserve those user controls; do not route them through a profile content override.
+
+Use this section as the authoritative workflow. Related repo/context/client docs link here rather than maintain a second set of instructions.
 
 ## Foundation recipes
 

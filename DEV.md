@@ -211,7 +211,9 @@ Use `// {{dark.key}}` or `// {{light.key}}` after color values. Multi-color stri
 Run `make format_build_include` after source/marker changes; a second run must report no updates. Unknown, malformed, or unbound active markers fail before writes.
 
 Baseline references and historical audit files under `theme/` are not regeneration targets. The formatter also preserves baseline bytes.
-See `theme/README.md` for native shapes and capability limits.
+The authoritative new-feature workflow is `theme/README.md` → Required workflow for new feature colors.
+Add or reuse a semantic role in both foundations, bind both native app templates with marker comments, generate, then load through `readSyTheme(app, mode)`.
+Setup scripts render/deploy native output; they must not define another Sy palette. Keep opt-out and both appearances covered, preserve tab/title-bar identity, and update current audit status without treating historical measurements as current failures.
 
 ## Helper API Reference
 

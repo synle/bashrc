@@ -92,7 +92,9 @@ The terminal application still controls default terminal background and ANSI col
 Gemini's captured custom-theme loader recomputes input/message/focus fills and couples border/UI-dark color through legacy `DarkGray`.
 Sources use supported controls rather than storing ignored overrides. Automatic switching between custom Gemini themes is not assumed.
 
-Run `make format_build_include` after changing foundation recipes or marker mappings.
+For new feature colors, follow `theme/README.md` → Required workflow for new feature colors.
+Reuse semantic roles/variants or add them to both foundations, bind supported fields in both client templates, then run `make format_build_include`.
+Client setup code only loads/renders/deploys those sources; it must not invent a second Sy palette or silently accept unsupported native fields.
 Theme pairs are loaded and validated before managed selection is changed. Native output names remain stable for the existing integrations.
 
 ### Settings-intent table

@@ -407,6 +407,7 @@ Profile registration is buffered: `registerProfileBlock` /
 - **`await backupConfigFile(path)` before writing any real user config** (Sublime, VS
   Code, Brave, Git, Vim) — creates `.bak_original` (never overwritten) and `.bak_latest`.
   Not needed for `writeBuildArtifact` or `BASH_SYLE_PATH`.
+- **Theme source of truth.** Follow `theme/README.md` → Required workflow for new feature colors. Managed Sy colors belong in both `theme/sy/_palette_{dark,light}.jsonc` foundations and app template markers, never feature-local literals or a second palette in setup code. Reuse semantic roles/derived variants first; generate through `software/tools/build-include.js`, then load/render canonical sources into native output. Preserve baseline references and record unresolved native limits in the audit.
 - **Theming goes through `shouldInstallCustomTheme()` and `getTheme()`** in
   `software/scripts/advanced/editor.common.js` — never a per-script `USE_CUSTOM_*` const.
   `shouldInstallCustomTheme()` keeps GUI gating; terminal callers pass `"terminal"` so SSH/headless interfaces remain supported.

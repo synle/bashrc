@@ -187,7 +187,7 @@ describe("Windows Terminal modern appearance", () => {
     expect(settings.customSetting).toBe("keep");
   });
 
-  it("colors only shell tabs and preserves profile icons and terminal backgrounds", async () => {
+  it("preserves saved tab colors and icons while unifying terminal content", async () => {
     const settings = await generateAppearance({
       profiles: {
         list: [
@@ -200,7 +200,7 @@ describe("Windows Terminal modern appearance", () => {
       },
     });
     expect(settings.profiles.list.map(({ name, icon, tabColor, background }) => ({ name, icon, tabColor, background }))).toEqual([
-      { name: "Ubuntu", icon: "ubuntu.ico", tabColor: "#e95420", background: "#112233" },
+      { name: "Ubuntu", icon: "ubuntu.ico", tabColor: "#ffffff", background: undefined },
       { name: "Debian", icon: "debian.ico", tabColor: "#e95420", background: undefined },
       { name: "Kali", icon: undefined, tabColor: "#e95420", background: undefined },
       {
@@ -209,13 +209,13 @@ describe("Windows Terminal modern appearance", () => {
         tabColor: "#000000",
         background: undefined,
       },
-      { name: "Powershell v5", icon: "powershell.ico", tabColor: "#012456", background: "#012456" },
+      { name: "Powershell v5", icon: "powershell.ico", tabColor: "#012456", background: undefined },
       { name: "Custom", icon: "custom.ico", tabColor: "#123456", background: undefined },
     ]);
     expect(settings.defaultProfile).toBe("u");
   });
 
-  it("updates existing managed shell tabs and preserves hidden values on repeat deployment", async () => {
+  it("preserves existing managed tab colors and hidden values on repeat deployment", async () => {
     const oldSettings = {
       profiles: {
         list: [
@@ -229,7 +229,7 @@ describe("Windows Terminal modern appearance", () => {
       {
         name: "Powershell v7",
         icon: "C:\\Users\\Test User\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
-        tabColor: "#000000",
+        tabColor: "#ffffff",
         hidden: true,
       },
       { name: "Powershell v5", icon: undefined, tabColor: "#012456", hidden: false },

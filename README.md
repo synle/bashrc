@@ -61,11 +61,13 @@ await readJson`software/scripts/foo.jsonc`; // universal JSONC reader
 
 ### Build-Include System
 
-A marker-based build system that inlines file content between `# BEGIN path` / `# END path` markers and processes `// {{theme.key}}` inline markers in JSONC files from a central color map. One `make format_build_include` keeps everything in sync.
+A marker-based build system inlines file content between `# BEGIN path` / `# END path` markers and renders `// {{theme.key}}` colors from paired `theme/sy/_palette_{dark,light}.jsonc` foundations. One `make format_build_include` resolves recipes/variants and updates application templates.
 
 ### Editor Configuration
 
-Manages settings, keybindings, extensions, and themes for VS Code, Sublime Text, Zed, and Vim across all platforms. Dark/light theme colors are centralized in one color map and propagated to all editor configs at build time.
+Manages settings, keybindings, extensions, and themes for VS Code, Sublime Text, Zed, and Vim across all platforms. Managed colors flow from shared dark/light foundations through app placeholder comments to native output.
+
+For new feature colors, follow [the shared theme workflow](theme/README.md#required-workflow-for-new-feature-colors). Reuse a semantic role or add it to both foundations, bind both app templates, generate, and deploy through the existing renderer. Do not add local color literals or a second Sy palette.
 
 ```bash
 bash run.sh --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"
@@ -83,7 +85,7 @@ GitHub Actions with 5 parallel OS builds (Ubuntu, RHEL, Arch, Debian, macOS), au
 
 ### Option A — single-file installer (recommended)
 
-Self-extracting bash script bundling `run.sh` + `software/` as a base64 payload. One HTTP request, no runtime raw fetches — works behind proxies and rate limits. Re-published on every push to `main`.
+Self-extracting bash script bundling `run.sh` + runtime `software/` sources + `theme/sy/` as a base64 payload. One HTTP request, no runtime raw fetches — works behind proxies and rate limits. Re-published on every push to `main`.
 
 Download once, then pass any `run.sh` flag:
 

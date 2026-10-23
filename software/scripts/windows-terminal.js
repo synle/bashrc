@@ -100,8 +100,8 @@ async function doWork() {
   const buildSettings = (oldSettings) => ({
     ...oldSettings,
 
-    // theme - auto dark/light switching
-    theme: "system",
+    // Window/title-bar theme is independent of terminal content; preserve the saved chrome choice.
+    theme: oldSettings.theme === undefined ? "system" : oldSettings.theme,
 
     // clipboard
     copyOnSelect: false,
@@ -136,7 +136,7 @@ async function doWork() {
     snapOnInput: true,
     altGrAliasing: true,
 
-    // Keep user-defined schemes needed by the preserved PowerShell and Command Prompt styles.
+    // Retain user-defined scheme records; every profile selects the shared content pair below.
     schemes: [
       ...(oldSettings.schemes || []).filter((scheme) => !useCustomTheme || ![syDarkScheme.name, syLightScheme.name].includes(scheme.name)),
       ...(useCustomTheme ? [syDarkScheme, syLightScheme] : []),
@@ -167,7 +167,7 @@ async function doWork() {
         : null;
 
   /**
-   * Enforce requested appearance for all profiles, elevate Ubuntu/Debian, and resolve the default profile.
+   * Unify content colors while preserving explicit tab/window chrome, then apply existing profile defaults.
    * Mutates and returns the passed-in settings object.
    * @param {object} settings Settings object produced by `buildSettings`.
    * @param {string|null} powershellCommand Discovered modern command; omitted for portable artifacts.
@@ -175,7 +175,6 @@ async function doWork() {
    */
   const applyProfileDefaults = (settings, powershellCommand = null) => {
     const allProfiles = settings.profiles?.list || settings.profiles || [];
-    const commandPromptScheme = allProfiles.find((profile) => profile.name === "Command Prompt")?.colorScheme ?? "Campbell";
     const inheritedStyles = _modernizeWindowsTerminalProfileFont(settings.profiles?.defaults || {});
     const shellProfiles = allProfiles.map((oldProfile) => {
       const profile = _modernizeWindowsTerminalProfileFont(oldProfile);
@@ -195,7 +194,6 @@ async function doWork() {
           ...profile,
           name: "Powershell v7",
           ...(powershellCommand ? { commandline: powershellCommand } : {}),
-          colorScheme: commandPromptScheme,
         };
       }
       return profile;
@@ -206,25 +204,30 @@ async function doWork() {
         name: "Powershell v7",
         commandline: powershellCommand,
         startingDirectory: "%USERPROFILE%",
-        colorScheme: commandPromptScheme,
       });
     }
-    const profiles = _prioritizeWindowsTerminalProfiles(shellProfiles);
+    const profiles = _prioritizeWindowsTerminalProfiles(shellProfiles).map((profile) =>
+      _withWindowsTerminalContentColors(profile, defaultProfileStyles.colorScheme),
+    );
     for (const profile of profiles) {
       // Saved profile fields override defaults, so apply requested preferences at both levels.
       Object.assign(profile, requiredProfileStyles, { font: { ...profile.font, ...requiredProfileStyles.font } });
       if (/Ubuntu|Debian/i.test(profile.name || "")) profile.elevate = true;
       if ((profile.cursorShape ?? defaultProfileStyles.cursorShape) !== "vintage") delete profile.cursorHeight;
-      if (_isWindowsTerminalWslProfile(profile)) profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.wsl;
-      else if (profile.name === "Powershell v7") profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.powershell7;
-      else if (profile.name === "Powershell v5") profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.powershell5;
+      if (profile.tabColor === undefined) {
+        if (_isWindowsTerminalWslProfile(profile)) profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.wsl;
+        else if (profile.name === "Powershell v7") profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.powershell7;
+        else if (profile.name === "Powershell v5") profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.powershell5;
+      }
     }
 
     settings.profiles = {
-      defaults: {
+      defaults: _withWindowsTerminalContentColors({
         ...defaultProfileStyles,
         ...(inheritedStyles.icon !== undefined ? { icon: inheritedStyles.icon } : {}),
-      },
+        ...(inheritedStyles.tabColor !== undefined ? { tabColor: inheritedStyles.tabColor } : {}),
+        ...(inheritedStyles.unfocusedAppearance !== undefined ? { unfocusedAppearance: inheritedStyles.unfocusedAppearance } : {}),
+      }, defaultProfileStyles.colorScheme),
       list: profiles,
     };
 
@@ -302,16 +305,33 @@ function _modernizeWindowsTerminalProfileFont(profile) {
 }
 
 /**
+ * Applies the shared content scheme without changing tab/title-bar or non-color appearance controls.
+ * @param {object} profile - Existing profile or inherited defaults.
+ * @param {{dark: string, light: string}} schemes - Selected Sy or native fallback scheme pair.
+ * @returns {object} Copied profile with normalized focused/unfocused content colors; input objects are not mutated.
+ */
+function _withWindowsTerminalContentColors(profile, schemes) {
+  const result = { ...profile, colorScheme: { ...schemes } };
+  const targets = [result];
+  const unfocused = profile.unfocusedAppearance;
+  if (unfocused !== null && typeof unfocused === "object" && !Array.isArray(unfocused)) {
+    result.unfocusedAppearance = { ...unfocused, colorScheme: { ...schemes } };
+    targets.push(result.unfocusedAppearance);
+  }
+  for (const target of targets) {
+    for (const key of ["foreground", "background", "cursorColor", "selectionBackground"]) delete target[key];
+  }
+  return result;
+}
+
+/**
  * Order profiles and default visibility without overriding explicit boolean hidden values.
  * @param {Array<object>} profiles - Profiles from Windows Terminal settings.
- * @returns {Array<object>} New ordered list preserving shell/Command Prompt schemes and explicit hidden flags.
+ * @returns {Array<object>} Ordered copies preserving appearance fields and explicit hidden flags; content normalization belongs to the caller.
  */
 function _prioritizeWindowsTerminalProfiles(profiles) {
   const prioritizedProfiles = profiles.map((profile) => {
     const prioritizedProfile = { ...profile };
-    if (!WINDOWS_TERMINAL_POWERSHELL_NAMES.includes(profile.name) && profile.name !== "Command Prompt") {
-      delete prioritizedProfile.colorScheme;
-    }
     if (typeof profile.hidden !== "boolean") {
       prioritizedProfile.hidden = !(
         _isWindowsTerminalWslProfile(profile) ||

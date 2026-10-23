@@ -53,8 +53,13 @@ async function _buildTermuxColors(mode = "dark") {
   return `${lines.join("\n")}\n`;
 }
 
-/** Writes the Termux palette to the local install. */
+/**
+ * Writes the selected Termux palette only when custom terminal themes are enabled.
+ * @returns {Promise<void>} Resolves without IO when opted out; existing colors remain unchanged.
+ * @throws {Error} For invalid enabled sources/modes or backup/write failures.
+ */
 async function doWork() {
+  if (!shouldInstallCustomTheme("terminal")) return;
   // No build artifact and no OS guard here: this script lives in software/scripts/android_termux/,
   // so discovery already gates it on is_os_android_termux and filterFilesByOsGuard drops it from an
   // explicit --files= run on any other OS. A guard inside would be dead code, and an artifact

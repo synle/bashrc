@@ -106,7 +106,7 @@ describe("PowerShell 7 Terminal launch", () => {
     expect(modern).toBeDefined();
     expect(modern.guid).toBe("{91c9f255-5190-4a5e-9ee5-d05d36dece87}");
     expect(modern.name).toBe("Powershell v7");
-    expect(modern.colorScheme).toBe("Campbell");
+    expect(modern.colorScheme).toEqual({ dark: "Campbell", light: "One Half Light" });
     expect(modern.startingDirectory).toBe("%USERPROFILE%");
     expect(modern.commandline).toBe(commandline);
     expect(modern.commandline).not.toContain("Set-Location");
