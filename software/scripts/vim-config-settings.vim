@@ -1,6 +1,9 @@
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Filetype Associations
 """""""""""""""""""""""""""""""""""""""""""""""""
+" Keep the configured theme; late terminal color replies can reset it to light defaults.
+let g:loaded_colorresp = 1
+
 au BufNewFile,BufRead *.cmp set filetype=xml                        " Salesforce Lightning components as XML
 au BufNewFile,BufRead *.app set filetype=xml                        " Salesforce app files as XML
 au BufNewFile,BufRead *.scss set filetype=scss.css                  " SCSS files get both SCSS and CSS highlighting
