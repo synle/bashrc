@@ -131,7 +131,6 @@ if has("persistent_undo")
   set undofile
 endif
 set mouse=i                   " Mouse only in insert mode — normal/visual use terminal-native selection
-set redrawtime=8000           " Max time (ms) to wait for syntax highlighting redraw before giving up
 set re=0                      " Use old regexp engine (faster for complex patterns)
 " Use system clipboard for yank/paste — matches Cmd+C/V behavior.
 " unnamed = macOS/Windows clipboard; unnamedplus = X11/Wayland CLIPBOARD on Linux.

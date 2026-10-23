@@ -1,6 +1,11 @@
 /** Generates vimrc configuration with vim-jetpack plugins, syntax highlighting, and keybindings for Linux, Mac, and Windows. */
 // SOURCE software/scripts/advanced/editor.common.js
 
+/** Maximum on-disk file size in KiB before disabling buffer-local syntax highlighting. */
+const VIM_SYNTAX_MAX_FILE_SIZE_KB = 8192;
+/** Maximum syntax redraw time per window, in milliseconds; this does not limit file loading or plugins. */
+const VIM_REDRAW_TIME_MS = 6000;
+
 /**
  * Renders canonical Vim highlight, terminal, and Lightline data without a second palette mapping.
  * @param {"dark"|"light"} mode - Target appearance.
@@ -138,7 +143,7 @@ async function _doVimTheme(vimFolders) {
 }
 
 /**
- * Deploys Vim plugins, shared settings, generated palettes, and selection to each existing platform target.
+ * Deploys Vim plugins, shared settings, syntax limits, generated palettes, and selection to each existing platform target.
  * @returns {Promise<void>} Resolves after backups and writes; theme/source IO errors propagate.
  */
 async function doWork() {
@@ -236,8 +241,23 @@ async function doWork() {
 
   `;
   const contentVimrc = (await readText`software/scripts/vim-config-settings.vim`).trim();
+  /** Vim-only limits; register after filetype and syntax setup so detection cannot override the size guard. */
+  const performanceContent = code`
+    " --- Syntax Performance ---
+    " Limit syntax redraw per window; file loading and plugin execution have separate costs.
+    set redrawtime=${VIM_REDRAW_TIME_MS}
+    " Preserve filetype detection and small-buffer highlighting; only files above the KiB limit opt out.
+    augroup SyLargeFiles
+      autocmd!
+      autocmd BufReadPost *
+            \\ if getfsize(expand('<afile>')) > ${VIM_SYNTAX_MAX_FILE_SIZE_KB} * 1024 |
+            \\   setlocal syntax=OFF |
+            \\ endif
+    augroup END
+  `;
 
-  const content = [contentOnlyFullVimrc, contentVimrc, themeContent].join("\n");
+  /** Complete generated vimrc, including buffer-local syntax protection. */
+  const content = [contentOnlyFullVimrc, contentVimrc, performanceContent, themeContent].join("\n");
   await writeBuildArtifact([{ file: `${BUILD_DIR}/vimrc`, data: content }]);
   for (const target of targets) {
     log(">> Setting up vimrc", target.file);
