@@ -450,17 +450,29 @@ Ghostty's search chords (`OS_KEY+f` start, `OS_KEY+g` / `OS_KEY+shift+g` next / 
 Ghostty 1.3.0 — so they are deliberately absent from `ghostty-keys.common.jsonc`. Binding
 them there would only restate a default we already agree with.
 
-### Scrollback (Ghostty)
+### Scrollback
+
+`ctrl+shift+up` / `ctrl+shift+down` scroll the terminal viewport by one page in both
+Windows Terminal and Ghostty. They do not send Page Up/Down to the child application.
+Windows Terminal's default smaller scroll increments on these chords are replaced.
+Existing Page Up/Down scrolling shortcuts remain available.
+
+No matching custom binding exists in the repository's Vim, tmux, or LLM CLI keymaps.
+The terminal consumes these chords before applications can use them, including any additional user or plugin bindings.
+Terminal scrolling does not navigate Vim's file or tmux's pane history.
+For tmux history, enter copy mode with `alt+g`, then use `Ctrl+B` / `Ctrl+F` to page up/down; `q` exits.
 
 Prompt jumping needs shell integration, which `ghostty.js` enables via
 `shell-integration = detect`. Ghostty's own defaults put these on `OS_KEY+arrow`; we
 relocated them because `OS_KEY+arrow` is split navigation here.
 
-| Key                 | Action              | Windows Terminal | tmux | Ghostty |
-| ------------------- | ------------------- | :--------------: | :--: | :-----: |
-| `OS_KEY+ctrl+up`    | Jump to prev prompt |        ❌        |  ❌  |   ✅    |
-| `OS_KEY+ctrl+down`  | Jump to next prompt |        ❌        |  ❌  |   ✅    |
-| `OS_KEY+home`/`end` | Scroll top / bottom |        ❌        |  ❌  |   ✅    |
+| Key                 | Action               | Windows Terminal | tmux | Ghostty |
+| ------------------- | -------------------- | :--------------: | :--: | :-----: |
+| `ctrl+shift+up`     | Scroll up one page   |        ✅        |  ❌  |   ✅    |
+| `ctrl+shift+down`   | Scroll down one page |        ✅        |  ❌  |   ✅    |
+| `OS_KEY+ctrl+up`    | Jump to prev prompt  |        ❌        |  ❌  |   ✅    |
+| `OS_KEY+ctrl+down`  | Jump to next prompt  |        ❌        |  ❌  |   ✅    |
+| `OS_KEY+home`/`end` | Scroll top / bottom  |        ❌        |  ❌  |   ✅    |
 
 ### Zoom
 

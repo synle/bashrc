@@ -43,6 +43,9 @@
   { "key": "OS_KEY+shift+\\", "action": "toggle_split_zoom" },
 
   // ---- Scrollback / prompts ----
+  // Scroll the terminal viewport; do not send Page Up/Down to the child app.
+  { "key": "ctrl+shift+up", "action": "scroll_page_up" },
+  { "key": "ctrl+shift+down", "action": "scroll_page_down" },
   // Jump the viewport to the previous/next shell prompt — the terminal equivalent
   // of "scroll back to where that build started". Needs shell integration (enabled
   // in ghostty.js) to know where prompts are.
