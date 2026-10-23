@@ -1585,13 +1585,12 @@ function refreshPathKeyedBlocks(text, homeFolder = BASE_HOMEDIR_LINUX) {
 // --- Shared Command Registry (deployed as slash commands / skills per CLI) ---
 
 /**
- * Repo-relative folder holding the single source of truth for every Sy-managed
- * command body. One `.md` per command, shared verbatim by every CLI — Claude
- * Code deploys them as slash commands, Copilot as personal skills, OpenCode
- * symlinks Claude's copies, and Gemini has no command surface at all.
+ * Repo-relative folder holding shared skill bodies, one `.md` per registry source.
+ * Keep this registry identifier stable while the source layout uses skills;
+ * deploySharedLLMSkills() writes the bodies once and links them into every CLI.
  * @type {string}
  */
-const LLM_COMMAND_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/v_current/commands";
+const LLM_COMMAND_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/v_current/skills";
 
 /**
  * The one registry of Sy-managed commands, shared by every LLM CLI setup.

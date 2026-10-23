@@ -715,7 +715,7 @@ One `SKILL.md` is shared across CLIs — write to the open Agent Skills lowest c
 ### 13.1 The global `/sy-*` corpus — one registry, never a per-CLI list
 
 Repo-local skills are separate from the machine-wide `/sy-*` corpus. Exactly two files
-to touch: `_common/v_current/commands/<name>.md` (behavior) and `LLM_COMMAND_DEPLOY_MAP` /
+to touch: `_common/v_current/skills/<name>.md` (behavior) and `LLM_COMMAND_DEPLOY_MAP` /
 `LLM_COMMAND_RETIRED_NAMES` in `llm-common.js` (add/rename/retire). Every CLI's
 `setup.js` reads that map via `// SOURCE software/scripts/advanced/llm/llm-common.js`;
 keys are extension-less so one map serves file- and folder-based CLIs.
