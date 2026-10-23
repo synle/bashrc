@@ -1,0 +1,22 @@
+/*
+Capability record only. No native theme definition is included.
+*/
+{
+  "app": "copilot",
+  "appearance": "light",
+  "captureStatus": "gap",
+  "kind": "capability-record",
+  "source": {
+    "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference",
+  },
+  "definition": {
+    "app": "copilot",
+    "appearance": "light",
+    "captureStatus": "unavailable",
+    "reason": "No exportable native palette definition verified. This is a capability record, not a theme payload.",
+    "nativePalette": "github",
+    "terminalAppearance": "light",
+    "appVersion": "1.0.103",
+    "packageMetadataVersion": "1.0.100",
+  },
+}

@@ -1,0 +1,26 @@
+/*
+Ayu theme.
+Collection and individual-theme terms may differ; see manifest license review.
+*/
+{
+  "app": "ghostty",
+  "appearance": "dark",
+  "captureStatus": "captured",
+  "kind": "source-wrapper",
+  "source": {
+    "kind": "local-source",
+    "path": "/Applications/Ghostty.app/Contents/Resources/ghostty/themes/Ayu",
+    "sha256": "e25221f4dd236557c72954ab25be41dc5ce29efa36171eb0e85c2a77b8bcc346",
+  },
+  "definition": {
+    "format": "ghostty-source-backup",
+    "selector": {
+      "appearance": "dark",
+    },
+    "sourceText": "palette = 0=#11151c\npalette = 1=#ea6c73\npalette = 2=#7fd962\npalette = 3=#f9af4f\npalette = 4=#53bdfa\npalette = 5=#cda1fa\npalette = 6=#90e1c6\npalette = 7=#c7c7c7\npalette = 8=#686868\npalette = 9=#f07178\npalette = 10=#aad94c\npalette = 11=#ffb454\npalette = 12=#59c2ff\npalette = 13=#d2a6ff\npalette = 14=#95e6cb\npalette = 15=#ffffff\nbackground = #0b0e14\nforeground = #bfbdb6\ncursor-color = #e6b450\ncursor-text = #0b0e14\nselection-background = #409fff\nselection-foreground = #0b0e14\n",
+    "originalFilename": "ghostty_dark.conf",
+  },
+  "selector": {
+    "appearance": "dark",
+  },
+}

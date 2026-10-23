@@ -1,0 +1,29 @@
+/*
+Solarized: MIT; styling collection: GPL-3.0-only
+Copyright (c) 2011 Ethan Schoonover
+*/
+{
+  "app": "termux",
+  "appearance": "light",
+  "captureStatus": "captured",
+  "kind": "source-wrapper",
+  "source": {
+    "kind": "upstream-source",
+    "repository": "termux/termux-styling",
+    "revision": "79338cb19f4b86cae4d2e81e6de60ba7f613bb9b",
+    "path": "app/src/main/assets/colors/solarized-light.properties",
+    "url": "https://raw.githubusercontent.com/termux/termux-styling/79338cb19f4b86cae4d2e81e6de60ba7f613bb9b/app/src/main/assets/colors/solarized-light.properties",
+    "sha256": "1c00d1d9dd0bcd9241cfdc1a9d697d25cc4552e12766e72554842cc6633706dc",
+  },
+  "definition": {
+    "format": "properties-source-backup",
+    "selector": {
+      "appearance": "light",
+    },
+    "sourceText": "# https://github.com/altercation/solarized/blob/master/xresources/solarized\nbackground=#fdf6e3\nforeground=#657b83\ncursor=#586e75\n\ncolor0=#073642\ncolor1=#dc322f\ncolor2=#859900\ncolor3=#b58900\ncolor4=#268bd2\ncolor5=#d33682\ncolor6=#2aa198\ncolor7=#eee8d5\ncolor8=#002b36\ncolor9=#cb4b16\ncolor10=#586e75\ncolor11=#657b83\ncolor12=#839496\ncolor13=#6c71c4\ncolor14=#93a1a1\ncolor15=#fdf6e3\n",
+    "originalFilename": "termux_light.properties",
+  },
+  "selector": {
+    "appearance": "light",
+  },
+}

@@ -1,0 +1,20 @@
+/*
+Capability record only. No native theme definition is included.
+*/
+{
+  "app": "claude",
+  "appearance": "light",
+  "captureStatus": "gap",
+  "kind": "capability-record",
+  "source": {
+    "url": "https://code.claude.com/docs/en/terminal-config.md",
+  },
+  "definition": {
+    "app": "claude",
+    "appearance": "light",
+    "captureStatus": "unavailable",
+    "reason": "Native preset tokens were not exported. No proprietary bundle was reverse-engineered or redistributed.",
+    "nativePreset": "light",
+    "appVersion": "2.1.302",
+  },
+}

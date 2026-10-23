@@ -1,0 +1,40 @@
+/*
+Sy source snapshot.
+No repository license file was found; no redistribution license is inferred.
+*/
+{
+  "app": "windows_terminal",
+  "appearance": "light",
+  "captureStatus": "captured",
+  "kind": "extracted-native-jsonc",
+  "source": {
+    "kind": "local-source",
+    "path": "software/scripts/windows-terminal.js",
+    "sha256": "1aeebdd401ed634716f4c8258c8b63594e9faac5b3eda6db16480297398b4757",
+    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
+  },
+  "definition": {
+    "name": "Sy Light",
+    "background": "#f8f8f8",
+    "foreground": "#1e1e1e",
+    "cursorColor": "#0451a5",
+    "selectionBackground": "#96c6fa",
+    "black": "#000000",
+    "blue": "#0033b3",
+    "brightBlack": "#4a4a4a",
+    "brightBlue": "#0051ae",
+    "brightCyan": "#145e5e",
+    "brightGreen": "#106145",
+    "brightPurple": "#8700c1",
+    "brightRed": "#a12626",
+    "brightWhite": "#8b8b8b",
+    "brightYellow": "#7f6000",
+    "cyan": "#00416f",
+    "green": "#004a15",
+    "purple": "#6c0099",
+    "red": "#840000",
+    "white": "#6d6d6d",
+    "yellow": "#775502",
+  },
+  "sourceText": "{\n      \"name\": \"Sy Light\", // {{light.themeName}}\n      \"background\": \"#f8f8f8\", // {{light.background}}\n      \"foreground\": \"#1e1e1e\", // {{light.foreground}}\n      \"cursorColor\": \"#0451a5\", // {{light.cursorColor}}\n      \"selectionBackground\": \"#96c6fa\", // {{light.selection}}\n      \"black\": \"#000000\", // {{light.black}}\n      \"blue\": \"#0033b3\", // {{light.blue}}\n      \"brightBlack\": \"#4a4a4a\", // {{light.brightBlack}}\n      \"brightBlue\": \"#0051ae\", // {{light.brightBlue}}\n      \"brightCyan\": \"#145e5e\", // {{light.brightCyan}}\n      \"brightGreen\": \"#106145\", // {{light.brightGreen}}\n      \"brightPurple\": \"#8700c1\", // {{light.brightPurple}}\n      \"brightRed\": \"#a12626\", // {{light.brightRed}}\n      \"brightWhite\": \"#8b8b8b\", // {{light.brightWhite}}\n      \"brightYellow\": \"#7f6000\", // {{light.brightYellow}}\n      \"cyan\": \"#00416f\", // {{light.cyan}}\n      \"green\": \"#004a15\", // {{light.green}}\n      \"purple\": \"#6c0099\", // {{light.purple}}\n      \"red\": \"#840000\", // {{light.red}}\n      \"white\": \"#6d6d6d\", // {{light.white}}\n      \"yellow\": \"#775502\", // {{light.yellow}}\n    }\n",
+}

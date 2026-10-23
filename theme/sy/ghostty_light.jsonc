@@ -1,0 +1,43 @@
+/*
+Sy source snapshot.
+No repository license file was found; no redistribution license is inferred.
+*/
+{
+  "app": "ghostty",
+  "appearance": "light",
+  "captureStatus": "captured",
+  "kind": "source-palette",
+  "source": {
+    "kind": "local-source",
+    "path": "software/scripts/advanced/ghostty-color-light.jsonc",
+    "sha256": "f95d12705e8db3834bfe20c04387a9113b6aa023350fb430074a4a534787159f",
+    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
+  },
+  "definition": {
+    "palette": [
+      "#000000",
+      "#840000",
+      "#004a15",
+      "#775502",
+      "#0033b3",
+      "#6c0099",
+      "#00416f",
+      "#6d6d6d",
+      "#4a4a4a",
+      "#a12626",
+      "#106145",
+      "#7f6000",
+      "#0051ae",
+      "#8700c1",
+      "#145e5e",
+      "#8b8b8b",
+    ],
+    "background": "#f8f8f8",
+    "foreground": "#1e1e1e",
+    "cursor-color": "#0451a5",
+    "cursor-text": "#f8f8f8",
+    "selection-background": "#96c6fa",
+    "selection-foreground": "#1e1e1e",
+  },
+  "sourceText": "{\n  // Sy Light — Ghostty theme source. Rendered to ~/.config/ghostty/themes/Sy Light\n  // by software/scripts/advanced/ghostty.js as `key = value` lines.\n  //\n  // Every literal here is stamped from COLOR_MAP in software/tools/build-include.js\n  // by `make format_build_include`. Edit COLOR_MAP, never these values.\n  // software/tests/terminalThemes.spec.js fails if a literal drifts off its marker.\n  //\n  // Structure must stay identical to ghostty-color-dark.jsonc — the spec compares\n  // the two key sets so a color can never be added to one mode only.\n\n  // --- ANSI ramp ---\n  // Index order is fixed by terminal convention: 0-7 normal, 8-15 bright.\n  // On a light background the bases are the deep end (~10:1) and the brights sit\n  // at the 7:1 floor, so tools that \"dim\" with the base color render darker\n  // rather than washing out. `white` / `brightWhite` are the ramp anchors and are\n  // exempt from the floor; the warm hues (`yellow`, `brightYellow`) are held at\n  // >= 5.5:1 on purpose — a 7:1 yellow on white reads as brown.\n  \"palette\": [\n    \"#000000\", // {{light.black}}\n    \"#840000\", // {{light.red}}\n    \"#004a15\", // {{light.green}}\n    \"#775502\", // {{light.yellow}}\n    \"#0033b3\", // {{light.blue}}\n    \"#6c0099\", // {{light.purple}}\n    \"#00416f\", // {{light.cyan}}\n    \"#6d6d6d\", // {{light.white}}\n    \"#4a4a4a\", // {{light.brightBlack}}\n    \"#a12626\", // {{light.brightRed}}\n    \"#106145\", // {{light.brightGreen}}\n    \"#7f6000\", // {{light.brightYellow}}\n    \"#0051ae\", // {{light.brightBlue}}\n    \"#8700c1\", // {{light.brightPurple}}\n    \"#145e5e\", // {{light.brightCyan}}\n    \"#8b8b8b\", // {{light.brightWhite}}\n  ],\n\n  // --- Surfaces ---\n  \"background\": \"#f8f8f8\", // {{light.background}}\n  \"foreground\": \"#1e1e1e\", // {{light.foreground}}\n\n  // --- Cursor ---\n  // cursor-text is the background so the glyph under a block cursor inverts cleanly.\n  \"cursor-color\": \"#0451a5\", // {{light.cursorColor}}\n  \"cursor-text\": \"#f8f8f8\", // {{light.background}}\n\n  // --- Selection ---\n  // Explicit foreground: without it Ghostty keeps the cell's own color, which can\n  // land a dim ANSI hue on the selection fill.\n  \"selection-background\": \"#96c6fa\", // {{light.selection}}\n  \"selection-foreground\": \"#1e1e1e\", // {{light.foreground}}\n}\n",
+}

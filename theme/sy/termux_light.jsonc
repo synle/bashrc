@@ -1,0 +1,20 @@
+/*
+Sy source snapshot.
+No repository license file was found; no redistribution license is inferred.
+*/
+{
+  "app": "termux",
+  "appearance": "light",
+  "captureStatus": "gap",
+  "kind": "capability-record",
+  "source": {
+    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
+    "path": "software/scripts/android_termux/termux-colors.js",
+  },
+  "definition": {
+    "app": "termux",
+    "appearance": "light",
+    "captureStatus": "unavailable",
+    "reason": "No Sy Light Termux palette exists in the captured repository source.",
+  },
+}

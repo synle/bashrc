@@ -1,0 +1,73 @@
+/*
+Sy source snapshot.
+No repository license file was found; no redistribution license is inferred.
+*/
+{
+  "app": "claude",
+  "appearance": "light",
+  "captureStatus": "captured",
+  "kind": "source-palette",
+  "source": {
+    "kind": "local-source",
+    "path": "software/scripts/advanced/llm/claude/claude-color-light.jsonc",
+    "sha256": "9bdd83842e80965bfc71080783204ad293ebb9d3bb8035599c0ac17915035219",
+    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
+  },
+  "definition": {
+    "name": "Sy Light",
+    "foreground": "#1e1e1e",
+    "muted": "#5a5a5a",
+    "border": "#262626",
+    "accent": "#0252ad",
+    "shimmer": "#0051ae",
+    "info": "#0033b3",
+    "success": "#004a15",
+    "error": "#840000",
+    "warning": "#775502",
+    "background": "#f8f8f8",
+    "surface": "#ececec",
+    "hover": "#cacaca",
+    "selection": "#96c6fa",
+  },
+  "sourceText": "{\n  // Sy palette bound to COLOR_MAP, matching Sublime. Refresh with make format_build_include.\n  \"name\": \"Sy Light\", // {{light.themeName}}\n  \"foreground\": \"#1e1e1e\", // {{light.foreground}}\n  \"muted\": \"#5a5a5a\", // {{light.textDisabled}}\n  \"border\": \"#262626\", // {{light.brightGray}}\n  \"accent\": \"#0252ad\", // {{light.linkBlue}}\n  \"shimmer\": \"#0051ae\", // {{light.brightBlue}}\n  \"info\": \"#0033b3\", // {{light.blue}}\n  \"success\": \"#004a15\", // {{light.green}}\n  \"error\": \"#840000\", // {{light.red}}\n  \"warning\": \"#775502\", // {{light.yellow}}\n  \"background\": \"#f8f8f8\", // {{light.background}}\n  \"surface\": \"#ececec\", // {{light.surface}}\n  \"hover\": \"#cacaca\", // {{light.gray}}\n  \"selection\": \"#96c6fa\", // {{light.selection}}\n}\n",
+  "inlineSources": [
+    {
+      "originalFilename": "sy_claude_light.native.jsonc",
+      "kind": "extracted-native-json",
+      "source": {
+        "kind": "local-source",
+        "path": "software/scripts/advanced/llm/claude/setup.js",
+        "sha256": "da6eb0ba3f54fc4f609a765bce05231c67681e98b11246faacd6970d7e42a52b",
+      },
+      "definition": {
+        "name": "Sy Light",
+        "base": "light",
+        "overrides": {
+          "claude": "#0252ad",
+          "claudeShimmer": "#0051ae",
+          "text": "#1e1e1e",
+          "inverseText": "#f8f8f8",
+          "inactive": "#5a5a5a",
+          "subtle": "#262626",
+          "permission": "#0033b3",
+          "permissionShimmer": "#0252ad",
+          "promptBorder": "#0252ad",
+          "promptBorderShimmer": "#0051ae",
+          "planMode": "#0033b3",
+          "autoAccept": "#004a15",
+          "success": "#004a15",
+          "error": "#840000",
+          "warning": "#775502",
+          "warningShimmer": "#775502",
+          "remember": "#0252ad",
+          "userMessageBackground": "#ececec",
+          "userMessageBackgroundHover": "#cacaca",
+          "bashMessageBackgroundColor": "#ececec",
+          "memoryBackgroundColor": "#ececec",
+          "selectionBg": "#96c6fa",
+          "composerSidebarBackground": "#f8f8f8",
+        },
+      },
+    },
+  ],
+}

@@ -1,0 +1,26 @@
+/*
+Ayu theme.
+Collection and individual-theme terms may differ; see manifest license review.
+*/
+{
+  "app": "ghostty",
+  "appearance": "light",
+  "captureStatus": "captured",
+  "kind": "source-wrapper",
+  "source": {
+    "kind": "local-source",
+    "path": "/Applications/Ghostty.app/Contents/Resources/ghostty/themes/Ayu Light",
+    "sha256": "b405867eb65535367c6d44168c8386c4cc92a392adf5b42b6300af00075f4001",
+  },
+  "definition": {
+    "format": "ghostty-source-backup",
+    "selector": {
+      "appearance": "light",
+    },
+    "sourceText": "palette = 0=#000000\npalette = 1=#ea6c6d\npalette = 2=#6cbf43\npalette = 3=#eca944\npalette = 4=#3199e1\npalette = 5=#9e75c7\npalette = 6=#46ba94\npalette = 7=#bababa\npalette = 8=#686868\npalette = 9=#f07171\npalette = 10=#86b300\npalette = 11=#f2ae49\npalette = 12=#399ee6\npalette = 13=#a37acc\npalette = 14=#4cbf99\npalette = 15=#d1d1d1\nbackground = #f8f9fa\nforeground = #5c6166\ncursor-color = #ffaa33\ncursor-text = #f8f9fa\nselection-background = #035bd6\nselection-foreground = #f8f9fa\n",
+    "originalFilename": "ghostty_light.conf",
+  },
+  "selector": {
+    "appearance": "light",
+  },
+}

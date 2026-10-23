@@ -1,0 +1,73 @@
+/*
+Sy source snapshot.
+No repository license file was found; no redistribution license is inferred.
+*/
+{
+  "app": "claude",
+  "appearance": "dark",
+  "captureStatus": "captured",
+  "kind": "source-palette",
+  "source": {
+    "kind": "local-source",
+    "path": "software/scripts/advanced/llm/claude/claude-color-dark.jsonc",
+    "sha256": "7cb324556bafff301343e445f5ffee40e5fac91cf02cc13de369de851bb620b5",
+    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
+  },
+  "definition": {
+    "name": "Sy Dark",
+    "foreground": "#e8e8e8",
+    "muted": "#8f8f8f",
+    "border": "#6e6e6e",
+    "accent": "#5ca0d7",
+    "shimmer": "#4fc1ff",
+    "info": "#5ca0d7",
+    "success": "#76a762",
+    "error": "#f67070",
+    "warning": "#dcdcaa",
+    "background": "#0a0a0a",
+    "surface": "#161616",
+    "hover": "#2b2b2b",
+    "selection": "#1b3c5e",
+  },
+  "sourceText": "{\n  // Sy palette bound to COLOR_MAP, matching Sublime. Refresh with make format_build_include.\n  \"name\": \"Sy Dark\", // {{dark.themeName}}\n  \"foreground\": \"#e8e8e8\", // {{dark.foreground}}\n  \"muted\": \"#8f8f8f\", // {{dark.textDisabled}}\n  \"border\": \"#6e6e6e\", // {{dark.brightGray}}\n  \"accent\": \"#5ca0d7\", // {{dark.blue}}\n  \"shimmer\": \"#4fc1ff\", // {{dark.brightBlue}}\n  \"info\": \"#5ca0d7\", // {{dark.blue}}\n  \"success\": \"#76a762\", // {{dark.green}}\n  \"error\": \"#f67070\", // {{dark.red}}\n  \"warning\": \"#dcdcaa\", // {{dark.yellow}}\n  \"background\": \"#0a0a0a\", // {{dark.background}}\n  \"surface\": \"#161616\", // {{dark.surface}}\n  \"hover\": \"#2b2b2b\", // {{dark.gray}}\n  \"selection\": \"#1b3c5e\", // {{dark.selection}}\n}\n",
+  "inlineSources": [
+    {
+      "originalFilename": "sy_claude_dark.native.jsonc",
+      "kind": "extracted-native-json",
+      "source": {
+        "kind": "local-source",
+        "path": "software/scripts/advanced/llm/claude/setup.js",
+        "sha256": "da6eb0ba3f54fc4f609a765bce05231c67681e98b11246faacd6970d7e42a52b",
+      },
+      "definition": {
+        "name": "Sy Dark",
+        "base": "dark",
+        "overrides": {
+          "claude": "#5ca0d7",
+          "claudeShimmer": "#4fc1ff",
+          "text": "#e8e8e8",
+          "inverseText": "#0a0a0a",
+          "inactive": "#8f8f8f",
+          "subtle": "#6e6e6e",
+          "permission": "#5ca0d7",
+          "permissionShimmer": "#5ca0d7",
+          "promptBorder": "#5ca0d7",
+          "promptBorderShimmer": "#4fc1ff",
+          "planMode": "#5ca0d7",
+          "autoAccept": "#76a762",
+          "success": "#76a762",
+          "error": "#f67070",
+          "warning": "#dcdcaa",
+          "warningShimmer": "#dcdcaa",
+          "remember": "#5ca0d7",
+          "userMessageBackground": "#161616",
+          "userMessageBackgroundHover": "#2b2b2b",
+          "bashMessageBackgroundColor": "#161616",
+          "memoryBackgroundColor": "#161616",
+          "selectionBg": "#1b3c5e",
+          "composerSidebarBackground": "#0a0a0a",
+        },
+      },
+    },
+  ],
+}

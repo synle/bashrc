@@ -1,0 +1,20 @@
+/*
+Sy source snapshot.
+No repository license file was found; no redistribution license is inferred.
+*/
+{
+  "app": "gemini",
+  "appearance": "dark",
+  "captureStatus": "gap",
+  "kind": "capability-record",
+  "source": {
+    "revision": "f628baa5af88c5684725c94a1ac85cc59f2f4476",
+    "path": "software/scripts/advanced/llm/gemini/setup.js",
+  },
+  "definition": {
+    "app": "gemini",
+    "appearance": "dark",
+    "captureStatus": "unavailable",
+    "reason": "No Sy theme adapter exists in the inspected setup source; no adapter was invented for this backup.",
+  },
+}

@@ -1,0 +1,44 @@
+/*
+MIT License
+Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+{
+  "app": "windows_terminal",
+  "appearance": "dark",
+  "captureStatus": "captured",
+  "kind": "extracted-native-json",
+  "source": {
+    "kind": "upstream-source",
+    "repository": "microsoft/terminal",
+    "revision": "98c8c795ebc2560af55e72beba3fa5fd31ceef64",
+    "path": "src/cascadia/TerminalSettingsModel/defaults.json",
+    "url": "https://raw.githubusercontent.com/microsoft/terminal/98c8c795ebc2560af55e72beba3fa5fd31ceef64/src/cascadia/TerminalSettingsModel/defaults.json",
+    "sha256": "5b8f30150cfc7604f72673556e56865e1cb7002ab456adb66b676c1941d1aa62",
+  },
+  "definition": {
+    "name": "One Half Dark",
+    "foreground": "#DCDFE4",
+    "background": "#282C34",
+    "cursorColor": "#FFFFFF",
+    "black": "#282C34",
+    "red": "#E06C75",
+    "green": "#98C379",
+    "yellow": "#E5C07B",
+    "blue": "#61AFEF",
+    "purple": "#C678DD",
+    "cyan": "#56B6C2",
+    "white": "#DCDFE4",
+    "brightBlack": "#5A6374",
+    "brightRed": "#E06C75",
+    "brightGreen": "#98C379",
+    "brightYellow": "#E5C07B",
+    "brightBlue": "#61AFEF",
+    "brightPurple": "#C678DD",
+    "brightCyan": "#56B6C2",
+    "brightWhite": "#DCDFE4",
+  },
+  "selector": {
+    "scheme": "One Half Dark",
+  },
+  "sourceText": "{\n  \"name\": \"One Half Dark\",\n  \"foreground\": \"#DCDFE4\",\n  \"background\": \"#282C34\",\n  \"cursorColor\": \"#FFFFFF\",\n  \"black\": \"#282C34\",\n  \"red\": \"#E06C75\",\n  \"green\": \"#98C379\",\n  \"yellow\": \"#E5C07B\",\n  \"blue\": \"#61AFEF\",\n  \"purple\": \"#C678DD\",\n  \"cyan\": \"#56B6C2\",\n  \"white\": \"#DCDFE4\",\n  \"brightBlack\": \"#5A6374\",\n  \"brightRed\": \"#E06C75\",\n  \"brightGreen\": \"#98C379\",\n  \"brightYellow\": \"#E5C07B\",\n  \"brightBlue\": \"#61AFEF\",\n  \"brightPurple\": \"#C678DD\",\n  \"brightCyan\": \"#56B6C2\",\n  \"brightWhite\": \"#DCDFE4\"\n}\n",
+}
