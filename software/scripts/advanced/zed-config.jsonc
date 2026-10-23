@@ -85,9 +85,13 @@
     "dock": "left", // File tree dock side. Values: "left", "right"
     "folder_indicator": "both", // Show disclosure chevron and folder icon together (Zed 1.19+). Values: "icon", "chevron", "both"
   },
-  "outline_panel": { "dock": "left" }, // Symbol outline dock side — pair with the file tree. Values: "left", "right"
+  "outline_panel": {
+    "dock": "left", // Symbol outline dock side — pair with the file tree. Values: "left", "right"
+    "button": false, // Hide the Outline panel button. Values: true, false
+  },
   "agent": {
     "dock": "right", // Agent / AI panel dock side. Values: "left", "right", "bottom"
+    "threads_sidebar": { "position": "right" }, // Keep the agent threads sidebar on the right.
     "tool_permissions": { "default": "allow" }, // Auto-approve agent tool actions without prompting (Zed v0.224.0+ analog of VS Code's claudeCode.allowDangerouslySkipPermissions). Values: "confirm", "allow", "deny"
   },
 
