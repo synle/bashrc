@@ -265,6 +265,22 @@ describe("list_prs — output shape", () => {
     expect(rowsFor([placeholder, wip, ready], ["--all"]).map((row) => row.number)).toEqual([1, 2, 3]);
   });
 
+  it.each([
+    [0, []],
+    [1, []],
+    [9, []],
+    [10, ["10/10"]],
+    [11, ["10/11"]],
+    [20, ["10/20", "20/20"]],
+    [52, ["10/52", "20/52", "30/52", "40/52", "50/52"]],
+  ])("reports progress only every ten completions for %i PRs", (count, expected) => {
+    const prs = Array.from({ length: count }, (_, index) => pullRequest({ ...AWAITING_REVIEW, number: index + 1 }));
+    const result = runCli(["--me=1", "--json"], prs);
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toHaveLength(count);
+    expect(Array.from(result.stderr.matchAll(/>>> enriching (\d+\/\d+)/g), (match) => match[1])).toEqual(expected);
+  });
+
   it("enriches at most three PRs at once", () => {
     const prs = Array.from({ length: 7 }, (_, index) =>
       pullRequest({

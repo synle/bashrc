@@ -908,7 +908,7 @@ function queryPr(pr, includeActivity = false) {
 }
 
 /**
- * Enrich search hits with a bounded pool of per-PR GraphQL queries.
+ * Enrich search hits with bounded GraphQL queries, reporting progress to stderr every ten completions.
  * @param {Array<{number:number, repository:{nameWithOwner:string}}>} hits
  * @param {boolean} [includeActivity=false] Whether to request optional activity fields.
  * @returns {Promise<{rows: Row[], unreadable: number}>}
@@ -935,7 +935,7 @@ async function enrich(hits, includeActivity = false) {
       if (row) rows[index] = row;
       else unreadable += 1;
       completed += 1;
-      process.stderr.write(`\r>>> enriching ${completed}/${hits.length}`);
+      if (completed % 10 === 0) process.stderr.write(`\r>>> enriching ${completed}/${hits.length}`);
     }
   };
 
@@ -1099,7 +1099,10 @@ async function main() {
   // Name the repos rather than counting them: "3 repo(s)" cannot tell you that the
   // one repo you cared about was not among them.
   const scopeLabel = repos.length > 0 ? `${repos.length} repo(s): ${formatRepoList(repos)}` : `all of GitHub`;
-  infoBlock([`>>> scanning ${scopeLabel} for open ${describeAudience(opts, author)} PRs`], { trailingBlankLine: true });
+  const scanScope = repos.length > 0 ? `${repos.length} repo(s)` : `all of GitHub`;
+  const scanLines = [`>>> scanning ${scanScope} for open ${describeAudience(opts, author)} PRs:`];
+  if (repos.length > 0) scanLines.push(``, ...repos.map((repo) => `- ${repo}`));
+  infoBlock(scanLines, { trailingBlankLine: true });
 
   const hits = searchPrs(author, opts.limit, repos);
   if (hits.length === 0) {
