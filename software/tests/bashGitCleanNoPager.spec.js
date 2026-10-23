@@ -1,6 +1,6 @@
 /** Git clean helper pager-safety checks. */
 import { describe, expect, it } from "vitest";
-import { execFileSync } from "child_process";
+import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -17,15 +17,49 @@ const backgroundTailSource = profileSource
 const cleanSource = profileSource.split("function clean() {", 2)[1].split("\n}\n\n# Creates an empty commit", 1)[0];
 
 /**
- * Runs the extracted `clean()` implementation under bash with stubbed git helpers so the spec can
- * assert whether the function returns before the cleanup tail finishes.
+ * Runs `clean()` in an isolated shell with disposable files and stubbed Git and refresh executables.
+ * A FIFO gates refresh completion on cleanup returning, without timing-based assertions.
  * @param {string[]} args - Arguments passed to `clean`.
- * @returns {string} Stdout from the bash process.
+ * @param {{codegraph?: boolean, refresh?: boolean, rebaseStatus?: number, refreshStatus?: number}} options - Optional tool and failure scenarios.
+ * @returns {string} Captured stdout; fixture files are removed after background jobs finish.
+ * @throws {Error} When the shell times out, fails, or leaks stderr.
  */
-function runCleanWithStubs(args = []) {
+function runCleanWithStubs(args = [], { codegraph = false, refresh = true, rebaseStatus = 0, refreshStatus = 0 } = {}) {
   const script = `
 repo_root=$(mktemp -d)
 trap 'rm -rf "$repo_root"' EXIT
+export CLEAN_TEST_ROOT="$repo_root" CLEAN_TEST_REFRESH_STATUS=${refreshStatus}
+mkdir -p "$repo_root/bin" "$repo_root/nested folder"
+for tool in mkdir touch date rm find grep sleep mkfifo cat chmod; do
+  command ln -s "$(type -P "$tool")" "$repo_root/bin/$tool"
+done
+PATH="$repo_root/bin"
+mkfifo "$repo_root/refresh-gate"
+exec 3<> "$repo_root/refresh-gate"
+if ${codegraph}; then
+  printf '#!/bin/bash\nexit 0\n' > "$repo_root/bin/codegraph"
+  chmod +x "$repo_root/bin/codegraph"
+fi
+if ${refresh}; then
+  command cat > "$repo_root/bin/codegraph_refresh" <<'REFRESH_STUB'
+#!/bin/bash
+printf 'REFRESH_STDOUT\n'
+printf 'REFRESH_STDERR\n' >&2
+if IFS= read -r input; then
+  printf 'REFRESH_STDIN_LEAK\n' >> "$CLEAN_TEST_ROOT/refresh-result"
+fi
+if [ "$#" -eq 1 ] && [ "$1" = "$CLEAN_TEST_ROOT" ] && [ -f "$CLEAN_TEST_ROOT/rebased" ]; then
+  printf 'REFRESH_ROOT_AFTER_REBASE\n' >> "$CLEAN_TEST_ROOT/refresh-result"
+fi
+if IFS= read -r -t 2 release < "$CLEAN_TEST_ROOT/refresh-gate"; then
+  printf 'REFRESH_RELEASED_AFTER_CLEAN\n' >> "$CLEAN_TEST_ROOT/refresh-result"
+else
+  printf 'REFRESH_BLOCKED_CLEAN\n' >> "$CLEAN_TEST_ROOT/refresh-result"
+fi
+exit "$CLEAN_TEST_REFRESH_STATUS"
+REFRESH_STUB
+  chmod +x "$repo_root/bin/codegraph_refresh"
+fi
 cd "$repo_root"
 mkdir -p .claude/worktree-empty/nested .claude/worktree-kept .claude/worktree-old
 : > .claude/worktree-empty/nested/empty.txt
@@ -44,12 +78,19 @@ function git() {
   fi
 
   case "${"$"}1" in
-  stash | merge | rebase | cherry-pick | am | fix-identity | clean-and-fetch | gc-if-stale | checkout | del)
+  rebase)
+    if [ "${"$"}2" != "--abort" ]; then
+      : > "$CLEAN_TEST_ROOT/rebased"
+      return ${rebaseStatus}
+    fi
+    return 0
+    ;;
+  stash | merge | cherry-pick | am | fix-identity | clean-and-fetch | gc-if-stale | checkout | del)
     return 0
     ;;
   rev-parse)
     if [ "${"$"}2" = "--show-toplevel" ]; then
-      pwd
+      echo "$CLEAN_TEST_ROOT"
     fi
     return 0
     ;;
@@ -83,15 +124,31 @@ function _clean_background_tail() {${backgroundTailSource}
 }
 function clean() {${cleanSource}
 }
+cd "$repo_root/nested folder"
 clean ${args.map((arg) => JSON.stringify(arg)).join(" ")}
-[ ! -e .claude/worktree-empty ] && echo CLAUDE_EMPTY_REMOVED
-[ -e .claude/worktree-kept ] && echo CLAUDE_NONEMPTY_KEPT
-[ -e .claude/worktree-old ] && echo CLAUDE_OLD_KEPT
+clean_status=$?
+[ ! -e "$repo_root/.claude/worktree-empty" ] && echo CLAUDE_EMPTY_REMOVED
+[ -e "$repo_root/.claude/worktree-kept" ] && echo CLAUDE_NONEMPTY_KEPT
+[ -e "$repo_root/.claude/worktree-old" ] && echo CLAUDE_OLD_KEPT
 echo AFTER_CLEAN
+printf 'release\n' >&3
 wait
+[ -f "$repo_root/refresh-result" ] && command cat "$repo_root/refresh-result"
+echo CLEAN_STATUS:$clean_status
+exit "$clean_status"
 `;
 
-  return execFileSync("bash", ["-lc", script], { encoding: "utf-8", cwd: ROOT_DIR });
+  const result = spawnSync("bash", ["--noprofile", "--norc", "-c", script], {
+    encoding: "utf-8",
+    cwd: ROOT_DIR,
+    env: { ...process.env, BASH_ENV: "" },
+    input: "UNEXPECTED_STDIN\n",
+    timeout: 5000,
+  });
+  expect(result.error).toBeUndefined();
+  expect(result.status).toBe(0);
+  expect(result.stderr).toBe("");
+  return result.stdout;
 }
 
 describe("clean git commands", () => {
@@ -143,5 +200,42 @@ describe("clean git commands", () => {
 
     expect(output).toContain("background cleanup offloaded");
     expect(output.indexOf("AFTER_CLEAN")).toBeLessThan(output.indexOf("TAIL_LASTD"));
+  });
+
+  it.each([{ args: [] }, { args: ["--background"] }])(
+    "subprocess: refreshes the repo root quietly without blocking clean $args",
+    ({ args }) => {
+      const output = runCleanWithStubs(args, { codegraph: true });
+
+      expect(output).toContain("CodeGraph refresh started in background");
+      expect(output.indexOf("CodeGraph refresh started in background")).toBeGreaterThan(output.indexOf("🔀 Rebasing onto"));
+      expect(output.indexOf("CodeGraph refresh started in background")).toBeLessThan(output.indexOf("🗑️ Deleting temp/"));
+      expect(output).toContain("REFRESH_ROOT_AFTER_REBASE");
+      expect(output).toContain("REFRESH_RELEASED_AFTER_CLEAN");
+      expect(output).not.toContain("REFRESH_BLOCKED_CLEAN");
+      expect(output).not.toContain("REFRESH_STDOUT");
+      expect(output).not.toContain("REFRESH_STDIN_LEAK");
+      expect(output).toContain("CLEAN_STATUS:0");
+    },
+  );
+
+  it.each([{ codegraph: false }, { codegraph: true, refresh: false }, { codegraph: true, rebaseStatus: 1 }])(
+    "subprocess: skips optional indexing when prerequisites fail %j",
+    (options) => {
+      const output = runCleanWithStubs([], options);
+
+      expect(output).not.toContain("CodeGraph refresh started in background");
+      expect(output).not.toContain("REFRESH_");
+      expect(output).toContain("TAIL_LASTD");
+      expect(output).toContain("CLEAN_STATUS:0");
+    },
+  );
+
+  it("subprocess: keeps successful cleanup independent from refresh failure", () => {
+    const output = runCleanWithStubs([], { codegraph: true, refreshStatus: 1 });
+
+    expect(output).toContain("REFRESH_RELEASED_AFTER_CLEAN");
+    expect(output).toContain("TAIL_LASTD");
+    expect(output).toContain("CLEAN_STATUS:0");
   });
 });

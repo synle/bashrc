@@ -84,10 +84,14 @@
     "folder_indicator": "both"
   },
   "outline_panel": {
-    "dock": "left"
+    "dock": "left",
+    "button": false
   },
   "agent": {
     "dock": "right",
+    "threads_sidebar": {
+      "position": "right"
+    },
     "tool_permissions": {
       "default": "allow"
     }

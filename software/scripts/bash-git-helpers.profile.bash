@@ -379,6 +379,7 @@ function _clean_background_tail() {
 # Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity).
 # Also deletes stale local branches (squash-merged PRs), branches fully merged into the default
 # branch, local tags that no longer exist on origin, and prunes and removes merged/gone worktrees.
+# After successful rebase, optionally initializes/syncs CodeGraph quietly in the background.
 # With --force / -f, every worktree is removed instead, skipping the dirty/merged checks.
 # With --background / -b, the slow tail returns early and keeps printing progress below the prompt.
 function clean() {
@@ -391,6 +392,7 @@ function clean() {
     - Deletes untracked *.rej files (failed 'git apply' hunk rejects); keeps all other untracked files
     - Deletes nested .DS_Store files (macOS Finder junk)
     - Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity)
+    - After successful rebase, initializes/syncs CodeGraph quietly in the background when codegraph and codegraph_refresh are installed
     - Also deletes stale local branches (squash-merged PRs), merged branches, stale local tags, and prunes and removes merged/gone worktrees
     - --force / -f: ALSO remove EVERY worktree, skipping the dirty/merged checks (uncommitted work in those worktrees is lost)
     - --background / -b: return after the branch reset and let steps 12-16 keep printing below the prompt"
@@ -469,7 +471,13 @@ function clean() {
   git --no-pager checkout "$default_branch" > /dev/null 2>&1
 
   _log_progress_step "$total_steps" "🔀 Rebasing onto 'origin/$default_branch'"
-  git --no-pager rebase "origin/$default_branch" > /dev/null 2>&1
+  if git --no-pager rebase "origin/$default_branch" > /dev/null 2>&1; then
+    # Reuse the worktree-local init/sync guards without delaying cleanup or leaking indexer output.
+    if type -P codegraph > /dev/null 2>&1 && type -P codegraph_refresh > /dev/null 2>&1; then
+      echo "  -> CodeGraph refresh started in background (init/sync; output suppressed)"
+      (codegraph_refresh "$repo_root") < /dev/null > /dev/null 2>&1 &
+    fi
+  fi
 
   _log_progress_step "$total_steps" "🗑️ Deleting $temp_branch"
   git --no-pager del "$temp_branch" > /dev/null 2>&1
