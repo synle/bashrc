@@ -32,34 +32,34 @@ This is the current issue ledger, synchronized with `audit.jsonc`. Original stat
 ## Current remaining issues and limits
 
 - [ ] **P1: Actual opacity/dimming contrast** — **unverified** (`opacity_and_dimming`)
-  Check Ghostty background/inactive-split/cursor composition and Zed faded code against their actual backdrops. Opaque pair tests do not establish native visibility.
+      Check Ghostty background/inactive-split/cursor composition and Zed faded code against their actual backdrops. Opaque pair tests do not establish native visibility.
 
 - [ ] **P1: Native token consumption, semantic overrides, and inheritance** — **unverified** (`native_token_consumption`)
-  Inspect real app/version behavior, especially VS Code semantic precedence and Claude tokens ignored silently by older renderers.
+      Inspect real app/version behavior, especially VS Code semantic precedence and Claude tokens ignored silently by older renderers.
 
 - [ ] **P2: Sublime Adaptive UI and grammar reachability** — **partial** (`sublime_ui_and_scopes`)
-  Scheme fixes are implemented. Adaptive sidebar/tab/control colors and effective scope/inheritance behavior are not exhaustively audited; native reference rule counts alone are not coverage.
+      Scheme fixes are implemented. Adaptive sidebar/tab/control colors and effective scope/inheritance behavior are not exhaustively audited; native reference rule counts alone are not coverage.
 
 - [ ] **P2: Full Vim plugin startup and inherited highlight behavior** — **partial** (`vim_full_plugin_inheritance`)
-  Standalone native load/switch checks pass, but full Jetpack/Signify/Lightline startup is not verified. Classify the remaining Ayu CursorLineConceal reference; unused NERDTree/GitGutter groups were intentionally not copied.
+      Standalone native load/switch checks pass, but full Jetpack/Signify/Lightline startup is not verified. Classify the remaining Ayu CursorLineConceal reference; unused NERDTree/GitGutter groups were intentionally not copied.
 
 - [ ] **P2: Complete native schema/component/state crosswalk** — **partial** (`complete_component_state_crosswalk`)
-  Current code fixes and selected regression pairs are tracked. No exhaustive schema-union/state/inheritance matrix establishes closure for every native component.
+      Current code fixes and selected regression pairs are tracked. No exhaustive schema-union/state/inheritance matrix establishes closure for every native component.
 
 - [ ] **P1: Final green whole-repository release gate** — **unverified** (`main_release_gate`)
-  Focused theme checks are available; the previous full gate was not green and was not rerun after all fixes at user request. Do not infer current whole-build success from this ledger.
+      Focused theme checks are available; the previous full gate was not green and was not rerun after all fixes at user request. Do not infer current whole-build success from this ledger.
 
 - [ ] **P3: Copilot custom theme import** — **capability_limit** (`copilot_custom_import`)
-  No verified native custom import/export contract was established. Preserve the user's native palette choice; do not invent an adapter.
+      No verified native custom import/export contract was established. Preserve the user's native palette choice; do not invent an adapter.
 
 - [ ] **P3: Closed native Claude/Copilot baseline palettes** — **capability_limit** (`native_baseline_exports`)
-  Four baseline records describe unavailable exports rather than fabricated color definitions.
+      Four baseline records describe unavailable exports rather than fabricated color definitions.
 
 - [ ] **P3: Unverified native custom-theme auto-switching contracts** — **capability_limit** (`custom_theme_auto_switching`)
-  Termux manual light selection exists; automatic switching is not verified. Custom Gemini/Claude automatic pairing is not assumed; Pi and paired OpenCode use their supported contracts.
+      Termux manual light selection exists; automatic switching is not verified. Custom Gemini/Claude automatic pairing is not assumed; Pi and paired OpenCode use their supported contracts.
 
 - [ ] **P2: Baseline redistribution terms** — **partial** (`baseline_redistribution`)
-  Sublime references remain local-only. Individual Ghostty theme rights and undeclared Sy repository licensing still require review before distribution; short attribution is not a compliance determination.
+      Sublime references remain local-only. Individual Ghostty theme rights and undeclared Sy repository licensing still require review before distribution; short attribution is not a compliance determination.
 
 ## Requested follow-up policy
 

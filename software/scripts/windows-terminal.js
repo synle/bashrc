@@ -222,12 +222,15 @@ async function doWork() {
     }
 
     settings.profiles = {
-      defaults: _withWindowsTerminalContentColors({
-        ...defaultProfileStyles,
-        ...(inheritedStyles.icon !== undefined ? { icon: inheritedStyles.icon } : {}),
-        ...(inheritedStyles.tabColor !== undefined ? { tabColor: inheritedStyles.tabColor } : {}),
-        ...(inheritedStyles.unfocusedAppearance !== undefined ? { unfocusedAppearance: inheritedStyles.unfocusedAppearance } : {}),
-      }, defaultProfileStyles.colorScheme),
+      defaults: _withWindowsTerminalContentColors(
+        {
+          ...defaultProfileStyles,
+          ...(inheritedStyles.icon !== undefined ? { icon: inheritedStyles.icon } : {}),
+          ...(inheritedStyles.tabColor !== undefined ? { tabColor: inheritedStyles.tabColor } : {}),
+          ...(inheritedStyles.unfocusedAppearance !== undefined ? { unfocusedAppearance: inheritedStyles.unfocusedAppearance } : {}),
+        },
+        defaultProfileStyles.colorScheme,
+      ),
       list: profiles,
     };
 

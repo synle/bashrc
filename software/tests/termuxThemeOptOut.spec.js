@@ -32,7 +32,10 @@ describe("Termux custom-theme opt-out", () => {
     expect(Object.keys(fileSystem)).toEqual([]);
     expect(mockExecCommands).toEqual([]);
   });
-  it.each([["dark", "#0a0a0a"], ["light", "#f8f8f8"]])("renders enabled %s colors and stays byte-stable", async (appearance, background) => {
+  it.each([
+    ["dark", "#0a0a0a"],
+    ["light", "#f8f8f8"],
+  ])("renders enabled %s colors and stays byte-stable", async (appearance, background) => {
     mode = appearance;
     await getIndexFunction("doWork")();
     const first = fileSystem[target];
