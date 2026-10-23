@@ -148,6 +148,10 @@ The self-extracting installer bundles `theme/sy/` so these sources remain availa
 
 Static contrast checks do not prove native rendering under transparency, dimming, selection precedence, remote terminals, or unsupported app versions.
 
+Versioned native observations live in `native-consumption.jsonc`; `NATIVE-VERIFICATION.md` records methods, scope, reproducible checks, and remaining visual gaps.
+Generate the value-free active/captured-reference component/state union with `node software/tools/theme-component-crosswalk.js`.
+The crosswalk preserves reference-only entries without labeling them defects or claiming exhaustive native-schema coverage.
+
 ## Baseline licensing and integrity
 
 Baseline files retain short, left-aligned license comments of at most four lines. Full-text source links and unresolved redistribution reviews remain in `manifest.jsonc`.

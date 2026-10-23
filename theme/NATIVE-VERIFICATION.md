@@ -40,3 +40,93 @@ The initial Ghostty test attempt also exposed an absent keybinding fixture; that
 
 Actual split focus, cursor glyph antialiasing, macOS Display P3 conversion, and desktop compositor rendering remain unverified.
 A real GUI/device capture must establish these before the opacity audit can be fully closed.
+
+## Remaining component coverage
+
+### Sublime 4200
+
+A temporary plugin created scratch views using the deployed Sy schemes and four installed grammars.
+Native `scope_name`, `style`, and `style_for_scope` returned 23 JavaScript, 21 Python, 12 HTML, and 14 CSS scope stacks per appearance.
+Of those 70 stacks, 25 match the global foreground; 21 actually inherit it, confirmed by native `source_line = -1`.
+Four explicit rules intentionally use the same foreground. Equal colors alone do not prove inheritance.
+The captured find and selection foregrounds resolve to the configured Sy foreground, including native variable resolution.
+
+Native `ui_info` reports Adaptive with the Sy Light scheme, and preferences resolve the default rounded tab style.
+The installed Adaptive resource separately defines sidebar/tab/control colors, brightness attributes, hover/selected/disabled conditions, textures, and label opacity.
+Those chrome rules are not controlled by the scheme's arbitrary variable names.
+The snapshot records inspected classes and states without copying the proprietary Adaptive definition.
+
+**Remaining:** native resolved element colors, texture alpha, hover/focus combinations, and visual captures.
+The scope API does not expose those chrome pixels. An attempted newly generated color-resource probe was inconclusive and was excluded from accepted observations.
+No speculative Adaptive override was added.
+
+### Full Vim startup
+
+Vim 9.1.1752 loaded the complete deployed vimrc with installed Jetpack, Signify, and Lightline.
+After native Signify highlight setup, dark/light/dark switches preserve DiffAdd/DiffChange/DiffDelete links and the Sy Lightline palette.
+The persistent integration spec runs both initial appearances and three switches each against the complete generated vimrc.
+It requires an explicit installed plugin root and fails before launch if required plugin folders or manifest entries are absent.
+Without that opt-in, the two native integration cases are explicitly skipped; standalone Vim tests remain separate.
+
+The initial apparent Signify defect came from inspecting uninitialized groups, not a lost-link regression.
+Native default links survive highlight clearing, so no production Vim fix was needed.
+CursorLineConceal appears only in the installed Ayu definition; installed plugins and Vim runtime contain no other consumer.
+It remains a reference-only group, not a reason to copy unused NERDTree/GitGutter mappings.
+
+**Remaining:** actual asynchronous VCS hunk creation, terminal glyph rendering, and every plugin-specific interaction.
+
+### Repeatable component/state crosswalk
+
+```bash
+node software/tools/theme-component-crosswalk.js
+```
+
+The command inventories active components and captured reference components for all twelve application identities in both appearances.
+It emits native key/selector identities, named key states, active/reference presence, and explicit unverified/reference-only dispositions.
+The accepted run contains **2,749 appearance-specific component entries**, including **2,228 active entries**.
+These are inventory counts, not contrast tests, native-schema completeness, or defect counts.
+Captured-only keys may inherit through broader selectors, belong to absent plugins, or require further investigation.
+Gemini's reference palette/syntax representation remains distinct from its active native controls rather than receiving an invented mapping.
+Copilot remains an empty capability-limit inventory, not fictional native components.
+
+The report contains no baseline color values or source text, so it does not redistribute the local-only references.
+Full native schema unions and reachable state combinations remain open; the crosswalk makes that boundary explicit.
+
+## Native token consumption
+
+### VS Code 1.138.0
+
+A dedicated Electron profile exposed the actual installed ColorThemeData engine through a local debugger.
+The probe used the installed constructor and canonical source settings under matching bracketed theme names.
+All four configured semantic types resolve through settings: newOperator, stringLiteral, customLiteral, and numberLiteral.
+Fifteen standard types resolve through configured TextMate fallbacks, including class, variable, parameter, property, function, method, string, number, operator, and keyword.
+A foreign-theme selector negative control removes the custom newOperator value.
+Native source confirms semantic settings take precedence over equal-specificity theme rules; missing properties can use registered TextMate fallback scopes.
+This does not mean every semantic type needs a redundant explicit override.
+
+**Remaining:** every language-provider legend, extension, older app version, and actual rendered state combination.
+
+### Claude 2.1.302
+
+The installed executable contains a native base selector, color validator, and override merger.
+The inspected provider calls that merger before publishing resolved theme context.
+Those pure native functions were evaluated in an IO-free VM against both canonical Sy objects.
+All **63 overrides per appearance** survive native key allowlisting and color validation; no configured key is silently discarded by this version's merger.
+Only token names and Sy observations are recorded, not the closed native baseline palettes.
+
+**Remaining:** interactive TUI call-site coverage, older versions, terminal composition, and unsupported automatic switching.
+Native merger acceptance does not prove every allowed role appears in every screen.
+
+## Reproduce focused checks
+
+```bash
+BASHRC_VIM_PLUGIN_ROOT="$HOME/.vim" npx vitest run --config vitest.config.js \
+  software/tests/vimThemes.plugins.spec.js software/tests/vimThemes.spec.js \
+  software/tests/themeComposition.spec.js software/tests/themeComponentCrosswalk.spec.js \
+  software/tests/themeNativeConsumption.spec.js software/tests/themeAuditStatus.spec.js
+```
+
+The plugin root must contain an already-installed native .vim runtime; the integration test does not provision plugins.
+`native-consumption.jsonc` pins accepted observations to source hashes. Re-run native probes before accepting a changed hash; never update it merely to green tests.
+The external implementation plan retains probe programs and raw local captures for this session.
+Full repository validation and baseline licensing/distribution review remain parked at the user's request.

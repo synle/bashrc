@@ -20,6 +20,8 @@ describe("current theme audit ledger", () => {
     expect(audit.currentIssues.find((issue) => issue.id === "windows_all_profile_content").status).toBe("resolved_in_code");
     expect(audit.currentIssues.find((issue) => issue.id === "termux_shared_optout").status).toBe("resolved_in_code");
     expect(audit.currentIssues.find((issue) => issue.id === "opacity_and_dimming").status).toBe("partial");
+    expect(audit.currentIssues.find((issue) => issue.id === "native_token_consumption").status).toBe("partial");
+    expect(audit.currentIssues.find((issue) => issue.id === "vim_full_plugin_inheritance").status).toBe("resolved_in_code");
     expect(audit.currentIssues.find((issue) => issue.id === "main_release_gate").status).toBe("unverified");
     expect(audit.currentIssues.find((issue) => issue.id === "copilot_custom_import").status).toBe("capability_limit");
   });
