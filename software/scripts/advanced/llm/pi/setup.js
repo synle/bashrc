@@ -116,6 +116,9 @@ const PI_OLLAMA_COMPAT = {
 
 /**
  * Builds display-name and header overrides without replacing Pi's native model capabilities.
+ * Use modelOverrides, not full models entries: renaming through models replaces native metadata
+ * and resets omitted context windows to defaults (reported regression: 100k instead of 1.1 million tokens).
+ * Override only names and required headers; let Pi retain its catalog's context and output limits.
  * @returns {Record<string, {name: string, headers?: Record<string, string>}>} Overrides keyed by model ID; no IO.
  */
 function _getPiCopilotModelOverrides() {

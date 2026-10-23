@@ -135,8 +135,8 @@ async function _doKeysWork(targetDir) {
  * @type {Record<string, any>}
  */
 const CLAUDE_MANAGED_SETTINGS = {
-  // default model for all claude code sessions. tradeoff: higher cost. risk: none
-  model: "claude-opus-4-7[1m]",
+  // Select only the model ID; [1m] explicitly overrides the native context-window choice.
+  model: "claude-opus-4-7",
   // skip confirmation prompt before entering bypass permissions mode. tradeoff: no safety prompt. risk: medium
   skipDangerousModePermissionPrompt: true,
   // auto-delete session files older than 30 days. tradeoff: lose old history. risk: low
@@ -158,9 +158,10 @@ const CLAUDE_MANAGED_SETTINGS = {
 };
 
 /**
- * Merges managed settings into ~/.claude/settings.json, preserving existing user settings.
- * Only keys in CLAUDE_MANAGED_SETTINGS are written — other keys are left untouched.
- * @param {string} targetDir - Path to the ~/.claude directory.
+ * Merges managed defaults and migrates the exact former managed [1m] model selection.
+ * Preserves other explicit user model choices and unrelated settings.
+ * @param {string} targetDir - Path to the ~/.claude folder.
+ * @returns {Promise<void>} Resolves after backing up and writing settings; write errors propagate.
  */
 async function _doSettingsWork(targetDir) {
   const targetPath = path.join(targetDir, "settings.json");
@@ -175,6 +176,8 @@ async function _doSettingsWork(targetDir) {
 
   // merge: managed settings are applied as defaults, existing user overrides are preserved
   const merged = { ...CLAUDE_MANAGED_SETTINGS, ...existing };
+  // Retire only our former default, not arbitrary user-selected context variants.
+  if (merged.model === "claude-opus-4-7[1m]") merged.model = CLAUDE_MANAGED_SETTINGS.model;
 
   mergeLLMHookEntry(merged, "UserPromptSubmit", {
     hooks: [
