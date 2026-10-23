@@ -3,7 +3,7 @@
 ################################################################################
 # --- sy-* skill dispatchers (shared across all LLM CLIs) ---
 #
-# Bash wrappers around every `_common/v_current/commands/<name>.md` so the same workflow
+# Bash wrappers around every `_common/v_current/skills/<name>.md` so the same workflow
 # can be invoked from the terminal. Four families are auto-registered per skill:
 #
 #   sy-<name>                       interactive; CLI chosen at call time
@@ -58,9 +58,9 @@
 #
 # Prompt bodies live in `$LLM_ROOT_FOLDER/skills/sy-<name>/SKILL.md` — the ONE
 # physical copy, deployed by `deploySharedLLMSkills()` from the shared
-# `_common/v_current/commands/<name>.md` source and symlinked into every CLI's skills
+# `_common/v_current/skills/<name>.md` source and symlinked into every CLI's skills
 # folder. Adding a new command:
-#   1. Drop `_common/v_current/commands/<name>.md` + register in `LLM_COMMAND_DEPLOY_MAP`
+#   1. Drop `_common/v_current/skills/<name>.md` + register in `LLM_COMMAND_DEPLOY_MAP`
 #      (`software/scripts/advanced/llm/llm-common.js`) — one map, every CLI.
 #   2. Re-run `bash run.sh --preset=llm` to deploy the body.
 #   3. Open a new shell. The dispatcher loop below auto-registers `sy-<name>`

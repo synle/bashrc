@@ -74,7 +74,7 @@
     ],
   },
   "llm-prompts": {
-    "description": "Building block subset of `llm`: re-sync prompts, slash commands, keybindings, and settings only — runs each CLI's setup.js without the install.sh / npm-install steps. Fast refresh after editing `_common/v_current/instructions.md` or `_common/v_current/commands/*.md`.",
+    "description": "Building block subset of `llm`: re-sync prompts, slash commands, keybindings, and settings only — runs each CLI's setup.js without the install.sh / npm-install steps. Fast refresh after editing `_common/v_current/instructions.md` or `_common/v_current/skills/*.md`.",
     "files": [
       "advanced/llm/claude/setup.js",
       "advanced/llm/copilot/setup.js",

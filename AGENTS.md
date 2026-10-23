@@ -425,7 +425,7 @@ Profile registration is buffered: `registerProfileBlock` /
 - In `software/scripts/advanced/llm/_common/v_current/instructions.md`, **rules are named, not
   numbered** — bullets only, cross-reference by name. Never hand-edit the generated
   global `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`; edit `_common/v_current/instructions.md`.
-- When editing current `_common/v_current/instructions*.md`, shared `_common/v_current/commands/*.md`,
+- When editing current `_common/v_current/instructions*.md`, shared `_common/v_current/skills/*.md`,
   or refreshing guidance, preserve the established tone and apply these rules;
   frozen `v1/` and `v2/` stay untouched:
   - **Meaning never dropped.** Optional articles can go; `not`, `never`, `no`, and
@@ -436,7 +436,7 @@ Profile registration is buffered: `registerProfileBlock` /
     phrasing is not shorter, plain prose wins. Policy, skills, code, and written
     deliverables stay in concise standard prose.
 - **Never name a real repo, org, or service in instructional prose** —
-  `_common/v_current/instructions.md`, `_common/v_current/commands/*.md`, `.agents/skills/*/SKILL.md`, any doc
+  `_common/v_current/instructions.md`, `_common/v_current/skills/*.md`, `.agents/skills/*/SKILL.md`, any doc
   telling an agent what to do. Use mock names (`acme/widget-store`, `myapp-frontend`).
   Incident notes keep the behavior and drop the name. This file may name `synle/bashrc` —
   a repo's own rules file can't be wrong about its remote; `assets/` / §3 is inventory,

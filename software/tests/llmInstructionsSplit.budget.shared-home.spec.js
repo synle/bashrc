@@ -198,11 +198,11 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
     { label: "instructions.md", text: instructions },
     ...splitFiles.map(({ target, text }) => ({ label: target, text })),
     ...fs
-      .readdirSync(path.join(ROOT, COMMON_FOLDER, "commands"))
+      .readdirSync(path.join(ROOT, COMMON_FOLDER, "skills"))
       .filter((name) => name.endsWith(".md"))
       .map((name) => ({
-        label: `commands/${name}`,
-        text: fs.readFileSync(path.join(ROOT, COMMON_FOLDER, "commands", name), "utf-8"),
+        label: `skills/${name}`,
+        text: fs.readFileSync(path.join(ROOT, COMMON_FOLDER, "skills", name), "utf-8"),
       })),
     {
       label: "instructions-copilot-tweaks.md",
