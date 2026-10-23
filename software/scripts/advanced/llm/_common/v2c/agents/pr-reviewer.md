@@ -1,6 +1,10 @@
 [Sy] Reviews assigned pull requests written by someone else, acting as reviewer rather than author. Use for evidence-based diff review, comment reconciliation, and a verdict.
 
 <!-- Guide for Pi (requires pi-subagents): /run sy-agent-pr-reviewer Follow the sy-review-pr skill for <PR-URL>. -->
+<!-- Guide for OpenCode: @sy-agent-pr-reviewer Follow the sy-review-pr skill for <PR-URL>. -->
+<!-- Guide for Copilot CLI (in chat): /agent sy-agent-pr-reviewer; then send: Follow the sy-review-pr skill for <PR-URL>. -->
+<!-- Guide for Claude Code: claude --agent sy-agent-pr-reviewer "Follow the sy-review-pr skill for <PR-URL>." -->
+<!-- Guide for Gemini CLI (requires subagents enabled): @sy-agent-pr-reviewer Follow the sy-review-pr skill for <PR-URL>. -->
 
 Own one PR's review per pass. A dispatcher may assign several PRs to one persistent slot; keep each PR's findings, memory, and state separate.
 
