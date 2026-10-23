@@ -147,20 +147,62 @@ Ask the selected worker to follow the matching skill with an explicit target.
 | Gemini   | `~/.gemini/agents/<name>.md`         | Generated regular file; `/agents`, then `@sy-agent-pr-reviewer`                         |
 | Pi       | `~/.pi/agent/agents/<name>.md`       | Shared symlink; requires `pi-subagents`; `/subagents`, then `/run sy-agent-pr-reviewer` |
 
-In Gemini or OpenCode, submit this prompt:
+**Direct worker invocation.** In Gemini or OpenCode, submit an agent mention with
+an explicit single-PR task. Choose the reviewer for someone else's PR or the
+babysitter for your own:
 
 ```text
 @sy-agent-pr-reviewer Follow the sy-review-pr skill for https://github.com/acme/widget-store/pull/123.
+@sy-agent-pr-babysitter Follow the sy-babysit-pr skill for https://github.com/acme/widget-store/pull/123.
 ```
 
-In Pi, use either the skill directly or a named worker:
+In Pi, `/run <agent> <task>` comes from the installed `pi-subagents` extension,
+not Pi core. Use `/subagents` to inspect available workers. Use `/run`, not an
+OpenCode-style `@` agent mention, to launch one:
+
+```text
+/run sy-agent-pr-reviewer Follow the sy-review-pr skill for https://github.com/acme/widget-store/pull/123.
+/run sy-agent-pr-babysitter Follow the sy-babysit-pr skill for https://github.com/acme/widget-store/pull/123.
+```
+
+Alternatively, run the skill in the parent without explicitly selecting a worker:
 
 ```text
 /skill:sy-review-pr https://github.com/acme/widget-store/pull/123
-/run sy-agent-pr-reviewer Follow the sy-review-pr skill for https://github.com/acme/widget-store/pull/123.
+/skill:sy-babysit-pr https://github.com/acme/widget-store/pull/123
 ```
 
-Pi's built-in `reviewer` is separate from `sy-agent-pr-reviewer`. Pi core discovers
+**Multi-PR dispatch.** Keep `sy-review-prs` or `sy-babysit-prs` as the workflow
+entry point; a direct worker invocation is not the multi-PR dispatcher.
+Preserve existing repo scope, author filters, and reference files in wrapper
+prompts. Append the matching selection instruction:
+
+```text
+Use sy-agent-pr-reviewer for dispatched review slots. Keep the parent session as dispatcher. Follow the fan-out skill for scheduling and the single-PR skill for each pass.
+```
+
+```text
+Use sy-agent-pr-babysitter for dispatched babysitting slots. Keep the parent session as dispatcher. Follow the fan-out skill for scheduling and the single-PR skill for each pass.
+```
+
+These plain-name instructions request worker selection; they do not execute a
+dispatch or guarantee compliance. OpenCode must invoke its Task tool with the
+selected worker. Pi's dispatcher uses the `subagent` tool's `agent` field.
+Keep OpenCode `@` mentions and Pi `/run` commands for direct worker invocation,
+not as replacements for the fan-out workflow. The parent owns scheduling and
+the ledger; each worker owns its assigned per-PR pass.
+
+Shared skills select workers by behavior rather than hardcoding agent names.
+Explicit names belong in client usage examples and personal wrapper prompts.
+Roles do not enforce tool permissions. The review workflow can post GitHub
+reviews and comments by default; it is not read-only GitHub access.
+
+See [OpenCode's agent documentation](https://opencode.ai/docs/agents) for native
+mentions and task permissions. For Pi command syntax, read the installed
+`pi-subagents` package's `docs/workflows.md` and its `pi-subagents` skill.
+
+The `pi-subagents` extension's built-in `reviewer` is separate from
+`sy-agent-pr-reviewer`. Pi core discovers
 shared skills through `~/.agents/skills/`; named workers require the installed
 `pi-subagents` extension. MCP-dependent Pi workers need background execution
 (`async: true`); foreground children do not load ambient parent extensions.
