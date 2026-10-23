@@ -79,6 +79,10 @@ Active shared LLM instructions, commands, and agents live in
 `software/scripts/advanced/llm/_common/v_current/`; runtime helpers and MCP configuration
 remain in `_common/`, alongside historical snapshots.
 
+Active shared LLM instructions, commands, and agents live in
+`software/scripts/advanced/llm/_common/v_current/`; runtime helpers and MCP configuration
+remain in `_common/`, alongside historical snapshots.
+
 Full directory + file map lives in `ARCHITECTURE.md` (Key Directories / Important Files)
 — read it rather than duplicating it here. The paths an agent touches most:
 
