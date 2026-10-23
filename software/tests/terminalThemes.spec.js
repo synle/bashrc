@@ -23,7 +23,7 @@ const { COLOR_MAP } = require("../tools/build-include.js");
 /** Strip `//` comments and trailing commas so a JSONC source can be JSON.parse'd. */
 function parseJsonc(file) {
   const raw = fs.readFileSync(file, "utf-8");
-  const stripped = raw.replace(/"(?:\\.|[^"\\])*"|\/\/[^\n]*/g, (m) => (m.startsWith("//") ? "" : m));
+  const stripped = raw.replace(/"(?:\\.|[^"\\])*"|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m) => (m.startsWith("/") ? "" : m));
   return JSON.parse(stripped.replace(/,(\s*[}\]])/g, "$1"));
 }
 
@@ -70,7 +70,7 @@ function expectMarkersBound(file) {
  * @type {string[]}
  */
 const ANSI_KEYS = [
-  "black",
+  "terminalBlack",
   "red",
   "green",
   "yellow",
@@ -94,7 +94,7 @@ const ANSI_KEYS = [
  * whose background sits at the same end they cannot clear a text floor and are exempt.
  * @type {string[]}
  */
-const RAMP_ANCHORS = ["black", "white", "brightWhite"];
+const RAMP_ANCHORS = ["terminalBlack", "white", "brightWhite"];
 
 /**
  * Hues held below the 7:1 AAA floor on purpose. COLOR_MAP documents the reason: a 7:1 yellow
@@ -149,7 +149,7 @@ function expectRampMonotonic(palette) {
 describe("ghostty theme", () => {
   for (const mode of ["dark", "light"]) {
     describe(mode, () => {
-      const file = `software/scripts/advanced/ghostty-color-${mode}.jsonc`;
+      const file = `theme/sy/ghostty_${mode}.jsonc`;
       const spec = parseJsonc(file);
 
       it("should keep every marker bound to COLOR_MAP", () => expectMarkersBound(file));
@@ -185,7 +185,7 @@ describe("ghostty theme", () => {
 
   it("should keep the dark and light sources structurally identical", () => {
     const shape = (mode) => {
-      const spec = parseJsonc(`software/scripts/advanced/ghostty-color-${mode}.jsonc`);
+      const spec = parseJsonc(`theme/sy/ghostty_${mode}.jsonc`);
       return { keys: Object.keys(spec).sort(), paletteLength: spec.palette.length };
     };
     expect(shape("dark")).toEqual(shape("light"));
@@ -221,7 +221,7 @@ describe("ghostty theme", () => {
 // ---- Termux ----
 
 describe("termux theme", () => {
-  const file = "software/scripts/android_termux/termux-color-dark.jsonc";
+  const file = "theme/sy/termux_dark.jsonc";
   const spec = parseJsonc(file);
 
   it("should keep every marker bound to COLOR_MAP", () => expectMarkersBound(file));
@@ -242,7 +242,7 @@ describe("termux theme", () => {
   // The old hardcoded palette put color0 at 1.47:1 against its own background, which made
   // anything printed in ANSI black effectively invisible.
   it("should keep the black ramp anchor distinguishable from the background", () => {
-    expect(contrast(spec.palette[0], spec.background)).toBeGreaterThanOrEqual(1.05);
+    expect(contrast(spec.palette[0], spec.background)).toBeGreaterThanOrEqual(3);
   });
 
   // termux-config.sh owns termux.properties only. If a colors block reappears there it would
@@ -261,13 +261,13 @@ describe("terminal palettes", () => {
   // them ever hardcodes a value again, this is what notices.
   it("should render the identical dark ramp on every terminal that has one", () => {
     const expected = ANSI_KEYS.map((key) => COLOR_MAP.dark[key]);
-    expect(parseJsonc("software/scripts/advanced/ghostty-color-dark.jsonc").palette).toEqual(expected);
-    expect(parseJsonc("software/scripts/android_termux/termux-color-dark.jsonc").palette).toEqual(expected);
+    expect(parseJsonc("theme/sy/ghostty_dark.jsonc").palette).toEqual(expected);
+    expect(parseJsonc("theme/sy/termux_dark.jsonc").palette).toEqual(expected);
   });
 
   it("should render the light ramp from COLOR_MAP", () => {
     const expected = ANSI_KEYS.map((key) => COLOR_MAP.light[key]);
-    expect(parseJsonc("software/scripts/advanced/ghostty-color-light.jsonc").palette).toEqual(expected);
+    expect(parseJsonc("theme/sy/ghostty_light.jsonc").palette).toEqual(expected);
   });
 
   // The whole point of the consolidation: no terminal config may name a third-party theme or

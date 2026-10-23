@@ -6,7 +6,7 @@ const { COLOR_MAP } = require("../tools/build-include.js");
 
 function parseJsonc(file) {
   const raw = fs.readFileSync(file, "utf-8");
-  const stripped = raw.replace(/"(?:\\.|[^"\\])*"|\/\/[^\n]*/g, (m) => (m.startsWith("//") ? "" : m));
+  const stripped = raw.replace(/"(?:\\.|[^"\\])*"|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m) => (m.startsWith("/") ? "" : m));
   return JSON.parse(stripped.replace(/,(\s*[}\]])/g, "$1"));
 }
 
@@ -129,10 +129,11 @@ const VS_CODE_STATE_PAIRS = [
 const VS_CODE_ANSI_NAMES = ["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White"];
 
 describe("windows terminal theme", () => {
-  const source = "software/scripts/windows-terminal.js";
   const keybindingsSource = "software/scripts/windows-terminal-keys.jsonc";
 
-  it("should keep every marker bound to COLOR_MAP", () => expectMarkersBound(source));
+  it.each(["dark", "light"])("keeps %s scheme markers bound to COLOR_MAP", (mode) =>
+    expectMarkersBound(`theme/sy/windows_terminal_${mode}.jsonc`),
+  );
 
   it("should keep Windows Terminal keybinding overrides for ctrl+v and shift+enter", () => {
     const contents = fs.readFileSync(keybindingsSource, "utf-8");
@@ -147,18 +148,14 @@ describe("windows terminal theme", () => {
 
   for (const theme of ["dark", "light"]) {
     it(`should keep the ${theme} ANSI ramp visible and monotonic`, () => {
-      const palette = COLOR_MAP[theme];
       const names = ["black", "red", "green", "yellow", "blue", "purple", "cyan", "white"];
-      const scheme = fs.readFileSync(source, "utf-8");
-      // The dark scheme deliberately lifts `black` off the background so SGR 30 is not invisible.
-      const blackValue = scheme.match(new RegExp(`"black": "(#[0-9a-f]{6})", // \\{\\{${theme}\\.`))[1];
-      expect(contrast(blackValue, palette.background), `${theme} ansi black is invisible`).toBeGreaterThanOrEqual(3);
+      const scheme = parseJsonc(`theme/sy/windows_terminal_${theme}.jsonc`);
+      expect(contrast(scheme.black, scheme.background), `${theme} ansi black is invisible`).toBeGreaterThanOrEqual(3);
       for (const name of names) {
         const bright = `bright${name[0].toUpperCase()}${name.slice(1)}`;
-        const base = name === "black" ? blackValue : palette[name];
-        expect(contrast(base, palette.background), `${theme} ${name} is invisible`).toBeGreaterThanOrEqual(3);
-        expect(contrast(palette[bright], palette.background), `${theme} ${bright} is invisible`).toBeGreaterThanOrEqual(3);
-        expect(luminance(palette[bright]), `${theme} ${bright} is not lighter than ${name}`).toBeGreaterThan(luminance(base));
+        expect(contrast(scheme[name], scheme.background), `${theme} ${name} is invisible`).toBeGreaterThanOrEqual(3);
+        expect(contrast(scheme[bright], scheme.background), `${theme} ${bright} is invisible`).toBeGreaterThanOrEqual(3);
+        expect(luminance(scheme[bright]), `${theme} ${bright} is not lighter than ${name}`).toBeGreaterThan(luminance(scheme[name]));
       }
     });
   }
@@ -194,16 +191,13 @@ describe("webapp stylesheet", () => {
 
 describe("inline marker binding safety", () => {
   const MARKER_FILES = fs
-    .readdirSync("software/scripts/advanced")
-    .filter((f) => /-color-(dark|light)\.jsonc$/.test(f))
-    .map((f) => `software/scripts/advanced/${f}`);
+    .readdirSync("theme/sy")
+    .filter((name) => name.endsWith(".jsonc") && !name.startsWith("_"))
+    .map((name) => `theme/sy/${name}`)
+    .filter((file) => parseJsonc(file).captureStatus !== "gap");
 
-  it("covers every generated color theme file", () => {
-    // 8 = VS Code, Sublime and Zed (2 each) plus the Ghostty terminal palettes, which
-    // joined COLOR_MAP when Ghostty stopped naming a bundled third-party theme.
-    // Termux's palette lives in software/scripts/android_termux/ and is covered by
-    // software/tests/terminalThemes.spec.js instead.
-    expect(MARKER_FILES.length).toBe(8);
+  it("covers every active generated template, not foundations or capability records", () => {
+    expect(MARKER_FILES.length).toBe(22);
   });
 
   for (const file of MARKER_FILES) {

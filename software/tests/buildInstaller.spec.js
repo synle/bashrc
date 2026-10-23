@@ -124,6 +124,10 @@ describe("tarball round-trip", () => {
     expect(entries).toContain("run.sh");
     expect(entries).toContain("software/index.js");
     expect(entries).toContain("software/common.js");
+    expect(entries).toContain("theme/sy/_palette_dark.jsonc");
+    expect(entries).toContain("theme/sy/pi_dark.jsonc");
+    expect(entries).toContain("theme/sy/vim_light.jsonc");
+    expect(entries.some((entry) => entry.startsWith("theme/baseline/"))).toBe(false);
   });
 
   it("excludes node_modules, *.spec.js, and __snapshots__", () => {

@@ -103,6 +103,12 @@ describe.each(["dark", "light"])("active %s templates", (mode) => {
     expect(read(`theme/sy/claude_${mode}.jsonc`).overrides.diffAddedWord).toBe(buildInclude.COLOR_MAP[mode].diffAddedWordBackground);
   });
 
+  // Native session/tree selectors retain accent/dim/status foregrounds after applying selectedBg to the whole row.
+  it.each(["accent", "dim", "muted", "warning", "error"])("keeps Pi selector %s text readable on its actual selected row", (role) => {
+    const colors = read(`theme/sy/pi_${mode}.jsonc`).colors;
+    expect(contrast(colors[role], colors.selectedBg)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("stores Vim groups, terminal colors, and status-line modes in its template", () => {
     const vim = read(`theme/sy/vim_${mode}.jsonc`);
     expect(vim.highlights.MatchParen.foreground).toBe(buildInclude.COLOR_MAP[mode].foreground);

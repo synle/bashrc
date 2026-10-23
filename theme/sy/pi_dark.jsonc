@@ -15,10 +15,10 @@ Edit marker roles, then run make format_build_include; do not edit generated lit
     "error": "#f67070", // {{dark.red}}
     "warning": "#dcdcaa", // {{dark.yellow}}
     "muted": "#b2b2b2", // {{dark.textSecondary}}
-    "dim": "#8f8f8f", // {{dark.textDisabled}}
+    "dim": "#b2b2b2", // {{dark.textSecondary}}
     "text": "#e8e8e8", // {{dark.foreground}}
     "thinkingText": "#b2b2b2", // {{dark.textSecondary}}
-    "selectedBg": "#1b3c5e", // {{dark.selection}}
+    "selectedBg": "#173049", // {{dark.selectionSyntax}}
     "scrollbarTrack": "#161616", // {{dark.surface}}
     "scrollbarThumb": "#6e6e6e", // {{dark.brightGray}}
     "searchMatchBg": "#5c4300", // {{dark.matchHighlight}}

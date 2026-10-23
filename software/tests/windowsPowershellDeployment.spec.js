@@ -6,7 +6,7 @@ import vm from "vm";
 import os from "os";
 import { spawnSync } from "child_process";
 import { createRequire } from "module";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction, readSyThemeFixture } from "./setup.js";
 
 /** Windows home fixture deliberately includes a space. @type {string} */
 const WINDOWS_HOME = "/mnt/c/Users/Test User";
@@ -33,6 +33,7 @@ function loadInstaller(file, overrides = {}) {
     shouldInstallCustomTheme: () => false,
     getTheme: () => ({ dark: "Campbell", light: "One Half Light" }),
     json: getIndexFunction("json"),
+    readSyTheme: readSyThemeFixture,
     code: getIndexFunction("code"),
     getWindowUserBaseDir: () => WINDOWS_HOME,
     getWindowAppDataLocalUserPath: () => `${WINDOWS_HOME}/AppData/Local`,

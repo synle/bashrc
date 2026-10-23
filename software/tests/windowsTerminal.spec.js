@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import vm from "vm";
 import { createRequire } from "module";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction, readSyThemeFixture } from "./setup.js";
 
 /**
  * Execute the installer with owned IO boundaries and return serialized settings output.
@@ -29,6 +29,7 @@ async function generateSettings(oldSettings = {}, binaries = [], executable = nu
     log: () => {},
     getTheme: () => ({ dark: "Campbell", light: "Campbell" }),
     json: getIndexFunction("json"),
+    readSyTheme: readSyThemeFixture,
     readJson: async (strings) => (strings[0].includes("windows-terminal-keys") ? [] : structuredClone(oldSettings)),
     getWindowUserBaseDir: () => "/mnt/c/Users/test",
     findPathFromList: () => executable,

@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import vm from "vm";
 import { createRequire } from "module";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction, readSyThemeFixture } from "./setup.js";
 
 /**
  * Generate serialized Terminal settings through the real installer with isolated IO.
@@ -28,6 +28,7 @@ async function generateAppearance(oldSettings = {}, windows = true, overrides = 
     log: () => {},
     getTheme: () => ({ dark: "Campbell", light: "Campbell" }),
     json: getIndexFunction("json"),
+    readSyTheme: readSyThemeFixture,
     readJson: async (strings) => (strings[0].includes("windows-terminal-keys") ? [] : structuredClone(oldSettings)),
     getWindowUserBaseDir: () => "/mnt/c/Users/Test User",
     findPathFromList: () => null,

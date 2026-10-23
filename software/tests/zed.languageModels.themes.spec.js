@@ -74,8 +74,8 @@ const STATUS_KEYS = [
 const ANSI_COLOR_NAMES = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"];
 
 for (const [themeFile, appearance] of [
-  ["software/scripts/advanced/zed-color-dark.jsonc", "dark"],
-  ["software/scripts/advanced/zed-color-light.jsonc", "light"],
+  ["theme/sy/zed_dark.jsonc", "dark"],
+  ["theme/sy/zed_light.jsonc", "light"],
 ]) {
   describe(`zed theme contrast > ${appearance}`, () => {
     const theme = JSON.parse(stripJsoncComments(fs.readFileSync(themeFile, "utf-8")));

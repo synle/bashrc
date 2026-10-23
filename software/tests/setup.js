@@ -235,7 +235,12 @@ sandbox.readJson = async (strings, ...values) => {
   const target = sandbox.text(strings, ...values).trim();
   try {
     if (target in fileSystem) return sandbox.parseJsonWithComments(fileSystem[target] || "{}");
-    return JSON.parse(fetchResponses[target] || "{}");
+    if (target in fetchResponses) return JSON.parse(fetchResponses[target] || "{}");
+    // Active theme inputs are controlled repository fixtures, not user-home files or network requests.
+    if (/^theme\/sy\/[a-z][a-z0-9_]*_(dark|light)\.jsonc$/.test(target)) {
+      return sandbox.parseJsonWithComments(fs.readFileSync(path.resolve(target), "utf8"));
+    }
+    return {};
   } catch (e) {
     return {};
   }
@@ -264,9 +269,37 @@ export function setMockExecSyncReturn(value) {
   mockExecSyncReturn = value;
 }
 
+/**
+ * Supplies canonical repository data to manual VM fixtures at the owned theme-IO boundary.
+ * @param {string} app - Canonical application prefix.
+ * @param {"dark"|"light"} mode - Requested appearance.
+ * @returns {Promise<object>} Mocked or real controlled repository theme data; no user-home IO occurs.
+ */
+export async function readSyThemeFixture(app, mode) {
+  return sandbox.readJson`theme/sy/${app}_${mode}.jsonc`;
+}
+
 /** Get the sandbox's process object for direct manipulation */
 export function getSandboxProcess() {
   return sandbox.process;
+}
+
+/**
+ * Measures raw script lines before SOURCE expansion during explicit theme coverage runs.
+ * @param {string} source - Raw repository script bytes.
+ * @param {string} file - Repository-relative source identity.
+ * @returns {string} Instrumented bytes, or unchanged input outside opt-in measurement.
+ */
+function instrumentThemeScript(source, file) {
+  if (process.env.BASHRC_TEST_THEME_COVERAGE !== "1" || !file.endsWith(".js")) return source;
+  const { createInstrumenter } = createRequire(import.meta.url)("istanbul-lib-instrument");
+  return createInstrumenter({
+    compact: false,
+    esModules: false,
+    coverageVariable: "__VITEST_COVERAGE__",
+    coverageGlobalScope: "globalThis",
+    produceSourceMap: false,
+  }).instrumentSync(source, path.resolve(file));
 }
 
 /**
@@ -282,7 +315,7 @@ export function expandSourceMarkers(source, seen = new Set()) {
   return source.replace(/^[ \t]*\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
     if (seen.has(srcFile)) return "";
     const next = new Set(seen).add(srcFile);
-    return expandSourceMarkers(fs.readFileSync(path.resolve(srcFile), "utf-8"), next);
+    return expandSourceMarkers(instrumentThemeScript(fs.readFileSync(path.resolve(srcFile), "utf-8"), srcFile), next);
   });
 }
 
@@ -293,7 +326,7 @@ export function expandSourceMarkers(source, seen = new Set()) {
  * @returns {Promise<void>}
  */
 export async function runScript(scriptPath) {
-  let scriptSource = fs.readFileSync(path.resolve(scriptPath), "utf-8");
+  let scriptSource = instrumentThemeScript(fs.readFileSync(path.resolve(scriptPath), "utf-8"), scriptPath);
   // Expand SOURCE markers by inlining the referenced file content
   scriptSource = expandSourceMarkers(scriptSource);
   const varScript = scriptSource.replace(/^(const|let) /gm, "var ");
@@ -315,7 +348,7 @@ export async function runScript(scriptPath) {
  * @param {string} scriptPath - Relative path from repo root (e.g. "software/scripts/advanced/llm/claude/setup.js").
  */
 export function loadScriptHelpers(scriptPath) {
-  let scriptSource = fs.readFileSync(path.resolve(scriptPath), "utf-8");
+  let scriptSource = instrumentThemeScript(fs.readFileSync(path.resolve(scriptPath), "utf-8"), scriptPath);
   scriptSource = expandSourceMarkers(scriptSource);
   const varScript = scriptSource.replace(/^(const|let) /gm, "var ");
   vm.runInNewContext(varScript, sandbox, { filename: scriptPath });

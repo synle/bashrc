@@ -6,7 +6,7 @@ const { COLOR_MAP } = require("../tools/build-include.js");
 
 function parseJsonc(file) {
   const raw = fs.readFileSync(file, "utf-8");
-  const stripped = raw.replace(/"(?:\\.|[^"\\])*"|\/\/[^\n]*/g, (m) => (m.startsWith("//") ? "" : m));
+  const stripped = raw.replace(/"(?:\\.|[^"\\])*"|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m) => (m.startsWith("/") ? "" : m));
   return JSON.parse(stripped.replace(/,(\s*[}\]])/g, "$1"));
 }
 
@@ -131,7 +131,7 @@ const VS_CODE_ANSI_NAMES = ["Black", "Red", "Green", "Yellow", "Blue", "Magenta"
 describe("sublime text theme", () => {
   for (const theme of ["dark", "light"]) {
     describe(theme, () => {
-      const file = `software/scripts/advanced/sublime-text-color-${theme}.jsonc`;
+      const file = `theme/sy/sublime_${theme}.jsonc`;
       const scheme = parseJsonc(file);
       const vars = scheme.variables;
       const globals = scheme.globals;
@@ -234,7 +234,7 @@ describe("sublime text theme", () => {
 
   it("should keep the dark and light schemes structurally identical", () => {
     const shape = (theme) => {
-      const scheme = parseJsonc(`software/scripts/advanced/sublime-text-color-${theme}.jsonc`);
+      const scheme = parseJsonc(`theme/sy/sublime_${theme}.jsonc`);
       return {
         variables: Object.keys(scheme.variables),
         globals: Object.keys(scheme.globals),

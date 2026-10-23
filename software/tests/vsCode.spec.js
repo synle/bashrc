@@ -176,8 +176,8 @@ describe("_getSettings -> theme gate", () => {
   it("should scope our customizations under the theme names when custom theming is on", () => {
     const vs = loadVsCode({ is_gui: 1 });
     const settings = vs._getSettings({}, darkColors, lightColors, []);
-    expect(settings["[Default High Contrast]"]["workbench.colorCustomizations"]).toEqual(darkColors["workbench.colorCustomizations"]);
-    expect(settings["[Default High Contrast Light]"]["workbench.colorCustomizations"]).toEqual(
+    expect(settings["workbench.colorCustomizations"]["[Default High Contrast]"]).toEqual(darkColors["workbench.colorCustomizations"]);
+    expect(settings["workbench.colorCustomizations"]["[Default High Contrast Light]"]).toEqual(
       lightColors["workbench.colorCustomizations"],
     );
   });
@@ -196,8 +196,10 @@ describe("_getSettings -> theme gate", () => {
   it("should keep the customizations in the prebuilt artifact even with no GUI", () => {
     const vs = loadVsCode({ is_gui: 0 });
     const settings = vs._getSettings({}, darkColors, lightColors, [], { is_prebuilt_config: true });
-    expect(settings["[Default High Contrast]"]).toBeTruthy();
-    expect(settings["[Default High Contrast Light]"]).toBeTruthy();
+    expect(settings["workbench.colorCustomizations"]["[Default High Contrast]"]).toEqual(darkColors["workbench.colorCustomizations"]);
+    expect(settings["workbench.colorCustomizations"]["[Default High Contrast Light]"]).toEqual(
+      lightColors["workbench.colorCustomizations"],
+    );
   });
 });
 

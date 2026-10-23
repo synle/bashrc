@@ -28,8 +28,8 @@ beforeEach(() => {
   setSandboxGlobal("is_os_windows", false);
   setSandboxGlobal("IS_CI", false);
   setSandboxGlobal("getRuntimeOption", () => false);
-  fileSystem["software/scripts/vim-color-dark.jsonc"] = fs.readFileSync("software/scripts/vim-color-dark.jsonc", "utf-8");
-  fileSystem["software/scripts/vim-color-light.jsonc"] = fs.readFileSync("software/scripts/vim-color-light.jsonc", "utf-8");
+  fileSystem["theme/sy/vim_dark.jsonc"] = fs.readFileSync("theme/sy/vim_dark.jsonc", "utf-8");
+  fileSystem["theme/sy/vim_light.jsonc"] = fs.readFileSync("theme/sy/vim_light.jsonc", "utf-8");
   fileSystem["software/scripts/vim-config-settings.vim"] = fs.readFileSync(settingsPath, "utf-8");
 });
 
@@ -120,9 +120,9 @@ describe("Vim shared theme deployment", () => {
   it.each(["{}", "null", "[]", '{"foreground":"not-a-color"}'])(
     "rejects invalid light palettes before writing either theme: %s",
     async (source) => {
-      fileSystem["software/scripts/vim-color-light.jsonc"] = source;
+      fileSystem["theme/sy/vim_light.jsonc"] = source;
 
-      await expect(getIndexFunction("_doVimTheme")([`${home}/.vim`])).rejects.toThrow("Invalid Vim light palette");
+      await expect(getIndexFunction("_doVimTheme")([`${home}/.vim`])).rejects.toThrow(/Invalid (Sy vim\/light source|Vim light theme)/);
 
       expect(fileSystem).not.toHaveProperty(`${home}/.vim/colors/sy-dark.vim`);
       expect(fileSystem).not.toHaveProperty(`${home}/.vim/colors/sy-light.vim`);
@@ -130,7 +130,7 @@ describe("Vim shared theme deployment", () => {
   );
 
   it("rejects unknown theme appearances", async () => {
-    await expect(getIndexFunction("_buildVimTheme")("mirage")).rejects.toThrow("Vim theme mode must be dark or light");
+    await expect(getIndexFunction("_buildVimTheme")("mirage")).rejects.toThrow("Invalid Sy theme selector");
   });
 });
 

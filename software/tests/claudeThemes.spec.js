@@ -13,14 +13,8 @@ beforeAll(() => {
 beforeEach(() => {
   setSandboxGlobal("is_gui", true);
   setSandboxGlobal("getRuntimeOption", () => false);
-  fileSystem["software/scripts/advanced/llm/claude/claude-color-dark.jsonc"] = fs.readFileSync(
-    "software/scripts/advanced/llm/claude/claude-color-dark.jsonc",
-    "utf-8",
-  );
-  fileSystem["software/scripts/advanced/llm/claude/claude-color-light.jsonc"] = fs.readFileSync(
-    "software/scripts/advanced/llm/claude/claude-color-light.jsonc",
-    "utf-8",
-  );
+  fileSystem["theme/sy/claude_dark.jsonc"] = fs.readFileSync("theme/sy/claude_dark.jsonc", "utf-8");
+  fileSystem["theme/sy/claude_light.jsonc"] = fs.readFileSync("theme/sy/claude_light.jsonc", "utf-8");
 });
 
 describe("Claude Sy themes", () => {
@@ -107,17 +101,17 @@ describe("Claude Sy themes", () => {
   });
 
   it.each([
-    ["missing", "{}"],
-    ["null", "null"],
-    ["array", "[]"],
-    ["incomplete", '{"name":"Sy Light","foreground":"#1e1e1e"}'],
-    ["malformed", "{broken"],
-  ])("rejects %s light source before writing either theme or settings", async (_kind, source) => {
-    fileSystem["software/scripts/advanced/llm/claude/claude-color-light.jsonc"] = source;
+    ["missing", "{}", /Invalid Sy claude\/light source/],
+    ["null", "null", /Invalid Sy claude\/light source/],
+    ["array", "[]", /Invalid Sy claude\/light source/],
+    ["incomplete", '{"name":"Sy Light","foreground":"#1e1e1e"}', /Invalid Claude light native theme/],
+    ["malformed", "{broken", /Invalid Sy claude\/light source/],
+  ])("rejects %s light source before writing either theme or settings", async (_kind, source, error) => {
+    fileSystem["theme/sy/claude_light.jsonc"] = source;
     const existing = JSON.stringify({ theme: "light" });
     fileSystem[`${targetFolder}/settings.json`] = existing;
 
-    await expect(getIndexFunction("_doSettingsWork")(targetFolder)).rejects.toThrow(/Invalid Claude light palette/);
+    await expect(getIndexFunction("_doSettingsWork")(targetFolder)).rejects.toThrow(error);
 
     expect(fileSystem[`${targetFolder}/settings.json`]).toBe(existing);
     expect(fileSystem).not.toHaveProperty(`${targetFolder}/themes/sy-dark.json`);
@@ -136,11 +130,18 @@ describe("Claude Sy themes", () => {
     expect(fileSystem).not.toHaveProperty(`${targetFolder}/themes/sy-dark.json`);
   });
 
-  it("uses built-in dark without creating adapter files on a headless host", async () => {
+  it("deploys native Sy themes for a headless terminal interface", async () => {
     setSandboxGlobal("is_gui", false);
-
     await getIndexFunction("_doSettingsWork")(targetFolder);
+    expect(JSON.parse(fileSystem[`${targetFolder}/settings.json`]).theme).toBe("custom:sy-dark");
+    expect(JSON.parse(fileSystem[`${targetFolder}/themes/sy-dark.json`]).overrides.text).toBe("#e8e8e8");
+    expect(JSON.parse(fileSystem[`${targetFolder}/themes/sy-light.json`]).base).toBe("light");
+  });
 
+  it("keeps native selection without Sy writes on an opted-out headless host", async () => {
+    setSandboxGlobal("is_gui", false);
+    setSandboxGlobal("getRuntimeOption", () => true);
+    await getIndexFunction("_doSettingsWork")(targetFolder);
     expect(JSON.parse(fileSystem[`${targetFolder}/settings.json`]).theme).toBe("dark");
     expect(fileSystem).not.toHaveProperty(`${targetFolder}/themes/sy-dark.json`);
     expect(fileSystem).not.toHaveProperty(`${targetFolder}/themes/sy-light.json`);

@@ -110,6 +110,8 @@ The self-extracting installer bundles `theme/sy/` so these sources remain availa
 - Vim stores highlight groups, terminal ANSI colors, and Lightline data in JSONC; its setup script renders native Vimscript.
 - Ghostty and Termux store terminal palette data in JSONC; their setup scripts render native config/properties syntax.
 - Pi and OpenCode role sets are checked against the captured native reference definitions.
+- Pi selector checks model the native session/tree renderer: accent, dim, muted, warning, and error foregrounds must stay readable after selected-row background wrapping.
+- Pi uses syntax-preserving selection and readable secondary text; its light selection adds the generated tint required by the warning-text contrast check.
 - Copilot custom theme import was not verified. Its Sy records remain explicit capability gaps, not invented native themes.
 - A Termux light source exists, but native automatic light/dark switching is not assumed.
 
