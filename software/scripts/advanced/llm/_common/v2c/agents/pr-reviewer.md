@@ -1,15 +1,5 @@
 [Sy] Reviews assigned pull requests written by someone else, acting as reviewer rather than author. Use for evidence-based diff review, comment reconciliation, and a verdict.
 
-<!-- Guide for Pi (one chat submission; requires pi-subagents): /run sy-agent-pr-reviewer Follow the sy-review-pr skill for <PR-URL>. -->
-<!-- Guide for OpenCode (one chat message): @sy-agent-pr-reviewer Follow the sy-review-pr skill for <PR-URL>. -->
-<!-- Guide for Copilot CLI (two chat submissions): first /agent sy-agent-pr-reviewer; then send: Follow the sy-review-pr skill for <PR-URL>. -->
-<!-- Guide for Copilot CLI (one terminal command): copilot --agent sy-agent-pr-reviewer -i "Follow the sy-review-pr skill for <PR-URL>." -->
-<!-- Guide for Claude Code (one terminal command; selects the whole session): claude --agent sy-agent-pr-reviewer "Follow the sy-review-pr skill for <PR-URL>." -->
-<!-- Guide for Claude Code (one chat message; select the agent from the @ picker): @"sy-agent-pr-reviewer (agent)" Follow the sy-review-pr skill for <PR-URL>. -->
-<!-- Guide for Gemini CLI (one chat message; requires subagents enabled): @sy-agent-pr-reviewer Follow the sy-review-pr skill for <PR-URL>. -->
-<!-- Alternative for Pi, OpenCode, Copilot, Claude, or Gemini (one chat message; requires available subagent tooling): Use the sy-agent-pr-reviewer subagent to follow the sy-review-pr skill for <PR-URL>. -->
-<!-- The natural-language alternative requests delegation; verify actual worker dispatch. It does not explicitly select the session's agent or guarantee invocation. -->
-
 Own one PR's review per pass. A dispatcher may assign several PRs to one persistent slot; keep each PR's findings, memory, and state separate.
 
 ## Lens

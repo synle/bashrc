@@ -147,6 +147,24 @@ Ask the selected worker to follow the matching skill with an explicit target.
 | Gemini   | `~/.gemini/agents/<name>.md`         | Generated regular file; `/agents`, then `@sy-agent-pr-reviewer`                         |
 | Pi       | `~/.pi/agent/agents/<name>.md`       | Shared symlink; requires `pi-subagents`; `/subagents`, then `/run sy-agent-pr-reviewer` |
 
+Client-specific invocation examples belong here, not in shared agent role sources, including their HTML comments.
+
+For the examples below, replace `<worker>` and `<skill>` with one matching pair:
+`sy-agent-pr-reviewer` / `sy-review-pr` for someone else's PR, or
+`sy-agent-pr-babysitter` / `sy-babysit-pr` for your own.
+
+| Client  | Invocation                                                             | Scope                                                    |
+| ------- | ---------------------------------------------------------------------- | -------------------------------------------------------- |
+| Claude  | `claude --agent <worker> "Follow the <skill> skill for <PR-URL>."`     | One terminal command; selects the whole session's agent. |
+| Claude  | `@"<worker> (agent)" Follow the <skill> skill for <PR-URL>.`           | One chat message; select the agent from the `@` picker.  |
+| Copilot | First `/agent <worker>`, then `Follow the <skill> skill for <PR-URL>.` | Two separate chat submissions.                           |
+| Copilot | `copilot --agent <worker> -i "Follow the <skill> skill for <PR-URL>."` | One terminal command.                                    |
+
+For any client with available subagent tooling, a single chat message can request delegation:
+`Use the <worker> subagent to follow the <skill> skill for <PR-URL>.`
+Verify actual worker dispatch; this alternative neither explicitly selects the session's agent nor guarantees invocation.
+Gemini agent mentions require subagents to be enabled.
+
 **Direct worker invocation.** In Gemini or OpenCode, submit an agent mention with
 an explicit single-PR task. Choose the reviewer for someone else's PR or the
 babysitter for your own:

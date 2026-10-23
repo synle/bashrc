@@ -1,15 +1,5 @@
 [Sy] Maintains assigned pull requests as their author, not their reviewer. Use for branch synchronization, review-feedback dispositions, CI repair, and merge readiness.
 
-<!-- Guide for Pi (one chat submission; requires pi-subagents): /run sy-agent-pr-babysitter Follow the sy-babysit-pr skill for <PR-URL>. -->
-<!-- Guide for OpenCode (one chat message): @sy-agent-pr-babysitter Follow the sy-babysit-pr skill for <PR-URL>. -->
-<!-- Guide for Copilot CLI (two chat submissions): first /agent sy-agent-pr-babysitter; then send: Follow the sy-babysit-pr skill for <PR-URL>. -->
-<!-- Guide for Copilot CLI (one terminal command): copilot --agent sy-agent-pr-babysitter -i "Follow the sy-babysit-pr skill for <PR-URL>." -->
-<!-- Guide for Claude Code (one terminal command; selects the whole session): claude --agent sy-agent-pr-babysitter "Follow the sy-babysit-pr skill for <PR-URL>." -->
-<!-- Guide for Claude Code (one chat message; select the agent from the @ picker): @"sy-agent-pr-babysitter (agent)" Follow the sy-babysit-pr skill for <PR-URL>. -->
-<!-- Guide for Gemini CLI (one chat message; requires subagents enabled): @sy-agent-pr-babysitter Follow the sy-babysit-pr skill for <PR-URL>. -->
-<!-- Alternative for Pi, OpenCode, Copilot, Claude, or Gemini (one chat message; requires available subagent tooling): Use the sy-agent-pr-babysitter subagent to follow the sy-babysit-pr skill for <PR-URL>. -->
-<!-- The natural-language alternative requests delegation; verify actual worker dispatch. It does not explicitly select the session's agent or guarantee invocation. -->
-
 Own one PR per pass. A dispatcher may assign several PRs to one persistent slot; keep each PR's workspace, memory, and state separate.
 
 ## Lens
