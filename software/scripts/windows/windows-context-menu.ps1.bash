@@ -1,11 +1,13 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-Removes Git Explorer verbs and installs root-safe, per-user PowerShell and WSL verbs.
+Removes Git verbs, hides duplicate system launchers, and installs per-user shell verbs.
 .DESCRIPTION
 Run on Windows as the affected user. Elevation allows machine-level Git removal;
 permission-denied deletion falls back to hiding the verb for the current user.
 Exports existing keys before changes and throws if a backup or registry write fails.
+PowerShell opens in Windows Terminal when wt.exe is available, otherwise directly.
+System WSL verbs and Terminal shell extensions are hidden only for the current user.
 Backups under LOCALAPPDATA\Sy\ContextMenuBackup are never overwritten.
 #>
 $ErrorActionPreference = 'Stop'
@@ -58,19 +60,42 @@ foreach ($scope in @('Directory', 'Directory\Background', 'LibraryFolder\Backgro
     }
 }
 
+# Keep the custom Linux entry; hide Windows-owned WSL verbs without changing machine keys.
+foreach ($scope in @('Directory', 'Directory\Background', 'LibraryFolder\Background', 'Drive')) {
+    $key = "HKEY_CURRENT_USER\Software\Classes\$scope\shell\WSL"
+    Save-ContextMenuKey -Key $key
+    New-Item -Path "Registry::$key" -Force | Out-Null
+    New-ItemProperty -LiteralPath "Registry::$key" -Name 'LegacyDisable' -Value '' -PropertyType String -Force | Out-Null
+}
+
+# Stable and Preview Terminal Explorer extensions; blocking them does not disable wt.exe.
+$blockedKey = 'HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked'
+Save-ContextMenuKey -Key $blockedKey
+New-Item -Path "Registry::$blockedKey" -Force | Out-Null
+foreach ($extension in @('{9f156763-7844-4dc4-b2b1-901f640f5155}', '{02db545a-3e20-46de-83a5-1329b1e88b6b}')) {
+    New-ItemProperty -LiteralPath "Registry::$blockedKey" -Name $extension -Value '' -PropertyType String -Force | Out-Null
+}
+
 # Resolve real applications now, not aliases or the maintenance script's own engine.
 $modernShell = Get-Command pwsh.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 $powerShellBinary = if ($null -ne $modernShell) { '"' + $modernShell.Source + '"' } else { 'powershell.exe' }
+$terminal = Get-Command wt.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$powerShellCommand = if ($null -ne $terminal) {
+    # Explicitly host the shell; the system default-terminal setting alone can still use conhost.
+    '"' + $terminal.Source + '" new-tab --startingDirectory "%V\." ' + $powerShellBinary + ' -NoExit'
+} else {
+    $powerShellBinary + ' -NoExit -WorkingDirectory "%V\."'
+}
 $menus = @(@{
     Verb = 'Powershell'
-    Label = 'Open Powershell Here'
-    Command = $powerShellBinary + ' -NoExit -WorkingDirectory "%V\."'
+    Label = 'Open PowerShell Here'
+    Command = $powerShellCommand
 })
 $wsl = Get-Command wsl.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($null -ne $wsl) {
     $menus += @{
         Verb = 'SyWSL'
-        Label = 'Open WSL Linux Here'
+        Label = 'Open Linux Shell Here'
         Command = '"' + $wsl.Source + '" --cd "%V\."'
     }
 }

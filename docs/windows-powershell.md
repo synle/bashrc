@@ -119,21 +119,27 @@ The script exports each existing affected registry key before changing it:
   Git and unknown/custom verbs remain installed. A Git update may recreate its menu
   entries; rerun normal provisioning or the copied maintenance script.
 - Creates current-user `Powershell` overrides for `Directory`,
-  `Directory\Background`, and `Drive`, labeled **Open Powershell Here**.
-  At registry-write time, checks `Get-Command pwsh.exe -CommandType Application`:
-  if found, writes its quoted full executable path; otherwise uses `powershell.exe`.
-  Both commands receive `-NoExit -WorkingDirectory "%V\."`. Rerun after installing,
-  moving, or removing PowerShell 7 to refresh the stored selection. Windows-owned
-  machine PowerShell keys are not modified. This menu selection is independent
-  of Windows Terminal's profiles; `Powershell v5` always uses `powershell.exe`.
+  `Directory\Background`, and `Drive`, labeled **Open PowerShell Here**.
+  At registry-write time, discovers `pwsh.exe` as an application; if absent, selects `powershell.exe`.
+  When `wt.exe` is available, its quoted path launches `new-tab --startingDirectory "%V\."`, followed by the selected shell and `-NoExit`.
+  This explicitly requests Windows Terminal hosting instead of relying on Windows' default-terminal delegation.
+  Without `wt.exe`, retains direct launch with `-NoExit -WorkingDirectory "%V\."`.
+  Rerun maintenance after installing, moving, or removing either executable to refresh its stored command.
+  Windows-owned machine PowerShell keys remain unchanged.
 - If `wsl.exe` is discoverable as an application, creates per-user `SyWSL` verbs
-  in those same three scopes, labeled **Open WSL Linux Here**, with the quoted
+  in those same three scopes, labeled **Open Linux Shell Here**, with the quoted
   binary path followed by `--cd "%V\."`. WSL uses its default distribution; the
-  binary's presence does not prove that a distribution is installed. Other WSL
-  menu entries remain untouched and may coexist. If WSL is later removed, restore
-  or remove only these backed-up `SyWSL` keys; absence does not delete prior entries.
+  binary's presence does not prove that a distribution is installed.
+  If WSL is later removed, restore or remove only these backed-up `SyWSL` keys; absence does not delete prior entries.
   Both labels explicitly set `MUIVerb` as well as the default value so an inherited
   machine label cannot override the requested text.
+- Hides built-in `WSL` verbs using current-user `LegacyDisable` overrides in `Directory`, `Directory\Background`, `LibraryFolder\Background`, and `Drive`.
+  This keeps one managed Linux entry without deleting Windows' registrations.
+  Unknown third-party WSL verbs remain untouched; inspect their registry identities if another duplicate persists.
+- Hides **Open in Terminal** for this user by blocking the stable and Preview Explorer shell extensions.
+  Their identifiers are `{9f156763-7844-4dc4-b2b1-901f640f5155}` and `{02db545a-3e20-46de-83a5-1329b1e88b6b}`.
+  Values live under `HKCU\Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked`.
+  Terminal itself and unrelated menus, including Zed, remain installed.
 - Does not invoke `last_folder`. Windows shell tweaks also no longer invoke that
   helper automatically; it remains available manually. Existing shell sessions
   need a profile reload or restart to pick up the startup change.
@@ -165,19 +171,45 @@ separately before deleting it.
 
 After applying, open a new Explorer window. Check a folder icon, folder background,
 a drive icon, and a library background: Git entries should be absent. Launch
-**Open Powershell Here** at `D:\` and in an existing folder containing spaces,
+**Open PowerShell Here** at `D:\` and in an existing folder containing spaces,
 apostrophes, or brackets. `Get-Location` must match the chosen folder with no
 startup path error; `$PSVersionTable.PSEdition` should be `Core` when `pwsh.exe`
-was discovered, otherwise `Desktop`. Check **Open WSL Linux Here** with `pwd`
-in a configured default distribution; it should match the chosen Windows folder's
-WSL mount, not the remembered folder. Repeat after rerunning with `pwsh.exe`
-unavailable to verify the fallback selection.
+was discovered, otherwise `Desktop`. With `wt.exe` available, verify that the shell opens as a Terminal tab.
+Confirm **Open in Terminal** and the built-in WSL entry are absent, including in the extended menu.
+Check **Open Linux Shell Here** with `pwd` in a configured default distribution.
+It should match the chosen Windows folder's WSL mount, except System32 startup redirects to home as described below.
+Repeat after rerunning with `pwsh.exe` unavailable to verify the fallback selection.
 Run the maintenance script twice; the second run must retain the first backups
 and leave the same effective menu configuration. PowerShell tests on macOS execute
 the script with registry boundary fixtures when those tests are run; they do not
 prove Explorer behavior, Windows registry merging, or Windows PowerShell 5.1
 argument parsing. The automatic cleanup change still needs verification on the
 affected Windows host; a source-only review is not proof that its live menu disappeared.
+
+## Windows Terminal window and tab preferences
+
+`software/scripts/windows-terminal.js` applies these global preferences to both live settings and the portable artifact:
+
+| Setting                                                                                 | JSON value                              |
+| --------------------------------------------------------------------------------------- | --------------------------------------- |
+| New instance behavior: attach to the most recently used window, across virtual desktops | `"windowingBehavior": "useAnyExisting"` |
+| Tab switcher interface: separate window, in tab strip order                             | `"tabSwitcherMode": "inOrder"`          |
+| Show tabs in full screen                                                                | `"showTabsFullscreen": true`            |
+| Position of newly created tab: after the current tab                                    | `"newTabPosition": "afterCurrentTab"`   |
+
+These managed values override previous choices when provisioning runs.
+They do not change the default-terminal application registration or force a specific Terminal launch mode for context-menu tabs.
+A recent Terminal version is required for the fullscreen-tab option.
+Verify the four controls in Terminal settings, then test a second invocation, tab switching, fullscreen, and tab creation.
+
+## WSL System32 startup folder
+
+WSL platform tweaks redirect `/mnt/c/WINDOWS/system32` to `$HOME` during startup, including ASCII case variants.
+The check runs once per shell, not on every prompt or profile reload.
+A non-exported sentinel lets each child shell perform its own startup check.
+Other folders, nested System32 folders, other drives, and non-WSL shells retain their launch folder.
+After startup, an explicit `cd` into System32 remains there.
+Restart the shell after deployment to exercise the new startup check.
 
 ## Diagnose remaining `E:"` startup errors on Windows
 

@@ -58,11 +58,15 @@ $env:OS = if ($scenario -eq 'non-windows') { 'Other' } else { 'Windows_NT' }
 $env:LOCALAPPDATA = '/fixture'
 $script:removed = @()
 $script:hidden = @()
+$script:blocked = @()
 $script:labels = @()
 $script:commands = @()
 function Get-Command {
   param($Name, $CommandType, $ErrorAction)
-  if ($Name -eq 'pwsh.exe' -and $scenario -in @('modern', 'modern-wsl')) {
+  if ($Name -eq 'wt.exe' -and $scenario -in @('terminal', 'terminal-modern')) {
+    return @{ Source = 'C:\Users\Test User\AppData\Local\Microsoft\WindowsApps\wt.exe' }
+  }
+  if ($Name -eq 'pwsh.exe' -and $scenario -in @('modern', 'modern-wsl', 'terminal-modern')) {
     return @{ Source = 'C:\Program Files\PowerShell\7\pwsh.exe' }
   }
   if ($Name -eq 'wsl.exe' -and $scenario -in @('wsl', 'modern-wsl')) {
@@ -103,6 +107,7 @@ function New-ItemProperty {
   param($LiteralPath, $Name, $Value, $PropertyType, [switch]$Force)
   if ($Name -eq 'LegacyDisable') { $script:hidden += @{ Key = $LiteralPath; Name = $Name; Value = $Value } }
   if ($Name -eq 'MUIVerb') { $script:labels += @{ Key = $LiteralPath; Value = $Value } }
+  if ($LiteralPath.EndsWith('\Shell Extensions\Blocked')) { $script:blocked += @{ Name = $Name; Value = $Value } }
 }
 function Set-Item {
   param($LiteralPath, $Value)
@@ -114,7 +119,7 @@ try {
   $source = [Console]::In.ReadToEnd()
   & ([scriptblock]::Create($source))
   if ($scenario -eq 'twice') { & ([scriptblock]::Create($source)) }
-  @{ Removed = $script:removed; Hidden = $script:hidden; Commands = $script:commands; Labels = $script:labels; Exports = $script:exports } | ConvertTo-Json -Depth 5 -Compress
+  @{ Removed = $script:removed; Hidden = $script:hidden; Blocked = $script:blocked; Commands = $script:commands; Labels = $script:labels; Exports = $script:exports } | ConvertTo-Json -Depth 5 -Compress
 } catch {
   @{ Error = $_.Exception.Message; Removed = $script:removed; Commands = $script:commands; Hidden = $script:hidden } | ConvertTo-Json -Compress
   exit 1
@@ -169,7 +174,7 @@ describe.skipIf(!hasPwsh)("Explorer maintenance consumer (PowerShell integration
     const result = runMaintenance();
     expect(result.status, result.stderr).toBe(0);
     expect(result.output.Removed).toHaveLength(16);
-    expect(result.output.Exports).toHaveLength(19);
+    expect(result.output.Exports).toHaveLength(24);
     expect(result.output.Removed).toEqual(
       expect.arrayContaining([
         "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Drive\\shell\\git_gui",
@@ -178,22 +183,23 @@ describe.skipIf(!hasPwsh)("Explorer maintenance consumer (PowerShell integration
         "Registry::HKEY_LOCAL_MACHINE\\Software\\Classes\\Drive\\shell\\git_shell",
       ]),
     );
-    expect(result.output.Hidden).toEqual([]);
-    expect(result.output.Labels.map(({ Value }) => Value)).toEqual(Array(3).fill("Open Powershell Here"));
-    expect(result.output.Commands).toEqual([
-      {
-        Key: "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\Powershell\\command",
-        Value: 'powershell.exe -NoExit -WorkingDirectory "%V\\."',
-      },
-      {
-        Key: "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Directory\\Background\\shell\\Powershell\\command",
-        Value: 'powershell.exe -NoExit -WorkingDirectory "%V\\."',
-      },
-      {
-        Key: "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Drive\\shell\\Powershell\\command",
-        Value: 'powershell.exe -NoExit -WorkingDirectory "%V\\."',
-      },
+    expect(result.output.Hidden.map(({ Key }) => Key)).toEqual([
+      "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\WSL",
+      "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Directory\\Background\\shell\\WSL",
+      "Registry::HKEY_CURRENT_USER\\Software\\Classes\\LibraryFolder\\Background\\shell\\WSL",
+      "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Drive\\shell\\WSL",
     ]);
+    expect(result.output.Blocked).toEqual([
+      { Name: "{9f156763-7844-4dc4-b2b1-901f640f5155}", Value: "" },
+      { Name: "{02db545a-3e20-46de-83a5-1329b1e88b6b}", Value: "" },
+    ]);
+    expect(result.output.Labels.map(({ Value }) => Value)).toEqual(Array(3).fill("Open PowerShell Here"));
+    expect(result.output.Commands.map(({ Key }) => Key)).toEqual([
+      "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\Powershell\\command",
+      "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Directory\\Background\\shell\\Powershell\\command",
+      "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Drive\\shell\\Powershell\\command",
+    ]);
+    expect(result.output.Commands.map(({ Value }) => Value)).toEqual(Array(3).fill('powershell.exe -NoExit -WorkingDirectory "%V\\."'));
   });
 
   it.each(["modern", "modern-wsl"])("prefers the discovered pwsh executable with a quoted path (%s)", (scenario) => {
@@ -213,21 +219,34 @@ describe.skipIf(!hasPwsh)("Explorer maintenance consumer (PowerShell integration
     expect(commands).toHaveLength(3);
     expect(commands.every(({ Value }) => Value === '"C:\\Windows\\System32\\wsl.exe" --cd "%V\\."')).toBe(true);
     expect(result.output.Labels.map(({ Value }) => Value)).toEqual([
-      "Open Powershell Here",
-      "Open WSL Linux Here",
-      "Open Powershell Here",
-      "Open WSL Linux Here",
-      "Open Powershell Here",
-      "Open WSL Linux Here",
+      "Open PowerShell Here",
+      "Open Linux Shell Here",
+      "Open PowerShell Here",
+      "Open Linux Shell Here",
+      "Open PowerShell Here",
+      "Open Linux Shell Here",
     ]);
-    expect(result.output.Exports).toHaveLength(22);
+    expect(result.output.Exports).toHaveLength(27);
   });
 
-  it("hides only the eight denied machine Git verbs for the current user", () => {
+  it.each([
+    ["terminal", "powershell.exe"],
+    ["terminal-modern", '"C:\\Program Files\\PowerShell\\7\\pwsh.exe"'],
+  ])("hosts the selected PowerShell in Terminal when available (%s)", (scenario, binary) => {
+    const result = runMaintenance(scenario);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.output.Commands.map(({ Value }) => Value)).toEqual(
+      Array(3).fill(
+        '"C:\\Users\\Test User\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe" new-tab --startingDirectory "%V\\." ' + binary + " -NoExit",
+      ),
+    );
+  });
+
+  it("hides denied Git verbs and built-in WSL verbs for the current user", () => {
     const result = runMaintenance("denied");
     expect(result.status, result.stderr).toBe(0);
     expect(result.output.Removed).toHaveLength(8);
-    expect(result.output.Hidden).toHaveLength(8);
+    expect(result.output.Hidden).toHaveLength(12);
     expect(result.output.Hidden[0]).toEqual({
       Key: "Registry::HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\git_gui",
       Name: "LegacyDisable",
@@ -264,7 +283,9 @@ describe.skipIf(!hasPwsh)("Explorer maintenance consumer (PowerShell integration
   it("preserves first-run backups when maintenance runs twice", () => {
     const result = runMaintenance("twice");
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output.Exports).toHaveLength(19);
+    expect(result.output.Exports).toHaveLength(24);
+    expect(result.output.Blocked).toHaveLength(4);
+    expect(result.output.Hidden).toHaveLength(8);
     expect(result.output.Commands).toHaveLength(6);
     expect(result.output.Commands[3]).toEqual(result.output.Commands[0]);
   });

@@ -108,7 +108,9 @@ async function doWork() {
     copyFormatting: false,
 
     // tabs
-    tabSwitcherMode: "disabled",
+    tabSwitcherMode: "inOrder",
+    newTabPosition: "afterCurrentTab",
+    showTabsFullscreen: true,
     tabWidthMode: "equal",
     confirmCloseAllTabs: true,
 
@@ -117,6 +119,7 @@ async function doWork() {
     focusFollowMouse: false, // require click to focus pane (like iTerm), set to true for hover-to-focus
 
     // window
+    windowingBehavior: "useAnyExisting",
     launchMode: "maximized",
     showTerminalTitleInTitlebar: true,
     startOnUserLogin: true,
