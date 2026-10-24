@@ -163,6 +163,8 @@ root = rev-parse --show-toplevel # Print repo root path
 current = branch --show-current # Print current branch name
 
 # ---- Pull / Push / Fetch ----
+f = "!git fapr" # Reuse fetch, prune, and rebase
+fp = "!git fapr && git po" # Reuse fetch/rebase, then push only on success
 fap = fetch --all --prune # Fetch all and purge deleted remotes
 fapr = "!git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git gc --prune=now && git fap && git r" # Reset fetch refspec, GC, fetch all, prune, then rebase
 p = pull
