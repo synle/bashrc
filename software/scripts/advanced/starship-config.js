@@ -117,7 +117,10 @@ async function doWork() {
       function _starship_preexec() {
         export STARSHIP_LOCAL_TIME="$(_starship_time)"
         export STARSHIP_UTC_TIME="$(_starship_time 'UTC')"
-        export STARSHIP_IP_ADDR="$(ifconfig2)"
+        local ip_addresses
+        ip_addresses="$(ifconfig2)"
+        # Keep machine-facing ifconfig2 output unchanged; space only the prompt list.
+        export STARSHIP_IP_ADDR="\${ip_addresses//,/, }"
         export STARSHIP_SHORT_PWD="$(shorter_pwd_path)"
         # disabled: python/node path:version info (uncomment to re-enable)
         # local _py_info
