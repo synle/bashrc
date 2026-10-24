@@ -3,6 +3,9 @@
 # --- Git Helpers ---
 ################################################################################
 
+# Refresh the current worktree's CodeGraph index through the guarded helper.
+alias refresh_codegraph="codegraph_refresh"
+
 # list source repo names for a GitHub user (default: synle)
 function repos() {
   if is_help_arg "${1:-}"; then
