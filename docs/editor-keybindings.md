@@ -898,7 +898,7 @@ Because Copilot's in-app keymap is unreachable, the equivalents of Claude's chor
 | Copilot CLI — `ctrl+x` open `$EDITOR` alias | Not a functional gap: `ctrl+g` (the canonical open-`$EDITOR` chord across all four CLIs) is already Copilot's hardcoded default, so editor-open works. Only the secondary `ctrl+x` alias is unreachable — `ctrl+x` is Copilot's own two-step prefix (`ctrl+x` → `b` / `o`) and there is no keymap surface to re-home it. |
 | Copilot CLI — user-level slash commands | Copilot's "skills" require a plugin manifest (`copilot plugin install`) — there's no `~/.copilot/commands/*.md` fallthrough like Claude's. Out of scope for `setup.js`; use the Captain `install-plugin-to-copilot` skill or manage plugins manually. |
 | Gemini CLI — user-level slash commands | Gemini's equivalent is the extension system (`gemini extensions install/link`) which requires an extension manifest. No `~/.gemini/commands/*.md` fallthrough. Out of scope for `setup.js`. |
-| OpenCode — sidebar hidden by default | The TUI schema (`https://opencode.ai/tui.json`) has no field for sidebar default state; the SQLite db (`~/.local/share/opencode/opencode.db`) has no settings table for view state. Only runtime toggles exist: `ctrl+\` / `super+\` (macOS/Linux) / `alt+\` (Windows) keybind or `ctrl+p` command palette. |
+| OpenCode — declarative sidebar state | The TUI schema has no sidebar field. Bootstrap's native startup plugin sets persisted KV `sidebar: "hide"`; existing sidebar keybinds and `ctrl+p` can override it until the next startup. |
 | OpenCode / Copilot — `ctrl+t` toggle todos | Neither tool has a todos panel. OpenCode's default `ctrl+t` is `variant_cycle`, left intact. (Gemini's `app.showFullTodos` is native on `ctrl+t`.) |
 
 ---

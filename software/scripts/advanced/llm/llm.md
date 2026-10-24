@@ -344,6 +344,29 @@ verified OpenCode scripting API: use the runtime's exposed tool schema instead.
 Neither individual-tool speedups nor Pi-equivalent UI rendering are guaranteed;
 native interactive execution and performance parity remain unverified.
 
+### OpenCode managed command-palette preferences
+
+`opencode/setup.js` registers the local `sy-ui-preferences.mjs` plugin in `tui.json`.
+The OpenCode 1.19.3 TUI schema has no direct fields for these persisted command-palette preferences:
+
+| Preference     | Explicit startup value          |
+| -------------- | ------------------------------- |
+| Diff wrapping  | `diff_wrap_mode: "word"`        |
+| Scrollbar      | `scrollbar_visible: true`       |
+| Paste summary  | `paste_summary_enabled: true`   |
+| Timestamps     | `timestamps: "show"`            |
+| Terminal title | `terminal_title_enabled: true`  |
+| Sidebar        | `sidebar: "hide"`               |
+| Tool details   | `tool_details_visibility: true` |
+
+The plugin uses native commands for paste-summary and terminal-title controls, then writes only managed values through the native KV API.
+Deployment never edits a running session's `kv.json` directly.
+Unrelated plugins and saved preferences, including animations, thinking mode, and theme selection, remain unchanged.
+Command-palette changes remain available during a session; the plugin reapplies managed values on the next startup.
+
+Refresh with `bash run.sh --files="advanced/llm/opencode/setup.js"` or the broader `bash run.sh --preset=llm`, then restart OpenCode.
+Existing sessions keep their loaded plugins and local state.
+
 ### OpenCode nested dispatch
 
 For OpenCode 1.19.3, bootstrap generates top-level `subagent_depth: 2` and

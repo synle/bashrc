@@ -307,22 +307,31 @@ async function _doOpencodeThemeWork(configHome, selected) {
 }
 
 /**
- * Writes ~/.config/opencode/tui.json with managed TUI defaults + keybinds.
+ * Writes managed TUI defaults, keybinds, and a native startup-preference plugin.
  * Keybinds belong in tui.json (the TUI config), not in opencode.json (the
  * provider/config schema at https://opencode.ai/config.json which has no
  * keybinds field). Schema: https://opencode.ai/tui.json.
  *
- * Managed fields written here (overwrite on every run):
- *   mouse, scroll_speed, scroll_acceleration, attention, keybinds.
- *
- * Strips invalid legacy top-level fields (`title`, `animations`) that crept
- * into earlier versions but are not valid in the tui.json schema. All other
- * existing keys are preserved.
+ * Preserves unrelated plugins and settings, strips invalid legacy title/animations,
+ * and applies seven managed KV preferences through OpenCode's own startup API.
+ * Never writes kv.json while another session may own it.
+ * @param {string} [configHome=getLLMConfigHome()] - Base configuration home.
+ * @param {boolean} [isWindowsConfig=is_os_windows] - Whether to use Windows keybindings.
+ * @returns {Promise<void>} Resolves after backing up and writing TUI configuration and its plugin.
+ * @throws {TypeError} If an existing plugin list is malformed; no files are written.
+ * @throws {Error} If theme validation or configuration IO fails.
  */
 async function _writeOpencodeTuiConfig(configHome = getLLMConfigHome(), isWindowsConfig = is_os_windows) {
   const tuiPath = path.join(configHome, ".config/opencode/tui.json");
   /** @type {Record<string, any>} */
   const existing = (await readJson`${tuiPath}`) || {};
+  if (existing.plugin !== undefined && !Array.isArray(existing.plugin)) {
+    throw new TypeError("OpenCode TUI plugin must be an array");
+  }
+  /** Stable native plugin identity, also used for its deployed filename. */
+  const pluginId = "sy-ui-preferences";
+  /** Absolute plugin path; native configuration resolves and URL-encodes file entries. */
+  const pluginPath = path.join(configHome, ".config/opencode", `${pluginId}.mjs`);
   // Strip invalid legacy top-level fields not in the tui.json schema
   delete existing.title;
   delete existing.animations;
@@ -334,6 +343,7 @@ async function _writeOpencodeTuiConfig(configHome = getLLMConfigHome(), isWindow
     $schema: "https://opencode.ai/tui.json",
     ...existing,
     theme,
+    plugin: [...(existing.plugin ?? []).filter((entry) => entry !== pluginPath), pluginPath],
     mouse: true,
     // Force single-column stacked diff rendering instead of the default "auto"
     // (which flips to side-by-side on wide terminals). Stacked diffs read
@@ -387,6 +397,39 @@ async function _writeOpencodeTuiConfig(configHome = getLLMConfigHome(), isWindow
   if (keybinds && Object.keys(keybinds).length > 0) {
     out.keybinds = keybinds;
   }
+  // OpenCode 1.19.3 exposes these command-palette preferences only through KV.
+  // A TUI plugin uses the application's own locking and preserves other choices.
+  /** Native startup module; no dependencies, network access, or direct state-file writes. */
+  const pluginSource = `/** Applies managed command-palette preferences at TUI startup. */
+export default {
+  id: ${JSON.stringify(pluginId)},
+  /**
+   * Applies managed values while preserving unrelated saved preferences.
+   * @param {import("@opencode-ai/plugin/tui").TuiPluginApi} api - Native TUI state and command API.
+   * @returns {Promise<void>} Resolves after native commands and KV updates.
+   */
+  async tui(api) {
+    /** Explicit bootstrap-owned preferences; Ctrl+P changes last until the next startup. */
+    const preferences = {
+      diff_wrap_mode: "word",
+      scrollbar_visible: true,
+      paste_summary_enabled: true,
+      timestamps: "show",
+      terminal_title_enabled: true,
+      sidebar: "hide",
+      tool_details_visibility: true,
+    };
+    // These two controls capture startup values in local signals rather than reacting to KV.
+    if (!api.kv.get("paste_summary_enabled", true)) api.keymap.dispatchCommand("app.toggle.paste_summary");
+    if (!api.kv.get("terminal_title_enabled", true)) api.keymap.dispatchCommand("terminal.title.toggle");
+    for (const [key, value] of Object.entries(preferences)) {
+      if (api.kv.get(key) !== value) api.kv.set(key, value);
+    }
+  },
+};
+`;
+  await backupConfigFile(pluginPath);
+  await writeText(pluginPath, pluginSource);
   await backupConfigFile(tuiPath);
   await writeJson(tuiPath, out);
   log(">> opencode tui.json written:", tuiPath);

@@ -83,13 +83,10 @@
 //   All ~30 <leader>X chords keep working — they're just typed as
 //   ctrl+o <key> now instead of ctrl+x <key>.
 //
-// Sidebar-hidden-by-default is not supported by the current OpenCode release:
-//   - The TUI schema (https://opencode.ai/tui.json) has no field for it.
-//   - The opencode SQLite db has no settings table for view state.
-//   - The command-palette "Hide sidebar" command (ctrl+p) is a runtime
-//     toggle only, not persisted between launches.
-//   - The only knob is the toggle keybind (now ctrl+\ or super+\).
-//   Documented as a permanent gap in docs/editor-keybindings.md.
+// OpenCode persists sidebar visibility in its state-folder kv.json.
+// setup.js registers a native TUI startup plugin that explicitly hides it.
+// The keybind and Ctrl+P palette can still toggle it during the session;
+// the managed hidden preference is reapplied at the next startup.
 {
   "keybinds": {
     // Move leader off ctrl+x so we can bind ctrl+x directly to editor_open.
