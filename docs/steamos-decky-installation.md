@@ -5,7 +5,7 @@
 Run as the normal Linux desktop account, **not** with `sudo`:
 
 ```bash
-./run --files=decky-and-css-loader
+./run --files=software/scripts/decky-and-css-loader.standalone.js
 ```
 
 The installer is on-demand only. It can share a comma-separated `--files=` selection
@@ -20,7 +20,16 @@ Linux desktop installations excluding WSL are supported. CI and dry-run selectio
 skip downloads and protected writes. The runtime rejects root and mismatched HOME
 before creating logs or downloading packages. `curl`, `sudo`, Linux account lookup
 (`getent`), and `/proc/self/fd` are required. `jq` is required only if the upstream
-Loader bootstrap must run. Existing Loader services are not upgraded or restarted.
+Loader bootstrap must run.
+
+Every accepted setup checks the latest stable Loader release against
+`~/homebrew/services/.loader.version`. A complete installation at that version skips
+Loader reinstallation. Missing, unreadable, or different versions trigger the upstream
+stable installer, including replacement of custom or prerelease versions.
+The upstream installer replaces Loader service files and restarts the service;
+matching installations do not restart. Failed version lookups or post-install
+verification stop setup instead of reporting an unknown version as current.
+Plugins and themes remain pinned separately; this check does not discover their updates.
 
 ## Cache and trust
 
@@ -60,8 +69,8 @@ No failure is reported as a verified installation.
 
 The shared installer prints its private `~/Desktop/decky-install-*/install.log` path.
 It records staging phases, package installation, protected write/verification output,
-Loader bootstrap output when needed, and failure diagnostics. The private folder is
-mode `700`; the log is mode `600`. Temporary download work is removed on success or
+Loader version checks, bootstrap output when needed, and failure diagnostics.
+The private folder is mode `700`; the log is mode `600`. Temporary download work is removed on success or
 failure; logs persist. SteamOS setup also retains its private
 `~/Desktop/steamos-setup.XXXXXX` stdout/stderr log, with timestamp, identity, OS/kernel,
 Bash version, and source checksum (unavailable for streamed input).

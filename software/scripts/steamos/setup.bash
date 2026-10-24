@@ -155,7 +155,7 @@ function _bootstrap_decky_loader_plugins_themes() {
     "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" \
     -o "$installer_folder/run" \
     && chmod +x "$installer_folder/run"; then
-    "$installer_folder/run" --files=decky-and-css-loader < /dev/null || status=$?
+    "$installer_folder/run" --files=software/scripts/decky-and-css-loader.standalone.js < /dev/null || status=$?
   else
     status=$?
   fi

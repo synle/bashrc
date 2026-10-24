@@ -9,8 +9,10 @@ const packages = require("../../metadata/decky-packages.json");
 
 /** Rolling release cache; package trust comes from the local pins, not remote metadata. */
 const CACHE_URL = "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip";
-/** Upstream Loader bootstrap; only invoked when the Loader is absent. */
+/** Upstream Loader bootstrap for absent, incomplete, or non-current stable installations. */
 const LOADER_URL = "https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_release.sh";
+/** Authoritative stable Loader version; fetched afresh for each explicit installation. */
+const LOADER_RELEASE_URL = "https://api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/latest";
 /** Bound simultaneous artifact downloads without an additional runtime dependency. */
 const DOWNLOAD_BATCH_SIZE = 3;
 
@@ -205,7 +207,10 @@ function command(program, args, options = {}) {
 /**
  * Install Decky and validated packages for the invoking desktop user; resolve void or reject on failure.
  * Requires Linux, matching non-root HOME, curl, sudo, Node, and jq only when Loader bootstrap is needed.
+ * Checks the latest stable version on every run; upgrades or repairs before installing pinned packages.
  * Downloads stay unprivileged; only upstream bootstrap and descriptor-anchored archive writes use sudo.
+ * @param {object} options - Trusted staging options, including optional package pins and downloader.
+ * @returns {Promise<void>} Resolves after verification; rejects on version lookup, bootstrap, or package failures.
  */
 async function install(options = {}) {
   if (process.platform !== "linux") throw new Error("Decky requires a Linux desktop");
@@ -229,15 +234,37 @@ async function install(options = {}) {
   try {
     const folder = path.join(work, "packages");
     await stage(folder, { ...options, report });
+    report(">>> Decky phase=loader-version-check");
+    const releaseFile = path.join(work, "loader-release.json");
+    await download(LOADER_RELEASE_URL, releaseFile);
+    if (fs.statSync(releaseFile).size > LIMITS.metadata) throw new Error("Loader release metadata exceeds 1 MiB");
+    const release = JSON.parse(fs.readFileSync(releaseFile, "utf8"));
+    if (
+      !release ||
+      typeof release !== "object" ||
+      Array.isArray(release) ||
+      typeof release.tag_name !== "string" ||
+      !/^v?[0-9]+\.[0-9]+\.[0-9]+$/.test(release.tag_name) ||
+      release.prerelease !== false ||
+      release.draft !== false
+    )
+      throw new Error("Loader stable release metadata requires a stable tag_name, prerelease=false, and draft=false");
+    const latestVersion = release.tag_name.replace(/^v/, "");
     const service = path.join(home, "homebrew/services/PluginLoader");
-    let installed = false;
+    const versionFile = path.join(home, "homebrew/services/.loader.version");
+    let installedVersion = "";
     try {
       fs.accessSync(service, fs.constants.X_OK);
-      installed = fs.statSync(path.join(home, "homebrew/plugins")).isDirectory();
+      if (fs.statSync(path.join(home, "homebrew/plugins")).isDirectory()) {
+        const version = fs.readFileSync(versionFile, "utf8").trim().replace(/^v/, "");
+        if (/^[0-9]+\.[0-9]+\.[0-9]+$/.test(version)) installedVersion = version;
+      }
     } catch (error) {
       if (!["ENOENT", "EACCES"].includes(error.code)) throw error;
+      report(`>>> Decky Loader version unavailable code=${error.code}; latest stable installation required`);
     }
-    if (!installed) {
+    report(`>>> Decky phase=loader-version installed=${installedVersion || "unknown"} latest=${latestVersion}`);
+    if (installedVersion !== latestVersion) {
       command("jq", ["--version"], commandOptions);
       const bootstrap = path.join(work, "install_release.sh");
       await download(LOADER_URL, bootstrap);
@@ -245,6 +272,11 @@ async function install(options = {}) {
       fs.accessSync(service, fs.constants.X_OK);
       if (!fs.statSync(path.join(home, "homebrew/plugins")).isDirectory())
         throw new Error("Decky Loader installation did not create its plugin folder");
+      if (fs.readFileSync(versionFile, "utf8").trim().replace(/^v/, "") !== latestVersion)
+        throw new Error("Decky Loader installed version does not match the latest stable release");
+      report(`>>> Decky phase=loader-updated version=${latestVersion}`);
+    } else {
+      report(`>>> Decky phase=loader-current version=${latestVersion}; skipping Loader reinstall`);
     }
     for (const pin of options.pins ?? packages) {
       const archive = path.join(folder, pin.path);

@@ -69,14 +69,14 @@ function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20" } = 
 describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires starship)", () => {
   it("separates identity, network, and Git fields while preserving the input line", () => {
     const { lines } = renderPrompt({ repository: true });
-    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM  [^]+  [^]+  192\.0\.2\.10,198\.51\.100\.20$/);
-    expect(lines.slice(1)).toEqual(["~/project  [prompt-test]", "5.2>"]);
+    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/);
+    expect(lines.slice(1)).toEqual(["~/project \ue0b1 [prompt-test]", "5.2>"]);
   });
 
   it("uses bright-white separators distinct from the colored information fields", () => {
     const { output } = renderPrompt({ repository: true });
     // Starship can retain active bold styling instead of repeating it in each ANSI sequence.
-    expect(output.match(/\x1b\[(?:1;)?97m  /g)).toHaveLength(4);
+    expect(output.match(/\x1b\[(?:1;)?97m \ue0b1 /g)).toHaveLength(4);
   });
 
   it("omits the branch separator outside a Git repository", () => {
@@ -86,6 +86,6 @@ describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires 
 
   it("omits the network separator when the IP field is empty", () => {
     const { lines } = renderPrompt({ ip: "" });
-    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM  [^]+  [^]+$/);
+    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+$/);
   });
 });

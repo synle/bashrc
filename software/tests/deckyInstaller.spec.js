@@ -97,15 +97,20 @@ function runInstaller({
   fs.writeFileSync(path.join(home, "cache.zip"), cache);
   fs.writeFileSync(
     path.join(home, "bin/sudo"),
-    `#!/bin/bash\nprintf '%s\\n' "$*" >> "$HOME/commands"\necho 'protected child diagnostic'\nif [ "$1" = bash ]; then\n  ${bootstrapFailure ? "exit 43" : 'mkdir -p "$HOME/homebrew/services" "$HOME/homebrew/plugins"; printf service > "$HOME/homebrew/services/PluginLoader"; chmod 755 "$HOME/homebrew/services/PluginLoader"'}\nfi\nexit ${sudoStatus}\n`,
+    `#!/bin/bash\nprintf '%s\\n' "$*" >> "$HOME/commands"\necho 'protected child diagnostic'\nif [ "$1" = bash ]; then\n  ${bootstrapFailure ? "exit 43" : 'mkdir -p "$HOME/homebrew/services" "$HOME/homebrew/plugins"; printf service > "$HOME/homebrew/services/PluginLoader"; chmod 755 "$HOME/homebrew/services/PluginLoader"; printf v3.3.0 > "$HOME/homebrew/services/.loader.version"'}\nfi\nexit ${sudoStatus}\n`,
     { mode: 0o755 },
   );
   fs.writeFileSync(path.join(home, "bin/jq"), '#!/bin/bash\necho "fixture jq version"\n', { mode: 0o755 });
-  fs.writeFileSync(path.join(home, "bin/curl"), '#!/bin/bash\nprintf "bootstrap data" > "${@: -1}"\n', { mode: 0o755 });
+  fs.writeFileSync(
+    path.join(home, "bin/curl"),
+    `#!/bin/bash\ncase "$*" in\n  *api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/latest*) printf '{"tag_name":"v3.3.0","prerelease":false,"draft":false}' > "\${@: -1}" ;;\n  *) printf "bootstrap data" > "\${@: -1}" ;;\nesac\n`,
+    { mode: 0o755 },
+  );
   if (existing) {
     fs.mkdirSync(path.join(home, "homebrew/services"), { recursive: true });
     fs.mkdirSync(path.join(home, "homebrew/plugins"));
     fs.writeFileSync(path.join(home, "homebrew/services/PluginLoader"), "existing service", { mode: 0o755 });
+    fs.writeFileSync(path.join(home, "homebrew/services/.loader.version"), "v3.3.0\n");
   }
   if (fixtureOnly) return { home, pin };
   const source = `const fs = require('fs');
@@ -242,7 +247,7 @@ describe("shared Node installer orchestration (subprocess, elevation simulated)"
       process.env.PATH = originalPath;
     }
   });
-  it("uses cache, retains an existing Loader, requests only protected archive elevation, and saves private logs", () => {
+  it("uses cache, retains a current Loader, requests only protected archive elevation, and saves private logs", () => {
     const { home, pin, result } = runInstaller();
     expect(result.status, result.stderr).toBe(0);
     expect(result.stderr).toContain("phase=complete");
