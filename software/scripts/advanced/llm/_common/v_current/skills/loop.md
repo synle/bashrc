@@ -10,7 +10,7 @@ Argument: $ARGUMENTS (the goal — "fix all failing tests", "migrate every call 
 
 Do **not** use this for: a single edit (just make it), design work with no verifiable stopping condition, a bug whose cause is unknown (that is a hunt — use the debugging workflow first), or anything where a wrong iteration is expensive to undo (schema migrations, deletions, releases).
 
-**Recurring PR work is not a loop goal.** Babysitting or reviewing pull requests on a schedule has no finish line that shrinks — a quiet round is normal there, not a stall — so never wrap `/sy-babysit-prs`, `/sy-review-prs`, `/sy-babysit-pr`, or `/sy-review-pr` in this loop. They own a time-driven clock of their own: pass `budget=<n>r keepalive=<duration>` (e.g. `budget=10r keepalive=20m`) to them directly.
+**Recurring PR work is not a loop goal.** Babysitting or reviewing pull requests on a schedule has no finish line that shrinks — a quiet round is normal there, not a stall — so never wrap `/sy-babysit-prs`, `/sy-review-prs`, `/sy-babysit-pr`, or `/sy-review-pr` in this loop. Their shared time-driven protocol lives in `<<LLM_ROOT_FOLDER>>/skills/sy-pr-loop/SKILL.md`. Pass `budget=<n>r keepalive=<duration>` (e.g. `budget=10r keepalive=20m`) to the selected PR workflow directly; never wrap that scheduler in this task loop.
 
 **Commands that hand their list to this loop.** `/sy-test-gap loop` and `/sy-dep-bump loop` feed their ranked work list into Phase 0 as the remaining list and their own verification as the check command; everything else follows the phases below unchanged.
 

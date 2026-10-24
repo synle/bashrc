@@ -1640,6 +1640,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-migrate-cross-agent-skills-and-context": "migrate-cross-agent-skills-and-context",
   "sy-onboard-repo": "onboard-repo",
   "sy-plan-grill-me": "plan-grill-me",
+  "sy-pr-loop": "pr-loop",
   // Single release entry-point. The command body checks $ARGUMENTS to decide
   // official vs beta — no per-channel alias files anymore (the old
   // /sy-release-{main,master,stable,official,beta} aliases were retired

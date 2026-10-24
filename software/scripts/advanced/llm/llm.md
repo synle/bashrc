@@ -223,6 +223,23 @@ or server-side enforcement of every applicable readiness gate.
 Polling cannot enforce merge safety atomically; repository-required checks or a merge queue must enforce merge-blocking requirements.
 These are agent instructions, not a runtime scheduler or a guarantee of bot integration.
 
+### Shared PR scheduling
+
+`sy-pr-loop` owns the shared clock, schedule, read-only fingerprint, owner reuse,
+single-pass handoff, deadline/retry bookkeeping, and batch pulse timing.
+The four PR workflows remain the normal entrypoints and load this protocol in their current owner.
+They never create a nested scheduler or wrap PR work in the shrinking-task `sy-loop`.
+
+Direct use selects an existing workflow first: `sy-pr-loop babysit-pr <PR-URL>`,
+`sy-pr-loop babysit-prs <scope>`, `sy-pr-loop review-pr <PR-URL>`, or `sy-pr-loop review-prs <scope>`.
+Remaining arguments retain that workflow's scope, permissions, clock overrides, and posting rules.
+
+Babysit keeps readiness/repair ownership and actionable-event classification.
+Review keeps verdict/posting policy and full passes on external changes, keepalive, and final verification.
+Shared scheduling grants neither branch mutation nor merge authority.
+Existing single-pass parameter forms remain supported; complete state crosses every handoff.
+The source is `_common/v_current/skills/pr-loop.md`; one shared registry entry deploys it to existing clients.
+
 ### Shared workers and skills
 
 A **skill** defines the workflow; a **worker** supplies the role and its boundaries.

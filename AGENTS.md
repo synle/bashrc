@@ -735,6 +735,11 @@ to touch: `_common/v_current/skills/<name>.md` (behavior) and `LLM_COMMAND_DEPLO
 `setup.js` reads that map via `// SOURCE software/scripts/advanced/llm/llm-common.js`;
 keys are extension-less so one map serves file- and folder-based CLIs.
 
+PR scheduling lives in `_common/v_current/skills/pr-loop.md`, deployed as `sy-pr-loop`.
+Single/batch babysit and review workflows read that protocol in their existing owner; they never start a nested scheduler.
+Babysit retains readiness and repair policy; review retains verdicts, posting rules, and full keepalive/final passes.
+Keep the general task loop separate: PR waiting is normal, not a stalled shrinking-work list.
+
 Deploy = one physical copy plus symlinks: `deploySharedLLMSkills()` writes
 `~/_extra/ai_llm/skills/<key>/SKILL.md` once, then links it into each folder in
 `LLM_SKILL_LINK_FOLDERS` (`~/.claude/skills/<key>`, `~/.copilot/skills/<key>`,
