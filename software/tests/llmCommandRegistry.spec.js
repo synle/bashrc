@@ -101,12 +101,11 @@ describe("shared skills deploy constants", () => {
     expect(llm.LLM_SHARED_SKILLS_FOLDER).toBe("/tmp/sandbox-home/sy/ai_llm/skills");
   });
 
-  it("links every skill into each CLI's own skills folder, per-skill (never a folder symlink)", () => {
+  it("links shared skills once per discovery root, with Gemini using .agents", () => {
     expect(llm.LLM_SKILL_LINK_FOLDERS).toEqual([
       "/tmp/sandbox-home/.claude/skills",
       "/tmp/sandbox-home/.copilot/skills",
       "/tmp/sandbox-home/.config/opencode/skills",
-      "/tmp/sandbox-home/.gemini/skills",
       "/tmp/sandbox-home/.agents/skills",
     ]);
   });

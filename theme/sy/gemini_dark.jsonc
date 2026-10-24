@@ -6,6 +6,8 @@ Edit marker roles, then run make format_build_include; do not edit generated lit
   "name": "Sy Dark", // {{dark.themeName}}
   "type": "custom",
   "DarkGray": "#6e6e6e", // {{dark.brightGray}}
+  // Native focus fallback: ui.focus is rejected by Gemini 0.64 settings validation.
+  "AccentGreen": "#5ca0d7", // {{dark.blue}}
   "text": {
     "primary": "#e8e8e8", // {{dark.foreground}}
     "secondary": "#b2b2b2", // {{dark.textSecondary}}
@@ -29,8 +31,6 @@ Edit marker roles, then run make format_build_include; do not edit generated lit
   "ui": {
     "comment": "#76a762", // {{dark.green}}
     "symbol": "#e8e8e8", // {{dark.foreground}}
-    "active": "#5ca0d7", // {{dark.blue}}
-    "focus": "#5ca0d7", // {{dark.blue}}
     "gradient": [
       "#5ca0d7", // {{dark.blue}}
       "#4ec9b0", // {{dark.cyan}}

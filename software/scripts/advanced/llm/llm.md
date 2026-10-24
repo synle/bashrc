@@ -15,14 +15,14 @@ Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini, Open
 
 ### Single sources of truth
 
-| Shared file                                                        | Consumed by                                                                                                                                                                                                                                               |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_common/v_current/instructions.md`                                | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                                                                                                        |
-| `_common/v_current/skills/*.md`                                    | `~/_extra/ai_llm/skills/sy-*/SKILL.md` (the ONE deployed copy) → symlinked into `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`, `~/.gemini/skills/`, `~/.agents/skills/`, plus `~/.config/opencode/commands/sy-*.md` for `/sy-*` |
-| `_common/v_current/agents/*.md`                                    | `<<LLM_ROOT_FOLDER>>/agents/<name>.md` (the ONE deployed copy) → symlinked into `~/.claude/agents/`, `~/.copilot/agents/` (as `<name>.agent.md`), `~/.config/opencode/agent/`                                                                             |
-| Review and babysit PR memory                                       | `<<LLM_ROOT_FOLDER>>/pr_reviews/` and `<<LLM_ROOT_FOLDER>>/pr_babysits/` (concise durable context, created by every LLM setup)                                                                                                                            |
-| `_common/mcp-servers.jsonc`                                        | `~/.claude/settings.json::mcpServers`, `~/.copilot/mcp-config.json::mcpServers`, `~/.gemini/settings.json::mcpServers`, `~/.config/opencode/opencode.json::mcp` (translated)                                                                              |
-| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                                                                                                                                                                          |
+| Shared file                                                        | Consumed by                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `_common/v_current/instructions.md`                                | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                                                                                                         |
+| `_common/v_current/skills/*.md`                                    | `~/_extra/ai_llm/skills/sy-*/SKILL.md` (the ONE deployed copy) → symlinked into `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`, `~/.agents/skills/` (also read by Gemini), plus `~/.config/opencode/commands/sy-*.md` for `/sy-*` |
+| `_common/v_current/agents/*.md`                                    | `<<LLM_ROOT_FOLDER>>/agents/<name>.md` (the ONE deployed copy) → symlinked into `~/.claude/agents/`, `~/.copilot/agents/` (as `<name>.agent.md`), `~/.config/opencode/agent/`                                                                              |
+| Review and babysit PR memory                                       | `<<LLM_ROOT_FOLDER>>/pr_reviews/` and `<<LLM_ROOT_FOLDER>>/pr_babysits/` (concise durable context, created by every LLM setup)                                                                                                                             |
+| `_common/mcp-servers.jsonc`                                        | `~/.claude/settings.json::mcpServers`, `~/.copilot/mcp-config.json::mcpServers`, `~/.gemini/settings.json::mcpServers`, `~/.config/opencode/opencode.json::mcp` (translated)                                                                               |
+| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                                                                                                                                                                           |
 
 **Every deployed doc above is read through `readLLMDocSource()`, never `readText` directly.**
 That reader resolves the `<<LLM_ROOT_FOLDER>>` / `<<SY_ROOT_FOLDER>>` path placeholders to this
@@ -54,7 +54,7 @@ bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
 | ------------ | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
 | **claude**   | ✅ `~/.claude/CLAUDE.md`                                                                            | ✅ skills — `~/.claude/skills/sy-*` → `~/_extra/ai_llm/skills/`  | ✅ `~/.claude/agents/*.md`         | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  | ✅ additive into `~/.claude/settings.json::mcpServers`    |
 | **copilot**  | ✅ `~/.copilot/copilot-instructions.md` (+ symlink `AGENTS.md`)                                     | ✅ skills — `~/.copilot/skills/sy-*` → `~/_extra/ai_llm/skills/` | ✅ `~/.copilot/agents/*.agent.md`  | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` | ✅ additive into `~/.copilot/mcp-config.json::mcpServers` |
-| **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ✅ skills — `~/.gemini/skills/sy-*` → `~/_extra/ai_llm/skills/`  | ❌ no agent surface in v0.55.1     | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  | ✅ additive into `~/.gemini/settings.json::mcpServers`    |
+| **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ✅ skills — `~/.agents/skills/sy-*` → `~/_extra/ai_llm/skills/`  | ❌ no agent surface in v0.55.1     | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  | ✅ additive into `~/.gemini/settings.json::mcpServers`    |
 | **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ skills + `/sy-*` commands, both → `~/_extra/ai_llm/skills/`   | ✅ `~/.config/opencode/agent/*.md` | ✅ inline `keybinds` in `~/.config/opencode/tui.json`            | ✅ inline in `opencode.json`  | ✅ inline `mcp` in `opencode.json` (translated shape)     |
 
 ### Per-turn persona reminders
@@ -90,7 +90,8 @@ Its disabled GUI fallback remains the independent inline Ayu adapters. Opted-out
 The terminal application still controls default terminal background and ANSI colors.
 
 Gemini's captured custom-theme loader recomputes input/message/focus fills and couples border/UI-dark color through legacy `DarkGray`.
-Sources use supported controls rather than storing ignored overrides. Automatic switching between custom Gemini themes is not assumed.
+Gemini 0.64 settings reject `ui.active` and `ui.focus`. Sources use the supported `AccentGreen` focus fallback, preserving focus colors separately from `status.success`.
+Automatic switching between custom Gemini themes is not assumed.
 
 For new feature colors, follow `theme/README.md` → Required workflow for new feature colors.
 Reuse semantic roles/variants or add them to both foundations, bind supported fields in both client templates, then run `make format_build_include`.
@@ -677,7 +678,7 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
   `_common/v_current/skills/*.md` is deployed ONCE to `~/_extra/ai_llm/skills/sy-*/SKILL.md`
   by `deploySharedLLMSkills()` (llm-common.js), then **per-skill symlinked** into
   `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`,
-  `~/.gemini/skills/`, and `~/.agents/skills/`. Per-skill, never a folder
+  and `~/.agents/skills/` (Gemini discovers this root directly). Per-skill, never a folder
   symlink — a folder link would hijack the destination and destroy
   plugin-installed or hand-authored skills. `opencode/setup.js` additionally
   mirrors each one into `~/.config/opencode/commands/` so `/sy-*` stays
@@ -738,7 +739,12 @@ OpenCode also accepts `.agents/skills/` and `~/.agents/skills/`, and walks up
 from the cwd to the git worktree root when resolving project skills
 ([docs](https://opencode.ai/docs/skills/)).
 
-Copilot's own path list comes from `copilot skill --help` on `v1.0.76`. Note the asymmetry: it reads `<repo>/.claude/skills/` but **not** `~/.claude/skills/`. That asymmetry no longer costs anything, because no CLI reads another's folder here: `deploySharedLLMSkills()` (llm-common.js) writes each `_common/v_current/skills/<name>.md` once to `~/_extra/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then symlinks that folder into every CLI's own skills path — Claude, Copilot, Gemini, OpenCode, and the interoperable `~/.agents/skills/`.
+Copilot's own path list comes from `copilot skill --help` on `v1.0.76`. Note the asymmetry: it reads `<repo>/.claude/skills/` but **not** `~/.claude/skills/`. That asymmetry no longer costs anything, because no CLI reads another's folder here: `deploySharedLLMSkills()` (llm-common.js) writes each `_common/v_current/skills/<name>.md` once to `~/_extra/ai_llm/skills/sy-<name>/SKILL.md` with generated frontmatter, then symlinks that folder into Claude, Copilot, OpenCode, and the interoperable `~/.agents/skills/` root. Gemini reads the interoperable root directly.
+
+Gemini setup compares skill folder names in `~/.gemini/skills` with valid skills in `~/.agents/skills`.
+Matching symlinks are unlinked without touching targets; matching real entries move to unique `~/.gemini/skills-backup-*` folders.
+Gemini-only skills remain untouched. Aliased roots or canonical skills stored inside the removed root are rejected to avoid data loss.
+Project trust remains unchanged.
 
 For this repo, Pi, OpenCode, and Copilot CLI can discover `.agents/skills/` directly; Claude Code retains the `.claude/skills` compatibility path. Pi requires project trust before loading project skills. Gemini's local discovery probe was blocked by its untrusted-folder gate; do not treat a skipped project scan as missing files.
 

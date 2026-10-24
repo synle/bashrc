@@ -39,12 +39,11 @@
 //                    `~/.claude/commands/sy-*.md` as a Gemini extension would
 //                    mean generating that scaffolding — out of scope.
 //
-//   ✅ Skills — ~/.gemini/skills/sy-<name> is a SYMLINK to the one physical
-//                    skill at $LLM_ROOT_FOLDER/skills/sy-<name>/SKILL.md, created by
-//                    the shared deploySharedLLMSkills() in llm-common.js. No
-//                    `gemini skills install/link` call is needed — the user
-//                    skills folder is read directly, and skills installed there
-//                    by the user are left untouched (per-skill links only).
+//   ✅ Skills — Gemini discovers ~/.agents/skills directly. Shared deployment
+//                    links each skill there once; no ~/.gemini/skills bootstrap.
+//                    Same-name Gemini entries are removed from discovery after
+//                    canonical deployment. Real entries are backed up first;
+//                    Gemini-only skills remain untouched.
 
 // --- Keybindings ---
 
@@ -384,7 +383,50 @@ async function _doGeminiInstructionsWork(targetDir) {
 }
 
 /**
- * Orchestrates Google Gemini CLI user-level setup: settings defaults +
+ * Removes same-name Gemini skills already available through the canonical .agents discovery root.
+ * Unlinks duplicate symlinks without following them; backs up real entries outside the scan root.
+ * @param {string} targetFolder - Gemini user configuration folder.
+ * @returns {number} Count removed from Gemini discovery; canonical and Gemini-only skills remain unchanged.
+ * @throws {Error} If discovery roots alias, the Gemini root is a symlink, or filesystem inspection/backup fails.
+ */
+function _pruneDuplicateGeminiSkills(targetFolder) {
+  /** Gemini-specific discovery root; this migration never follows a root symlink. */
+  const geminiSkills = path.join(targetFolder, "skills");
+  /** Canonical discovery root that must retain every surviving skill. */
+  const agentSkills = path.join(path.dirname(targetFolder), ".agents", "skills");
+  if (!fs.existsSync(geminiSkills) || !fs.existsSync(agentSkills)) return 0;
+  if (fs.lstatSync(geminiSkills).isSymbolicLink()) throw new Error("Gemini skills root must not be a symlink");
+  /** Resolved root used to reject canonical references into the folder being cleaned. */
+  const realGeminiSkills = fs.realpathSync(geminiSkills);
+
+  /** Lazily created backup keeps real user content outside Gemini discovery. */
+  let backupFolder;
+  /** Number of duplicates safely removed from Gemini discovery. */
+  let removed = 0;
+  for (const name of fs.readdirSync(geminiSkills)) {
+    /** A same-name canonical file proves the skill remains discoverable. */
+    const canonical = path.join(agentSkills, name, "SKILL.md");
+    if (!fs.existsSync(canonical) || !fs.statSync(canonical).isFile()) continue;
+    // The surviving canonical skill must not depend on a folder this migration removes.
+    if (fs.realpathSync(canonical).startsWith(realGeminiSkills + path.sep))
+      throw new Error("Canonical skill must not live inside Gemini skills root");
+    /** Exact Gemini entry to unlink or move; no recursive deletion is used. */
+    const duplicate = path.join(geminiSkills, name);
+    if (fs.lstatSync(duplicate).isSymbolicLink()) {
+      fs.unlinkSync(duplicate);
+    } else {
+      if (backupFolder === undefined) backupFolder = fs.mkdtempSync(path.join(targetFolder, "skills-backup-"));
+      fs.renameSync(duplicate, path.join(backupFolder, name));
+    }
+    removed++;
+    log(">> Gemini skill duplicate removed from discovery:", name);
+  }
+  if (backupFolder !== undefined) log(">> Gemini duplicate skill backup:", backupFolder);
+  return removed;
+}
+
+/**
+ * Orchestrates Google Gemini CLI user-level setup: settings, canonical skill migration,
  * native MCP and shared engineering-principles instructions. Skips entirely when the
  * `gemini` binary is not installed.
  * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
@@ -411,8 +453,9 @@ async function doWork() {
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
   await deploySharedLLMInstructions();
   await _doGeminiInstructionsWork(targetDir);
-  // Skills live once in $LLM_ROOT_FOLDER/skills and are symlinked into ~/.gemini/skills.
+  // Gemini reads the canonical ~/.agents/skills links directly.
   await deploySharedLLMSkills();
+  _pruneDuplicateGeminiSkills(targetDir);
 
   // Named worker agents. Rendered per CLI from one shared source — see
   // LLM_AGENT_DEPLOY_FOLDERS. Safe to call from every setup script: the bytes are

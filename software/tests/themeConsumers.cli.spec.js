@@ -111,7 +111,44 @@ describe("Gemini custom theme integration", () => {
     });
     expect(result.ui.customThemes["Sy Light"].text.primary).toBe("#1e1e1e");
     expect(result.ui.customThemes["Sy Dark"].background).not.toHaveProperty("input");
+    expect(result.ui.customThemes["Sy Dark"].ui).toEqual({
+      comment: "#76a762",
+      symbol: "#e8e8e8",
+      gradient: ["#5ca0d7", "#4ec9b0", "#c586c0"],
+    });
+    expect(result.ui.customThemes["Sy Light"].ui).toEqual({
+      comment: "#004a15",
+      symbol: "#1e1e1e",
+      gradient: ["#0033b3", "#00416f", "#6c0099"],
+    });
+    expect(result.ui.customThemes["Sy Dark"].AccentGreen).toBe("#5ca0d7");
+    expect(result.ui.customThemes["Sy Light"].AccentGreen).toBe("#0033b3");
+    expect(result.ui.customThemes["Sy Dark"].status.success).toBe("#76a762");
   });
+  it("replaces invalid managed UI overrides while preserving light selection and foreign themes", async () => {
+    fileSystem[`${geminiHome}/settings.json`] = JSON.stringify({
+      ui: {
+        theme: "Sy Light",
+        customThemes: {
+          "Sy Dark": { ui: { active: "#ffffff", focus: "#ffffff" } },
+          "Sy Light": { ui: { active: "#000000", focus: "#000000" } },
+          foreign: { name: "foreign", type: "custom" },
+        },
+      },
+    });
+    await getIndexFunction("_doGeminiSettingsWork")(geminiHome);
+    const result = JSON.parse(fileSystem[`${geminiHome}/settings.json`]);
+    expect(result.ui.theme).toBe("Sy Light");
+    expect(result.ui.customThemes["Sy Dark"].ui).not.toHaveProperty("active");
+    expect(result.ui.customThemes["Sy Dark"].ui).not.toHaveProperty("focus");
+    expect(result.ui.customThemes["Sy Light"].ui).not.toHaveProperty("active");
+    expect(result.ui.customThemes["Sy Light"].ui).not.toHaveProperty("focus");
+    expect(result.ui.customThemes.foreign).toEqual({ name: "foreign", type: "custom" });
+    const first = fileSystem[`${geminiHome}/settings.json`];
+    await getIndexFunction("_doGeminiSettingsWork")(geminiHome);
+    expect(fileSystem[`${geminiHome}/settings.json`]).toBe(first);
+  });
+
   it("preserves foreign themes and user-only custom entries", async () => {
     fileSystem[`${geminiHome}/settings.json`] = JSON.stringify({
       ui: { theme: "foreign", customThemes: { foreign: { name: "foreign", type: "custom" } } },

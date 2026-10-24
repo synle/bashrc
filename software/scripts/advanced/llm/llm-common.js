@@ -1759,7 +1759,7 @@ const LLM_SHARED_SKILLS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "skills");
  *   - `~/.copilot/skills`        — Copilot CLI personal skills (its only slot; it
  *                                  does not read `~/.claude/*`).
  *   - `~/.config/opencode/skills`— OpenCode global skills.
- *   - `~/.gemini/skills`         — Gemini CLI user skills.
+ * Gemini discovers `~/.agents/skills` directly; a second Gemini link duplicates discovery.
  *   - `~/.agents/skills`         — the cross-vendor interoperable path several
  *                                  CLIs also scan.
  * @type {string[]}
@@ -1768,7 +1768,6 @@ const LLM_SKILL_LINK_FOLDERS = [
   path.join(BASE_HOMEDIR_LINUX, ".claude", "skills"),
   path.join(BASE_HOMEDIR_LINUX, ".copilot", "skills"),
   path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "skills"),
-  path.join(BASE_HOMEDIR_LINUX, ".gemini", "skills"),
   path.join(BASE_HOMEDIR_LINUX, ".agents", "skills"),
 ];
 

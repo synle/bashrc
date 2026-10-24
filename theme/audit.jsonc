@@ -138,7 +138,7 @@ Original measurements remain explicitly historical, not current failures.
       "priority": "P1",
       "status": "resolved_in_code",
       "title": "Native Pi/OpenCode/Gemini deployment",
-      "resolution": "Pi covers 56 captured roles, OpenCode covers 50 paired CLI roles, and Gemini uses supported custom controls. New client deployments preserve explicit foreign selections.",
+      "resolution": "Pi covers 56 captured roles, OpenCode covers 50 paired CLI roles, and Gemini uses supported custom controls. Gemini 0.64 rejects ui.active/ui.focus; the schema-supported AccentGreen fallback preserves focus independently of status.success. New client deployments preserve explicit foreign selections.",
       "evidence": [
         "software/scripts/advanced/llm/pi/setup.js",
         "software/scripts/advanced/llm/opencode/setup.js",

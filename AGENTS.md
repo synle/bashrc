@@ -738,8 +738,10 @@ keys are extension-less so one map serves file- and folder-based CLIs.
 Deploy = one physical copy plus symlinks: `deploySharedLLMSkills()` writes
 `~/_extra/ai_llm/skills/<key>/SKILL.md` once, then links it into each folder in
 `LLM_SKILL_LINK_FOLDERS` (`~/.claude/skills/<key>`, `~/.copilot/skills/<key>`,
-`~/.config/opencode/skills/<key>` + commands mirror, `~/.gemini/skills/<key>`,
-`~/.agents/skills/<key>`, plus shell wrappers).
+`~/.config/opencode/skills/<key>` + commands mirror, `~/.agents/skills/<key>`,
+plus shell wrappers). Gemini reads `~/.agents/skills` directly; no duplicate Gemini link is deployed.
+Gemini setup removes same-named entries from `~/.gemini/skills` only when the canonical skill exists.
+It unlinks duplicate symlinks, backs up real entries outside discovery, and preserves Gemini-only skills.
 
 - **Per-skill links, never a folder symlink** — a wholesale link hijacks the
   destination and would destroy plugin/hand-authored skills on next deploy. The pass
