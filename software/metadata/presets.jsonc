@@ -13,10 +13,13 @@
 //
 // CLI resolution:
 //   --files=<name>   → strict script lookup (no preset fallback).
-//   --preset=<name>  → strict preset lookup (fuzzy substring match on miss).
+//   --preset=<name>  → exact case-insensitive preset lookup.
 //   --preset=@<name> → same as --preset=<name> (leading @ stripped for symmetry).
 //   <bare-arg>       → script lookup first; if no script matches, preset fallback.
 //   @<bare-arg>      → strict preset lookup (skip script search entirely).
+// Edge stars opt into prefix (name*), suffix (*name), or contains (*name*) matching.
+// Multiple matches require default-yes terminal confirmation before any selected script runs.
+// Quote wildcard arguments against shell expansion. Hash-prefixed shorthand is unsupported.
 {
   "lightweight": {
     "description": "Minimal config-only setup: git, vim, inputrc. Only the listed files run — no advanced/heavy installs.",

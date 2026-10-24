@@ -483,7 +483,7 @@ function prompt_yes_no() {
       prompt_yes_no: prompt the user with a yes/no question
         Usage: prompt_yes_no <prompt> [default]
         default: 'Y' or 'N' (case-insensitive); defaults to 'N'.
-        Returns 0 on yes; 1 on no / empty / no-tty.
+        Returns 0 on yes or the affirmative default; 1 on no / EOF / no-tty.
         Example: prompt_yes_no 'Continue?' && do_thing
         Example: prompt_yes_no 'Skip step?' Y && skip_step
     "
@@ -500,7 +500,7 @@ function prompt_yes_no() {
   (: < /dev/tty) 2> /dev/null || return 1
 
   local reply=""
-  read -rp "$prompt $hint " reply < /dev/tty
+  read -rp "$prompt $hint " reply < /dev/tty || return 1
   reply="$(echo "$reply" | tr '[:lower:]' '[:upper:]' | xargs)"
 
   if [ -z "$reply" ]; then

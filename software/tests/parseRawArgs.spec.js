@@ -125,38 +125,40 @@ describe("parseRawArgs", () => {
     expect(() => parseRawArgs()).toThrow(/Unknown preset "does-not-exist"/);
   });
 
-  it("should auto-resolve a partial preset name with exactly one match", () => {
+  it("should resolve an explicit prefix wildcard with one match", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       editors: { files: ["a.js"] },
       browsers: { files: ["b.js"] },
     });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editor"]);
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editor*"]);
     const result = parseRawArgs();
     expect(result.presets).toEqual(["editors"]);
     expect(result.files).toBe("a.js");
   });
 
-  it("should auto-resolve a case-insensitive partial match", () => {
+  it("should resolve a case-insensitive exact match", () => {
     proc.env.PRESETS_JSON = JSON.stringify({ Lightweight: { files: ["a.js"] } });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=LIGHT"]);
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=LIGHTWEIGHT"]);
     const result = parseRawArgs();
     expect(result.presets).toEqual(["Lightweight"]);
   });
 
-  it("should throw with a copy-paste suggestion list when partial match is ambiguous", () => {
+  it("should collect multiple preset matches for confirmation before execution", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       editors: { files: ["a.js"] },
       "editor-pro": { files: ["b.js"] },
     });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editor"]);
-    expect(() => parseRawArgs()).toThrow(/ambiguous — matched 2: editors, editor-pro/);
-    expect(() => parseRawArgs()).toThrow(/bash run\.sh --preset=editors/);
-    expect(() => parseRawArgs()).toThrow(/bash run\.sh --preset=editor-pro/);
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editor*"]);
+    expect(parseRawArgs()).toMatchObject({
+      files: "a.js,b.js",
+      presets: ["editors", "editor-pro"],
+      confirmations: [{ keyword: "editor*", mode: "presets", matches: ["editors", "editor-pro"] }],
+    });
   });
 
   it("should still resolve presets by EXACT name regardless of prefix style", () => {
     // Underscore-prefixed names no longer get special handling — they're treated
-    // like any other name. Exact match still wins over fuzzy.
+    // like any other literal name.
     proc.env.PRESETS_JSON = JSON.stringify({
       _editors: { files: ["internal.js"] },
       "editors-pack": { files: ["public.js"] },

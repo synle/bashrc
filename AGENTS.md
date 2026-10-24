@@ -133,7 +133,7 @@ Use `./run` from the checkout root; it is an executable symlink to `run.sh`.
 ```bash
 ./run                             # profile refresh (default)
 ./run --setup --force             # full setup, install everything
-./run --files="git.js"            # one script (fuzzy: basename or partial)
+./run --files="git.js"            # one exact script path or basename
 ./run --files="a.js,b.sh"         # several
 ./run git.js vim-config.js        # bare args as files
 ./run --refresh="fzf.js,fonts.js" # run + force-refresh those scripts
@@ -149,12 +149,13 @@ IS_CUSTOM_THEME_DISABLED=1 ./run  # stock built-in themes instead of Sy Dark/Sy 
 Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
 `emulators`, `apps`, `terminal`, `prompt`, `llm`, `llm-prompts`, `browsers`.
 
-**CLI resolution.** `--files=<x>` strict script — typo fails loudly, on purpose. `--preset=<x>` strict preset with case-insensitive substring fallback. Bare `<x>` script-first, preset fallback (`_resolveBareArgPresetFallback`, driven by `BASHRC_BARE_ARGS`). Bare `@<x>` skips script search. Script matching (`_resolveScriptFile`): exact path → basename sans extension → regex partial. 1 hit auto-resolves; 2+ print suggestions; 0 errors. Script wins collisions — `./run llm` hits `llm-common.js`; use `@llm` to force the preset.
+**CLI resolution.** `--files=<x>` searches only scripts; `--preset=<x>` and `@<x>` search only presets. Names match exactly, case-insensitively; scripts accept full paths, basenames, or basenames without extensions. Exact paths take priority. Bare `<x>` searches scripts first, then presets through `_resolveBareArgPresetFallback`. Missing matches fail before selected scripts execute. Multiple matches for one keyword require confirmation before any selected script executes. The red warning names `files` or `presets` and lists every match; Enter accepts, while No, EOF, timeout, or no terminal cancels. Explicit lists do not prompt merely because they contain several keywords.
 
 **Selector aliases.** `--file` / `--files` and `--preset` / `--presets` accept `=value` or a separate value; single-dash long forms remain supported.
 No short selector aliases are added: `-f` remains force refresh, and `-p` is not a preset selector.
-Quoted `'#<name>'` forces preset lookup like `@<name>`. Quote hash and wildcard arguments so the shell passes them unchanged.
-Trailing `*` selects every case-insensitive prefix match: script basenames for file selectors, preset names for explicit preset selectors.
+Only `@<name>` is a preset marker; hash-prefixed preset shorthand is unsupported.
+Use `name*` for prefix matching, `*name` for suffix matching, and `*name*` for contains matching; internal stars are unsupported.
+These wildcards work with file selectors, bare arguments, `--preset`, and `@`; quote them, such as `./run '@llm*'`, against shell expansion.
 Missing separate values fail before selection; existing empty equals-values remain no-ops.
 
 **When sharing a command, offer both forms when both apply** — narrow `--files=bash-keys` and broad `--preset=terminal`.

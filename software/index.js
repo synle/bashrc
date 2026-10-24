@@ -156,8 +156,8 @@ function loadPresets() {
  * misconfigured `presets.jsonc` (self-reference or A → B → A loops) fails fast at parse
  * time with a readable chain instead of recursing forever.
  *
- * Sub-preset references must match by exact name — fuzzy resolution applies only to
- * user-facing CLI input (`--preset=<name>`), not to entries inside `presets.jsonc`.
+ * Sub-preset references must match by exact name; explicit CLI wildcards do not
+ * apply to entries inside `presets.jsonc`.
  *
  * @param {string} name - Canonical preset name to expand (already resolved against the map)
  * @param {Record<string, { description?: string, files?: string[], presets?: string[] }>} presetMap - Full preset map (from loadPresets)
@@ -208,43 +208,46 @@ function expandPresetFiles(name, presetMap, visited = new Set(), chain = []) {
 }
 
 /**
- * Resolves a user-supplied preset name against the loaded preset map.
- * Exact match wins; otherwise falls back to case-insensitive substring match.
- * Shared by `parseRawArgs` (handling preset flags and `@` / `#` markers) and
- * `_resolveBareArgPresetFallback` (handling plain bare args that miss the script lookup).
- *
- * @param {string} name - User-supplied preset name (may be partial or wrong case).
- * @param {Record<string, { description?: string, files?: string[], presets?: string[] }>} presetMap - Full preset map (from loadPresets).
- * @param {{ suggestionFlag?: string }} [opts] - When ambiguous, format suggestions using this CLI form
- *   (e.g. `"--preset="` or `"@"`). Defaults to `"--preset="`.
- * @returns {string|null} Canonical preset name, or `null` when no match exists.
- * @throws {Error} When the fuzzy match is ambiguous (2+ hits) — message includes copy-pasteable
- *   suggestions formatted with `opts.suggestionFlag`.
+ * Matches literal names case-insensitively, allowing stars only at either edge.
+ * @param {string} value - Candidate name.
+ * @param {string} selector - Exact name, prefix*, *suffix, *contains*, or *.
+ * @returns {boolean} Whether the candidate matches; internal stars are invalid.
  */
-function _resolvePresetName(name, presetMap, opts = {}) {
-  const flag = opts.suggestionFlag || "--preset=";
-  if (presetMap[name]) return name;
-  const needle = name.toLowerCase();
-  const known = Object.keys(presetMap);
-  const matches = known.filter((k) => k.toLowerCase().includes(needle));
-  if (matches.length === 1) return matches[0];
-  if (matches.length > 1) {
-    const suggestions = matches.map((m) => `  ./run ${flag === "#" ? `'${flag}${m}'` : `${flag}${m}`}`).join("\n");
-    throw new Error(
-      `Preset "${name}" is ambiguous — matched ${matches.length}: ${matches.join(", ")}.\n` + `Pick one and re-run:\n${suggestions}`,
-    );
-  }
-  return null;
+function _matchesSelector(value, selector) {
+  const leading = selector.startsWith("*");
+  const trailing = selector.endsWith("*");
+  const token = selector.replace(/^\*|\*$/g, "").toLowerCase();
+  if (token.includes("*")) return false;
+  const candidate = value.toLowerCase();
+  if (leading && trailing) return candidate.includes(token);
+  if (leading) return candidate.endsWith(token);
+  if (trailing) return candidate.startsWith(token);
+  return candidate === token;
 }
+
+/**
+ * Resolves an exact, case-insensitive preset name without implicit substring matching.
+ * @param {string} name - User-supplied literal preset name.
+ * @param {Record<string, *>} presetMap - Known presets.
+ * @returns {string|null} Canonical exact name, or null when absent.
+ */
+function _resolvePresetName(name, presetMap) {
+  return Object.keys(presetMap).find((key) => key.toLowerCase() === name.toLowerCase()) || null;
+}
+
+/**
+ * @typedef {{ keyword: string, mode: "files"|"presets", matches: string[] }} SelectorConfirmation
+ * Multiple matches that require approval before script emission.
+ */
 
 /**
  * Parses the raw CLI arguments passed from run.sh via the BASHRC_RAW_ARGS env var.
  * Sets process.env variables (TEST_SCRIPT_FILES, IS_FORCE_REFRESH, etc.)
  * so that subsequent getRuntimeOption() calls pick them up.
  * Must be called before any getRuntimeOption() reads of flag env vars.
- * File/preset aliases accept either `=value` or a separate value; trailing `*` selects preset prefixes.
- * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean, bareArgs: string[] }}
- * @throws {Error} When selector values are missing or preset names are unknown, ambiguous, or cyclic.
+ * File/preset aliases accept `=value` or a separate value; edge stars opt into broader matching.
+ * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean, bareArgs: string[], confirmations: SelectorConfirmation[] }}
+ * @throws {Error} When selector values are missing or preset names are unknown or cyclic.
  */
 function parseRawArgs() {
   const rawJson = process.env.BASHRC_RAW_ARGS || "[]";
@@ -262,15 +265,14 @@ function parseRawArgs() {
   let debug = false;
   let dryrun = false;
   let remove = false;
-  /**
-   * @type {Array<{ name: string, suggestionFlag: string }>} Preset requests with their
-   *   originating flag or marker for ambiguity suggestions. Canonical names populate `presets` below.
-   */
+  /** @type {string[]} Preset names or edge-wildcard selectors requested by the caller. */
   const presetRequests = [];
+  /** @type {SelectorConfirmation[]} Multiple-match requests deferred until runner preflight. */
+  const confirmations = [];
   /** @type {string[]} Canonical preset names actually expanded (one per request, in order). */
   const presets = [];
   /**
-   * @type {string[]} Plain bare-arg names (no leading @ or #, no file flag) — eligible for
+   * @type {string[]} Plain bare-arg names (no leading @, no file flag) — eligible for
    *   the script→preset fallback in `_resolveBareArgPresetFallback`. `--files=` values and
    *   preset-expanded files are NOT included; only those entries fall back to preset lookup
    *   when script resolution fails.
@@ -312,11 +314,7 @@ function parseRawArgs() {
           .split(/[,;\s]/)
           .map((s) => s.trim())
           .filter(Boolean)) {
-          // Explicit preset flags accept either marker without changing suggestion syntax.
-          presetRequests.push({
-            name: name.replace(/^[@#]/, ""),
-            suggestionFlag: "--preset=",
-          });
+          presetRequests.push(name.replace(/^@/, ""));
         }
       }
     } else if (/^-?-(setup|is-setup)$/.test(arg)) {
@@ -329,11 +327,10 @@ function parseRawArgs() {
       remove = true;
     } else if (/^-?-no-color$/.test(arg)) {
       process.env.NO_COLOR = "1";
-    } else if (arg.startsWith("@") || arg.startsWith("#")) {
-      // Marked bare arguments bypass script lookup; preserve the marker in suggestions.
+    } else if (arg.startsWith("@")) {
+      // The at-sign marker bypasses script lookup.
       const stripped = arg.slice(1).trim();
-      if (!stripped && arg.startsWith("#")) throw new Error("# requires a preset name.");
-      if (stripped) presetRequests.push({ name: stripped, suggestionFlag: arg[0] });
+      if (stripped) presetRequests.push(stripped);
     } else if (!arg.startsWith("-")) {
       // Plain bare arg → tentatively a file (script-first priority). If script
       // resolution later returns not_found, `_resolveBareArgPresetFallback`
@@ -345,21 +342,20 @@ function parseRawArgs() {
 
   // Expand presets last so explicit --files= and presets compose.
   // Files: union (preset files appended in order).
-  // Name resolution: exact match wins. If no exact match, try case-insensitive
-  // substring match — exactly one hit auto-resolves; zero hits or 2+ hits error.
+  // Literal names match exactly; explicit edge stars expand all matching names.
   if (presetRequests.length > 0) {
     const presetMap = loadPresets();
     const known = Object.keys(presetMap);
-    for (const { name, suggestionFlag } of presetRequests) {
-      const wildcard = name.endsWith("*");
-      const prefix = name.slice(0, -1).toLowerCase();
-      const resolvedNames = wildcard
-        ? known.filter((key) => prefix.length > 0 && key.toLowerCase().startsWith(prefix))
-        : [_resolvePresetName(name, presetMap, { suggestionFlag })].filter(Boolean);
+    for (const name of presetRequests) {
+      const resolvedNames = name.includes("*")
+        ? known.filter((key) => _matchesSelector(key, name))
+        : [_resolvePresetName(name, presetMap)].filter(Boolean);
       if (resolvedNames.length === 0) {
         const list = known.length ? known.join(", ") : "(none defined)";
         throw new Error(`Unknown preset "${name}". Available presets: ${list}`);
       }
+
+      if (resolvedNames.length > 1) confirmations.push({ keyword: name, mode: "presets", matches: resolvedNames });
 
       for (const resolvedName of resolvedNames) {
         // Track canonical names and reuse recursive expansion, including its cycle checks.
@@ -380,7 +376,7 @@ function parseRawArgs() {
   if (dryrun) process.env.IS_DRY_RUN = "1";
   if (remove) process.env.IS_REMOVE_MODE = "1";
   // Propagate bare-arg list to downstream resolution (_resolveBareArgPresetFallback).
-  // Only plain bare args (no leading `@` or `#`, no file flag) are fallback-eligible —
+  // Only plain bare args (no leading `@`, no file flag) are fallback-eligible —
   // explicit flags stay strict so typos surface loudly.
   if (bareArgs.length > 0) process.env.BASHRC_BARE_ARGS = bareArgs.join(",");
 
@@ -394,10 +390,11 @@ function parseRawArgs() {
     presets,
     setup,
     bareArgs,
+    confirmations,
   };
 }
 
-/** @type {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean, bareArgs: string[] }} */
+/** @type {ReturnType<typeof parseRawArgs>} */
 const _parsedArgs = parseRawArgs();
 
 // --- Global Imports & Path Constants ---
@@ -5224,7 +5221,7 @@ async function listRepoDir(source = "remote_api", fallthrough = false) {
 }
 
 /**
- * Get all available scripts used for searching and matching against partially matched scripts.
+ * Gets the script inventory used for exact selection and explicit wildcard expansion.
  * Includes .js and .sh files under software/scripts/ and software/metadata/ (excludes tools, common, etc.).
  *
  * In local-repo mode the local tree is authoritative — `listRepoDir("local", true)` would
@@ -5595,44 +5592,42 @@ function _getBundleRunnerType(file) {
 }
 
 /**
- * Resolves a script file path against the repo file list, handling fuzzy matching and dedup.
- * Extracts the file-validation logic so both
- * single-file and bundled processing can reuse it.
- * @param {string} file - The script file path (after prefix expansion)
- * @param {string} originalFile - The original file name before prefix expansion
- * @param {string[]} allRepoFiles - List of all file paths in the repository (mutated: matched entries are removed)
- * @returns {{ resolvedFile: string, fileExists: boolean, description: string, fileMatchState: string|undefined }}
+ * Finds exact paths or basename/stem matches within a folder boundary, with optional edge stars.
+ * @param {string} file - Repository-prefixed file selector.
+ * @param {string[]} allRepoFiles - Candidate repository script paths; never mutated.
+ * @returns {string[]} Matching canonical paths, with an exact path taking priority.
+ */
+function _getScriptSelectorMatches(file, allRepoFiles) {
+  const exact = allRepoFiles.find((candidate) => candidate.toLowerCase() === file.toLowerCase());
+  if (exact) return [exact];
+  const inputBase = path.basename(file);
+  const inputFolder = `${path.dirname(file)}/`.toLowerCase();
+  return allRepoFiles.filter(
+    (candidate) =>
+      candidate.toLowerCase().startsWith(inputFolder) &&
+      (_matchesSelector(path.basename(candidate), inputBase) ||
+        _matchesSelector(path.basename(candidate, path.extname(candidate)), inputBase)),
+  );
+}
+
+/**
+ * Resolves one exact script selection and removes its path to prevent duplicate execution.
+ * @param {string} file - Repository-prefixed script selector.
+ * @param {string} originalFile - Caller-facing selector for diagnostics.
+ * @param {string[]} allRepoFiles - Candidate paths; the unique match is removed.
+ * @returns {{ resolvedFile: string, fileExists: boolean, description: string, fileMatchState: string|undefined }} Resolution result.
  */
 function _resolveScriptFile(file, originalFile, allRepoFiles) {
-  const inputBase = path.basename(file);
-  const inputFolder = path.dirname(file);
-
-  // Tier 1: exact path match (paths are unique, so .find is safe)
-  let foundMatchedPath = allRepoFiles.find((f) => f === file);
-
-  // Tier 2: exact basename match sans extension — e.g. "git" matches "git.js"
-  if (!foundMatchedPath) {
-    foundMatchedPath = allRepoFiles.find(
-      (f) => path.basename(f, path.extname(f)).toLowerCase() === inputBase.toLowerCase() && f.startsWith(inputFolder),
-    );
+  const matches = _getScriptSelectorMatches(file, allRepoFiles);
+  if (matches.length > 1) {
+    return {
+      resolvedFile: file,
+      fileExists: false,
+      description: `Ambiguous "${originalFile}" — matched ${matches.length}: ${matches.join(", ")}.`,
+      fileMatchState: "ambiguous",
+    };
   }
-
-  // Tier 3: partial regex match on basename — e.g. "vim" matches "vim-config.js".
-  // Collect ALL matches: 1 → use it, 2+ → ambiguous (return a copy-pasteable suggestion list).
-  if (!foundMatchedPath) {
-    const partial = allRepoFiles.filter((f) => new RegExp(inputBase, "i").test(path.basename(f)) && f.startsWith(inputFolder));
-    if (partial.length === 1) {
-      foundMatchedPath = partial[0];
-    } else if (partial.length > 1) {
-      const suggestions = partial.map((p) => `  ./run --files=${p.replace(/^software\/scripts\//, "")}`).join("\n");
-      return {
-        resolvedFile: file,
-        fileExists: false,
-        description: `Ambiguous "${originalFile}" — matched ${partial.length}: ${partial.join(", ")}. Pick one and re-run:\n${suggestions}`,
-        fileMatchState: "ambiguous",
-      };
-    }
-  }
+  const foundMatchedPath = matches[0];
 
   const fileExists = !!foundMatchedPath;
   let description = "";
@@ -5659,30 +5654,20 @@ function _resolveScriptFile(file, originalFile, allRepoFiles) {
 }
 
 /**
- * Expands explicit `*` suffix selectors in script lists.
- *
- * Any entry ending with `*` is treated as a basename prefix match inside its folder
- * scope, and expands to every matching script path in `allRepoFiles`.
- *
- * Examples:
- * - `vim*` → `software/scripts/vim-config.js`, `software/scripts/vim-jetpack.sh`
- * - `advanced/git*` → every `software/scripts/advanced/git...` script
- *
- * Entries that do not end with `*` are passed through unchanged. Wildcards with no
- * prefix (`*`) or no matches are left unchanged so the existing not-found flow still
- * reports a clear error.
- *
- * @param {string[]} softwareFiles - Caller-supplied script entries
- * @param {string[]} allRepoFiles - Full repository script list for wildcard matching
- * @returns {string[]} Script entries with wildcard selectors expanded and deduplicated
+ * Expands edge wildcards and duplicate exact basenames, collecting approval requests before execution.
+ * @param {string[]} softwareFiles - Caller-supplied script selectors.
+ * @param {string[]} allRepoFiles - Candidate canonical script paths; never mutated.
+ * @param {SelectorConfirmation[]} [confirmations] - Output queue for multiple-match warnings.
+ * @returns {string[]} Expanded, deduplicated selections; unmatched literals remain for error reporting.
  */
-function _expandWildcardScriptFiles(softwareFiles, allRepoFiles) {
+function _expandWildcardScriptFiles(softwareFiles, allRepoFiles, confirmations = []) {
   const seen = new Set();
   const expanded = [];
 
   /**
    * Pushes a script entry once, preserving first-seen order.
-   * @param {string} file - Script file entry to append
+   * @param {string} file - Script file entry to append.
+   * @returns {void} Adds only previously unseen entries.
    */
   function pushUnique(file) {
     if (!file || seen.has(file)) return;
@@ -5692,30 +5677,15 @@ function _expandWildcardScriptFiles(softwareFiles, allRepoFiles) {
 
   for (const entry of softwareFiles) {
     const raw = (entry || "").trim();
-    if (!raw.endsWith("*")) {
-      pushUnique(raw);
-      continue;
-    }
-
-    const token = raw.slice(0, -1).trim();
-    if (!token) {
-      pushUnique(raw);
-      continue;
-    }
-
-    const probe = token.startsWith("software/") ? token : `software/scripts/${token}`;
-    const inputFolder = path.dirname(probe);
-    const inputBasePrefix = path.basename(probe).toLowerCase();
-
-    const matches = allRepoFiles.filter((f) => f.startsWith(inputFolder) && path.basename(f).toLowerCase().startsWith(inputBasePrefix));
-
+    const probe = raw.startsWith("software/") ? raw : `software/scripts/${raw}`;
+    const matches = _getScriptSelectorMatches(probe, allRepoFiles);
     if (matches.length === 0) {
       pushUnique(raw);
       continue;
     }
 
+    if (matches.length > 1) confirmations.push({ keyword: raw, mode: "files", matches });
     for (const match of matches) pushUnique(match);
-    log(`>> Expanded wildcard "${raw}" to matches.lengthscript{matches.length === 1 ? "" : "s"}.`);
   }
 
   return expanded;
@@ -5727,8 +5697,7 @@ function _expandWildcardScriptFiles(softwareFiles, allRepoFiles) {
  * For each entry in `softwareFiles` that came from a plain bare arg (no `--files=` flag,
  * no `@` prefix — see `BASHRC_BARE_ARGS` set by `parseRawArgs`), if script resolution
  * returns `not_found`, retry as a preset. On a preset hit, splice in the preset's
- * expanded file list at that position. Script-side ambiguous matches stay in place
- * so the downstream `_runScripts` ambiguity reporter can surface them.
+ * expanded file list at that position. Multiple matches join the preflight approval queue.
  *
  * Entries from `--files=`, `--refresh=`, or `--preset=` expansion are NEVER fallback-eligible;
  * the explicit flag means the user is asserting intent and a typo should fail loudly.
@@ -5738,11 +5707,11 @@ function _expandWildcardScriptFiles(softwareFiles, allRepoFiles) {
  *
  * @param {string[]} softwareFiles - Caller-supplied script list (post-CSV split).
  * @param {string[]} allRepoFiles - Repo file list for the script-resolution probe.
- * @returns {string[]} New list with preset expansions spliced in for fallback hits.
- * @throws {Error} When the preset fuzzy match is ambiguous (2+ hits) — re-thrown
- *   from `_resolvePresetName` with `@<name>` formatted suggestions.
+ * @param {SelectorConfirmation[]} [confirmations] - Output queue for multiple preset matches.
+ * @returns {string[]} New list with exact or explicit wildcard preset expansions spliced in.
+ * @throws {Error} When preset expansion finds a cycle or an unknown referenced preset.
  */
-function _resolveBareArgPresetFallback(softwareFiles, allRepoFiles) {
+function _resolveBareArgPresetFallback(softwareFiles, allRepoFiles, confirmations = []) {
   const bareArgsCsv = process.env.BASHRC_BARE_ARGS || "";
   if (!bareArgsCsv) return softwareFiles;
   const bareArgs = new Set(
@@ -5777,15 +5746,10 @@ function _resolveBareArgPresetFallback(softwareFiles, allRepoFiles) {
       continue;
     }
 
-    // Script not_found → try preset lookup. Pass `@` as the suggestion-flag so
-    // ambiguous-match error messages point users back at the bare-arg form.
-    const resolvedName = _resolvePresetName(entry, presetMap, {
-      suggestionFlag: "@",
-    });
-    if (resolvedName) {
-      log(`>> Bare arg "${entry}" matched no script — resolved as preset "${resolvedName}".`);
-      const expanded = expandPresetFiles(resolvedName, presetMap);
-      for (const f of expanded) result.push(f);
+    const matches = known.filter((name) => _matchesSelector(name, entry));
+    if (matches.length > 0) {
+      if (matches.length > 1) confirmations.push({ keyword: entry, mode: "presets", matches });
+      for (const name of matches) result.push(...expandPresetFiles(name, presetMap));
     } else {
       // Neither script nor preset matched. Leave the entry in place so the existing
       // "File not found" path in _runScripts prints its script-side suggestions;
@@ -6076,7 +6040,7 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
     if (!file.startsWith("software/")) {
       file = `software/scripts/${file}`;
     }
-    // Resolve partial matches early so bundle type detection works on the actual file path
+    // Resolve exact basenames early so bundle type detection uses the actual file path
     // (e.g. "git" → "software/scripts/git.js" before _getBundleRunnerType checks the extension)
     const resolved = _resolveScriptFile(file, originalFile, allRepoFiles);
     const resolvedFile = resolved.fileExists ? resolved.resolvedFile : file;
@@ -6093,14 +6057,13 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
     };
   });
 
-  // Re-check resolved paths so a fuzzy unsuffixed input cannot bypass profile policy
+  // Re-check resolved paths so an extensionless basename cannot bypass profile policy
   // by resolving to a `.personal.*` or `.work.*` script.
   entries = entries.filter((entry) => _filterFilesByProfile([entry.file], is_work_profile, true).length > 0);
   const total = entries.length;
 
-  // Surface ambiguous matches up-front. Without this, an input like `--files=vim` would
-  // route to the bundle dispatcher first, fail on missing extension, and the helpful
-  // suggestion list buried in resolved.description would never reach the user.
+  // Keep defensive diagnostics for callers outside selector preflight; normal CLI
+  // multi-match selections have already expanded and received approval.
   const ambiguous = entries.filter((e) => e.resolved.fileMatchState === "ambiguous");
   for (const entry of ambiguous) {
     echo(`>>`, colorOrange(entry.originalFile), colorRed(`is ambiguous`));
@@ -6316,8 +6279,36 @@ function _mergeScriptTimings(timings) {
 }
 
 /**
- * Runs a subset of scripts specified by the TEST_SCRIPT_FILES environment variable.
+ * Confirms broad selections through the shared terminal prompt without consuming pipeline stdin.
+ * @param {SelectorConfirmation[]} confirmations - Multiple-match requests collected during resolution.
+ * @returns {Promise<void>} Resolves only after every request is accepted.
+ * @throws {Error} When confirmation is declined, times out, or has no controlling terminal.
+ */
+async function _confirmSelectorMatches(confirmations) {
+  if (confirmations.length === 0) return;
+  const functions = await readText`software/bootstrap/common-functions.bash`;
+  for (const { keyword, mode, matches } of confirmations) {
+    log(colorRed(`Warning: This keyword matches multiple ${mode}: ${keyword}\n${matches.map((match) => `- ${match}`).join("\n")}`));
+    try {
+      execBashSync(`${functions}\nprompt_yes_no "$BASHRC_SELECTOR_PROMPT" Y`, {
+        shell: "bash",
+        env: { ...process.env, BASHRC_SELECTOR_PROMPT: colorRed("Do you wish to continue") },
+        stdio: ["ignore", "pipe", "inherit"],
+      });
+    } catch (error) {
+      if (error.status !== 1 && error.code !== "ETIMEDOUT") throw error;
+      throw new Error(
+        `Selection cancelled: ${keyword}. Confirmation requires a terminal and an affirmative answer (Enter defaults to Yes).`,
+        { cause: error },
+      );
+    }
+  }
+}
+
+/**
+ * Resolves and confirms all requested selectors before emitting any selected scripts.
  * @returns {Promise<void>}
+ * @throws {Error} When a selector cannot be resolved or confirmation is declined.
  */
 async function _doWorkTestFiles() {
   if (!TEST_SCRIPT_FILES) {
@@ -6330,15 +6321,22 @@ async function _doWorkTestFiles() {
     .map((s) => s.trim())
     .filter((s) => !!s);
 
-  // ---- Explicit wildcard expansion (`vim*`) ----
-  // Expand before bare-arg preset fallback so wildcard hits stay on the script path.
-  softwareFiles = _expandWildcardScriptFiles(softwareFiles, allRepoFiles);
-
+  /** @type {SelectorConfirmation[]} All approvals must finish before the first script is emitted. */
+  const confirmations = [..._parsedArgs.confirmations];
   // ---- Bare-arg preset fallback ----
   // For each entry that came from a plain bare arg (no --files=, no @ prefix), if it
   // matches no script, retry as a preset. Runs BEFORE the OS guard so preset-expanded
   // files get the same OS filtering treatment.
-  softwareFiles = _resolveBareArgPresetFallback(softwareFiles, allRepoFiles);
+  softwareFiles = _resolveBareArgPresetFallback(softwareFiles, allRepoFiles, confirmations);
+  softwareFiles = _expandWildcardScriptFiles(softwareFiles, allRepoFiles, confirmations);
+  const missing = softwareFiles.filter(
+    (file) => _getScriptSelectorMatches(file.startsWith("software/") ? file : `software/scripts/${file}`, allRepoFiles).length === 0,
+  );
+  if (missing.length > 0)
+    throw new Error(
+      `No files or presets match: ${missing.join(", ")}. Names match exactly; use explicit edge wildcards for broader selection.`,
+    );
+  await _confirmSelectorMatches(confirmations);
 
   // ---- OS folder guard ----
   // Apply the same OS-folder filter that getSoftwareScriptFiles() uses for full runs.
@@ -6584,6 +6582,7 @@ function printRunInfo() {
     if (err instanceof ScriptSkipError) {
       log(`>>> ${err.message}`);
     } else {
+      process.exitCode = 1;
       echo(`> Error ${err}`);
     }
   } finally {

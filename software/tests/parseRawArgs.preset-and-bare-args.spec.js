@@ -92,12 +92,12 @@ describe("parseRawArgs", () => {
     expect(result.bareArgs).toEqual([]);
   });
 
-  it("should apply fuzzy substring matching to @xxx bare arg", () => {
+  it("should apply an explicit prefix wildcard to an at-sign selector", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       editors: { files: ["vim.js"] },
       browsers: { files: ["brave.js"] },
     });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["@edit"]);
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["@edit*"]);
     const result = parseRawArgs();
     expect(result.presets).toEqual(["editors"]);
     expect(result.files).toBe("vim.js");
@@ -113,16 +113,14 @@ describe("parseRawArgs", () => {
     expect(result.files).toBe("claude.js");
   });
 
-  it("should error with @-formatted suggestions when @xxx fuzzy match is ambiguous", () => {
+  it("should reject an at-sign abbreviation without an explicit wildcard", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       editors: { files: ["a.js"] },
       "editor-pro": { files: ["b.js"] },
     });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["@editor"]);
-    // Ambiguous fuzzy match uses the @ suggestion-flag because the entry-point was @xxx.
-    expect(() => parseRawArgs()).toThrow(/ambiguous — matched 2: editors, editor-pro/);
-    expect(() => parseRawArgs()).toThrow(/bash run\.sh @editors/);
-    expect(() => parseRawArgs()).toThrow(/bash run\.sh @editor-pro/);
+    expect(() => parseRawArgs()).toThrow(/Unknown preset "editor"/);
+    expect(proc.env.TEST_SCRIPT_FILES).toBeUndefined();
   });
 
   it("should treat lone @ as a no-op (empty preset name)", () => {

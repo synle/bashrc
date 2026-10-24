@@ -1,10 +1,10 @@
-/** Regression coverage for equivalent setup selectors and prefix wildcards. */
+/** Regression coverage for exact selectors, explicit edge wildcards, and confirmation requests. */
 import { beforeEach, describe, expect, it } from "vitest";
 import { getIndexFunction, getSandboxProcess } from "./setup.js";
 
-/** Parse CLI selectors through the setup engine's argument boundary. */
+/** Parse selectors through the setup engine's argument boundary. */
 const parseRawArgs = getIndexFunction("parseRawArgs");
-/** Expand parsed file selectors through the runner's wildcard boundary. */
+/** Resolve file selectors before the runner emits any scripts. */
 const expandFiles = getIndexFunction("_expandWildcardScriptFiles");
 
 describe("setup selectors", () => {
@@ -37,36 +37,121 @@ describe("setup selectors", () => {
 
   it.each(["--preset", "--presets", "-preset", "-presets"])("accepts %s with a separate preset", (flag) => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify([flag, "editors"]);
-    expect(parseRawArgs()).toMatchObject({ files: "vim.js", presets: ["editors"], bareArgs: [] });
+    expect(parseRawArgs()).toMatchObject({ files: "vim.js", presets: ["editors"], bareArgs: [], confirmations: [] });
   });
 
-  it.each(["--preset=editors", "--presets=editors", "#editors", "@editors", "--preset=#editors"])(
-    "accepts %s as a strict preset selector",
-    (arg) => {
-      proc.env.BASHRC_RAW_ARGS = JSON.stringify([arg]);
-      expect(parseRawArgs()).toMatchObject({ files: "vim.js", presets: ["editors"], bareArgs: [] });
-    },
-  );
-
-  it.each(["--preset=EDIT*", "--presets=EDIT*", "#EDIT*", "@EDIT*"])("expands every prefix match for %s", (arg) => {
+  it.each(["--preset=editors", "--presets=EDITORS", "@editors", "--preset=@editors"])("accepts exact preset %s", (arg) => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify([arg]);
-    expect(parseRawArgs()).toMatchObject({ files: "exact.js,vim.js,code.js", presets: ["edit", "editors", "editor-pro"] });
+    expect(parseRawArgs()).toMatchObject({ files: "vim.js", presets: ["editors"], bareArgs: [], confirmations: [] });
   });
 
-  it("composes raw files, repeated aliases, and preset lists", () => {
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify([
-      "raw.js",
-      "--files",
-      "git.js",
-      "--file=extra.js",
-      "--preset",
-      "edit,editors",
-      "--presets=editor-pro",
+  it.each(["--preset=editor", "@editor", "--preset=#editors", "--preset=#EDIT*"])("rejects nonmatching preset %s atomically", (arg) => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["-f", "--files=git.js", arg]);
+    expect(() => parseRawArgs()).toThrow(/Unknown preset/);
+    expect(proc.env.TEST_SCRIPT_FILES).toBeUndefined();
+    expect(proc.env.IS_FORCE_REFRESH).toBeUndefined();
+    expect(proc.env.BASHRC_BARE_ARGS).toBeUndefined();
+  });
+
+  it.each(["#editors", "#EDIT*"])("does not interpret %s as a preset marker", (arg) => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify([arg]);
+    expect(parseRawArgs()).toMatchObject({ files: arg, presets: [], bareArgs: [arg], confirmations: [] });
+  });
+
+  it.each(["--preset=EDIT*", "--presets=EDIT*", "@EDIT*", "--preset=@EDIT*"])("collects every prefix match for %s", (arg) => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify([arg]);
+    expect(parseRawArgs()).toMatchObject({
+      files: "exact.js,vim.js,code.js",
+      presets: ["edit", "editors", "editor-pro"],
+      confirmations: [{ keyword: "EDIT*", mode: "presets", matches: ["edit", "editors", "editor-pro"] }],
+    });
+  });
+
+  it.each(["--preset=*edit", "@*edit"])("collects every suffix match for %s", (arg) => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify([arg]);
+    expect(parseRawArgs()).toMatchObject({
+      files: "exact.js,other.js",
+      presets: ["edit", "other-edit"],
+      confirmations: [{ keyword: "*edit", mode: "presets", matches: ["edit", "other-edit"] }],
+    });
+  });
+
+  it.each(["--presets=*dit*", "@*dit*"])("collects every contains match for %s", (arg) => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify([arg]);
+    expect(parseRawArgs()).toMatchObject({
+      files: "exact.js,vim.js,code.js,other.js",
+      presets: ["edit", "editors", "editor-pro", "other-edit"],
+      confirmations: [{ keyword: "*dit*", mode: "presets", matches: ["edit", "editors", "editor-pro", "other-edit"] }],
+    });
+  });
+
+  it("does not require confirmation for a single wildcard match or an explicit list", () => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["@*pro", "--preset=edit,editors"]);
+    expect(parseRawArgs()).toMatchObject({
+      files: "code.js,exact.js,vim.js",
+      presets: ["editor-pro", "edit", "editors"],
+      confirmations: [],
+    });
+  });
+
+  it.each(["@missing", "@missing*", "@*missing", "@ed*it"])("rejects invalid preset selector %s", (arg) => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify([arg]);
+    expect(() => parseRawArgs()).toThrow(/Unknown preset/);
+    expect(proc.env.TEST_SCRIPT_FILES).toBeUndefined();
+  });
+
+  it.each([
+    ["vim*", ["software/scripts/vim.js", "software/scripts/vim-config.js"]],
+    ["*config", ["software/scripts/vim-config.js", "software/scripts/git-config.js"]],
+    ["*config.js", ["software/scripts/vim-config.js", "software/scripts/git-config.js"]],
+    ["*im*", ["software/scripts/vim.js", "software/scripts/vim-config.js"]],
+    ["vim", ["software/scripts/vim.js"]],
+    ["vi", ["vi"]],
+  ])("expands file selector %s with literal edge matching", (selector, expected) => {
+    expect(
+      expandFiles([selector], ["software/scripts/vim.js", "software/scripts/vim-config.js", "software/scripts/git-config.js"]),
+    ).toEqual(expected);
+  });
+
+  it.each([
+    ["a[1]", ["software/scripts/a[1].js"]],
+    ["a.", ["a."]],
+    ["a?*", ["a?*"]],
+    ["*💡*", ["software/scripts/tool💡.js"]],
+  ])("treats regex metacharacters and Unicode literally in %s", (selector, matches) => {
+    const confirmations = [];
+    expect(
+      expandFiles([selector], ["software/scripts/a[1].js", "software/scripts/a1.js", "software/scripts/tool💡.js"], confirmations),
+    ).toEqual(matches);
+    expect(confirmations).toEqual([]);
+  });
+
+  it("collects file confirmation requests for duplicate basenames, preserving folder boundaries", () => {
+    const confirmations = [];
+    const files = [
+      "software/scripts/advanced/a/setup.js",
+      "software/scripts/advanced/b/setup.js",
+      "software/scripts/advanced-extra/setup.js",
+    ];
+    expect(expandFiles(["advanced/setup.js"], files, confirmations)).toEqual([
+      "software/scripts/advanced/a/setup.js",
+      "software/scripts/advanced/b/setup.js",
     ]);
-    expect(parseRawArgs()).toMatchObject({ files: "raw.js,git.js,extra.js,exact.js,vim.js,code.js", bareArgs: ["raw.js"] });
+    expect(confirmations).toEqual([
+      {
+        keyword: "advanced/setup.js",
+        mode: "files",
+        matches: ["software/scripts/advanced/a/setup.js", "software/scripts/advanced/b/setup.js"],
+      },
+    ]);
+    expect(files).toEqual([
+      "software/scripts/advanced/a/setup.js",
+      "software/scripts/advanced/b/setup.js",
+      "software/scripts/advanced-extra/setup.js",
+    ]);
   });
 
-  it.each([["vim*"], ["--file", "vim*"], ["--file=vim*"], ["--files", "vim*"]])("expands file prefix selectors %j", (...args) => {
+  it.each([["vim*"], ["--file", "vim*"], ["--file=vim*"], ["--files", "vim*"]])("expands file aliases %j", (...args) => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(args);
     const parsed = parseRawArgs();
     expect(
@@ -84,17 +169,6 @@ describe("setup selectors", () => {
   it("does not consume another option as a selector value", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--file", "--dryrun"]);
     expect(() => parseRawArgs()).toThrow(/--file requires a value/);
-  });
-
-  it.each(["#missing", "#missing*", "#*", "#"])("rejects invalid preset selector %s", (arg) => {
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify([arg]);
-    expect(() => parseRawArgs()).toThrow(/Unknown preset|requires a preset name/);
-    expect(proc.env.TEST_SCRIPT_FILES).toBeUndefined();
-  });
-
-  it("quotes hash-prefixed suggestions so the shell does not discard them", () => {
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["#editor"]);
-    expect(() => parseRawArgs()).toThrow("./run '#editors'");
   });
 
   it("keeps force refresh available alongside file selectors", () => {

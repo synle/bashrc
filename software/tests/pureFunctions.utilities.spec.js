@@ -113,24 +113,20 @@ describe("_resolvePresetName", () => {
     expect(_resolvePresetName("editors", presetMap)).toBe("editors");
   });
 
-  it("should return unique fuzzy match", () => {
-    expect(_resolvePresetName("editor", presetMap)).toBe("editors");
+  it("should not resolve a unique substring without a wildcard", () => {
+    expect(_resolvePresetName("editor", presetMap)).toBeNull();
   });
 
   it("should return null for no match", () => {
     expect(_resolvePresetName("nonexistent", presetMap)).toBeNull();
   });
 
-  it("should throw on ambiguous match", () => {
-    expect(() => _resolvePresetName("s", presetMap)).toThrow(/ambiguous/);
+  it("should not resolve a substring shared by multiple names", () => {
+    expect(_resolvePresetName("s", presetMap)).toBeNull();
   });
 
-  it("should use custom suggestionFlag", () => {
-    try {
-      _resolvePresetName("s", presetMap, { suggestionFlag: "--files=" });
-    } catch (e) {
-      expect(e.message).toContain("--files=");
-    }
+  it("should preserve canonical spelling for a case-insensitive exact name", () => {
+    expect(_resolvePresetName("EDITORS", presetMap)).toBe("editors");
   });
 });
 

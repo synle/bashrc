@@ -72,16 +72,16 @@ describe("_resolveScriptFile", () => {
     expect(result.fileMatchState).toBe("expanded_match");
   });
 
-  it("should match by partial regex on basename", () => {
+  it("should not match a basename substring without a wildcard", () => {
     const result = _resolveScriptFile("software/scripts/vim", "vim", [...repoFiles]);
-    expect(result.resolvedFile).toBe("software/scripts/vim-config.js");
-    expect(result.fileExists).toBe(true);
-    expect(result.fileMatchState).toBe("expanded_match");
+    expect(result.resolvedFile).toBe("software/scripts/vim");
+    expect(result.fileExists).toBe(false);
+    expect(result.fileMatchState).toBe("not_found");
   });
 
-  it("should return ambiguous for multiple partial matches", () => {
+  it("should preserve multiple explicit wildcard matches for preflight handling", () => {
     const files = ["software/scripts/setup_a.js", "software/scripts/setup_b.js", "software/scripts/git.js"];
-    const result = _resolveScriptFile("software/scripts/setup", "setup", files);
+    const result = _resolveScriptFile("software/scripts/setup*", "setup*", files);
     expect(result.fileExists).toBe(false);
     expect(result.fileMatchState).toBe("ambiguous");
     expect(result.description).toContain("Ambiguous");

@@ -19,9 +19,9 @@
 #   ./run -f                                 # Shorthand for --force-refresh
 #   ./run --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.jsonc
 #   ./run --presets lightweight              # Plural alias; separate values also work
-#   ./run '#llm*'                            # Run all presets with this prefix (quote # and *)
+#   ./run '@llm*'                            # Preset prefix matches (quote wildcards against shell expansion)
 #   ./run --preset=lightweight,heavyweight   # Multiple presets compose (file lists union)
-#   ./run --preset=editor                    # Partial match (case-insensitive substring); 1 hit auto-resolves, 2+ hits errors with suggestions
+#   ./run --preset='*prompts'                # Preset suffix matches; multiple matches require default-yes confirmation
 #   ./run @llm                               # Bare @-marker → strict preset lookup (skip script search)
 #   ./run editors                            # Bare arg → script-first; falls back to preset on miss
 #   ./run --debug                            # Enable debug mode (keep temp scripts for inspection)
@@ -32,7 +32,9 @@
 #   ./run --remove --files="fzf.js"          # Remove a script's config (runs undoWork)
 #
 # Single dash also works: -files=..., -force-refresh, -f, -preset=..., -debug, -D, -verbose, -V, -dryrun, -remove
-# No short file/preset aliases: -f remains force refresh; -p is not a preset selector.
+# Names match exactly, case-insensitively. Use name*, *name, or *name* for prefix, suffix, or contains matches.
+# Multiple matches warn in red and require confirmation before scripts run; no terminal means cancellation.
+# No hash-prefixed preset shorthand. No short selector aliases: -f remains force refresh; -p is not a preset selector.
 ################################################################################
 
 ################################################################################

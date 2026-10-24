@@ -69,19 +69,21 @@ git diff --check
 ## Running a Subset
 
 `./run` invokes `run.sh` and accepts `--file` / `--files` and `--preset` / `--presets`, with either `=value` or a separate value.
-Both selector types fuzzy-match case-insensitively: one hit auto-resolves; multiple hits print suggestions.
-Trailing `*` selects every case-insensitive prefix match instead. Quote hash-prefixed selectors and wildcards so the shell passes them unchanged.
+Names match exactly and case-insensitively by default. File selectors accept exact paths, basenames, or basenames without extensions.
+Use `name*` for prefix matches, `*name` for suffix matches, and `*name*` for contains matches. Internal stars are unsupported.
+Quote wildcard arguments so the shell passes them unchanged. One match runs automatically; multiple matches require confirmation before any selected script executes.
+The red warning names `files` or `presets` and lists all matches. Enter accepts; No, EOF, a 30-second timeout, or no terminal cancels.
 There are no short file/preset aliases; existing `-f` still means force refresh.
 
 ```bash
 ./run --files=git.js              # one script
 ./run --file git.js               # singular alias, separate value
 ./run 'vim*'                      # all scripts with this basename prefix
-./run --files=vim                 # fuzzy match
+./run --files='*config.js'        # explicit suffix match
 ./run --preset=lightweight        # named preset
 ./run --preset=terminal,prompt    # union
 ./run --presets terminal         # plural alias, separate value
-./run '#llm*'                     # all presets with this prefix
+./run '@llm*'                     # preset prefix expansion with confirmation
 ./run @llm                        # strict preset lookup
 ./run editors                     # bare arg: script-first, preset fallback
 ./run --refresh="fzf.js,fonts.js" # force-refresh specific scripts
@@ -91,9 +93,16 @@ There are no short file/preset aliases; existing `-f` still means force refresh.
 
 Presets live in `software/metadata/presets.jsonc` (JSONC). Each entry declares `files[]` and/or recursive `presets[]`; cycles rejected at parse time by `expandPresetFiles`, guarded by `software/tests/presets.spec.js`. Composites: `lightweight` / `heavyweight`. Building blocks: `editors`, `emulators`, `apps`, `browsers`, `terminal`, `prompt`, `llm`.
 
-Resolution priority: file flags are script-only; preset flags are preset-only with substring fallback; bare `<x>` searches scripts first, then presets.
-Bare `@<x>` and quoted `'#<x>'` search presets only. Collision → script wins (`./run llm` hits `llm-common.js`; use `'#llm'`).
+Resolution priority: file flags are script-only; preset flags and bare `@<x>` are preset-only; other bare arguments search scripts first, then presets.
+Exact file paths take priority over basename matches. Script matches take priority over bare-name preset fallback.
+Explicit comma-separated lists do not require confirmation merely because they contain several keywords.
 Missing separate option values fail before selection. Existing empty `--files=` and `--preset=` values remain no-ops.
+
+### Selector migration
+
+Hash-prefixed preset shorthand is no longer supported. Replace `'#name'` with `@name`, or use `--preset=name`.
+Implicit fuzzy abbreviations are no longer supported. Replace `--preset=editor` with `--preset=editors` or quote `--preset='editor*'`.
+For automation without a terminal, provide exact preset names or unambiguous file paths instead of selectors with multiple matches.
 
 ## Testing
 

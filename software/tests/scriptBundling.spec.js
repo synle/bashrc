@@ -83,7 +83,7 @@ describe("_resolveScriptFile", () => {
     expect(result.description).toContain("File not found");
   });
 
-  it("should fuzzy match by basename in subdirectories of the same parent", () => {
+  it("should match an exact basename within the same folder scope", () => {
     const allFiles = ["software/scripts/advanced/fzf.js"];
     const result = _resolveScriptFile("software/scripts/fzf.js", "fzf.js", allFiles);
     // basename fzf.js matches and advanced/fzf.js starts with software/scripts
@@ -92,7 +92,7 @@ describe("_resolveScriptFile", () => {
     expect(result.fileMatchState).toBe("expanded_match");
   });
 
-  it("should not fuzzy match when parent directory differs entirely", () => {
+  it("should not match when the parent folder differs entirely", () => {
     const allFiles = ["other/path/fzf.js"];
     const result = _resolveScriptFile("software/scripts/fzf.js", "fzf.js", allFiles);
     expect(result.fileExists).toBe(false);
@@ -106,22 +106,18 @@ describe("_resolveScriptFile", () => {
     expect(result.description).toContain("Expanded");
   });
 
-  it("should return ambiguous error with copy-paste suggestions when partial match has 2+ hits", () => {
+  it("should identify multiple explicit wildcard matches without selecting the first", () => {
     const allFiles = ["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"];
-    // bare "vim" gets prefixed to "software/scripts/vim" by the caller; basename "vim"
-    // matches both via the partial-regex tier.
-    const result = _resolveScriptFile("software/scripts/vim", "vim", allFiles);
+    const result = _resolveScriptFile("software/scripts/vim*", "vim*", allFiles);
     expect(result.fileExists).toBe(false);
     expect(result.fileMatchState).toBe("ambiguous");
-    expect(result.description).toContain("Ambiguous");
     expect(result.description).toContain("matched 2");
-    expect(result.description).toContain("./run --files=vim-config.js");
-    expect(result.description).toContain("./run --files=vim-jetpack.sh");
+    expect(allFiles).toEqual(["software/scripts/vim-config.js", "software/scripts/vim-jetpack.sh"]);
   });
 
-  it("should still resolve when partial match yields exactly one hit", () => {
+  it("should resolve when an explicit wildcard yields exactly one hit", () => {
     const allFiles = ["software/scripts/vim-config.js", "software/scripts/git.js"];
-    const result = _resolveScriptFile("software/scripts/vim", "vim", allFiles);
+    const result = _resolveScriptFile("software/scripts/vim*", "vim*", allFiles);
     expect(result.fileExists).toBe(true);
     expect(result.resolvedFile).toBe("software/scripts/vim-config.js");
   });

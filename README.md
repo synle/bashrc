@@ -141,13 +141,20 @@ make clean / make doctor # Clean up / diagnostics
 ```bash
 ./run                             # Full run (local repo or fetches from GitHub)
 ./run --files="git.js"            # Specific file(s); bare args work too
-./run --preset=lightweight        # Named preset; partial match auto-resolves if 1 hit
+./run --preset=lightweight        # Exact named preset
+./run @prompts                    # Refresh shared prompts without installing clients
+./run '@llm*'                     # Preset prefix expansion; confirm multiple matches
+./run --files='*config.js'        # Script suffix expansion; confirm multiple matches
 ./run --refresh="fzf.js,fonts.js" # Force-refresh specific scripts
 ./run --force-refresh             # Reinstall heavy items only if stale >2 weeks
 ./run --dryrun                    # Preview without writing
 ./run --remove --files="fzf.js"   # Remove a script's config
 ./run --debug --verbose           # Keep temp files, bash tracing
 ```
+
+Names match exactly, case-insensitively. Use quoted `name*`, `*name`, or `*name*` selectors for prefix, suffix, or contains matching.
+Multiple matches produce a red warning listing the matching files or presets before execution. Enter accepts; No, EOF, timeout, or no terminal cancels.
+Hash-prefixed preset shorthand and implicit fuzzy abbreviations are unsupported; use `@name`, `--preset=name`, or explicit wildcards.
 
 ## Architecture
 
