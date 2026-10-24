@@ -46,7 +46,7 @@ Persist the same launch time and `deadline_at = started_at + resolved budget`. F
 - Return a `## State` block after each pass. The driver supplies it under `## Prior state`, never a whitespace-split `state=` token. Missing prior state means round one and requires live verification, not invented ownership.
 - Increment `completed_round` only after a pass finishes. An interrupted pass resumes from its last completed checkpoint; other PRs keep independent counters.
 - Preserve shared state: `loop_count`, `completed_round`, `started_at`, `deadline_at`, `last_full_pass_at`, `last_poll_at`, `watch_fingerprint`, `probe_snapshot`, `probe_count`, `consecutive_noops`, `dirty_after_pass`, `pending_wake_events`, `externally_blocked`, `last_watch_verification_at`, and `wake_reason`.
-- Preserve every workflow-specific state field and `needs_user` source/version/next-action field. Never reset repair caps, de-duplication, workspace ownership, automerge ownership, or readiness evidence during a handoff.
+- Preserve every workflow-specific state field and `needs_user` source/version, blocked/independent actions, clearing condition, and next action. Apply the selected workflow's decision scope before parking; the flag alone never proves quiet eligibility. Dirty/unpushed work remains outstanding even when a named action is blocked; preserve it without repeatedly dispatching forbidden actions. Never reset repair caps, de-duplication, workspace ownership, automerge ownership, or readiness evidence during a handoff.
 - Checkpoint immediately after ownership-changing writes, pushes, or workspace allocation, not only at pass end. Only the relevant owner performs cleanup; retain durable PR memory after every exit.
 
 ### Read-only probe
@@ -124,7 +124,7 @@ Never:
 - Interrupt another owner's work or destroy dirty/unpushed state during cleanup.
 
 Stop and ask when workflow selection, scope, ownership, or a required permission is ambiguous; preserve state and leave existing PRs untouched.
-An in-run decision parks its PR under the selected workflow's rules instead of silently ending a watch.
+An in-run decision restricts only affected actions under the selected workflow's rules; continue independently authorized work and the existing watch. A readiness gap is not repair authority or a repair veto.
 
 ## Verification
 

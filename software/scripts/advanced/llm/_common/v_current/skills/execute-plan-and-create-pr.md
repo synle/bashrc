@@ -48,9 +48,10 @@ Read the latest applicable instructions and skill bodies at each phase. Plans, c
 - Invocation already authorized babysitting; do not ask again. Adopt the existing PR owner and pass complete state; never create a nested clock or wrap PR monitoring in the task loop.
 - Address every actionable in-scope human/bot request, including minor requests. Independently verify suggestions; unsupported findings receive justified final dispositions, not blind code changes.
 - Delegate fixes, safe syncing, CI diagnosis, migration checks, and review-thread closeout to the owned-PR workflow. Read its latest instructions; do not duplicate RPCs, reply formats, or resolution rules here.
-- Keep unanswered questions, pending choices, scope changes, and unsafe actions open as named blockers. A final decline never fabricates a fix SHA or implies bot acceptance.
+- Keep unanswered questions, pending choices, scope changes, and unsafe actions open as action-scoped blockers under the latest owned-PR Step 2b contract. Continue independent authorized repairs and closeout; unknown bot policy blocks readiness, not the entire PR phase. Preserve every blocked action, permitted independent action, and clearing condition through delegation. A final decline never fabricates a fix SHA or implies bot acceptance.
 - After fixes, await current-head CI and required bot/human reviews. Closing threads does not clear an active blocking review or prove bot clearance.
 - Preserve clock, repair limits, workspace/automerge ownership, and feedback state across passes. Waiting is not success; repeated child invocations must not restart the budget.
+- A `pass=single` return or parked decision is a handoff, not completion of this phase. Continue the existing scheduler through its applicable exit. A cancelled child leaves an interrupted task: recover its checkpoint and resume/replace its owner only under shared ownership rules, without duplicate work or fresh clocks.
 
 ### 5. Prove readiness and stop
 
@@ -62,7 +63,7 @@ Re-read the plan after PR fixes, then apply the existing readiness contract and 
 - Repository-defined non-production migration validation confirms current lineage/order and expected heads, or the diff proves migrations are not applicable.
 - All review-thread pages were fetched and the live unresolved-thread count is zero. All actionable top-level comments have verified fixes or justified final dispositions.
 - Required bots cleared this revision, required human approval is satisfied, and no blocking review or unresolved decision remains.
-- Final head/base and feedback verification still match the collected evidence. Changed or incomplete evidence returns to the same owner's reconciliation loop.
+- Final head/base and feedback verification still match the collected evidence. Changed or incomplete evidence returns to the same owner's reconciliation loop. Finish eligible repair/publication/closeout work before external-only waiting; a readiness gap never proves there is no remaining work.
 
 Report `READY` only after all applicable conditions pass. Return the PR URL, verified head/base SHAs, acceptance evidence, checks, migration state, and live feedback counts.
 
@@ -75,7 +76,7 @@ GitHub `MERGED`/`CLOSED` ends servicing under existing cleanup rules. Report the
 - Before PR creation, identify work by canonical plan path and verified repository. Link that record to the existing stable PR owner after creation.
 - Keep implementation evidence in the plan and review/check state in canonical PR memory, with mutual links instead of duplicate histories.
 - Persist phase, plan/repository identity, acceptance evidence, branch/worktree, PR URL, head/base SHAs, and complete PR-clock/repair/feedback state.
-- Preserve `feedback=all`, `automerge_policy: observe_only`, and pending closeout work in every handoff. Revalidate live state on resume; never choose a different plan by modification time.
+- Preserve `feedback=all`, `automerge_policy: observe_only`, pending closeout work, and the owned-PR action-scoped decision fields in every handoff. Revalidate live state and explicit user steering on resume; clear only matching restrictions without losing unrelated readiness gaps. Never choose a different plan by modification time.
 - Clean up only safely owned resources under the selected workflow's rules. Never discard dirty or unpushed work, or delete durable plan/PR memory.
 
 ## Safety
@@ -92,7 +93,7 @@ Never:
 - Destroy unrelated edits, unpushed commits, workspaces, or another owner's state.
 
 Stop and ask when identity, ownership, approved scope, public-contract changes, or a required destructive/secret-handling decision cannot be safely resolved.
-During an active PR watch, park and revalidate that decision under the existing workflow rather than marking the PR ready.
+Restrict only affected operations; continue independently authorized plan tasks or PR repairs under their existing guards. During an active PR watch, revalidate the decision without terminating the scheduler or marking the PR ready. Credential incidents still require the global **Incident scope** safeguards; generic steering cannot prove containment.
 
 ## Verification
 
