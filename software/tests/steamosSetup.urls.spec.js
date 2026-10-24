@@ -79,6 +79,21 @@ afterEach(() => {
 });
 
 describe("SteamOS URL shortcut protocols", () => {
+  it("registers Apple TV+ with the requested streaming URL", () => {
+    const registrations = setupSource
+      .split("\n")
+      .filter((line) => line.startsWith("  _add_url_steam_shortcut "))
+      .join("\n");
+    const result = spawnSync(
+      "/bin/bash",
+      ["-c", `function _add_url_steam_shortcut() { printf '%s\\t%s\\n' "$1" "$2"; }\n${registrations}`],
+      { encoding: "utf-8", timeout: 10000 },
+    );
+
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    expect(result.stdout.split("\n")).toContain("Apple TV+\thttps://tv.apple.com/");
+  });
+
   it.each([
     [
       "_add_url_steam_shortcut",

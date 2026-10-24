@@ -1123,6 +1123,7 @@ if [ "$BRAVE_FLATPAK_READY" -eq 1 ] && [ -n "$BRAVE_FLATPAK_EXECUTABLE" ]; then
   _add_url_steam_shortcut "Netflix" "https://www.netflix.com/"
   _add_url_steam_shortcut "Disney+" "https://www.disneyplus.com/"
   _add_url_steam_shortcut "Prime Video" "https://www.primevideo.com/"
+  _add_url_steam_shortcut "Apple TV+" "https://tv.apple.com/"
   _add_url_steam_shortcut "YouTube" "https://www.youtube.com/"
   _add_url_steam_shortcut "Plex" "http://192.168.1.45:32400/web/index.html/"
   _add_url_steam_shortcut "Fav" "https://synle.github.io/fav/"
