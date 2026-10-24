@@ -116,7 +116,7 @@ async function _doVimTheme(vimFolders) {
           execute 'colorscheme ' . l:scheme
         catch /^Vim\\%((\\a\\+)\\)\\=:E185/
           echohl WarningMsg
-          echom 'Theme missing: ' . l:scheme . '; using Ayu. Run bash run.sh --files=vim-jetpack.sh'
+          echom 'Theme missing: ' . l:scheme . '; using Ayu. Run ./run --files=vim-jetpack.sh'
           echohl None
           try
             execute 'colorscheme ' . s:theme_fallbacks[l:appearance]

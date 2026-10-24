@@ -229,7 +229,7 @@ function _resolvePresetName(name, presetMap, opts = {}) {
   const matches = known.filter((k) => k.toLowerCase().includes(needle));
   if (matches.length === 1) return matches[0];
   if (matches.length > 1) {
-    const suggestions = matches.map((m) => `  bash run.sh ${flag === "#" ? `'${flag}${m}'` : `${flag}${m}`}`).join("\n");
+    const suggestions = matches.map((m) => `  ./run ${flag === "#" ? `'${flag}${m}'` : `${flag}${m}`}`).join("\n");
     throw new Error(
       `Preset "${name}" is ambiguous — matched ${matches.length}: ${matches.join(", ")}.\n` + `Pick one and re-run:\n${suggestions}`,
     );
@@ -1207,7 +1207,7 @@ global.is_work_profile = is_work_profile;
  * is_gui_wayland | A Wayland compositor is reachable.
  *
  * Read through getRuntimeOption so a run can be forced either way for testing:
- * `bash run.sh --setup --is_gui=0` rehearses a headless install on a GUI box.
+ * `./run --setup --is_gui=0` rehearses a headless install on a GUI box.
  */
 /** @type {boolean} A GUI display surface is available (mac/windows always; elsewhere needs X11 or Wayland; never over ssh) */
 const is_gui = getRuntimeOption("is_gui", parseBoolean);
@@ -1233,7 +1233,7 @@ global.is_gui_wayland = is_gui_wayland;
  * system_gpu_vram_mib | Largest GPU's VRAM in MiB (Apple Silicon: 2/3 of unified
  *                     | memory). 0 when no GPU, or when VRAM is unreadable.
  *
- * Read through getRuntimeOption, so `bash run.sh --system_gpu_vram_mib=8192`
+ * Read through getRuntimeOption, so `./run --system_gpu_vram_mib=8192`
  * rehearses a smaller card.
  */
 /** @type {boolean} A battery was detected (laptop / handheld) */
@@ -5624,7 +5624,7 @@ function _resolveScriptFile(file, originalFile, allRepoFiles) {
     if (partial.length === 1) {
       foundMatchedPath = partial[0];
     } else if (partial.length > 1) {
-      const suggestions = partial.map((p) => `  bash run.sh --files=${p.replace(/^software\/scripts\//, "")}`).join("\n");
+      const suggestions = partial.map((p) => `  ./run --files=${p.replace(/^software\/scripts\//, "")}`).join("\n");
       return {
         resolvedFile: file,
         fileExists: false,

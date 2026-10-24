@@ -342,7 +342,7 @@ report filesystem locations. A normal new-tab menu action still uses the profile
 configured starting folder. Non-filesystem PowerShell providers do not report a folder.
 
 Deploy from the updated checkout on Windows/WSL with the normal profile refresh,
-`bash run.sh`, then restart the shells. A targeted `--files` run alone does not rebuild
+`./run`, then restart the shells. A targeted `--files` run alone does not rebuild
 the base Bash profile containing this hook. To verify on Windows, enter a non-home
 folder containing spaces, wait for the prompt, then try
 `alt+t`, `alt+d`, and `alt+'` separately. Run `pwd` in Bash or `Get-Location` in
@@ -816,7 +816,7 @@ Run `/reload` in an existing Pi session after deployment to apply the keybinding
 
 Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub Copilot CLI** (the [official `gh.io/copilot-install` distribution](https://gh.io/copilot-install), not the deprecated `@github/copilot-cli` package), and **Google Gemini CLI**. Where possible the input-layer chords are aligned to Claude's conventions so muscle memory carries across tools.
 
-**OpenCode 2 migration:** OpenCode 2 is now the canonical `opencode` and `op` command. Existing `~/.config/opencode/` and `~/.local/share/opencode/` config, sessions, and credentials stay in place because OpenCode 2 reads them through its compatibility layer. Run `bash run.sh --files=migrate-opencode-v2.standalone.js` once to move the old isolated `~/.local/opencode-2/` install into a timestamped `~/.local/opencode-migrations/` backup; remove that migration script after all existing machines complete the move.
+**OpenCode 2 migration:** OpenCode 2 is now the canonical `opencode` and `op` command. Existing `~/.config/opencode/` and `~/.local/share/opencode/` config, sessions, and credentials stay in place because OpenCode 2 reads them through its compatibility layer. Run `./run --files=migrate-opencode-v2.standalone.js` once to move the old isolated `~/.local/opencode-2/` install into a timestamped `~/.local/opencode-migrations/` backup; remove that migration script after all existing machines complete the move.
 
 **Shared engineering principles:** `software/scripts/advanced/llm/_common/v_current/instructions.md` is the single source of truth and gets deployed to `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, and `~/.gemini/GEMINI.md` (one per `setup.js`). OpenCode reads `~/.claude/CLAUDE.md` directly via its global fallback, so it's automatically covered.
 

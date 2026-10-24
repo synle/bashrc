@@ -39,7 +39,7 @@ OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chr
 3. **Reuse the helper API.** Before hand-rolling file IO, path lookup, download, or
    install logic, check `software/index.js` / `common-functions.bash` (§9).
 4. **Run what you changed.** After touching a script:
-   `bash run.sh --files="<basename>"`. A PostToolUse hook reminds you.
+   `./run --files="<basename>"`. A PostToolUse hook reminds you.
 5. **JSDoc everything you touch** — every function, constant, type. Script files open
    with `/** Description. */` (`/**`, not `/** *`).
 6. **Never edit generated output — edit the generator.**
@@ -128,26 +128,28 @@ via BEGIN/END), `tools/build-include.js` (BEGIN/END engine + `{{map.key}}`),
 
 ## 5. Running things
 
+Use `./run` from the checkout root; it is an executable symlink to `run.sh`.
+
 ```bash
-bash run.sh                             # profile refresh (default)
-bash run.sh --setup --force             # full setup, install everything
-bash run.sh --files="git.js"            # one script (fuzzy: basename or partial)
-bash run.sh --files="a.js,b.sh"         # several
-bash run.sh git.js vim-config.js        # bare args as files
-bash run.sh --refresh="fzf.js,fonts.js" # run + force-refresh those scripts
-bash run.sh --force-refresh             # reinstall heavy items only if stale (>2 weeks)
-bash run.sh @lightweight                # bare @ → strict preset lookup
-bash run.sh --preset=editors,terminal   # presets union their file lists
-bash run.sh --dryrun --setup            # no writes; .sh scripts skipped entirely
-bash run.sh --remove --files="fzf.js"   # call undoWork() instead of doWork()
-bash run.sh --debug --verbose           # keep temp files / bash tracing (set -x)
-IS_CUSTOM_THEME_DISABLED=1 bash run.sh  # stock built-in themes instead of Sy Dark/Sy Light
+./run                             # profile refresh (default)
+./run --setup --force             # full setup, install everything
+./run --files="git.js"            # one script (fuzzy: basename or partial)
+./run --files="a.js,b.sh"         # several
+./run git.js vim-config.js        # bare args as files
+./run --refresh="fzf.js,fonts.js" # run + force-refresh those scripts
+./run --force-refresh             # reinstall heavy items only if stale (>2 weeks)
+./run @lightweight                # bare @ → strict preset lookup
+./run --preset=editors,terminal   # presets union their file lists
+./run --dryrun --setup            # no writes; .sh scripts skipped entirely
+./run --remove --files="fzf.js"   # call undoWork() instead of doWork()
+./run --debug --verbose           # keep temp files / bash tracing (set -x)
+IS_CUSTOM_THEME_DISABLED=1 ./run  # stock built-in themes instead of Sy Dark/Sy Light
 ```
 
 Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
 `emulators`, `apps`, `terminal`, `prompt`, `llm`, `llm-prompts`, `browsers`.
 
-**CLI resolution.** `--files=<x>` strict script — typo fails loudly, on purpose. `--preset=<x>` strict preset with case-insensitive substring fallback. Bare `<x>` script-first, preset fallback (`_resolveBareArgPresetFallback`, driven by `BASHRC_BARE_ARGS`). Bare `@<x>` skips script search. Script matching (`_resolveScriptFile`): exact path → basename sans extension → regex partial. 1 hit auto-resolves; 2+ print suggestions; 0 errors. Script wins collisions — `bash run.sh llm` hits `llm-common.js`; use `@llm` to force the preset.
+**CLI resolution.** `--files=<x>` strict script — typo fails loudly, on purpose. `--preset=<x>` strict preset with case-insensitive substring fallback. Bare `<x>` script-first, preset fallback (`_resolveBareArgPresetFallback`, driven by `BASHRC_BARE_ARGS`). Bare `@<x>` skips script search. Script matching (`_resolveScriptFile`): exact path → basename sans extension → regex partial. 1 hit auto-resolves; 2+ print suggestions; 0 errors. Script wins collisions — `./run llm` hits `llm-common.js`; use `@llm` to force the preset.
 
 **Selector aliases.** `--file` / `--files` and `--preset` / `--presets` accept `=value` or a separate value; single-dash long forms remain supported.
 No short selector aliases are added: `-f` remains force refresh, and `-p` is not a preset selector.
@@ -498,7 +500,7 @@ that both bash and node consume:
   (after the `is_os_*` exports, since `is_gui` consults `is_os_mac` / `is_os_windows`),
   so every shell start re-derives it and node inherits the result as env vars. Never add
   these to the `os_flags` snapshot loop.
-- **Override for testing:** `bash run.sh --setup --is_gui=0` rehearses a headless install
+- **Override for testing:** `./run --setup --is_gui=0` rehearses a headless install
   on a GUI box (`--is_gui_x11=` / `--is_gui_wayland=` likewise). `run.sh`'s pre-scan maps
   these to `BASHRC_FORCE_IS_GUI*` env vars and `_detect_gui_flags` applies them **last,
   inside itself**. Do not "fix" this by exporting `is_gui` over the detected value —
@@ -667,7 +669,7 @@ Flow** (`.github/workflows/build-main.yml` = prep → build-{ubuntu,rhel,arch,de
   background queue is skipped in CI. `check_binary_warn` never fails — use it for
   GitHub-release fallbacks, AUR-only packages, and anything backgrounded on mac.
 - **Agent hooks** (`.claude/settings.json`): PreToolUse blocks any `Write`/`Edit` under
-  `/.build/`; PostToolUse prints a `bash run.sh --files="…"` reminder after editing a
+  `/.build/`; PostToolUse prints a `./run --files="…"` reminder after editing a
   `software/scripts/` `.js`/`.sh` (excluding `.common.js`, `index.js`, `build-include.js`,
   `bootstrap/*`, and `_`-prefixed basenames).
 
@@ -689,7 +691,7 @@ include repo-local skills.
 | `/remove-package`                | Dropping a tool                                                                               |
 | `/add-os`                        | Onboarding a new distro / platform                                                            |
 | `/remove-os`                     | Dropping OS support                                                                           |
-| `/run`                           | Resolving a script name to its `bash run.sh --files=…` command and running it                 |
+| `/run`                           | Resolving a script name to its `./run --files=…` command and running it                       |
 | `/check`                         | Verifying session changes survived a merge/rebase/hook                                        |
 | `/plan-and-commit`               | Multi-file change worth recording — writes `~/_extra/ai_llm/plans/bashrc-<feature>.{md,diff}` |
 | `/refresh-llm-guidance`          | Distilling upstream agent guidance into this repo's context and local skills                  |
@@ -876,7 +878,7 @@ outside-home, credential-shaped source, or duplicate markers → old body kept, 
 After any corpus change, deploy + verify:
 
 ```bash
-bash run.sh --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"
+./run --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"
 ```
 
 Run twice: same count both runs, no `Removed prior Sy skill` lines on the second.
@@ -888,7 +890,7 @@ same commit.
 ## 14. Working agreement
 
 **Before you finish, in order:** (1) JSDoc on everything you touched; (2)
-`bash run.sh --files="<the script you changed>"` — it must actually run; (3) `make format`
+`./run --files="<the script you changed>"` — it must actually run; (3) `make format`
 if you touched BEGIN/END markers, the CI binary list, script indexes, or JSDoc; (4)
 `make test_unit`, and `make validate` for anything touching `index.js`, `run.sh`,
 `bootstrap/`, or markers; (5) run it twice — confirm idempotency; (6) update this file
@@ -924,7 +926,7 @@ Targeted escalations that beat a full `make validate` when you know what you tou
 
 | Touched                                               | Run instead of `make validate`                                                           |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| A `software/scripts/` script                          | `bash run.sh --files="<script>"` (twice, for idempotency)                                |
+| A `software/scripts/` script                          | `./run --files="<script>"` (twice, for idempotency)                                      |
 | `software/index.js`, `run.sh`, `bootstrap/`           | `make test_unit && make test_profile`                                                    |
 | A `.sh` / `.bash` / profile partial                   | `bash -n <file>` then `make test_unit` (`profileShellSyntax` parses every partial — §11) |
 | BEGIN/END markers, `ci-binaries.json`, script indexes | `make format && make test_buildconfig`                                                   |

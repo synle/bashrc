@@ -666,7 +666,7 @@ function git_create_worktree() {
   fi
 
   if ! type -P worktree_create > /dev/null 2>&1; then
-    echo "git_create_worktree: worktree_create is not installed — run: bash run.sh --files=git-functions.js" >&2
+    echo "git_create_worktree: worktree_create is not installed — run: ./run --files=git-functions.js" >&2
     return 1
   fi
 
@@ -1359,7 +1359,7 @@ function _pr_list_run() {
   fi
 
   if ! type -P list_prs > /dev/null 2>&1; then
-    echo "$name: list_prs is not installed — run: bash run.sh --files=git-functions.js" >&2
+    echo "$name: list_prs is not installed — run: ./run --files=git-functions.js" >&2
     return 1
   fi
 
@@ -1410,7 +1410,7 @@ github.com/acme/api/pull/124'"
     return 1
   fi
   if ! type -P pr_merge > /dev/null 2>&1; then
-    echo "pr_merge: command is not installed — run: bash run.sh --files=git-functions.js" >&2
+    echo "pr_merge: command is not installed — run: ./run --files=git-functions.js" >&2
     return 1
   fi
   command pr_merge "$@"

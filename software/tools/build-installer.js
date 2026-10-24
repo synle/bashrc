@@ -8,7 +8,7 @@
  *
  *   1. Extracts the tarball to a temp dir ($BASHRC_INSTALLER_DIR, defaults to /tmp/...).
  *   2. cd's into the extracted repo.
- *   3. exec's `bash run.sh "$@"` so callers can pass any run.sh flag through.
+ *   3. exec's `./run "$@"` so callers can pass any run.sh flag through.
  *
  * Because the extracted directory contains software/index.js, run.sh auto-detects
  * IS_LOCAL_REPO=1 and serves every script from disk — no GitHub raw fetches, no
@@ -42,6 +42,7 @@ const OUTPUT_PATH = path.join(OUTPUT_DIR, "install-bashrc.sh");
  * getGitHubRawUrl at runtime, never from local disk.
  */
 const FILES_TO_BUNDLE = [
+  "run",
   "run.sh",
   "software/index.js",
   "software/common.js",
@@ -156,7 +157,7 @@ function getVersionString() {
 
 /**
  * Render the bash header that prefixes the base64 payload. The header is
- * standalone-runnable up to the `exec bash run.sh` line; everything after the
+ * standalone-runnable up to the `exec ./run` line; everything after the
  * PAYLOAD_MARKER is data, never executed.
  *
  * The header supports two invocation modes:
@@ -256,7 +257,7 @@ awk '/^${PAYLOAD_MARKER}\$/{found=1; next} found' "\$0" \\
 cd "\$EXTRACT_DIR"
 # exec replaces this shell with run.sh so the EXIT trap above fires only when
 # run.sh itself exits — Ctrl-C and normal completion both clean up correctly.
-exec bash run.sh "\$@"
+exec ./run "\$@"
 
 ${PAYLOAD_MARKER}
 `;

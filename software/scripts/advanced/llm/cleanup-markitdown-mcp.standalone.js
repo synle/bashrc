@@ -1,7 +1,7 @@
 /** Remove legacy MarkItDown MCP registrations after switching to CLI extraction. */
 
 // TODO: Remove this temporary migration after existing machines have run it.
-// Run explicitly: bash run.sh --files=cleanup-markitdown-mcp.standalone.js
+// Run explicitly: ./run --files=cleanup-markitdown-mcp.standalone.js
 
 /**
  * Remove only uvx-launched markitdown-mcp entries from the four known CLI configs.

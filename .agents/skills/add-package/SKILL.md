@@ -93,7 +93,7 @@ If the tool belongs to a named bundle (`editors`, `terminal`, `llm`, …), add i
 
 ```bash
 npx vitest run --config vitest.config.js software/tests/presets.spec.js
-bash run.sh --preset=<preset> --dryrun
+./run --preset=<preset> --dryrun
 ```
 
 ### 8. Register a new `.sh` script in the profile-syntax spec
@@ -105,14 +105,14 @@ If step 1 or 2 created a new `.sh` / `.bash` file, add it to the file list in `s
 Run the script you actually touched — twice, to prove idempotency (AGENTS.md §14):
 
 ```bash
-bash run.sh --files="<name>.js"        # or "mac/<name>.sh", etc.
-bash run.sh --files="<name>.js"        # second run must be a clean no-op
+./run --files="<name>.js"        # or "mac/<name>.sh", etc.
+./run --files="<name>.js"        # second run must be a clean no-op
 ```
 
 Package-manager-only changes (no new script) are exercised by the dry run instead:
 
 ```bash
-bash run.sh --dryrun --setup
+./run --dryrun --setup
 ```
 
 Then the full gate:
@@ -140,7 +140,7 @@ Stop and ask if installer provenance, package identity, or supported-platform sc
 
 Before declaring success, confirm and report:
 
-- `bash run.sh --files="<the script>"` run twice, second run idempotent — or `bash run.sh --dryrun --setup` for a package-manager-only change
+- `./run --files="<the script>"` run twice, second run idempotent — or `./run --dryrun --setup` for a package-manager-only change
 - `make format && make validate` run, with its result quoted, not paraphrased
 - a fresh shell starts clean and the binary resolves via `type -P`
 - which platforms actually got the package, and which were deliberately skipped and why

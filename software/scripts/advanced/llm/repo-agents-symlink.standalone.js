@@ -11,7 +11,7 @@
  * Idempotent. Never clobbers a regular file or a symlink pointing somewhere else —
  * those are reported and skipped. Use:
  *
- *   bash run.sh --files=repo-agents-symlink.standalone.js
+ *   ./run --files=repo-agents-symlink.standalone.js
  */
 
 /**

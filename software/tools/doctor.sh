@@ -312,7 +312,7 @@
     _bak_date=$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "${HOME}/.bash_syle.bak" 2> /dev/null || stat -c '%y' "${HOME}/.bash_syle.bak" 2> /dev/null | cut -d. -f1)
     _check_pass "Rollback backup available (${_bak_size} bytes, ${_bak_date})"
   else
-    _check_warn "No rollback backup found (~/.bash_syle.bak) - created on next 'bash run.sh'"
+    _check_warn "No rollback backup found (~/.bash_syle.bak) - created on next './run'"
   fi
 
   echo ""

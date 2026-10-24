@@ -26,7 +26,7 @@
 #
 # Winget package installs (Brave, VS Code, Git, Terminal, etc.) are handled
 # from WSL by software/scripts/windows/_winget-install.sh — run from inside
-# WSL via `bash run.sh --files=_winget-install.sh` after this script finishes.
+# WSL via `./run --files=_winget-install.sh` after this script finishes.
 ################################################################################
 
 # Disable progress bars to speed up Invoke-WebRequest

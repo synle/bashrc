@@ -381,7 +381,7 @@ async function _writeOpencodeTuiConfig(configHome = getLLMConfigHome(), isWindow
     },
     // Attention block: visual + OS-notification still on; audio chime OFF
     // because parallel-session workflows (e.g. running claude / copilot /
-    // gemini / opencode side-by-side via `bash run.sh --preset=llm`) make
+    // gemini / opencode side-by-side via `./run --preset=llm`) make
     // overlapping audio cues unhelpful. enabled:true keeps the visual flash;
     // notifications:true keeps OS desktop notifications (silent unless the
     // OS notification center adds its own sound). sound:false suppresses
@@ -665,7 +665,7 @@ function _readSymlinkTarget(linkPath) {
  * `opencode/install.sh` does `npm uninstall -g` + reinstall on every run, and the
  * opencode data folder (`~/.local/share/opencode/`) gets rebuilt along with it —
  * taking `auth.json` (every provider login: github-copilot, anthropic, openai...)
- * with it. Result: a re-login after every `bash run.sh --preset=llm`.
+ * with it. Result: a re-login after every `./run --preset=llm`.
  *
  * Fix: the real credential file lives at `~/.auth-opencode.json`, which nothing in
  * the install path touches, and `~/.local/share/opencode/auth.json` is a symlink

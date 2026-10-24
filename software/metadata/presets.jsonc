@@ -1,5 +1,5 @@
-// Named --preset=<name> bundles. Source of truth for `bash run.sh --preset=...`
-// and bare-arg preset lookup (`bash run.sh <name>` / `bash run.sh @<name>`).
+// Named --preset=<name> bundles. Source of truth for `./run --preset=...`
+// and bare-arg preset lookup (`./run <name>` / `./run @<name>`).
 // Format: JSONC — supports `//` line comments, `/* */` block comments, and trailing
 // commas. Parsed by loadPresets() in software/index.js (strips comments before
 // JSON.parse). Run.sh reads this file verbatim into PRESETS_JSON.

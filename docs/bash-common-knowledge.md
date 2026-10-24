@@ -768,7 +768,7 @@ function my_wrapper() {
 
 ```bash
 # User runs:
-bash run.sh --files="git.js" --force-refresh
+./run --files="git.js" --force-refresh
 
 # run.sh pre-scans $@ for --verbose/--no-color via case statement
 for arg in "$@"; do
@@ -1061,11 +1061,11 @@ HISTCONTROL=ignorespace:ignoredups:erasedups
 Concrete repro:
 
 ```
-17:22:51   bash run.sh ~refresh-source.standalone.js   ← saved
+17:22:51   ./run ~refresh-source.standalone.js   ← saved
 … (12 minutes of typing into a chat window — no shell activity) …
-18:08:12   bash run.sh ~refresh-source.standalone.js   ← saved (different from previous in-history)
+18:08:12   ./run ~refresh-source.standalone.js   ← saved (different from previous in-history)
 … (12 more minutes typing into a chat) …
-18:20:12   bash run.sh ~refresh-source.standalone.js   ← DROPPED by ignoredups
+18:20:12   ./run ~refresh-source.standalone.js   ← DROPPED by ignoredups
                                                           (immediately previous in-history is identical)
 18:20:54   history | grep refresh                      ← saved
 ```

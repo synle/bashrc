@@ -186,7 +186,7 @@ installer ships no Windows release. `snip` is in the `warn` list of
 `required`, since it is an advanced-profile tool absent on limited-support OSes.
 
 ```bash
-bash run.sh --files="snip.sh"   # install / refresh the binary
+./run --files="snip.sh"   # install / refresh the binary
 snip --version                  # currently v0.24.1, 132 filters
 ```
 
@@ -236,7 +236,7 @@ snip untrust <file>
 
 An untrusted file is skipped with `snip: skipping untrusted filter <path> (run 'snip trust
 <path>' to trust)`. Nothing here ships a filter yet — the obvious candidate is
-`bash run.sh`, this repo's own primary command, which `snip check` reports as **no
+`./run`, this repo's own primary command, which `snip check` reports as **no
 filter** despite being one of the most verbose things anyone runs here. The cost is a
 per-machine `snip trust` step, which is why it has not been taken on speculatively.
 

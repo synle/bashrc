@@ -151,9 +151,9 @@ grep -n LIMITED_SUPPORT_OSES run.sh software/bootstrap/common-env.sh   # both li
 Prove the new folder actually executes before running the full gate:
 
 ```bash
-bash run.sh --dryrun --setup              # confirms the new folder is discovered and guarded
-bash run.sh --files="<name>/_init.js"     # run on real hardware for the platform
-bash run.sh --files="<name>/_init.js"     # second run must be a clean no-op (idempotency)
+./run --dryrun --setup              # confirms the new folder is discovered and guarded
+./run --files="<name>/_init.js"     # run on real hardware for the platform
+./run --files="<name>/_init.js"     # second run must be a clean no-op (idempotency)
 ```
 
 Then:
@@ -178,7 +178,7 @@ If detection would overlap an existing OS (a derivative distro, a variant sharin
 
 Before declaring success, confirm and report:
 
-- `bash run.sh --files="<a script in the new folder>"` run twice, second run idempotent
+- `./run --files="<a script in the new folder>"` run twice, second run idempotent
 - `make format && make validate` run, with its result quoted, not paraphrased
 - the new case in `software/tests/osDetection.spec.js` asserts no other distro flag leaks
 - `/bin/bash -n` clean on every new `.sh` file — a bare `bash -n` is Homebrew 5.x on macOS and will not catch a 3.2 break

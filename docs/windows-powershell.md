@@ -56,19 +56,19 @@ already saved. This is a settings cleanup, not a measured speed improvement.
 These changes do not modify PowerShell profiles, startup commands, bell behavior,
 or scrollbar marks. Native Windows rendering still requires a Windows check.
 
-To update only Windows Terminal, run `bash run.sh --files="windows-terminal.js"`.
-For broader terminal tooling, use `bash run.sh --preset=emulators`.
+To update only Windows Terminal, run `./run --files="windows-terminal.js"`.
+For broader terminal tooling, use `./run --preset=emulators`.
 
 ## Deploy from WSL
 
 Refresh the profiles, Windows Terminal settings, and shared Starship configuration:
 
 ```bash
-bash run.sh --files="software/scripts/windows/_init.js,software/scripts/windows/_only.js,software/scripts/windows/powershell.js,software/scripts/windows-terminal.js,software/scripts/advanced/starship-config.js,software/scripts/windows/~cleanup.js"
+./run --files="software/scripts/windows/_init.js,software/scripts/windows/_only.js,software/scripts/windows/powershell.js,software/scripts/windows-terminal.js,software/scripts/advanced/starship-config.js,software/scripts/windows/~cleanup.js"
 ```
 
 For broader terminal-emulator and prompt tooling, use
-`bash run.sh --preset=emulators,prompt`; that preset does not assemble and deploy
+`./run --preset=emulators,prompt`; that preset does not assemble and deploy
 the Windows PowerShell profile. The explicit command above includes Windows
 initialization and cleanup because a selective `--files` run does not add those
 steps automatically. Repeat it to check that profile contents match on the second

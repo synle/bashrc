@@ -1,4 +1,4 @@
-/** Google Gemini CLI setup: settings + user-level GEMINI.md instructions. Run: `bash run.sh --files="gemini/setup.js"` */
+/** Google Gemini CLI setup: settings + user-level GEMINI.md instructions. Run: `./run --files="gemini/setup.js"` */
 // SOURCE software/scripts/advanced/llm/llm-common.js
 // SOURCE software/scripts/advanced/editor.common.js
 
@@ -179,7 +179,7 @@ const GEMINI_MANAGED_SETTINGS = {
   // sibling user-set keys under `general` (e.g. `general.preferredEditor`).
   general: {
     // Disable in-session auto-update. We refresh gemini out-of-band via
-    // `bash run.sh --files=gemini/install.sh` (npm_install_global). Matches
+    // `./run --files=gemini/install.sh` (npm_install_global). Matches
     // opencode's autoupdate:false (opencode/setup.js:119) so all four LLM
     // CLIs update on the same cadence — when the dotfiles bootstrap runs,
     // not mid-session. tradeoff: must re-run installer to pick up new

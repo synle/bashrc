@@ -8,7 +8,7 @@
 # Windows host — `npm_install_global` auto-mirrors via `cmd.exe /c npm install -g`.
 # A curl|bash install would only land on the current OS, forcing a separate winget
 # step for the Windows side. Trade-off: lose the native installer's self-update;
-# refresh comes from `bash run.sh --force-refresh --files=claude` instead.
+# refresh comes from `./run --force-refresh --files=claude` instead.
 #
 # Deliberately no `rm -f ~/.local/bin/claude` / `rm -rf ~/.local/share/claude` here.
 # That pair used to run unconditionally as a leftover from migrating off the native

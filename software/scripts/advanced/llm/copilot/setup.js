@@ -1,4 +1,4 @@
-/** GitHub Copilot CLI setup: settings + user-level copilot-instructions.md instructions. Run: `bash run.sh --files="copilot/setup.js"` */
+/** GitHub Copilot CLI setup: settings + user-level copilot-instructions.md instructions. Run: `./run --files="copilot/setup.js"` */
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
 // ----------------------------------------------------------------------------
@@ -282,7 +282,7 @@ const COPILOT_MANAGED_SETTINGS = {
   // gh.io/copilot-install (copilot/install.sh) on the next dotfiles bootstrap.
   // Matches opencode's autoupdate:false (opencode/setup.js:119) and the
   // gemini general.enableAutoUpdate:false so all four LLM CLIs update on the
-  // same cadence — when `bash run.sh` runs, not mid-session. tradeoff: must
+  // same cadence — when `./run` runs, not mid-session. tradeoff: must
   // re-run installer to pick up new copilot versions. risk: low.
   autoUpdate: false,
   // Keep the `Co-authored-by: Copilot <copilot@github.com>` trailer on git
@@ -599,7 +599,7 @@ async function doWork() {
 
   // ensure ~/.copilot exists — copilot's install.sh does not create it on its
   // own (the dir only appears after the first interactive launch), so when
-  // someone runs `bash run.sh --files="copilot/setup.js"` on a freshly-
+  // someone runs `./run --files="copilot/setup.js"` on a freshly-
   // installed-but-never-launched copilot we still want to land both files.
   await mkdir(targetDir);
 

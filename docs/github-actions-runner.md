@@ -4,7 +4,7 @@ Three cooperating shell tools for turning this machine into a CI worker and a
 file courier. All three are defined in
 `software/scripts/github-runner.profile.bash` and sourced into `~/.bash_syle`
 (advanced profile), so they are available as shell functions after a normal
-`bash run.sh`.
+`./run`.
 
 | Function            | What it does                                                                                        |
 | ------------------- | --------------------------------------------------------------------------------------------------- |

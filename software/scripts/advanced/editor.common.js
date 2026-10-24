@@ -1,6 +1,6 @@
 /**
  * Shared constants and helpers for editor configuration scripts (Sublime Text,
- * VS Code, Zed). Run: `bash run.sh --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"`
+ * VS Code, Zed). Run: `./run --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"`
  *
  * Editor visual/format settings (tab size, line-wrap column, font, etc.) come
  * from `EDITOR_CONFIGS` in software/index.js — the single source of truth.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SOURCE software/bootstrap/common-functions.bash
 
-# Usage: bash run.sh --files="mac/printer-setup.sh"
+# Usage: ./run --files="mac/printer-setup.sh"
 
 PRINTER_NAME="SyHousePrinter"
 PRINTER_DESCRIPTION="Sy House Printer"

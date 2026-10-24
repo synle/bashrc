@@ -255,7 +255,7 @@ Real issues we hit setting this up. Each entry: what went wrong, why, how we fix
 
 ### Sublime Text — package install requires full restart
 
-**Symptom.** New `LSP-*` package added to repo wiring, ran `bash run.sh`, restarted Sublime via close-window, package still missing.
+**Symptom.** New `LSP-*` package added to repo wiring, ran `./run`, restarted Sublime via close-window, package still missing.
 
 **Cause.** Package Control reads `Packages/User/Package Control.sublime-settings` `installed_packages` on **startup** to compute the diff vs what's on disk. Closing a window doesn't restart the Python host that drives Package Control.
 
@@ -328,7 +328,7 @@ Symmetric pattern: every Prettier-handled language gets `formatter: "prettier"`;
 **Fix.** Deploy the override:
 
 ```bash
-bash run.sh --files=advanced/lsp/zed.js
+./run --files=advanced/lsp/zed.js
 ```
 
 Then full quit Zed (`Cmd+Q`) and reopen.
@@ -363,7 +363,7 @@ Ensure that the org.eclipse.core.runtime bundle is resolved and started (see con
 exec python3 "$HOME/.local/share/jdtls/bin/jdtls.py" "$@"
 ```
 
-Source: `software/scripts/advanced/lsp/install.sh` (jdtls section). To re-deploy on an existing machine: `bash run.sh --files=advanced/lsp/install.sh --refresh=lsp/install.sh`.
+Source: `software/scripts/advanced/lsp/install.sh` (jdtls section). To re-deploy on an existing machine: `./run --files=advanced/lsp/install.sh --refresh=lsp/install.sh`.
 
 **Debug.**
 

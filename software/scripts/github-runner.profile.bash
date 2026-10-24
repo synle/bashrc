@@ -171,7 +171,7 @@ function gh_run_script() {
       /path/to/local/file           run a file already on disk
     [command] runs inside the fetched workspace. Defaults:
       - a single fetched file        -> executed with bash
-      - a cloned repo/gist           -> ./run.sh if present, else you must pass a command
+      - a cloned repo/gist           -> ./run if executable, else run.sh if present, else pass a command
   Examples:
     gh_run_script acme/widget-store ./ci/smoke.sh
     gh_run_script https://gist.github.com/me/abc123
@@ -244,8 +244,10 @@ function gh_run_script() {
     (cd "$workspace" && "$@")
   elif [ -n "$single_file" ]; then
     bash "$single_file"
+  elif [ -x "$workspace/run" ]; then
+    (cd "$workspace" && ./run)
   elif [ -f "$workspace/run.sh" ]; then
-    (cd "$workspace" && bash run.sh)
+    (cd "$workspace" && bash ./run.sh)
   else
     echo ">> Nothing to run. Pass a command, e.g.: gh_run_script $source ./setup.sh" >&2
     return 1

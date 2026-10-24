@@ -3,33 +3,33 @@
 # --- run.sh - Unified test runner script ---
 #
 # Usage:
-#   bash run.sh                                    # Full run (auto-detects local repo or fetches from GitHub)
-#   bash run.sh --files="git.js"                   # Run specific file(s)
-#   bash run.sh --file git.js                      # Singular alias; separate values also work
-#   bash run.sh 'vim*'                             # Run all scripts with this basename prefix
-#   bash run.sh --files="vim.js,git.js"            # Multiple files (comma-separated)
-#   bash run.sh --files="""                        # Multiple files (multiline)
+#   ./run                                    # Full run (auto-detects local repo or fetches from GitHub)
+#   ./run --files="git.js"                   # Run specific file(s)
+#   ./run --file git.js                      # Singular alias; separate values also work
+#   ./run 'vim*'                             # Run all scripts with this basename prefix
+#   ./run --files="vim.js,git.js"            # Multiple files (comma-separated)
+#   ./run --files="""                        # Multiple files (multiline)
 #     vim.js
 #     git.js
 #     vim-jetpack.sh
 #   """
-#   bash run.sh git.js                             # Bare args treated as files
-#   bash run.sh git.js vim.js                      # Multiple bare args
-#   bash run.sh --force-refresh                    # Force refresh node and reinstall
-#   bash run.sh -f                                 # Shorthand for --force-refresh
-#   bash run.sh --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.jsonc
-#   bash run.sh --presets lightweight              # Plural alias; separate values also work
-#   bash run.sh '#llm*'                            # Run all presets with this prefix (quote # and *)
-#   bash run.sh --preset=lightweight,heavyweight   # Multiple presets compose (file lists union)
-#   bash run.sh --preset=editor                    # Partial match (case-insensitive substring); 1 hit auto-resolves, 2+ hits errors with suggestions
-#   bash run.sh @llm                               # Bare @-marker → strict preset lookup (skip script search)
-#   bash run.sh editors                            # Bare arg → script-first; falls back to preset on miss
-#   bash run.sh --debug                            # Enable debug mode (keep temp scripts for inspection)
-#   bash run.sh -D                                 # Shorthand for --debug
-#   bash run.sh --verbose                          # Enable verbose mode (set -x for bash tracing)
-#   bash run.sh -V                                 # Shorthand for --verbose
-#   bash run.sh --dryrun                           # Show what would change without writing files
-#   bash run.sh --remove --files="fzf.js"          # Remove a script's config (runs undoWork)
+#   ./run git.js                             # Bare args treated as files
+#   ./run git.js vim.js                      # Multiple bare args
+#   ./run --force-refresh                    # Force refresh node and reinstall
+#   ./run -f                                 # Shorthand for --force-refresh
+#   ./run --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.jsonc
+#   ./run --presets lightweight              # Plural alias; separate values also work
+#   ./run '#llm*'                            # Run all presets with this prefix (quote # and *)
+#   ./run --preset=lightweight,heavyweight   # Multiple presets compose (file lists union)
+#   ./run --preset=editor                    # Partial match (case-insensitive substring); 1 hit auto-resolves, 2+ hits errors with suggestions
+#   ./run @llm                               # Bare @-marker → strict preset lookup (skip script search)
+#   ./run editors                            # Bare arg → script-first; falls back to preset on miss
+#   ./run --debug                            # Enable debug mode (keep temp scripts for inspection)
+#   ./run -D                                 # Shorthand for --debug
+#   ./run --verbose                          # Enable verbose mode (set -x for bash tracing)
+#   ./run -V                                 # Shorthand for --verbose
+#   ./run --dryrun                           # Show what would change without writing files
+#   ./run --remove --files="fzf.js"          # Remove a script's config (runs undoWork)
 #
 # Single dash also works: -files=..., -force-refresh, -f, -preset=..., -debug, -D, -verbose, -V, -dryrun, -remove
 # No short file/preset aliases: -f remains force refresh; -p is not a preset selector.
@@ -48,7 +48,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 84df16908b24bd41b412e83b16d529f6 | 13.1 KB
+# software/bootstrap/common-env.sh | c5c26f2744fa733ea97cbdf592cc26c4 | 13.1 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_OWNER="synle" # GitHub owner of this repo and of personal repos
@@ -234,7 +234,7 @@ unset _gpu_nvsmi _gpu_timeout _gpu_mib _gpu_file _gpu_bytes
 #
 # Read by run.sh via $BASH_SYLE_COMMON_PATH (which invokes this after the is_os_*
 # exports), so node inherits the flags as environment variables. Override for a
-# single run with `bash run.sh --is_gui=0` to rehearse a headless install.
+# single run with `./run --is_gui=0` to rehearse a headless install.
 function _detect_gui_flags() {
   is_gui_x11=0 && [ -n "${DISPLAY:-}" ] && is_gui_x11=1
   is_gui_wayland=0 && [ -n "${WAYLAND_DISPLAY:-}" ] && is_gui_wayland=1
@@ -842,7 +842,7 @@ unset os_flags ollama_default_server_ip code_server_remote_hosts
 # heredoc it spawns would silently recompute the detected value back on top of a
 # plain is_gui export. _detect_gui_flags applies these overrides itself, last, so
 # they survive any number of re-detects.
-#   bash run.sh --setup --is_gui=0   # rehearse a headless install on a GUI box
+#   ./run --setup --is_gui=0   # rehearse a headless install on a GUI box
 ################################################################################
 IS_SETUP=0
 for arg in "$@"; do
@@ -967,7 +967,7 @@ $LINE_BREAK_HASH
 ################################################################################
 # --- Re-source $BASH_SYLE_PATH so edits take effect in the calling shell ---
 # Only effective when invoked via `. run.sh` / `source run.sh`. Under plain
-# `bash run.sh` the source happens in the exiting subshell — no harm, no effect.
+# `./run` the source happens in the exiting subshell — no harm, no effect.
 # Validate first so a syntax error does not poison the parent shell.
 ################################################################################
 if [ -f "$BASH_SYLE_PATH" ] && bash -n "$BASH_SYLE_PATH" 2> /dev/null; then

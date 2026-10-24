@@ -160,11 +160,11 @@ OUTER
   echo "Next steps:"
   if [ "$_type" = "sh" ]; then
     echo "  1. Edit $_file to implement the script"
-    echo "  2. Test: bash run.sh --files=\"$_name.$_type\""
+    echo "  2. Test: ./run --files=\"$_name.$_type\""
     echo "  3. Run: make format"
   else
     echo "  1. Edit $_file to implement doWork() and undoWork()"
-    echo "  2. Test: bash run.sh --files=\"$_name.$_type\""
+    echo "  2. Test: ./run --files=\"$_name.$_type\""
     echo "  3. Run: make format"
   fi
 

@@ -62,7 +62,7 @@
 # folder. Adding a new command:
 #   1. Drop `_common/v_current/skills/<name>.md` + register in `LLM_COMMAND_DEPLOY_MAP`
 #      (`software/scripts/advanced/llm/llm-common.js`) — one map, every CLI.
-#   2. Re-run `bash run.sh --preset=llm` to deploy the body.
+#   2. Re-run `./run --preset=llm` to deploy the body.
 #   3. Open a new shell. The dispatcher loop below auto-registers `sy-<name>`
 #      and every `<cli>_skill_<name>` from anything matching
 #      `$LLM_ROOT_FOLDER/skills/sy-*/SKILL.md`, so no edit here is ever required.
@@ -272,7 +272,7 @@ function _sy_assert_skill() {
   local name="$1"
   local body_file="$_SY_SKILLS_DIR/sy-$name/SKILL.md"
   if [ ! -f "$body_file" ]; then
-    echo "sy-$name: prompt body missing at $body_file (run \`bash run.sh --preset=llm\` first)" >&2
+    echo "sy-$name: prompt body missing at $body_file (run \`./run --preset=llm\` first)" >&2
     return 1
   fi
   return 0
@@ -545,7 +545,7 @@ function _sy_help() {
                            and exits. The *_skill_run_* wrappers force 1.
 
   Body is loaded from $_SY_SKILLS_DIR/sy-$name/SKILL.md (deployed by any CLI's setup.js).
-  Re-run \`bash run.sh --preset=llm\` to refresh if the body is stale."
+  Re-run \`./run --preset=llm\` to refresh if the body is stale."
 }
 
 # _sy_dispatch: top-level entry per sy-<name>. Pulls a leading CLI override

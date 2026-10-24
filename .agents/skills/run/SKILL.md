@@ -1,11 +1,11 @@
 ---
 name: run
-description: Resolve a script name or keyword in software/scripts/ to its `bash run.sh --files='...'` command and execute it. Use when test-running, re-running, or verifying a single script in this repo.
+description: Resolve a script name or keyword in software/scripts/ to its `./run --files='...'` command and execute it. Use when test-running, re-running, or verifying a single script in this repo.
 ---
 
 ## Purpose
 
-Resolve a script keyword to the matching `bash run.sh --files='...'` command in `software/scripts/`, then **run it** — this skill executes, it does not just print.
+Resolve a script keyword to the matching `./run --files='...'` command in `software/scripts/`, then **run it** — this skill executes, it does not just print.
 
 The user's query is: `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the script name(s) given in the request instead.
 
@@ -31,7 +31,7 @@ The user's query is: `$ARGUMENTS` — if that placeholder arrives unexpanded or 
 3. Split `$ARGUMENTS` by spaces/commas into individual queries. Fuzzy-match each query against the remaining filenames (basename without extension, or partial path match).
 4. Resolve all queries to their matching script paths. If any query has multiple close matches, list them and ask the user to pick.
 5. If any query has no match, tell the user and list a few similar candidates.
-6. Combine all resolved paths into a single comma-separated `--files=` value and **execute**: `bash run.sh --files="fzf.js,git.js,mac/brew.sh"`
+6. Combine all resolved paths into a single comma-separated `--files=` value and **execute**: `./run --files="fzf.js,git.js,mac/brew.sh"`
 
 The `--files=` value should use paths relative to `software/scripts/` (e.g. `fzf.js`, `mac/brew.sh`, `git.js`), comma-separated for multiple scripts.
 

@@ -3,7 +3,7 @@
 // TODO: Remove this migration script and its regression test after existing
 // machines have completed the OpenCode v2 migration.
 // Run explicitly after installing the v2 package:
-// bash run.sh --files=migrate-opencode-v2.standalone.js
+// ./run --files=migrate-opencode-v2.standalone.js
 
 /**
  * Move the old isolated preview prefix into a timestamped backup and leave the

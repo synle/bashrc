@@ -5,7 +5,7 @@
 Run as the normal Linux desktop account, **not** with `sudo`:
 
 ```bash
-bash run.sh --files=decky-and-css-loader
+./run --files=decky-and-css-loader
 ```
 
 The installer is on-demand only. It can share a comma-separated `--files=` selection

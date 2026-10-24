@@ -70,7 +70,7 @@ Manages settings, keybindings, extensions, and themes for VS Code, Sublime Text,
 For new feature colors, follow [the shared theme workflow](theme/README.md#required-workflow-for-new-feature-colors). Reuse a semantic role or add it to both foundations, bind both app templates, generate, and deploy through the existing renderer. Do not add local color literals or a second Sy palette.
 
 ```bash
-bash run.sh --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"
+./run --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"
 ```
 
 ### AI CLI Setup
@@ -85,20 +85,20 @@ GitHub Actions with 5 parallel OS builds (Ubuntu, RHEL, Arch, Debian, macOS), au
 
 ### Option A — single-file installer (recommended)
 
-Self-extracting bash script bundling `run.sh` + runtime `software/` sources + `theme/sy/` as a base64 payload. One HTTP request, no runtime raw fetches — works behind proxies and rate limits. Re-published on every push to `main`.
+Self-extracting bash script bundling `run` + `run.sh` + runtime `software/` sources + `theme/sy/` as a base64 payload. One HTTP request, no runtime raw fetches — works behind proxies and rate limits. Re-published on every push to `main`.
 
 Download once, then pass any `run.sh` flag:
 
 ```bash
-tmp=$(mktemp -d) && cd "$tmp" && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o run.sh
+tmp=$(mktemp -d) && cd "$tmp" && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o run && chmod +x run
 
-bash run.sh --setup                          # full setup (deps + profile)
-bash run.sh --preset=heavyweight             # everything
-bash run.sh --preset=lightweight             # minimal
-bash run.sh                                  # profile refresh only
-bash run.sh --files=git.js                   # one script
-bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack             # a few scripts
-bash run.sh --dryrun --setup                 # preview, no writes
+./run --setup                          # full setup (deps + profile)
+./run --preset=heavyweight             # everything
+./run --preset=lightweight             # minimal
+./run                                  # profile refresh only
+./run --files=git.js                   # one script
+./run --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack             # a few scripts
+./run --dryrun --setup                 # preview, no writes
 ```
 
 Downloading first avoids a harmless `curl: (56)` pipe-close noise you'd get from piping straight into bash. Extracts to `$TMPDIR/synle-bashrc-installer-$$/` (override: `BASHRC_INSTALLER_DIR=...`; keep: `BASHRC_INSTALLER_KEEP=1`). Build locally with `make build_installer` → `.build/install-bashrc.sh` (~1 MB).
@@ -121,7 +121,7 @@ fi
 ### Option C - via git and make
 
 ```bash
-tmp=$(mktemp -d) && cd "$tmp" && git clone --depth 1 https://github.com/synle/bashrc.git && cd bashrc && bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
+tmp=$(mktemp -d) && cd "$tmp" && git clone --depth 1 https://github.com/synle/bashrc.git && cd bashrc && ./run --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
 ```
 
 ## Usage
@@ -136,17 +136,17 @@ make test_all            # All test suites (skips coverage)
 make clean / make doctor # Clean up / diagnostics
 ```
 
-### run.sh
+### ./run
 
 ```bash
-bash run.sh                             # Full run (local repo or fetches from GitHub)
-bash run.sh --files="git.js"            # Specific file(s); bare args work too
-bash run.sh --preset=lightweight        # Named preset; partial match auto-resolves if 1 hit
-bash run.sh --refresh="fzf.js,fonts.js" # Force-refresh specific scripts
-bash run.sh --force-refresh             # Reinstall heavy items only if stale >2 weeks
-bash run.sh --dryrun                    # Preview without writing
-bash run.sh --remove --files="fzf.js"   # Remove a script's config
-bash run.sh --debug --verbose           # Keep temp files, bash tracing
+./run                             # Full run (local repo or fetches from GitHub)
+./run --files="git.js"            # Specific file(s); bare args work too
+./run --preset=lightweight        # Named preset; partial match auto-resolves if 1 hit
+./run --refresh="fzf.js,fonts.js" # Force-refresh specific scripts
+./run --force-refresh             # Reinstall heavy items only if stale >2 weeks
+./run --dryrun                    # Preview without writing
+./run --remove --files="fzf.js"   # Remove a script's config
+./run --debug --verbose           # Keep temp files, bash tracing
 ```
 
 ## Architecture

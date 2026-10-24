@@ -94,7 +94,7 @@ describe("setup selectors", () => {
 
   it("quotes hash-prefixed suggestions so the shell does not discard them", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["#editor"]);
-    expect(() => parseRawArgs()).toThrow("bash run.sh '#editors'");
+    expect(() => parseRawArgs()).toThrow("./run '#editors'");
   });
 
   it("keeps force refresh available alongside file selectors", () => {

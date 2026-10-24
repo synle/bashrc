@@ -13,7 +13,7 @@ npm run build              # build webapp
 make build_installer       # .build/install-bashrc.sh
 ```
 
-The installer is a single bash script (~1 MB): `run.sh` + `software/` as a base64'd gzipped tarball after a sentinel marker. Extracts to a per-PID tmp dir (`BASHRC_INSTALLER_DIR` overrides, `BASHRC_INSTALLER_KEEP=1` preserves), forwards every `run.sh` flag. CI mirrors it to the `binary-cache` release as `bashrc-installer__install-bashrc.sh`:
+The installer is a single bash script (~1 MB): `run` + `run.sh` + `software/` as a base64'd gzipped tarball after a sentinel marker. Extracts to a per-PID tmp dir (`BASHRC_INSTALLER_DIR` overrides, `BASHRC_INSTALLER_KEEP=1` preserves), forwards every `run.sh` flag. CI mirrors it to the `binary-cache` release as `bashrc-installer__install-bashrc.sh`:
 
 ```bash
 curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash -s -- --setup
@@ -68,31 +68,31 @@ git diff --check
 
 ## Running a Subset
 
-`run.sh` accepts `--file` / `--files` and `--preset` / `--presets`, with either `=value` or a separate value.
+`./run` invokes `run.sh` and accepts `--file` / `--files` and `--preset` / `--presets`, with either `=value` or a separate value.
 Both selector types fuzzy-match case-insensitively: one hit auto-resolves; multiple hits print suggestions.
 Trailing `*` selects every case-insensitive prefix match instead. Quote hash-prefixed selectors and wildcards so the shell passes them unchanged.
 There are no short file/preset aliases; existing `-f` still means force refresh.
 
 ```bash
-bash run.sh --files=git.js              # one script
-bash run.sh --file git.js               # singular alias, separate value
-bash run.sh 'vim*'                      # all scripts with this basename prefix
-bash run.sh --files=vim                 # fuzzy match
-bash run.sh --preset=lightweight        # named preset
-bash run.sh --preset=terminal,prompt    # union
-bash run.sh --presets terminal         # plural alias, separate value
-bash run.sh '#llm*'                     # all presets with this prefix
-bash run.sh @llm                        # strict preset lookup
-bash run.sh editors                     # bare arg: script-first, preset fallback
-bash run.sh --refresh="fzf.js,fonts.js" # force-refresh specific scripts
-bash run.sh --dryrun --setup            # preview, no writes
-bash run.sh --remove --files=fzf.js     # undoWork for one script
+./run --files=git.js              # one script
+./run --file git.js               # singular alias, separate value
+./run 'vim*'                      # all scripts with this basename prefix
+./run --files=vim                 # fuzzy match
+./run --preset=lightweight        # named preset
+./run --preset=terminal,prompt    # union
+./run --presets terminal         # plural alias, separate value
+./run '#llm*'                     # all presets with this prefix
+./run @llm                        # strict preset lookup
+./run editors                     # bare arg: script-first, preset fallback
+./run --refresh="fzf.js,fonts.js" # force-refresh specific scripts
+./run --dryrun --setup            # preview, no writes
+./run --remove --files=fzf.js     # undoWork for one script
 ```
 
 Presets live in `software/metadata/presets.jsonc` (JSONC). Each entry declares `files[]` and/or recursive `presets[]`; cycles rejected at parse time by `expandPresetFiles`, guarded by `software/tests/presets.spec.js`. Composites: `lightweight` / `heavyweight`. Building blocks: `editors`, `emulators`, `apps`, `browsers`, `terminal`, `prompt`, `llm`.
 
 Resolution priority: file flags are script-only; preset flags are preset-only with substring fallback; bare `<x>` searches scripts first, then presets.
-Bare `@<x>` and quoted `'#<x>'` search presets only. Collision → script wins (`bash run.sh llm` hits `llm-common.js`; use `'#llm'`).
+Bare `@<x>` and quoted `'#<x>'` search presets only. Collision → script wins (`./run llm` hits `llm-common.js`; use `'#llm'`).
 Missing separate option values fail before selection. Existing empty `--files=` and `--preset=` values remain no-ops.
 
 ## Testing
@@ -160,7 +160,7 @@ Istanbul provider via `@vitest/coverage-istanbul`. Thresholds, globs, and ration
 
 ```bash
 make init                  # npm ci + mkdir .build
-make setup                 # = setup_local_full → bash run.sh --setup --force
+make setup                 # = setup_local_full → ./run --setup --force
 make setup_local_profile   # profile refresh only, no dep install
 make setup_prod            # bootstrap from GitHub
 make format                # build_include → ci_binaries → script_indexes → jsdocs

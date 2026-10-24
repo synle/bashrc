@@ -39,13 +39,13 @@ and on a deployed doc read with bare `readText`.
 Run all four CLIs end-to-end with:
 
 ```bash
-bash run.sh --preset=llm
+./run --preset=llm
 ```
 
 Run a single one:
 
 ```bash
-bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
+./run --files="claude/setup.js"     # or copilot/, gemini/, opencode/
 ```
 
 ### Surface parity matrix
@@ -152,7 +152,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 
 ### Editing rules
 
-- **Instructions / rules**: edit `_common/v_current/instructions.md`, then re-run all four setup scripts (or `bash run.sh --preset=llm`).
+- **Instructions / rules**: edit `_common/v_current/instructions.md`, then re-run all four setup scripts (or `./run --preset=llm`).
 - **Slash commands**: edit a file under `_common/v_current/skills/<name>.md` — every deploy (Claude direct + Copilot skills + OpenCode symlink) picks it up on the next setup run. **Adding / renaming / retiring** one is a single edit to `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` — that one map is the registry every CLI setup reads, so there is no per-CLI list to keep in sync.
 - **Named agents**: edit `_common/v_current/agents/<name>.md` for the vendor-neutral worker role: responsibilities, ownership, and forbidden actions. Keep workflow steps in the matching skill. Register additions in `LLM_AGENT_DEPLOY_MAP`; record retired names in `LLM_AGENT_RETIRED_NAMES`. Deployment and native-format details appear below.
 - **Worker names**: use `sy-agent-` for deployed workers and `sy-` for workflows. Keep source filenames bare; the PR workers deploy as `sy-agent-pr-babysitter` and `sy-agent-pr-reviewer`.
@@ -179,10 +179,10 @@ Existing user-created Pi MCP entries remain untouched.
 Install and deploy narrowly:
 
 ```bash
-bash run.sh --files="pi-lens.sh,claude/setup.js,copilot/setup.js,gemini/setup.js,opencode/setup.js,pi/setup.js"
+./run --files="pi-lens.sh,claude/setup.js,copilot/setup.js,gemini/setup.js,opencode/setup.js,pi/setup.js"
 ```
 
-The broad installation alternative is `bash run.sh --preset=llm`.
+The broad installation alternative is `./run --preset=llm`.
 Run the narrow command twice to check repeatability, then restart the affected clients.
 
 The server uses its launch working folder unless `--cwd=` or `PI_LENS_MCP_CWD` overrides it.
@@ -402,7 +402,7 @@ Deployment never edits a running session's `kv.json` directly.
 Unrelated plugins and saved preferences, including animations, thinking mode, and theme selection, remain unchanged.
 Command-palette changes remain available during a session; the plugin reapplies managed values on the next startup.
 
-Refresh with `bash run.sh --files="advanced/llm/opencode/setup.js"` or the broader `bash run.sh --preset=llm`, then restart OpenCode.
+Refresh with `./run --files="advanced/llm/opencode/setup.js"` or the broader `./run --preset=llm`, then restart OpenCode.
 Existing sessions keep their loaded plugins and local state.
 
 ### OpenCode nested dispatch
@@ -415,8 +415,8 @@ reviewer and local-agent permissions remain unchanged. Agent policy lives in
 
 Native `task` is separate from Code Mode, whose discovery covers connected MCP
 tools only. A missing Code Mode entry does not prove that native `task` is absent.
-Refresh with `bash run.sh --files="advanced/llm/opencode/setup.js"` (or the broader
-`bash run.sh --preset=llm`), then restart OpenCode. Existing child sessions may
+Refresh with `./run --files="advanced/llm/opencode/setup.js"` (or the broader
+`./run --preset=llm`), then restart OpenCode. Existing child sessions may
 retain persisted task-deny rules; configuration changes do not clear those rules.
 Do not recreate existing workers to bypass that restriction. Before resuming an
 existing handle, verify it exists: OpenCode 1.19.3 can create a new child when
@@ -590,10 +590,10 @@ block (`software/tests/syCommandsDispatcher.spec.js`).
 Claude Code auto-loads `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` and every record it links on every turn. The other three CLIs have no equivalent layer — every session starts cold. To bridge, snapshot Claude's per-project memory into a single managed "Persistent Context" appendix and upsert into the other three CLIs' user-level instructions files:
 
 ```bash
-bash run.sh --files=memory-bridge.standalone.js
+./run --files=memory-bridge.standalone.js
 ```
 
-Standalone — runs on demand, NOT on every `bash run.sh --preset=llm` (a
+Standalone — runs on demand, NOT on every `./run --preset=llm` (a
 snapshot freezes whatever Claude's memory looked like at run time). Writes to
 `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`
 between BEGIN/END markers keyed by the source script path. Idempotent. Skips
@@ -609,10 +609,10 @@ without maintaining two copies, drop an `AGENTS.md` symlink next to every
 `CLAUDE.md`:
 
 ```bash
-bash run.sh --files=repo-agents-symlink.standalone.js
+./run --files=repo-agents-symlink.standalone.js
 ```
 
-Standalone — runs on demand, NOT on every `bash run.sh --preset=llm`. Walks `$HOME/git/*/` by default; override / extend with comma-separated paths via `BASHRC_AGENTS_REPO_ROOTS=~/git,~/work`. Idempotent. Never clobbers an existing regular file or a foreign symlink — those are reported and skipped.
+Standalone — runs on demand, NOT on every `./run --preset=llm`. Walks `$HOME/git/*/` by default; override / extend with comma-separated paths via `BASHRC_AGENTS_REPO_ROOTS=~/git,~/work`. Idempotent. Never clobbers an existing regular file or a foreign symlink — those are reported and skipped.
 
 ---
 
@@ -734,13 +734,13 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
 - **One CLI invocation deploys all four.**
 
   ```bash
-  bash run.sh --preset=llm
+  ./run --preset=llm
   ```
 
   Or refresh a single CLI in isolation:
 
   ```bash
-  bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
+  ./run --files="claude/setup.js"     # or copilot/, gemini/, opencode/
   ```
 
 - **Per-project `.agents/skills/<name>/SKILL.md` lives in the project's own
@@ -878,5 +878,5 @@ added via the Manage Models... UI) pass through untouched.
 2. Put it in the right tier of [`llm-models.jsonc`](llm-models.jsonc),
    replacing that tier's model for the same role. Autocomplete models must be `-base`
    (FIM tokens exist only in base checkpoints).
-3. `bash run.sh --files=ollama-models.personal.js` to pull it, then
-   `bash run.sh --files=opencode/setup.js` (or `--files=zed.js`) to redeploy the config.
+3. `./run --files=ollama-models.personal.js` to pull it, then
+   `./run --files=opencode/setup.js` (or `--files=zed.js`) to redeploy the config.

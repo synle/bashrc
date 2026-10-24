@@ -49,11 +49,11 @@ setup_prod:
 
 # Full setup from local files (installs dependencies via _full-setup.sh)
 setup_local_full:
-	bash run.sh --setup --force
+	./run --setup --force
 
 # Refresh profile only from local files (no dependency install)
 setup_local_profile:
-	bash run.sh
+	./run
 
 # Conditional: full setup if first run, profile refresh if ~/.bash_syle exists
 setup_local_conditional:
@@ -128,21 +128,21 @@ build_all: build build_webapp build_postbuild
 
 # Prebuild host mappings
 build_prebuild_hosts:
-	bash run.sh --files="software/metadata/ip-address.config.js"
+	./run --files="software/metadata/ip-address.config.js"
 
 # Build JSON/config artifacts + autocomplete specs
 build_configs:
-	CI=true bash run.sh --files="$$(grep -R -l 'writeBuildArtifact' 'software/' | grep -v 'index.js' | grep -v 'software/tests/' | grep -v 'software/scripts/.*/')"
-	CI=true bash run.sh --files="$$(ls software/metadata/autocomplete-spec-*.js 2>/dev/null | tr '\n' ' ')"
+	CI=true ./run --files="$$(grep -R -l 'writeBuildArtifact' 'software/' | grep -v 'index.js' | grep -v 'software/tests/' | grep -v 'software/scripts/.*/')"
+	CI=true ./run --files="$$(ls software/metadata/autocomplete-spec-*.js 2>/dev/null | tr '\n' ' ')"
 
 # Build autocomplete spec files (OS-independent, runs in ci_prep so changes land in the prep patch)
 build_autocomplete_specs:
-	CI=true bash run.sh --files="$$(ls software/metadata/autocomplete-spec-*.js 2>/dev/null | tr '\n' ' ')"
+	CI=true ./run --files="$$(ls software/metadata/autocomplete-spec-*.js 2>/dev/null | tr '\n' ' ')"
 
 # Build host mappings (skip in CI)
 build_host_mappings:
 	[ "$$CI" = "true" ] && exit 0
-	bash run.sh --files="software/metadata/hosts-blocked-ads.config.js"
+	./run --files="software/metadata/hosts-blocked-ads.config.js"
 
 # Backup XFCE configuration (keyboard shortcuts, theming, panel) to .build/
 backup_xcfe:
@@ -157,7 +157,7 @@ build_webapp:
 	$(_BUILD_ENV) && npm run build
 
 # Build the self-extracting single-file installer (.build/install-bashrc.sh).
-# Bundles run.sh + software/{index.js,common.js,bootstrap,scripts,metadata}
+# Bundles run + run.sh + software/{index.js,common.js,bootstrap,scripts,metadata}
 # into one bash script with a base64-encoded tarball payload. CI mirrors
 # the output to the binary-cache rolling release as
 # bashrc-installer__install-bashrc.sh — end users can curl|bash a single URL
@@ -191,7 +191,7 @@ build_postbuild:
 
 # Update /etc/hosts (extra, opt-in)
 build_update_hosts:
-	bash run.sh --files="software/metadata/hosts-blocked-ads.config.js"
+	./run --files="software/metadata/hosts-blocked-ads.config.js"
 
 ################################################################################
 # ---- Test ----
@@ -241,9 +241,9 @@ test_buildconfig_update:
 test_dryrun:
 	dryrun_log=$$(mktemp -t bashrc_dryrun_test.XXXXXX)
 	dryrun_start_ms=$$(node -e 'process.stdout.write(String(Date.now()))')
-	bash run.sh --dryrun --setup 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tee "$$dryrun_log"
+	./run --dryrun --setup 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tee "$$dryrun_log"
 	run_status=$${PIPESTATUS[0]}
-	if [ "$$run_status" -ne 0 ]; then echo "FAIL: run.sh --dryrun exited $$run_status (log: $$dryrun_log)"; exit 1; fi
+	if [ "$$run_status" -ne 0 ]; then echo "FAIL: ./run --dryrun exited $$run_status (log: $$dryrun_log)"; exit 1; fi
 	echo ">> Checking dry run results for errors..."
 	probe_folder=$$(mktemp -d); rmdir "$$probe_folder"
 	node software/tools/check-dryrun-results.js "$$dryrun_start_ms" /tmp/synle/bashrc "$$(dirname "$$probe_folder")/synle/bashrc" "$$HOME/tmp/synle/bashrc" || exit 1
@@ -269,7 +269,7 @@ prep: format build_webapp
 
 # Run unit tests + dry-run all scripts (no file writes)
 dry_run: test_unit
-	bash run.sh --dryrun --setup
+	./run --dryrun --setup
 
 # Alias for dry_run
 start: dry_run
@@ -295,7 +295,7 @@ ci_download_release_binaries:
 
 # CI Phase 2: Build configs and run scripts with --setup to install dependencies via _full-setup.sh
 ci_build: build_prebuild_hosts build_configs build_host_mappings
-	CI=true bash run.sh --setup --force --verbose
+	CI=true ./run --setup --force --verbose
 
 # CI Phase 3: Run all tests
 

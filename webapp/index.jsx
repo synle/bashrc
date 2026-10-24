@@ -571,7 +571,7 @@ function ScriptPresetInputSection() {
  * Combined form section for the "Test Custom Run" tab. Lets the user pick between two
  * input modes — `files` (free-form list of script paths) and `preset` (named bundle from
  * `software/metadata/presets.jsonc`) — via a radio toggle. Renders the matching input
- * section + OS selector + the appropriate generated `bash run.sh` command line (using
+ * section + OS selector + the appropriate remote bootstrap command line (using
  * `--files="""..."""` or `--preset=<name>` depending on mode). Mode is persisted in
  * formValue.scriptMode so the choice survives reloads.
  * @returns {React.ReactElement} The custom-run tab body.

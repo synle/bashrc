@@ -153,12 +153,13 @@ function _bootstrap_decky_loader_plugins_themes() {
   installer_folder=$(mktemp -d) || return 1
   if curl -fsSL --connect-timeout 15 --max-time 120 \
     "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" \
-    -o "$installer_folder/run.sh"; then
-    bash "$installer_folder/run.sh" --files=decky-and-css-loader < /dev/null || status=$?
+    -o "$installer_folder/run" \
+    && chmod +x "$installer_folder/run"; then
+    "$installer_folder/run" --files=decky-and-css-loader < /dev/null || status=$?
   else
     status=$?
   fi
-  rm -f "$installer_folder/run.sh"
+  rm -f "$installer_folder/run"
   rmdir "$installer_folder"
   return "$status"
 }
@@ -1132,8 +1133,8 @@ fi
 # --- Browser Extensions + tmux/vim (via the synle/bashrc installer) ---
 # Installs url-porter + skippy-ff Chrome extensions, plus tmux and vim config.
 tmp=$(mktemp -d) && pushd "$tmp" \
-  && curl -fsSL "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" -o run.sh
-bash run.sh --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
+  && curl -fsSL "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" -o run
+chmod +x run && ./run --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
 rm -rf "$tmp"
 popd
 

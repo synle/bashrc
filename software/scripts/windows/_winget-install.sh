@@ -9,7 +9,7 @@
 # bash. _full-setup.ps1.bash no longer carries a duplicate package list; it
 # only handles WSL bootstrap, firewall, GPU tuning, and msstore-only items
 # (media extensions). Run this script from WSL after the PS1 finishes:
-#   bash run.sh --files=_winget-install.sh
+#   ./run --files=_winget-install.sh
 #
 # Caveats:
 #   - Many packages declare `Scope: machine` in their winget-pkgs manifest
@@ -340,7 +340,7 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
   if ((_elevated == 1)); then
     echo ">>> WARNING: this WSL session is NOT elevated — machine-scope packages may fail to install"
     echo "    Relaunch Windows Terminal as administrator, then re-run:"
-    echo "      bash run.sh --refresh=_winget-install.sh"
+    echo "      ./run --refresh=_winget-install.sh"
   elif ((_elevated == 2)); then
     echo ">>> WARNING: could not determine Windows elevation (powershell.exe unavailable?)"
     echo "    Machine-scope packages may fail if this session is not elevated"
@@ -424,7 +424,7 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
     if ((_elevated == 1)); then
       echo "    This WSL session is not elevated; machine-scope installers may require elevation."
       echo "    Relaunch Windows Terminal as administrator, then re-run:"
-      echo "      bash run.sh --refresh=_winget-install.sh"
+      echo "      ./run --refresh=_winget-install.sh"
     fi
     exit 1
   fi
@@ -437,7 +437,7 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
   date +%s > "$WINGET_INSTALL_STAMP_PATH"
 else
   echo ">>> Listing available winget upgrades (winget install is recent; informational only)"
-  echo "    To force a full install pass: bash run.sh --refresh=_winget-install.sh"
+  echo "    To force a full install pass: ./run --refresh=_winget-install.sh"
   winget.exe upgrade --include-unknown --source winget --accept-source-agreements --disable-interactivity < /dev/null || true
 fi
 

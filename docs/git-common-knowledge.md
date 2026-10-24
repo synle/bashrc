@@ -72,7 +72,7 @@ git config --global diff.algorithm histogram    # better than default myers
 
 Repo-local config: drop `--global` and run inside the repo. Stored in `.git/config`.
 
-This repo's full config — including ~80 aliases — lives at `software/scripts/git.gitconfig` and gets installed by `bash run.sh --files=git.js`.
+This repo's full config — including ~80 aliases — lives at `software/scripts/git.gitconfig` and gets installed by `./run --files=git.js`.
 
 ---
 

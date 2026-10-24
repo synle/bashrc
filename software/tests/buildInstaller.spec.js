@@ -59,8 +59,8 @@ describe("buildHeader", () => {
     expect(matches).toHaveLength(1);
   });
 
-  it("execs run.sh with forwarded args", () => {
-    expect(header).toMatch(/exec bash run\.sh "\$@"/);
+  it("execs ./run with forwarded args", () => {
+    expect(header).toMatch(/exec \.\/run "\$@"/);
   });
 
   it("respects BASHRC_INSTALLER_KEEP to skip cleanup", () => {
@@ -90,7 +90,8 @@ describe("assembleInstaller", () => {
 });
 
 describe("FILES_TO_BUNDLE manifest", () => {
-  it("lists run.sh and the four critical software/ subtrees", () => {
+  it("lists run, run.sh, and the four critical software/ subtrees", () => {
+    expect(FILES_TO_BUNDLE).toContain("run");
     expect(FILES_TO_BUNDLE).toContain("run.sh");
     expect(FILES_TO_BUNDLE).toContain("software/index.js");
     expect(FILES_TO_BUNDLE).toContain("software/bootstrap");
@@ -114,13 +115,14 @@ describe("tarball round-trip", () => {
     tarball = buildTarball();
   });
 
-  it("contains run.sh and software/index.js at the top of the tree", () => {
+  it("contains run, run.sh, and software/index.js at the top of the tree", () => {
     const res = spawnSync("tar", ["-tzf", "-"], {
       input: tarball,
       encoding: "utf8",
     });
     expect(res.status).toBe(0);
     const entries = res.stdout.split("\n");
+    expect(entries).toContain("run");
     expect(entries).toContain("run.sh");
     expect(entries).toContain("software/index.js");
     expect(entries).toContain("software/common.js");
@@ -172,8 +174,8 @@ describe("getVersionString", () => {
   });
 });
 
-describe("end-to-end: installer extracts and runs run.sh --help", () => {
-  it("produces an extracted repo with run.sh + software/index.js", () => {
+describe("end-to-end: installer extraction", () => {
+  it("produces an extracted repo with run + run.sh + software/index.js", () => {
     // Build a small installer to disk and execute it with a no-op flag.
     // We pick `--files=` with an obviously bogus name and a fast-fail flag
     // (--dryrun) so run.sh exits quickly without doing real work.
@@ -193,7 +195,7 @@ describe("end-to-end: installer extracts and runs run.sh --help", () => {
     fs.chmodSync(installerPath, 0o755);
 
     try {
-      // Extract only — bypass the `exec run.sh` step by sourcing the script
+      // Extract only — bypass the `exec ./run` step by sourcing the script
       // up to the marker and running just the extract pipeline manually. This
       // keeps the test hermetic (no real ~/.bash_syle writes) and fast.
       const extractScript = `
@@ -208,6 +210,7 @@ describe("end-to-end: installer extracts and runs run.sh --help", () => {
       });
       expect(res.status, res.stderr).toBe(0);
 
+      expect(fs.readlinkSync(path.join(extractDir, "run"))).toBe("./run.sh");
       expect(fs.existsSync(path.join(extractDir, "run.sh"))).toBe(true);
       expect(fs.existsSync(path.join(extractDir, "software/index.js"))).toBe(true);
       expect(fs.existsSync(path.join(extractDir, "software/common.js"))).toBe(true);

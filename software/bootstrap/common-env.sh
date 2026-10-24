@@ -185,7 +185,7 @@ unset _gpu_nvsmi _gpu_timeout _gpu_mib _gpu_file _gpu_bytes
 #
 # Read by run.sh via $BASH_SYLE_COMMON_PATH (which invokes this after the is_os_*
 # exports), so node inherits the flags as environment variables. Override for a
-# single run with `bash run.sh --is_gui=0` to rehearse a headless install.
+# single run with `./run --is_gui=0` to rehearse a headless install.
 function _detect_gui_flags() {
   is_gui_x11=0 && [ -n "${DISPLAY:-}" ] && is_gui_x11=1
   is_gui_wayland=0 && [ -n "${WAYLAND_DISPLAY:-}" ] && is_gui_wayland=1

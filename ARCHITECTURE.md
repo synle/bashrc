@@ -24,6 +24,7 @@ Also ships a Vite + React webapp (`webapp/`, sources in `src/`) at https://synle
 
 ## Important Files
 
+- **`run`** — Executable symlink to `run.sh`; use `./run [selectors and flags]` from the checkout root. Installer payloads include both files.
 - **`run.sh`** — Entrypoint. Local vs remote mode, flag parsing (`--files`, `--preset`, `--debug`, `--refresh`, `--dryrun`, `--remove`), drives the node→bash pipeline.
 - **`Makefile`** — Setup / validation / CI targets.
 - **`software/index.js`** — Dual-purpose: shared utility library (parsers, IO, network, platform detection, tagged templates) AND bootstrap orchestrator discovering + running scripts.

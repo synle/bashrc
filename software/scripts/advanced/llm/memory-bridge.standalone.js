@@ -5,10 +5,10 @@
  * OpenCode's user-level instructions files. Lets non-Claude CLIs start with
  * the same persistent facts Claude already loads on every turn.
  *
- * Standalone — runs on demand, NOT on every `bash run.sh --preset=llm`. The
+ * Standalone — runs on demand, NOT on every `./run --preset=llm`. The
  * snapshot is a point-in-time copy; re-run after meaningful memory edits.
  *
- *   bash run.sh --files=memory-bridge.standalone.js
+ *   ./run --files=memory-bridge.standalone.js
  *
  * Source:  $HOME/.claude/projects/<encoded-cwd>/memory/MEMORY.md (index)
  *          plus every linked `.md` next to it.
@@ -128,7 +128,7 @@ function _readProjectMemory(memoryDir) {
  *     # Persistent Context (auto-memory bridge from Claude Code)
  *
  *     _Snapshot of `~/.claude/projects/<...>/memory/` — re-run
- *     `bash run.sh --files=memory-bridge.standalone.js` to refresh._
+ *     `./run --files=memory-bridge.standalone.js` to refresh._
  *
  *     ## Project: ~/git/<repo>  (`<encoded-cwd>`)
  *
@@ -146,9 +146,7 @@ function _renderMemoryBlock(snapshots) {
   const lines = [];
   lines.push("# Persistent Context (auto-memory bridge from Claude Code)");
   lines.push("");
-  lines.push(
-    "_Snapshot of `~/.claude/projects/<encoded-cwd>/memory/` — re-run `bash run.sh --files=memory-bridge.standalone.js` to refresh._",
-  );
+  lines.push("_Snapshot of `~/.claude/projects/<encoded-cwd>/memory/` — re-run `./run --files=memory-bridge.standalone.js` to refresh._");
   lines.push("");
 
   for (const snap of snapshots) {

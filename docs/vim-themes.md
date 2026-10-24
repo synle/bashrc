@@ -28,17 +28,17 @@ If the selected scheme is missing, Vim warns and attempts Ayu; if Ayu is also mi
 Run the narrow command:
 
 ```bash
-bash run.sh --files="vim-config.js,vim-jetpack.sh"
+./run --files="vim-config.js,vim-jetpack.sh"
 ```
 
-The broad alternative is `bash run.sh --preset=editors`.
+The broad alternative is `./run --preset=editors`.
 The generator backs up existing configurations and writes the same complete configuration to existing Windows targets.
 Native runtime folders are `~/.vim` on Unix-like systems and `~/vimfiles` for the existing Windows target.
 
 Use the existing opt-out to select Ayu while keeping it installed in both modes:
 
 ```bash
-IS_CUSTOM_THEME_DISABLED=1 bash run.sh --files="vim-config.js,vim-jetpack.sh"
+IS_CUSTOM_THEME_DISABLED=1 ./run --files="vim-config.js,vim-jetpack.sh"
 ```
 
 The installer waits for Jetpack synchronization in the foreground.

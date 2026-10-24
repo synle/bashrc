@@ -8,7 +8,7 @@
 # Windows host — `npm_install_global` auto-mirrors via `cmd.exe /c npm install -g`.
 # A curl|bash install would only land on the current OS, forcing a separate winget
 # step for the Windows side. Trade-off: lose the native installer's winget routing;
-# refresh comes from `bash run.sh --force-refresh --files=copilot` instead.
+# refresh comes from `./run --force-refresh --files=copilot` instead.
 echo '> Installing GitHub Copilot CLI'
 npm_install_global @github/copilot@latest copilot
 

@@ -115,8 +115,8 @@ describe("_resolveScriptFile", () => {
     expect(result.fileMatchState).toBe("ambiguous");
     expect(result.description).toContain("Ambiguous");
     expect(result.description).toContain("matched 2");
-    expect(result.description).toContain("bash run.sh --files=vim-config.js");
-    expect(result.description).toContain("bash run.sh --files=vim-jetpack.sh");
+    expect(result.description).toContain("./run --files=vim-config.js");
+    expect(result.description).toContain("./run --files=vim-jetpack.sh");
   });
 
   it("should still resolve when partial match yields exactly one hit", () => {

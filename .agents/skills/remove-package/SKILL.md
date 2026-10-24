@@ -97,7 +97,7 @@ Report package-owned assets that may be obsolete. `assets/` is owner-managed and
 After Steps 4–10, run the normal undo path only if local uninstall was requested and `undoWork()` exists:
 
 ```bash
-bash run.sh --remove --files="<name>.js"
+./run --remove --files="<name>.js"
 ```
 
 Then delete the scripts recorded in Step 3 and run the full gate:

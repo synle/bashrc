@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# run: bash run.sh --files="fzf.js"
+# run: ./run --files="fzf.js"
 ################################################################################
 # --- FZF Fuzzy Finder Integration ---
 #

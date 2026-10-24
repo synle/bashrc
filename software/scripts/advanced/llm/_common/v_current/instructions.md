@@ -176,19 +176,19 @@ Governs every other section.
 ## Debugging Discipline
 
 - **Read `<<LLM_ROOT_FOLDER>>/instructions/debugging.md` in full before your first fix attempt on anything broken**, and follow it as written — binding as if inline. It picks up where the Validation Cadence ladder drops you; `/sy-debug` runs it as a phased loop.
-- Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
+- Missing? Redeploy: `./run --files="claude/setup.js"`.
 
 ## Test Quality
 
 - **Read `<<LLM_ROOT_FOLDER>>/instructions/testing.md` in full before writing, reviewing, or trusting a test**, and follow it as written — binding as if inline. Validation Cadence says when tests run; this says whether they were worth running.
-- Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
+- Missing? Redeploy: `./run --files="claude/setup.js"`.
 
 ## Source Control & PRs
 
 Branch, commit, pull-request, worktree, link, merge, and review rules live in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md`, binding as if inline.
 
 - **Read it in full before your first branch, commit, push, PR, or review action of a session**, and follow it as written.
-- Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
+- Missing? Redeploy: `./run --files="claude/setup.js"`.
 
 ## Plans & Wrap-Ups
 

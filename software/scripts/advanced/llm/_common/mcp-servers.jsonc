@@ -2,7 +2,7 @@
   // Source-of-truth MCP server registry for all five LLM CLIs (Claude Code,
   // GitHub Copilot CLI, Google Gemini CLI, OpenCode, Pi). Each named entry below
   // is deployed to each eligible CLI's native MCP config location on the next setup
-  // run via `bash run.sh --preset=llm` (or any per-CLI `<cli>/setup.js`).
+  // run via `./run --preset=llm` (or any per-CLI `<cli>/setup.js`).
   //
   // Format: the standard `mcpServers` shape that Claude / Copilot / Gemini / Pi
   // already consume verbatim. Each entry uses ONE of:

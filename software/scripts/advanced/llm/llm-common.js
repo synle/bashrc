@@ -4,7 +4,7 @@
  * Shared keybinding helpers remain independent of editor setup. Claude additionally
  * imports editor.common.js for the shared custom-theme gate and built-in fallback registry.
  *
- * Run: `bash run.sh --files="opencode/setup.js"` (or any other llm/<name>/setup.js).
+ * Run: `./run --files="opencode/setup.js"` (or any other llm/<name>/setup.js).
  */
 
 // --- PR Workflow Configuration ---

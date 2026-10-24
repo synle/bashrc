@@ -1,5 +1,5 @@
 # Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# run: ./run --files="bash-autocomplete-complete-spec.js"
 # thin per-command wrapper — loads spec data and delegates to __spec_complete
 function __spec_complete_{{COMMAND}}() {
   local spec_data
