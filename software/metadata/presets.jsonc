@@ -87,6 +87,11 @@
     ],
   },
 
+  "prompts": {
+    "description": "Alias for `llm-prompts`: refresh shared prompts and CLI configuration without installing clients.",
+    "presets": ["llm-prompts"],
+  },
+
   "browsers": {
     "description": "Building block: browser tweaks (DOM/CSS hacks via Stylus + per-browser config) plus CLI launchers for Brave, Chrome, Edge, Vivaldi, Opera, Arc, Chromium.",
     "files": ["advanced/browser-config.js", "advanced/browser-launchers.js"],
