@@ -83,6 +83,8 @@ The shortcut-clearing prompt defaults to Yes; declining preserves existing entri
 Clearing affects all user-defined non-Steam shortcuts in the selected account; review that prompt deliberately.
 
 Brave Flatpak is a prerequisite for browser tiles. Fixed-site tiles use `--kiosk` with a direct HTTP or HTTPS URL.
+The tile named Brave opens Fav in kiosk mode instead of launching a generic browser window.
+Setup no longer registers a separate Fav tile. If shortcut cleanup is declined, previously saved Fav entries remain until manually removed.
 Do not impose an HTTPS-only restriction on local HTTP services or replace kiosk launch options with `--app=` or URI forwarding.
 The site registrations near the script's end are the authoritative title/URL inventory, including Plex, Apple TV+, and Crunchyroll.
 URL helpers match exact titles, refresh existing entries, and refuse database changes while Steam runs.

@@ -101,9 +101,9 @@ describe("SteamOS setup", () => {
     expect(dependencySetup).toBeLessThan(firstShortcut);
   });
 
-  it("installs Flatpak Brave before creating its native and URL shortcuts", () => {
+  it("installs Flatpak Brave before creating its Fav launcher and other URL shortcuts", () => {
     const flatpakInstall = setupSource.indexOf("if ! flatpak install --user flathub com.brave.Browser; then");
-    const braveShortcut = setupSource.indexOf('_add_steam_shortcut "Brave"');
+    const braveShortcut = setupSource.indexOf('_add_url_steam_shortcut "Brave"');
     const disneyShortcut = setupSource.indexOf('_add_url_steam_shortcut "Disney+"');
     const emudeckDownload = setupSource.indexOf('curl -fsSL "https://www.emudeck.com/EmuDeck.desktop"');
 
@@ -111,14 +111,14 @@ describe("SteamOS setup", () => {
     expect(flatpakInstall).toBeLessThan(emudeckDownload);
     expect(braveShortcut).toBeGreaterThan(flatpakInstall);
     expect(disneyShortcut).toBeGreaterThan(flatpakInstall);
-    expect(setupSource).toContain('"--command=brave" "--file-forwarding" "com.brave.Browser" "@@u" "@@"');
+    expect(setupSource).not.toContain("--file-forwarding");
     expect(setupSource).not.toContain("pacman -S --needed --noconfirm brave-bin");
     expect(setupSource).not.toContain("flatpak remote-add");
     expect(setupSource).not.toContain("pacman -S --needed --noconfirm flatpak");
     expect(setupSource).not.toContain("flatpak list --user --app");
-    expect(setupSource).toContain(
-      '_add_steam_shortcut "Brave" "$BRAVE_FLATPAK_EXECUTABLE" "Browsers,Apps" "$BRAVE_FLATPAK_EXECUTABLE" "/usr/bin/"',
-    );
+    expect(setupSource).toContain('_add_url_steam_shortcut "Brave" "https://synle.github.io/fav/"');
+    expect(setupSource).not.toContain('_add_steam_shortcut "Brave"');
+    expect(setupSource).not.toContain('_add_url_steam_shortcut "Fav"');
     expect(flatpakInstall).toBeLessThan(setupSource.indexOf('_add_url_steam_shortcut "Disney+"'));
   });
 

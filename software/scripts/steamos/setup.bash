@@ -6,7 +6,7 @@
 # Required Brave install, run before remaining setup. Use Flatpak's generated Steam fields:
 # flatpak install --user flathub com.brave.Browser
 # Target: /usr/bin/flatpak | Start In: /usr/bin/
-# Generic Launch Options: "run" "--branch=stable" "--arch=x86_64" "--command=brave" "--file-forwarding" "com.brave.Browser" "@@u" "@@"
+# The Brave tile opens Fav through the same kiosk URL launcher as the other sites.
 # Fixed site URLs open directly in kiosk mode; do not use "--app=" or URI forwarding.
 STEAMOS_SCRIPT_FOLDER="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -1115,11 +1115,8 @@ if type -P pacman > /dev/null; then
 fi
 
 # --- Brave and URL shortcuts (Flatpak prerequisite installed at startup) ---
-BRAVE_FLATPAK_EXECUTABLE=$(type -P flatpak)
-if [ "$BRAVE_FLATPAK_READY" -eq 1 ] && [ -n "$BRAVE_FLATPAK_EXECUTABLE" ]; then
-  BRAVE_FLATPAK_EXECUTABLE=/usr/bin/flatpak
-  BRAVE_FLATPAK_OPTIONS='"run" "--branch=stable" "--arch=x86_64" "--command=brave" "--file-forwarding" "com.brave.Browser" "@@u" "@@"'
-  _add_steam_shortcut "Brave" "$BRAVE_FLATPAK_EXECUTABLE" "Browsers,Apps" "$BRAVE_FLATPAK_EXECUTABLE" "/usr/bin/" "$BRAVE_FLATPAK_OPTIONS"
+if [ "$BRAVE_FLATPAK_READY" -eq 1 ] && type -P flatpak > /dev/null; then
+  _add_url_steam_shortcut "Brave" "https://synle.github.io/fav/"
   _add_url_steam_shortcut "Netflix" "https://www.netflix.com/"
   _add_url_steam_shortcut "Disney+" "https://www.disneyplus.com/"
   _add_url_steam_shortcut "Prime Video" "https://www.primevideo.com/"
@@ -1127,7 +1124,6 @@ if [ "$BRAVE_FLATPAK_READY" -eq 1 ] && [ -n "$BRAVE_FLATPAK_EXECUTABLE" ]; then
   _add_url_steam_shortcut "Crunchyroll" "https://www.crunchyroll.com/"
   _add_url_steam_shortcut "YouTube" "https://www.youtube.com/"
   _add_url_steam_shortcut "Plex" "http://192.168.1.45:32400/web/index.html/"
-  _add_url_steam_shortcut "Fav" "https://synle.github.io/fav/"
 else
   echo ">>> Steam: Brave shortcuts skipped; Flatpak Brave prerequisite is missing. Continuing setup." >&2
 fi

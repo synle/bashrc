@@ -80,9 +80,10 @@ afterEach(() => {
 
 describe("SteamOS URL shortcut protocols", () => {
   it.each([
+    ["Brave", "Brave\thttps://synle.github.io/fav/"],
     ["Apple TV+", "Apple TV+\thttps://tv.apple.com/"],
     ["Crunchyroll", "Crunchyroll\thttps://www.crunchyroll.com/"],
-  ])("registers %s with its streaming URL", (_title, registration) => {
+  ])("registers %s with its website URL", (_title, registration) => {
     const registrations = setupSource
       .split("\n")
       .filter((line) => line.startsWith("  _add_url_steam_shortcut "))
