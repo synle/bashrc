@@ -207,12 +207,8 @@ set laststatus=2              " Always show the status bar (needed for lightline
 set signcolumn=yes            " Always show the sign column — prevents layout shift from git/lint signs
 set shortmess+=I              " Suppress the intro message when starting vim
 set noshowmode                " Hide -- INSERT -- from the command line — lightline already shows it
-" Enable setting the terminal title
-set title
-
-" Optional: Customize what gets displayed in the title bar 
-" (e.g., relative file path, modified flag, and application name)
-set titlestring=%t%(\ %M%)%(\ (%{expand(\"%:p:h\")})%)—Vim
+" Preserve the caller's terminal title when opening or leaving Vim from CLI tools.
+set notitle titlestring=
 set ruler                     " Show cursor position (line, column) in the status bar
 set number                    " Show line numbers by default
 set norelativenumber          " Keep absolute numbers (no relative numbers)
