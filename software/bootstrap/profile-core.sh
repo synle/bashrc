@@ -663,11 +663,6 @@ function lsfa() {
 
 alias grep='command grep --color=auto'
 # --- Aliases: File Listing (native ls) ---
-# TODO: DECOMMISSION / DEPRECATED: eza is retired; remove legacy local installations manually.
-# Keep ls native: no wrapper, alias, or injected defaults. Clear the old profile
-# definitions so reloading an existing shell also retires the former backend.
-unalias ls 2> /dev/null || true
-unset -f ls ls_newest_first ls_biggest_first
 if command ls --version 2> /dev/null | command grep -q GNU; then
   alias ll="command ls -lahF --color=auto"
 else

@@ -377,6 +377,8 @@ Profile registration is buffered: `registerProfileBlock` /
 
 ### 7.3 Profile & config
 
+- **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as
+  explicit native aliases; cover listing behavior in `software/tests/nativeLs.spec.js`.
 - **Windows Terminal folder inheritance** uses OSC 9;9 reporting from
   `_windows_terminal_report_folder` in `profile-advanced.sh` and
   `Write-WindowsTerminalWorkingFolder` in `powershell-profile.ps1.bash`. Keep both

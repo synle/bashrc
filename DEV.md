@@ -192,15 +192,13 @@ The formatter is **oxfmt** (`npm run format`), not prettier, despite the
 ## Native file listing
 
 `ls` uses the native executable without an alias, wrapper, or injected arguments.
-Reloading the profile removes the retired listing alias and function.
 `ll` provides a colored native long listing with hidden files, readable sizes, and file-type indicators.
 
 - `ls_newest` / `ls_newest_first`: newest entries last / first.
 - `ls_biggest` / `ls_biggest_first`: largest entries last / first.
 
 These shortcuts are explicit aliases, not generated command variants.
-Native timestamps and permission columns replace the retired backend's custom formatting.
-The retired package is no longer installed or registered for completion; existing machine installations are not automatically uninstalled.
+Long listings use native timestamps and permission columns.
 
 ## Shared theme sources
 
