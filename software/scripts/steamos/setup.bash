@@ -1116,7 +1116,7 @@ fi
 
 # --- Brave and URL shortcuts (Flatpak prerequisite installed at startup) ---
 if [ "$BRAVE_FLATPAK_READY" -eq 1 ] && type -P flatpak > /dev/null; then
-  _add_url_steam_shortcut "Brave" "https://synle.github.io/fav/"
+  _add_url_steam_shortcut "Brave" "https://synle.github.io/fav/?tv"
   _add_url_steam_shortcut "Netflix" "https://www.netflix.com/"
   _add_url_steam_shortcut "Disney+" "https://www.disneyplus.com/"
   _add_url_steam_shortcut "Prime Video" "https://www.primevideo.com/"
@@ -1169,3 +1169,4 @@ finish_choice=""
 until _prompt "Finish and exit setup?"; do
   :
 done
+
