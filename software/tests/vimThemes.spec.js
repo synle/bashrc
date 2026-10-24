@@ -18,8 +18,27 @@ import {
 const settingsPath = path.resolve("software/scripts/vim-config-settings.vim");
 /** @type {string} Sandbox user's native configuration folder. */
 const home = getIndexConstant("BASE_HOMEDIR_LINUX");
+/** Native runtime capability probe; older Vim builds lack the bundled OSC handler and skip only those integration cases. */
+const colorResponseProbe = spawnSync(
+  "vim",
+  [
+    "-Nu",
+    "NONE",
+    "-i",
+    "NONE",
+    "-n",
+    "-es",
+    "-c",
+    'call writefile([globpath(&runtimepath, "plugin/colorresp.vim")], "/dev/stdout")',
+    "-c",
+    "qall!",
+  ],
+  { encoding: "utf-8", timeout: 5000 },
+);
 
 beforeAll(() => {
+  expect(colorResponseProbe.error, colorResponseProbe.stderr).toBeUndefined();
+  expect(colorResponseProbe.status, colorResponseProbe.stderr).toBe(0);
   loadScriptHelpers("software/scripts/vim-config.js");
 });
 
@@ -39,7 +58,7 @@ beforeEach(() => {
  * @param {string} appearance - Initial native background setting.
  * @param {string[]} commands - Commands dispatched by a zero-delay timer after startup, when OptionSet events are enabled.
  * @param {object} extraSchemes - Optional owned fixture colorschemes, not third-party API mocks.
- * @returns {Promise<object>} Persisted observations; process errors and assertion failures surface directly.
+ * @returns {Promise<object>} Persisted highlights and terminal output; process errors and assertion failures surface directly.
  */
 async function probeTheme(selection, appearance, commands = [], extraSchemes = {}) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "vim theme's "));
@@ -75,7 +94,7 @@ async function probeTheme(selection, appearance, commands = [], extraSchemes = {
   });
   expect(result.error, result.stderr).toBeUndefined();
   expect(result.status, result.stderr).toBe(0);
-  return JSON.parse(fs.readFileSync(output, "utf-8"));
+  return { ...JSON.parse(fs.readFileSync(output, "utf-8")), terminalOutput: result.stdout };
 }
 
 describe("Vim shared theme deployment", () => {
@@ -157,6 +176,39 @@ describe("Vim native theme consumer", () => {
     const result = await probeTheme(selection, "light", ["set background=dark"]);
 
     expect(result).toMatchObject({ scheme: "sy-dark", background: "dark", foreground: "#e8e8e8", tag: "#5ca0d7" });
+  });
+
+  it.skipIf(colorResponseProbe.stdout.trim() === "").each([
+    ["dark", "ffff/ffff/ffff", "sy-light", "light", "#1e1e1e", "#9b2c2c"],
+    ["light", "0000/0000/0000", "sy-dark", "dark", "#e8e8e8", "#5ca0d7"],
+    ["dark", "0000/0000/0000", "sy-dark", "dark", "#e8e8e8", "#5ca0d7"],
+    ["light", "ffff/ffff/ffff", "sy-light", "light", "#1e1e1e", "#9b2c2c"],
+  ])("selects the matching palette after a late terminal reply from %s (%s)", async (initial, rgb, scheme, background, foreground, tag) => {
+    const selection = await getIndexFunction("_doVimTheme")([]);
+    const result = await probeTheme(selection, initial, [
+      "set term=xterm",
+      "runtime plugin/colorresp.vim",
+      `call test_feedinput("\\e]11;rgb:${rgb}\\x07")`,
+      "call getchar(0)",
+    ]);
+
+    expect(result).toMatchObject({ scheme, background, foreground, tag });
+  });
+
+  it("queries the terminal background when Vim regains focus", async () => {
+    const selection = await getIndexFunction("_doVimTheme")([]);
+    const result = await probeTheme(selection, "dark", ['let &t_RB = "\\e]11;?\\x07"', "doautocmd FocusGained"]);
+
+    expect(result.terminalOutput).toContain("\u001b]11;?\u0007");
+    expect(result).toMatchObject({ scheme: "sy-dark", background: "dark", foreground: "#e8e8e8", tag: "#5ca0d7" });
+  });
+
+  it("preserves the current palette when the terminal background query is unavailable", async () => {
+    const selection = await getIndexFunction("_doVimTheme")([]);
+    const result = await probeTheme(selection, "light", ["set t_RB=", "doautocmd FocusGained"]);
+
+    expect(result.terminalOutput).not.toContain("\u001b]11;?");
+    expect(result).toMatchObject({ scheme: "sy-light", background: "light", foreground: "#1e1e1e", tag: "#9b2c2c" });
   });
 
   it("routes disabled custom themes through the registry fallback without loading Sy colors", async () => {

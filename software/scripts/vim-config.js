@@ -72,8 +72,8 @@ async function _buildVimTheme(mode) {
 }
 
 /**
- * Deploys both generated Sy schemes when enabled and returns one background-aware selection routine.
- * Ayu installation is unconditional in the caller's Jetpack declaration, independent of this gate.
+ * Deploys both Sy schemes and selects the matching family on manual changes and terminal background replies.
+ * Refreshes terminal background detection on terminal, split, and tab focus; Ayu installation remains unconditional in the caller.
  * @param {string[]} vimFolders - Native Vim runtime folders to receive colors/*.vim.
  * @returns {Promise<string>} Vimscript selecting Sy or registry fallback; IO and palette errors propagate.
  */
@@ -137,6 +137,14 @@ async function _doVimTheme(vimFolders) {
       autocmd!
       " Allow the selected colorscheme's syntax and Lightline hooks to run inside this event.
       autocmd OptionSet background ++nested call <SID>ApplyColorScheme()
+      " colorresp changes background inside a non-nested event, which suppresses OptionSet.
+      if exists('##TermResponseAll')
+        autocmd TermResponseAll background ++nested call <SID>ApplyColorScheme()
+      endif
+      " Refresh on terminal focus and Vim split/tab entry; no continuous appearance subscription is required.
+      if exists('*echoraw') && exists('+t_RB')
+        autocmd FocusGained,WinEnter,TabEnter * if !has('gui_running') | call echoraw(&t_RB) | endif
+      endif
     augroup END
     call s:ApplyColorScheme()
   `;
