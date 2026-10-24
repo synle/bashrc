@@ -1,7 +1,6 @@
 # AGENTS.md — synle/bashrc
 
-Rules for any AI coding agent (Claude Code, Copilot CLI, Gemini CLI, OpenCode) working
-in this repo. This file is the **rules**; `ARCHITECTURE.md` + `DEV.md` are the **map**.
+Rules for coding agents working in this repo, including Pi. This file is the **rules**; `ARCHITECTURE.md` + `DEV.md` are the **map**.
 Read the map before applying the rules on unfamiliar work.
 
 Repo is `synle/bashrc`. Resolve the remote with `git remote get-url origin` — the local
@@ -20,8 +19,8 @@ run.sh  →  node software/index.js  →  stdout is bash  →  | bash
 
 `software/index.js` is dual-purpose: the utility library whose functions are globals in
 every script, and the bootstrap entry that resolves which scripts to run and **emits bash
-on stdout**. Each script under `software/scripts/` is either a JS module exporting
-`doWork()` or a plain bash script. The product is `~/.bash_syle` (the shell profile) plus
+on stdout**. Discoverable scripts under `software/scripts/` are `.js` files defining
+`doWork()` or executable `.sh` files. Manual `.bash` scripts and profile partials are not installer entries. The product is `~/.bash_syle` (the shell profile) plus
 installed tools and written config files.
 
 OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chromeos`,
@@ -38,8 +37,9 @@ OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chr
    block/marker helpers and the `writeText` family, never blind appends.
 3. **Reuse the helper API.** Before hand-rolling file IO, path lookup, download, or
    install logic, check `software/index.js` / `common-functions.bash` (§9).
-4. **Run what you changed.** After touching a script:
-   `./run --files="<basename>"`. A PostToolUse hook reminds you.
+4. **Run what you changed.** Run discoverable `.js`/`.sh` scripts through
+   `./run --files="<basename>"`. Manual scripts and profile partials follow §14.1 and their documented entry points.
+   The SteamOS case is in `DEV.md` → SteamOS manual setup; never invent an installer selector.
 5. **JSDoc everything you touch** — every function, constant, type. Script files open
    with `/** Description. */` (`/**`, not `/** *`).
 6. **Never edit generated output — edit the generator.**
@@ -55,7 +55,7 @@ OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chr
   (e.g. `git`, `docker`), `hosts-*.consolidated.config`, `hosts-blocked-ads.config`.
 - **`assets/`** — owner-managed. Release backups for `display-dj`, `sqlui-native`,
   `url-porter`, `skiff-files`, `proxie` live in the `binary-cache` rolling release
-  (refreshed by `tools/ci-download-release-binaries.sh`). `assets/binaries/` is gitignored.
+  (refreshed by `software/tools/ci-download-release-binaries.sh`). `assets/binaries/` is gitignored.
   Decky packages are not vendored: `software/metadata/decky-packages.json` pins the
   generated `steamos-decky__bundle.zip`; `make build_decky_bundle` builds it with Node.
   The on-demand `decky-and-css-loader` script and SteamOS setup share one runtime.
@@ -75,17 +75,13 @@ OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chr
 
 ## CodeGraph lifecycle
 
-`advanced/llm/codegraph.sh` provisions a pinned CodeGraph executable; the shared MCP registry owns client configuration, not CodeGraph's installer. `codegraph_refresh <absolute-worktree-root>` initializes or incrementally syncs one local index and emits JSON readiness separately from Git success. `worktree_create` calls it on creation/reuse while keeping stdout path-only; `--path-only` never indexes. Active shared instructions and sync/merge skills require a final refresh after stable Git operations. Indexes must remain local and untracked; failed or deferred refresh requires direct source tools. Windows-mounted Linux worktrees are deferred to avoid sharing an index with Windows; use a Linux-native checkout. The installer skips Termux because no supported build exists.
+`software/scripts/advanced/llm/codegraph.sh` provisions a pinned CodeGraph executable; the shared MCP registry owns client configuration, not CodeGraph's installer. `codegraph_refresh <absolute-worktree-root>` initializes or incrementally syncs one local index and emits JSON readiness separately from Git success. `worktree_create` calls it on creation/reuse while keeping stdout path-only; `--path-only` never indexes. Active shared instructions and sync/merge skills require a final refresh after stable Git operations. Indexes must remain local and untracked; failed or deferred refresh requires direct source tools. Windows-mounted Linux worktrees are deferred to avoid sharing an index with Windows; use a Linux-native checkout. The installer skips Termux because no supported build exists.
 
 ## 4. Layout
 
 Active shared LLM instructions, commands, and agents live in
 `software/scripts/advanced/llm/_common/v_current/`; runtime helpers and MCP configuration
-remain in `_common/`, alongside historical snapshots.
-
-Active shared LLM instructions, commands, and agents live in
-`software/scripts/advanced/llm/_common/v_current/`; runtime helpers and MCP configuration
-remain in `_common/`, alongside historical snapshots.
+remain directly in `_common/`.
 
 Full directory + file map lives in `ARCHITECTURE.md` (Key Directories / Important Files)
 — read it rather than duplicating it here. The paths an agent touches most:
@@ -93,7 +89,7 @@ Full directory + file map lives in `ARCHITECTURE.md` (Key Directories / Importan
 ```
 run.sh                        entry: OS detect, bootstrap node, stream bash
 Makefile                      every dev/CI verb (.ONESHELL, GNU Make 4+)
-software/index.js             engine + global helper API (~6k lines)
+software/index.js             engine + global helper API
 software/common.js            marker/block primitives; inlined into index.js
 software/bootstrap/           common-env.sh, common-functions.bash, profile-core.sh,
                               profile-advanced.sh, setup.sh (remote one-liner)
@@ -627,35 +623,35 @@ file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
 
 ### Enforced conventions — one spec each
 
-| Spec                              | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sectionMarkerStyle`              | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`.                                                                                                                                                                                                                                                                                                                   |
-| `pathArrayValidation`             | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`.                                                                                                                                                                                                                                                     |
-| `mirroredFunctionParity`          | `is_help_arg`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both.                                                                                                                                                                                                                                                 |
-| `guiDetection`                    | `_detect_gui_flags` replayed against fake env: flags always `0`/`1`, ssh forces `is_gui=0`, mac/windows always GUI, no other flag leaks. Add a case whenever you touch display detection.                                                                                                                                                                                                                                                      |
-| `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8).                                                                                                                                                                                                                                                                                                                                                                         |
-| `fzfTerminalSafety`               | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm.                                                                                                                                                                                                                                                                                       |
-| `curlWrapperFormat`               | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`.                                                                                                                                                                                                                                                                                                                |
-| `editorKeybindings`               | No duplicate keybinding within a context across VS Code / Sublime / Zed sources.                                                                                                                                                                                                                                                                                                                                                               |
-| `editorThemes`                    | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical. Also re-measures the installed VS Code base theme so no unclaimed scope leaks through `tokenColorCustomizations` (a merge, not a replacement) under 7:1.                                                                                                                                                     |
-| `terminalThemes`                  | Terminal palettes are `COLOR_MAP`-bound, not hardcoded: Ghostty (`theme/sy/ghostty_{dark,light}.jsonc`) and Termux (`theme/sy/termux_{dark,light}.jsonc`) markers stay bound, all 16 ANSI slots present, ramp legible + monotonic, and `termux-config.sh` never writes `colors.properties` again.                                                                                                                                              |
-| `autocompleteSpecValidation`      | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`.                                                                                                                                                                                                                                                                                                                  |
-| `generateCiBinaryList`            | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`).                                                                                                                                                                                                                                                                                                                                             |
-| `gitWorktreePath`                 | Runs the `worktree-path` / `create-worktree` aliases for real against a temp repo, fake origin, and fake `$HOME`: layout is `$HOME/.worktrees/<owner>/<repo>/<repo>__<slot>`, owner/repo come from the remote and never the folder name, the branch slug replaces everything outside `[A-Za-z0-9._-]`, stdout is the path and nothing else, the primary checkout is never handed back, and a branch with unpushed commits is never `-B`-reset. |
-| `gitAliasResolution`              | Every `git.gitconfig` alias (incl. generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` placeholder.                                                                                                                                                                                                                                               |
-| `presets`                         | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles.                                                                                                                                                                                                                                                                                                                  |
-| `profileSyntax`                   | Generated profiles pass `bash -n` under **both** PATH bash and the oldest local bash (`/bin/bash`, 3.2 on macOS), meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. Also lints every shell file for the bash-3.2 traps: no heredoc inside `$( ... )`, no `&>>` (§8).                                                      |
-| `profileShellSyntax`              | Every `*.profile.bash` / `*.bash` under `software/scripts/` (recursive, `.ps1.bash` excluded) and `software/bootstrap/` passes `bash -n` under both PATH bash and the oldest local bash. Runs in the **fast default suite** (no `.build/` needed), so `make test_unit` alone catches a botched partial — e.g. a deleted `function foo() {` header leaving an orphaned `}` body that breaks `source ~/.bash_syle`.                              |
-| `filterFilesByOsGuard`            | Explicit `--files=` entries in an inactive OS folder are dropped, not run.                                                                                                                                                                                                                                                                                                                                                                     |
-| `osDetection`                     | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.                                                                                                                                                                                                                                                                                             |
-| `smokeTestRawUrls`                | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                                                                                                                                                                                                                                                               |
+| Spec                              | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sectionMarkerStyle`              | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`.                                                                                                                                                                                                                                                                                                                       |
+| `pathArrayValidation`             | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`.                                                                                                                                                                                                                                                         |
+| `mirroredFunctionParity`          | `is_help_arg`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both.                                                                                                                                                                                                                                                     |
+| `guiDetection`                    | `_detect_gui_flags` replayed against fake env: flags always `0`/`1`, ssh forces `is_gui=0`, mac/windows always GUI, no other flag leaks. Add a case whenever you touch display detection.                                                                                                                                                                                                                                                          |
+| `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8).                                                                                                                                                                                                                                                                                                                                                                             |
+| `fzfTerminalSafety`               | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm.                                                                                                                                                                                                                                                                                           |
+| `curlWrapperFormat`               | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`.                                                                                                                                                                                                                                                                                                                    |
+| `editorKeybindings`               | No duplicate keybinding within a context across VS Code / Sublime / Zed sources.                                                                                                                                                                                                                                                                                                                                                                   |
+| `editorThemes`                    | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical. Also re-measures the installed VS Code base theme so no unclaimed scope leaks through `tokenColorCustomizations` (a merge, not a replacement) under 7:1.                                                                                                                                                         |
+| `terminalThemes`                  | Terminal palettes are `COLOR_MAP`-bound, not hardcoded: Ghostty (`theme/sy/ghostty_{dark,light}.jsonc`) and Termux (`theme/sy/termux_{dark,light}.jsonc`) markers stay bound, all 16 ANSI slots present, ramp legible + monotonic, and `termux-config.sh` never writes `colors.properties` again.                                                                                                                                                  |
+| `autocompleteSpecValidation`      | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`.                                                                                                                                                                                                                                                                                                                      |
+| `generateCiBinaryList`            | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`).                                                                                                                                                                                                                                                                                                                                                 |
+| `gitWorktreePath`                 | Runs the `worktree-path` / `create-worktree` aliases for real against a temp repo, fake origin, and fake `$HOME`: layout is `$HOME/.worktrees/<owner>/<repo>/<sanitized-branch>`, owner/repo come from the remote and never the folder name, the branch slug replaces everything outside `[A-Za-z0-9._-]`, stdout is the path and nothing else, the primary checkout is never handed back, and a branch with unpushed commits is never `-B`-reset. |
+| `gitAliasResolution`              | Every `git.gitconfig` alias (incl. generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` placeholder.                                                                                                                                                                                                                                                   |
+| `presets`                         | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles.                                                                                                                                                                                                                                                                                                                      |
+| `profileSyntax`                   | Generated profiles pass `bash -n` under **both** PATH bash and the oldest local bash (`/bin/bash`, 3.2 on macOS), meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. Also lints every shell file for the bash-3.2 traps: no heredoc inside `$( ... )`, no `&>>` (§8).                                                          |
+| `profileShellSyntax`              | Every `*.profile.bash` / `*.bash` under `software/scripts/` (recursive, `.ps1.bash` excluded) and `software/bootstrap/` passes `bash -n` under both PATH bash and the oldest local bash. Runs in the **fast default suite** (no `.build/` needed), so `make test_unit` alone catches a botched partial — e.g. a deleted `function foo() {` header leaving an orphaned `}` body that breaks `source ~/.bash_syle`.                                  |
+| `filterFilesByOsGuard`            | Explicit `--files=` entries in an inactive OS folder are dropped, not run.                                                                                                                                                                                                                                                                                                                                                                         |
+| `osDetection`                     | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.                                                                                                                                                                                                                                                                                                 |
+| `smokeTestRawUrls`                | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                                                                                                                                                                                                                                                                   |
 
 ---
 
 ## 12. CI/CD
 
 Phases, artifacts, and the publish/deploy flow: **`ARCHITECTURE.md` → Build & Release
-Flow** (`.github/workflows/build-main.yml` = prep → build-{ubuntu,rhel,arch,debian,mac}
+Flow** (`.github/workflows/build-main.yml` = decky-bundle → prep → build-{ubuntu,rhel,arch,debian,mac}
 → publish → test; `arch` / `debian` are `continue-on-error`). What matters here:
 
 - Publish amends HEAD and force-pushes, so the SHA on `main` changes after CI —
@@ -818,7 +814,7 @@ sources `_common/v_current/agents/<name>.md`.
 ### 13.3 The shared LLM home folder — `~/_extra/ai_llm/`
 
 Everything LLM tooling owns outside a checkout lives under one root, created by
-`deploySharedLLMInstructions()` in `llm-common.js` (called by all four setups):
+`deploySharedLLMInstructions()` in `llm-common.js` (called by each CLI setup):
 
 | Path                            | Holds                                                        |
 | ------------------------------- | ------------------------------------------------------------ |
@@ -881,10 +877,14 @@ gets the current bytes of `<path>` (`~/` / `$HOME/` expanded). Never adds a bloc
 marker, no change (why `CLAUDE.md` stays lean). Skips `synle/bashrc |` keys. Missing, empty,
 outside-home, credential-shaped source, or duplicate markers → old body kept, error logged.
 
-After any corpus change, deploy + verify:
+After corpus changes, run focused instruction/skill registry and budget tests.
+Deploy through every configured client after satisfying Secret Handling; full setup can access credential stores.
+If approval is missing, report deployment blocked rather than editing generated global files.
+
+The shared deployment command is:
 
 ```bash
-./run --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"
+./run --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js,software/scripts/advanced/llm/pi/setup.js"
 ```
 
 Run twice: same count both runs, no `Removed prior Sy skill` lines on the second.
@@ -895,14 +895,18 @@ same commit.
 
 ## 14. Working agreement
 
-**Before you finish, in order:** (1) JSDoc on everything you touched; (2)
-`./run --files="<the script you changed>"` — it must actually run; (3) `make format`
-if you touched BEGIN/END markers, the CI binary list, script indexes, or JSDoc; (4)
-`make test_unit`, and `make validate` for anything touching `index.js`, `run.sh`,
-`bootstrap/`, or markers; (5) run it twice — confirm idempotency; (6) update this file
-when you change `software/index.js`, `run.sh`, `common-env.sh`, or
-`.github/actions/ci-build/action.yml`, and `docs/editor-keybindings.md` on any keybinding
-change.
+**Before you finish:**
+
+- Document touched functions, constants, and types in the language's native style.
+- Run changed discoverable scripts twice through `./run --files="<script>"` and check idempotency.
+  Manual scripts and profile partials use their own validation paths in §14.1.
+  Report unavailable target-host checks explicitly; do not provision an unrelated host.
+- Regenerate affected BEGIN/END blocks, CI binary lists, script indexes, and JSDoc output through their existing generators.
+  Use `make format` when those changes require its full generation chain; keep unrelated generated churn out of commits.
+- Choose checks from §14.1. Runtime changes to `software/index.js`, `run.sh`, `bootstrap/`, or runtime include markers require `make validate` once before commit.
+  Shared-instruction Markdown and its include directives follow §13.3 instead.
+- Update this file when changing `software/index.js`, `run.sh`, `common-env.sh`, or `.github/actions/ci-build/action.yml`.
+  Update `docs/editor-keybindings.md` for every keybinding change.
 
 `run.sh` exports `IS_SETUP=0|1` during its pre-scan so emitted `.sh` scripts see the same
 setup intent as Node. Its `node | tee | bash | tee` pipeline must preserve every
@@ -910,15 +914,15 @@ setup intent as Node. Its `node | tee | bash | tee` pipeline must preserve every
 
 ### 14.1 Validation cadence — batch it, don't run `make validate` per edit
 
-`make validate` is `format` + `test_unit` + `test_buildconfig` + `build_webapp` +
-`test_smoke_local` + `test_dryrun` + `ci_test_shellcheck` — a **pre-commit gate, not a
-save hook.** Finish all edits first, then validate once. Rungs:
+`Makefile` defines the full gate: `format`, `lint`, `test_unit`, `test_buildconfig`,
+`build_webapp`, `test_smoke_local`, `test_dryrun`, and `ci_test_shellcheck`, followed by gating `test_profile`.
+This is a **pre-commit gate, not a save hook**. Finish edits first, then run the applicable gate once. Rungs:
 
 | Rung | Command                                                                 | Cost    | When                                   |
 | ---- | ----------------------------------------------------------------------- | ------- | -------------------------------------- |
-| 1    | `bash -n <file>.sh` / `node --check <file>.js`                          | instant | Right after editing one file           |
+| 1    | `/bin/bash -n <file>.sh` / `node --check <file>.js`                     | instant | Right after editing one file           |
 | 2    | `npx vitest run --config vitest.config.js software/tests/<one>.spec.js` | ~1s     | After one file or one concern          |
-| 3    | `make test_unit`                                                        | ~25s    | After the last file in a related group |
+| 3    | `make test_unit`                                                        | varies  | After the last file in a related group |
 | 4    | `make validate`                                                         | minutes | **Once**, before commit / hand-off     |
 
 Rung 2 accepts several specs and a name filter, so one call covers a related group:
@@ -928,16 +932,17 @@ npx vitest run --config vitest.config.js software/tests/{presets,osDetection}.sp
 npx vitest run --config vitest.config.js -t "should return defaults when BASHRC_RAW_ARGS is empty"
 ```
 
-Targeted escalations that beat a full `make validate` when you know what you touched:
+Validation by scope; targeted checks do not replace the full runtime gate required by §14:
 
-| Touched                                               | Run instead of `make validate`                                                           |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| A `software/scripts/` script                          | `./run --files="<script>"` (twice, for idempotency)                                      |
-| `software/index.js`, `run.sh`, `bootstrap/`           | `make test_unit && make test_profile`                                                    |
-| A `.sh` / `.bash` / profile partial                   | `bash -n <file>` then `make test_unit` (`profileShellSyntax` parses every partial — §11) |
-| BEGIN/END markers, `ci-binaries.json`, script indexes | `make format && make test_buildconfig`                                                   |
-| `presets.jsonc`                                       | `npx vitest run --config vitest.config.js software/tests/presets.spec.js`                |
-| Only `.md` / docs / skills                            | nothing — docs aren't linted or built                                                    |
+| Touched                                                 | Required checks                                                                                            |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| A `software/scripts/` script                            | `./run --files="<script>"` (twice, for idempotency)                                                        |
+| `software/index.js`, `run.sh`, `bootstrap/`             | Focused specs, then `make validate` once                                                                   |
+| A `.sh` / `.bash` / profile partial                     | `/bin/bash -n <file>`, focused specs, then `make test_unit`; manual SteamOS setup follows `DEV.md`         |
+| BEGIN/END markers, `ci-binaries.json`, script indexes   | `make format && make test_buildconfig`                                                                     |
+| `presets.jsonc`                                         | `npx vitest run --config vitest.config.js software/tests/presets.spec.js`                                  |
+| Ordinary `.md` / project maps                           | Scoped formatting, link/source verification, and diff review; no runtime gate                              |
+| Shared instructions / skills / their include directives | Focused registry/budget tests, scoped include regeneration where needed, and §13.3 deployment verification |
 
 Never re-run `make validate` on work unchanged since it last went green. A failure sends
 you **back down** the ladder: reproduce at rung 2 on that one spec, fix, confirm, then
@@ -959,10 +964,14 @@ regenerating a BEGIN/END block, a codegen pass, a dependency bump) — say so wh
 - `console.log` in a JS script.
 - Commit `.build/`, `dist/`, `coverage/`, or `software/types/` churn as hand-written work.
 
-**Git:** branches are `<username>/<feature>`; PR titles are `[bashrc] <description>`;
-**squash merge only** — never merge commits or rebase merges. Local `git merge origin/main`
-to sync is fine; always `git pull --rebase` before pushing. This is a solo+bots repo, so
-pushing straight to the default branch is the norm unless asked otherwise. Worktrees are
-never hand-rolled — `git create-worktree <branch> [<slot>]` (from `git.gitconfig`) is the
-only sanctioned way to get one, and it prints
-`$HOME/.worktrees/<owner>/<repo>/<repo>__<slot>` on stdout.
+**Git:** branches are `<username>/<feature>`; PR titles are `[bashrc] <description>`.
+Use **squash merges only** for PRs, never merge commits or rebase merges.
+Sync feature branches by merging the resolved default branch; never rebase a shared feature branch.
+Before an authorized default-branch push, use `git pull --rebase`, then fast-forward push.
+This solo+bots repo normally uses direct default-branch pushes, but pushing still requires authorization.
+
+`worktree_create <branch>` owns worktree creation, recovery, reuse, and branch-derived paths.
+`git create-worktree <branch>` and `git worktree-path <branch>` are compatibility wrappers, not slot-based creators.
+Canonical output is `$HOME/.worktrees/<owner>/<repo>/<sanitized-branch>`; stdout contains only the path.
+`worktree_create --path-only <branch>` resolves the path without creating or indexing anything.
+Preserve existing legacy worktree locations instead of moving them to match the new layout.

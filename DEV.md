@@ -1,6 +1,8 @@
 # bashrc
 
-Personal dotfiles and shell-environment bootstrapper. The setup engine is Node.js scripts piped into bash (`cat index.js | node | bash`) orchestrated by `run.sh` and a GNU `Makefile`, covering macOS, Ubuntu/Debian, Arch, RHEL/Fedora, Windows/WSL/MinGW, ChromeOS, SteamOS, and Android Termux. A Vite + React webapp under `webapp/` renders the demo page at https://synle.github.io/bashrc/; tests run on Vitest.
+Personal dotfiles and shell-environment bootstrapper for the platforms listed in `ARCHITECTURE.md`.
+`run.sh` feeds the shared Node engine into a logged bash pipeline; GNU Make provides development and CI targets.
+The Vite + React webapp lives under `webapp/`; tests run on Vitest.
 
 ## Quick Start
 
@@ -13,7 +15,7 @@ npm run build              # build webapp
 make build_installer       # .build/install-bashrc.sh
 ```
 
-The installer is a single bash script (~1 MB): `run` + `run.sh` + `software/` as a base64'd gzipped tarball after a sentinel marker. Extracts to a per-PID tmp dir (`BASHRC_INSTALLER_DIR` overrides, `BASHRC_INSTALLER_KEEP=1` preserves), forwards every `run.sh` flag. CI mirrors it to the `binary-cache` release as `bashrc-installer__install-bashrc.sh`:
+The installer is a single bash script: `run` + `run.sh` + `software/` as a base64'd gzipped tarball after a sentinel marker. Extracts to a per-PID tmp dir (`BASHRC_INSTALLER_DIR` overrides, `BASHRC_INSTALLER_KEEP=1` preserves), forwards every `run.sh` flag. CI mirrors it to the `binary-cache` release as `bashrc-installer__install-bashrc.sh`:
 
 ```bash
 curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash -s -- --setup
@@ -66,6 +68,35 @@ npx vitest run --config vitest.config.js software/tests/steamosSetup.cache.spec.
 git diff --check
 ```
 
+## SteamOS manual setup
+
+`software/scripts/steamos/setup.bash` is an interactive post-install entry point, not a discoverable `./run --files=` script.
+Run it from the checkout root in Desktop Mode/Konsole as the normal desktop user, never root or `sudo`:
+
+```bash
+/bin/bash software/scripts/steamos/setup.bash
+```
+
+Close Steam before changing shortcuts. The script records a private `steamos-setup.*` log on the Desktop.
+It asks whether to clear user-defined non-Steam shortcuts, install Decky, and upgrade the system.
+The shortcut-clearing prompt defaults to Yes; declining preserves existing entries for title-based updates.
+Clearing affects all user-defined non-Steam shortcuts in the selected account; review that prompt deliberately.
+
+Brave Flatpak is a prerequisite for browser tiles. Fixed-site tiles use `--kiosk` with a direct HTTP or HTTPS URL.
+Do not impose an HTTPS-only restriction on local HTTP services or replace kiosk launch options with `--app=` or URI forwarding.
+The site registrations near the script's end are the authoritative title/URL inventory, including Plex, Apple TV+, and Crunchyroll.
+URL helpers match exact titles, refresh existing entries, and refuse database changes while Steam runs.
+The manual replacement helper also backs up the shortcut database and restores it if re-adding fails.
+
+Validate changes without provisioning an unrelated host:
+
+```bash
+/bin/bash -n software/scripts/steamos/setup.bash
+npx vitest run --config vitest.config.js software/tests/steamosSetup*.spec.js
+```
+
+The subprocess specs exercise isolated fixtures, not live Steam/Brave playback. Report a missing target-host run as a validation gap.
+
 ## Running a Subset
 
 `./run` invokes `run.sh` and accepts `--file` / `--files` and `--preset` / `--presets`, with either `=value` or a separate value.
@@ -113,15 +144,15 @@ Both SteamOS setup installer calls pass `--skip-prompt` so matching-name confirm
 Suites are split across dedicated Vitest configs so each can run independently:
 
 ```bash
-make test_unit             # Vitest sandbox tests for software/index.js + build-include
+make test_unit             # software/tests unit, convention, and subprocess integration specs
 make test_coverage         # Unit tests + istanbul coverage report
 make test_profile          # bash -n syntax checks for assembled profile scripts
 make test_smoke            # Puppeteer smokes against the live deploy
 make test_smoke_local      # Puppeteer smokes against ./dist (local build)
 make test_buildconfig      # Inline-snapshot shape checks for generated configs
 make test_dryrun           # Dry-runs every JS script; asserts no writes / clean stdout
-make test_all              # Unit + profile + smoke + buildconfig + dryrun (skips coverage)
-make validate              # format + test_unit + test_buildconfig + build_webapp + test_smoke_local + test_dryrun
+make test_all              # unit + profile + live smoke + buildconfig + dryrun + shellcheck; no coverage
+make validate              # full local gate; exact targets and final profile gate are in Makefile
 ```
 
 Run a single spec or filter by test name:
@@ -138,8 +169,8 @@ One config per suite:
 | Config                         | Suite                                                                                 |
 | ------------------------------ | ------------------------------------------------------------------------------------- |
 | `vitest.config.js`             | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
-| `vitest.profile.config.js`     | `profileSyntax.spec.js`                                                               |
-| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js`                                                            |
+| `vitest.profile.config.js`     | `profileSyntax*.spec.js`                                                              |
+| `vitest.buildconfig.config.js` | `buildConfigShape*.spec.js`                                                           |
 | `vitest.smoke.config.js`       | webapp + raw-URL smokes against the live site                                         |
 | `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer)                                           |
 
@@ -157,6 +188,19 @@ The unit runner uses bounded Vitest fork workers and file parallelism. Keep test
 own fixtures and temp folders, no shared mutable state, no order assumptions. Use
 `describe.concurrent` only when a suite has no shared process or filesystem state.
 
+If a native subprocess times out only during the parallel suite, reproduce its spec alone before changing code or timeouts.
+A diagnostic complete-suite run can use fewer workers:
+
+```bash
+npm test -- --maxWorkers=4
+```
+
+Keep the original failure evidence. A passing isolated spec does not prove the full suite passed.
+Native Vim plugin integration is opt-in through `BASHRC_VIM_PLUGIN_ROOT`; an unset variable skips those cases, not the ordinary Vim probes.
+
+Ordinary map/documentation edits need scoped formatting, link/source verification, and diff review rather than runtime provisioning.
+Shared instruction/skill changes also need registry/budget checks and deployment verification from `AGENTS.md` §13.3.
+
 Executable scripts may use `.personal.js` / `.personal.sh` or `.work.js` / `.work.sh`.
 Discovery and explicit `--files` / preset runs enforce the active `is_work_profile`;
 same-name variants run common → personal → work. These suffixes do not apply to profile
@@ -167,7 +211,9 @@ partials, PowerShell templates, `.common.*`, or other SOURCE files.
 
 ### Coverage
 
-Istanbul provider via `@vitest/coverage-istanbul`. Thresholds, globs, and rationale live in `vitest.config.js` — the source of truth; don't duplicate numbers here.
+Istanbul provider via `@vitest/coverage-istanbul`. Thresholds, globs, and rationale live in `vitest.config.js`; do not duplicate numbers here.
+Its explicit JavaScript allowlist does not measure bash helpers or every installer script.
+Subprocess tests can verify shell behavior without providing shell line/branch percentages; report that measurement gap instead of claiming the coverage floor passed.
 
 ## Make Targets
 
@@ -177,7 +223,7 @@ make setup                 # = setup_local_full → ./run --setup --force
 make setup_local_profile   # profile refresh only, no dep install
 make setup_prod            # bootstrap from GitHub
 make format                # build_include → ci_binaries → script_indexes → jsdocs
-                           #   → spec_cleanup → shell (shfmt) → oxfmt
+                           #   → spec_cleanup → shell (shfmt) → oxfmt → autocomplete specs
 make format_build_include  # process BEGIN/END markers
 make format_ci_binaries    # regenerate the ci-binary-checks block
 make build_all             # configs, hosts, webapp, postbuild
@@ -190,17 +236,25 @@ make test_buildconfig      # inline-snapshot shape (…_update to refresh)
 make test_smoke[_local]    # puppeteer webapp (live / local dist)
 make test_dryrun           # run.sh --dryrun --setup; fails on non-zero exit or any script status "error" in run_timing.json
 make test_all              # unit, profile, smoke, buildconfig, dryrun, shellcheck
-make validate              # format + unit + buildconfig + webapp + smoke_local
-                           #   + dryrun + shellcheck   ← run this before pushing
+make validate              # format + lint + unit + buildconfig + webapp + smoke_local
+                           #   + dryrun + shellcheck, then gating profile tests
 make new-script name= os= type=
 make doctor                # environment diagnosis (shows last bench_profile result)
 make bench_profile         # time `bash -i -c exit`; fails if median > budget
-                           #   (default 400ms ceiling; baseline ~330ms, goal 150ms)
+                           #   budget and defaults: software/tools/bench-profile.js; override with BENCH_ARGS
 make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, node_modules …
 ```
 
 The formatter is **oxfmt** (`npm run format`), not prettier, despite the
 `format_prettier` target name. Shell formatting is `shfmt -w -i 2 -bn -sr`.
+For Markdown-only changes, scope the configured formatter instead of regenerating unrelated outputs:
+
+```bash
+npx oxfmt --write AGENTS.md DEV.md ARCHITECTURE.md
+```
+
+For a changed Markdown include directive, `node software/tools/build-include.js <target.md>` regenerates only that target.
+Edit the directive or included source, never the generated body; verify a second run makes no changes.
 
 ## Native file listing
 
