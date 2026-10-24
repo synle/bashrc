@@ -763,14 +763,14 @@ function _add_steam_shortcut() {
 }
 
 # Add or refresh a Brave site as a Steam tile, deduplicating by exact shortcut title.
-# $1: Steam title; $2: HTTPS URL. Trailing slashes are stripped before adding `--app=` to avoid Steam URL-forwarding artifacts.
+# $1: Steam title; $2: HTTP or HTTPS URL. Trailing slashes are stripped before opening the site in kiosk mode.
 # Returns nonzero if inspection or registration fails.
 function _add_url_steam_shortcut() {
   local title="$1" url="$2" flatpak_executable launchoptions status
 
   echo "[DEBUG] Steam URL add: $title; checking existing title"
-  if [ -z "$title" ] || [[ "$url" != https://* ]]; then
-    echo ">>> Steam: skipping URL shortcut; title and HTTPS URL required."
+  if [ -z "$title" ] || [[ "$url" != http://* && "$url" != https://* ]]; then
+    echo ">>> Steam: skipping URL shortcut; title and HTTP or HTTPS URL required."
     return 1
   fi
   while [[ "$url" == */ ]]; do
@@ -820,14 +820,14 @@ function _add_url_steam_shortcut() {
 }
 
 # Replace all shortcuts with an exact title, then add the Brave Flatpak URL shortcut.
-# $1: Steam title; $2: HTTPS URL. Not called during automatic setup.
-# Backs up shortcuts.vdf and restores it if SteamTinkerLaunch fails to add.
+# $1: Steam title; $2: HTTP or HTTPS URL. Not called during automatic setup.
+# Returns nonzero on failure. Backs up shortcuts.vdf and restores it if SteamTinkerLaunch fails to add.
 function _upsert_url_steam_shortcut() {
   local title="$1" url="$2" shortcuts backup status
 
   echo "[DEBUG] Steam URL upsert: $title; preflight"
-  if [ -z "$title" ] || [[ "$url" != https://* ]]; then
-    echo ">>> Steam: skipping URL shortcut; title and HTTPS URL required."
+  if [ -z "$title" ] || [[ "$url" != http://* && "$url" != https://* ]]; then
+    echo ">>> Steam: skipping URL shortcut; title and HTTP or HTTPS URL required."
     return 1
   fi
   if ! type -P steamtinkerlaunch > /dev/null; then
