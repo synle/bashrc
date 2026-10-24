@@ -79,7 +79,10 @@ afterEach(() => {
 });
 
 describe("SteamOS URL shortcut protocols", () => {
-  it("registers Apple TV+ with the requested streaming URL", () => {
+  it.each([
+    ["Apple TV+", "Apple TV+\thttps://tv.apple.com/"],
+    ["Crunchyroll", "Crunchyroll\thttps://www.crunchyroll.com/"],
+  ])("registers %s with its streaming URL", (_title, registration) => {
     const registrations = setupSource
       .split("\n")
       .filter((line) => line.startsWith("  _add_url_steam_shortcut "))
@@ -91,7 +94,7 @@ describe("SteamOS URL shortcut protocols", () => {
     );
 
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
-    expect(result.stdout.split("\n")).toContain("Apple TV+\thttps://tv.apple.com/");
+    expect(result.stdout.split("\n")).toContain(registration);
   });
 
   it.each([
