@@ -12,12 +12,14 @@ const HOME = getIndexConstant("BASE_HOMEDIR_LINUX");
 beforeEach(() => {
   setSandboxGlobal("is_os_windows", false);
   setSandboxGlobal("IS_CI", false);
-  setSandboxGlobal("getRuntimeOption", () => true);
+  setSandboxGlobal("getRuntimeOption", () => false);
   fileSystem["software/scripts/vim-config-settings.vim"] = fs.readFileSync("software/scripts/vim-config-settings.vim", "utf-8");
+  fileSystem["theme/sy/vim_dark.jsonc"] = fs.readFileSync("theme/sy/vim_dark.jsonc", "utf-8");
+  fileSystem["theme/sy/vim_light.jsonc"] = fs.readFileSync("theme/sy/vim_light.jsonc", "utf-8");
 });
 
 /**
- * Generates the complete vimrc and observes native syntax state after opening an owned fixture.
+ * Deploys the generated vimrc and real Sy schemes to an isolated runtime, then observes native syntax for an owned fixture.
  * @param {number|null} size - Exact fixture size in bytes, or null for a nonexistent file.
  * @param {string[]} commands - Additional Vimscript observations or buffer transitions.
  * @returns {Promise<object>} Native option values and observations; process or read failures fail the test.
@@ -34,6 +36,12 @@ async function probeVim(size, commands = []) {
   fs.mkdirSync(path.dirname(plugin), { recursive: true });
   // An existing empty manager exercises the supported missing-plugin path without downloading anything.
   fs.writeFileSync(plugin, "");
+  // Missing Ayu previously exercised error fallback during every timing-sensitive syntax probe.
+  const colorsFolder = path.join(folder, ".vim/colors");
+  fs.mkdirSync(colorsFolder, { recursive: true });
+  for (const appearance of ["dark", "light"]) {
+    fs.writeFileSync(path.join(colorsFolder, `sy-${appearance}.vim`), fileSystem[`${HOME}/.vim/colors/sy-${appearance}.vim`]);
+  }
   fs.writeFileSync(vimrc, fileSystem[`${HOME}/.vimrc`]);
   fs.writeFileSync(path.join(folder, "small.json"), '{"key":true}\n');
   if (size !== null) {
@@ -57,6 +65,7 @@ async function probeVim(size, commands = []) {
   });
   expect(result.error, result.stderr).toBeUndefined();
   expect(result.status, result.stderr).toBe(0);
+  expect(result.stderr).not.toContain("Theme missing:");
   return JSON.parse(fs.readFileSync(output, "utf-8"));
 }
 

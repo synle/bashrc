@@ -232,6 +232,7 @@ describe("build config shape - objects", () => {
     }
     expect(readBuildConfigKeys("vs-code-color-dark")).toMatchInlineSnapshot(`
       [
+        "editor.semanticTokenColorCustomizations",
         "editor.tokenColorCustomizations",
         "workbench.colorCustomizations",
       ]
@@ -245,6 +246,7 @@ describe("build config shape - objects", () => {
     }
     expect(readBuildConfigKeys("vs-code-color-light")).toMatchInlineSnapshot(`
       [
+        "editor.semanticTokenColorCustomizations",
         "editor.tokenColorCustomizations",
         "workbench.colorCustomizations",
       ]
