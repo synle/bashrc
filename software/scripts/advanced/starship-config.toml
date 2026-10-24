@@ -1,16 +1,17 @@
-# Starship prompt config - matches bashrc PS1 layout
-# Line 1: local_time U=utc_time user @ hostname ip_address
-# Line 2: directory [git_branch ahead/behind]
-# Line 3: >>>
+# Starship prompt config - separated fields in the three-line bashrc layout
+# Line 1: local_time U=utc_time  user  hostname  ip_address
+# Line 2: directory  [git_branch] ahead/behind
+# Line 3: bash_version>
+# Bold bright-white separators use the terminal palette and contrast with colored fields.
 
 format = """
 ${env_var.LOCAL_TIME} \
-[U=](bold yellow)${env_var.UTC_TIME} \
-[$username](bold blue) @ \
-[$hostname](bold purple) \
+[U=](bold yellow)${env_var.UTC_TIME}[  ](bold bright-white)\
+$username[  ](bold bright-white)\
+$hostname\
 ${env_var.IP_ADDR}\
 $fill
-${env_var.SHORT_PWD} \
+${env_var.SHORT_PWD}\
 $git_branch\
 $git_status\
 $fill
@@ -48,7 +49,7 @@ disabled = true
 
 [git_branch]
 style = "bold cyan"
-format = "[\\[$branch\\]]($style)"
+format = "[  ](bold bright-white)[\\[$branch\\]]($style)"
 
 [git_status]
 # the prompt only renders ahead/behind, so never pay for recursing into submodules -
@@ -192,7 +193,7 @@ format = "[$env_value](bold yellow)"
 [env_var.IP_ADDR]
 variable = "STARSHIP_IP_ADDR"
 default = ""
-format = "[$env_value](bold yellow)"
+format = "([  ](bold bright-white)[$env_value](bold yellow))"
 
 [env_var.SHORT_PWD]
 variable = "STARSHIP_SHORT_PWD"
