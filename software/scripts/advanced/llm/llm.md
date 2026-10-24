@@ -223,6 +223,24 @@ or server-side enforcement of every applicable readiness gate.
 Polling cannot enforce merge safety atomically; repository-required checks or a merge queue must enforce merge-blocking requirements.
 These are agent instructions, not a runtime scheduler or a guarantee of bot integration.
 
+### Execute an implementation plan
+
+`sy-execute-plan <plan-path>` reads the complete approved plan and repository context,
+executes its acceptance checklist, creates or resumes its PR, and works toward verified readiness.
+The source is `_common/v_current/skills/execute-plan-and-create-pr.md`; the shared registry deploys the shorter command name.
+
+Finite implementation may use the task loop; asynchronous PR work reuses owned-PR babysitting and the shared PR loop.
+The workflow selects `goal=ready feedback=all` and caller `automerge_policy: observe_only`.
+Default babysitting remains `feedback=blockers`; the strict mode requires zero unresolved review threads
+and zero unaddressed actionable top-level comments, plus current CI, mergeability, migration, bot, and approval evidence.
+Strict feedback never permits unsafe fixes, fabricated SHAs, or forced resolution of pending questions.
+Replies and resolution follow the latest shared closeout instructions unchanged.
+
+Invocation authorizes task-scoped commits/pushes, PR creation, and bounded babysitting—not merge, release, protection changes, or secrets access.
+No new automerge is enabled; existing requests retain their ownership and are reported.
+Resume the same plan, worktree, PR, and owner with preserved counters and feedback policy.
+Budget exhaustion or an unresolved decision reports incomplete work, never readiness.
+
 ### Shared PR scheduling
 
 `sy-pr-loop` owns the shared clock, schedule, read-only fingerprint, owner reuse,

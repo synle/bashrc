@@ -741,6 +741,9 @@ PR scheduling lives in `_common/v_current/skills/pr-loop.md`, deployed as `sy-pr
 Single/batch babysit and review workflows read that protocol in their existing owner; they never start a nested scheduler.
 Babysit retains readiness and repair policy; review retains verdicts, posting rules, and full keepalive/final passes.
 Keep the general task loop separate: PR waiting is normal, not a stalled shrinking-work list.
+`execute-plan-and-create-pr.md` deploys as `sy-execute-plan` through the same registry.
+It orchestrates plan implementation and strict owned-PR readiness, reusing task/PR loops and the latest shared closeout rule.
+Its explicit no-new-automerge caller policy and all-feedback mode persist through creation, babysitting, and resume.
 
 Deploy = one physical copy plus symlinks: `deploySharedLLMSkills()` writes
 `~/_extra/ai_llm/skills/<key>/SKILL.md` once, then links it into each folder in

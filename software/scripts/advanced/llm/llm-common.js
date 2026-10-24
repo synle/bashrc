@@ -1632,6 +1632,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-debug": "debug",
   "sy-dep-bump": "dep-bump",
   "sy-draft-pr": "draft-pr",
+  "sy-execute-plan": "execute-plan-and-create-pr",
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
   "sy-loop": "loop",

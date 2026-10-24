@@ -1,5 +1,12 @@
 [Sy] Create a pull request for the current branch.
 
+## Caller contract
+
+Preserve an explicit caller `automerge_policy` in owned-PR memory and babysit handoffs. `normal` keeps existing behavior; `observe_only` forbids new enablement, re-enablement, and offers to enable automerge, including prose-only PRs.
+Default to normal only when no caller or saved policy exists. Unknown policy fails closed for automerge; never revoke a pre-existing request owned by someone else.
+Carry an explicit caller `feedback` selection (`blockers` or `all`) into owned-PR memory and the babysit handoff; absent selection keeps the babysit default.
+An explicitly requested plan-execution workflow may already authorize creation and babysitting; preserve that authorization rather than asking again or using the solo+bots direct-push fallback.
+
 ## Steps
 
 1. **Resolve the repo** via `git remote get-url origin` → authoritative `owner/repo`. Do not derive from folder name.
@@ -52,7 +59,7 @@
 8. Create the PR with the file-backed body: `gh pr create --base "$DEF" --title "[<repo>] ..." --body-file /tmp/pr-body.md`. **`--base` is always passed explicitly and is always the default branch** — never another feature branch, never another open PR's head. Never use `--body` or interpolate body contents into this command.
 9. Return the PR URL.
    9a. **Seed owned-PR memory.** After GitHub returns the PR URL, use stable identity `<owner>/<repo>#<number>`. Under `<<LLM_ROOT_FOLDER>>/pr_babysits/`, find an existing file by that identity in its heading or full PR URL and by historical filename aliases; otherwise create `<repo-name>_<number>_<slug>.md`, resolving `<owner>/<repo>` and `<repo-name>` from GitHub, preserving repository-name punctuation, and deriving a short lowercase snake_case slug from the title after stripping status / repo prefixes. One same-kind match is reused without renaming; multiple matches create no new file, so report the conflict and use the newest verified snapshot until consolidation is approved. Record a short TLDR, PR URL, owner/repo identity, branch/head SHA, creation result/time, current status, and empty `## Progress`, `## Open Items`, `## State`, and `## Final Snapshot` sections. This file persists across runs and becomes `/sy-babysit-pr`'s canonical memory; never create a worktree-adjacent journal.
-10. **Automerge decision — classify the diff, then act without asking on a standalone prose-only PR.** Run `git diff <base>...HEAD` (already fetched in Step 5) and bucket it:
+10. **Automerge decision — honor caller policy before classification.** With `observe_only`, leave new automerge off and skip all enablement/offers below; preserve pre-existing requests. Otherwise classify the diff, then act without asking on an eligible standalone prose-only PR. Run `git diff <base>...HEAD` (already fetched in Step 5) and bucket it:
     - **Prose-only AND standalone** (every changed line is docs-file content, a comment, a docstring, or whitespace — see the Automerge is opt-in rule for the exact definition — _and_ the PR has no companion PR still open): apply **Readiness before automerge** from shared PR instructions, then run `gh pr merge <number> --squash --auto` only when permitted, then report `"Standalone prose-only diff (<n> files, docs/comments only) — automerge enabled; CI and any required approval still gate it."` Do not ask. Skip entirely if the title carries `WIP` / `DO NOT MERGE` or the PR is a draft.
     - **Companion check** (only needed when the diff is prose-only). The PR is **not** standalone if any of these hold: the branch carries a group prefix `<username>/<group-slug>/<feature>` (3+ segments) shared with another open PR — `gh pr list --repo <owner>/<repo> --state open --json number,url,title,headRefName --limit 100`, plus a best-effort cross-repo sweep `gh search prs --author @me --state open --json number,url,title,repository --limit 50 '<group-slug>'` (`gh search prs --json` has no `headRefName`, so this one matches on text); the title or body references another open PR (`.../pull/<n>`, "depends on", "part of", "stacked on", a shared plan slug); or the base branch is another open PR's head. If it is not standalone, **do not enable automerge** — report `"Prose-only but not standalone — <n> companion PR(s) open: <links>. Automerge deferred so docs don't land before the code; /sy-babysit-pr will enable it once they merge."`
     - **Other trivial categories** (tests-only / dependency-only / otherwise trivial): ask once — `"This PR looks like <category>. Want me to enable automerge (gh pr merge --squash --auto)? (yes/no, default no)"`. Run `gh pr merge <number> --squash --auto` only on an explicit "yes".
@@ -60,7 +67,7 @@
     - If `gh` rejects `--auto` (repo has auto-merge disabled, or squash is not an allowed method), report the exact error once and move on — never fall back to an immediate `gh pr merge` without `--auto`, and never retry.
 11. **Optional readiness handoff.** If babysitting was already explicitly requested, hand off without asking again. Otherwise offer: "Babysit until bot review, CI, mergeability, and migration checks pass?"
 
-- Explicit yes/request → follow the owned-PR babysit workflow with the new URL and `goal=ready`.
+- Explicit yes/request → follow the owned-PR babysit workflow with the new URL, selected feedback mode, `goal=ready`, and unchanged caller automerge policy.
 - No authorization → stop after returning the URL. Creation never starts polling, fixes builds, or allocates a watch worker by itself.
 
 ## Rules
