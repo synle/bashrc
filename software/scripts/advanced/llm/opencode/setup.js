@@ -312,7 +312,7 @@ async function _doOpencodeThemeWork(configHome, selected) {
  * provider/config schema at https://opencode.ai/config.json which has no
  * keybinds field). Schema: https://opencode.ai/tui.json.
  *
- * Preserves unrelated plugins and settings, strips invalid legacy title/animations,
+ * Preserves unrelated plugins, keybindings, and settings, strips invalid legacy title/animations,
  * and applies seven managed KV preferences through OpenCode's own startup API.
  * Never writes kv.json while another session may own it.
  * @param {string} [configHome=getLLMConfigHome()] - Base configuration home.
@@ -395,7 +395,7 @@ async function _writeOpencodeTuiConfig(configHome = getLLMConfigHome(), isWindow
     },
   };
   if (keybinds && Object.keys(keybinds).length > 0) {
-    out.keybinds = keybinds;
+    out.keybinds = { ...existing.keybinds, ...keybinds };
   }
   // OpenCode 1.19.3 exposes these command-palette preferences only through KV.
   // A TUI plugin uses the application's own locking and preserves other choices.

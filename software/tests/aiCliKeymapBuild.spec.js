@@ -46,6 +46,10 @@ describe("AI CLI keymap build — Claude Code", () => {
       $docs: "https://code.claude.com/docs/en/keybindings",
       bindings: [
         {
+          context: "Scroll",
+          bindings: { "ctrl+home": "scroll:top", "ctrl+end": "scroll:bottom" },
+        },
+        {
           context: "Global",
           bindings: {
             "ctrl+t": "app:toggleTodos",
@@ -78,6 +82,10 @@ describe("AI CLI keymap build — Claude Code", () => {
       $schema: "https://www.schemastore.org/claude-code-keybindings.json",
       $docs: "https://code.claude.com/docs/en/keybindings",
       bindings: [
+        {
+          context: "Scroll",
+          bindings: { "ctrl+home": "scroll:top", "ctrl+end": "scroll:bottom" },
+        },
         {
           context: "Global",
           bindings: {
@@ -196,6 +204,8 @@ describe("AI CLI keymap build — Google Gemini CLI", () => {
       { command: "cursor.home", key: "home" },
       { command: "cursor.end", key: "ctrl+e" },
       { command: "cursor.end", key: "end" },
+      { command: "scroll.home", key: "ctrl+home" },
+      { command: "scroll.end", key: "ctrl+end" },
     ]);
   });
 
@@ -218,6 +228,8 @@ describe("AI CLI keymap build — Google Gemini CLI", () => {
       { command: "cursor.home", key: "home" },
       { command: "cursor.end", key: "ctrl+e" },
       { command: "cursor.end", key: "end" },
+      { command: "scroll.home", key: "ctrl+home" },
+      { command: "scroll.end", key: "ctrl+end" },
       { command: "-input.paste", key: "alt+v" },
     ]);
   });
@@ -228,12 +240,13 @@ describe("AI CLI keymap build — OpenCode", () => {
   const OPENCODE_EXPECTED = {
     leader: "ctrl+o",
     editor_open: "ctrl+g,ctrl+x",
-    messages_first: "ctrl+alt+shift+g",
+    messages_first: "ctrl+home,ctrl+alt+shift+g",
+    messages_last: "ctrl+end,ctrl+alt+g",
     input_newline: "shift+return,ctrl+return,alt+return,ctrl+j",
     input_line_home: "ctrl+a,home",
     input_line_end: "ctrl+e,end",
-    input_buffer_home: "ctrl+home,super+home",
-    input_buffer_end: "ctrl+end,super+end",
+    input_buffer_home: "super+home",
+    input_buffer_end: "super+end",
     session_rename: "f6",
     input_clear: "escape",
     session_compact: "ctrl+l,super+l,<leader>c",
@@ -256,8 +269,8 @@ describe("AI CLI keymap build — OpenCode", () => {
     const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(true);
     expect(keybinds).toEqual({
       ...OPENCODE_EXPECTED,
-      input_buffer_home: "ctrl+home,alt+home",
-      input_buffer_end: "ctrl+end,alt+end",
+      input_buffer_home: "alt+home",
+      input_buffer_end: "alt+end",
       session_compact: "ctrl+l,alt+l,<leader>c",
       input_undo: "alt+z,ctrl+-",
       command_list: "ctrl+p",

@@ -1,9 +1,8 @@
 /** Exercises persisted Vim theme configuration and generated colors through the real Vim consumer. */
-import { beforeAll, beforeEach, describe, expect, it, onTestFinished } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import fs from "fs";
-import os from "os";
 import path from "path";
-import { spawnSync } from "child_process";
+import { hasColorResponsePlugin, probeTheme } from "./vimThemes.helpers.js";
 import {
   fileSystem,
   getIndexConstant,
@@ -18,29 +17,8 @@ import {
 const settingsPath = path.resolve("software/scripts/vim-config-settings.vim");
 /** @type {string} Sandbox user's native configuration folder. */
 const home = getIndexConstant("BASE_HOMEDIR_LINUX");
-/** Native runtime capability probe; older Vim builds lack the bundled OSC handler and skip only those integration cases. */
-const colorResponseProbe = spawnSync(
-  "vim",
-  [
-    "-Nu",
-    "NONE",
-    "-i",
-    "NONE",
-    "-n",
-    "-es",
-    "-c",
-    'call writefile([globpath(&runtimepath, "plugin/colorresp.vim")], "/dev/stdout")',
-    "-c",
-    "qall!",
-  ],
-  { encoding: "utf-8", timeout: 5000 },
-);
 
-beforeAll(() => {
-  expect(colorResponseProbe.error, colorResponseProbe.stderr).toBeUndefined();
-  expect(colorResponseProbe.status, colorResponseProbe.stderr).toBe(0);
-  loadScriptHelpers("software/scripts/vim-config.js");
-});
+beforeAll(() => loadScriptHelpers("software/scripts/vim-config.js"));
 
 beforeEach(() => {
   setSandboxGlobal("is_gui", true);
@@ -51,51 +29,6 @@ beforeEach(() => {
   fileSystem["theme/sy/vim_light.jsonc"] = fs.readFileSync("theme/sy/vim_light.jsonc", "utf-8");
   fileSystem["software/scripts/vim-config-settings.vim"] = fs.readFileSync(settingsPath, "utf-8");
 });
-
-/**
- * Loads generated themes and selection in isolated Vim, then observes native highlight resolution.
- * @param {string} selection - Generated family-selection Vimscript.
- * @param {string} appearance - Initial native background setting.
- * @param {string[]} commands - Commands dispatched by a zero-delay timer after startup, when OptionSet events are enabled.
- * @param {object} extraSchemes - Optional owned fixture colorschemes, not third-party API mocks.
- * @returns {Promise<object>} Persisted highlights and terminal output; process errors and assertion failures surface directly.
- */
-async function probeTheme(selection, appearance, commands = [], extraSchemes = {}) {
-  const folder = fs.mkdtempSync(path.join(os.tmpdir(), "vim theme's "));
-  onTestFinished(() => fs.rmSync(folder, { recursive: true, force: true }));
-  const colorsFolder = path.join(folder, "colors");
-  const output = path.join(folder, "result.json");
-  const script = path.join(folder, "probe.vim");
-  fs.mkdirSync(colorsFolder);
-  fs.writeFileSync(path.join(colorsFolder, "sy-dark.vim"), await getIndexFunction("_buildVimTheme")("dark"));
-  fs.writeFileSync(path.join(colorsFolder, "sy-light.vim"), await getIndexFunction("_buildVimTheme")("light"));
-  for (const [name, content] of Object.entries(extraSchemes)) fs.writeFileSync(path.join(colorsFolder, `${name}.vim`), content);
-  fs.writeFileSync(
-    script,
-    [
-      `let &runtimepath = ${JSON.stringify(folder)} . ',' . &runtimepath`,
-      `set background=${appearance}`,
-      `execute 'source ' . fnameescape(${JSON.stringify(settingsPath)})`,
-      selection,
-      "function! RunThemeProbe(timer) abort",
-      ...commands,
-      "let g:result = {'scheme': g:colors_name, 'background': &background, 'ayu': get(g:, 'ayucolor', ''), 'foreground': synIDattr(synIDtrans(hlID('Normal')), 'fg', 'gui'), 'tag': synIDattr(synIDtrans(hlID('tsxTagName')), 'fg', 'gui'), 'mode': get(get(g:, 'sy_lightline_palette', {}), 'insert', {})}",
-      `call writefile([json_encode(g:result)], ${JSON.stringify(output)})`,
-      "qall!",
-      "endfunction",
-      // OptionSet is suppressed during startup, including VimEnter handlers; dispatch from the main loop instead.
-      "autocmd VimEnter * call timer_start(0, function('RunThemeProbe'))",
-    ].join("\n"),
-  );
-  const result = spawnSync("vim", ["-N", "-u", "NONE", "-i", "NONE", "-n", "--not-a-term", "-S", script], {
-    env: { ...process.env, HOME: folder },
-    encoding: "utf-8",
-    timeout: 5000,
-  });
-  expect(result.error, result.stderr).toBeUndefined();
-  expect(result.status, result.stderr).toBe(0);
-  return { ...JSON.parse(fs.readFileSync(output, "utf-8")), terminalOutput: result.stdout };
-}
 
 describe("Vim shared theme deployment", () => {
   it.each([true, false])("always declares Ayu when custom selection is %s", async (custom) => {
@@ -178,7 +111,7 @@ describe("Vim native theme consumer", () => {
     expect(result).toMatchObject({ scheme: "sy-dark", background: "dark", foreground: "#e8e8e8", tag: "#5ca0d7" });
   });
 
-  it.skipIf(colorResponseProbe.stdout.trim() === "").each([
+  it.skipIf(!hasColorResponsePlugin).each([
     ["dark", "ffff/ffff/ffff", "sy-light", "light", "#1e1e1e", "#9b2c2c"],
     ["light", "0000/0000/0000", "sy-dark", "dark", "#e8e8e8", "#5ca0d7"],
     ["dark", "0000/0000/0000", "sy-dark", "dark", "#e8e8e8", "#5ca0d7"],
@@ -193,14 +126,6 @@ describe("Vim native theme consumer", () => {
     ]);
 
     expect(result).toMatchObject({ scheme, background, foreground, tag });
-  });
-
-  it("queries the terminal background when Vim regains focus", async () => {
-    const selection = await getIndexFunction("_doVimTheme")([]);
-    const result = await probeTheme(selection, "dark", ['let &t_RB = "\\e]11;?\\x07"', "doautocmd FocusGained"]);
-
-    expect(result.terminalOutput).toContain("\u001b]11;?\u0007");
-    expect(result).toMatchObject({ scheme: "sy-dark", background: "dark", foreground: "#e8e8e8", tag: "#5ca0d7" });
   });
 
   it("preserves the current palette when the terminal background query is unavailable", async () => {

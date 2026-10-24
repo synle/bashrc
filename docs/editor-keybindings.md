@@ -808,6 +808,8 @@ before vim sees it, so there it stays the terminal's text paste.
 
 `advanced/llm/pi/setup.js` merges `advanced/llm/pi/pi-keys.common.jsonc` into `~/.pi/agent/keybindings.json`, preserving unrelated user bindings.
 The managed `tui.editor.deleteWordBackward` action binds `ctrl+w`, `ctrl+backspace`, and upstream `alt+backspace`.
+Fullscreen transcript navigation explicitly binds `tui.altScreen.top` to `ctrl+home` and `tui.altScreen.bottom` to `ctrl+end`.
+The bottom action also resumes following new output.
 Run `/reload` in an existing Pi session after deployment to apply the keybindings.
 
 ## AI CLI Assistants
@@ -820,7 +822,7 @@ Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub C
 
 **OpenCode leader move:** OpenCode's upstream default leader is `ctrl+x`, which we move to `ctrl+o` (`tui.json` → `keybinds.leader`) so `ctrl+x` stays available as `editor_open`'s secondary alias alongside the primary `ctrl+g`. Every `<leader>X` chord still works — just typed as `ctrl+o <key>` (e.g. `ctrl+o e` for the leader-style editor open, `ctrl+o n` for new session, `ctrl+o t` for themes). `ctrl+o` was chosen because it's free in opencode, bash readline, vim, and tmux — no tmux-prefix or XON/XOFF flow-control collisions. OpenCode uses `super` on macOS/Linux and replaces it with `alt` on Windows via `opencode-keys.windows.jsonc`; Windows keeps `ctrl+p` as the command-list shortcut because Windows Terminal uses `alt+p` for tab search.
 
-**`ctrl+g` is the canonical "open `$EDITOR`" chord on all four CLIs.** Claude Code, Copilot CLI, and Gemini CLI all ship `ctrl+g` as their _upstream default_ for external-editor-open (Claude's in-TUI hint literally prints `ctrl+g edit in $EDITOR`; Gemini's bundled `docs/reference/keyboard-shortcuts.md` lists `Ctrl+G` / `Ctrl+Shift+G` for `input.openExternalEditor`). Under the explicit-match policy we bind it explicitly anyway, and keep `ctrl+x` as a second alias so the chord matches bash readline's own "open in `$EDITOR`" binding — and bash now binds **both** `ctrl+g` and `ctrl+x` to `edit-and-execute-command` so the pair is identical in and out of a TUI (see "Bash Readline" below). OpenCode is the one tool whose default differs: `ctrl+g` is `messages_first` there, so `opencode-keys.common.jsonc` remaps `messages_first` to `ctrl+alt+shift+g` to free `ctrl+g` for `editor_open`; bare `home` stays assigned to input line-start.
+**`ctrl+g` is the canonical "open `$EDITOR`" chord on all four CLIs.** Claude Code, Copilot CLI, and Gemini CLI all ship `ctrl+g` as their _upstream default_ for external-editor-open (Claude's in-TUI hint literally prints `ctrl+g edit in $EDITOR`; Gemini's bundled `docs/reference/keyboard-shortcuts.md` lists `Ctrl+G` / `Ctrl+Shift+G` for `input.openExternalEditor`). Under the explicit-match policy we bind it explicitly anyway, and keep `ctrl+x` as a second alias so the chord matches bash readline's own "open in `$EDITOR`" binding — and bash now binds **both** `ctrl+g` and `ctrl+x` to `edit-and-execute-command` so the pair is identical in and out of a TUI (see "Bash Readline" below). OpenCode is the one tool whose default differs: `ctrl+g` is `messages_first` there, so `opencode-keys.common.jsonc` remaps `messages_first` to `ctrl+home,ctrl+alt+shift+g` to free `ctrl+g` for `editor_open`; bare `home` stays assigned to input line-start.
 
 **Copilot CLI configurability gap:** `copilot help config` (v1.0.48) exposes **no keymap configuration** — every in-app chord is hardcoded in the binary. Parity for Copilot is therefore limited to whatever its defaults happen to ship; any divergence from Claude's convention is a permanent ⚠️ until upstream changes. The only knobs we can set live in the wrapper (`software/scripts/advanced/llm/copilot/copilot.profile.bash`: `--autopilot --allow-all`) and `~/.copilot/settings.json` (model, theme, hooks, etc., all listed in `copilot help config`, seeded by `copilot/setup.js`).
 
@@ -830,22 +832,43 @@ Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub C
 
 **Gemini CLI keybindings:** Schema is a flat JSON array of `{ command, key }` objects; prefix `command` with `-` to remove a default binding. Discovered in Gemini bundle `chunk-MODIYMRW.js` (function `loadCustomKeybindings`, ~ line 64732). `gemini-keys.common.jsonc` lists every Claude chord explicitly (app.showFullTodos, input.newline×2, edit.undo, edit.clear on `OS_KEY+l` AND `ctrl+l`, input.openExternalEditor, input.paste, edit.deleteWordLeft on `ctrl+w` and `ctrl+backspace`, cursor.home×2, cursor.end×2). `gemini-keys.windows.jsonc` is the Windows/Linux-only companion (mirrors `claude-keys.windows.jsonc`) — removes the default `alt+v` paste so `OS_KEY=alt` on Windows/Linux doesn't double-bind paste. `ctrl+l` is forced to `edit.clear` by removing Gemini's default `app.clearScreen` first (via the `"-"` prefix) — TRADEOFF: Gemini loses screen-clear on `ctrl+l` (accepted).
 
+### Transcript Navigation
+
+Use literal **Ctrl** on every OS, matching editor buffer navigation rather than moving inside the prompt text.
+
+| Key         | Action                                    | Claude Code                | OpenCode         | Copilot CLI      | Gemini CLI    | Pi                     |
+| ----------- | ----------------------------------------- | -------------------------- | ---------------- | ---------------- | ------------- | ---------------------- |
+| `ctrl+home` | Jump to transcript start                  | `Scroll` → `scroll:top`    | `messages_first` | Not configurable | `scroll.home` | `tui.altScreen.top`    |
+| `ctrl+end`  | Jump to transcript bottom / latest output | `Scroll` → `scroll:bottom` | `messages_last`  | Not configurable | `scroll.end`  | `tui.altScreen.bottom` |
+
+Claude requires fullscreen rendering (`/tui fullscreen`); Pi's actions also apply in fullscreen mode.
+Claude and Pi resume following new output after the bottom action.
+The terminal must deliver distinct Ctrl+Home/End sequences; macOS may intercept Ctrl+Fn+arrow combinations on MacBook keyboards.
+Copilot CLI 1.0.103 still exposes no keymap setting in `copilot help config`; its documented Ctrl+Home/End shortcuts move within prompt text.
+No fictitious Copilot keymap or terminal-wide translation is deployed.
+
+OpenCode keeps `ctrl+alt+shift+g` and `ctrl+alt+g` as transcript aliases.
+Bare Home/End and Ctrl+A/E remain current-line navigation.
+Whole-prompt navigation stays on `super+home/end` on macOS/Linux or `alt+home/end` on Windows, avoiding transcript collisions.
+Setup merges managed OpenCode actions over existing keybindings while preserving unrelated custom actions.
+`software/tests/aiCliTranscriptNavigation.spec.js` checks deployed native keymaps, per-platform behavior, preservation, and repeat-deployment stability.
+
 ### Input Editing
 
-| Key                                                                                             | Action                    |     Claude     |    OpenCode    |  Copilot CLI   |   Gemini CLI    |
-| ----------------------------------------------------------------------------------------------- | ------------------------- | :------------: | :------------: | :------------: | :-------------: |
-| `shift+enter`, `ctrl+enter`                                                                     | Newline                   |       ✅       |       ✅       |       ⚠️       |       ✅        |
-| `super+z` (Windows: `alt+z`), `ctrl+-`                                                          | Undo input                |       ✅       |       ✅       |       ⚠️       |       ✅        |
-| `super+l`, `ctrl+l`                                                                             | Clear input               |       ✅       | ❌<sup>n</sup> |       ⚠️       | ✅<sup>i</sup>  |
-| `escape` (opencode only)                                                                        | Clear input               |       ❌       | ✅<sup>n</sup> |       ❌       |       ❌        |
-| `ctrl+w`, `ctrl+backspace`                                                                      | Delete previous word      |       ✓        |       ✓        |       ††       |        ✓        |
-| `ctrl+l`, `super+l` (Windows: `alt+l`), `ctrl+o c` (opencode only)                              | Compact / reset chat      |       ❌       | ✅<sup>o</sup> |       ❌       |       ❌        |
-| `ctrl+r` (opencode only)                                                                        | Recall previous prompt    |       ❌       | ✅<sup>k</sup> |       ❌       |       ❌        |
-| `ctrl+w`, `ctrl+backspace`                                                                      | Delete previous word      |       ✅       |       ✅       |       ⚠️       |       ✅        |
-| `ctrl+v`                                                                                        | Paste image / text        | ✅<sup>b</sup> | ✅<sup>j</sup> |       ⚠️       | ✅<sup>b2</sup> |
-| `home` / `end`, `ctrl+a` / `ctrl+e`                                                             | Home / End (current line) | ✅<sup>c</sup> |       ✅       |       ⚠️       | ✅<sup>c2</sup> |
-| `ctrl+home` / `super+home` (Windows: `alt+home`), `ctrl+end` / `super+end` (Windows: `alt+end`) | Home / End (whole buffer) |       ❌       | ✅<sup>d</sup> |       ⚠️       |       ❌        |
-| `ctrl+g`, `ctrl+x`                                                                              | Open `$EDITOR`            | ✅<sup>l</sup> | ✅<sup>e</sup> | ✅<sup>m</sup> | ✅<sup>l</sup>  |
+| Key                                                                  | Action                    |     Claude     |    OpenCode    |  Copilot CLI   |   Gemini CLI    |
+| -------------------------------------------------------------------- | ------------------------- | :------------: | :------------: | :------------: | :-------------: |
+| `shift+enter`, `ctrl+enter`                                          | Newline                   |       ✅       |       ✅       |       ⚠️       |       ✅        |
+| `super+z` (Windows: `alt+z`), `ctrl+-`                               | Undo input                |       ✅       |       ✅       |       ⚠️       |       ✅        |
+| `super+l`, `ctrl+l`                                                  | Clear input               |       ✅       | ❌<sup>n</sup> |       ⚠️       | ✅<sup>i</sup>  |
+| `escape` (opencode only)                                             | Clear input               |       ❌       | ✅<sup>n</sup> |       ❌       |       ❌        |
+| `ctrl+w`, `ctrl+backspace`                                           | Delete previous word      |       ✓        |       ✓        |       ††       |        ✓        |
+| `ctrl+l`, `super+l` (Windows: `alt+l`), `ctrl+o c` (opencode only)   | Compact / reset chat      |       ❌       | ✅<sup>o</sup> |       ❌       |       ❌        |
+| `ctrl+r` (opencode only)                                             | Recall previous prompt    |       ❌       | ✅<sup>k</sup> |       ❌       |       ❌        |
+| `ctrl+w`, `ctrl+backspace`                                           | Delete previous word      |       ✅       |       ✅       |       ⚠️       |       ✅        |
+| `ctrl+v`                                                             | Paste image / text        | ✅<sup>b</sup> | ✅<sup>j</sup> |       ⚠️       | ✅<sup>b2</sup> |
+| `home` / `end`, `ctrl+a` / `ctrl+e`                                  | Home / End (current line) | ✅<sup>c</sup> |       ✅       |       ⚠️       | ✅<sup>c2</sup> |
+| `super+home` (Windows: `alt+home`), `super+end` (Windows: `alt+end`) | Home / End (whole prompt) |       ❌       | ✅<sup>d</sup> |       ⚠️       |       ❌        |
+| `ctrl+g`, `ctrl+x`                                                   | Open `$EDITOR`            | ✅<sup>l</sup> | ✅<sup>e</sup> | ✅<sup>m</sup> | ✅<sup>l</sup>  |
 
 On Windows, OpenCode uses `alt` in place of `super` for undo, compaction, whole-buffer navigation, and sidebar toggle. It keeps `ctrl+p` for the command list because Windows Terminal reserves `alt+p` for tab search. The Windows Terminal focus-mode shortcut uses `alt+shift+\`, leaving `alt+\` available to OpenCode. `messages_first` no longer uses bare `home`, which belongs to input-line start.
 
@@ -854,8 +877,8 @@ On Windows, OpenCode uses `alt` in place of `super` for undo, compaction, whole-
 <sup>b2</sup> Gemini's `input.paste` is text-paste (no image pipeline today). `gemini-keys.common.jsonc` binds `ctrl+v` explicitly; `gemini-keys.windows.jsonc` removes the default `alt+v` paste (mirroring `claude-keys.windows.jsonc`'s `alt+v: null`).
 <sup>c</sup> Claude **null**s all four chords (`ctrl+a`, `ctrl+e`, `home`, `end`) so the underlying terminal readline gets HOME / END — HOME and END are listed explicitly (not just `ctrl+a`/`ctrl+e`) so a future upstream binding for the physical keys can't silently override the readline pass-through. OpenCode binds both the readline chords AND the physical `home`/`end` keys directly via `input_line_home` / `input_line_end`.
 <sup>c2</sup> Gemini has no readline pass-through mode — `cursor.home`/`cursor.end` ARE the cursor-jump actions. `gemini-keys.common.jsonc` binds both `ctrl+a` + `home` to `cursor.home` and both `ctrl+e` + `end` to `cursor.end`, matching Claude's user-visible HOME/END behavior.
-<sup>d</sup> OpenCode's `input_buffer_home` / `input_buffer_end` default to `home`/`end` (which would conflict with the line-home/end binding above); we remap them to `ctrl+home,super+home` / `ctrl+end,super+end` on macOS/Linux and `ctrl+home,alt+home` / `ctrl+end,alt+end` on Windows. Bare `home`/`end` stay on current-line navigation.
-<sup>e</sup> `ctrl+g` is the primary chord (`editor_open`); `ctrl+x` is the secondary alias, free because of the leader move (`ctrl+x` → `ctrl+o`). OpenCode's upstream `ctrl+g` = `messages_first` is remapped to `ctrl+alt+shift+g` to free it; bare `home` stays on current-line start.
+<sup>d</sup> OpenCode's `input_buffer_home` / `input_buffer_end` use `super+home` / `super+end` on macOS/Linux and `alt+home` / `alt+end` on Windows. Ctrl+Home/End navigate the transcript instead. Bare `home`/`end` stay on current-line navigation.
+<sup>e</sup> `ctrl+g` is the primary chord (`editor_open`); `ctrl+x` is the secondary alias, free because of the leader move (`ctrl+x` → `ctrl+o`). OpenCode's upstream `ctrl+g` = `messages_first` is remapped to `ctrl+home,ctrl+alt+shift+g` to free it; bare `home` stays on current-line start.
 <sup>i</sup> Gemini's `edit.clear` default is `ctrl+c` only (dual-purposes with quit-when-empty). `gemini-keys.common.jsonc` binds `OS_KEY+l` and `ctrl+l` explicitly so it matches Claude's `chat:clearInput`. `ctrl+l` forces over Gemini's default `app.clearScreen` via the `"-"` prefix removal — TRADEOFF: gemini loses screen-clear on `ctrl+l` (user-approved).
 <sup>j</sup> OpenCode's `input_paste` is text-paste (no image pipeline today). `opencode-keys.common.jsonc` binds `ctrl+v` explicitly under the explicit-match policy.
 <sup>k</sup> OpenCode's `history_previous` is `up,ctrl+r` — cycles back through prior prompts (opencode has no incremental reverse-search command; `history_previous` is the nearest analog). Upstream default `ctrl+r` = `session_rename` is reassigned to `f6` so `ctrl+r` is free for history recall.

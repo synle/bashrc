@@ -71,13 +71,15 @@ describe("Pi settings and keybinding deployment", () => {
     expect(JSON.parse(fileSystem[SETTINGS_PATH]).theme).toBe(theme);
   });
 
-  it("deploys all word-deletion chords through the normal setup entry point", async () => {
+  it("deploys word-deletion and transcript-navigation chords through normal setup", async () => {
     await getIndexFunction("doWork")();
 
     expect(fileSystem[KEYBINDINGS_PATH]).toBeDefined();
     expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toEqual({
       $schema: "https://pi.dev/schemas/keybindings.schema.json",
       "tui.editor.deleteWordBackward": ["ctrl+w", "ctrl+backspace", "alt+backspace"],
+      "tui.altScreen.top": "ctrl+home",
+      "tui.altScreen.bottom": "ctrl+end",
     });
   });
 
@@ -85,6 +87,8 @@ describe("Pi settings and keybinding deployment", () => {
     mockFsExistence[KEYBINDINGS_PATH] = true;
     fileSystem[KEYBINDINGS_PATH] = JSON.stringify({
       "tui.editor.deleteWordBackward": ["alt+w"],
+      "tui.altScreen.top": "alt+home",
+      "tui.altScreen.bottom": "alt+end",
       "app.session.new": "ctrl+shift+n",
     });
 
@@ -93,6 +97,8 @@ describe("Pi settings and keybinding deployment", () => {
     expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toEqual({
       $schema: "https://pi.dev/schemas/keybindings.schema.json",
       "tui.editor.deleteWordBackward": ["ctrl+w", "ctrl+backspace", "alt+backspace"],
+      "tui.altScreen.top": "ctrl+home",
+      "tui.altScreen.bottom": "ctrl+end",
       "app.session.new": "ctrl+shift+n",
     });
   });

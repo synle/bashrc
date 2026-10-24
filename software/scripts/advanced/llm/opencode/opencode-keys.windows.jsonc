@@ -5,8 +5,9 @@
 // reserved for Windows Terminal tab search, so OpenCode keeps only `ctrl+p`.
 {
   "keybinds": {
-    "input_buffer_home": "ctrl+home,alt+home",
-    "input_buffer_end": "ctrl+end,alt+end",
+    // Ctrl+Home/End belong to transcript navigation on every platform.
+    "input_buffer_home": "alt+home",
+    "input_buffer_end": "alt+end",
     "session_compact": "ctrl+l,alt+l,<leader>c",
     "input_undo": "alt+z,ctrl+-",
     "command_list": "ctrl+p",

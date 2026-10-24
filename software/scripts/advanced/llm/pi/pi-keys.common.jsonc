@@ -3,4 +3,7 @@
 {
   "$schema": "https://pi.dev/schemas/keybindings.schema.json",
   "tui.editor.deleteWordBackward": ["ctrl+w", "ctrl+backspace", "alt+backspace"],
+  // Own the fullscreen transcript defaults explicitly, matching editor buffer navigation.
+  "tui.altScreen.top": "ctrl+home",
+  "tui.altScreen.bottom": "ctrl+end",
 }

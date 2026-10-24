@@ -88,4 +88,8 @@
   // cursor.end — mirror of cursor.home for the END side.
   { "command": "cursor.end", "key": "ctrl+e" },
   { "command": "cursor.end", "key": "end" },
+
+  // Conversation transcript, not the prompt buffer; match editor top/bottom chords.
+  { "command": "scroll.home", "key": "ctrl+home" },
+  { "command": "scroll.end", "key": "ctrl+end" },
 ]

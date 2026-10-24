@@ -73,7 +73,7 @@ async function _buildVimTheme(mode) {
 
 /**
  * Deploys both Sy schemes and selects the matching family on manual changes and terminal background replies.
- * Refreshes terminal background detection on terminal, split, and tab focus; Ayu installation remains unconditional in the caller.
+ * Refreshes detection on terminal/split/tab focus and after navigation pauses; Ayu installation remains unconditional in the caller.
  * @param {string[]} vimFolders - Native Vim runtime folders to receive colors/*.vim.
  * @returns {Promise<string>} Vimscript selecting Sy or registry fallback; IO and palette errors propagate.
  */
@@ -141,9 +141,10 @@ async function _doVimTheme(vimFolders) {
       if exists('##TermResponseAll')
         autocmd TermResponseAll background ++nested call <SID>ApplyColorScheme()
       endif
-      " Refresh on terminal focus and Vim split/tab entry; no continuous appearance subscription is required.
+      " Focus refreshes immediately; native idle events recheck after navigation without a query on every keystroke.
+      " CursorHold uses the shared updatetime setting and does not poll an untouched editor.
       if exists('*echoraw') && exists('+t_RB')
-        autocmd FocusGained,WinEnter,TabEnter * if !has('gui_running') | call echoraw(&t_RB) | endif
+        autocmd FocusGained,WinEnter,TabEnter,CursorHold,CursorHoldI * if !has('gui_running') | call echoraw(&t_RB) | endif
       endif
     augroup END
     call s:ApplyColorScheme()

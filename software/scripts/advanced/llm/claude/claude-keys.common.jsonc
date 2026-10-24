@@ -2,6 +2,14 @@
 // OS_KEY = CMD (meta) key on macOS, ALT key on Windows/Linux.
 [
   {
+    "context": "Scroll",
+    "bindings": {
+      // Transcript navigation in fullscreen mode; keep prompt line navigation separate.
+      "ctrl+home": "scroll:top",
+      "ctrl+end": "scroll:bottom",
+    },
+  },
+  {
     "context": "Global",
     "bindings": {
       // toggle task list

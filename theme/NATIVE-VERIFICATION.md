@@ -68,6 +68,13 @@ The persistent integration spec runs both initial appearances and three switches
 It requires an explicit installed plugin root and fails before launch if required plugin folders or manifest entries are absent.
 Without that opt-in, the two native integration cases are explicitly skipped; standalone Vim tests remain separate.
 
+Appearance refresh queries the terminal on `FocusGained`, `WinEnter`, and `TabEnter`.
+`CursorHold` and `CursorHoldI` query again after navigation pauses, using the shared 300 ms `updatetime` without polling an untouched editor.
+Native navigation checks execute actual split/tab switches and normal/insert input before observing the emitted background query.
+The probe keeps stdin open, reports Vim exceptions, and checks both process status and persisted results.
+Accepted startup observations were recaptured after the color-response opt-out was removed; only the settings hash changed.
+These checks do not establish live Ghostty/macOS appearance notifications or desktop rendering.
+
 The initial apparent Signify defect came from inspecting uninitialized groups, not a lost-link regression.
 Native default links survive highlight clearing, so no production Vim fix was needed.
 CursorLineConceal appears only in the installed Ayu definition; installed plugins and Vim runtime contain no other consumer.
@@ -121,7 +128,7 @@ Native merger acceptance does not prove every allowed role appears in every scre
 
 ```bash
 BASHRC_VIM_PLUGIN_ROOT="$HOME/.vim" npx vitest run --config vitest.config.js \
-  software/tests/vimThemes.plugins.spec.js software/tests/vimThemes.spec.js \
+  software/tests/vimThemes.plugins.spec.js software/tests/vimThemes.spec.js software/tests/vimThemes.navigation.spec.js \
   software/tests/themeComposition.spec.js software/tests/themeComponentCrosswalk.spec.js \
   software/tests/themeNativeConsumption.spec.js software/tests/themeAuditStatus.spec.js
 ```
@@ -129,4 +136,5 @@ BASHRC_VIM_PLUGIN_ROOT="$HOME/.vim" npx vitest run --config vitest.config.js \
 The plugin root must contain an already-installed native .vim runtime; the integration test does not provision plugins.
 `native-consumption.jsonc` pins accepted observations to source hashes. Re-run native probes before accepting a changed hash; never update it merely to green tests.
 The external implementation plan retains probe programs and raw local captures for this session.
-Full repository validation and baseline licensing/distribution review remain parked at the user's request.
+The original capture did not include full repository validation. Later validation results belong to their implementation plans.
+Baseline licensing/distribution review remains open.

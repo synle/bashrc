@@ -46,10 +46,12 @@ diff|__git_files__,__git_diff_flags__
 ds1
 ds|__git_files__,__git_diff_flags__
 d|__git_files__,__git_diff_flags__
+f
 fapr|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
 fap|__git_remotes__
 fetch|__git_remotes__,--all,--prune,-p,--tags,--no-tags,--force,-f,--depth,--shallow-since,--dry-run
 fix-identity|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
+fp
 gc-if-stale
 gone|__git_branches__,__git_branch_flags__
 hash|__git_branches__,__git_files__

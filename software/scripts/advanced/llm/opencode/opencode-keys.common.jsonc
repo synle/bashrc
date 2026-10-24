@@ -47,8 +47,10 @@
 // muscle memory):
 //   sidebar_toggle    ctrl+\,super+\       — matches Sublime/VS Code/Zed
 //                                            sidebar toggle convention.
-//   input_buffer_home ctrl+home,super+home — start of multi-line buffer.
-//   input_buffer_end  ctrl+end,super+end   — end of multi-line buffer.
+//   input_buffer_home super+home           — start of multi-line prompt buffer.
+//   input_buffer_end  super+end            — end of multi-line prompt buffer.
+//   messages_first    ctrl+home            — jump to transcript start.
+//   messages_last     ctrl+end             — jump to latest transcript output.
 //   messages_copy     ctrl+y               — copy last assistant message
 //                                            (bash-readline yank chord).
 //   command_list      ctrl+p,super+p       — command palette (super+p matches
@@ -65,7 +67,7 @@
 //                                            history_previous is the nearest
 //                                            analog. ctrl+r is free because
 //                                            session_rename moved to f6.
-//   messages_first    ctrl+alt+shift+g
+//   messages_first    ctrl+home,ctrl+alt+shift+g
 //                                          — moved off the upstream default
 //                                            "ctrl+g,home" so ctrl+g is free
 //                                            for editor_open (the chord that
@@ -103,10 +105,10 @@
     // leader stays moved to ctrl+o (see header). opencode's own default for
     // editor_open is <leader>e, which keeps working as ctrl+o e.
     "editor_open": "ctrl+g,ctrl+x",
-    // Free ctrl+g for editor_open: opencode's upstream default binds
-    // messages_first to "ctrl+g,home". Bare HOME belongs to input_line_home,
-    // so move only the ctrl chord to ctrl+alt+shift+g.
-    "messages_first": "ctrl+alt+shift+g",
+    // Transcript navigation uses Ctrl+Home/End, matching editor buffer navigation.
+    // Keep old transcript aliases; bare Home/End remain prompt line navigation.
+    "messages_first": "ctrl+home,ctrl+alt+shift+g",
+    "messages_last": "ctrl+end,ctrl+alt+g",
     // Newline in input. Claude binds shift+enter / ctrl+enter. We list
     // every chord explicitly (no reliance on opencode default) plus
     // alt+return / ctrl+j which opencode upstream historically shipped.
@@ -114,19 +116,16 @@
     // Beginning of current input line. We bind both ctrl+a and the physical
     // HOME key to input_line_home so the user-visible behavior matches across
     // Sublime, VS Code, Zed, and bash readline. For multi-line input, this
-    // jumps to the start of the current line; ctrl+home/super+home jump to
-    // the start of the whole buffer (see input_buffer_home below).
+    // jumps to the start of the current line; super+home jumps to the start
+    // of the whole prompt buffer. Ctrl+Home navigates the transcript.
     "input_line_home": "ctrl+a,home",
     // End of current input line. Mirror of input_line_home — binds ctrl+e
     // and the physical END key.
     "input_line_end": "ctrl+e,end",
-    // Beginning of the entire input buffer (only different from
-    // input_line_home for multi-line input). Bound to ctrl+home and super+home
-    // since bare HOME now belongs to input_line_home above.
-    "input_buffer_home": "ctrl+home,super+home",
-    // End of the entire input buffer. Bound to ctrl+end and super+end since
-    // bare END now belongs to input_line_end above.
-    "input_buffer_end": "ctrl+end,super+end",
+    // Keep alternate whole-prompt navigation without stealing transcript chords.
+    // Windows substitutes alt+home/end through its companion keymap.
+    "input_buffer_home": "super+home",
+    "input_buffer_end": "super+end",
     // Clear current input — escape ONLY.
     //
     // Neither ctrl+l nor super+l is here — both go to session_compact below.
