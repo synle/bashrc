@@ -203,6 +203,26 @@ type error from the same workspace.
 Repeat in each client; record untested clients and platforms explicitly.
 Do not invoke MCP rebuild or mutation tools merely to test connectivity.
 
+### Pull-request readiness and watching
+
+Creating a PR returns its URL and seeds memory; babysitting remains opt-in.
+A single-PR babysit defaults to `goal=ready`: required bot clearance, passing CI,
+mergeability, and repository-defined migration validation must cover the current revision.
+Required human approval, dependency, WIP, and thread-closeout gates still apply.
+A bot thumbs-up counts only with trusted identity and current-revision provenance.
+One verified major finding activates repair regardless of comment count or approval.
+
+Use `goal=watch` to keep monitoring through the selected budget after readiness.
+Batch babysitting defaults to watch mode; pass `goal=ready` explicitly for a readiness goal.
+`READY` never means merged and never grants merge or release permission.
+Pending, missing, stale, or unreadable evidence never counts as readiness.
+Unknown bot or validation policy needs a human decision; unavailable reviewers/checks remain resumable waiting.
+
+Automerge permissions remain unchanged, but enabling it requires verified readiness
+or server-side enforcement of every applicable readiness gate.
+Polling cannot enforce merge safety atomically; repository-required checks or a merge queue must enforce merge-blocking requirements.
+These are agent instructions, not a runtime scheduler or a guarantee of bot integration.
+
 ### Shared workers and skills
 
 A **skill** defines the workflow; a **worker** supplies the role and its boundaries.
