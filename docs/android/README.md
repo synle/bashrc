@@ -40,76 +40,23 @@ adb shell pm list users
 ```
 
 With multiple devices connected, set `ANDROID_SERIAL` to the intended device's serial before continuing.
-Set `android_user` below to the profile you will clean up; `0` is usually the owner, not necessarily the current foreground user.
+Run the standalone host scripts from the repository root, or use their absolute paths.
+Android user `0` is usually the owner, not necessarily the current foreground user.
 Repeat for each relevant work, secondary, or private profile.
 Record the model and firmware build from **Settings > About phone** alongside each snapshot.
 
-Paste this entire block into host Bash before each cleanup run.
-Every run creates a new folder under your home folder, preserving previous snapshots.
-
 ```bash
-(
-  set -euo pipefail
-  umask 077
-  android_user=0
-  backup_folder=$(mktemp -d "$HOME/android-backup-$(date +%Y%m%d-%H%M%S)-XXXXXX")
-  printf 'Backup folder: %s\n' "$backup_folder"
-  printf '%s\n' "$android_user" > "$backup_folder/android-user.txt"
-  adb version > "$backup_folder/adb-version.txt"
-  adb shell -n pm list users > "$backup_folder/users.txt"
-
-  # Preserve raw lists; pipefail prevents transport errors becoming an empty inventory.
-  adb shell -n pm list packages --user "$android_user" -u > "$backup_folder/all.raw.txt"
-  adb shell -n pm list packages --user "$android_user" -u -s > "$backup_folder/system.raw.txt"
-  adb shell -n pm list packages --user "$android_user" -u -3 > "$backup_folder/user.raw.txt"
-  adb shell -n pm list packages --user "$android_user" > "$backup_folder/installed.raw.txt"
-  adb shell -n pm list packages --user "$android_user" -e > "$backup_folder/enabled.raw.txt"
-  adb shell -n pm list packages --user "$android_user" -d > "$backup_folder/disabled.raw.txt"
-
-  for list_name in all system user installed enabled disabled; do
-    tr -d '\r' < "$backup_folder/$list_name.raw.txt" |
-      awk '/^package:/ { sub(/^package:/, ""); print }' |
-      LC_ALL=C sort -u > "$backup_folder/$list_name.txt"
-  done
-  test -s "$backup_folder/all.txt"
-
-  # Use filenames rather than NR == FNR so empty input lists remain valid.
-  awk '
-    FILENAME == ARGV[1] { system_packages[$0] = 1; next }
-    FILENAME == ARGV[2] { user[$0] = 1; next }
-    FILENAME == ARGV[3] { installed[$0] = 1; next }
-    FILENAME == ARGV[4] { enabled[$0] = 1; next }
-    FILENAME == ARGV[5] { disabled[$0] = 1; next }
-    FILENAME == ARGV[6] {
-      type = ($0 in system_packages) ? "system" : (($0 in user) ? "user" : "unknown")
-      status = "unknown"
-      if (!($0 in installed)) status = "removed"
-      else if ($0 in disabled) status = "disabled"
-      else if ($0 in enabled) status = "active"
-      printf "%s\t%s\t%s\n", $0, type, status
-    }
-  ' "$backup_folder/system.txt" "$backup_folder/user.txt" \
-    "$backup_folder/installed.txt" "$backup_folder/enabled.txt" \
-    "$backup_folder/disabled.txt" "$backup_folder/all.txt" > "$backup_folder/apps.rows.tsv"
-  printf 'package\ttype\tstatus\n' > "$backup_folder/apps.tsv"
-  command cat "$backup_folder/apps.rows.tsv" >> "$backup_folder/apps.tsv"
-
-  # Raw evidence includes permission grants, per-user flags, and AppOps modes/history.
-  # These two dumps may include other Android users; the inventory above does not.
-  adb shell -n dumpsys package > "$backup_folder/packages.txt"
-  adb shell -n dumpsys appops > "$backup_folder/appops.txt"
-
-  # These tables contain current values, including defaults; see section 3 below.
-  for namespace in system secure global; do
-    adb shell -n settings --user "$android_user" list "$namespace" > "$backup_folder/settings-$namespace.raw.txt"
-    tr -d '\r' < "$backup_folder/settings-$namespace.raw.txt" |
-      LC_ALL=C sort > "$backup_folder/settings-$namespace.txt"
-  done
-
-  printf 'All capture commands exited successfully. Review raw output before cleanup.\n' > "$backup_folder/capture-finished.txt"
-  printf 'Saved inventory: %s/apps.tsv\n' "$backup_folder"
-)
+# Creates a private mktemp folder; prints its path before and after capture.
+# stdout contains only the full inventory TSV path; progress goes to stderr.
+inventory_tsv=$(bash docs/android/scripts/android-access.sh inventory 0)
 ```
+
+Every invocation creates a new folder with `mktemp -d "$HOME/android-backup-$(date +%Y%m%d-%H%M%S)-XXXXXX"`.
+The final message includes the full generated TSV path, including on a later capture failure if the TSV already exists.
+The scripts pin the selected ADB serial and save device/user metadata alongside the inventory.
+Rows sort system apps first, then non-system apps, with package names sorted within each type; unknown types sort last.
+The optional friendly-name column is omitted because standard ADB package lists do not reliably expose localized app labels.
+No APK extraction or extra Android build-tool dependency is required.
 
 Open `apps.tsv` in a spreadsheet; it has these three columns:
 
@@ -135,42 +82,89 @@ Cancel capture with Ctrl-C; it requires no device rollback because it changes no
 
 ### 2. Permissions for a Selected App
 
-Set `app_package` to an installed package from `apps.tsv`; there is no single reliable "current app" during capture.
-Run this block in host Bash to save focused evidence in a separate private folder:
+Use the same `get` command for one package, a comma-separated package list, or an inventory TSV.
+There is no default placeholder package: provide real installed package identifiers from your inventory.
+For example, choose actual packages before using the first two forms below:
 
 ```bash
-(
-  set -euo pipefail
-  umask 077
-  android_user=0
-  app_package=com.example.app
-  permission_folder=$(mktemp -d "$HOME/android-permissions-$(date +%Y%m%d-%H%M%S)-XXXXXX")
-  printf 'Permission folder: %s\n' "$permission_folder"
-  printf 'user=%s\npackage=%s\n' "$android_user" "$app_package" > "$permission_folder/target.txt"
-  adb shell -n dumpsys package "$app_package" > "$permission_folder/package.txt"
-  adb shell -n cmd appops get --user "$android_user" "$app_package" > "$permission_folder/appops.txt"
-
-  # Extract only the selected user's runtime grants, not manifest declarations.
-  # dumpsys is diagnostic text; keep the raw dump if an OEM changes its layout.
-  tr -d '\r' < "$permission_folder/package.txt" | awk -v target="$android_user" '
-    /^[[:space:]]*User [0-9]+:/ {
-      selected = ($2 == target ":")
-      runtime = 0
-      next
-    }
-    selected && /^[[:space:]]*runtime permissions:/ {
-      runtime = 1
-      indent = match($0, /[^[:space:]]/)
-      next
-    }
-    runtime && /[^[:space:]]/ {
-      if (match($0, /[^[:space:]]/) <= indent) { runtime = 0; next }
-      if ($0 ~ /: granted=/) print
-    }
-  ' > "$permission_folder/runtime-permissions.txt"
-  command cat "$permission_folder/runtime-permissions.txt"
-)
+bash docs/android/scripts/android-access.sh get camera 'com.example.selectedapp' 0
+bash docs/android/scripts/android-access.sh get contacts 'com.example.firstapp,com.example.secondapp' 0
+bash docs/android/scripts/android-access.sh get all "$inventory_tsv"
 ```
+
+CSV accepts surrounding whitespace and removes duplicate identifiers; it does not accept human-readable app labels.
+TSV parsing locates the `package` and `status` headers, so an extra friendly-name column does not shift the package selector.
+Keep selected rows and the header when editing an inventory TSV.
+`active` and `disabled` rows are selected; `removed` rows are skipped because AppOps requires an installed package UID.
+Unknown statuses, empty selections, malformed identifiers, missing packages, and device/user mismatches fail before any permission writes.
+CSV defaults to Android user `0`; TSV uses adjacent `android-user.txt` metadata when present.
+If you move an edited TSV away from its metadata, pass the intended Android user explicitly.
+
+A private timestamped folder contains `results.tsv` and one private subfolder per app.
+Each app folder contains raw `package.txt`, `appops.txt`, selected-user `runtime-permissions.tsv`, and normalized `access.tsv`.
+Background queries also preserve per-operation output, app inactivity, and standby-bucket evidence.
+Individual failed reads remain in `results.tsv`; other selected apps are still attempted, but the command exits nonzero.
+The scripts print the backup folder at start and finish, and the full results TSV path at finish.
+Read raw package dumps carefully: they can include users other than the selected user.
+
+#### One-Step Inventory and Access Backup
+
+```bash
+bash docs/android/scripts/backup-all.sh 0
+```
+
+The bundle first creates the inventory, then passes that TSV to `get all`.
+It prints both full TSV paths and retains the inventory if access capture fails.
+No device permissions or settings are changed.
+A large inventory can take several minutes; do not clean up apps while capture runs.
+
+#### Shared Access Types for Bulk Get and Set
+
+| Type                                          | What it selects                                             | Set actions                  |
+| --------------------------------------------- | ----------------------------------------------------------- | ---------------------------- |
+| `all`                                         | Runtime grant evidence plus both background AppOps          | Read-only                    |
+| `location`, `location-precise`                | Coarse and fine foreground location                         | `grant`, `revoke`            |
+| `location-approximate`                        | Coarse location; granting also revokes fine location        | `grant`, `revoke`            |
+| `location-background`                         | Background location, separate from foreground accuracy      | `grant`, `revoke`            |
+| `camera`, `microphone`                        | Camera or audio recording                                   | `grant`, `revoke`            |
+| `contacts`, `calendar`                        | Read and write permissions for that category                | `grant`, `revoke`            |
+| `phone`, `sms`                                | Common phone/call or messaging permission groups            | `grant`, `revoke`            |
+| `notifications`, `media`, `nearby`, `sensors` | Corresponding runtime permission groups                     | `grant`, `revoke`            |
+| `background-running`                          | `RUN_IN_BACKGROUND` AppOp                                   | `allow`, `ignore`, `default` |
+| `background-processing`                       | `RUN_ANY_IN_BACKGROUND` AppOp                               | `allow`, `ignore`, `default` |
+| `android.permission.PERMISSION_NAME`          | One exact runtime permission, useful for selective recovery | `grant`, `revoke`            |
+
+The category definitions live in the script, not separate grant/revoke copies.
+Some groups contain permissions unavailable or undeclared on a particular app or Android version.
+Unknown runtime grant evidence blocks `set --apply`; policy-fixed, signature, or special-access permissions may not be changeable through ADB.
+
+#### Bulk Grant, Revoke, and Background Changes
+
+`set` defaults to preview, prints the selected packages, and writes `preview.tsv` without changing device access.
+Review that output first; append `--apply` only when you intend to change every selected package.
+
+```bash
+# Preview contact grants for selected inventory rows.
+bash docs/android/scripts/android-access.sh set grant contacts "$inventory_tsv"
+
+# Explicit device changes after review; choose the intended subset first.
+bash docs/android/scripts/android-access.sh set grant contacts "$inventory_tsv" --apply
+bash docs/android/scripts/android-access.sh set revoke contacts "$inventory_tsv" --apply
+bash docs/android/scripts/android-access.sh set grant location-approximate "$inventory_tsv" --apply
+bash docs/android/scripts/android-access.sh set grant location-background "$inventory_tsv" --apply
+bash docs/android/scripts/android-access.sh set ignore background-running "$inventory_tsv" --apply
+bash docs/android/scripts/android-access.sh set allow background-processing "$inventory_tsv" --apply
+```
+
+CSV and explicit-user forms work here exactly as they do for `get`.
+All selected apps must pass before-state capture before the first mutation.
+The script rechecks installed state at each package's write boundary, preserves command output, and captures after-state evidence.
+`changes.tsv` records command outcomes; `verification.tsv` compares requested values with after-state reads.
+A command that exits successfully but leaves the wrong state causes a nonzero batch result.
+A batch is not transactional: failures or Ctrl-C can leave some changes applied.
+Keep the printed backup folder; review its before/after folders and logs before retrying or recovering.
+Granting background location does not establish foreground location; grant the intended foreground accuracy separately if needed.
+Revoking `location-approximate` revokes coarse access only; use the `location` category to revoke both foreground location permissions.
 
 `granted=true` records a grant; `granted=false` records a denial at capture time.
 An absent line is **unknown or not applicable**, not automatically denied.
@@ -183,7 +177,7 @@ AppOps is a second layer: compare `appops.txt` with permission grants, device po
 Usage timestamps are history, not permission settings.
 
 All permission names below use the prefix `android.permission.`.
-Use the grouped names to review `runtime-permissions.txt` and the corresponding entries in the raw package and AppOps dumps.
+Use the grouped names to review `runtime-permissions.tsv` and the corresponding entries in the raw package and AppOps dumps.
 
 #### Location: Approximate, Precise, and Background
 
@@ -196,20 +190,15 @@ Use the grouped names to review `runtime-permissions.txt` and the corresponding 
 #### Background Processing and Background Running
 
 There is no universal "run in background" permission.
-Review these independent controls in addition to runtime grants:
+Use the same app selection for each independent background control:
 
 ```bash
-# Host commands; replace this package and profile before running.
-android_user=0
-app_package=com.example.app
-adb shell cmd appops get --user "$android_user" "$app_package" RUN_IN_BACKGROUND
-adb shell cmd appops get --user "$android_user" "$app_package" RUN_ANY_IN_BACKGROUND
-adb shell am get-inactive --user "$android_user" "$app_package"
-adb shell am get-standby-bucket --user "$android_user" "$app_package"
-adb shell dumpsys deviceidle
+bash docs/android/scripts/android-access.sh get background-running "$inventory_tsv"
+bash docs/android/scripts/android-access.sh get background-processing "$inventory_tsv"
 ```
 
-Save these outputs alongside the focused permission snapshot when reviewing background behavior.
+These snapshots include AppOps modes, inactivity, and standby-bucket evidence.
+Use `get all` for a combined snapshot; the separate categories remain available for focused reads and writes.
 Check battery-optimization exemptions in the device-idle dump and **Settings > Apps > app > Battery**.
 `WAKE_LOCK` and `FOREGROUND_SERVICE` appear among declared/install-time permissions; neither guarantees unrestricted background execution.
 `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permits requesting an exemption, not proof that an exemption was granted.
@@ -249,7 +238,7 @@ The raw snapshots preserve some related settings and AppOps evidence, but do not
 
 ### 3. Settings Snapshot and Non-Default Candidates
 
-The first block saves sorted `settings-system.txt`, `settings-secure.txt`, and `settings-global.txt`, plus unmodified raw outputs.
+The `inventory` command saves sorted `settings-system.txt`, `settings-secure.txt`, and `settings-global.txt`, plus unmodified raw outputs.
 System and secure settings are user-scoped; global settings are device-wide even when a user argument is supplied.
 These exports include defaults, generated values, and runtime state, not only intentional user changes.
 They omit app-private preferences, inaccessible settings, and some OEM configuration.
@@ -275,12 +264,35 @@ Keep the before-cleanup snapshot unchanged and capture another after cleanup to 
 
 ### Recovery Scope and Limits
 
-This is an audit snapshot, not an automatic restore script.
-Review recovery one package or setting at a time, for the original user and compatible firmware.
+This is an audit snapshot, not a universal automatic restore.
+Review recovery one package or setting at a time, for the original device/user and compatible firmware.
 The existing package-management notes below describe reinstalling retained packages and re-enabling apps.
 A missing APK, removed app data, or expired one-time grant cannot be restored from these text files.
-Do not replay settings tables or bulk-grant permissions: some values are identifiers, policy-controlled, obsolete, or unsafe to copy.
-Restore only reviewed changes through the relevant device UI or a separately verified command, then query the state again.
+
+For permission recovery, inspect each package's before-state `access.tsv`, `runtime-permissions.tsv`, and raw dump.
+Group only packages that shared the same original value; do not blanket-grant an entire category to restore mixed prior grants.
+Use one exact permission when restoring a single grant:
+
+```bash
+# Preview restoration for a reviewed package subset; substitute actual selected package identifiers.
+bash docs/android/scripts/android-access.sh set grant android.permission.READ_CONTACTS 'com.example.firstapp,com.example.secondapp' 0
+# Append --apply only after confirming these packages originally had this grant.
+# Use set revoke for packages whose original value was false.
+
+# Restore the original explicit AppOps mode for a reviewed TSV subset.
+bash docs/android/scripts/android-access.sh set default background-running "$inventory_tsv"
+```
+
+For AppOps, inspect the raw operation output: an effective `allow` value does not prove a prior explicit allow override.
+`default` resets only the chosen AppOp; it does not restore OEM sleeping-app rules, all battery settings, or app standby history.
+Modes outside the script's allow/ignore/default write allowlist require separate review rather than silent coercion.
+UID-level overrides can prevent package-level AppOps changes; the script reports failed verification instead of modifying every app sharing that UID.
+When restoring location, establish the original coarse grant before fine/background grants where required by the platform.
+One-time, policy-fixed, and other permission flags cannot be faithfully restored by plain grant/revoke operations.
+Re-run `get` after recovery and review `verification.tsv` from applied changes.
+
+Do not replay settings tables: some values are identifiers, policy-controlled, obsolete, or unsafe to copy.
+Restore only reviewed settings through the device UI or a separately verified command, then query their state again.
 A reset-to-defaults job is not restoration of your captured prior state.
 
 References: [ADB and Package Manager](https://developer.android.com/tools/adb), [dumpsys](https://developer.android.com/tools/dumpsys),

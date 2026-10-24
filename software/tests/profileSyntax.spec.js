@@ -44,8 +44,11 @@ const rootScriptFiles = listFiles(ROOT_DIR, (n) => n.endsWith(".sh"));
 /** CodeGraph provisioning is parsed even without generated profiles. */
 const codegraphInstaller = path.join(ROOT_DIR, "software/scripts/advanced/llm/codegraph.sh");
 
-describe("CodeGraph installer syntax", () => {
-  it("parses under both supported shells", () => assertNoSyntaxErrors(codegraphInstaller));
+describe("Standalone tool syntax", () => {
+  it("parses under both supported shells", () => {
+    assertNoSyntaxErrors(codegraphInstaller);
+    listFiles(path.join(ROOT_DIR, "docs/android/scripts"), (name) => name.endsWith(".sh")).forEach(assertNoSyntaxErrors);
+  });
 });
 
 /** Setup scripts included in cross-platform shell syntax checks. */
