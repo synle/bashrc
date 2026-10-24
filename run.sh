@@ -22,6 +22,7 @@
 #   ./run '@llm*'                            # Preset prefix matches (quote wildcards against shell expansion)
 #   ./run --preset=lightweight,heavyweight   # Multiple presets compose (file lists union)
 #   ./run --preset='*prompts'                # Preset suffix matches; multiple matches require default-yes confirmation
+#   ./run --skip-prompt 'vim*'               # Run every eligible match without selector confirmation
 #   ./run @llm                               # Bare @-marker → strict preset lookup (skip script search)
 #   ./run editors                            # Bare arg → script-first; falls back to preset on miss
 #   ./run --debug                            # Enable debug mode (keep temp scripts for inspection)
@@ -34,6 +35,7 @@
 # Single dash also works: -files=..., -force-refresh, -f, -preset=..., -debug, -D, -verbose, -V, -dryrun, -remove
 # Names match exactly, case-insensitively. Use name*, *name, or *name* for prefix, suffix, or contains matches.
 # Multiple matches warn in red and require confirmation before scripts run; no terminal means cancellation.
+# --skip-prompt (also -skip-prompt) bypasses only selector confirmation; warnings and unrelated prompts remain.
 # No hash-prefixed preset shorthand. No short selector aliases: -f remains force refresh; -p is not a preset selector.
 ################################################################################
 

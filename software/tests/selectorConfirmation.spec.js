@@ -130,7 +130,23 @@ describe("selector confirmation", () => {
     );
   });
 
-  it("rejects unmatched selections before prompting or dispatching anything", async () => {
+  it("dispatches every match without terminal confirmation when explicitly opted in", async () => {
+    setSandboxGlobal("TEST_SCRIPT_FILES", "*.js");
+    setSandboxGlobal("_parsedArgs", { skipPrompt: true, confirmations: [] });
+    await runSelected();
+    expect(shell).not.toHaveBeenCalled();
+    expect(output.mock.calls).toEqual([
+      ["\x1b[1;31mWarning: This keyword matches multiple files: *.js\n- software/scripts/a.js\n- software/scripts/b.js\x1b[0m"],
+    ]);
+    expect(runner).toHaveBeenCalledWith(
+      ["software/scripts/a.js", "software/scripts/b.js", "~refresh-source.standalone.js"],
+      ["software/scripts/a.js", "software/scripts/b.js"],
+      "Test Files",
+    );
+  });
+
+  it.each([false, true])("rejects unmatched selections before prompting or dispatching; skipPrompt=%s", async (skipPrompt) => {
+    setSandboxGlobal("_parsedArgs", { skipPrompt, confirmations: [] });
     setSandboxGlobal("TEST_SCRIPT_FILES", "a.js,missing");
     await expect(runSelected()).rejects.toThrow("No files or presets match: missing");
     expect(shell).not.toHaveBeenCalled();

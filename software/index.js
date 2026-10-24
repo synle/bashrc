@@ -246,7 +246,7 @@ function _resolvePresetName(name, presetMap) {
  * so that subsequent getRuntimeOption() calls pick them up.
  * Must be called before any getRuntimeOption() reads of flag env vars.
  * File/preset aliases accept `=value` or a separate value; edge stars opt into broader matching.
- * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean, bareArgs: string[], confirmations: SelectorConfirmation[] }}
+ * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, skipPrompt: boolean, presets: string[], setup: boolean, bareArgs: string[], confirmations: SelectorConfirmation[] }}
  * @throws {Error} When selector values are missing or preset names are unknown or cyclic.
  */
 function parseRawArgs() {
@@ -265,6 +265,8 @@ function parseRawArgs() {
   let debug = false;
   let dryrun = false;
   let remove = false;
+  /** @type {boolean} Explicit consent to every selector match, not unrelated prompts. */
+  let skipPrompt = false;
   /** @type {string[]} Preset names or edge-wildcard selectors requested by the caller. */
   const presetRequests = [];
   /** @type {SelectorConfirmation[]} Multiple-match requests deferred until runner preflight. */
@@ -325,6 +327,8 @@ function parseRawArgs() {
       dryrun = true;
     } else if (/^-?-remove$/.test(arg)) {
       remove = true;
+    } else if (/^-?-skip-prompt$/.test(arg)) {
+      skipPrompt = true;
     } else if (/^-?-no-color$/.test(arg)) {
       process.env.NO_COLOR = "1";
     } else if (arg.startsWith("@")) {
@@ -387,6 +391,7 @@ function parseRawArgs() {
     debug,
     dryrun,
     remove,
+    skipPrompt,
     presets,
     setup,
     bareArgs,
@@ -6281,14 +6286,16 @@ function _mergeScriptTimings(timings) {
 /**
  * Confirms broad selections through the shared terminal prompt without consuming pipeline stdin.
  * @param {SelectorConfirmation[]} confirmations - Multiple-match requests collected during resolution.
- * @returns {Promise<void>} Resolves only after every request is accepted.
- * @throws {Error} When confirmation is declined, times out, or has no controlling terminal.
+ * Logs every match warning; --skip-prompt accepts these requests without a terminal.
+ * @returns {Promise<void>} Resolves after explicit opt-in or acceptance of every request.
+ * @throws {Error} Without opt-in, when confirmation is declined, times out, or has no controlling terminal.
  */
 async function _confirmSelectorMatches(confirmations) {
   if (confirmations.length === 0) return;
   const functions = await readText`software/bootstrap/common-functions.bash`;
   for (const { keyword, mode, matches } of confirmations) {
     log(colorRed(`Warning: This keyword matches multiple ${mode}: ${keyword}\n${matches.map((match) => `- ${match}`).join("\n")}`));
+    if (_parsedArgs.skipPrompt) continue;
     try {
       execBashSync(`${functions}\nprompt_yes_no "$BASHRC_SELECTOR_PROMPT" Y`, {
         shell: "bash",

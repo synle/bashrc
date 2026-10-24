@@ -73,12 +73,15 @@ Names match exactly and case-insensitively by default. File selectors accept exa
 Use `name*` for prefix matches, `*name` for suffix matches, and `*name*` for contains matches. Internal stars are unsupported.
 Quote wildcard arguments so the shell passes them unchanged. One match runs automatically; multiple matches require confirmation before any selected script executes.
 The red warning names `files` or `presets` and lists all matches. Enter accepts; No, EOF, a 30-second timeout, or no terminal cancels.
+Pass `--skip-prompt` to run every eligible match without selector confirmation, including without a terminal. This presence flag defaults to false.
+Match warnings, missing-name errors, OS/work-profile guards, and unrelated prompts remain unchanged. The single-dash form `-skip-prompt` also works.
 There are no short file/preset aliases; existing `-f` still means force refresh.
 
 ```bash
 ./run --files=git.js              # one script
 ./run --file git.js               # singular alias, separate value
 ./run 'vim*'                      # all scripts with this basename prefix
+./run --skip-prompt 'vim*'        # all eligible matches without selector confirmation
 ./run --files='*config.js'        # explicit suffix match
 ./run --preset=lightweight        # named preset
 ./run --preset=terminal,prompt    # union
@@ -102,7 +105,8 @@ Missing separate option values fail before selection. Existing empty `--files=` 
 
 Hash-prefixed preset shorthand is no longer supported. Replace `'#name'` with `@name`, or use `--preset=name`.
 Implicit fuzzy abbreviations are no longer supported. Replace `--preset=editor` with `--preset=editors` or quote `--preset='editor*'`.
-For automation without a terminal, provide exact preset names or unambiguous file paths instead of selectors with multiple matches.
+For automation without a terminal, provide exact preset names or unambiguous file paths, or pass `--skip-prompt` to accept every eligible match.
+Both SteamOS setup installer calls pass `--skip-prompt` so matching-name confirmation cannot interrupt those delegations.
 
 ## Testing
 

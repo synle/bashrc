@@ -155,7 +155,7 @@ function _bootstrap_decky_loader_plugins_themes() {
     "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" \
     -o "$installer_folder/run" \
     && chmod +x "$installer_folder/run"; then
-    "$installer_folder/run" --files=software/scripts/decky-and-css-loader.standalone.js < /dev/null || status=$?
+    "$installer_folder/run" --skip-prompt --files=software/scripts/decky-and-css-loader.standalone.js < /dev/null || status=$?
   else
     status=$?
   fi
@@ -1134,7 +1134,7 @@ fi
 # Installs url-porter + skippy-ff Chrome extensions, plus tmux and vim config.
 tmp=$(mktemp -d) && pushd "$tmp" \
   && curl -fsSL "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" -o run
-chmod +x run && ./run --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
+chmod +x run && ./run --skip-prompt --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
 rm -rf "$tmp"
 popd
 

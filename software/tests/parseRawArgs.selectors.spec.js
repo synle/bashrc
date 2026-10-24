@@ -23,6 +23,17 @@ describe("setup selectors", () => {
     });
   });
 
+  it("requires selector confirmation by default", () => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--files=vim*"]);
+    expect(parseRawArgs()).toMatchObject({ files: "vim*", skipPrompt: false });
+  });
+
+  it.each(["--skip-prompt", "-skip-prompt"])("accepts %s without changing the selected files", (flag) => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify([flag, "--files=vim*"]);
+    expect(parseRawArgs()).toMatchObject({ files: "vim*", skipPrompt: true, forceRefresh: false, bareArgs: [] });
+    expect(proc.env.TEST_SCRIPT_FILES).toBe("vim*");
+  });
+
   it.each(["--file", "--files", "-file", "-files"])("accepts %s with a separate filename", (flag) => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify([flag, "git.js"]);
     expect(parseRawArgs()).toMatchObject({ files: "git.js", forceRefresh: false, bareArgs: [] });

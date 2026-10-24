@@ -166,6 +166,26 @@ describe.skipIf(process.platform === "win32")("selector terminal integration", (
     expect(result.output).not.toContain("EXECUTED:");
   });
 
+  it.each(["al*", "--file=al*", "--files=*l*", "@pack-*", "--preset=*pack*", "pack-*"])(
+    "runs all matches for %s without a terminal when --skip-prompt follows the selector",
+    (arg) => {
+      const result = runTerminal([arg, "--skip-prompt"], "", { SELECTOR_NO_TTY: "1" });
+      expect(result.status).toBe(0);
+      expect(result.output).toContain("Warning: This keyword matches multiple");
+      expect(result.output).not.toContain("Do you wish to continue");
+      expect(result.output).toContain("EXECUTED:software/scripts/alpha.js");
+      expect(result.output).toContain("EXECUTED:software/scripts/alpine.js");
+      expect(result.output).not.toContain("EXECUTED:software/scripts/beta.js");
+    },
+  );
+
+  it.each(["--files=al*,missing", "@missing", "--file"])("still rejects invalid selection %s with --skip-prompt", (arg) => {
+    const result = runTerminal(["--skip-prompt", arg], "", { SELECTOR_NO_TTY: "1" });
+    expect(result.status).toBe(1);
+    expect(result.output).not.toContain("EXECUTED:");
+    expect(result.output).not.toContain("Do you wish to continue");
+  });
+
   it.each(["al", "@pack", "#pack-alpha", "--preset=#pack-alpha"])("rejects obsolete or implicit selector %s", (arg) => {
     const result = runTerminal([arg]);
     expect(result.status).toBe(1);

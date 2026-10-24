@@ -150,6 +150,8 @@ Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
 `emulators`, `apps`, `terminal`, `prompt`, `llm`, `llm-prompts`, `browsers`.
 
 **CLI resolution.** `--files=<x>` searches only scripts; `--preset=<x>` and `@<x>` search only presets. Names match exactly, case-insensitively; scripts accept full paths, basenames, or basenames without extensions. Exact paths take priority. Bare `<x>` searches scripts first, then presets through `_resolveBareArgPresetFallback`. Missing matches fail before selected scripts execute. Multiple matches for one keyword require confirmation before any selected script executes. The red warning names `files` or `presets` and lists every match; Enter accepts, while No, EOF, timeout, or no terminal cancels. Explicit lists do not prompt merely because they contain several keywords.
+The presence flag `--skip-prompt` (also `-skip-prompt`) defaults to false and bypasses only matching-name confirmation, running every eligible match without a terminal.
+Warnings, missing-name errors, OS/work-profile guards, and unrelated prompts remain unchanged. Both SteamOS setup installer calls pass the flag.
 
 **Selector aliases.** `--file` / `--files` and `--preset` / `--presets` accept `=value` or a separate value; single-dash long forms remain supported.
 No short selector aliases are added: `-f` remains force refresh, and `-p` is not a preset selector.

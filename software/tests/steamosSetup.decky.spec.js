@@ -325,7 +325,9 @@ describe("SteamOS Decky delegation (Bash subprocess)", () => {
       env: { ...process.env, HOME: home, PATH: `${home}/bin:${process.env.PATH}` },
     });
     expect(result.status, result.stderr).toBe(status);
-    expect(fs.readFileSync(path.join(home, "args"), "utf8")).toBe("--files=software/scripts/decky-and-css-loader.standalone.js\n");
+    expect(fs.readFileSync(path.join(home, "args"), "utf8")).toBe(
+      "--skip-prompt\n--files=software/scripts/decky-and-css-loader.standalone.js\n",
+    );
     expect(fs.readFileSync(path.join(home, "request"), "utf8")).toContain("binary-cache/bashrc-installer__install-bashrc.sh");
     expect(fs.existsSync(fs.readFileSync(path.join(home, "download"), "utf8").trim())).toBe(false);
     expect(fs.readFileSync(path.join(home, "homebrew/services/PluginLoader"), "utf8")).toBe("existing service");

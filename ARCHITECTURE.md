@@ -94,6 +94,8 @@ Bare `<x>` searches scripts first, then presets; `@<x>` forces preset lookup. Ha
 A shared literal matcher handles `name*`, `*name`, and `*name*` as prefix, suffix, and contains selectors; internal stars are unsupported.
 Preset parsing and file preflight collect multiple-match requests. Before emitting selected scripts, the runner lists every match in a red warning naming files or presets.
 The shared terminal prompt defaults to Yes on Enter and reads `/dev/tty`, never pipeline stdin. No, EOF, timeout, or no terminal cancels execution.
+The presence flag `--skip-prompt` (also `-skip-prompt`) explicitly accepts all matches without that prompt; warnings remain visible.
+Missing-name validation, OS/work-profile filtering, and unrelated prompts remain unchanged. Both SteamOS setup installer calls opt in.
 Unmatched selections fail before any selected script is emitted, and bootstrap errors exit nonzero.
 No short selector aliases are added; `-f` retains force-refresh behavior.
 
