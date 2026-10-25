@@ -2,17 +2,29 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const crypto = require("crypto");
 const { spawn, spawnSync } = require("child_process");
 const { LIMITS, readZip, writeZip } = require("./decky-zip.common.js");
-const packages = require("../../metadata/decky-packages.json");
+const {
+  REPO_ROOT,
+  repositoryArchivePath,
+  readRepositoryArchive,
+  metadata,
+  validatePackage,
+  resolvePackages,
+  loaderVersion,
+} = require("./decky-packages.common.js");
+/** Canonical selected Loader version and compact/rich package entries. */
+const inventory = require("../../metadata/decky-packages.json");
 
 /** Rolling release cache; package trust comes from the local pins, not remote metadata. */
 const CACHE_URL = "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip";
-/** Upstream Loader bootstrap for absent, incomplete, or non-current stable installations. */
+/** Upstream Loader bootstrap, adapted only at its verified release selector to honor the exact inventory pin. */
 const LOADER_URL = "https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_release.sh";
-/** Authoritative stable Loader version; fetched afresh for each explicit installation. */
-const LOADER_RELEASE_URL = "https://api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/latest";
+/** GitHub tagged-release endpoint; never use a floating latest release for an explicit Loader pin. */
+const LOADER_RELEASE_URL = "https://api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/tags/v";
+/** Verified upstream selector; drift rejects installation rather than silently installing an unselected release. */
+const LOADER_SELECTOR =
+  'RELEASE=$(curl -s \'https://api.github.com/repos/SteamDeckHomebrew/decky-loader/releases\' | jq -r "first(.[] | select(.prerelease == "false"))")';
 /** Bound simultaneous artifact downloads without an additional runtime dependency. */
 const DOWNLOAD_BATCH_SIZE = 3;
 
@@ -52,33 +64,6 @@ function download(url, destination) {
       }
     });
   });
-}
-
-/** Return bounded JSON object from ZIP members (Map) at name (string); throws on malformed/missing data. */
-function metadata(members, name) {
-  const member = members.get(name);
-  if (!member || member.size > LIMITS.metadata) throw new Error("required JSON metadata missing or exceeds 1 MiB");
-  const value = JSON.parse(member.read().toString("utf8"));
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("JSON metadata must be an object");
-  return value;
-}
-
-/** Validate payload (Buffer) against trusted pin (object); return void, throwing before any installation. */
-function validatePackage(payload, pin) {
-  if (crypto.createHash("sha256").update(payload).digest("hex") !== pin.sha256)
-    throw new Error("package SHA-256 does not match the pinned version");
-  const members = readZip(payload);
-  for (const [name, member] of members) {
-    if (name.split("/")[0] !== pin.root) throw new Error("package root does not match the selected identity");
-    member.read();
-  }
-  const theme = pin.path.startsWith("decky_css_loader/");
-  const manifest = metadata(members, `${pin.root}/${theme ? "theme.json" : "plugin.json"}`);
-  const version = theme ? manifest.version : metadata(members, `${pin.root}/package.json`).version;
-  if (!theme && !members.get(`${pin.root}/dist/index.js`)?.size) throw new Error("plugin must contain a built dist/index.js");
-  if (manifest.name !== pin.name || typeof version !== "string" || version.replace(/^v/, "") !== pin.version)
-    throw new Error("package name/version does not match the selected identity");
-  if (theme && manifest.id !== pin.theme_id) throw new Error("theme ID does not match the selected identity");
 }
 
 /** Return validated cache payloads (Map) matching pins exactly; reject unsafe bundles, recover bad packages individually. */
@@ -122,21 +107,44 @@ function metadataBytes(pins) {
 }
 
 /**
- * Stage pins into a new private folder (string); resolve void, rejecting on download/validation/filesystem errors.
- * Options supply trusted inventory, cache URL (null means upstream-only), downloader, and diagnostic reporter.
+ * Stage selections into a new private folder (string); return resolved pins or reject on validation/IO errors.
+ * Options supply compact/rich pins, repository root/raw URL, cache URL, downloader, and diagnostic reporter.
  * Cache is attempted first; missing packages download in batches of 3. Wait for all in-flight work before failure.
  * Only the caller-owned staging folder is written; callers must remove it after failures or consumption.
  */
 async function stage(
   folder,
   {
-    pins = packages,
+    pins: selections = inventory.decky_packages,
+    repoRoot = REPO_ROOT,
+    repositoryUrl = null,
     cacheUrl = CACHE_URL,
     downloader = download,
     report = (message) => process.stderr.write(`>>> Decky ${message}\n`),
   } = {},
 ) {
+  if (!Array.isArray(selections)) throw new Error("decky_packages must be an array");
   fs.mkdirSync(folder, { mode: 0o700 });
+  if (repositoryUrl !== null) {
+    if (typeof repositoryUrl !== "string" || !repositoryUrl.startsWith("https://")) throw new Error("repository URL must use HTTPS");
+    repoRoot = path.join(folder, "repository");
+    fs.mkdirSync(repoRoot);
+    const local = selections.filter((entry) => entry && entry.url === undefined);
+    for (let start = 0; start < local.length; start += DOWNLOAD_BATCH_SIZE) {
+      const results = await Promise.allSettled(
+        local.slice(start, start + DOWNLOAD_BATCH_SIZE).map(async (entry) => {
+          const relative = repositoryArchivePath(entry.path);
+          const target = path.join(repoRoot, relative);
+          fs.mkdirSync(path.dirname(target), { recursive: true });
+          await downloader(repositoryUrl.replace(/\?raw=1$/, "") + relative, target);
+          return target;
+        }),
+      );
+      const failure = results.find((result) => result.status === "rejected");
+      if (failure) throw failure.reason;
+    }
+  }
+  const pins = resolvePackages(selections, repoRoot);
   fs.mkdirSync(path.join(folder, "decky_plugin"));
   fs.mkdirSync(path.join(folder, "decky_css_loader"));
   let accepted = new Map();
@@ -154,13 +162,14 @@ async function stage(
   for (let start = 0; start < missing.length; start += DOWNLOAD_BATCH_SIZE) {
     const results = await Promise.allSettled(
       missing.slice(start, start + DOWNLOAD_BATCH_SIZE).map(async (pin) => {
-        report(`phase=upstream-download package=${path.basename(pin.path)}`);
+        report(`phase=${pin.local_path ? "repository-read" : "upstream-download"} package=${path.basename(pin.path)}`);
         const temporary = path.join(folder, path.basename(pin.path) + ".download");
-        await downloader(pin.url, temporary);
-        const payload = fs.readFileSync(temporary);
+        if (!pin.local_path) await downloader(pin.url, temporary);
+        const payload = pin.local_path ? readRepositoryArchive(pin.local_path, repoRoot) : fs.readFileSync(temporary);
         validatePackage(payload, pin);
         accepted.set(pin.path, payload);
-        fs.unlinkSync(temporary);
+        if (!pin.local_path) fs.unlinkSync(temporary);
+        return pin.path;
       }),
     );
     const failure = results.find((result) => result.status === "rejected");
@@ -172,16 +181,16 @@ async function stage(
   }
   fs.writeFileSync(path.join(folder, "metadata.json"), metadataBytes(pins), { flag: "wx", mode: 0o600 });
   if (fs.existsSync(cache)) fs.unlinkSync(cache);
+  return pins;
 }
 
-/** Build deterministic upstream-only bundle at output (string); reject without replacing previous output on failure. */
+/** Build deterministic repository/upstream bundle at output (string); reject without replacing previous output on failure. */
 async function build(output, options = {}) {
   fs.mkdirSync(path.dirname(output), { recursive: true });
   const work = fs.mkdtempSync(path.join(path.dirname(output), ".decky-build-"));
   try {
-    const pins = options.pins ?? packages;
     const folder = path.join(work, "packages");
-    await stage(folder, { ...options, pins, cacheUrl: null });
+    const pins = await stage(folder, { ...options, cacheUrl: null });
     const entries = new Map([
       ["metadata.json", metadataBytes(pins)],
       ...pins.map((pin) => [pin.path, fs.readFileSync(path.join(folder, pin.path))]),
@@ -207,7 +216,7 @@ function command(program, args, options = {}) {
 /**
  * Install Decky and validated packages for the invoking desktop user; resolve void or reject on failure.
  * Requires Linux, matching non-root HOME, curl, sudo, Node, and jq only when Loader bootstrap is needed.
- * Checks the latest stable version on every run; upgrades or repairs before installing pinned packages.
+ * Enforces the configured Loader version, reapplies all packages, restarts the service, and verifies it is active.
  * Downloads stay unprivileged; only upstream bootstrap and descriptor-anchored archive writes use sudo.
  * @param {object} options - Trusted staging options, including optional package pins and downloader.
  * @returns {Promise<void>} Resolves after verification; rejects on version lookup, bootstrap, or package failures.
@@ -218,6 +227,7 @@ async function install(options = {}) {
   const home = process.env.HOME;
   if (account.uid === 0 || !home || fs.realpathSync(home) !== fs.realpathSync(account.homedir))
     throw new Error("HOME must match a non-root invoking account");
+  const selectedVersion = loaderVersion(options.inventory ?? inventory);
   const desktop = path.join(home, "Desktop");
   fs.mkdirSync(desktop, { recursive: true });
   const logFolder = fs.mkdtempSync(path.join(desktop, "decky-install-"));
@@ -233,10 +243,10 @@ async function install(options = {}) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "decky-install-"));
   try {
     const folder = path.join(work, "packages");
-    await stage(folder, { ...options, report });
+    const pins = await stage(folder, { ...options, pins: options.pins ?? (options.inventory ?? inventory).decky_packages, report });
     report(">>> Decky phase=loader-version-check");
     const releaseFile = path.join(work, "loader-release.json");
-    await download(LOADER_RELEASE_URL, releaseFile);
+    await download(LOADER_RELEASE_URL + selectedVersion, releaseFile);
     if (fs.statSync(releaseFile).size > LIMITS.metadata) throw new Error("Loader release metadata exceeds 1 MiB");
     const release = JSON.parse(fs.readFileSync(releaseFile, "utf8"));
     if (
@@ -249,7 +259,7 @@ async function install(options = {}) {
       release.draft !== false
     )
       throw new Error("Loader stable release metadata requires a stable tag_name, prerelease=false, and draft=false");
-    const latestVersion = release.tag_name.replace(/^v/, "");
+    if (release.tag_name.replace(/^v/, "") !== selectedVersion) throw new Error("Loader release does not match decky_loader_version");
     const service = path.join(home, "homebrew/services/PluginLoader");
     const versionFile = path.join(home, "homebrew/services/.loader.version");
     let installedVersion = "";
@@ -261,24 +271,28 @@ async function install(options = {}) {
       }
     } catch (error) {
       if (!["ENOENT", "EACCES"].includes(error.code)) throw error;
-      report(`>>> Decky Loader version unavailable code=${error.code}; latest stable installation required`);
+      report(`>>> Decky Loader version unavailable code=${error.code}; selected version installation required`);
     }
-    report(`>>> Decky phase=loader-version installed=${installedVersion || "unknown"} latest=${latestVersion}`);
-    if (installedVersion !== latestVersion) {
+    report(`>>> Decky phase=loader-version installed=${installedVersion || "unknown"} selected=${selectedVersion}`);
+    if (installedVersion !== selectedVersion) {
       command("jq", ["--version"], commandOptions);
       const bootstrap = path.join(work, "install_release.sh");
       await download(LOADER_URL, bootstrap);
-      command("sudo", ["bash", bootstrap], commandOptions);
+      const script = fs.readFileSync(bootstrap, "utf8");
+      if (script.split("\n").filter((line) => line.startsWith("RELEASE=")).length !== 1 || !script.split("\n").includes(LOADER_SELECTOR))
+        throw new Error("Loader bootstrap release selector changed; refusing an unpinned installation");
+      fs.writeFileSync(bootstrap, script.replace(LOADER_SELECTOR, 'RELEASE=$(command cat -- "$1")'));
+      command("sudo", ["bash", bootstrap, releaseFile], commandOptions);
       fs.accessSync(service, fs.constants.X_OK);
       if (!fs.statSync(path.join(home, "homebrew/plugins")).isDirectory())
         throw new Error("Decky Loader installation did not create its plugin folder");
-      if (fs.readFileSync(versionFile, "utf8").trim().replace(/^v/, "") !== latestVersion)
-        throw new Error("Decky Loader installed version does not match the latest stable release");
-      report(`>>> Decky phase=loader-updated version=${latestVersion}`);
+      if (fs.readFileSync(versionFile, "utf8").trim().replace(/^v/, "") !== selectedVersion)
+        throw new Error("Decky Loader installed version does not match decky_loader_version");
+      report(`>>> Decky phase=loader-updated version=${selectedVersion}`);
     } else {
-      report(`>>> Decky phase=loader-current version=${latestVersion}; skipping Loader reinstall`);
+      report(`>>> Decky phase=loader-current version=${selectedVersion}; skipping Loader reinstall`);
     }
-    for (const pin of options.pins ?? packages) {
+    for (const pin of pins) {
       const archive = path.join(folder, pin.path);
       const kind = pin.path.startsWith("decky_plugin/") ? "plugins" : "themes";
       report(`>>> Decky phase=install archive=${path.basename(archive)} kind=${kind} privilege=sudo`);
@@ -288,6 +302,10 @@ async function install(options = {}) {
         commandOptions,
       );
     }
+    report(">>> Decky phase=service-restart");
+    command("sudo", ["systemctl", "restart", "plugin_loader.service"], commandOptions);
+    command("sudo", ["systemctl", "is-active", "--quiet", "plugin_loader.service"], commandOptions);
+    report(">>> Decky phase=service-active");
     report(">>> Decky phase=complete");
   } catch (error) {
     report(`>>> Decky phase=failed ${error.message}`);

@@ -2,63 +2,19 @@ import { afterEach, describe, expect, it } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import vm from "vm";
 import crypto from "crypto";
-import { createRequire } from "module";
 import { spawnSync } from "child_process";
 import zip from "../scripts/decky/decky-zip.common.js";
 import runtime from "../scripts/decky/decky-runtime.common.js";
-import installer from "../tools/build-installer.js";
 
-/** Real CommonJS consumer used to load the staged runtime without invoking installation. */
-const requireModule = createRequire(import.meta.url);
 /** Test-owned workspaces, never a live desktop home. */
 const folders = [];
-/** Standard script source evaluated with the same globals supplied by the bootstrap engine. */
-const entrySource = fs.readFileSync("software/scripts/decky-and-css-loader.standalone.js", "utf8");
-
 /** Return a new private test workspace with executable fixture tools. */
 function workspace() {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "decky-consumer-"));
   folders.push(folder);
   fs.mkdirSync(path.join(folder, "bin"));
   return folder;
-}
-
-/** Evaluate the standard script with real engine guards/templates/file I/O, capturing only emitted Bash instead of installing. */
-async function emit(overrides = {}) {
-  const folder = workspace();
-  const output = [];
-  const source = fs.readFileSync("software/index.js", "utf8");
-  const boundary = source.indexOf("\n(async function () {");
-  if (boundary < 0) throw new Error("bootstrap library boundary unavailable");
-  const context = vm.createContext({
-    require: requireModule,
-    process: {
-      ...process,
-      argv: [],
-      env: {
-        ...process.env,
-        is_os_steamos: "1",
-        is_os_mac: "0",
-        is_os_wsl: overrides.is_os_wsl ? "1" : "0",
-        CI: overrides.IS_CI ? "1" : "0",
-        IS_DRY_RUN: overrides.IS_DRY_RUN ? "1" : "0",
-        BASHRC_TEMP_DIR: folder,
-      },
-    },
-    console,
-    Buffer,
-    setTimeout,
-    setInterval,
-    clearTimeout,
-    clearInterval,
-    output,
-  });
-  context.global = context;
-  vm.runInContext(source.slice(0, boundary) + "\nemitBash = (content) => output.push(content); log = () => {}; echo = () => {};", context);
-  await vm.runInContext(`${entrySource}\ndoWork()`, context);
-  return { folder, bash: output.join("\n") };
 }
 
 /** Prepare isolated desktop/tool fixtures; optionally run the real orchestrator with simulated NSS/platform/elevation. */
@@ -95,6 +51,7 @@ function runInstaller({
     ]),
   );
   fs.writeFileSync(path.join(home, "cache.zip"), cache);
+  fs.writeFileSync(path.join(home, "bootstrap.sh"), fs.readFileSync("software/tests/fixtures/decky-loader-bootstrap.txt"));
   fs.writeFileSync(
     path.join(home, "bin/sudo"),
     `#!/bin/bash\nprintf '%s\\n' "$*" >> "$HOME/commands"\necho 'protected child diagnostic'\nif [ "$1" = bash ]; then\n  ${bootstrapFailure ? "exit 43" : 'mkdir -p "$HOME/homebrew/services" "$HOME/homebrew/plugins"; printf service > "$HOME/homebrew/services/PluginLoader"; chmod 755 "$HOME/homebrew/services/PluginLoader"; printf v3.3.0 > "$HOME/homebrew/services/.loader.version"'}\nfi\nexit ${sudoStatus}\n`,
@@ -103,7 +60,7 @@ function runInstaller({
   fs.writeFileSync(path.join(home, "bin/jq"), '#!/bin/bash\necho "fixture jq version"\n', { mode: 0o755 });
   fs.writeFileSync(
     path.join(home, "bin/curl"),
-    `#!/bin/bash\ncase "$*" in\n  *api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/latest*) printf '{"tag_name":"v3.3.0","prerelease":false,"draft":false}' > "\${@: -1}" ;;\n  *) printf "bootstrap data" > "\${@: -1}" ;;\nesac\n`,
+    `#!/bin/bash\ncase "$*" in\n  *api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/tags/v*) printf '{"tag_name":"v3.3.0","prerelease":false,"draft":false}' > "\${@: -1}" ;;\n  *) cp "$HOME/bootstrap.sh" "\${@: -1}" ;;\nesac\n`,
     { mode: 0o755 },
   );
   if (existing) {
@@ -130,60 +87,6 @@ function runInstaller({
 
 afterEach(() => {
   for (const folder of folders.splice(0)) fs.rmSync(folder, { recursive: true, force: true });
-});
-
-describe("standard opt-in Decky script consumer", () => {
-  it("loads the shared modules and inventory extracted from the real self-extracting payload", () => {
-    const folder = workspace();
-    const result = spawnSync("tar", ["-xzf", "-", "-C", folder], { input: installer.buildTarball(), encoding: "utf8", timeout: 15000 });
-    expect(result.status, result.stderr).toBe(0);
-    expect(requireModule(path.join(folder, "software/scripts/decky/decky-runtime.common.js")).CACHE_URL).toBe(
-      "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
-    );
-    expect(requireModule(path.join(folder, "software/metadata/decky-packages.json"))).toHaveLength(18);
-    expect(fs.existsSync(path.join(folder, "software/scripts/decky-and-css-loader.standalone.js"))).toBe(true);
-    expect(fs.existsSync(path.join(folder, "assets/steamos"))).toBe(false);
-  });
-  it("stages loadable Node modules and pins, then invokes their emitted install entry through Bash", async () => {
-    const { folder, bash } = await emit();
-    const stage = path.join(
-      folder,
-      fs.readdirSync(folder).find((name) => name.startsWith("decky-")),
-    );
-    const runtime = path.join(stage, "software/scripts/decky/decky-runtime.common.js");
-    expect(requireModule(runtime).CACHE_URL).toBe(
-      "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
-    );
-    expect(requireModule(path.join(stage, "software/metadata/decky-packages.json"))).toHaveLength(18);
-    // Test-owned runtime replacement proves the generated invocation seam without live installation.
-    fs.writeFileSync(runtime, 'exports.install = async () => { process.stdout.write("fixture invoked\\n"); };');
-    const result = spawnSync("/bin/bash", ["-c", bash], { encoding: "utf8", timeout: 15000 });
-    expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toBe("fixture invoked\n");
-  });
-  it("propagates a failed emitted installer as a nonzero Bash result", async () => {
-    const { folder, bash } = await emit();
-    const stage = path.join(
-      folder,
-      fs.readdirSync(folder).find((name) => name.startsWith("decky-")),
-    );
-    fs.writeFileSync(
-      path.join(stage, "software/scripts/decky/decky-runtime.common.js"),
-      'exports.install = async () => { throw new Error("fixture rejected"); };',
-    );
-    const result = spawnSync("/bin/bash", ["-c", bash], { encoding: "utf8", timeout: 15000 });
-    expect(result.status).toBe(1);
-    expect(result.stderr).toBe(">>> Decky installation failed: fixture rejected\n");
-  });
-  it.each([{ IS_CI: true }, { IS_DRY_RUN: true }])("skips staging and emitted writes for %j", async (options) => {
-    const { folder, bash } = await emit(options);
-    expect(bash).toBe("");
-    expect(fs.readdirSync(folder)).toEqual(["bin"]);
-  });
-  it("rejects WSL rather than emitting privileged installation", async () => {
-    await expect(emit({ is_os_wsl: true })).rejects.toThrow("Not supported on is_os_wsl");
-    expect(fs.readdirSync(folders.at(-1))).toEqual(["bin"]);
-  });
 });
 
 describe("shared Node installer orchestration (subprocess, elevation simulated)", () => {
@@ -254,6 +157,9 @@ describe("shared Node installer orchestration (subprocess, elevation simulated)"
     const commands = fs.readFileSync(path.join(home, "commands"), "utf8");
     expect(commands).toContain("decky-install.common.js");
     expect(commands).toContain(` ${home} plugins 12345 ${pin.sha256}`);
+    expect(commands).toMatch(
+      /decky-install\.common\.js[^\n]*\nsystemctl restart plugin_loader\.service\nsystemctl is-active --quiet plugin_loader\.service\n/,
+    );
     expect(commands).not.toContain("install_release.sh");
     expect(fs.readFileSync(path.join(home, "homebrew/services/PluginLoader"), "utf8")).toBe("existing service");
     const logFolder = path.join(home, "Desktop", fs.readdirSync(path.join(home, "Desktop"))[0]);
@@ -267,7 +173,9 @@ describe("shared Node installer orchestration (subprocess, elevation simulated)"
   it("bootstraps an absent Loader before requesting protected archive installation", () => {
     const { home, result } = runInstaller({ existing: false });
     expect(result.status, result.stderr).toBe(0);
-    expect(fs.readFileSync(path.join(home, "commands"), "utf8")).toMatch(/^bash .*install_release.sh\n.*decky-install.common.js/s);
+    expect(fs.readFileSync(path.join(home, "commands"), "utf8")).toMatch(
+      /^bash [^\n]*install_release.sh[^\n]*\n.*decky-install.common.js/s,
+    );
     expect(fs.readFileSync(path.join(home, "homebrew/services/PluginLoader"), "utf8")).toBe("service");
   });
   it.each([

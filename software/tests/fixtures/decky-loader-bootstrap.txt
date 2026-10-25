@@ -1,0 +1,4 @@
+#!/bin/bash
+# Release-selector fixture recorded from the upstream CLI installer; never downloads or installs anything.
+RELEASE=$(curl -s 'https://api.github.com/repos/SteamDeckHomebrew/decky-loader/releases' | jq -r "first(.[] | select(.prerelease == "false"))")
+printf '%s\n' "$RELEASE" > "$HOME/selected-release.json"

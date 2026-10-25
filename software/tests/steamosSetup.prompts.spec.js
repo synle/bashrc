@@ -156,6 +156,7 @@ describe("SteamOS startup prompts (subprocess)", () => {
       "choice:Clear all user-defined non-Steam shortcuts from the active Steam account?",
       "choice:Install Decky Loader, plugins, and CSS Loader themes?",
       "choice:Run system upgrade (sudo pacman -Syu / paru -Syu)?",
+      "choice:Enable wake-up for all supported USB devices (may cause accidental wake-ups)?",
       "sudo:-v",
       "folders created",
       "ready for installation",

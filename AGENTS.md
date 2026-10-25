@@ -56,8 +56,14 @@ OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chr
 - **`assets/`** — owner-managed. Release backups for `display-dj`, `sqlui-native`,
   `url-porter`, `skiff-files`, `proxie` live in the `binary-cache` rolling release
   (refreshed by `software/tools/ci-download-release-binaries.sh`). `assets/binaries/` is gitignored.
-  Decky packages are not vendored: `software/metadata/decky-packages.json` pins the
-  generated `steamos-decky__bundle.zip`; `make build_decky_bundle` builds it with Node.
+  Exception: owner-approved Decky ZIPs may live under `assets/steamos/decky_loader_plugins/`.
+  `software/metadata/decky-packages.json` declares an exact `decky_loader_version` and
+  `decky_packages`; repository ZIP entries require only `path`, `name`, and `version`.
+  The runtime derives hashes, roots, kinds, and theme IDs from those trusted bytes;
+  rich HTTPS/hash pins remain supported. Never accept an unpinned arbitrary remote ZIP.
+  `make build_decky_bundle` generates the release bundle; the self-extracting installer
+  includes the approved ZIP folder. Reruns reapply selected files, restart
+  `plugin_loader.service`, and verify it is active. Preserve unrelated plugins/settings.
   The on-demand `decky-and-css-loader` script and SteamOS setup share one runtime.
 - **`software/scripts/advanced/llm/_common/v1/` and `v2/`** — frozen instruction snapshots.
   Preserve bytes, including old include markers; never regenerate or format archive contents.

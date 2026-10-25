@@ -1,173 +1,95 @@
-[
-  {
-    "path": "decky_css_loader/Centered_Home_v1.3.zip",
-    "name": "Centered Home",
-    "version": "1.3",
-    "root": "Centered Home",
-    "source": "https://deckthemes.com/themes/view?themeId=865407ae-fb14-4db7-b123-61f6995ed757",
-    "url": "https://api.deckthemes.com/blobs/a66c23a2-d0eb-4b5b-9617-6b4af5283146",
-    "sha256": "3432aee99cfbca1fefa5660a819a3223683d8d80c3dd5fe83aa94c4e48e26ba2",
-    "theme_id": "865407ae-fb14-4db7-b123-61f6995ed757"
-  },
-  {
-    "path": "decky_css_loader/Clean_Gameview_v1.7.zip",
-    "name": "Clean Gameview",
-    "version": "1.7",
-    "root": "Clean Gameview",
-    "source": "https://deckthemes.com/themes/view?themeId=a9776f60-2724-4ff0-824b-e1f82a04688e",
-    "url": "https://api.deckthemes.com/blobs/4da0b741-22b1-4df2-905d-f135fffda295",
-    "sha256": "04f2acbb288b62cbfb9c5aa90d8e7edf98ac442fd6467baba84aeb548ffb0a71",
-    "theme_id": "a9776f60-2724-4ff0-824b-e1f82a04688e"
-  },
-  {
-    "path": "decky_css_loader/Faster_Transition_Animations_v1.1.zip",
-    "name": "Faster Transition Animations",
-    "version": "1.1",
-    "root": "Faster Transition Animations",
-    "source": "https://deckthemes.com/themes/view?themeId=921a7ec8-b355-4799-b23f-73f4b9c713b8",
-    "url": "https://api.deckthemes.com/blobs/d622ec80-5ecb-4f68-a9cc-5ed0335e293c",
-    "sha256": "fce0963b6b722e386d26025478b4ab43be3133a2d2586e91f8588261ffc1b848",
-    "theme_id": "921a7ec8-b355-4799-b23f-73f4b9c713b8"
-  },
-  {
-    "path": "decky_css_loader/Mini_Carousel_v1.0.zip",
-    "name": "Mini Carousel",
-    "version": "1.0",
-    "root": "Mini Carousel",
-    "source": "https://deckthemes.com/themes/view?themeId=4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b",
-    "url": "https://api.deckthemes.com/blobs/4685f114-9ee8-4869-97ce-6f1ae0e351f9",
-    "sha256": "6117ec1776525505d9b23a25494c188cd2b6d27c275b8ee84c1bddcd873ff705",
-    "theme_id": "4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b"
-  },
-  {
-    "path": "decky_css_loader/No_Home_Edge_Fade_v1.2.zip",
-    "name": "No Home Edge Fade",
-    "version": "1.2",
-    "root": "No Home Edge Fade",
-    "source": "https://deckthemes.com/themes/view?themeId=2dab90ab-2cf3-480f-adce-f6c67caadd67",
-    "url": "https://api.deckthemes.com/blobs/31f620ac-6e88-4840-a596-37ef86eaa602",
-    "sha256": "f3c08cf5ed3a38a566f1528010b4eb73ed43f9a85c05865ce4ab7bbcca700fab",
-    "theme_id": "2dab90ab-2cf3-480f-adce-f6c67caadd67"
-  },
-  {
-    "path": "decky_css_loader/No_Home_Recent_Text_v1.0.zip",
-    "name": "No Home Recent Text",
-    "version": "1.0",
-    "root": "No Home Recent Text",
-    "source": "https://deckthemes.com/themes/view?themeId=95c4e310-0770-4e1f-9f9d-cbe444e9bb17",
-    "url": "https://api.deckthemes.com/blobs/af5d0c85-2d9c-4f9a-a1f8-3fb0247e7f3a",
-    "sha256": "f10f81ff081d83dc81b98eea46ebb4c90ccc8df31ec220f15bd3165287427d60",
-    "theme_id": "95c4e310-0770-4e1f-9f9d-cbe444e9bb17"
-  },
-  {
-    "path": "decky_css_loader/No_Home_Text_v1.0.zip",
-    "name": "No Home Text",
-    "version": "1.0",
-    "root": "No Home Text",
-    "source": "https://deckthemes.com/themes/view?themeId=0e8a208f-136f-4f26-b0e1-344bcd186ed9",
-    "url": "https://api.deckthemes.com/blobs/442ee0b8-4bf1-4b8d-8955-eab09862c765",
-    "sha256": "3178be7743364974b8f6a12d80f513357bd8518413215bcf5e9fc0839fcce9ea",
-    "theme_id": "0e8a208f-136f-4f26-b0e1-344bcd186ed9"
-  },
-  {
-    "path": "decky_css_loader/Obsidian_v4.2.zip",
-    "name": "Obsidian",
-    "version": "4.2",
-    "root": "Obsidian",
-    "source": "https://deckthemes.com/themes/view?themeId=f16cf40d-7ccc-4981-95bf-77b28e8d101e",
-    "url": "https://api.deckthemes.com/blobs/6f1e9724-87d7-42e7-b82c-5b4aef9e108a",
-    "sha256": "f0965d261216d5c765e3366d6880c0d236087c84d9cbce52d17b2597472be947",
-    "theme_id": "f16cf40d-7ccc-4981-95bf-77b28e8d101e"
-  },
-  {
-    "path": "decky_css_loader/Round_v2.7.zip",
-    "name": "Round",
-    "version": "2.7",
-    "root": "Round",
-    "source": "https://deckthemes.com/themes/view?themeId=c6844008-a809-41f6-b140-7aa76f2a62ad",
-    "url": "https://api.deckthemes.com/blobs/bcac4a5e-4364-4d32-b2a7-ed716a926059",
-    "sha256": "284e46de160bf8d4e2a3e0808eeff01f2ddebd127c5e4b162711605d35310787",
-    "theme_id": "c6844008-a809-41f6-b140-7aa76f2a62ad"
-  },
-  {
-    "path": "decky_plugin/EmuDecky_v1.0.10.zip",
-    "name": "EmuDecky",
-    "version": "1.0.10",
-    "root": "EmuDecky",
-    "source": "https://github.com/EmuDeck/EmuDecky",
-    "url": "https://github.com/EmuDeck/EmuDecky/releases/download/1.0.10/EmuDecky.zip",
-    "sha256": "f2f713798978a6680a6f96038828c483e112d409928d0fcff8ce928bd6ef6706"
-  },
-  {
-    "path": "decky_plugin/ProtonDB_Badges_v1.3.4.zip",
-    "name": "ProtonDB Badges",
-    "version": "1.3.4",
-    "root": "protondb-decky",
-    "source": "https://github.com/bschelst/protondb-decky",
-    "url": "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/90a3453ac02709cad64096e7539fd8141fa56f99ae3441fc24a4990dc9684358.zip",
-    "sha256": "90a3453ac02709cad64096e7539fd8141fa56f99ae3441fc24a4990dc9684358"
-  },
-  {
-    "path": "decky_plugin/SteamGridDB_v1.8.1.zip",
-    "name": "SteamGridDB",
-    "version": "1.8.1",
-    "root": "decky-steamgriddb",
-    "source": "https://github.com/SteamGridDB/decky-steamgriddb",
-    "url": "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/e84f5b1f111af8862b06218479491fbf61036e1bfd9f16f93f9901e9b9ebc5e0.zip",
-    "sha256": "e84f5b1f111af8862b06218479491fbf61036e1bfd9f16f93f9901e9b9ebc5e0"
-  },
-  {
-    "path": "decky_plugin/HueSync_v3.9.0.zip",
-    "name": "HueSync",
-    "version": "3.9.0",
-    "root": "HueSync",
-    "source": "https://github.com/honjow/HueSync",
-    "url": "https://github.com/honjow/HueSync/releases/download/v3.9.0/huesync.zip",
-    "sha256": "7510c96ed22278a914a3aae591c2393ff4e25812a765d1d633f77baa8a593e1f"
-  },
-  {
-    "path": "decky_plugin/HLTB_for_Deck_v2.0.12.zip",
-    "name": "HLTB for Deck",
-    "version": "2.0.12",
-    "root": "hltb-for-deck",
-    "source": "https://github.com/morwy/hltb-for-deck",
-    "url": "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/bd54a23b0b8ec0798aa590e5be236522a593529d7680e77fb888e2971bf3d558.zip",
-    "sha256": "bd54a23b0b8ec0798aa590e5be236522a593529d7680e77fb888e2971bf3d558"
-  },
-  {
-    "path": "decky_plugin/AutoFlatpaks_v1.6.8.zip",
-    "name": "AutoFlatpaks",
-    "version": "1.6.8",
-    "root": "decky-autoflatpaks",
-    "source": "https://github.com/jurassicplayer/decky-autoflatpaks",
-    "url": "https://github.com/jurassicplayer/decky-autoflatpaks/releases/download/v1.6.8/decky-autoflatpaks.zip",
-    "sha256": "f96a002841558e1af5bde073dc0abfe51eb1f745720833eeca271ce6b66ae26e"
-  },
-  {
-    "path": "decky_plugin/Volume_Boost_v0.0.7.zip",
-    "name": "Volume Boost",
-    "version": "0.0.7",
-    "root": "volume-boost",
-    "source": "https://github.com/saumya-banthia/volume-boost",
-    "url": "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/2cc576a7f60751306d690268e227df626e59d3733680ced753de4c116629a9cc.zip",
-    "sha256": "2cc576a7f60751306d690268e227df626e59d3733680ced753de4c116629a9cc"
-  },
-  {
-    "path": "decky_plugin/CSS_Loader_v2.1.3.zip",
-    "name": "CSS Loader",
-    "version": "2.1.3",
-    "root": "SDH-CssLoader",
-    "source": "https://github.com/DeckThemes/SDH-CssLoader",
-    "url": "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/99beaf1374af82408e6d056e0b0147e5fca544e1035fa7ab88419231697bc231.zip",
-    "sha256": "99beaf1374af82408e6d056e0b0147e5fca544e1035fa7ab88419231697bc231"
-  },
-  {
-    "path": "decky_plugin/Decky_LSFG-VK_v0.14.4.zip",
-    "name": "Decky LSFG-VK",
-    "version": "0.14.4",
-    "root": "Decky LSFG-VK",
-    "source": "https://github.com/xXJSONDeruloXx/decky-lsfg-vk",
-    "url": "https://github.com/xXJSONDeruloXx/decky-lsfg-vk/releases/download/v0.14.4/Decky.LSFG-VK.zip",
-    "sha256": "a2187926dfb53e1813fa786d6e12a1d078638aa27153061389b755806e97338f"
-  }
-]
+{
+  "decky_loader_version": "3.3.0",
+  "decky_packages": [
+    {
+      "path": "assets/steamos/decky_loader_plugins/Centered_Home_v1.3.zip",
+      "name": "Centered Home",
+      "version": "1.3"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/Clean_Gameview_v1.7.zip",
+      "name": "Clean Gameview",
+      "version": "1.7"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/Faster_Transition_Animations_v1.1.zip",
+      "name": "Faster Transition Animations",
+      "version": "1.1"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/Mini_Carousel_v1.0.zip",
+      "name": "Mini Carousel",
+      "version": "1.0"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/No_Home_Edge_Fade_v1.2.zip",
+      "name": "No Home Edge Fade",
+      "version": "1.2"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/No_Home_Recent_Text_v1.0.zip",
+      "name": "No Home Recent Text",
+      "version": "1.0"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/No_Home_Text_v1.0.zip",
+      "name": "No Home Text",
+      "version": "1.0"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/Obsidian_v4.2.zip",
+      "name": "Obsidian",
+      "version": "4.2"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/Round_v2.7.zip",
+      "name": "Round",
+      "version": "2.7"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/EmuDecky_v1.0.10.zip",
+      "name": "EmuDecky",
+      "version": "1.0.10"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/ProtonDB_Badges_v1.3.4.zip",
+      "name": "ProtonDB Badges",
+      "version": "1.3.4"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/SteamGridDB_v1.8.1.zip",
+      "name": "SteamGridDB",
+      "version": "1.8.1"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/HueSync_v3.9.0.zip",
+      "name": "HueSync",
+      "version": "3.9.0"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/HLTB_for_Deck_v2.0.12.zip",
+      "name": "HLTB for Deck",
+      "version": "2.0.12"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/AutoFlatpaks_v1.6.8.zip",
+      "name": "AutoFlatpaks",
+      "version": "1.6.8"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/Volume_Boost_v0.0.7.zip",
+      "name": "Volume Boost",
+      "version": "0.0.7"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/CSS_Loader_v2.1.3.zip",
+      "name": "CSS Loader",
+      "version": "2.1.3"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/Decky_LSFG-VK_v0.14.4.zip",
+      "name": "Decky LSFG-VK",
+      "version": "0.14.4"
+    }
+  ]
+}

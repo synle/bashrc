@@ -38,8 +38,8 @@ const OUTPUT_PATH = path.join(OUTPUT_DIR, "install-bashrc.sh");
 /**
  * Files and folders bundled into the installer payload, relative to REPO_ROOT.
  * Keep minimal: only what run.sh + index.js + the script runner actually read at
- * install time. assets/ is excluded — fonts.js fetches font binaries via
- * getGitHubRawUrl at runtime, never from local disk.
+ * install time. Only the approved Decky ZIP folder is bundled from assets/;
+ * other binary assets continue to use their existing runtime download paths.
  */
 const FILES_TO_BUNDLE = [
   "run",
@@ -49,6 +49,7 @@ const FILES_TO_BUNDLE = [
   "software/bootstrap",
   "software/scripts",
   "software/metadata",
+  "assets/steamos/decky_loader_plugins",
   "theme/sy", // Active sources are required by local/offline consumers; reference archives are not bundled.
 ];
 

@@ -53,6 +53,8 @@ function _start_steamos_setup_log() {
   STEAMOS_SETUP_LOG=$(mktemp "$HOME/Desktop/steamos-setup.XXXXXX") || return 1
   exec > >(tee -a "$STEAMOS_SETUP_LOG") 2>&1
   echo ">>> SteamOS setup log: $STEAMOS_SETUP_LOG"
+  STEAMOS_SETUP_STARTED=$(date -u '+%Y%m%d-%H%M%S') || return 1
+  STEAMOS_PACKAGE_LOG=""
   date -u '+>>> SteamOS setup started: %Y-%m-%dT%H:%M:%SZ'
   printf '>>> SteamOS setup identity: '
   id
@@ -70,6 +72,30 @@ function _start_steamos_setup_log() {
   if [ -r /etc/os-release ]; then
     grep '^\(ID\|VERSION_ID\)=' /etc/os-release
   fi
+  return 0
+}
+
+# Run a verbose installation with stdout/stderr captured in one private timestamped log per setup run.
+# $1: public operation label; remaining arguments: command and literal arguments. Returns the command's status.
+# Prints progress and log location only; stdin is closed so package managers cannot consume streamed setup input.
+function _run_long_install() {
+  local label="$1" status log_root started
+  shift
+  if [ -z "${STEAMOS_PACKAGE_LOG:-}" ]; then
+    log_root="${BASHRC_TEMP_ROOT_DIR:-${TMPDIR:-/tmp}}"
+    started="${STEAMOS_SETUP_STARTED:-$(date -u '+%Y%m%d-%H%M%S')}"
+    STEAMOS_PACKAGE_LOG=$(mktemp "$log_root/sy-log-$started-steamos-setup-output.XXXXXX.txt") || return 1
+  fi
+  echo ">>> $label; output log: $STEAMOS_PACKAGE_LOG"
+  printf '\n>>> %s\n' "$label" >> "$STEAMOS_PACKAGE_LOG" || return 1
+  "$@" < /dev/null >> "$STEAMOS_PACKAGE_LOG" 2>&1
+  status=$?
+  printf '>>> Exit status: %s\n' "$status" >> "$STEAMOS_PACKAGE_LOG" || return 1
+  if [ "$status" -ne 0 ]; then
+    echo ">>> $label failed (status $status); review $STEAMOS_PACKAGE_LOG" >&2
+    return "$status"
+  fi
+  echo ">>> $label complete."
   return 0
 }
 
@@ -157,6 +183,13 @@ else
   DO_SYSTEM_UPGRADE=0
 fi
 
+# Collect the late USB choice before any downloads or long installation steps.
+if _prompt "Enable wake-up for all supported USB devices (may cause accidental wake-ups)?" Y; then
+  DO_USB_WAKE_SETUP=1
+else
+  DO_USB_WAKE_SETUP=0
+fi
+
 # Authenticate before downloads and installation; cached credentials may avoid a prompt.
 if ! sudo -v; then
   echo ">>> SteamOS setup stopped: sudo authentication failed." >&2
@@ -176,7 +209,7 @@ function _install_flatpak_brave_prerequisite() {
     return 1
   fi
   echo ">>> Brave prerequisite: installing or confirming com.brave.Browser from Flathub for the desktop user."
-  if ! flatpak install --user flathub com.brave.Browser; then
+  if ! _run_long_install "Flatpak Brave installation" flatpak install --user -y flathub com.brave.Browser; then
     echo ">>> Brave prerequisite failed: could not install com.brave.Browser." >&2
     return 1
   fi
@@ -1061,7 +1094,7 @@ function _install_steamtinkerlaunch_dependencies() {
       return 1
     fi
     echo ">>> Installing SteamTinkerLaunch dependencies: xdotool xorg-xwininfo yad"
-    if ! sudo pacman -S --needed --noconfirm xdotool xorg-xwininfo yad; then
+    if ! _run_long_install "SteamTinkerLaunch dependencies" sudo pacman -S --needed --noconfirm xdotool xorg-xwininfo yad; then
       echo ">>> SteamTinkerLaunch dependency installation failed."
       return 1
     fi
@@ -1170,12 +1203,12 @@ if type -P pacman > /dev/null; then
   echo ">>> Installing vim, tmux and fuse2"
   if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
     echo ">>> Updating system (pacman -Syu)"
-    sudo pacman -Syu --noconfirm
+    _run_long_install "System upgrade" sudo pacman -Syu --noconfirm
   else
     echo ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
   fi
-  if sudo pacman -S --needed --noconfirm vim tmux fuse2; then
-    flatpak update -y
+  if _run_long_install "Vim, tmux, and FUSE installation" sudo pacman -S --needed --noconfirm vim tmux fuse2; then
+    _run_long_install "Flatpak update" flatpak update -y
   else
     echo ">>> Steam: vim/tmux/fuse2 package installation failed; continuing."
   fi
@@ -1206,7 +1239,7 @@ popd
 if type -P paru > /dev/null && grep -q '^ID=cachyos' /etc/os-release 2> /dev/null; then
   if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
     echo ">>> CachyOS with paru detected - updating AUR packages"
-    paru -Syu --noconfirm
+    _run_long_install "AUR upgrade" paru -Syu --noconfirm
   else
     echo ">>> Skipped AUR upgrade: paru -Syu --noconfirm"
   fi
@@ -1257,8 +1290,8 @@ USB_WAKE_SERVICE
   sudo systemctl enable --now usb-wake-all.service
 }
 
-# Default Yes as requested; declining leaves any existing wake configuration untouched.
-if _prompt "Enable wake-up for all supported USB devices (may cause accidental wake-ups)?" Y; then
+# Apply the startup choice without another late prompt; declining preserves existing configuration.
+if [ "$DO_USB_WAKE_SETUP" -eq 1 ]; then
   if _install_usb_wake_service; then
     echo ">>> USB wake: enabled now and at boot for devices exposing power/wakeup."
   else

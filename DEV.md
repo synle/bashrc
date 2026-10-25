@@ -34,11 +34,12 @@ before running it; no live cleanup is needed to verify the workflow locally.
 
 ## Refreshing SteamOS Decky Plugins
 
-Decky plugins and CSS Loader themes are pinned in `software/metadata/decky-packages.json`.
-The opt-in `decky-and-css-loader.standalone.js` stages the generated binary-cache bundle,
-recovers missing packages upstream in batches of three, and installs through the shared
-protected Node runtime. SteamOS setup delegates to the same standard script. No Decky
-ZIPs are tracked under `assets/steamos/`. For a checked update of every package, ask:
+`software/metadata/decky-packages.json` declares an exact `decky_loader_version` and `decky_packages`.
+Compact entries require only `path`, `name`, and `version`; approved hand-picked ZIPs live under `assets/steamos/decky_loader_plugins/`.
+The shared Node runtime derives hashes, native roots, package kinds, and theme IDs, while retaining rich HTTPS/hash entry support.
+The self-extracting installer includes those ZIPs. Missing or stale cached packages recover from selected repository bytes or pinned upstream URLs.
+Reruns overwrite selected archive members, restart `plugin_loader.service`, and verify it is active; unrelated plugins and settings remain.
+SteamOS setup delegates to the same standard script. For a checked update of every package, ask:
 
 ```text
 Refresh all pinned Decky plugins and CSS Loader themes to the latest verified installable releases.
@@ -52,8 +53,8 @@ packages. Building alone does not discover updates.
 Query upstream releases/store records, verify temporary candidate SHA-256, ZIP safety,
 identity/version, compiled plugin payload, and theme IDs before changing inventory pins.
 Keep newer verified releases; do not downgrade merely to match older store listings.
-Use `<name>_v<version>.zip` filenames; preserve theme IDs and hashes in metadata. Store
-metadata alone is not an archive. Leave unverified candidates unchanged.
+Use `<name>_v<version>.zip` filenames. Compact entries derive theme IDs and hashes from verified committed bytes; rich entries retain explicit pins.
+Store metadata alone is not an archive. Preserve upstream attribution in `assets/steamos/README.md` and leave unverified candidates unchanged.
 
 `make build_decky_bundle DECKY_BUNDLE_OUTPUT="$HOME/steamos-decky__bundle.zip"` builds
 and validates deterministic output with Node.js and curl; failed builds preserve existing
@@ -89,7 +90,10 @@ Open a new Bash session to load the alias. It reruns the complete interactive se
 Later definitions from sourced profiles can override it, including the managed SteamOS profile's existing pacman `update` alias.
 
 Close Steam before changing shortcuts. The script records a private `steamos-setup.*` log on the Desktop.
-It asks whether to clear user-defined non-Steam shortcuts, install Decky, upgrade the system, and enable USB wake-up.
+Before downloads, it asks whether to clear user-defined non-Steam shortcuts, install Decky, upgrade the system, and enable USB wake-up.
+The final completion acknowledgment remains at the end.
+Long pacman, Flatpak, and paru operations capture stdout/stderr in a private `sy-log-<UTC-start-time>-steamos-setup-output.<unique>.txt` file.
+Its temporary root uses `BASHRC_TEMP_ROOT_DIR`, then `TMPDIR`, then `/tmp`; short progress, failure status, and log location remain visible.
 The shortcut-clearing prompt defaults to Yes; declining preserves existing entries for title-based updates.
 Clearing affects all user-defined non-Steam shortcuts in the selected account; review that prompt deliberately.
 

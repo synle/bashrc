@@ -79,6 +79,14 @@ The manual SteamOS script is a separate flow: it installs its prerequisites and 
 Both HTTP and HTTPS site URLs are accepted; exact-title matching supports repeat updates.
 Keep its title/URL inventory in the script, not a second registry.
 
+## Decky package flow
+
+`software/metadata/decky-packages.json` owns the exact Loader version and selected package list.
+Compact entries reference trusted ZIPs in `assets/steamos/decky_loader_plugins/`; the shared package module derives hashes, native roots, kinds, and theme IDs.
+Rich HTTPS/hash entries remain supported. The self-extracting installer includes approved ZIPs, and cache recovery cannot override their derived hashes.
+Every installation reapplies selected archive members, restarts `plugin_loader.service`, and verifies it is active without removing unrelated plugins/settings.
+SteamOS collects operational choices before installation; only verbose package-manager operations redirect output to a timestamped private temporary log.
+
 ## Profile Assembly
 
 Ordinary installer scripts never write `~/.bash_syle` directly — they buffer via `registerWithBashSyleProfile(configKey, content)` (append/replace a BEGIN/END block), `registerPlatformTweaks(platform, content, subKey?)`, autocomplete/powershell variants, and `removeFromBashSyleProfile` (for `--remove`). All writes accumulate in `_profileBlockBuffer`, flushed once per bundle + in `~cleanup.js`. Duplicate `configKey` throws. Empty marker pairs pre-placed in `profile-core.sh` / `profile-advanced.sh` so blocks update in place.

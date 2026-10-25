@@ -102,7 +102,9 @@ describe("SteamOS setup", () => {
   });
 
   it("installs Flatpak Brave before creating its Fav launcher and other URL shortcuts", () => {
-    const flatpakInstall = setupSource.indexOf("if ! flatpak install --user flathub com.brave.Browser; then");
+    const flatpakInstall = setupSource.indexOf(
+      '_run_long_install "Flatpak Brave installation" flatpak install --user -y flathub com.brave.Browser',
+    );
     const braveShortcut = setupSource.indexOf('_add_url_steam_shortcut "Brave"');
     const disneyShortcut = setupSource.indexOf('_add_url_steam_shortcut "Disney+"');
     const emudeckDownload = setupSource.indexOf('curl -fsSL "https://www.emudeck.com/EmuDeck.desktop"');

@@ -1,0 +1,220 @@
+/** Contract tests for compact repository ZIPs, rich remote pins, and the exact Loader inventory version. */
+import { afterEach, describe, expect, it } from "vitest";
+import fs from "fs";
+import os from "os";
+import path from "path";
+import packages from "../scripts/decky/decky-packages.common.js";
+import zip from "../scripts/decky/decky-zip.common.js";
+import inventory from "../metadata/decky-packages.json";
+
+/** Private test roots cleaned after every case, including rejected inputs. */
+const roots = [];
+/** Return a private repository fixture containing an optional installable plugin or theme ZIP. */
+function fixture({ theme = false, entries } = {}) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "decky-inventory-"));
+  roots.push(root);
+  const relative = "assets/steamos/decky_loader_plugins/Example_v2.0.zip";
+  const file = path.join(root, relative);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const payload = zip.writeZip(
+    new Map(
+      entries ??
+        (theme
+          ? [["Native Root/theme.json", Buffer.from('{"name":"Example","version":"v2.0","id":"theme-id"}')]]
+          : [
+              ["Native Root/plugin.json", Buffer.from('{"name":"Example","flags":[]}')],
+              ["Native Root/package.json", Buffer.from('{"version":"2.0"}')],
+              ["Native Root/dist/index.js", Buffer.from("compiled, never executed")],
+            ]),
+    ),
+  );
+  fs.writeFileSync(file, payload);
+  return { root, file, payload, selection: { path: relative, name: "Example", version: "2.0" } };
+}
+
+/** Create an explicitly unsafe filesystem fixture; return its repository paths without invoking the consumer. */
+function unsafeSource(kind) {
+  const f = fixture();
+  if (kind === "symlink") {
+    fs.renameSync(f.file, f.file + ".real");
+    fs.symlinkSync(f.file + ".real", f.file);
+  }
+  if (kind === "hardlink") fs.linkSync(f.file, f.file + ".link");
+  if (kind === "parent symlink") {
+    fs.renameSync(path.dirname(f.file), path.dirname(f.file) + ".real");
+    fs.symlinkSync(path.dirname(f.file) + ".real", path.dirname(f.file));
+  }
+  if (kind === "empty") fs.truncateSync(f.file, 0);
+  if (kind === "oversized") fs.truncateSync(f.file, 256 * 1024 * 1024 + 1);
+  if (kind === "folder") {
+    fs.unlinkSync(f.file);
+    fs.mkdirSync(f.file);
+  }
+  return f;
+}
+
+afterEach(() => {
+  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
+});
+
+describe("compact Decky repository inventory", () => {
+  it("derives actual native roots, kinds, identities, and hashes from all 18 hand-picked archives", () => {
+    const pins = packages.resolvePackages(inventory.decky_packages);
+    expect(pins).toHaveLength(18);
+    expect(pins.filter((p) => p.theme_id)).toHaveLength(9);
+    expect(pins.filter((p) => !p.theme_id)).toHaveLength(9);
+    expect(pins.find((p) => p.name === "HLTB for Deck").version).toBe("2.0.12");
+    expect(pins.find((p) => p.name === "ProtonDB Badges").version).toBe("1.3.4");
+    expect(pins.find((p) => p.name === "HueSync")).toMatchObject({
+      path: "decky_plugin/HueSync_v3.9.0.zip",
+      root: "HueSync",
+      version: "3.9.0",
+      local_path: "assets/steamos/decky_loader_plugins/HueSync_v3.9.0.zip",
+      sha256: "7510c96ed22278a914a3aae591c2393ff4e25812a765d1d633f77baa8a593e1f",
+    });
+    expect(pins.find((p) => p.name === "Centered Home")).toMatchObject({
+      path: "decky_css_loader/Centered_Home_v1.3.zip",
+      root: "Centered Home",
+      theme_id: "865407ae-fb14-4db7-b123-61f6995ed757",
+    });
+  });
+
+  it("does not assume the archive root matches the filename or display name", () => {
+    const f = fixture();
+    const [pin] = packages.resolvePackages([f.selection], f.root);
+    expect(pin).toMatchObject({ path: "decky_plugin/Example_v2.0.zip", root: "Native Root", name: "Example", version: "2.0" });
+    expect(packages.readRepositoryArchive(f.selection.path, f.root)).toEqual(f.payload);
+  });
+
+  it("derives theme IDs and verifies their embedded version", () => {
+    const f = fixture({ theme: true });
+    expect(packages.resolvePackages([f.selection], f.root)[0]).toMatchObject({
+      path: "decky_css_loader/Example_v2.0.zip",
+      theme_id: "theme-id",
+      root: "Native Root",
+    });
+  });
+
+  it("retains rich HTTPS/hash entries without requiring a local ZIP", () => {
+    const pin = {
+      path: "decky_plugin/Example_v2.0.zip",
+      name: "Example",
+      version: "2.0",
+      root: "Native Root",
+      url: "https://example.test/plugin.zip",
+      sha256: "a".repeat(64),
+    };
+    expect(packages.resolvePackages([pin])).toEqual([pin]);
+    expect(packages.resolvePackages([])).toEqual([]);
+  });
+
+  it.each([null, {}, "bad", 0])("rejects non-array selections %j", (value) => {
+    expect(() => packages.resolvePackages(value)).toThrow("decky_packages must be an array");
+  });
+
+  it.each([null, [], "bad", false])("rejects non-object entries %j", (value) => {
+    expect(() => packages.resolvePackages([value])).toThrow("package entry must be an object");
+  });
+
+  it.each(["", "  ", "../escape", "a\\b", "a\nname", "x".repeat(257), 0])("rejects invalid identity %j", (name) => {
+    const f = fixture();
+    expect(() => packages.resolvePackages([{ ...f.selection, name }], f.root)).toThrow("package name");
+    expect(fs.readFileSync(f.file)).toEqual(f.payload);
+  });
+
+  it.each(["", "v2.0", "2.0-pre1", "../2", "2".repeat(33), 0])("rejects invalid version %j", (version) => {
+    const f = fixture();
+    expect(() => packages.resolvePackages([{ ...f.selection, version }], f.root)).toThrow("package version");
+  });
+
+  it.each([
+    "",
+    "/tmp/Example_v2.0.zip",
+    "assets/steamos/decky_loader_plugins/../Example_v2.0.zip",
+    "assets/steamos/decky_loader_plugins/.hidden_v2.0.zip",
+    "assets/steamos/decky_loader_plugins/a/b_v2.0.zip",
+    "assets/steamos/decky_loader_plugins/a\n_v2.0.zip",
+    "https://example.test/a.zip",
+    0,
+  ])("rejects unsafe repository path %j", (value) => {
+    expect(() => packages.repositoryArchivePath(value)).toThrow("package path");
+  });
+
+  it("rejects unknown compact fields instead of weakening hash validation", () => {
+    const f = fixture();
+    expect(() => packages.resolvePackages([{ ...f.selection, sha256: "ignore" }], f.root)).toThrow("accepts only path, name, and version");
+  });
+
+  it.each(["symlink", "hardlink", "parent symlink", "empty", "oversized", "folder"])("rejects a %s source before parsing", (kind) => {
+    const f = unsafeSource(kind);
+    expect(() => packages.resolvePackages([f.selection], f.root)).toThrow();
+    expect(fs.existsSync(path.join(f.root, "homebrew"))).toBe(false);
+  });
+
+  it.each([
+    {
+      entries: [
+        ["One/plugin.json", "{}"],
+        ["Two/plugin.json", "{}"],
+      ],
+    },
+    { entries: [["Root/file", "no manifest"]] },
+    {
+      entries: [
+        ["Root/plugin.json", "{}"],
+        ["Root/theme.json", "{}"],
+      ],
+    },
+    { entries: [[".hidden/plugin.json", "{}"]] },
+  ])("rejects ambiguous or unsafe roots %j", ({ entries }) => {
+    const f = fixture({ entries: entries.map(([name, value]) => [name, Buffer.from(value)]) });
+    expect(() => packages.resolvePackages([f.selection], f.root)).toThrow(/root/);
+  });
+
+  it.each(["{}", '{"name":"Example","version":"2.0","id":""}'])("rejects a theme without an ID %s", (manifest) => {
+    const f = fixture({ entries: [["Root/theme.json", Buffer.from(manifest)]] });
+    expect(() => packages.resolvePackages([f.selection], f.root)).toThrow("theme ID");
+  });
+
+  it.each(["{", "[]", "null"])("rejects malformed or non-object JSON %s", (manifest) => {
+    const f = fixture({ entries: [["Root/plugin.json", Buffer.from(manifest)]] });
+    expect(() => packages.resolvePackages([f.selection], f.root)).toThrow(/JSON/);
+  });
+
+  it("rejects duplicate destinations before producing installable selections", () => {
+    const f = fixture();
+    expect(() => packages.resolvePackages([f.selection, f.selection], f.root)).toThrow("duplicate package");
+  });
+
+  it.each([
+    { path: "../Example.zip" },
+    { root: "../root" },
+    { root: "" },
+    { url: "http://example.test/a.zip" },
+    { sha256: "no hash" },
+    { local_path: "assets/steamos/decky_loader_plugins/Example_v2.0.zip" },
+  ])("rejects unsafe rich entry overrides %j", (overrides) => {
+    const pin = {
+      path: "decky_plugin/Example_v2.0.zip",
+      name: "Example",
+      version: "2.0",
+      root: "Root",
+      url: "https://example.test/a.zip",
+      sha256: "a".repeat(64),
+      ...overrides,
+    };
+    expect(() => packages.resolvePackages([pin])).toThrow("upstream package requires");
+  });
+});
+
+describe("exact Decky Loader inventory version", () => {
+  it("accepts the selected stable Loader version", () => {
+    expect(packages.loaderVersion(inventory)).toBe("3.3.0");
+  });
+  it.each([null, [], {}, { decky_loader_version: "3.3.0" }])("rejects invalid inventory shape %j", (value) => {
+    expect(() => packages.loaderVersion(value)).toThrow("inventory requires");
+  });
+  it.each(["", "latest", "v3.3.0", "3.3", "3.3.0-pre1", 0])("rejects non-exact Loader version %j", (version) => {
+    expect(() => packages.loaderVersion({ decky_loader_version: version, decky_packages: [] })).toThrow("decky_loader_version");
+  });
+});

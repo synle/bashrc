@@ -6,7 +6,7 @@ description: Update all pinned Decky plugins and CSS Loader themes to the latest
 ## Purpose
 
 Refresh the trusted package inventory used by the opt-in Node.js installer and bundle
-builder. Keep installable upstream artifacts verified without committing package ZIPs.
+builder. Verify hand-picked repository ZIPs and rich upstream pins before changing selected versions.
 
 ## Quick start
 
@@ -20,14 +20,18 @@ or ambiguous names before changing pins.
 not a source-code archive or an unchecked store version. Building the bundle alone
 never discovers updates or changes pins. Preserve the selected package set, including
 Centered Home, unless the user explicitly requests an addition or removal.
+The default scope is `decky_packages`; change the separate exact `decky_loader_version` only when explicitly requested.
 
 ## Steps
 
 1. Confirm repository root, branch, and worktree state. Read the canonical inventory,
    `docs/steamos-decky-installation.md`, and shared Decky runtime. Preserve unrelated edits.
-2. For every selected plugin, query its recorded upstream's latest stable release and
+   Read `decky_packages` from the inventory object, not a top-level array.
+   Resolve compact entries through `decky-packages.common.js`; derive native roots, hashes, package kinds, and theme IDs from their trusted ZIPs.
+   Resolve upstream attribution from rich entry sources or `assets/steamos/README.md`; missing or ambiguous provenance blocks that package.
+2. For every selected plugin, query its verified upstream's latest stable release and
    current approved store version. For every selected theme, query the DeckThemes record
-   using its `theme_id` and inspect the approved current download blob. Compare actual
+   using its resolved `theme_id` and inspect the approved current download blob. Compare actual
    versions rather than publication dates or lexicographic strings. Exclude drafts,
    prereleases, disabled themes, and unapproved submissions unless explicitly requested.
    Keep newer verified installed-artifact pins rather than downgrading to an older store
@@ -37,20 +41,23 @@ Centered Home, unless the user explicitly requests an addition or removal.
 4. Validate SHA-256, safe ZIP32 entries and CRC, one selected root, exact identity/version,
    nonempty compiled plugin `dist/index.js`, and theme ID where applicable. Use the shared
    Node validator against independently checked candidate pins; no Python tooling.
-5. Update only verified entries in `software/metadata/decky-packages.json`. Record exact
-   HTTPS download and attribution URLs, SHA-256, root, version, and theme ID. Filenames
-   must be `<name>_v<version>.zip`, without author prefixes, UUIDs, or hashes. Preserve
-   `decky_plugin/` and `decky_css_loader/` bundle paths. Never replace pins for an
-   unavailable, unbuilt, or unverifiable candidate; report that package as blocked.
+5. Update only verified selections in `software/metadata/decky-packages.json`.
+   For compact entries, add the independently verified candidate ZIP under `assets/steamos/decky_loader_plugins/` and set only `path`, `name`, and `version`.
+   Do not overwrite an existing archive with different bytes without explicit approval; prefer a distinct versioned filename.
+   Preserve upstream attribution in `assets/steamos/README.md` and record the exact artifact URL and old/new SHA-256 values in the update evidence.
+   For rich entries, retain exact HTTPS URL, SHA-256, root, version, and applicable theme ID pins.
+   Filenames must be `<name>_v<version>.zip`, without author prefixes, UUIDs, or hashes.
+   Preserve `decky_plugin/` and `decky_css_loader/` generated bundle paths.
+   Leave unavailable, unbuilt, or unverifiable candidates unchanged and report them as blocked.
 6. Build the full bundle outside the checkout using an explicit output path:
 
    ```bash
    make build_decky_bundle DECKY_BUNDLE_OUTPUT="$HOME/steamos-decky__bundle.zip"
    ```
 
-   The builder downloads upstream-only in complete batches of three, validates all
-   packages, and atomically replaces successful output. Check that the resulting
-   `metadata.json` matches the updated inventory and contains every selected package.
+   The builder bypasses the cache, reads repository ZIPs, and downloads rich-entry upstream artifacts in complete batches of three.
+   It validates all packages and atomically replaces successful output.
+   Check that `metadata.json` matches resolved inventory metadata and contains every selected package.
 
 7. Run the verification commands below, re-read the inventory and diff, and report every
    selected package in a table: package, previous version, latest discovered version,
@@ -63,7 +70,8 @@ Centered Home, unless the user explicitly requests an addition or removal.
 
 Never:
 
-- commit generated ZIPs or restore the removed Decky archive folders
+- commit generated bundles or place source ZIPs outside the approved `assets/steamos/decky_loader_plugins/` folder
+- change the Loader pin without an explicit request or silently use floating latest behavior
 - infer an artifact URL, substitute source-code ZIPs, or accept an unverified store hash
 - execute downloaded plugin code during validation
 - delete installed themes/settings or drop a selected package during a version refresh
@@ -78,7 +86,7 @@ Run the following and quote exact result lines, distinguishing passed, failed, a
 
 ```bash
 /bin/bash -n software/scripts/steamos/setup.bash
-npx vitest run --config vitest.config.js software/tests/steamosSetup.cache.spec.js software/tests/steamosSetup.decky.spec.js software/tests/deckyZip.spec.js software/tests/deckyInstaller.spec.js
+npx vitest run --config vitest.config.js software/tests/decky*.spec.js software/tests/steamosSetup*.spec.js
 make build_decky_bundle DECKY_BUNDLE_OUTPUT="OUTPUT.zip"
 git diff --check
 ```

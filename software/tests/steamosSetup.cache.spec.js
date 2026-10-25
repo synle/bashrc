@@ -6,7 +6,6 @@ import crypto from "crypto";
 import { spawnSync } from "child_process";
 import runtime from "../scripts/decky/decky-runtime.common.js";
 import zip from "../scripts/decky/decky-zip.common.js";
-import pins from "../metadata/decky-packages.json";
 
 /** Test-owned workspaces, never the user's home or release assets. */
 const workspaces = [];
@@ -278,18 +277,6 @@ describe("Decky deterministic bundle build", () => {
     ).rejects.toThrow("offline");
     expect(fs.readFileSync(output, "utf8")).toBe("previous verified asset");
     expect(fs.readdirSync(folder)).toEqual(["previous.zip"]);
-  });
-
-  it("ships nine plugins and nine themes, including verified newer store releases and Centered Home", () => {
-    expect(pins.filter((pin) => pin.path.startsWith("decky_plugin/"))).toHaveLength(9);
-    expect(pins.filter((pin) => pin.path.startsWith("decky_css_loader/"))).toHaveLength(9);
-    expect(pins.find((pin) => pin.name === "HLTB for Deck").version).toBe("2.0.12");
-    expect(pins.find((pin) => pin.name === "ProtonDB Badges").version).toBe("1.3.4");
-    expect(pins.find((pin) => pin.name === "Centered Home")).toMatchObject({
-      path: "decky_css_loader/Centered_Home_v1.3.zip",
-      theme_id: "865407ae-fb14-4db7-b123-61f6995ed757",
-    });
-    expect(pins.every((pin) => /\/[A-Za-z0-9_-]+_v[0-9.]+\.zip$/.test(pin.path))).toBe(true);
   });
 
   it("CLI rejects missing output with a nonzero status and usable diagnostic (subprocess)", () => {

@@ -47,14 +47,15 @@ beforeEach(() => {
   // Fields recorded from the upstream stable release API during this investigation.
   fs.writeFileSync(file("release.json"), '{"tag_name":"v3.3.0","prerelease":false,"draft":false}');
   fs.writeFileSync(file("bootstrap-version"), "v3.3.0\n");
+  fs.writeFileSync(file("bootstrap.sh"), fs.readFileSync("software/tests/fixtures/decky-loader-bootstrap.txt"));
   fs.writeFileSync(file("bin/jq"), "#!/bin/bash\nexit 0\n", { mode: 0o755 });
   fs.writeFileSync(
     file("bin/curl"),
     `#!/bin/bash
 printf '%s\\n' "$*" >> "$HOME/downloads"
 case "$*" in
-  *api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/latest*) cp "$HOME/release.json" "\${@: -1}" ;;
-  *) printf bootstrap > "\${@: -1}" ;;
+  *api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/tags/v*) cp "$HOME/release.json" "\${@: -1}" ;;
+  *) cp "$HOME/bootstrap.sh" "\${@: -1}" ;;
 esac
 `,
     { mode: 0o755 },
@@ -63,7 +64,12 @@ esac
     file("bin/sudo"),
     `#!/bin/bash
 printf '%s\\n' "$*" >> "$HOME/commands"
+if [ "$1" = systemctl ]; then
+  if [ -f "$HOME/service-failure" ] && [ "$(command cat "$HOME/service-failure")" = "$2" ]; then exit 44; fi
+  exit 0
+fi
 if [ -f "$HOME/bootstrap-failure" ]; then exit 43; fi
+/bin/bash "$2" "$3" || exit $?
 mkdir -p "$HOME/homebrew/services" "$HOME/homebrew/plugins"
 printf service > "$HOME/homebrew/services/PluginLoader"
 chmod 755 "$HOME/homebrew/services/PluginLoader"
@@ -90,6 +96,7 @@ describe("Decky Loader stable-version installation (Linux and elevation simulate
     await install();
     expect(fs.readFileSync(file("homebrew/services/.loader.version"), "utf8")).toBe("v3.3.0\n");
     expect(fs.readFileSync(file("homebrew/services/PluginLoader"), "utf8")).toBe("service");
+    expect(JSON.parse(fs.readFileSync(file("selected-release.json"), "utf8")).tag_name).toBe("v3.3.0");
     expect(fs.readFileSync(file("downloads"), "utf8")).toContain(
       "https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_release.sh",
     );
@@ -99,9 +106,11 @@ describe("Decky Loader stable-version installation (Linux and elevation simulate
     fs.writeFileSync(file("homebrew/services/.loader.version"), stamp);
     await install();
     expect(fs.readFileSync(file("homebrew/services/PluginLoader"), "utf8")).toBe("existing service");
-    expect(fs.existsSync(file("commands"))).toBe(false);
+    expect(fs.readFileSync(file("commands"), "utf8")).toBe(
+      "systemctl restart plugin_loader.service\nsystemctl is-active --quiet plugin_loader.service\n",
+    );
     expect(fs.readFileSync(file("downloads"), "utf8")).toContain(
-      "https://api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/latest",
+      "https://api.github.com/repos/SteamDeckHomebrew/decky-loader/releases/tags/v3.3.0",
     );
     expect(fs.readFileSync(file("downloads"), "utf8")).not.toContain("install_release.sh");
   });
@@ -110,7 +119,9 @@ describe("Decky Loader stable-version installation (Linux and elevation simulate
     await install();
     const commands = fs.readFileSync(file("commands"), "utf8");
     await install();
-    expect(fs.readFileSync(file("commands"), "utf8")).toBe(commands);
+    expect(fs.readFileSync(file("commands"), "utf8")).toBe(
+      commands + "systemctl restart plugin_loader.service\nsystemctl is-active --quiet plugin_loader.service\n",
+    );
     expect(fs.readFileSync(file("homebrew/services/.loader.version"), "utf8")).toBe("v3.3.0\n");
     expect(fs.readdirSync(file("Desktop"))).toHaveLength(2);
   });
@@ -183,9 +194,39 @@ describe("Decky Loader stable-version installation (Linux and elevation simulate
     expect(fs.readdirSync(file("homebrew/plugins"))).toEqual([]);
   });
 
+  it("rejects a valid stable release that is not the configured Loader pin", async () => {
+    fs.writeFileSync(file("release.json"), '{"tag_name":"v3.4.0","prerelease":false,"draft":false}');
+    await expect(install()).rejects.toThrow("Loader release does not match decky_loader_version");
+    expectUnchangedInstallation();
+  });
+
+  it("restores the hand-picked Loader even when a newer version is installed", async () => {
+    fs.writeFileSync(file("homebrew/services/.loader.version"), "v9.0.0\n");
+    await install();
+    expect(fs.readFileSync(file("homebrew/services/.loader.version"), "utf8")).toBe("v3.3.0\n");
+    expect(JSON.parse(fs.readFileSync(file("selected-release.json"), "utf8")).tag_name).toBe("v3.3.0");
+  });
+
+  it.each(["missing", "duplicate"])("fails closed on a %s upstream release selector", async (kind) => {
+    const original = fs.readFileSync(file("bootstrap.sh"), "utf8");
+    fs.writeFileSync(file("bootstrap.sh"), kind === "missing" ? "#!/bin/bash\nexit 0\n" : original + original);
+    await expect(install()).rejects.toThrow("Loader bootstrap release selector changed");
+    expectUnchangedInstallation();
+  });
+
+  it.each(["restart", "is-active"])("does not report completion when service %s fails", async (operation) => {
+    fs.writeFileSync(file("homebrew/services/.loader.version"), "v3.3.0\n");
+    fs.writeFileSync(file("service-failure"), operation);
+    await expect(install()).rejects.toThrow("sudo failed status=44");
+    const logFolder = fs.readdirSync(file("Desktop"))[0];
+    const log = fs.readFileSync(file(`Desktop/${logFolder}/install.log`), "utf8");
+    expect(log).toContain("phase=failed");
+    expect(log).not.toContain("phase=complete");
+  });
+
   it("rejects an installer that leaves the old version rather than reporting success", async () => {
     fs.writeFileSync(file("bootstrap-version"), "v3.2.10\n");
-    await expect(install()).rejects.toThrow("Decky Loader installed version does not match the latest stable release");
+    await expect(install()).rejects.toThrow("Decky Loader installed version does not match decky_loader_version");
     expect(fs.readdirSync(file("homebrew/plugins"))).toEqual([]);
     const logFolder = fs.readdirSync(file("Desktop"))[0];
     const log = fs.readFileSync(file(`Desktop/${logFolder}/install.log`), "utf8");

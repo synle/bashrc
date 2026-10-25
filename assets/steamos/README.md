@@ -149,30 +149,45 @@ PC is unavailable. Keep host shortcuts if you still use them there.
 
 ## Decky package bundle
 
-[`software/metadata/decky-packages.json`](../../software/metadata/decky-packages.json)
-is the authoritative inventory: nine plugins and nine themes, with exact versions,
-upstream attribution/download URLs, SHA-256, selected roots, and theme IDs.
-HLTB for Deck 2.0.12, ProtonDB Badges 1.3.4, and CSS Loader 2.1.3 retain the verified
-newer releases. Centered Home v1.3 is included; extra installed files and settings
-are preserved.
+[`software/metadata/decky-packages.json`](../../software/metadata/decky-packages.json) owns the exact Loader version and all nine plugin/nine theme selections.
+Compact entries require only `path`, `name`, and `version`.
+Their hand-picked ZIPs live in [`decky_loader_plugins/`](decky_loader_plugins/); the shared runtime derives trusted hashes, native roots, kinds, and theme IDs.
+Rich HTTPS/hash entries remain supported. Selection and version authority stays in JSON, not this attribution section.
 
-The generated `steamos-decky__bundle.zip` contains `metadata.json`,
-`decky_plugin/<name>_v<version>.zip`, and
-`decky_css_loader/<name>_v<version>.zip`. Filenames contain no author prefixes,
-UUIDs, or checksums. Credit belongs to the upstream authors linked in the inventory.
+The generated `steamos-decky__bundle.zip` contains `metadata.json`, `decky_plugin/<name>_v<version>.zip`, and `decky_css_loader/<name>_v<version>.zip`.
+The self-extracting installer also includes repository ZIPs. Generated bundles are not committed.
+Filenames contain no author prefixes, UUIDs, or checksums.
 
 The standard opt-in installer is `bash run.sh --files=decky-and-css-loader`.
-It works alongside comma-separated selections; no preset includes it implicitly.
-SteamOS setup delegates to that same path through the self-extracting bootstrap.
+SteamOS setup delegates to the same path; no preset includes it implicitly.
+Every rerun reapplies selected files, restarts Decky, and verifies active state, preserving unrelated plugins, extra files, and settings.
 See [installation and validation details](../../docs/steamos-decky-installation.md).
 
-To update everything, ask an agent: **“Refresh all pinned Decky plugins and CSS Loader
-themes to the latest verified installable releases.”** The repo-local
-[`refresh-steamos-decky-plugins` skill](../../.claude/skills/refresh-steamos-decky-plugins/SKILL.md)
-checks every inventory entry when no package names are supplied, verifies candidates,
-updates pins, tests, and rebuilds. Building alone does not update versions.
-ZIPs are generated, not committed. CI builds the bundle on
-PRs without release credentials and publishes it only on default-branch pushes.
+For verified upstream updates, use the repo-local [refresh workflow](../../.agents/skills/refresh-steamos-decky-plugins/SKILL.md).
+Building alone does not change hand-picked versions. CI builds without release credentials on PRs and publishes only on default-branch pushes.
+
+### Upstream attribution
+
+These links preserve provenance only; they do not define another package-selection list or version registry.
+
+- [Centered Home](https://deckthemes.com/themes/view?themeId=865407ae-fb14-4db7-b123-61f6995ed757)
+- [Clean Gameview](https://deckthemes.com/themes/view?themeId=a9776f60-2724-4ff0-824b-e1f82a04688e)
+- [Faster Transition Animations](https://deckthemes.com/themes/view?themeId=921a7ec8-b355-4799-b23f-73f4b9c713b8)
+- [Mini Carousel](https://deckthemes.com/themes/view?themeId=4788b3d9-f4f3-40f2-ae0e-a80afa9fce5b)
+- [No Home Edge Fade](https://deckthemes.com/themes/view?themeId=2dab90ab-2cf3-480f-adce-f6c67caadd67)
+- [No Home Recent Text](https://deckthemes.com/themes/view?themeId=95c4e310-0770-4e1f-9f9d-cbe444e9bb17)
+- [No Home Text](https://deckthemes.com/themes/view?themeId=0e8a208f-136f-4f26-b0e1-344bcd186ed9)
+- [Obsidian](https://deckthemes.com/themes/view?themeId=f16cf40d-7ccc-4981-95bf-77b28e8d101e)
+- [Round](https://deckthemes.com/themes/view?themeId=c6844008-a809-41f6-b140-7aa76f2a62ad)
+- [EmuDecky](https://github.com/EmuDeck/EmuDecky)
+- [ProtonDB Badges](https://github.com/bschelst/protondb-decky)
+- [SteamGridDB](https://github.com/SteamGridDB/decky-steamgriddb)
+- [HueSync](https://github.com/honjow/HueSync)
+- [HLTB for Deck](https://github.com/morwy/hltb-for-deck)
+- [AutoFlatpaks](https://github.com/jurassicplayer/decky-autoflatpaks)
+- [Volume Boost](https://github.com/saumya-banthia/volume-boost)
+- [CSS Loader](https://github.com/DeckThemes/SDH-CssLoader)
+- [Decky LSFG-VK](https://github.com/xXJSONDeruloXx/decky-lsfg-vk)
 
 ## Misc — repo root
 
