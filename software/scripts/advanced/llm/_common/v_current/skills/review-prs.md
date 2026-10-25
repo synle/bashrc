@@ -15,8 +15,6 @@ Background agents are default. Resolve, sort, announce, and assign the complete 
 Read `<<LLM_ROOT_FOLDER>>/skills/sy-pr-loop/SKILL.md` before parsing or dispatch. This driver owns the single set-wide clock, schedule, probes, shared handoff, and stop bookkeeping.
 Strip overrides before scope resolution and rendering; never forward fresh clocks to `pass=single` workers. Reuse existing owners and complete per-PR state.
 Apply Owner recovery and restart before adoption or dispatch; persist its signals, decisions, pause state, and original clock in this ledger and prior-state handoffs.
-Apply shared **Fresh restart** for explicit `restart=fresh` before scope parsing or initial dispatch. Validate at the top level; never forward restart to a worker.
-Keep the parent as set-wide clock owner. Complete the whole-selected-batch barrier before replacement slots; pass completed takeover state and preserved per-PR history, never fresh clock overrides.
 Select the review adapter: full passes on external changes, keepalive, and final verification. Babysit's quiet read-only verification never replaces these passes.
 
 ## Steps

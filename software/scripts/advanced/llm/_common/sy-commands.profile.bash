@@ -153,9 +153,6 @@ unset _sy_spec
 # hardcoded outside _SY_LLM_SPECS. Override per-shell via `export LLM=copilot`.
 _SY_DEFAULT_LLM="${_SY_SUPPORTED_LLMS[0]}"
 
-# Maximum budget-value length (characters); bounds numeric components before workflow duration resolution.
-_SY_PR_LOOP_OPTION_MAX_LENGTH=256
-
 # --- Resolution helpers ---
 
 # _sy_is_supported_llm: return 0 when $1 matches a known CLI name, 1 otherwise.
@@ -233,56 +230,6 @@ function _sy_resolve_boolean() {
   local fallback="$2"
   [ -z "$value" ] && value="$fallback"
   is_truthy "$value"
-}
-
-# _sy_pr_loop_options: validate optional restart=fresh and budget=<duration|rounds> argv.
-# Args: $@ = literal option strings; no scope arguments or shell evaluation accepted.
-# Stdout: canonical options (restart first, budget last), or empty text for recovery defaults.
-# Returns: 0 on success; 2 with a fixed stderr diagnostic on invalid/duplicate input.
-# Side effects: none beyond stdout/stderr; no CLI invocation or ownership action.
-function _sy_pr_loop_options() {
-  local arg restart="" budget="" value
-  for arg in "$@"; do
-    case "$arg" in
-    restart=*)
-      if [ -n "$restart" ]; then
-        echo "PR lifecycle options: duplicate restart." >&2
-        return 2
-      fi
-      if [ "$arg" != "restart=fresh" ]; then
-        echo "PR lifecycle options: invalid restart; expected restart=fresh." >&2
-        return 2
-      fi
-      restart="$arg"
-      ;;
-    budget=*)
-      if [ -n "$budget" ]; then
-        echo "PR lifecycle options: duplicate budget." >&2
-        return 2
-      fi
-      value="${arg#budget=}"
-      if [ "${#value}" -gt "$_SY_PR_LOOP_OPTION_MAX_LENGTH" ]; then
-        echo "PR lifecycle options: budget exceeds $_SY_PR_LOOP_OPTION_MAX_LENGTH characters." >&2
-        return 2
-      fi
-      if ! [[ "$value" =~ ^([0-9]+[smh])+$|^[0-9]+(r|rounds)$ ]] || ! [[ "$value" =~ [1-9] ]]; then
-        echo "PR lifecycle options: invalid budget; expected positive duration or rounds." >&2
-        return 2
-      fi
-      budget="$arg"
-      ;;
-    *)
-      echo "PR lifecycle options: unknown argument; expected restart=fresh or budget=<duration|rounds>." >&2
-      return 2
-      ;;
-    esac
-  done
-  printf '%s' "$restart"
-  if [ -n "$budget" ]; then
-    [ -z "$restart" ] || printf ' '
-    printf '%s' "$budget"
-  fi
-  return 0
 }
 
 # _sy_announce_launch: print route and both boolean controls before execution.

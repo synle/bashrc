@@ -18,8 +18,6 @@ Background agent is default **for a top-level invocation only.** Dispatch one se
 
 Read `<<LLM_ROOT_FOLDER>>/skills/sy-pr-loop/SKILL.md` before parsing overrides or starting a watch. It owns clock, schedule, probes, owner reuse, state handoff, and deadline/retry bookkeeping.
 Apply its Owner recovery and restart contract before treating a saved owner as live, resuming, replacing, or creating a clock. Carry its recovery evidence in review memory.
-Apply shared **Fresh restart** for explicit `restart=fresh` before scope parsing or initial dispatch. Validate at the top level; never forward restart to a worker.
-Keep the existing standalone background worker as loop owner after the top-level validated takeover handoff; inherit its new clock rather than creating another scheduler.
 Select the review adapter: external fingerprint changes, keepalive, and final verification require full review passes. Never inherit babysit's quiet read-only verification policy.
 Dry-run remains one foreground pass without a clock or GitHub writes; explicit single-pass mode transfers scheduling to its caller.
 
