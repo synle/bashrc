@@ -290,9 +290,17 @@ xnoremap <silent> ,y <Esc><C-r>
 nnoremap <silent> ,<F5> :edit!<CR>
 nnoremap <silent> <Bslash><F5> :edit!<CR>
 
-" ,[ / ,] for previous / next buffer tab (pairs with ,1..,9).
-nnoremap <silent> ,[ :bprevious<CR>
-nnoremap <silent> ,] :bnext<CR>
+" Comma aliases reuse the backslash toggles: numbers, whitespace, and wrap.
+" These replace the previous/next-buffer bindings on ,[ / ,].
+nmap <silent> ,<Bslash> <Bslash><Bslash>
+nmap <silent> ,[ <Bslash>[
+nmap <silent> ,] <Bslash>]
+
+" Select indentation for this buffer without rewriting existing text.
+" Hard tabs keep the current display width and shift by one complete tab.
+nnoremap <silent> ,1 :setlocal expandtab softtabstop=2 shiftwidth=2 tabstop=2<CR>
+nnoremap <silent> ,2 :setlocal expandtab softtabstop=4 shiftwidth=4 tabstop=4<CR>
+nnoremap <silent> ,3 :setlocal noexpandtab softtabstop=0<Bar>let &l:shiftwidth = &l:tabstop<CR>
 
 " } (shift+]) to toggle soft wrap — matches VS Code/Sublime/Zed's
 " ctrl+shift+OS_KEY+\ chord conceptually (one-key wrap toggle).
@@ -307,7 +315,7 @@ xnoremap <Del> d
 
 " Tab / Shift+Tab in visual mode indent / dedent and keep the selection, so
 " repeated presses keep shifting — VS Code/Sublime parity. Buffer-local
-" expandtab/shiftwidth/tabstop select 2 spaces or one hard tab, not a fixed width.
+" expandtab/shiftwidth/tabstop select the chosen space width or one hard tab.
 " Replaces the old visual-mode Tab wrap toggle; \] / } still toggle wrap.
 xnoremap <Tab> >gv
 xnoremap <S-Tab> <gv
@@ -385,14 +393,15 @@ nnoremap <C-q> :q<CR>
 nnoremap <C-d> :vsplit<CR>
 
 " Splits match tmux (tmux.config): ,d side-by-side (vertical), ,' stacked (horizontal).
-" ,s saves the current buffer. ,5 is not a split here — ,1..,9 jump to buffer tabs (see below).
+" ,s saves the current buffer. ,1..,3 select indentation; ,4..,9 jump to buffer tabs.
 " ,v is clipboard image/text paste, not a split.
 nnoremap <silent> ,d :vsplit<CR>
 nnoremap <silent> ,' :split<CR>
 nnoremap <silent> ,s :w<CR>
 
-" ,1..,9 jump to the Nth buffer tab in the lightline-bufferline tabline (left to right).
-for s:i in range(1, 9)
+" ,4..,9 jump to the Nth buffer tab in the lightline-bufferline tabline (left to right).
+" Reserve ,1..,3 for indentation selection.
+for s:i in range(4, 9)
   execute printf('nmap <silent> ,%d <Plug>lightline#bufferline#go(%d)', s:i, s:i)
 endfor
 
@@ -434,18 +443,90 @@ nnoremap <silent> ,<Down> <c-w>j
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — FZF / Search
 """""""""""""""""""""""""""""""""""""""""""""""""
-" Ctrl-t or ,t to open fuzzy file finder
-nnoremap <silent> <C-t> :Files<CR>
-nnoremap <silent> ,t :Files<CR>
+" Shared actions for buffer, file, and history pickers; other pickers stay unchanged.
+let s:picker_actions = {
+  \ '': 'focus',
+  \ 'alt-enter': 'current',
+  \ 'ctrl-d': 'vsplit',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'split',
+  \ 'ctrl-t': 'tab split',
+  \ }
 
-" Ctrl-f / ,f to search file contents with ripgrep
+" Open a:Number buffer using a:String action from picker_actions.
+" Returns nothing; changes focus/layout and propagates native buffer/window errors.
+function! s:PickerOpen(action, buffer) abort
+  if a:action ==# 'focus'
+    if bufnr('%') == a:buffer
+      return
+    endif
+    for l:window in win_findbuf(a:buffer)
+      if win_gotoid(l:window)
+        return
+      endif
+    endfor
+  elseif index(['vsplit', 'split', 'tab split'], a:action) >= 0
+    execute a:action
+  endif
+  execute 'buffer ' . a:buffer
+endfunction
+
+" Adapt a:String picker kind and a:List lines (key, selections) to shared opening.
+" Returns nothing; registers file buffers without reloading unsaved text.
+" Raises an error for unknown keys or stale/malformed buffer selections.
+function! s:PickerSink(kind, lines) abort
+  if len(a:lines) < 2
+    return
+  endif
+  if !has_key(s:picker_actions, a:lines[0])
+    throw 'Vim picker: unsupported selection key'
+  endif
+  for l:entry in a:lines[1:]
+    if a:kind ==# 'buffers'
+      " Native :Buffers puts [buffer number] in its third tab-separated field.
+      let l:buffer = str2nr(matchstr(get(split(l:entry, "\t", 1), 2, ''), '\[\zs[0-9]\+\ze\]'))
+      if l:buffer <= 0 || !bufexists(l:buffer)
+        throw 'Vim picker: selection has no existing buffer number'
+      endif
+    else
+      if empty(l:entry)
+        throw 'Vim picker: selected file path is empty'
+      endif
+      let l:buffer = bufadd(fnamemodify(l:entry, ':p'))
+      call setbufvar(l:buffer, '&buflisted', 1)
+    endif
+    call s:PickerOpen(s:picker_actions[a:lines[0]], l:buffer)
+  endfor
+endfunction
+
+" Launch a:String kind (files, buffers, history) with native lists and shared keys.
+" Returns nothing; opens fzf and overrides its path-paste action only for this run.
+" Raises an error for unknown kinds; native picker/plugin errors propagate.
+function! s:Picker(kind) abort
+  if index(['files', 'buffers', 'history'], a:kind) < 0
+    throw 'Vim picker: expected files, buffers, or history'
+  endif
+  let l:spec = {
+    \ 'sink*': function('s:PickerSink', [a:kind]),
+    \ '_paste': 0,
+    \ 'options': ['--no-expect', '--expect=' . join(filter(keys(s:picker_actions), 'v:val !=# ""'), ','),
+    \   '--footer', 'Enter: focus/open | Alt-Enter: here | C-D: vertical | C-X/C-V: horizontal | C-T: tab'],
+    \ }
+  if a:kind ==# 'files'
+    call fzf#vim#files('', l:spec)
+  else
+    call call('fzf#vim#' . a:kind, [l:spec])
+  endif
+endfunction
+
+" Ctrl-t / ,t, ,b, and ,r share opening behavior but retain distinct lists.
+nnoremap <silent> <C-t> :call <SID>Picker('files')<CR>
+nnoremap <silent> ,t :call <SID>Picker('files')<CR>
+nnoremap <silent> ,b :call <SID>Picker('buffers')<CR>
+nnoremap <silent> ,r :call <SID>Picker('history')<CR>
+
+" ,f searches file contents with ripgrep and keeps its native picker actions.
 nnoremap <silent> ,f :Rg<CR>
-
-" ,b to list and switch between open buffers
-nnoremap <silent> ,b :Buffers<CR>
-
-" ,r to list recently opened files
-nnoremap <silent> ,r :History<CR>
 
 " Alt+Z / Alt+Shift+Z for undo/redo (Option on Mac, Alt on Windows)
 " <A-z> form — works in terminals that natively support Alt key

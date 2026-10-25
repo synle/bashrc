@@ -732,8 +732,11 @@ The terminal must send a distinct Ctrl+Delete code rather than ordinary Delete.
 | `ctrl+up/down` (normal, insert, visual) | Page up / page down                  |
 | `ctrl+m` (normal, visual, insert)       | Jump to matching pair (`%`)          |
 | `,arrow`                                | Navigate splits                      |
-| `,1` … `,9`                             | Go to Nth buffer tab (tabline order) |
-| `,[` / `,]`                             | Previous / next buffer tab           |
+| `,4` … `,9`                             | Go to Nth buffer tab (tabline order) |
+
+`,1`–`,3` now select indentation instead of buffer tabs. `,[` / `,]` now toggle
+whitespace / wrap instead of switching buffers. Use `,b` for the buffer picker
+or `:bprevious` / `:bnext` for previous / next buffer navigation.
 
 In traditional terminals, `ctrl+m` and Enter both send carriage return. Enter
 therefore also jumps to the matching pair in normal, visual, and insert modes.
@@ -754,6 +757,18 @@ Both keys change leading indentation rather than inserting whitespace within tex
 Visual `Tab` / `shift+Tab` use the same buffer settings and keep the selection
 for repeated shifts. Normal-mode `Tab` remains a comma-prefix shortcut.
 
+Choose indentation for the current buffer in Normal mode:
+
+| Key  | Indentation                                  |
+| ---- | -------------------------------------------- |
+| `,1` | 2 spaces                                     |
+| `,2` | 4 spaces                                     |
+| `,3` | Hard tabs, keeping the current display width |
+
+These shortcuts change buffer-local settings, not existing text or other buffers.
+Insert and Visual indentation use the selected width and tab style. Reading a file
+or changing its filetype runs automatic detection again and may reset the selection.
+
 Every save (`:w`, `,s`, or `\s`) removes whole leading blank/whitespace-only
 lines, removes trailing whitespace, and retains the existing single blank line
 at EOF. First-content indentation and interior blank lines are preserved.
@@ -761,13 +776,13 @@ Empty and all-blank files retain their previous EOF normalization.
 
 ### Toggles (normal mode)
 
-Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for line numbers, whitespace markers, and soft wrap. `}` still overrides vim's default next-paragraph motion as a one-key soft-wrap toggle.
+Vim uses backslash-prefixed two-key toggles and matching comma aliases in normal mode. Defaults are ON for line numbers, whitespace markers, and soft wrap. `}` still overrides vim's default next-paragraph motion as a one-key soft-wrap toggle.
 
 | Key                                             | Action                                                             |
 | ----------------------------------------------- | ------------------------------------------------------------------ |
-| `\\`                                            | Toggle line numbers                                                |
-| `\[`                                            | Toggle whitespace markers (invisibles)                             |
-| `\]`                                            | Toggle soft wrap (`set wrap!`)                                     |
+| `\\`, `,\`                                      | Toggle line numbers                                                |
+| `\[`, `,[`                                      | Toggle whitespace markers (invisibles)                             |
+| `\]`, `,]`                                      | Toggle soft wrap (`set wrap!`)                                     |
 | `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)               |
 | `\s`                                            | Save file (`:w`)                                                   |
 | `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                |
@@ -790,6 +805,26 @@ Vim uses backslash-prefixed two-key toggles in normal mode. Defaults are ON for 
 | `,f`           | Ripgrep search    |
 | `,b`           | Buffer list       |
 | `,r`           | Recent files      |
+
+The `,b`, `,t` / `ctrl+t`, and `,r` pickers share these opening actions:
+
+| Key                  | Action                                                                 |
+| -------------------- | ---------------------------------------------------------------------- |
+| `Enter`              | Focus a pane showing the selection; otherwise open in the current pane |
+| `alt+enter`          | Open in the current pane, even if another pane already shows the file  |
+| `ctrl+d`             | Open in a new vertical split                                           |
+| `ctrl+x` or `ctrl+v` | Open in a new horizontal split                                         |
+| `ctrl+t`             | Open in a new Vim tab page                                             |
+
+Enter can focus an existing pane in another Vim tab page. Open buffers keep their
+unsaved text; selecting an unnamed buffer uses its buffer identity, not a file path.
+These actions apply to each selected item where the native picker allows multiselection.
+
+Inside these three pickers, `alt+enter` replaces path paste, `ctrl+d` replaces
+query-character deletion/EOF exit, and `ctrl+v` changes from vertical to horizontal split.
+The `,f` ripgrep picker and other native picker commands keep their existing actions.
+The terminal must deliver the chord; a terminal that intercepts `ctrl+v` for paste
+prevents the picker from receiving it.
 
 ### Clipboard
 
