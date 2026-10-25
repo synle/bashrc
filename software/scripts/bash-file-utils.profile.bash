@@ -5,6 +5,7 @@
 #
 # --- Simple Utilities (no dependencies) ---
 # download — Download a file from a URL via curl
+# zip      — Archive one file or folder with a timestamped name in the current folder
 # tree     — Display directory tree (falls back to find+sed)
 # cp2      — Copy with progress bar via pv (supports file->file)
 # watch    — Run a command when files change (md5-based polling)
@@ -153,6 +154,73 @@ function zip() {
   # File sync removes stale members on approved overwrites instead of merging archives.
   (builtin cd -- "$input_folder" && command zip -q -r -FS -nw "$destination" -- "./$input_name") || return $?
   printf 'Created: %s\n' "$destination"
+}
+
+# unzip: extract one ZIP into its filename stem in the current folder
+# Args: one existing .zip file; native options and multi-argument calls pass through.
+# Returns 0 on success/help, nonzero on invalid input, declined overwrite, or unzip failure.
+# Writes extracted files; existing output folders require confirmation before overwriting.
+function unzip() {
+  if [ "$#" -eq 0 ] || is_help_arg "${1:-}"; then
+    echo "unzip: extract one ZIP into its filename stem in the current folder
+  Usage: unzip <archive.zip>
+  Output: ./<archive-basename-without-.zip>/<archive contents>
+  Existing output folders require overwrite confirmation; no terminal means cancel.
+  Example: unzip ./bashrc.patch-20261025-090534.zip
+  Native options and multi-argument calls pass through:
+    unzip -l archive.zip
+    unzip archive.zip -d chosen-folder
+  Use ./ before a leading-dash archive filename."
+    return 0
+  fi
+  if ! type -P unzip > /dev/null; then
+    echo "unzip: native unzip executable not found" >&2
+    return 1
+  fi
+  if [ "$#" -gt 1 ]; then
+    command unzip "$@"
+    return $?
+  fi
+  case "$1" in
+  -*)
+    command unzip "$@"
+    return $?
+    ;;
+  esac
+
+  local input="$1" archive_name destination overwrite_option="-n"
+  case "$input" in /*) ;; *) input="$PWD/$input" ;; esac
+  if [ ! -f "$input" ]; then
+    echo "unzip: input must be an existing ZIP file: $1" >&2
+    return 1
+  fi
+  archive_name=$(command basename "$input")
+  case "$archive_name" in
+  *.[zZ][iI][pP]) archive_name="${archive_name%.*}" ;;
+  *)
+    echo "unzip: input filename must end in .zip; use command unzip for native syntax" >&2
+    return 1
+    ;;
+  esac
+  case "$archive_name" in
+  '' | . | ..)
+    echo "unzip: archive basename must name an output folder" >&2
+    return 1
+    ;;
+  esac
+  destination="$PWD/$archive_name"
+  if [ -d "$destination" ] && [ ! -L "$destination" ]; then
+    prompt_yes_no "Extract into $destination and overwrite matching files?" || return 1
+    overwrite_option="-o"
+  fi
+  if [ -L "$destination" ] || { [ -e "$destination" ] && [ ! -d "$destination" ]; }; then
+    echo "unzip: destination must be a folder, not a symlink or file" >&2
+    return 1
+  fi
+
+  # Without approval, -n also protects files created by a concurrent extraction.
+  command unzip -q "$overwrite_option" "$input" -d "$destination" || return $?
+  printf 'Extracted: %s\n' "$destination"
 }
 
 # tree: display directory tree (falls back to find+sed when tree is not installed)
