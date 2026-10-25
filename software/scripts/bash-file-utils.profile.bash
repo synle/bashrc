@@ -6,6 +6,7 @@
 # --- Simple Utilities (no dependencies) ---
 # download — Download a file from a URL via curl
 # zip      — Archive one file or folder with a timestamped name in the current folder
+# unzip    — Extract a ZIP into its filename stem in the current folder
 # tree     — Display directory tree (falls back to find+sed)
 # cp2      — Copy with progress bar via pv (supports file->file)
 # watch    — Run a command when files change (md5-based polling)

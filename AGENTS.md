@@ -627,6 +627,11 @@ Testing / Vitest configs / Coverage**. Two rules that live here: register every 
 file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
 `software/index.js` or `software/tools/build-include.js`.
 
+- **ASCII-first tests.** Write test code, names, comments, and routine fixture data in ASCII.
+  Never use emoji or other non-ASCII characters unless Unicode behavior is the specific subject, such as encoding, normalization, or Unicode filenames.
+  For those cases, prefer ASCII escape sequences and state why Unicode is required.
+  Use literal Unicode only when the literal representation itself is under test; text conversion can otherwise corrupt it.
+
 ### Enforced conventions — one spec each
 
 | Spec                              | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                               |
