@@ -77,6 +77,17 @@ Run it from the checkout root in Desktop Mode/Konsole as the normal desktop user
 /bin/bash software/scripts/steamos/setup.bash
 ```
 
+After validating the invoking account, setup checks existing `~/.bashrc` and `~/.bash_profile` files independently.
+For each file without an active direct `alias update=` definition, it saves original/latest backups and appends:
+
+```bash
+alias update='curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/software/scripts/steamos/setup.bash | bash -'
+```
+
+Missing startup files are not created. Existing `update` aliases are preserved, even when their commands differ; commented-out aliases do not block installation.
+Open a new Bash session to load the alias. It reruns the complete interactive setup, including its shortcut-clearing prompt; it is not package-update-only.
+Later definitions from sourced profiles can override it, including the managed SteamOS profile's existing pacman `update` alias.
+
 Close Steam before changing shortcuts. The script records a private `steamos-setup.*` log on the Desktop.
 It asks whether to clear user-defined non-Steam shortcuts, install Decky, upgrade the system, and enable USB wake-up.
 The shortcut-clearing prompt defaults to Yes; declining preserves existing entries for title-based updates.

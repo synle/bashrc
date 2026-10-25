@@ -75,6 +75,57 @@ function _start_steamos_setup_log() {
 
 _start_steamos_setup_log || exit 1
 
+# --- Shell update alias ---
+# Append the setup alias only to existing Bash startup files without a direct update alias.
+# No arguments. Returns nonzero on read, backup, or append failure; never creates startup files.
+# Saves original/latest backups and logs each add or skip; existing aliases remain untouched.
+function _register_setup_update_alias() {
+  local startup_file lookup_status found=0 status=0
+  local update_alias="alias update='curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/software/scripts/steamos/setup.bash | bash -'"
+
+  echo ">>> Shell update alias: checking existing .bashrc and .bash_profile files."
+  for startup_file in "$HOME/.bashrc" "$HOME/.bash_profile"; do
+    [ -f "$startup_file" ] || continue
+    found=1
+    grep -q '^[[:space:]]*alias[[:space:]][[:space:]]*update=' "$startup_file"
+    lookup_status=$?
+    if [ "$lookup_status" -eq 0 ]; then
+      echo ">>> Shell update alias: keeping the existing update alias in $startup_file."
+      continue
+    fi
+    if [ "$lookup_status" -ne 1 ]; then
+      echo ">>> Shell update alias: cannot inspect $startup_file; leaving it unchanged." >&2
+      status=1
+      continue
+    fi
+    # The fetched standalone script cannot assume shared backup helpers are installed.
+    if [ ! -e "${startup_file}.bak_original" ]; then
+      echo ">>> Shell update alias: saving ${startup_file}.bak_original."
+      if ! cp -p "$startup_file" "${startup_file}.bak_original"; then
+        status=1
+        continue
+      fi
+    fi
+    if ! cp -p "$startup_file" "${startup_file}.bak_latest"; then
+      status=1
+      continue
+    fi
+    echo ">>> Shell update alias: adding the full SteamOS setup command to $startup_file."
+    if ! printf '\n# Re-run the complete interactive SteamOS setup.\n%s\n' "$update_alias" >> "$startup_file"; then
+      echo ">>> Shell update alias: could not append to $startup_file." >&2
+      status=1
+    fi
+  done
+  if [ "$found" -eq 0 ]; then
+    echo ">>> Shell update alias: no .bashrc or .bash_profile found; no startup file created."
+  fi
+  return "$status"
+}
+
+if ! _register_setup_update_alias; then
+  echo ">>> Shell update alias setup incomplete; review the output above. Continuing setup." >&2
+fi
+
 # Steam must be fully closed before setup changes its shortcut database.
 if ! type -P pgrep > /dev/null; then
   echo ">>> Steam setup: cannot check whether Steam is running; pgrep is unavailable." >&2
