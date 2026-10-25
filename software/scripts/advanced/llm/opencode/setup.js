@@ -809,7 +809,7 @@ export default async function () {
 
 /**
  * Configures installed OpenCode: discovered providers, MCP, TUI, instructions,
- * persona plugin, command/skill links, agents, and the existing auth-store link.
+ * persona plugin, command/skill links, retired-agent cleanup, and the existing auth-store link.
  * Omits Ollama providers when discovery returns none; skips if OpenCode is absent.
  * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */
@@ -857,8 +857,6 @@ async function doWork() {
   await deploySharedLLMSkills();
   await _syncOpencodeSkillCommandSymlinks();
 
-  // Named worker agents for the PR fan-outs. Independent of the skills above —
-  // a skill supplies the workflow, an agent supplies the worker persona and, on
-  // opencode specifically, the label its subagent tab strip renders.
+  // Retire prior managed PR workers while preserving private agent artifacts.
   await deploySharedLLMAgents();
 }

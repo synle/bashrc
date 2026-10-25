@@ -243,7 +243,7 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
     }
   });
 
-  it("should resolve every PR-loop tuning placeholder to a positive number of seconds", () => {
+  it("should resolve every PR workflow tuning placeholder to a positive number", () => {
     // These carry the babysit / review cadence, so an unresolved token ships the
     // literal `<<SY_PR_POLL_INTERVAL_SECONDS>>` to an agent, which reads as prose and
     // silently loses the interval it was supposed to sleep.
@@ -260,18 +260,18 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
     }
   });
 
-  it("should deploy the shared babysit sync and run defaults", () => {
+  it("should deploy the shared babysit poll and run defaults", () => {
     const source = fs.readFileSync(path.join(ROOT, COMMON_FOLDER, "skills/babysit-pr.md"), "utf-8");
     const deployed = llm.resolveLLMDocPlaceholders(source);
-    expect(deployed).toContain("at least `7200` seconds have elapsed");
+    expect(deployed).toContain("Every `60` seconds, run the Step 12a read-only probe.");
     expect(deployed).toContain("The run budget is `12` rounds");
   });
 
-  it("should deploy a changed sync interval from the shared tuning map", () => {
+  it("should deploy a changed poll interval from the shared tuning map", () => {
     const configured = loadLlmCommon();
-    configured.LLM_DOC_TUNING_PLACEHOLDERS["<<SY_PR_SYNC_INTERVAL_SECONDS>>"] = "3600";
+    configured.LLM_DOC_TUNING_PLACEHOLDERS["<<SY_PR_POLL_INTERVAL_SECONDS>>"] = "120";
     const source = fs.readFileSync(path.join(ROOT, COMMON_FOLDER, "skills/babysit-pr.md"), "utf-8");
-    expect(configured.resolveLLMDocPlaceholders(source)).toContain("at least `3600` seconds have elapsed");
+    expect(configured.resolveLLMDocPlaceholders(source)).toContain("Every `120` seconds, run the Step 12a read-only probe.");
   });
 
   it("should route every deployed doc through the one reader that resolves placeholders", () => {

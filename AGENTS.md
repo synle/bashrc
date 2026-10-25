@@ -736,13 +736,10 @@ to touch: `_common/v_current/skills/<name>.md` (behavior) and `LLM_COMMAND_DEPLO
 `setup.js` reads that map via `// SOURCE software/scripts/advanced/llm/llm-common.js`;
 keys are extension-less so one map serves file- and folder-based CLIs.
 
-PR scheduling lives in `_common/v_current/skills/pr-loop.md`, deployed as `sy-pr-loop`.
-Single/batch babysit and review workflows read that protocol in their existing owner; they never start a nested scheduler.
-Babysit retains readiness and repair policy; review retains verdicts, posting rules, and full keepalive/final passes.
-Keep the general task loop separate: PR waiting is normal, not a stalled shrinking-work list.
-`execute-plan-and-create-pr.md` deploys as `sy-execute-plan` through the same registry.
-It orchestrates plan implementation and strict owned-PR readiness, reusing task/PR loops and the latest shared closeout rule.
-Its explicit no-new-automerge caller policy and all-feedback mode persist through creation, babysitting, and resume.
+PR scheduling lives in the restored single/batch babysit and review workflows.
+Each dispatcher owns its clock and invokes single-pass workers; there is no shared scheduler skill.
+The removed scheduler and execute-plan commands stay in `LLM_COMMAND_RETIRED_NAMES` so deployment sweeps managed leftovers.
+Keep the general task loop separate from PR waiting.
 
 Deploy = one physical copy plus symlinks: `deploySharedLLMSkills()` writes
 `~/_extra/ai_llm/skills/<key>/SKILL.md` once, then links it into each folder in
@@ -774,42 +771,16 @@ It unlinks duplicate symlinks, backs up real entries outside discovery, and pres
   `claude` is `slash` on its own documented text, `gemini` deliberately empty. Empty
   kind degrades to `inline`, which always works.
 
-### 13.2 Named agents — a persona, never a workflow
+### 13.2 Retired named agents
 
-Skill = workflow; agent = worker. Registry `LLM_AGENT_DEPLOY_MAP` in `llm-common.js`,
-sources `_common/v_current/agents/<name>.md`.
+The PR worker personas are retired; `LLM_AGENT_DEPLOY_MAP` is empty.
+Keep all prior worker names in `LLM_AGENT_RETIRED_NAMES` and retain `deploySharedLLMAgents()` in every client setup for cleanup.
 
-- **Agent source describes who the worker is, never what it does** — lens, ownership,
-  never-touch list, reporting style. Steps/cadence/safety stay in the matching `SKILL.md`.
-- Same portability contract as skills (§13.0); each opens with the `[Sy] <what this is>`
-  first-line marker.
-- **One authoritative role, native delivery metadata**: `deploySharedLLMAgents()` writes
-  shared files and delivers through `LLM_AGENT_LINK_FOLDERS`. Claude, Copilot, OpenCode,
-  and Pi use symlinks with `name` + `description` + `mode: subagent` frontmatter.
-- **Never drop a shared union key**: Claude requires `name`; OpenCode needs
-  `mode: subagent`. Gemini 0.64.0 rejects `mode` and ignores symlinks, so its destination
-  selects `delivery: "file"` and `format: "portable"` from `LLM_AGENT_FORMATS`.
-  Generate that regular-file adapter from the same role body; never maintain a second source.
-- **Per-agent artifacts, never a folder symlink**. Preserve foreign files, folders,
-  and symlinks. Update or remove regular files only when their body carries our `[Sy] ` marker.
-- **Extend metadata, not content lists**: a new worker needs one role source and one
-  `LLM_AGENT_DEPLOY_MAP` entry. A new client needs destination metadata and an awaited
-  `deploySharedLLMAgents()` call. Add native formats only after verifying a loader contract.
-- **Agent names use `sy-agent-`** — distinguish worker roles from `sy-` workflows
-  in pickers and dispatch labels. Source filenames stay bare.
-- **A new CLI entry requires a live probe** — wrong folder/key fails silently everywhere.
-  Probes enumerate available agents for free:
-  `claude --agent zz-nope -p x`, `copilot --agent zz-nope -p x`, `opencode agent list`.
-  Verified: claude 2.1.223 (`~/.claude/agents/<name>.md`), copilot 1.0.81
-  (`~/.copilot/agents/<name>.agent.md`), opencode 1.18.18
-  (`~/.config/opencode/agent/<name>.md`, name from FILENAME). Gemini uses
-  `~/.gemini/agents/<name>.md`; inspect `/agents`, then invoke `@sy-agent-pr-reviewer`.
-  Preserve explicit `experimental.enableAgents: false`. Pi's `pi-subagents` extension
-  reads `~/.pi/agent/agents/<name>.md`; inspect `/subagents`, then use `/run sy-agent-pr-reviewer`.
-  Pi core alone does not discover these workers. OpenCode discovery can lag a write;
-  restart clients before checking inventories. Invocation and extension details live in `llm.md`.
-- **Never name an agent inside a skill body** — select workers by behavior. Renames/
-  deletions add the old name to `LLM_AGENT_RETIRED_NAMES` in the same commit.
+- Preserve foreign files, folders, and symlinks. Remove client regular files only when their body carries a managed marker.
+- Use the existing shared cleanup helpers; never remove an entire client agents folder.
+- Shared skills select available workers by behavior, not retired names.
+- Worker retirement does not remove the chat-style persona or its hooks.
+- Destination and native-format metadata remain for cleanup compatibility; deployment details live in `llm.md`.
 
 ### 13.3 The shared LLM home folder — `~/_extra/ai_llm/`
 
@@ -820,7 +791,7 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
 | ------------------------------- | ------------------------------------------------------------ |
 | `~/_extra/ai_llm/instructions/` | On-demand instruction files (`LLM_SHARED_INSTRUCTION_FILES`) |
 | `~/_extra/ai_llm/skills/`       | ONE copy of every `/sy-*` skill (§13.1)                      |
-| `~/_extra/ai_llm/agents/`       | ONE copy of every named agent (§13.2)                        |
+| `~/_extra/ai_llm/agents/`       | Retired managed-agent artifacts; normally empty (§13.2)      |
 | `~/_extra/ai_llm/plans/`        | Flat plan artifacts + sidecars                               |
 | `~/_extra/ai_llm/pr_reviews/`   | Durable context for reviews of other people's PRs            |
 | `~/_extra/ai_llm/pr_babysits/`  | Durable context for maintaining owned PRs                    |

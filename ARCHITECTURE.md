@@ -36,7 +36,7 @@ CI regenerates build artifacts under `.build/`.
 - **`software/bootstrap/common-env.sh`** — Sets `REPO_PATH_IDENTIFIER`, `REPO_BRANCH_NAME`, `ALL_OS_FLAGS`; consumed by engine and `vite.config.js`.
 - **`software/scripts/_init.js` / `~cleanup.js` / `~wrapup.sh`** — Lifecycle scripts; `filterRepoScripts()` owns ordering, including scripts explicitly pinned after post-scripts.
 - **`software/scripts/steamos/setup.bash`** — Separate interactive Desktop Mode setup; not an installer selector. See `DEV.md` → SteamOS manual setup.
-- **`software/scripts/advanced/llm/_common/v_current/`** — Canonical shared instruction, skill, and agent bodies.
+- **`software/scripts/advanced/llm/_common/v_current/`** — Canonical shared instruction and skill bodies; named PR worker personas are retired.
 - **`software/scripts/advanced/llm/llm-common.js`** — Shared deployment registries and placeholder resolution; client setup scripts render the same sources.
 - **`software/tools/build-include.js`** — Include/marker compiler; resolves `theme/sy/_palette_{dark,light}.jsonc` and renders native-shaped Sy templates.
 - **`theme/sy/` / `theme/baseline/`** — Active palette/template sources / immutable reference captures; historical audit metadata is not application configuration.

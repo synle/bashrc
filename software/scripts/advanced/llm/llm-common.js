@@ -23,8 +23,6 @@ const LLM_DOC_TUNING_PLACEHOLDERS = {
   "<<SY_PR_POLL_INTERVAL_SECONDS>>": "60", // 1 minute
   /** Maximum interval between full passes, even when no state changed. */
   "<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>": "1200", // 20 minutes
-  /** Minimum interval between ordinary babysit syncs; approval vetoes them. */
-  "<<SY_PR_SYNC_INTERVAL_SECONDS>>": "7200", // 2 hours
   /** How long to wait between retries of an unreachable GitHub / model call. */
   "<<SY_PR_RETRY_INTERVAL_SECONDS>>": "15",
   /** How many consecutive unreachable retries end the run. */
@@ -1632,7 +1630,6 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-debug": "debug",
   "sy-dep-bump": "dep-bump",
   "sy-draft-pr": "draft-pr",
-  "sy-execute-plan": "execute-plan-and-create-pr",
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
   "sy-loop": "loop",
@@ -1641,7 +1638,6 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-migrate-cross-agent-skills-and-context": "migrate-cross-agent-skills-and-context",
   "sy-onboard-repo": "onboard-repo",
   "sy-plan-grill-me": "plan-grill-me",
-  "sy-pr-loop": "pr-loop",
   // Single release entry-point. The command body checks $ARGUMENTS to decide
   // official vs beta — no per-channel alias files anymore (the old
   // /sy-release-{main,master,stable,official,beta} aliases were retired
@@ -1704,6 +1700,9 @@ const LLM_SKILL_MARKERS = [LLM_SKILL_MARKER, "Sy Skill - "];
  * @type {string[]} deployed command names, no extension
  */
 const LLM_COMMAND_RETIRED_NAMES = [
+  // 2026-10-25: removed when restoring the pre-scheduler guidance.
+  "sy-execute-plan",
+  "sy-pr-loop",
   // Keep until the 2026-08-26 rename has cleared the three-month and rollout window.
   "sy-sync-and-groom-repo", // renamed to sy-sync-and-clean-repo (2026-08-26)
   "sy-sync-and-groom-repos", // renamed to sy-sync-and-clean-repos (2026-08-26)
@@ -2043,7 +2042,8 @@ const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/v_current
 /**
  * The one registry of Sy-managed agents, shared by every LLM CLI setup.
  *
- * Key   = deployed agent name, **without** any extension (e.g. `sy-agent-pr-babysitter`).
+ * The registry is empty after retiring the PR workers; deployment remains active for cleanup.
+ * Key   = deployed agent name, **without** any extension (e.g. `sy-agent-example`).
  *         Every CLI derives its own filename from this key via the per-CLI
  *         `suffix` in {@link LLM_AGENT_LINK_FOLDERS}, which is what lets one
  *         map serve `~/.config/opencode/agent/<key>.md` and
@@ -2066,10 +2066,7 @@ const LLM_AGENT_SOURCE_FOLDER = "software/scripts/advanced/llm/_common/v_current
  *
  * @type {Record<string, string>}
  */
-const LLM_AGENT_DEPLOY_MAP = {
-  "sy-agent-pr-babysitter": "pr-babysitter",
-  "sy-agent-pr-reviewer": "pr-reviewer",
-};
+const LLM_AGENT_DEPLOY_MAP = {};
 
 /**
  * Agent names we used to deploy but no longer do. Same contract and same
@@ -2092,6 +2089,9 @@ const LLM_AGENT_RETIRED_NAMES = [
   // 2026-10-23: distinguish worker names from workflow names at deployment.
   "sy-pr-babysitter", // renamed to sy-agent-pr-babysitter
   "sy-pr-reviewer", // renamed to sy-agent-pr-reviewer
+  // 2026-10-25: removed with the PR worker persona sources.
+  "sy-agent-pr-babysitter",
+  "sy-agent-pr-reviewer",
 ];
 
 /**

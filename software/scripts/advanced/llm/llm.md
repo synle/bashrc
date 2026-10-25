@@ -11,18 +11,17 @@ doesn't have to chase references.
 
 ## Part 1 — LLM CLI setup (shared rules)
 
-Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini, OpenCode) derives its rules, slash commands, and ergonomics from the same active source files in `_common/v_current/`. Shared runtime helpers and MCP configuration remain in `_common/`. Each per-CLI `setup.js` is responsible for mapping the shared content onto whatever config surface that specific CLI exposes on disk.
+Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini, OpenCode, Pi) derives its rules, slash commands, and ergonomics from the same active source files in `_common/v_current/`. Shared runtime helpers and MCP configuration remain in `_common/`. Each per-CLI `setup.js` is responsible for mapping the shared content onto whatever config surface that specific CLI exposes on disk.
 
 ### Single sources of truth
 
-| Shared file                                                        | Consumed by                                                                                                                                                                                                                                                |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_common/v_current/instructions.md`                                | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                                                                                                         |
-| `_common/v_current/skills/*.md`                                    | `~/_extra/ai_llm/skills/sy-*/SKILL.md` (the ONE deployed copy) → symlinked into `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`, `~/.agents/skills/` (also read by Gemini), plus `~/.config/opencode/commands/sy-*.md` for `/sy-*` |
-| `_common/v_current/agents/*.md`                                    | `<<LLM_ROOT_FOLDER>>/agents/<name>.md` (the ONE deployed copy) → symlinked into `~/.claude/agents/`, `~/.copilot/agents/` (as `<name>.agent.md`), `~/.config/opencode/agent/`                                                                              |
-| Review and babysit PR memory                                       | `<<LLM_ROOT_FOLDER>>/pr_reviews/` and `<<LLM_ROOT_FOLDER>>/pr_babysits/` (concise durable context, created by every LLM setup)                                                                                                                             |
-| `_common/mcp-servers.jsonc`                                        | `~/.claude/settings.json::mcpServers`, `~/.copilot/mcp-config.json::mcpServers`, `~/.gemini/settings.json::mcpServers`, `~/.config/opencode/opencode.json::mcp` (translated)                                                                               |
-| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                                                                                                                                                                           |
+| Shared source                                                      | Consumed by                                                                                                                                                  |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `_common/v_current/instructions.md`                                | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md`                  |
+| `_common/v_current/skills/*.md`                                    | One copy under `~/_extra/ai_llm/skills/sy-*/SKILL.md`; client discovery links come from `LLM_SKILL_LINK_FOLDERS`. OpenCode also receives its command mirror. |
+| Review and babysit PR memory                                       | `~/_extra/ai_llm/pr_reviews/` and `~/_extra/ai_llm/pr_babysits/`                                                                                             |
+| `_common/mcp-servers.jsonc`                                        | Client destinations in the surface matrix below; shared selection and deployment preserve user-only entries.                                                 |
+| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-client keybinding files, with `OS_KEY` substituted per platform.                                                                                         |
 
 **Every deployed doc above is read through `readLLMDocSource()`, never `readText` directly.**
 That reader resolves the `<<LLM_ROOT_FOLDER>>` / `<<SY_ROOT_FOLDER>>` path placeholders to this
@@ -36,7 +35,7 @@ them, so a placeholder there would never expand. `llmInstructionsSplit.spec.js` 
 build on a hardcoded path in a deployed source, on a placeholder that survives resolution,
 and on a deployed doc read with bare `readText`.
 
-Run all four CLIs end-to-end with:
+Run the broad LLM preset with:
 
 ```bash
 ./run --preset=llm
@@ -45,23 +44,26 @@ Run all four CLIs end-to-end with:
 Run a single one:
 
 ```bash
-./run --files="claude/setup.js"     # or copilot/, gemini/, opencode/
+./run --files="claude/setup.js"     # or copilot/, gemini/, opencode/, pi/
 ```
 
 ### Surface parity matrix
 
-|              | Instructions                                                                                        | Slash commands                                                   | Named agents                       | Keybindings                                                      | Managed settings              | MCP servers                                               |
-| ------------ | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
-| **claude**   | ✅ `~/.claude/CLAUDE.md`                                                                            | ✅ skills — `~/.claude/skills/sy-*` → `~/_extra/ai_llm/skills/`  | ✅ `~/.claude/agents/*.md`         | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  | ✅ additive into `~/.claude/settings.json::mcpServers`    |
-| **copilot**  | ✅ `~/.copilot/copilot-instructions.md` (+ symlink `AGENTS.md`)                                     | ✅ skills — `~/.copilot/skills/sy-*` → `~/_extra/ai_llm/skills/` | ✅ `~/.copilot/agents/*.agent.md`  | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` | ✅ additive into `~/.copilot/mcp-config.json::mcpServers` |
-| **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ✅ skills — `~/.agents/skills/sy-*` → `~/_extra/ai_llm/skills/`  | ❌ no agent surface in v0.55.1     | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  | ✅ additive into `~/.gemini/settings.json::mcpServers`    |
-| **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ skills + `/sy-*` commands, both → `~/_extra/ai_llm/skills/`   | ✅ `~/.config/opencode/agent/*.md` | ✅ inline `keybinds` in `~/.config/opencode/tui.json`            | ✅ inline in `opencode.json`  | ✅ inline `mcp` in `opencode.json` (translated shape)     |
+| Client   | Instructions                         | Skills                                           | Keybindings                             | Managed settings                   | MCP servers                              |
+| -------- | ------------------------------------ | ------------------------------------------------ | --------------------------------------- | ---------------------------------- | ---------------------------------------- |
+| Claude   | `~/.claude/CLAUDE.md`                | `~/.claude/skills/`                              | `~/.claude/keybindings.json`            | `~/.claude/settings.json`          | `~/.claude.json::mcpServers`             |
+| Copilot  | `~/.copilot/copilot-instructions.md` | `~/.copilot/skills/`                             | Build artifact only                     | `~/.copilot/settings.json`         | `~/.copilot/mcp-config.json::mcpServers` |
+| Gemini   | `~/.gemini/GEMINI.md`                | `~/.agents/skills/`                              | `~/.gemini/keybindings.json`            | `~/.gemini/settings.json`          | `~/.gemini/settings.json::mcpServers`    |
+| OpenCode | `~/.config/opencode/AGENTS.md`       | `~/.config/opencode/skills/` plus command mirror | `~/.config/opencode/tui.json::keybinds` | `~/.config/opencode/opencode.json` | `opencode.json::mcp`                     |
+| Pi       | `~/.pi/agent/AGENTS.md`              | `~/.agents/skills/`                              | `~/.pi/agent/keybindings.json`          | `~/.pi/agent/settings.json`        | `~/.pi/agent/mcp.json::mcpServers`       |
+
+Named PR workers are retired; client setup retains their cleanup pass.
 
 ### Per-turn persona reminders
 
 - Claude Code, Gemini CLI, and Pi receive a short persona reminder before every user-driven agent turn through their documented prompt hooks.
 - Copilot CLI receives reminder context at session start and resume. Its user-level command hooks cannot inject context on every prompt; `userPromptTransformed` mutation is supported only by SDK hooks.
-- OpenCode's documented plugin API has no verified user-prompt context injection event. It relies on the always-loaded instructions and last-loaded persona file.
+- OpenCode setup deploys `plugins/sy-persona-reminder.js`, which refreshes reminder context before model calls and preserves it during compaction.
 - All reminders point to the same rule: chat progress, status, and completion messages are user replies; only external deliverables are exempt.
 
 Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today.
@@ -154,8 +156,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 
 - **Instructions / rules**: edit `_common/v_current/instructions.md`, then re-run all four setup scripts (or `./run --preset=llm`).
 - **Slash commands**: edit a file under `_common/v_current/skills/<name>.md` — every deploy (Claude direct + Copilot skills + OpenCode symlink) picks it up on the next setup run. **Adding / renaming / retiring** one is a single edit to `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` — that one map is the registry every CLI setup reads, so there is no per-CLI list to keep in sync.
-- **Named agents**: edit `_common/v_current/agents/<name>.md` for the vendor-neutral worker role: responsibilities, ownership, and forbidden actions. Keep workflow steps in the matching skill. Register additions in `LLM_AGENT_DEPLOY_MAP`; record retired names in `LLM_AGENT_RETIRED_NAMES`. Deployment and native-format details appear below.
-- **Worker names**: use `sy-agent-` for deployed workers and `sy-` for workflows. Keep source filenames bare; the PR workers deploy as `sy-agent-pr-babysitter` and `sy-agent-pr-reviewer`.
+- **Named agents**: PR worker personas are retired. Keep `LLM_AGENT_DEPLOY_MAP` empty and retain the shared retirement pass in every client setup.
 - **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.- **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys eligible entries additively and preserves user-only entries. Registry-only `excludeClients` omits named clients and never reaches native configuration. Removing or excluding a name does not delete existing deployed entries.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
@@ -203,176 +204,23 @@ type error from the same workspace.
 Repeat in each client; record untested clients and platforms explicitly.
 Do not invoke MCP rebuild or mutation tools merely to test connectivity.
 
-### Pull-request readiness and watching
+### Pull-request watching after the rollback
 
-Creating a PR returns its URL and seeds memory; babysitting remains opt-in.
-A single-PR babysit defaults to `goal=ready`: required bot clearance, passing CI,
-mergeability, and repository-defined migration validation must cover the current revision.
-Required human approval, dependency, WIP, and thread-closeout gates still apply.
-A bot thumbs-up counts only with trusted identity and current-revision provenance.
-One verified major finding activates repair regardless of comment count or approval.
+The active guidance restores the pre-scheduler workflows. Use `sy-babysit-pr` for an owned PR and `sy-review-pr` for another author's PR.
+Their plural workflows handle fan-out; each dispatcher owns its clock and passes `pass=single` to its workers.
+Creating a PR does not start babysitting. Watch loops still require an explicit request.
 
-Use `goal=watch` to keep monitoring through the selected budget after readiness.
-Batch babysitting defaults to watch mode; pass `goal=ready` explicitly for a readiness goal.
-`READY` never means merged and never grants merge or release permission.
-Pending, missing, stale, or unreadable evidence never counts as readiness.
-Unknown bot or validation policy needs a human decision; unavailable reviewers/checks remain resumable waiting.
+The shared scheduler and execute-plan commands are retired. Their sources are no longer active, and deployment removes managed leftovers.
+The restored workflows do not expose the removed readiness-goal or all-feedback modes.
+Read the active single-PR skill for current repair, posting, approval, and automerge rules.
+A quiet probe does not replace keepalive or final verification.
 
-Automerge permissions remain unchanged, but enabling it requires verified readiness
-or server-side enforcement of every applicable readiness gate.
-Polling cannot enforce merge safety atomically; repository-required checks or a merge queue must enforce merge-blocking requirements.
-These are agent instructions, not a runtime scheduler or a guarantee of bot integration.
+### Retired named workers
 
-### Execute an implementation plan
-
-`sy-execute-plan <plan-path>` reads the complete approved plan and repository context,
-executes its acceptance checklist, creates or resumes its PR, and works toward verified readiness.
-The source is `_common/v_current/skills/execute-plan-and-create-pr.md`; the shared registry deploys the shorter command name.
-
-Finite implementation may use the task loop; asynchronous PR work reuses owned-PR babysitting and the shared PR loop.
-The workflow selects `goal=ready feedback=all` and caller `automerge_policy: observe_only`.
-Default babysitting remains `feedback=blockers`; the strict mode requires zero unresolved review threads
-and zero unaddressed actionable top-level comments, plus current CI, mergeability, migration, bot, and approval evidence.
-Strict feedback never permits unsafe fixes, fabricated SHAs, or forced resolution of pending questions.
-Replies and resolution follow the latest shared closeout instructions unchanged.
-
-Invocation authorizes task-scoped commits/pushes, PR creation, and bounded babysitting—not merge, release, protection changes, or secrets access.
-No new automerge is enabled; existing requests retain their ownership and are reported.
-Resume the same plan, worktree, PR, and owner with preserved counters and feedback policy.
-Budget exhaustion or an unresolved decision reports incomplete work, never readiness.
-
-### Shared PR scheduling
-
-`sy-pr-loop` owns the shared clock, schedule, read-only fingerprint, owner reuse,
-single-pass handoff, deadline/retry bookkeeping, and batch pulse timing.
-The four PR workflows remain the normal entrypoints and load this protocol in their current owner.
-They never create a nested scheduler or wrap PR work in the shrinking-task `sy-loop`.
-
-Direct use selects an existing workflow first: `sy-pr-loop babysit-pr <PR-URL>`,
-`sy-pr-loop babysit-prs <scope>`, `sy-pr-loop review-pr <PR-URL>`, or `sy-pr-loop review-prs <scope>`.
-Remaining arguments retain that workflow's scope, permissions, clock overrides, and posting rules.
-
-Babysit keeps readiness/repair ownership and actionable-event classification.
-Review keeps verdict/posting policy and full passes on external changes, keepalive, and final verification.
-Shared scheduling grants neither branch mutation nor merge authority.
-Existing single-pass parameter forms remain supported; complete state crosses every handoff.
-The source is `_common/v_current/skills/pr-loop.md`; one shared registry entry deploys it to existing clients.
-
-### Shared workers and skills
-
-A **skill** defines the workflow; a **worker** supplies the role and its boundaries.
-`sy-agent-pr-reviewer` reviews other people's pull requests; `sy-agent-pr-babysitter` maintains
-your own. Their roles do not grant permissions or enforce a security sandbox.
-Ask the selected worker to follow the matching skill with an explicit target.
-
-| Client   | Worker destination                   | Delivery and discovery                                                                  |
-| -------- | ------------------------------------ | --------------------------------------------------------------------------------------- |
-| Claude   | `~/.claude/agents/<name>.md`         | Shared symlink; `claude --agent sy-agent-pr-reviewer`                                   |
-| Copilot  | `~/.copilot/agents/<name>.agent.md`  | Shared symlink; `copilot --agent sy-agent-pr-reviewer`                                  |
-| OpenCode | `~/.config/opencode/agent/<name>.md` | Shared symlink; `opencode agent list`, then `@sy-agent-pr-reviewer`                     |
-| Gemini   | `~/.gemini/agents/<name>.md`         | Generated regular file; `/agents`, then `@sy-agent-pr-reviewer`                         |
-| Pi       | `~/.pi/agent/agents/<name>.md`       | Shared symlink; requires `pi-subagents`; `/subagents`, then `/run sy-agent-pr-reviewer` |
-
-Client-specific invocation examples belong here, not in shared agent role sources, including their HTML comments.
-
-For the examples below, replace `<worker>` and `<skill>` with one matching pair:
-`sy-agent-pr-reviewer` / `sy-review-pr` for someone else's PR, or
-`sy-agent-pr-babysitter` / `sy-babysit-pr` for your own.
-
-| Client  | Invocation                                                             | Scope                                                    |
-| ------- | ---------------------------------------------------------------------- | -------------------------------------------------------- |
-| Claude  | `claude --agent <worker> "Follow the <skill> skill for <PR-URL>."`     | One terminal command; selects the whole session's agent. |
-| Claude  | `@"<worker> (agent)" Follow the <skill> skill for <PR-URL>.`           | One chat message; select the agent from the `@` picker.  |
-| Copilot | First `/agent <worker>`, then `Follow the <skill> skill for <PR-URL>.` | Two separate chat submissions.                           |
-| Copilot | `copilot --agent <worker> -i "Follow the <skill> skill for <PR-URL>."` | One terminal command.                                    |
-
-For any client with available subagent tooling, a single chat message can request delegation:
-`Use the <worker> subagent to follow the <skill> skill for <PR-URL>.`
-Verify actual worker dispatch; this alternative neither explicitly selects the session's agent nor guarantees invocation.
-Gemini agent mentions require subagents to be enabled.
-
-**Direct worker invocation.** In Gemini or OpenCode, submit an agent mention with
-an explicit single-PR task. Choose the reviewer for someone else's PR or the
-babysitter for your own:
-
-```text
-@sy-agent-pr-reviewer Follow the sy-review-pr skill for https://github.com/acme/widget-store/pull/123.
-@sy-agent-pr-babysitter Follow the sy-babysit-pr skill for https://github.com/acme/widget-store/pull/123.
-```
-
-In Pi, `/run <agent> <task>` comes from the installed `pi-subagents` extension,
-not Pi core. Use `/subagents` to inspect available workers. Use `/run`, not an
-OpenCode-style `@` agent mention, to launch one:
-
-```text
-/run sy-agent-pr-reviewer Follow the sy-review-pr skill for https://github.com/acme/widget-store/pull/123.
-/run sy-agent-pr-babysitter Follow the sy-babysit-pr skill for https://github.com/acme/widget-store/pull/123.
-```
-
-Alternatively, run the skill in the parent without explicitly selecting a worker:
-
-```text
-/skill:sy-review-pr https://github.com/acme/widget-store/pull/123
-/skill:sy-babysit-pr https://github.com/acme/widget-store/pull/123
-```
-
-**Multi-PR dispatch.** Keep `sy-review-prs` or `sy-babysit-prs` as the workflow
-entry point; a direct worker invocation is not the multi-PR dispatcher.
-Preserve existing repo scope, author filters, and reference files in wrapper
-prompts. Append the matching selection instruction:
-
-```text
-Use sy-agent-pr-reviewer for dispatched review slots. Keep the parent session as dispatcher. Follow the fan-out skill for scheduling and the single-PR skill for each pass.
-```
-
-```text
-Use sy-agent-pr-babysitter for dispatched babysitting slots. Keep the parent session as dispatcher. Follow the fan-out skill for scheduling and the single-PR skill for each pass.
-```
-
-These plain-name instructions request worker selection; they do not execute a
-dispatch or guarantee compliance. OpenCode must invoke its Task tool with the
-selected worker. Pi's dispatcher uses the `subagent` tool's `agent` field.
-Keep OpenCode `@` mentions and Pi `/run` commands for direct worker invocation,
-not as replacements for the fan-out workflow. The parent owns scheduling and
-the ledger; each worker owns its assigned per-PR pass.
-
-Shared skills select workers by behavior rather than hardcoding agent names.
-Explicit names belong in client usage examples and personal wrapper prompts.
-Roles do not enforce tool permissions. The review workflow can post GitHub
-reviews and comments by default; it is not read-only GitHub access.
-
-See [OpenCode's agent documentation](https://opencode.ai/docs/agents) for native
-mentions and task permissions. For Pi command syntax, read the installed
-`pi-subagents` package's `docs/workflows.md` and its `pi-subagents` skill.
-
-The `pi-subagents` extension's built-in `reviewer` is separate from
-`sy-agent-pr-reviewer`. Pi core discovers
-shared skills through `~/.agents/skills/`; named workers require the installed
-`pi-subagents` extension. MCP-dependent Pi workers need background execution
-(`async: true`); foreground children do not load ambient parent extensions.
-Restart clients after deployment before checking their inventories. Gemini's
-explicit `experimental.enableAgents: false` setting remains unchanged.
-
-`LLM_AGENT_DEPLOY_MAP` is the sole worker-content registry. `deploySharedLLMAgents()`
-writes the authoritative role under `<<LLM_ROOT_FOLDER>>/agents/`, then delivers
-it through `LLM_AGENT_LINK_FOLDERS`. Claude, Copilot, OpenCode, and Pi share
-`name`, `description`, and `mode: subagent` frontmatter. Gemini 0.64.0 rejects
-`mode` and ignores symlinks, so its metadata selects `delivery: "file"` and
-`format: "portable"`. That adapter keeps the same role body with only `name`
-and `description`. Do not edit generated destination files.
-
-Extend the existing registries rather than adding per-client content lists:
-
-- **New worker:** add its role source and one `LLM_AGENT_DEPLOY_MAP` entry. All destinations receive it automatically.
-- **New skill:** add its command source and one `LLM_COMMAND_DEPLOY_MAP` entry. Existing `deploySharedLLMSkills()` delivery remains unchanged.
-- **New client:** add destination metadata to `LLM_AGENT_LINK_FOLDERS` and call `await deploySharedLLMAgents()` from its setup.
-- **Strict client format:** reuse `delivery: "file"` with a registered `LLM_AGENT_FORMATS` format. Add a format only when a verified loader contract requires it.
-- **Skill support for a new client:** add its native skill destination to `LLM_SKILL_LINK_FOLDERS` only if existing discovery roots do not already cover it.
-
-Use per-worker artifacts, never a destination-folder symlink. The common deployer
-preserves foreign files, folders, and links; it updates or removes only owned
-artifacts. Verify native discovery without launching model tasks after adding
-any client. File presence alone does not prove loader compatibility.
+No named PR worker personas are deployed. Run the review or babysit skill directly; fan-out workflows select available workers by behavior.
+The agent registry remains empty. Each client setup still calls the shared deployer to retire prior managed artifacts.
+Cleanup preserves foreign files, folders, and links. Restart clients after deployment before checking their discovery inventories.
+The chat-style persona and its reminder hooks remain separate and unchanged.
 
 ### OpenCode experimental Code Mode
 

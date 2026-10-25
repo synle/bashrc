@@ -29,8 +29,8 @@
  *                             preserving unrelated user bindings.
  *   ~/.pi/agent/mcp.json — shared MCP servers, merged additively while
  *                             preserving user-only servers and other keys.
- *   ~/.pi/agent/agents/*.md — shared named workers linked by the common deployer;
- *                             discovered by the pi-subagents extension, not Pi core.
+ *   ~/.pi/agent/agents/ — prior managed PR workers are retired by the common
+ *                             cleanup pass; private workers remain unchanged.
  *   ~/.pi/agent/models.json — discovered Ollama providers, selected GitHub
  *                             Copilot model overrides, and Copilot IDE-auth headers
  *                             merged under `providers`.
@@ -482,7 +482,7 @@ export default function (pi) {
 
 /**
  * Orchestrates Pi setup: settings, keybindings, native MCP, Ollama providers, shared instructions,
- * APPEND_SYSTEM persona reinforcement, collapsed tool output, shared skills, and agents.
+ * APPEND_SYSTEM persona reinforcement, collapsed tool output, shared skills, and retired-agent cleanup.
  * Skips entirely when pi is not installed.
  * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */

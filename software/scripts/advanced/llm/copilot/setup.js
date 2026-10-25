@@ -618,9 +618,6 @@ async function doWork() {
   // by the shared deploy — Copilot reads no other skill path.
   await deploySharedLLMSkills();
 
-  // Named worker agents. Rendered per CLI from one shared source — see
-  // LLM_AGENT_DEPLOY_FOLDERS. Safe to call from every setup script: the bytes are
-  // deterministic, so whichever CLI runs first does the work and the rest no-op,
-  // and each CLI stays able to repair the shared corpus on its own.
+  // Retire prior managed PR workers while preserving private agent artifacts.
   await deploySharedLLMAgents();
 }
