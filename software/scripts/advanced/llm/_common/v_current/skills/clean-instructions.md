@@ -10,7 +10,10 @@ Argument: $ARGUMENTS (optional paths or glob; if empty or unexpanded, use the sc
 
 ## Hard rules
 
-- **Apply Writing Rules from `instructions.md`.** Check meaning-preserving concision, sentence structure, active voice, and consistent terminology while revising guidance. Do not rewrite the whole corpus merely to add these rules. Preserve protected technical payloads and attach every condition and exception to its action.
+- **Apply Writing Rules from `instructions.md`.** Read before writing or cleaning guidance. Apply the following checks without rewriting unrelated content.
+- **One idea per sentence.** Use ASD-STE100-inspired controlled English. Write at most <<SY_PROSE_SENTENCE_MAX_WORDS>> words per prose sentence. Use active voice. Use one established term per concept. Keep conditions and exceptions attached to their actions. Never invent an actor or certainty to force active voice.
+- **Meaning never dropped.** Optional articles may go. Never drop `not`, `never`, `no`, or `only`. Keep numbers and units exact. Preserve uncertainty, conditions, ordering, exceptions, safety gates, named rules, references, and technical payloads.
+- **No theater.** No "me think", roleplay, or chatter between tool calls. Keep required progress checkpoints. If Caveman phrasing is not shorter, use plain prose. Write rules and skills in precise standard English.
 - **Trim restatement, never a rule.** Preserve distinct behavior, conditions, ordering, exceptions, and safety gates. Split behind a pointer if useful compression cannot meet the budget.
 - **Preserve named-rule names verbatim.** Keep referenced names while rewriting their prose; verify every cross-reference.
 - **Meaning has one home.** Consolidate knowledge that changes for the same reason. Similar wording with different ownership or triggers may remain.
@@ -50,7 +53,7 @@ Keep universal rules inline and move conditional reference to a companion reache
 ### 7. Verify
 
 - Review before/after behavior, named-rule sets, references, and exact sizes. Record every deliberate merge or precedence resolution.
-- Check revised prose for one idea per sentence, at most 30 words per sentence, active voice, and consistent terminology. Review meaning separately; sentence counts cannot prove it. Preserve technical payloads rather than rewriting them to satisfy a word limit.
+- Check revised prose against **One idea per sentence**, **Meaning never dropped**, and **No theater**. Use the shared sentence limit, not a separate number. Review meaning separately; sentence counts cannot prove preservation. Preserve technical payloads rather than rewriting them to satisfy a word limit.
 - Run focused registry, budget, generator and deployment checks, then the required final gate once. Deploy twice; quote counts, failures, skips, and second-run churn.
 
 ## Safety

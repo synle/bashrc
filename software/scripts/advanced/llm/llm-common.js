@@ -7,16 +7,18 @@
  * Run: `./run --files="opencode/setup.js"` (or any other llm/<name>/setup.js).
  */
 
-// --- PR Workflow Configuration ---
+// --- Shared Guidance Configuration ---
 
 /**
- * Shared PR workflow tuning, resolved into deployed guidance by resolveLLMDocPlaceholders.
- * Change values here and redeploy; callers never maintain separate timing defaults.
- * Interval values use seconds; budget and threshold values use counts.
+ * Shared prose and PR workflow tuning, resolved into deployed guidance by resolveLLMDocPlaceholders.
+ * Change values here and redeploy; callers never maintain separate defaults.
+ * Sentence limits use words, intervals use seconds, and budgets and thresholds use counts.
  * Numeric tokens stay separate from LLM_DOC_PATH_PLACEHOLDERS, which holds absolute folders.
  * @type {Record<string, string>}
  */
 const LLM_DOC_TUNING_PLACEHOLDERS = {
+  /** Maximum words per prose sentence when writing or revising guidance and replies. */
+  "<<SY_PROSE_SENTENCE_MAX_WORDS>>": "30",
   /** Run duration in keepalive rounds, unless the invocation overrides it. */
   "<<SY_PR_RUN_BUDGET_ROUNDS>>": "12", // 4 hours at the default keepalive
   /** How often a quiet PR is re-probed read-only for a state change. */

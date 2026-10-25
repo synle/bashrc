@@ -243,10 +243,9 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
     }
   });
 
-  it("should resolve every PR workflow tuning placeholder to a positive number", () => {
-    // These carry the babysit / review cadence, so an unresolved token ships the
-    // literal `<<SY_PR_POLL_INTERVAL_SECONDS>>` to an agent, which reads as prose and
-    // silently loses the interval it was supposed to sleep.
+  it("should resolve every shared guidance tuning placeholder to a positive number", () => {
+    // Unresolved prose limits and workflow intervals reach agents as literal tokens,
+    // not usable numeric bounds.
     for (const { label, text } of deployedSources) {
       const deployed = llm.resolveLLMDocPlaceholders(text);
       for (const token of Object.keys(llm.LLM_DOC_TUNING_PLACEHOLDERS)) {

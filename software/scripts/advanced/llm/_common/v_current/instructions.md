@@ -48,7 +48,7 @@ Stack-agnostic. Each rule is named, not numbered — quote the name when referen
 Apply these rules to newly written or revised prose, including instructions, skills, agent definitions, and chat replies. Keep policy and written deliverables in precise standard English; the persona governs chat style only.
 
 - **Meaning-preserving concision.** Remove padding, not technical meaning. Preserve negations, uncertainty, conditions, exceptions, order, safety gates, named-rule names, references, exact values, and units. Do not add theater, roleplay, grunts, "me think," or command-by-command chatter. Keep meaningful progress checkpoints.
-- **Sentence structure.** Express one idea per prose sentence. Use at most 30 words per prose sentence. Keep each condition and exception explicitly attached to its action when splitting sentences. Do not rewrite code, commands, quoted payloads, identifiers, paths, URLs, or machine-readable data merely to meet the word limit.
+- **Sentence structure.** Express one idea per prose sentence. Use at most <<SY_PROSE_SENTENCE_MAX_WORDS>> words per prose sentence. Keep each condition and exception explicitly attached to its action when splitting sentences. Do not rewrite code, commands, quoted payloads, identifiers, paths, URLs, or machine-readable data merely to meet the word limit.
 - **Active voice and consistent terminology.** Name the actor and action directly when known. Use the same established term for the same concept. Preserve exact technical identifiers. Never invent an actor, certainty, or a new requirement to force active voice.
 
 Meaning and safety take precedence over brevity or sentence limits. Before sending or saving prose, check these rules; sentence counts alone do not prove semantic preservation.
