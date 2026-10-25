@@ -748,8 +748,11 @@ Indentation detection changes buffer-local options, not existing file contents.
 Files with tab-led nonblank content use hard tabs at the current tabstop width;
 otherwise soft indentation always uses 2 spaces, even when existing lines use 4.
 A hard-tab filetype's default is retained when no space-led content exists,
-including empty Makefiles. Visual `Tab` / `shift+Tab` use these buffer settings
-and keep the selection for repeated shifts.
+including empty Makefiles. In Insert mode, `Tab` indents the current line and
+`shift+Tab` dedents it from any cursor position, without leaving Insert mode.
+Both keys change leading indentation rather than inserting whitespace within text.
+Visual `Tab` / `shift+Tab` use the same buffer settings and keep the selection
+for repeated shifts. Normal-mode `Tab` remains a comma-prefix shortcut.
 
 Every save (`:w`, `,s`, or `\s`) removes whole leading blank/whitespace-only
 lines, removes trailing whitespace, and retains the existing single blank line

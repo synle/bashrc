@@ -312,6 +312,12 @@ xnoremap <Del> d
 xnoremap <Tab> >gv
 xnoremap <S-Tab> <gv
 
+" Insert-mode Tab / Shift+Tab shift the current line from any cursor position,
+" using the same buffer-local width as Visual mode without leaving Insert mode.
+inoremap <Tab> <C-t>
+" Start a new undo change so CTRL-D cannot consume a just-typed 0 or ^.
+inoremap <S-Tab> <C-g>u<C-d>
+
 " ctrl+shift+enter (all OSes) / cmd+shift+enter (MacVim) also toggle soft wrap,
 " matching VS Code/Sublime/Zed/text-server. GUI vim and terminals that report
 " modified keys (CSI u / modifyOtherKeys) deliver these; plain terminals send a bare CR.

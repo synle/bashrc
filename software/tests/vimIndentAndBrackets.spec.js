@@ -90,6 +90,44 @@ describe("Vim indentation integration", () => {
     expect(result.lines).toEqual([expected]);
   });
 
+  it.each([
+    ["Tab at line start", "alpha", "gg0i", "Tab", "  Xalpha"],
+    ["Tab inside text", "  alpha", "gg04li", "Tab", "    alXpha"],
+    ["Tab at line end", "  alpha", "ggA", "Tab", "    alphaX"],
+    ["Tab on an empty line", "", "gg0i", "Tab", "  X"],
+    ["Shift+Tab at line start", "    alpha", "gg0i", "S-Tab", "X  alpha"],
+    ["Shift+Tab inside text", "    alpha", "gg06li", "S-Tab", "  alXpha"],
+    ["Shift+Tab at line end", "    alpha", "ggA", "S-Tab", "  alphaX"],
+    ["Shift+Tab without indentation", "alpha", "ggA", "S-Tab", "alphaX"],
+    ["Shift+Tab on an empty line", "", "gg0i", "S-Tab", "X"],
+    ["Shift+Tab with partial indentation", " alpha", "ggA", "S-Tab", "alphaX"],
+    ["Shift+Tab with hard tabs", "\t\talpha", "ggA", "S-Tab", "\talphaX"],
+  ])("shifts the current line for %s and resumes insertion at the same text", (_name, input, position, key, expected) => {
+    const result = editInVim(input, [`call feedkeys("${position}\\<${key}>X\\<Esc>", "xt")`]);
+    expect(result.lines).toEqual([expected]);
+  });
+
+  it.each([
+    ["0", "  alpha0X"],
+    ["^", "  alpha^X"],
+  ])("dedents one level without consuming a just-typed %s", (typed, expected) => {
+    const result = editInVim("    alpha", [`call feedkeys("ggA${typed}\\<S-Tab>X\\<Esc>", "xt")`]);
+    expect(result.lines).toEqual([expected]);
+  });
+
+  it.each([
+    ["spaces", "  alpha", "  alphaX"],
+    ["hard tabs", "\talpha", "\talphaX"],
+  ])("round-trips repeated Insert-mode shifts with %s", (_name, input, expected) => {
+    const result = editInVim(input, ['call feedkeys("ggA\\<Tab>\\<Tab>\\<S-Tab>\\<S-Tab>X\\<Esc>", "xt")']);
+    expect(result.lines).toEqual([expected]);
+  });
+
+  it("keeps repeated Insert-mode dedents from deleting unindented text", () => {
+    const result = editInVim("  alpha", ['call feedkeys("ggA\\<S-Tab>\\<S-Tab>\\<S-Tab>X\\<Esc>", "xt")']);
+    expect(result.lines).toEqual(["alphaX"]);
+  });
+
   it("keeps a filetype's hard-tab width on an empty buffer", () => {
     const result = editInVim("", ["setlocal noexpandtab softtabstop=0 shiftwidth=4 tabstop=8", "doautocmd FileType"]);
     expect(result.indent).toEqual([0, 0, 8, 8]);
