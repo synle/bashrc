@@ -116,16 +116,20 @@ DESKTOP_FOLDER="$HOME/Desktop"
 APPS_FOLDER="$HOME/Apps"
 mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
 
-# Flatpak Brave is required before downloads and Steam shortcut setup.
+# Install or confirm Flatpak Brave before downloads and Steam shortcut setup.
+# No arguments. Returns nonzero if Flatpak is missing or installation fails; installs the user-scoped app.
 function _install_flatpak_brave_prerequisite() {
+  echo ">>> Brave prerequisite: checking for Flatpak."
   if ! type -P flatpak > /dev/null; then
     echo ">>> Brave prerequisite failed: flatpak command is unavailable." >&2
     return 1
   fi
+  echo ">>> Brave prerequisite: installing or confirming com.brave.Browser from Flathub for the desktop user."
   if ! flatpak install --user flathub com.brave.Browser; then
     echo ">>> Brave prerequisite failed: could not install com.brave.Browser." >&2
     return 1
   fi
+  echo ">>> Brave prerequisite: ready for browser shortcut registration."
 }
 
 BRAVE_FLATPAK_READY=0
@@ -151,16 +155,23 @@ curl -fsSL "https://raw.githubusercontent.com/synle/bashrc/HEAD/assets/steamos/s
 function _bootstrap_decky_loader_plugins_themes() {
   local installer_folder status=0
   installer_folder=$(mktemp -d) || return 1
+  # Use the shared installer so setup does not maintain a second Decky installation flow.
+  echo ">>> Decky bootstrap: downloading the shared installer into a private temporary folder."
   if curl -fsSL --connect-timeout 15 --max-time 120 \
     "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" \
     -o "$installer_folder/run" \
     && chmod +x "$installer_folder/run"; then
+    echo ">>> Decky bootstrap: starting the standard Decky Loader, plugin, and theme installer."
     "$installer_folder/run" --skip-prompt --files=software/scripts/decky-and-css-loader.standalone.js < /dev/null || status=$?
   else
     status=$?
+    echo ">>> Decky bootstrap: installer download or executable preparation failed (status $status)." >&2
   fi
+  # Preserve the installer result while removing only this invocation's temporary files.
+  echo ">>> Decky bootstrap: removing the private temporary installer."
   rm -f "$installer_folder/run"
   rmdir "$installer_folder"
+  echo ">>> Decky bootstrap: finished with status $status."
   return "$status"
 }
 # --- Steam shortcuts ---
@@ -764,7 +775,8 @@ function _add_steam_shortcut() {
 
 # Add or refresh a Brave site as a Steam tile, deduplicating by exact shortcut title.
 # $1: Steam title; $2: HTTP or HTTPS URL. Trailing slashes are stripped before opening the site in kiosk mode.
-# Returns nonzero if inspection or registration fails.
+# Uses X11 and disables smooth scrolling for Brave-backed tiles only; native shortcuts are unchanged.
+# Returns nonzero if inspection or registration fails; writes shortcuts.vdf on registration or update.
 function _add_url_steam_shortcut() {
   local title="$1" url="$2" flatpak_executable launchoptions status
 
@@ -781,7 +793,11 @@ function _add_url_steam_shortcut() {
     echo ">>> Steam: skipping $title; flatpak executable not found."
     return 1
   fi
-  launchoptions="\"run\" \"--command=brave\" \"com.brave.Browser\" \"--kiosk\" \"$url\""
+  # --ozone-platform=x11: request X11/XWayland instead of native Wayland as a compatibility workaround for reported hangs.
+  # --disable-smooth-scrolling: turn off scrolling animations as requested; no measured speedup is claimed.
+  # --kiosk: keep fixed-site tiles fullscreen without browser chrome.
+  # Keep GPU acceleration and sandbox defaults; verify playback and stability on the target SteamOS host.
+  launchoptions="\"run\" \"--command=brave\" \"com.brave.Browser\" \"--ozone-platform=x11\" \"--disable-smooth-scrolling\" \"--kiosk\" \"$url\""
   _steam_shortcut_exists title "$title"
   status=$?
   echo "[DEBUG] Steam URL add: $title title lookup status $status"
@@ -1145,6 +1161,62 @@ if type -P paru > /dev/null && grep -q '^ID=cachyos' /etc/os-release 2> /dev/nul
   fi
 fi
 
+# --- USB wake-up ---
+# Install a boot-time service enabling wake-up on USB devices that expose power/wakeup.
+# No arguments. Returns nonzero on backup, write, reload, or enable failure.
+# Backs up an existing unit, writes /etc/systemd/system/usb-wake-all.service, and starts it.
+function _install_usb_wake_service() {
+  local service_file="/etc/systemd/system/usb-wake-all.service"
+  echo ">>> USB wake: checking systemd and the Linux USB device tree."
+  if ! type -P systemctl > /dev/null || [ ! -d /sys/bus/usb/devices ]; then
+    echo ">>> USB wake: systemd and the Linux USB device tree are required." >&2
+    return 1
+  fi
+  # Keep the first pre-setup unit and the most recent unit for manual recovery.
+  if [ -e "$service_file" ]; then
+    if [ ! -e "${service_file}.bak_original" ]; then
+      echo ">>> USB wake: saving the original unit to ${service_file}.bak_original."
+      sudo cp -p "$service_file" "${service_file}.bak_original" || return 1
+    fi
+    echo ">>> USB wake: saving the current unit to ${service_file}.bak_latest."
+    sudo cp -p "$service_file" "${service_file}.bak_latest" || return 1
+  fi
+  echo ">>> USB wake: writing $service_file; the service applies wake settings now and at boot."
+  # systemd needs $$ to pass literal dollar signs through to the shell.
+  # Boot-time only: unsupported devices are skipped; later hotplug needs a service restart.
+  if ! sudo tee "$service_file" > /dev/null << 'USB_WAKE_SERVICE'
+[Unit]
+Description=Enable wake-up for supported USB devices
+After=systemd-udev-trigger.service
+
+[Service]
+Type=oneshot
+# Only kernel-exposed wake controls are writable; log each attempted device for journalctl.
+ExecStart=/bin/sh -c 'status=0; for device in /sys/bus/usb/devices/*/power/wakeup; do [ -e "$$device" ] || continue; echo "USB wake: enabling $$device"; if ! echo enabled > "$$device"; then echo "USB wake: failed to enable $$device" >&2; status=1; fi; done; exit "$$status"'
+
+[Install]
+WantedBy=multi-user.target
+USB_WAKE_SERVICE
+  then
+    return 1
+  fi
+  echo ">>> USB wake: reloading systemd to pick up the unit."
+  sudo systemctl daemon-reload || return 1
+  echo ">>> USB wake: enabling usb-wake-all.service for future boots and starting it now."
+  sudo systemctl enable --now usb-wake-all.service
+}
+
+# Default Yes as requested; declining leaves any existing wake configuration untouched.
+if _prompt "Enable wake-up for all supported USB devices (may cause accidental wake-ups)?" Y; then
+  if _install_usb_wake_service; then
+    echo ">>> USB wake: enabled now and at boot for devices exposing power/wakeup."
+  else
+    echo ">>> USB wake setup failed; review the output above. Continuing setup." >&2
+  fi
+else
+  echo ">>> USB wake: skipped by choice; existing wake configuration is unchanged."
+fi
+
 # --- Limine bootloader: set menu timeout + quiet boot ---
 LIMINE_CONF="/boot/limine.conf"
 if [ -f "$LIMINE_CONF" ]; then
@@ -1169,4 +1241,3 @@ finish_choice=""
 until _prompt "Finish and exit setup?"; do
   :
 done
-

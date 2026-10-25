@@ -80,7 +80,7 @@ afterEach(() => {
 
 describe("SteamOS URL shortcut protocols", () => {
   it.each([
-    ["Brave", "Brave\thttps://synle.github.io/fav/"],
+    ["Brave", "Brave\thttps://synle.github.io/fav/?tv"],
     ["Apple TV+", "Apple TV+\thttps://tv.apple.com/"],
     ["Crunchyroll", "Crunchyroll\thttps://www.crunchyroll.com/"],
   ])("registers %s with its website URL", (_title, registration) => {
@@ -102,16 +102,34 @@ describe("SteamOS URL shortcut protocols", () => {
     [
       "_add_url_steam_shortcut",
       "http://192.168.1.45:32400/web/index.html/",
-      '"run" "--command=brave" "com.brave.Browser" "--kiosk" "http://192.168.1.45:32400/web/index.html"',
+      '"run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "http://192.168.1.45:32400/web/index.html"',
     ],
     [
       "_upsert_url_steam_shortcut",
       "http://192.168.1.45:32400/web/index.html/",
-      '"run" "--command=brave" "com.brave.Browser" "--kiosk" "http://192.168.1.45:32400/web/index.html"',
+      '"run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "http://192.168.1.45:32400/web/index.html"',
     ],
-    ["_add_url_steam_shortcut", "https://example.com///", '"run" "--command=brave" "com.brave.Browser" "--kiosk" "https://example.com"'],
-    ["_upsert_url_steam_shortcut", "https://example.com///", '"run" "--command=brave" "com.brave.Browser" "--kiosk" "https://example.com"'],
-  ])("%s registers and preserves %s on repeat execution", (helper, url, launchoptions) => {
+    [
+      "_add_url_steam_shortcut",
+      "https://example.com///",
+      '"run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "https://example.com"',
+    ],
+    [
+      "_upsert_url_steam_shortcut",
+      "https://example.com///",
+      '"run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "https://example.com"',
+    ],
+    [
+      "_add_url_steam_shortcut",
+      "https://synle.github.io/fav/?tv",
+      '"run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "https://synle.github.io/fav/?tv"',
+    ],
+    [
+      "_upsert_url_steam_shortcut",
+      "https://synle.github.io/fav/?tv",
+      '"run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "https://synle.github.io/fav/?tv"',
+    ],
+  ])("%s registers Brave flags and preserves %s on repeat execution", (helper, url, launchoptions) => {
     const { result, home, shortcutsPath } = runShortcut(helper, "Plex", url);
 
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);

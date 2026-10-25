@@ -130,7 +130,8 @@ _add_url_steam_shortcut Netflix https://www.netflix.com///`,
         AppName: "Netflix",
         Exe: '"/usr/bin/flatpak"',
         StartDir: '"/usr/bin/"',
-        LaunchOptions: '"run" "--command=brave" "com.brave.Browser" "--kiosk" "https://www.netflix.com"',
+        LaunchOptions:
+          '"run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "https://www.netflix.com"',
       },
     ]);
   });

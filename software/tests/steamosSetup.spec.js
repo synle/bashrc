@@ -116,7 +116,7 @@ describe("SteamOS setup", () => {
     expect(setupSource).not.toContain("flatpak remote-add");
     expect(setupSource).not.toContain("pacman -S --needed --noconfirm flatpak");
     expect(setupSource).not.toContain("flatpak list --user --app");
-    expect(setupSource).toContain('_add_url_steam_shortcut "Brave" "https://synle.github.io/fav/"');
+    expect(setupSource).toContain('_add_url_steam_shortcut "Brave" "https://synle.github.io/fav/?tv"');
     expect(setupSource).not.toContain('_add_steam_shortcut "Brave"');
     expect(setupSource).not.toContain('_add_url_steam_shortcut "Fav"');
     expect(flatpakInstall).toBeLessThan(setupSource.indexOf('_add_url_steam_shortcut "Disney+"'));
