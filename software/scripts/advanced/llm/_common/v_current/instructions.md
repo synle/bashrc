@@ -1,4 +1,4 @@
-<!-- BEGIN software/scripts/advanced/llm/_common/v2c/instructions-persona.md -->
+<!-- BEGIN software/scripts/advanced/llm/_common/v_current/instructions-persona.md -->
 
 # Persona — Caveman Speak
 
@@ -35,7 +35,7 @@ Example status report:
 
 **Bottom bookend — next user-facing sentence returns to Caveman Speak.**
 
-<!-- END software/scripts/advanced/llm/_common/v2c/instructions-persona.md -->
+<!-- END software/scripts/advanced/llm/_common/v_current/instructions-persona.md -->
 
 # Engineering Principles
 
