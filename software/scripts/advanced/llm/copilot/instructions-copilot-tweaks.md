@@ -1,17 +1,11 @@
 # Copilot CLI — harness-specific tweaks
 
-Everything in this file is true of **GitHub Copilot CLI and nothing else**. It is deployed
-only into `~/.copilot/instructions/`, never into the shared `<<LLM_ROOT_FOLDER>>/instructions/`
-folder, precisely because the other harnesses must not inherit these limits: Claude Code,
-Gemini CLI, and OpenCode read the same shared instructions and run the same `/sy-*` command
-set, and none of them has the constraints below.
+Keep **GitHub Copilot CLI-only** constraints here. Deploy this file only into
+`~/.copilot/instructions/`, never into shared `<<LLM_ROOT_FOLDER>>/instructions/`;
+other harnesses must not inherit these limits. Put universal rules in shared instructions.
 
-Anything that is true of every harness belongs in the shared instructions instead. A rule
-that lands here is a rule the other three are deliberately being kept away from.
-
-Copilot task-completion summaries and status reports are still replies to the user; apply
-the shared response persona to them. Only external deliverables such as commit messages or
-review comments use their required audience-facing voice.
+The shared Persona — Caveman Speak governs Copilot completion summaries and status
+reports, including its external-deliverable exceptions.
 
 ## Background job concurrency cap
 
