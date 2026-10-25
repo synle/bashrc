@@ -58,11 +58,12 @@ afterEach(() => {
 });
 
 describe("compact Decky repository inventory", () => {
-  it("derives actual native roots, kinds, identities, and hashes from all 18 hand-picked archives", () => {
+  it("resolves all 19 selections while deriving trusted metadata from the 18 repository archives", () => {
     const pins = packages.resolvePackages(inventory.decky_packages);
-    expect(pins).toHaveLength(18);
+    expect(pins).toHaveLength(19);
     expect(pins.filter((p) => p.theme_id)).toHaveLength(9);
-    expect(pins.filter((p) => !p.theme_id)).toHaveLength(9);
+    expect(pins.filter((p) => !p.theme_id)).toHaveLength(10);
+    expect(pins.find((p) => p.name === "Decky LSFG-VK").version).toBe("0.14.4");
     expect(pins.find((p) => p.name === "HLTB for Deck").version).toBe("2.0.12");
     expect(pins.find((p) => p.name === "ProtonDB Badges").version).toBe("1.3.4");
     expect(pins.find((p) => p.name === "HueSync")).toMatchObject({
@@ -77,6 +78,19 @@ describe("compact Decky repository inventory", () => {
       root: "Centered Home",
       theme_id: "865407ae-fb14-4db7-b123-61f6995ed757",
     });
+  });
+
+  it("pins the verified Framegen stable archive without committing the oversized ZIP", () => {
+    expect(inventory.decky_packages.find((p) => p.name === "Decky-Framegen")).toEqual({
+      path: "decky_plugin/Decky-Framegen_v0.17.zip",
+      name: "Decky-Framegen",
+      version: "0.17",
+      root: "Decky-Framegen",
+      source: "https://github.com/xXJSONDeruloXx/Decky-Framegen",
+      url: "https://github.com/xXJSONDeruloXx/Decky-Framegen/releases/download/v0.17/Decky-Framegen.zip",
+      sha256: "3300b617e3d979b483d03f995c75c829d6d54beaa4ac8dfae300c2560e4fc60f",
+    });
+    expect(fs.existsSync("assets/steamos/decky_loader_plugins/Decky-Framegen_v0.17.zip")).toBe(false);
   });
 
   it("does not assume the archive root matches the filename or display name", () => {

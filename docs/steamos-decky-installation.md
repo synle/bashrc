@@ -35,9 +35,9 @@ The runtime rejects root and mismatched HOME before creating logs or downloading
 }
 ```
 
-This example shows one entry; the canonical inventory retains all nine plugins and nine themes.
+This example shows one entry; the canonical inventory retains all ten plugins and nine themes.
 Versions are hand-picked repository versions, not automatic upstream-latest selections.
-All selected archives currently live in `assets/steamos/decky_loader_plugins/`.
+Eighteen selected archives live in `assets/steamos/decky_loader_plugins/`; Decky-Framegen uses a pinned upstream release archive.
 That folder is the only approved source for compact entries requiring `path`, `name`, and `version`.
 
 The runtime derives SHA-256, actual native archive root, plugin/theme kind, and theme ID from trusted repository bytes.
@@ -50,6 +50,12 @@ Upstream attribution remains in [`assets/steamos/README.md`](../assets/steamos/R
 Existing rich entries remain supported with bundle `path`, `name`, `version`, `root`, HTTPS `url`, `sha256`, and optional `source`/`theme_id`.
 Arbitrary remote ZIPs still require an independently verified hash; calculating a hash after an untrusted download does not establish authenticity.
 Migrating a former array-only inventory requires wrapping it under `decky_packages` and adding an exact stable `decky_loader_version`.
+
+Decky-Framegen's stable release ZIP exceeds [GitHub's 100 MiB Git-file limit](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github).
+Its rich entry pins the exact release URL, native root, version, and independently verified SHA-256; the generated cache bundle includes the archive.
+No Git LFS or oversized Git object is required. Existing Decky LSFG-VK remains selected as a separate plugin.
+After installation, open Decky-Framegen and choose **Setup OptiScaler Mod**, then configure each game according to upstream guidance.
+The installer does not enable frame generation or patch games automatically.
 
 ## Exact Loader version
 

@@ -71,14 +71,14 @@ describe("standard opt-in Decky script consumer", () => {
     expect(requireModule(path.join(folder, "software/scripts/decky/decky-runtime.common.js")).CACHE_URL).toBe(
       "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
     );
-    expect(requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(18);
+    expect(requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(19);
     expect(fs.existsSync(path.join(folder, "software/scripts/decky-and-css-loader.standalone.js"))).toBe(true);
     expect(fs.readdirSync(path.join(folder, "assets/steamos/decky_loader_plugins"))).toHaveLength(18);
     expect(
       requireModule(path.join(folder, "software/scripts/decky/decky-packages.common.js")).resolvePackages(
         requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages,
       ),
-    ).toHaveLength(18);
+    ).toHaveLength(19);
   });
   it("stages loadable Node modules and pins, then invokes their emitted install entry through Bash", async () => {
     const { folder, bash } = await emit();
@@ -90,7 +90,7 @@ describe("standard opt-in Decky script consumer", () => {
     expect(requireModule(runtime).CACHE_URL).toBe(
       "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
     );
-    expect(requireModule(path.join(stage, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(18);
+    expect(requireModule(path.join(stage, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(19);
     // Test-owned elevation seam still resolves actual repository archives through the staged package module.
     fs.writeFileSync(
       runtime,
@@ -98,12 +98,12 @@ describe("standard opt-in Decky script consumer", () => {
       const packages = require('./decky-packages.common.js');
       const inventory = require('../../metadata/decky-packages.json');
       const pins = packages.resolvePackages(inventory.decky_packages, options.repoRoot);
-      process.stdout.write(pins.length + ' verified repository packages\\n');
+      process.stdout.write(pins.length + ' resolved selected packages\\n');
     };`,
     );
     const result = spawnSync("/bin/bash", ["-c", bash], { encoding: "utf8", timeout: 15000 });
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toBe("18 verified repository packages\n");
+    expect(result.stdout).toBe("19 resolved selected packages\n");
   });
   it("propagates a failed emitted installer as a nonzero Bash result", async () => {
     const { folder, bash } = await emit();
