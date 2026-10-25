@@ -1,18 +1,40 @@
-import { describe, expect, it } from "vitest";
+/** Exercise SteamOS startup prompts without allowing installation side effects. */
+import { afterEach, describe, expect, it } from "vitest";
 import { spawnSync } from "child_process";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 
 /** Manual setup source; only pre-installation sections execute in this spec. */
 const setupSource = fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/steamos/setup.bash"), "utf8");
+/** Test-owned homes and executable folders removed after each subprocess test. */
+const workspaces = [];
+
+/**
+ * Extract a bounded setup section, rejecting missing or reordered markers before execution.
+ * @param {string} source Shell source to inspect.
+ * @param {string} startMarker First included marker.
+ * @param {string} endMarker First excluded marker.
+ * @returns {string} Source strictly between the verified boundaries, including the start marker.
+ * @throws {Error} If either marker is missing or the end does not follow the start.
+ */
+function extractSetupSection(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  const end = source.indexOf(endMarker);
+  if (start < 0 || end <= start) throw new Error("Invalid SteamOS setup fixture boundaries");
+  return source.slice(start, end);
+}
+
 /** Prompt definition without account validation or installation side effects. */
-const promptSource = setupSource.slice(setupSource.indexOf("function _prompt()"), setupSource.indexOf("# Validate the invoking account"));
-/** Initial choices and authentication, stopping before the first installer. */
-const choicesSource = setupSource.slice(
-  setupSource.indexOf("# Steam must be fully closed"),
-  setupSource.indexOf("# Flatpak Brave is required"),
-);
+const promptSource = extractSetupSection(setupSource, "function _prompt()", "# Validate the invoking account");
+/** Initial choices and authentication, stopping before the first installer function. */
+const choicesSource = extractSetupSection(setupSource, "# Steam must be fully closed", "function _install_flatpak_brave_prerequisite()");
+
+// Cleanup owns only folders created by this spec, including on assertion failure.
+afterEach(() => {
+  for (const folder of workspaces.splice(0)) fs.rmSync(folder, { recursive: true, force: true });
+});
 
 /**
  * Exercise the real prompt through a controlling terminal without accessing credentials.
@@ -67,11 +89,18 @@ print(json.dumps({"status": os.waitstatus_to_exitcode(status), "output": output.
 }
 
 /**
- * Execute the startup choices with inert command boundaries; no installer or real sudo runs.
+ * Execute startup choices in a private home with a fixture-only PATH and inert sudo.
  * @param {number} sudoStatus Exit status returned by the sudo boundary.
  * @returns {import("child_process").SpawnSyncReturns<string>} Captured shell result.
+ * @throws {Error} If creating the test-owned workspace fails.
+ * @description Creates temporary fixture files; afterEach removes them.
  */
 function runChoices(sudoStatus) {
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-prompts-"));
+  workspaces.push(folder);
+  const binFolder = path.join(folder, "bin");
+  fs.mkdirSync(binFolder);
+  fs.writeFileSync(path.join(binFolder, "pgrep"), "#!/bin/bash\nexit 1\n", { mode: 0o755 });
   return spawnSync(
     "/bin/bash",
     [
@@ -83,9 +112,24 @@ function mkdir() { echo 'folders created'; }
 ${choicesSource}
 echo 'ready for installation'`,
     ],
-    { encoding: "utf8", timeout: 5000 },
+    {
+      encoding: "utf8",
+      timeout: 5000,
+      cwd: folder,
+      env: { HOME: folder, PATH: binFolder, BASH_ENV: "", ENV: "" },
+    },
   );
 }
+
+describe("SteamOS setup fixture boundaries", () => {
+  it("excludes installer code after the ending marker", () => {
+    expect(extractSetupSection("before\nstart\necho safe\nend\ncurl installer", "start", "end")).toBe("start\necho safe\n");
+  });
+
+  it.each(["end only", "start only", "end before start", ""])('rejects invalid boundaries in "%s"', (source) => {
+    expect(() => extractSetupSection(source, "start", "end")).toThrow("Invalid SteamOS setup fixture boundaries");
+  });
+});
 
 describe("SteamOS startup prompts (subprocess)", () => {
   it.each([
@@ -107,6 +151,7 @@ describe("SteamOS startup prompts (subprocess)", () => {
     const result = runChoices(0);
 
     expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toBe("");
     expect(result.stdout.split("\n")).toEqual([
       "choice:Clear all user-defined non-Steam shortcuts from the active Steam account?",
       "choice:Install Decky Loader, plugins, and CSS Loader themes?",

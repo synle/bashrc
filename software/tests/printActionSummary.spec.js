@@ -1,29 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 
 import fs from "fs";
 
 import path from "path";
 
-import { fileURLToPath } from "url";
-
-const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-
-const PROFILE_CORE = path.join(ROOT_DIR, "software/bootstrap/profile-core.sh");
-
-const HELPER_SOURCE = (() => {
-  const text = fs.readFileSync(PROFILE_CORE, "utf-8");
-  const lines = text.split("\n");
-  const startMarker = lines.findIndex((l) => l.startsWith("function to_windows_path()"));
-  const endMarker = lines.findIndex((l, i) => i > startMarker && l.startsWith("function print_action_summary()"));
-  if (startMarker === -1 || endMarker === -1) throw new Error("could not locate to_windows_path / print_action_summary in profile-core.sh");
-  // Walk forward to find the closing brace of print_action_summary (first `^}` after the function start).
-  let close = endMarker + 1;
-  while (close < lines.length && lines[close] !== "}") close++;
-  if (close === lines.length) throw new Error("could not locate closing brace of print_action_summary");
-  return lines.slice(startMarker - 1, close + 1).join("\n"); // include the comment header on the line above
-})();
+import { HELPER_SOURCE } from "./printActionSummary.helpers.js";
 
 let sandbox = "";
 
@@ -68,6 +51,13 @@ fi
   fs.chmodSync(p, 0o755);
 }
 
+/**
+ * Execute the native summary in a bounded Bash process and require clean stderr.
+ * @param {{args: string[], cwd?: string, wslpath?: {cases: Record<string, string>}}} options Fixture command and optional overrides.
+ * @returns {string} Captured summary or help text.
+ * @throws {Error} If fixture IO fails or subprocess output violates its contract.
+ * @description Writes the test-owned shell script and asserts its exit status and diagnostics.
+ */
 function callSummary({ args, cwd, wslpath }) {
   if (wslpath) stubWslpath(wslpath);
   const home = path.join(sandbox, "home");
@@ -83,7 +73,10 @@ function callSummary({ args, cwd, wslpath }) {
   ].join("\n");
   const scriptPath = path.join(sandbox, "run.sh");
   fs.writeFileSync(scriptPath, script);
-  return execSync(`bash ${JSON.stringify(scriptPath)}`, { encoding: "utf-8" });
+  const result = spawnSync("/bin/bash", [scriptPath], { encoding: "utf-8", timeout: 5000 });
+  expect(result.status, result.stderr).toBe(0);
+  expect(result.stderr).toBe("");
+  return result.stdout;
 }
 
 function rp(p) {
@@ -91,6 +84,16 @@ function rp(p) {
 }
 
 describe("print_action_summary", () => {
+  it("prints native help without missing helper diagnostics", () => {
+    expect(callSummary({ args: ["--help"] })).toBe(
+      "print_action_summary: show copy-paste-runnable action summary\n" +
+        "  Usage: print_action_summary [--run-folder=<folder>] <target_path> [<binary> [<extra_args>...]]\n" +
+        "  Prints PWD, cd command, and optional binary invocation.\n" +
+        "  --run-folder overrides the cd target for commands that must run somewhere\n" +
+        "  other than where the file lives (e.g. applying a patch from inside the repo).\n",
+    );
+  });
+
   describe("--run-folder override", () => {
     it("cds to the override instead of the folder holding the file", () => {
       // The patch-transfer bug: `git_patch_apply` runs `git apply`, whose paths are

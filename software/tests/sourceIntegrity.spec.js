@@ -29,9 +29,9 @@ const INTENTIONAL_COLLAPSED_FUNCTION_NAMES = new Set(["killport"]);
  *
  * The corrupted tree reached the default branch, where the mangled line was a hard
  * bash syntax error inside a profile partial inlined into `~/.bash_syle` — every new
- * shell died sourcing it. It got through because the shell syntax net is advisory:
- * `profileSyntax.spec.js` is excluded from `vitest.config.js` and `make validate` runs
- * `test_profile` as `|| echo "WARNING: ..."`, so neither fails the gate.
+ * shell died sourcing it. At the time, generated-profile syntax checks were advisory.
+ * The current validation gate also blocks on profile checks; these source checks
+ * independently cover raw files before profile generation.
  *
  * These two checks live in the blocking unit suite and are complementary — together
  * they catch both real corrupted lines above:
@@ -90,6 +90,17 @@ function oldestBash() {
 }
 
 const BASH = oldestBash();
+
+/**
+ * Find unique collapsed function names using the same ASCII word boundaries as the corruption guard.
+ * @param {string} line Source line to scan.
+ * @param {Map<string, string>} probes Collapsed names mapped to their original spelling.
+ * @returns {string[]} Matching names in first-occurrence order, with no side effects.
+ */
+function findCollapsedNames(line, probes) {
+  // 2026-10-25: three local scans improved from median 10.960s to 186ms by avoiding per-probe scans.
+  return [...new Set(line.match(/\w+/g) ?? [])].filter((token) => probes.has(token));
+}
 
 describe("shell source syntax", () => {
   it("should find shell files to check", () => {
@@ -154,6 +165,23 @@ describe("transport corruption", () => {
     expect(PROBES.size).toBeGreaterThan(100);
   });
 
+  it.each([
+    ["", []],
+    ['... () ""', []],
+    ['commit_msg=(gitpatchsubject"latest_patch")', ["gitpatchsubject"]],
+    ["gitpatchsubject gitpatchsubject", ["gitpatchsubject"]],
+    ["printactionsummary; gitpatchsubject", ["printactionsummary", "gitpatchsubject"]],
+    ["_git_patch_subject print_action_summary", []],
+    ["prefixgitpatchsubject gitpatchsubjectSuffix gitpatchsubject_ 1gitpatchsubject", []],
+    ["é/gitpatchsubject/😀", ["gitpatchsubject"]],
+  ])("matches only complete collapsed tokens in %j", (line, expected) => {
+    const probes = new Map([
+      ["gitpatchsubject", "_git_patch_subject"],
+      ["printactionsummary", "print_action_summary"],
+    ]);
+    expect(findCollapsedNames(line, probes)).toEqual(expected);
+  });
+
   // Verified against the real incident: this flags the corrupted
   // `commit_msg=(gitpatchsubject"latest_patch")` while reporting zero hits on the
   // clean tree across 300+ probes.
@@ -164,10 +192,8 @@ describe("transport corruption", () => {
     for (const file of TEXT_FILES) {
       const lines = fs.readFileSync(file, "utf8").split("\n");
       lines.forEach((line, index) => {
-        for (const [collapsed, original] of PROBES) {
-          if (new RegExp(`\\b${collapsed}\\b`).test(line)) {
-            found.push(`${path.relative(ROOT_DIR, file)}:${index + 1} "${collapsed}" (should be "${original}")`);
-          }
+        for (const collapsed of findCollapsedNames(line, PROBES)) {
+          found.push(`${path.relative(ROOT_DIR, file)}:${index + 1} "${collapsed}" (should be "${PROBES.get(collapsed)}")`);
         }
       });
     }

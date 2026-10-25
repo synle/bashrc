@@ -1,29 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { execSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 
 import fs from "fs";
 
 import path from "path";
 
-import { fileURLToPath } from "url";
-
-const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-
-const PROFILE_CORE = path.join(ROOT_DIR, "software/bootstrap/profile-core.sh");
-
-const HELPER_SOURCE = (() => {
-  const text = fs.readFileSync(PROFILE_CORE, "utf-8");
-  const lines = text.split("\n");
-  const startMarker = lines.findIndex((l) => l.startsWith("function to_windows_path()"));
-  const endMarker = lines.findIndex((l, i) => i > startMarker && l.startsWith("function print_action_summary()"));
-  if (startMarker === -1 || endMarker === -1) throw new Error("could not locate to_windows_path / print_action_summary in profile-core.sh");
-  // Walk forward to find the closing brace of print_action_summary (first `^}` after the function start).
-  let close = endMarker + 1;
-  while (close < lines.length && lines[close] !== "}") close++;
-  if (close === lines.length) throw new Error("could not locate closing brace of print_action_summary");
-  return lines.slice(startMarker - 1, close + 1).join("\n"); // include the comment header on the line above
-})();
+import { HELPER_SOURCE } from "./printActionSummary.helpers.js";
 
 let sandbox = "";
 
@@ -92,9 +75,12 @@ function rp(p) {
 
 describe("to_windows_path", () => {
   /**
-   * Sources the helper into bash and runs `to_windows_path "$1"`, returning stdout.
-   * @param {string} input
-   * @param {{cases: Record<string,string>}} [wslpath]
+   * Execute native path conversion in bounded Bash, requiring clean stderr.
+   * @param {string} input Path or help argument.
+   * @param {{cases: Record<string,string>}} [wslpath] Optional conversion fixture.
+   * @returns {string} Trimmed conversion or help output.
+   * @throws {Error} If fixture IO fails or subprocess output violates its contract.
+   * @description Writes a test-owned script and asserts its exit status and diagnostics.
    */
   function callConvert(input, wslpath) {
     if (wslpath) stubWslpath(wslpath);
@@ -106,8 +92,19 @@ describe("to_windows_path", () => {
     ].join("\n");
     const scriptPath = path.join(sandbox, "run.sh");
     fs.writeFileSync(scriptPath, script);
-    return execSync(`bash ${JSON.stringify(scriptPath)}`, { encoding: "utf-8" }).trim();
+    const result = spawnSync("/bin/bash", [scriptPath], { encoding: "utf-8", timeout: 5000 });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toBe("");
+    return result.stdout.trim();
   }
+
+  it("prints native help without missing helper diagnostics", () => {
+    expect(callConvert("--help")).toBe(
+      "to_windows_path: convert unix path to Windows mixed-slash path\n" +
+        "  Usage: to_windows_path <unix_path>\n" +
+        "  No-op on non-WSL (echoes input unchanged).",
+    );
+  });
 
   it("returns the input unchanged when wslpath is not on PATH (off-WSL)", () => {
     expect(callConvert("/home/user/foo")).toBe("/home/user/foo");
