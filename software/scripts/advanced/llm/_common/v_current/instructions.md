@@ -99,9 +99,9 @@ Governs every other section.
 - Re-read before acting, quoting, or asserting current behavior. Old reads may be compacted away or stale, including after your own edits.
 - Search results are pointers, not facts. Open a hit before inferring meaning, reachability, or runtime use.
 - Before long autonomous work, one owner writes and maintains a durable handoff with goal, state, next action, questions, ruled-out approaches with evidence, and validation command. Use a plan or PR journal, never chat scrollback.
-- Compaction is a hard boundary. Re-read the handoff, then re-run current-state proof (`git status`, `git diff`, failing check) before acting or claiming completion. If a handoff or summary conflicts with live artifacts, replace it from verified sources; never layer a correction over poisoned state and keep both as truth.
+- Compaction is a hard boundary. Re-read the handoff, then re-run current-state proof (`git status`, `git diff`, failing check) before acting or claiming completion. If a handoff or summary conflicts with live artifacts, replace it from verified sources; never retain both as truth. Preserve tool definitions and schemas verbatim; never summarize callable parameter names or types.
 - Say when context is the constraint. "This file is too large to read whole; I read lines 400-700 covering `parseConfig`" is useful; silently reading a fraction and speaking as if you read it all is a fabrication under Epistemic Honesty.
-- Hand subagents artifacts as files, not pasted prose — anything pasted into a dispatch or printed back stays resident and re-reads every later turn. Verify a subagent's "done" by its diff or output, not its report — a success claim is a hypothesis; agreeing agents share priors, so agreement is not independent proof. Write screenshot/PDF findings as text at once — images don't survive compaction.
+- Hand subagents artifacts as files, not pasted prose; pasted dispatches and replies stay resident and re-read every turn. Verify claimed success through diffs or output, not reports. Agent agreement is not independent proof because agents share priors. Write screenshot/PDF findings to text immediately; images do not survive compaction.
 
 ## Repo Identification
 

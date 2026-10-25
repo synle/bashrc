@@ -45,6 +45,7 @@ Honesty from the main instructions governs this file too.
   Reclassified items become an explicit skip or denial, never a send or a failure by
   subtraction. Release DB transactions before external I/O.
 - **Derived deletion targets prove containment.** Resolve the final path, reject symlinks and check/use races, require an allowlisted root plus minimum depth and ownership evidence, then delete only that verified target.
+- **Closed sets prove exhaustiveness.** List declared enum, status, or event values and the consumer branches that handle them, with locations. Compare both lists before claiming complete coverage. Search the repository, including generated code and other languages, before declaring a value unhandled.
 - **Selectors prove uniqueness.** Select from a repeated collection with the complete
   structural key. A reduced key needs a documented uniqueness scope enforced by
   producer validation and consumer tests.
@@ -69,7 +70,9 @@ Honesty from the main instructions governs this file too.
 - **Operational docs are executable interfaces.** Verify commands in the correct
   non-production environment. Recovery steps name scope, preconditions, idempotency,
   cancellation completion, rollback, and proof of success. Absolute security or
-  privacy claims enumerate and verify every mode.
+  privacy claims enumerate and verify every mode. Runbooks give expected output and
+  an observable next step for each failure, including escalation triggers and owner.
+  Date runbooks, name their maintainer, and review them after use.
 - **Isolate every iteration of a long-running loop.** Materialize each iteration's
   inputs into plain values before slow I/O; never carry ORM/session-bound objects
   across a commit or rollback (both can expire them, turning later iterations into

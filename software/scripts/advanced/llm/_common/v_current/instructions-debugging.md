@@ -10,7 +10,7 @@ Honesty from the main instructions governs this file too.
 
 - No fix without a reproduction. A guess that greens the symptom is _worse_ than no fix — hides the defect, burns the evidence. Can't reproduce? The deliverable is a reproduction, not a patch: match the failing environment, run from a clean checkout, reproduce in CI. If none works, say so and stop rather than patch blind. Report the rate (`3/3`, `2/10`); stabilize intermittents (seeds, clocks, ports) before bisecting.
 - Shrink the repro before forming a hypothesis. One test, not a suite; one input, not a fixture; one call, not a request. Done when removing anything else makes the failure vanish.
-- Read the **first** failure, not the last. Runners, compilers, and CI logs cascade. Read whole stack traces before theorizing, quote errors verbatim — an error message is a search key.
+- Read the **first** failure, not the last. Runners, compilers, and CI logs cascade. Read whole stack traces before theorizing, quote errors verbatim — an error message is a search key. Before an external search, remove secrets, hostnames, IPs, private paths, SQL fragments, and customer data. Search the error category, never a raw private trace.
 
 ## Isolate one variable at a time
 
