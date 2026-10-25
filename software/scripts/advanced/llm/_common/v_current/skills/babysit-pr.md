@@ -54,6 +54,7 @@ Top-level default: one self-contained background worker owning workspace recover
 ## Shared PR loop
 
 Read `<<LLM_ROOT_FOLDER>>/skills/sy-pr-loop/SKILL.md` before parsing clock overrides or starting work. It owns clock grammar, schedule output, read-only probes, shared handoff, and deadline/retry bookkeeping.
+Apply its Owner recovery and restart contract before treating a saved owner as live, resuming, replacing, or creating a clock. Carry its recovery evidence in PR memory.
 The run budget is `<<SY_PR_RUN_BUDGET_ROUNDS>>` rounds by default; apply the shared contract's overrides rather than a second clock.
 This workflow retains readiness, repairs, workspace ownership, and Step 12b's wake policy. A caller reading the shared contract never dispatches another scheduler.
 
