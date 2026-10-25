@@ -80,13 +80,13 @@ describe("Windows Terminal modern appearance", () => {
   });
 
   it.each([
-    [{ name: "Ubuntu-24.04", elevate: false }, true],
-    [{ name: "debian" }, true],
+    [{ name: "Ubuntu-24.04", elevate: false }, false],
+    [{ name: "debian" }, undefined],
     [{ name: "Kali", source: "Microsoft.WSL", elevate: false }, false],
     [{ name: "Windows PowerShell" }, undefined],
     [{ name: "Custom", elevate: true }, true],
     [{}, undefined],
-  ])("repairs numeric cellHeight to a string while enforcing appearance and selective elevation for %j", async (profile, elevate) => {
+  ])("repairs numeric cellHeight while preserving saved elevation without forcing administrator mode for %j", async (profile, elevate) => {
     const oldProfile = {
       ...profile,
       guid: "fixture",

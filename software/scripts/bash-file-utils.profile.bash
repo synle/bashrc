@@ -80,6 +80,81 @@ function download() {
   fi
 }
 
+# zip: archive one file or folder, preserving its top-level name
+# Args: input file/folder, optional destination archive or existing folder.
+# Returns 0 on success/help, nonzero on invalid input, declined overwrite, or zip failure.
+# Writes an archive; existing archives require confirmation. Caller's folder is unchanged.
+function zip() {
+  if [ "$#" -eq 0 ] || is_help_arg "${1:-}"; then
+    echo "zip: archive one file or folder, preserving its top-level name
+  Usage: zip <input> [destination]
+  Default: ./<input-basename>-YYYYMMDD-HHMMSS.zip (local time)
+  destination: archive filename (.zip appended if missing), or an existing folder.
+  Existing archives require overwrite confirmation; no terminal means cancel.
+  Examples:
+    zip /tmp/patch-TOZUe3/bashrc.patch
+    zip /tmp/patch-TOZUe3
+    zip /tmp/patch-TOZUe3 ./chosen.zip
+  Native options pass through: zip -r archive.zip folder
+  Use command zip for native positional syntax; use ./ before a leading-dash input."
+    return 0
+  fi
+  if ! type -P zip > /dev/null; then
+    echo "zip: native zip executable not found" >&2
+    return 1
+  fi
+  case "$1" in
+  -*)
+    command zip "$@"
+    return $?
+    ;;
+  esac
+  if [ "$#" -gt 2 ] || [ -z "$1" ] || { [ "$#" -eq 2 ] && [ -z "$2" ]; }; then
+    echo "zip: expected one input and an optional nonempty destination; see zip --help" >&2
+    return 1
+  fi
+
+  local input="$1" input_folder input_name destination destination_folder archive_name
+  case "$input" in /*) ;; *) input="$PWD/$input" ;; esac
+  if [ ! -f "$input" ] && [ ! -d "$input" ]; then
+    echo "zip: input must be an existing file or folder: $1" >&2
+    return 1
+  fi
+  if [ -d "$input" ]; then
+    input=$(builtin cd -- "$input" && command pwd) || return 1
+  fi
+  if [ "$input" = / ]; then
+    echo "zip: input must name a file or folder, not the filesystem root" >&2
+    return 1
+  fi
+  input_folder=$(builtin cd -- "$(command dirname "$input")" && command pwd) || return 1
+  input_name=$(command basename "$input")
+  input="$input_folder/$input_name"
+  archive_name="$input_name-$(command date +%Y%m%d-%H%M%S).zip"
+  destination="${2:-$PWD/$archive_name}"
+  [ ! -d "$destination" ] || destination="${destination%/}/$archive_name"
+  case "$destination" in *.[zZ][iI][pP]) ;; *) destination="$destination.zip" ;; esac
+  case "$destination" in /*) ;; *) destination="$PWD/$destination" ;; esac
+  destination_folder=$(builtin cd -- "$(command dirname "$destination")" && command pwd) || return 1
+  destination="$destination_folder/$(command basename "$destination")"
+  if [ "$input" = "$destination" ] || [ "$input" -ef "$destination" ]; then
+    echo "zip: destination cannot overwrite the input" >&2
+    return 1
+  fi
+  if [ -L "$destination" ] || { [ -e "$destination" ] && [ ! -f "$destination" ]; }; then
+    echo "zip: destination must be a regular archive file, not a symlink or special file" >&2
+    return 1
+  fi
+  if [ -e "$destination" ]; then
+    prompt_yes_no "Overwrite $destination?" || return 1
+  fi
+
+  # Work from the parent so both files and folders retain only their top-level name.
+  # File sync removes stale members on approved overwrites instead of merging archives.
+  (builtin cd -- "$input_folder" && command zip -q -r -FS -nw "$destination" -- "./$input_name") || return $?
+  printf 'Created: %s\n' "$destination"
+}
+
 # tree: display directory tree (falls back to find+sed when tree is not installed)
 function tree() {
   if type -P tree &> /dev/null; then

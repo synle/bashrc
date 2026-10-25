@@ -170,7 +170,7 @@ async function doWork() {
         : null;
 
   /**
-   * Unify content colors while preserving explicit tab/window chrome, then apply existing profile defaults.
+   * Unify content colors and apply profile defaults while preserving saved elevation and explicit tab/window chrome.
    * Mutates and returns the passed-in settings object.
    * @param {object} settings Settings object produced by `buildSettings`.
    * @param {string|null} powershellCommand Discovered modern command; omitted for portable artifacts.
@@ -215,7 +215,8 @@ async function doWork() {
     for (const profile of profiles) {
       // Saved profile fields override defaults, so apply requested preferences at both levels.
       Object.assign(profile, requiredProfileStyles, { font: { ...profile.font, ...requiredProfileStyles.font } });
-      if (/Ubuntu|Debian/i.test(profile.name || "")) profile.elevate = true;
+      // Preserve saved elevation instead of forcing administrator mode.
+      // if (/Ubuntu|Debian/i.test(profile.name || "")) profile.elevate = true;
       if ((profile.cursorShape ?? defaultProfileStyles.cursorShape) !== "vintage") delete profile.cursorHeight;
       if (profile.tabColor === undefined) {
         if (_isWindowsTerminalWslProfile(profile)) profile.tabColor = WINDOWS_TERMINAL_TAB_COLORS.wsl;
