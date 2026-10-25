@@ -14,6 +14,32 @@ Do not call this entrypoint recursively when the selected workflow reads this co
 
 ## Steps
 
+### Run selection
+
+Before creating a clock, identify the workflow, scope kind, normalized repository/PR identities, resolved author filters, and canonical search root and discovery depth when applicable.
+Normalize aliases, case-insensitive identities, and explicit-list order; keep changing search results separate from the stable scope definition.
+Persist that selection beside run_id, run_lifecycle (`running`, `interrupted`, `paused`, or `completed`), clock, owner handles, and pause scope/clearing condition.
+Use existing ledger locations and stable PR keys; historical PR memory alone is not an active dispatcher ledger.
+Within the bounded discovery window, check stable per-PR owner keys across runs before dispatch, including owners whose set-wide scope differs.
+A different scope or run_id never proves a PR unowned. Reuse an existing owner or block that PR when authority is uncertain.
+Check saved pause scopes against overlapping PRs even when the new set-wide scope differs; unrelated work may continue.
+Several matching ledgers or contradictory owner evidence require a bounded ambiguity report; never choose the newest ledger merely by timestamp.
+An explicitly identified run still requires live owner verification; the identifier is not exclusive authority.
+
+- One matching running or interrupted run: adopt its existing clock and recover through Owner recovery and restart.
+- An interrupted expired run still requires an explicit valid new watch budget before more monitoring or passes; preserve outstanding work and counters.
+- A matching explicit pause blocks only its saved scope until matching user resumption. A budget change never clears a pause.
+- An audit, restart, or unrelated instruction is not resumption. A run with no stored pause is not automatically proven unpaused when contrary user instructions exist.
+- A plain authorized invocation after proven completed history starts the default budget with a new run_id and launch time; no new caller token is required.
+- With no matching run and no conflicting owner or pause, start a fresh authorized run. Do not inherit an unrelated historical deadline.
+- Legacy or contradictory lifecycle evidence remains unknown; report the missing evidence or ask which run to recover instead of inventing completion.
+
+A completed run needs saved finished_at and exit_reason, completed exit reconciliation, and verified evidence of no active writer and no unfinished workspace, publication, or cleanup debt.
+Deadline expiry alone never proves completion. Interrupted or ownership-blocked exits remain recoverable, not completed history.
+Preserve repair caps, de-duplication, automerge ownership, and unresolved decisions across fresh runs; only run-local schedule/pass counters start anew.
+Fresh scheduling never authorizes retrying a capped repair or repeating a prior remote write.
+Record run_lifecycle and completion evidence on every exit. A historical needs_user decision remains action-scoped under the selected workflow, not a blanket run pause.
+
 ### Clock and schedule
 
 - Strip trailing `budget=<value>` and `keepalive=<duration>` before scope resolution. Durations accept `<n>s`, `<n>m`, `<n>h`, or combinations such as `6h40m`. Budget also accepts `<n>r` or `<n>rounds`; bare numbers are invalid.
@@ -97,6 +123,7 @@ A Markdown generation cannot revoke credentials or stop a late owner from publis
 | Expired deadline                                       | Report final state; require an explicit new watch budget before further monitoring or passes.        |
 
 **Recover state, not a fresh run.** A new invocation is a recovery entrypoint, not a fresh watch budget.
+This restriction applies to a matching interrupted or paused run; proven completed history follows Run selection instead.
 Preserve saved started_at, deadline_at, and cadence unless the user explicitly supplies a valid new watch budget.
 An invalid override, restart, or new dispatcher never silently extends the deadline. If saved clock evidence is missing or contradictory, request explicit budget clarification.
 Do not start a pass after an expired deadline, including a recovery or final worker pass; report read-only reconciliation and any verification still owed.
@@ -109,6 +136,22 @@ Persist run identity, stable job key, owner handle, active/idle state, checkpoin
 Keep unavailable signal values explicitly unknown; legacy records require live reconciliation, not fabricated history.
 Record ownership generation only when runtime acquisition enforces it, plus recovery decision, supporting evidence/time, missing proof, next action, and pause state.
 Checkpoint ownership changes immediately and before a replacement performs side effects. Report resume, retain, replace, or blocked with evidence and next action.
+
+### Partial-launch handoff
+
+If only k requested jobs start, keep every PR enrolled and persist accepted handles plus each rejected launch's actual error.
+Let healthy started passes return at a safe point; never cancel them merely because peer launches failed.
+Do not inject rejected assignments into a running slot. Collect complete per-PR state and reconcile pending events before refilling free slots from the ranked queue.
+Reuse eligible idle owners under the ownership contract; never create another owner for an accepted job's PR.
+Accepted count k alone is not capacity evidence. Non-capacity rejection never changes S.
+Lower effective concurrency only with documented capacity rejection or a verified runtime limit; never exceed the selected user/harness ceiling.
+Keep transient service failures, permission/configuration errors, and capacity exhaustion distinct; retry only eligible transient failures under the shared bounded service policy.
+k == 0 is a launch failure, never S = 0; report it and preserve the queue without pretending any PR was serviced.
+If a started owner becomes unresponsive, use Owner recovery and restart or an explicit user stop, not a special cancellation shortcut.
+A cancellation response does not prove child or remote operations stopped.
+Block replacement writes until termination or effective revocation, operation reconciliation, and exclusive authority are verified.
+Preserve already-pushed commits, posted artifact IDs, repair counters, and automerge ownership; retry only missing actions after live reconciliation.
+A completed safe pass releases a slot; unknown writer state does not prove capacity free. Retain blocked ownership evidence and continue independent work within the clock.
 
 ### Read-only probe
 

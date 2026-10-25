@@ -594,22 +594,26 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Nothing else goes in this cell. No open-thread counts (Agent cell), no timestamps (Agent cell), no free-form reason clause.
 
-- **Agent** — what the dispatched job is doing. **One line: `<state token>[ (pass N · <HH:MM> left)] · [slot <N> · ]<clock> · <counters>`.** State, clock, and counters are one thought — "which state, since when, for how long, and how much is outstanding" — and they read worse split. The per-row `slot <N>` lives here because it is the only part of the old group line that varies row to row. No delta here; the marker leads the Status cell.
+- **Agent** — what the dispatched job is doing. **One line: `<state token>[ (pass N · <HH:MM> left)] · [slot <N> · ]<clock> · <counters>[ · <recovery telemetry>]`.** State, clock, and counters are one thought — "which state, since when, for how long, and how much is outstanding" — and they read worse split. The per-row `slot <N>` lives here because it is the only part of the old group line that varies row to row. No delta here; the marker leads the Status cell.
 
   **State token and clock.**
 
-  | Token                   | When                                                             | Clock                                                           |
-  | ----------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
-  | `⚪ NOT STARTED`        | Enrolled, first pass not yet run                                 | `queued, position 2 of 5` (no clock; nothing started)           |
-  | `🔄 IN PROGRESS`        | Job actively working this pass                                   | `started 17:12 · running 22m`                                   |
-  | `⏸️ WAITING`            | Pass done, polling until something moves                         | `ended 16:58 · ran 19m · next check 17:02`                      |
-  | `🔍 WATCHING`           | **Not terminal** — no worker held, dispatcher polling cheaply    | `blocked on Owner Approval · probe 4 · next check 17:02`        |
-  | `✅ COMPLETED`          | Job finished all passes, or the PR merged                        | `ended 17:05 · 48m total`                                       |
-  | `⏭️ SKIPPED`            | **Terminal** — skipped, and the run budget is spent              | `17:02 — draft, budget spent`                                   |
-  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, run budget still open      | `17:02 — draft · next check 17:02`                              |
-  | `🙋 NEEDS_USER`         | **Not terminal on GitHub** — this run paused it for the operator | `needs you — split request · asked 16:40 · revalidated current` |
-  | `⚠️ ESCALATED`          | Job stopped and needs human judgment                             | `stopped 17:01 · ran 19m — needs human`                         |
-  | `❌ FAILED`             | Job errored out                                                  | `failed 16:44 · ran 4m — worktree conflict`                     |
+  | Token                   | When                                                                           | Clock                                                           |
+  | ----------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+  | `⚪ NOT STARTED`        | Enrolled, first pass not yet run                                               | `queued, position 2 of 5` (no clock; nothing started)           |
+  | `🔄 IN PROGRESS`        | Job actively working this pass                                                 | `started 17:12 · running 22m`                                   |
+  | `⏸️ WAITING`            | Pass done, polling until something moves                                       | `ended 16:58 · ran 19m · next check 17:02`                      |
+  | `🔍 WATCHING`           | **Not terminal** — no worker held, dispatcher polling cheaply                  | `blocked on Owner Approval · probe 4 · next check 17:02`        |
+  | `✅ COMPLETED`          | Job finished all passes, or the PR merged                                      | `ended 17:05 · 48m total`                                       |
+  | `⏭️ SKIPPED`            | **Terminal** — skipped, and the run budget is spent                            | `17:02 — draft, budget spent`                                   |
+  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, run budget still open                    | `17:02 — draft · next check 17:02`                              |
+  | `🙋 NEEDS_USER`         | **Not terminal on GitHub** — this run paused it for the operator               | `needs you — split request · asked 16:40 · revalidated current` |
+  | `⚠️ ESCALATED`          | Job stopped and needs human judgment                                           | `stopped 17:01 · ran 19m — needs human`                         |
+  | `❌ FAILED`             | Job errored out                                                                | `failed 16:44 · ran 4m — worktree conflict`                     |
+  | `⛔ OWNERSHIP BLOCKED`  | **Not terminal** — replacement authority or writer termination remains unknown | `ownership unknown — <missing proof> · next check <HH:MM>`      |
+
+  Ownership-blocked Agent state takes precedence while writer authority remains unresolved, even if GitHub merged or closed the PR.
+  Keep the GitHub state in Status; this token reports recovery debt, not a new ledger state or permission to free a slot.
 
   **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip while the run budget is still open is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-check ETA. Only when the budget is spent does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal _and_ loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
 
@@ -617,7 +621,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **`🙋 NEEDS_USER` is a pause in this run, never a state on GitHub.** Pause only the blocked decision; retain probes and keepalive revalidation per the dispatcher's rules. For babysit, unchanged pulses show only `NEEDS_USER — unchanged; <next step>`; full question/state remains in memory and internal handoffs. Outside babysit's unchanged pulses, show the question, ask time, and latest verdict (`current` / `changed` / `conflicted` / `stale_unknown`); `cleared` returns to normal scheduling. Make no GitHub scheduler-state writes. Do not render this pause as `⚠️ ESCALATED` or terminal `⏭️ SKIPPED`.
 
-  **A merged or closed PR is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
+  **A merged or closed PR with reconciled ownership is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
 
   **Clock grammar.** Times are local `HH:MM`, 24-hour, no date (the header block already carries the date). Durations are `<N>m` under an hour, `<N>h <N>m` over it, always whole minutes — a pulse is a 10-minute heartbeat, so seconds are noise.
 
@@ -630,7 +634,29 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **The clock is excluded from the change-marker diff.** Elapsed time moves on every pulse by definition, so counting it as a change would render `Δ` on every running row forever and destroy the marker's only job. Diff the state token, the pass number, the Status cell, and the counters line — never `running <N>m`, never a recomputed `next check <HH:MM>`, never the remaining-budget figure. A row whose only difference is the clock ticking is `▫️`.
 
-  **Counters — the tail of the same line.** Always printed, always all three fields, always this order, appended after the clock with the same `·` separator:
+  **Recovery telemetry — an optional suffix in the existing Agent cell.** With a recovery ledger, append these fragments after the thread counters:
+
+  `owner <active|idle|unknown> · hb <age|unknown|n/a> · op <operation|unknown|n/a> <duration|unknown> · progress <age|unknown> · recovery <decision>`
+
+  Use the existing whole-minute duration grammar; progress age measures time since last_progress_at, not the last heartbeat.
+  Idle owners show hb n/a and op n/a; omit the operation duration when no operation is active.
+  Unsupported active-pass heartbeat shows hb unknown; unknown owner state never becomes idle merely because no active entry was returned.
+  Recovery decision is `none`, `retain`, `resume`, `investigate`, `replace`, or `blocked`, with a short evidence-backed reason when needed.
+  A `blocked` decision shows the ownership-blocked token and missing proof or next action, not a fabricated clean watching state.
+  No caller ledger means no recovery suffix; standalone listing must not invent owner identity or liveness.
+
+  Recovery ledger fields: run_id, run_lifecycle, owner_state, heartbeat_supported (`true`, `false`, or `unknown`), last_heartbeat_at, last_progress_at, operation, operation_started_at, expected operation deadline, recovery_decision, recovery_reason, and recovery_next_action.
+  Unknown timestamps stay unknown. Read these fields from the caller's verified ledger, never infer them from PR updatedAt or pass age.
+  Missing telemetry never proves ownership, completion, or a free worker slot.
+
+  **Recovery movement.** Exclude last_heartbeat_at, heartbeat age, operation elapsed time, and progress age from movement.
+  Diff recovery_decision, recovery_reason, owner_state, operation identity, and last_progress_at alongside the existing stable row fields.
+  Operation identity is its label and saved operation_started_at; a new operation is movement, not merely a longer elapsed duration.
+  Heartbeat-only updates remain ▫️. A recovery transition such as investigate to blocked is Δ, never PR-readiness evidence.
+  Save the stable recovery fields in the previous rendered snapshot; recompute ages without checkpointing them as semantic changes.
+  Preserve 🆕 for a row without a prior snapshot and keep the existing four columns.
+
+  **Counters — the fixed thread fields on the same line.** Always printed, always all three fields, always this order, appended after the clock with the same `·` separator:
 
   `💬 <n> open · ✔ <n> resolved · ⚠️ <n> need attention`
 
