@@ -9,10 +9,10 @@ Honesty from the main instructions governs this file too.
 
 ## Prove the win
 
-- No optimization without a number before and after. "Faster" is not a result; `1.8s → 240ms on the same input, 5 runs, median` is. Applies to every performance-motivated change — caching, batching, an index, a rewritten loop, a swapped data structure, an added worker.
+- No optimization without a number before and after. Report comparable measurements, not "faster": `1.8s → 240ms on the same input, 5 runs, median`. The opening scope applies to every performance-motivated change.
 - A measured win must exceed run-to-run variance under the same harness. Revert neutral or slower changes; sunk effort is not evidence.
 - Profile; don't guess. Locate the bottleneck with a profiler, flame graph, timed query logs, `EXPLAIN`, browser traces, or timers around suspected spans.
-- State the budget before optimizing and stop when you hit it — p99 under 200ms at 10× load, a build under two minutes. Without a target, optimization has no completion condition. If the current number already meets the budget, leave the code alone and say so.
+- State the budget before optimizing and stop when you hit it — p99 under 200ms at 10× load, a build under two minutes. If current performance already meets the budget, leave code unchanged and report that.
 - Measure the thing the user waits on. A step running at startup, in parallel, or on a background thread gives a real benchmark win and zero perceived win. Measure end-to-end at the boundary a human or caller experiences, at realistic input size — a 10-row fixture hides every scaling problem.
 - Re-measure after landing, on real traffic or data. Benchmarks lie by omission: warm caches, absent contention, single-tenant machines, unrealistic distributions. Say plainly when the win didn't survive production.
 

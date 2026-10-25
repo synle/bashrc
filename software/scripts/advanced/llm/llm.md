@@ -31,7 +31,7 @@ machine with a different home layout — and must not carry `$LLM_ROOT_FOLDER` e
 the agent reading the deployed file has no shell expanding anything and an unexpanded
 variable inside a `mkdir -p` writes at the filesystem root. Repo-local docs (this file,
 `AGENTS.md`, `docs/`, `.agents/skills/`) keep the literal path instead: nothing resolves
-them, so a placeholder there would never expand. `llmInstructionsSplit.spec.js` fails the
+them, so a placeholder there would never expand. The `llmInstructionsSplit.budget*.spec.js` specs fail the
 build on a hardcoded path in a deployed source, on a placeholder that survives resolution,
 and on a deployed doc read with bare `readText`.
 
@@ -145,7 +145,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Per-role agent models                  | n/a                                                      | n/a                                   | n/a                                                          | `agent` from `AGENT_TO_MODEL_MAP`                 |
 | Language servers (diagnostics)         | native                                                   | native                                | native                                                       | `lsp: true` (omitted = DISABLED)                  |
 | Code formatters on edit                | native (hooks)                                           | native                                | native                                                       | `formatter: true` (omitted = DISABLED)            |
-| Load split PR-workflow rules           | native (`@` import budget)                               | symlink in `~/.copilot/instructions/` | native                                                       | `instructions: [~/_extra/ai_llm/instructions/…]`  |
+| Load split PR-workflow rules           | on-demand pointer; no eager import                       | symlink in `~/.copilot/instructions/` | on-demand pointer                                            | `instructions: [~/_extra/ai_llm/instructions/…]`  |
 | Terminal cursor style                  | n/a                                                      | n/a                                   | n/a                                                          | `cursor: { style: "block" }`                      |
 | Leader-chord timeout                   | n/a                                                      | n/a                                   | n/a                                                          | `leader_timeout: 1500`                            |
 | Prompt textarea height cap             | n/a                                                      | n/a                                   | n/a                                                          | `prompt.max_height: 20`                           |
@@ -154,10 +154,11 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 
 ### Editing rules
 
-- **Instructions / rules**: edit `_common/v_current/instructions.md`, then re-run all four setup scripts (or `./run --preset=llm`).
+- **Instructions / rules**: edit the authoritative source under `_common/v_current/`, including registered split files. Regenerate affected includes; follow `AGENTS.md` §13.3 for approved deployment across all configured clients.
 - **Slash commands**: edit a file under `_common/v_current/skills/<name>.md` — every deploy (Claude direct + Copilot skills + OpenCode symlink) picks it up on the next setup run. **Adding / renaming / retiring** one is a single edit to `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` — that one map is the registry every CLI setup reads, so there is no per-CLI list to keep in sync.
 - **Named agents**: PR worker personas are retired. Keep `LLM_AGENT_DEPLOY_MAP` empty and retain the shared retirement pass in every client setup.
-- **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.- **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
+- **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.
+- **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys eligible entries additively and preserves user-only entries. Registry-only `excludeClients` omits named clients and never reaches native configuration. Removing or excluding a name does not delete existing deployed entries.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
@@ -331,7 +332,7 @@ Preserve the remaining configuration and restart the affected CLI after cleanup.
 ### Using the Playwright MCP server
 
 Microsoft's [`@playwright/mcp`](https://github.com/microsoft/playwright-mcp)
-ships in the shared registry and deploys to all four CLIs. It gives the agent
+ships in the shared registry and deploys to all five configured CLIs. It gives the agent
 **browser automation** over STDIO — navigate, click, type, fill forms,
 screenshot, and capture accessibility snapshots — handy for debugging the repo's
 own `webapp/` or any web task.
@@ -547,73 +548,22 @@ You will lose ergonomics. Plan accordingly.
 
 ### Starting from scratch — what a brand-new machine needs
 
-If you've never set up _any_ of these CLIs and want all four in parity, you need — at minimum — to author and place:
+Provision shared instructions and skills, per-client settings and supported keybindings, and per-project context.
+Use the single-source and surface-parity tables above for destinations; do not maintain a second inventory.
 
-1. **One canonical instructions doc** (engineering rules, tone, persona, guardrails)
-   that gets deployed to four different filenames in four different folders.
-2. **A slash-command corpus** (PR review, release, babysit, etc.) deployed to
-   the two CLIs that support a `commands/` slot (Claude, OpenCode) and inlined
-   into instructions for the two that don't (Copilot, Gemini).
-3. **Per-CLI keybinding files** with platform-specific overrides — each CLI
-   uses a different schema and different OS-modifier conventions.
-4. **Per-CLI settings files** mapping the same _intent_ (hide banner, disable
-   auto-update, hide tips, etc.) onto each CLI's actual key names.
-5. **A per-project `CLAUDE.md` / `AGENTS.md`** per repo, plus any `.agents/skills/<name>/SKILL.md`
-   playbooks you want loaded on matching tasks.
-6. **A way to keep all of the above in sync** when you change one rule — without
-   that, you will silently drift apart within a week and find yourself debugging
-   "why did Copilot do X when Claude wouldn't?".
+- Shared instruction sources include the always-loaded document and registered on-demand companions.
+- Deploy the skill corpus once, then use per-skill discovery links and OpenCode's command mirror; do not inline duplicate skill bodies into instructions.
+- Map settings intent to each client's native keys. Keep platform overrides in the keybinding sources; Copilot keymaps remain build artifacts until native support exists.
+- Keep project context in `AGENTS.md` and project skills in `.agents/skills/<name>/SKILL.md`, separate from global deployment.
+  This repo exposes `.claude/skills -> ../.agents/skills` for compatibility; see [Skills across CLIs](#skills-across-clis).
 
 ### How this repo solves it
 
-The whole point of `software/scripts/advanced/llm/` is so that none of the
-above has to be hand-maintained per CLI. One edit, four deployments, every run.
-
-- **One instructions file feeds four CLIs.**
-  `_common/v_current/instructions.md` is the single source of truth. Each `setup.js`
-  (`claude/`, `copilot/`, `gemini/`, `opencode/`) writes it out to the right
-  filename in the right folder, in the right managed-block format for that CLI:
-  - `~/.claude/CLAUDE.md`
-  - `~/.copilot/copilot-instructions.md`
-  - `~/.gemini/GEMINI.md`
-  - `~/.config/opencode/AGENTS.md`
-- **One command corpus feeds all four CLIs without duplication.**
-  `_common/v_current/skills/*.md` is deployed ONCE to `~/_extra/ai_llm/skills/sy-*/SKILL.md`
-  by `deploySharedLLMSkills()` (llm-common.js), then **per-skill symlinked** into
-  `~/.claude/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`,
-  and `~/.agents/skills/` (Gemini discovers this root directly). Per-skill, never a folder
-  symlink — a folder link would hijack the destination and destroy
-  plugin-installed or hand-authored skills. `opencode/setup.js` additionally
-  mirrors each one into `~/.config/opencode/commands/` so `/sy-*` stays
-  user-invocable there.
-- **Settings intent stays aligned via the cross-CLI table above.**
-  Each setup.js owns its own `<CLI>_MANAGED_SETTINGS` map (because the literal
-  key names differ), but the _intent_ is documented in one place — the
-  settings-intent table — so a reviewer can spot drift the moment a new key
-  goes into one CLI without being mirrored to the others.
-- **Keybindings have a per-CLI common+windows split with `OS_KEY` substitution.**
-  `<cli>/<cli>-keys.common.jsonc` covers shared chords; `<cli>/<cli>-keys.windows.jsonc`
-  layers Windows/Linux overrides; `OS_KEY` is substituted at deploy time. The
-  Copilot artifact is built even though Copilot has no live keymap surface yet,
-  so the schema stays exercised on every CI build and the file is ready to drop
-  in the moment upstream ships a config slot.
-- **One CLI invocation deploys all four.**
-
-  ```bash
-  ./run --preset=llm
-  ```
-
-  Or refresh a single CLI in isolation:
-
-  ```bash
-  ./run --files="claude/setup.js"     # or copilot/, gemini/, opencode/
-  ```
-
-- **Per-project `.agents/skills/<name>/SKILL.md` lives in the project's own
-  repo**, separate from the global LLM-CLI deploy. This repo keeps its skill
-  bodies there and exposes `.claude/skills -> ../.agents/skills` for Claude
-  compatibility. Pi, OpenCode, and Copilot CLI support the canonical location;
-  see [Skills across CLIs](#skills-across-clis) below.
+The five client setup scripts consume the same sources through `llm-common.js`.
+Follow **Editing rules** above for source ownership and **AGENTS.md §13.3** for credential approval, deployment commands, and two-run verification.
+Per-skill links preserve plugin-installed and hand-authored skills; never replace a whole discovery folder with a symlink.
+The broad `./run --preset=llm` and narrow `./run --files="claude/setup.js"` forms above select the desired scope.
+Use the matching setup path for another client; configured clients may skip when their prerequisites are absent.
 
 - **Auto-memory is Claude-Code-specific today.**
   `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` plus its linked files are

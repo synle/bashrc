@@ -4,9 +4,7 @@ Argument: $ARGUMENTS (optional paths or glob; if empty or unexpanded, use the sc
 
 ## When to use
 
-- Reduce context load after additions or before a budget overflow.
-- Resolve duplicated knowledge, contradictory steps, stale mechanics, and repeated explanation.
-- Move conditional reference behind a pointer when compression alone cannot meet the budget.
+Reduce context load after additions, resolve duplicate or stale guidance, and move conditional reference behind pointers when compression cannot meet the budget.
 
 ## Hard rules
 
@@ -14,7 +12,7 @@ Argument: $ARGUMENTS (optional paths or glob; if empty or unexpanded, use the sc
 - **One idea per sentence.** Use ASD-STE100-inspired controlled English. Write at most <<SY_PROSE_SENTENCE_MAX_WORDS>> words per prose sentence. Use active voice. Use one established term per concept. Keep conditions and exceptions attached to their actions. Never invent an actor or certainty to force active voice.
 - **Meaning never dropped.** Optional articles may go. Never drop `not`, `never`, `no`, or `only`. Keep numbers and units exact. Preserve uncertainty, conditions, ordering, exceptions, safety gates, named rules, references, and technical payloads.
 - **No theater.** No "me think", roleplay, or chatter between tool calls. Keep required progress checkpoints. If Caveman phrasing is not shorter, use plain prose. Write rules and skills in precise standard English.
-- **Trim restatement, never a rule.** Preserve distinct behavior, conditions, ordering, exceptions, and safety gates. Split behind a pointer if useful compression cannot meet the budget.
+- **Trim restatement, never a rule.** Preserve distinct behavior under **Meaning never dropped**; split behind a pointer when compression cannot meet the budget.
 - **Preserve named-rule names verbatim.** Keep referenced names while rewriting their prose; verify every cross-reference.
 - **Meaning has one home.** Consolidate knowledge that changes for the same reason. Similar wording with different ownership or triggers may remain.
 - **The environment is a source of truth.** Point to authoritative config, manifests, and help instead of caching inventories. Retain non-obvious conventions and failure history needed to use them correctly.
@@ -53,7 +51,7 @@ Keep universal rules inline and move conditional reference to a companion reache
 ### 7. Verify
 
 - Review before/after behavior, named-rule sets, references, and exact sizes. Record every deliberate merge or precedence resolution.
-- Check revised prose against **One idea per sentence**, **Meaning never dropped**, and **No theater**. Use the shared sentence limit, not a separate number. Review meaning separately; sentence counts cannot prove preservation. Preserve technical payloads rather than rewriting them to satisfy a word limit.
+- Check **One idea per sentence**, **Meaning never dropped**, and **No theater** against the shared sentence limit, never a separate number. Review meaning independently of sentence counts; preserve technical payloads rather than rewriting them to meet the limit.
 - Run focused registry, budget, generator and deployment checks, then the required final gate once. Deploy twice; quote counts, failures, skips, and second-run churn.
 
 ## Safety
@@ -63,7 +61,7 @@ Never:
 - Delete a live rule — or weaken one to a suggestion — to hit a char budget. Split behind a pointer instead.
 - Rename a rule whose name is cross-referenced elsewhere.
 - Author a new rule under cover of "cleanup," or change a rule's meaning while compressing its prose.
-- Edit a generated/deployed copy instead of the source (the deployed corpus regenerates; the source is the single home).
+- Edit generated/deployed copies instead of their source.
 - Bypass a size gate by trimming a code fence, a required value, or a load-bearing example.
 
 Stop and ask when a section is over budget with no restatement left to cut and no clean split boundary — the fix is a design call (which rules move, which file they land in) the human should make.

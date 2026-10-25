@@ -8,20 +8,20 @@ Honesty from the main instructions governs this file too.
 
 ## Reproduce before you theorize
 
-- No fix without a reproduction. A guess that greens the symptom is _worse_ than no fix — hides the defect, burns the evidence. Can't reproduce? The deliverable is a reproduction, not a patch: match the failing environment, run from a clean checkout, reproduce in CI. If none works, say so and stop rather than patch blind. Report the rate (`3/3`, `2/10`); stabilize intermittents (seeds, clocks, ports) before bisecting.
+- No fix without a reproduction. If it does not reproduce, match the failing environment, try a clean checkout, and reproduce in CI. If none works, report reproduction evidence and gaps, then stop; never patch blind. Report the rate (`3/3`, `2/10`); stabilize intermittents (seeds, clocks, ports) before bisecting.
 - Shrink the repro before forming a hypothesis. One test, not a suite; one input, not a fixture; one call, not a request. Done when removing anything else makes the failure vanish.
 - Read the **first** failure, not the last. Runners, compilers, and CI logs cascade. Read whole stack traces before theorizing, quote errors verbatim — an error message is a search key. Before an external search, remove secrets, hostnames, IPs, private paths, SQL fragments, and customer data. Search the error category, never a raw private trace.
 
 ## Isolate one variable at a time
 
 - One hypothesis, one change, one observation. State the hypothesis **and what would disprove it**, change one thing, observe, and revert if it did not prove out.
-- List a few ranked candidates before testing any — single-hypothesis generation anchors on the first plausible idea. Each must name its disproof ("if X is the cause, changing Y kills the bug"); a candidate with no prediction is a vibe, so sharpen or drop it. Then test one at a time.
+- List a few ranked candidates before testing any. Each must name its disproof ("if X is the cause, changing Y kills the bug"). Sharpen or drop candidates without predictions; test one at a time.
 - Bisect; don't stare. Binary-search the cheapest axis — history (`git bisect run <cmd>` with the minimal repro), code path (log the _value_ at the midpoint, not "got here"), input, or one config/dependency toggle from a known-good baseline.
 - Find the divergence point. State one expected value or behavior at a named code location, then bisect until two adjacent observations show right before and wrong after. Observe values; never infer them from code whose behavior is already disproving your model.
 - Instrument narrowly, clean up after. Prefer one debugger breakpoint or REPL inspection over ten logs; never log-everything-and-grep. Tag every temporary debug log with a unique prefix (`[DEBUG-a4f2]`) so removal is one `grep` — and remove them all before declaring done.
 - Perf regression: logs mislead. Establish a baseline measurement first (timing harness, profiler, query plan), then bisect. Measure first, fix second.
 - After three consecutive ruled-out hypotheses, attack the premise instead of forming a fourth. Usual culprits: the code read is not the code run (stale build, cached artifact, shadowed module, wrong branch), the test asserts something other than assumed, the "known good" baseline was never good, or the environment differs.
-- Prove the running thing is the built thing before trusting any live result — a version/SHA endpoint, or a process start time after the build. A stale server makes every observation lie.
+- Prove the running thing is the built thing before trusting live results: check a version/SHA endpoint or process start time after the build.
 
 ## Fix the cause, then prove it
 
