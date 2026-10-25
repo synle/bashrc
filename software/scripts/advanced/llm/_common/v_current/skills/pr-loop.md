@@ -14,8 +14,74 @@ Do not call this entrypoint recursively when the selected workflow reads this co
 
 ## Steps
 
+### Fresh restart
+
+`restart=fresh` is an explicit top-level request for new scheduling ownership and a new watch clock; it is not a state-deletion command.
+Omission preserves ordinary recovery, including existing explicit budget overrides and completed-history selection.
+Strip restart before scope resolution, author parsing, or clock creation; the selected workflow still owns scope and permissions.
+Reject unknown restart values, duplicate restart/budget options, missing values, malformed durations, and non-positive or non-finite fresh budgets.
+Perform validation before any stop request, dispatch, clock change, or publication; invalid fresh input never falls back to ordinary launch.
+Resolve valid durations/rounds and clamping with Clock and schedule; an omitted fresh budget/cadence uses the shared defaults only after takeover.
+Personal shell wrappers use `_sy_pr_loop_options` from the shared shell dispatcher partial to validate only restart/budget argv and emit canonical trailing tokens.
+That helper bounds budget text to 256 characters, preserves valid tokens as data, and never performs takeover or numeric duration resolution.
+Direct ordinary invocations retain their existing invalid-value fallback; wrapper validation rejects malformed positional arguments before any workflow launch.
+
+Reject fresh mode combined with review dry-run or its dry-run aliases, `pass=single`, or execution inside an already dispatched worker.
+Consume restart once at the top-level scheduling owner; never forward the restart token to a worker.
+Workers receive completed handoff state, the selected policy, and preserved per-PR history, not permission to restart another owner.
+Standalone retains its existing single-worker loop owner. Batch retains its parent-owned clock and pass=single workers.
+Implementation approval is not a live restart invocation and never resumes a paused PR run.
+
+**Independent preflight.** Allow one 60-second discovery/capability window across the selected set and one additional 60-second stop-or-drain confirmation window.
+Both are independent of the predecessor watch deadline; an expired predecessor cannot erase this explicitly authorized preflight allowance.
+Persist attempt deadlines before side effects; an interrupted retry does not silently receive fresh time.
+Bound every call by its remaining phase window. An unbounded required call or exceeded window yields `restart blocked`, not force termination or assumed success.
+A later explicit fresh request may authorize another bounded attempt only after reconciling the prior attempt and its requests.
+Do not start a fresh countdown during preflight or automatically resume stopped predecessors after a blocked attempt.
+
+**Capability gate.** Before stopping a healthy owner, verify runtime support for controller quiescence, writer/child completion, and exclusive authority for the selected identities.
+A stop acknowledgement or session-file lease is not a stable-PR publishing fence.
+A sole-controller fallback requires verifiable external serialization of controllers plus terminated former writers and relevant operations.
+Unknown or unsupported capability produces `restart blocked` before cancellation, naming missing proof and next action.
+Saved idle handles alone do not establish an active competing controller; inspect execution-scoped evidence rather than treating historical sessions as perpetual locks.
+Never infer exclusive authority from an empty active list, old timestamp, model promise, or a Markdown ownership generation.
+Claim/fence enforcement must cover dispatch, resume, and publication; a new predecessor child invalidates the barrier.
+Static/stubbed checks do not certify runtime exclusion; unavailable backend authority tests keep that backend's takeover path blocked.
+
+**Whole-set takeover.** One barrier covers the entire selected batch, including its affected predecessor controllers.
+Persist the predecessor snapshot and attempt first; quiesce or effectively fence controllers before stopping or draining their in-scope writers.
+Prefer safe checkpoints and graceful completion. Confirm child/local/remote-operation quiescence and reconcile pending publications before replacement authority.
+Acquire the verified runtime claim or serialized sole-controller authority, then recheck controller and writer evidence at the irreversible boundary.
+No replacement slots, new run identity, or fresh watch clock before the barrier succeeds.
+Preserve out-of-scope assignments; if an owner cannot separate them safely, report the affected scope and request a decision rather than widening takeover.
+Record per-PR stopped/fenced/active/unknown results; partial success never launches a subset of replacement slots behind an incomplete batch barrier.
+
+**Reset scheduling, preserve work.** Reset only run identity, clock/cadence, queue/membership, run-local pass/probe counts, queue aging, and board snapshots.
+After the barrier, re-resolve authorized scope, rebuild ranking, obtain real launch time, and start the valid requested budget or shared defaults.
+Reset run-local pass/poll/fingerprint scheduling fields, but retain predecessor summaries and reconcile pending wake events rather than dropping unresolved events.
+Preserve worktrees, dirty edits, untracked work, unpushed commits, checkpoints, posted artifact IDs, reviewed SHAs, repair caps, automerge ownership, sync cooldown history, and approval vetoes.
+Refresh readiness against current head/base; never force a duplicate review of unchanged code or reuse a previous READY result as current proof.
+Keep selected goal/feedback/automerge policy and the workflow's mutation permissions. Restart grants no merge, release, or migration authority.
+Recover local work before sync; reconcile GitHub artifacts immediately before retrying a non-idempotent action and perform only missing steps.
+Fresh scheduling grants no additional attempts for the same capped unresolved defect.
+
+**Pause scope.** A fresh invocation requests resumption only for its matching scheduler pause and monitoring scope.
+Record that intent before stopping; a failed takeover leaves the matching scheduler pause effective.
+Clear the matching scheduler pause only after the full barrier succeeds; human decisions, approval gates, credential incidents, and other action-scoped restrictions remain.
+If pause scope or resumption permission is ambiguous, block rather than treating restart as blanket authorization.
+
+**Durable retry.** Store takeover provenance in the existing dispatcher ledger and PR-memory ## State sections, never a competing memory folder.
+Persist takeover_attempt_id, takeover_phase, normalized scope, predecessor run/owner handles, checkpoint pointers, discovery/stop deadlines, stop_request_ids, and runtime authority identity when supported.
+Use takeover_phase `discovery`, `quiescing`, `reconciling`, `claiming`, `ready`, or `blocked`; omit it when no takeover exists.
+Keep per-PR last completed steps, controller/child/remote evidence and timestamps, pending events, missing proof, next action, and saved pause/resumption intent.
+Checkpoint before a stop request and after each verified effect. Attempt IDs and generations are provenance, not unenforced locks.
+Retry only missing steps after reconciling stop requests and remote publications; a missing acknowledgement checkpoint never justifies blindly resending a request.
+Never resume stopped predecessors automatically, erase prior history, or absorb unrelated assignments to manufacture successful recovery.
+On a blocked exit, preserve original clocks and work, report elapsed preflight and exact missing proof, and start no fresh timer.
+
 ### Run selection
 
+Apply Fresh restart first when explicitly requested; otherwise preserve this ordinary run-selection policy.
 Before creating a clock, identify the workflow, scope kind, normalized repository/PR identities, resolved author filters, and canonical search root and discovery depth when applicable.
 Normalize aliases, case-insensitive identities, and explicit-list order; keep changing search results separate from the stable scope definition.
 Persist that selection beside run_id, run_lifecycle (`running`, `interrupted`, `paused`, or `completed`), clock, owner handles, and pause scope/clearing condition.
@@ -47,7 +113,8 @@ Record run_lifecycle and completion evidence on every exit. A historical needs_u
 - Defaults: `<<SY_PR_RUN_BUDGET_ROUNDS>>` rounds and `<<SY_PR_KEEPALIVE_INTERVAL_SECONDS>>` seconds. Clamp budget to `[10m, 24h]`, then keepalive to `[5m, budget]`. Report every clamp.
 - Natural-language cadence maps to these tokens: `10 rounds 25 mins apart` means `budget=10r keepalive=25m`.
 - Exactly one owner holds `started_at`, `deadline_at`, cadence, and final verification. A batch driver owns the set's clock; single-pass workers inherit it and never receive fresh clock overrides.
-- Apply Owner recovery and restart before creating a new clock. For a fresh authorized run, obtain real launch time with `date` and print the schedule below.
+- For ordinary recovery, apply Owner recovery and restart before creating a new clock. Explicit fresh mode applies its separate preflight and barrier first.
+- After fresh takeover or ordinary fresh-run selection succeeds, obtain real launch time with `date` and print the schedule below.
 - On recovery, print the saved first-pass time, original deadline, and remaining budget instead of announcing a new launch. Single-pass workers and review dry-runs announce no watch schedule.
 
 ```text
@@ -70,7 +137,8 @@ Persist the same launch time and `deadline_at = started_at + resolved budget`. F
 - Await every job dispatched or resumed in the turn. A missing detached timer means inline execution with real waits, never abandoned jobs or a shortened budget.
 - `pass=single` runs one pass inline, returns state, and never sleeps or polls between passes. Only an explicit caller selects it; an agent never adds it to shorten a normal request.
 - Keep existing parameter forms: babysit uses `round=<n>` plus optional `last=true`. Review accepts legacy `round=<n>/<total>` and driver form `round=<n> last=true`; normalize both to the same completed-round/cleanup state. Manual single-pass defaults remain babysit `round=1 last=true` and review `round=1/1`.
-- Report and ignore unknown `key=value` tokens; never parse them as PR refs. Workflow-specific invalid goals or scopes retain their own rejection rules.
+- Validate and consume restart through Fresh restart before handling other tokens; never ignore an invalid or forwarded restart option.
+- Report and ignore other unknown `key=value` tokens; never parse them as PR refs. Workflow-specific invalid goals or scopes retain their own rejection rules.
 - Return a `## State` block after each pass. The driver supplies it under `## Prior state`, never a whitespace-split `state=` token. Missing prior state means round one and requires live verification, not invented ownership.
 - Increment `completed_round` only after a pass finishes. An interrupted pass resumes from its last completed checkpoint; other PRs keep independent counters.
 - Preserve shared state: `loop_count`, `completed_round`, `started_at`, `deadline_at`, `last_full_pass_at`, `last_poll_at`, `watch_fingerprint`, `probe_snapshot`, `probe_count`, `consecutive_noops`, `dirty_after_pass`, `pending_wake_events`, `externally_blocked`, `last_watch_verification_at`, and `wake_reason`.
@@ -79,7 +147,8 @@ Persist the same launch time and `deadline_at = started_at + resolved budget`. F
 
 ### Owner recovery and restart
 
-**Bounded discovery.** Before dispatch or recovery, read the saved ledger and latest checkpoint for each stable PR key, including prior owner handles.
+**Bounded discovery.** These windows govern ordinary recovery; explicit Fresh restart uses its independent preflight rather than the predecessor watch deadline.
+Before dispatch or recovery, read the saved ledger and latest checkpoint for each stable PR key, including prior owner handles.
 Use the documented harness status interface for those identities, not repeated CLI discovery, full process dumps, transcript sweeps, or unrelated migration scans.
 Allow one 60-second discovery window across the saved owners, with at most two targeted status reads per owner and one latest-checkpoint read.
 Bound each call by the remaining window and watch deadline; batch reads when supported.
@@ -179,11 +248,12 @@ gh api "repos/<owner>/<repo>/pulls/<number>/comments?per_page=1&sort=updated&dir
 
 - Round one is always a full pass unless the selected workflow's explicit dry-run/single-pass mode applies. A scope skip ends the pass, not the watch.
 - Poll after each pass. Exclude the owner's own writes from inbound-event decisions; they never create a self-sustaining loop.
-- Never interrupt an active pass except through Owner recovery and restart or an explicit user stop. Routine incoming events wait for a safe point.
+- Never interrupt an active pass except through Owner recovery and restart, Fresh restart, or an explicit user stop. Routine incoming events wait for a safe point.
 - Record relevant incoming events and source/head versions, let the owner finish safely, then reconcile against its returned snapshot. Collapse only unconsumed events into one follow-up.
 - Never overwrite a newer driver observation with an older worker snapshot. Preserve pending events until consumed or proven no longer actionable.
 - Verify at least every resolved keepalive interval and before the deadline. Harmless progress never postpones verification. Schedule from the latest completed full pass or watch verification.
-- All waits, in-pass CI monitors, retries, and merge waits share the outer deadline. Reserve final verification before it; do not start another pass after it. Finish an active pass safely and report any actual overrun.
+- Watching waits, in-pass CI monitors, retries, and merge waits share the outer watch deadline; only explicit Fresh restart preflight has separate bounded windows.
+- Reserve final verification before the watch deadline; do not start another pass after it. Finish an active pass safely and report any actual overrun.
 - Wait using a real blocking `sleep`, bounded by the next due event and remaining deadline. If interrupted early, measure and wait only the remainder. Never simulate elapsed time, busy-poll, or shorten the requested watch.
 - A quiet round, absent detached timer, or green snapshot never ends a watch goal. A parked `needs_user` decision remains watched and revalidated; it is never marked successful or posted as scheduler state on GitHub.
 - `MERGED`/`CLOSED` ends that PR's rotation and invokes only required owner cleanup. Other per-PR exits come from the selected workflow: verified ready goals or bounded repair escalation, never generic inference.
@@ -227,7 +297,7 @@ Never:
 - Turn missing/unknown evidence, a quiet tick, exhausted budget, or parked decision into success.
 - Reset durable retry counters or erase local work to recover a scheduler.
 - Modify repository protections, execute production migrations, merge, release, or post GitHub scheduler markers from the shared layer.
-- Interrupt another owner's work outside Owner recovery and restart or an explicit user stop, or destroy dirty/unpushed state during cleanup.
+- Interrupt another owner's work outside Owner recovery and restart, Fresh restart, or an explicit user stop, or destroy dirty/unpushed state during cleanup.
 - Treat elapsed time, an empty active list, or a stale-looking lock as exclusive write authority.
 
 Stop and ask when workflow selection, scope, ownership, or a required permission is ambiguous; preserve state and leave existing PRs untouched.

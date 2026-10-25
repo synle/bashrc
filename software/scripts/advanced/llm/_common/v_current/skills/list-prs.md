@@ -656,6 +656,16 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
   Save the stable recovery fields in the previous rendered snapshot; recompute ages without checkpointing them as semantic changes.
   Preserve 🆕 for a row without a prior snapshot and keep the existing four columns.
 
+  **Fresh takeover status.** When the caller supplies takeover_attempt_id, append `restart <takeover_phase>` to the existing recovery suffix.
+  Read takeover_phase, predecessor run identity, discovery/stop deadlines, and per-PR takeover results from the verified caller ledger.
+  During preflight, show `restart pending — <phase> · <missing proof or next action>`; blocked attempts show `restart blocked — <missing proof>`.
+  No fresh countdown before takeover completes; display the predecessor clock separately as historical context, never as a newly launched watch.
+  Whole-set takeover pending is not an active replacement worker or a free-slot claim. Preserve existing PR status and per-PR debt.
+  The ownership-blocked token still marks missing authority; a blocked restart is not failed CI, a new GitHub state, or a completed pass.
+  Diff takeover_attempt_id, takeover_phase, and verified missing-proof changes alongside stable recovery fields.
+  Takeover deadline ticks never create Δ; phase transitions and an actual new run identity do. A new run resets its board snapshots and begins with 🆕.
+  A successful barrier switches to the verified new run clock and normal Agent token; never infer success from elapsed preflight time.
+
   **Counters — the fixed thread fields on the same line.** Always printed, always all three fields, always this order, appended after the clock with the same `·` separator:
 
   `💬 <n> open · ✔ <n> resolved · ⚠️ <n> need attention`
