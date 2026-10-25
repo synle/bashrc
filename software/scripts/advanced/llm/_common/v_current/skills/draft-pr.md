@@ -57,7 +57,7 @@
    - **Ordinary WIP mode** → Title format: `WIP: DO NOT MERGE — [<repo>] <concise description of changes>` — bare repo name, org / owner dropped (`[widget-store] ...`, never `[acme/widget-store] ...`). The WIP prefix stays outermost so the stop signal reads first.
    - **Template found → the body is that template, filled in** (see the rule named above). This is a WIP, so unfinished sections say `TODO — still wiring up X` rather than being deleted or fabricated, and most checklist boxes correctly stay unticked.
    - **No template outside placeholder mode → default body:** a `## Summary` section with bullet points and a `## Test plan` section.
-   - **Blocked on an earlier wave (Step 4c) → add a `## Blocked on` section**, template or not, listing every PR this one waits for as a full `http://github.com/<owner>/<repo>/pull/<n>` URL with a half-line saying what it provides (`— adds the nullable \`org_id\` column`). Close it with one line stating the consequence: `"CI stays red until these land; this branch does not contain them."`That section is doing three jobs at once — it tells a human why a red WIP is fine, it is the reference that marks this PR non-standalone so automerge stays deferred, and it is what a later pass re-reads to decide the PR can be promoted.
+   - **Blocked on an earlier wave (Step 4c) → add a `## Blocked on` section**, template or not, listing every PR this one waits for as a full `https://github.com/<owner>/<repo>/pull/<n>` URL with a half-line saying what it provides (`— adds the nullable \`org_id\` column`). Close it with one line stating the consequence: `"CI stays red until these land; this branch does not contain them."`That section is doing three jobs at once — it tells a human why a red WIP is fine, it is the reference that marks this PR non-standalone so automerge stays deferred, and it is what a later pass re-reads to decide the PR can be promoted.
 7a. Write the complete WIP body to an explicit temporary Markdown file with the file-editing tool (for example,`/tmp/pr-body.md`) and review that file. Do not create it with a shell heredoc, shell variable, `echo`, `printf`, or command substitution; do not put body text in the shell command.
 8. Push the branch if needed: `git push -u origin <branch>`
 9. Create the PR with the file-backed body.
@@ -67,11 +67,11 @@
 10. Return the PR URL immediately, and say implementation starts after this link is shared.
     10a. **Seed owned-PR memory.** After GitHub returns the PR URL, use stable identity `<owner>/<repo>#<number>`. Under `<<LLM_ROOT_FOLDER>>/pr_babysits/`, find an existing file by that identity in its heading or full PR URL and by historical filename aliases; otherwise create `<repo-name>_<number>_<slug>.md`, resolving `<owner>/<repo>` and `<repo-name>` from GitHub, preserving repository-name punctuation, and deriving a short lowercase snake_case slug from the title after stripping status / repo prefixes. One same-kind match is reused without renaming; multiple matches create no new file, so report the conflict and use the newest verified snapshot until consolidation is approved. Record a short TLDR, PR URL, owner/repo identity, branch/head SHA, WIP creation result/time, current status, and empty `## Progress`, `## Open Items`, `## State`, and `## Final Snapshot` sections. This file persists across runs and becomes `/sy-babysit-pr`'s canonical memory; never create a worktree-adjacent journal.
 11. **Placeholder mode follow-through:** once real implementation lands, push the code, run `gh pr ready <number>`, drop the `WIP` / `Placeholder` title markers, and rewrite the body so it matches the implemented diff before asking for review.
-12. **Ordinary WIP mode only: optional readiness handoff.** If babysitting was already explicitly requested, hand off without asking again. Otherwise offer: "Babysit until bot review, CI, mergeability, and migration checks pass?"
+12. **Ordinary WIP mode only:** ask the user: "Do you want me to babysit this PR until CI passes? (yes/no)"
 
 - Placeholder mode → stop after returning the link; later implementation promotes this same PR via Step 11.
-- Ordinary WIP mode, explicit yes/request → follow the owned-PR babysit workflow with the new URL and `goal=ready`.
-- Ordinary WIP mode, no authorization → stop. Creating a PR never starts a watch loop by itself.
+- Ordinary WIP mode, yes → run `/sy-babysit-pr` with the new PR URL.
+- Ordinary WIP mode, no → stop.
 
 ## Rules
 

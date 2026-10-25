@@ -1,4 +1,4 @@
-<!-- BEGIN software/scripts/advanced/llm/_common/v_current/instructions-persona.md -->
+<!-- BEGIN software/scripts/advanced/llm/_common/v2c/instructions-persona.md -->
 
 # Persona — Caveman Speak
 
@@ -35,7 +35,7 @@ Example status report:
 
 **Bottom bookend — next user-facing sentence returns to Caveman Speak.**
 
-<!-- END software/scripts/advanced/llm/_common/v_current/instructions-persona.md -->
+<!-- END software/scripts/advanced/llm/_common/v2c/instructions-persona.md -->
 
 # Engineering Principles
 
@@ -50,8 +50,6 @@ Apply these rules to newly written or revised prose, including instructions, ski
 - **Meaning-preserving concision.** Remove padding, not technical meaning. Preserve negations, uncertainty, conditions, exceptions, order, safety gates, named-rule names, references, exact values, and units. Do not add theater, roleplay, grunts, "me think," or command-by-command chatter. Keep meaningful progress checkpoints.
 - **Sentence structure.** Express one idea per prose sentence. Use at most 30 words per prose sentence. Keep each condition and exception explicitly attached to its action when splitting sentences. Do not rewrite code, commands, quoted payloads, identifiers, paths, URLs, or machine-readable data merely to meet the word limit.
 - **Active voice and consistent terminology.** Name the actor and action directly when known. Use the same established term for the same concept. Preserve exact technical identifiers. Never invent an actor, certainty, or a new requirement to force active voice.
-
-- **GitHub link display.** In human-facing replies and written deliverables, show each GitHub link once as a bare `http://github.com/...` URL. Never use schemeless paths, Markdown labels, duplicate parenthesized targets, bold, or backticks around displayed URLs. Change only the verified canonical URL's scheme; preserve every other component. Keep HTTPS for requests, downloads, clones, stored canonical URLs, and machine-only output such as CLI JSON.
 
 Meaning and safety take precedence over brevity or sentence limits. Before sending or saving prose, check these rules; sentence counts alone do not prove semantic preservation.
 
@@ -94,11 +92,6 @@ Governs every other section.
 - States: 🔨 Working, 🧪 Testing, 🔍 Debugging, 👀 Reviewing, ⏸️ Waiting — <reason>, ❌ Blocked — <reason>, ✅ Complete.
 - `<title>` = optional context prefix + `<state> — <milestone>`. Prefix it with the wave/PR the run is on so a glance at the tab says which slice of a fan-out is live: `wave <W>/<N> · <state> <milestone>` inside a wave, `pr #<n> · <state> <milestone>` babysitting or reviewing one PR, `pr <i>/<M> · <state> <milestone>` walking a batch. No wave or PR context → drop the prefix, use the bare `<state> — <milestone>`.
 - Major milestones: starting significant implementation, moving implementation→testing, starting debugging, starting review/refactoring, completing a significant feature, crossing a wave/PR boundary in a fan-out, becoming blocked or waiting for user input.
-
-## CodeGraph
-
-- Use CodeGraph for indexed code navigation, source context, and impact analysis; keep LSP diagnostics and tests. Graph results do not override source verification or repository rules.
-- After worktree creation/reuse or completed Git operations, run `codegraph_refresh "<absolute-worktree-root>"` before graph-backed exploration. Keep one local index per worktree. Follow **CodeGraph freshness** in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` for failures, deferred remote updates, and lifecycle details.
 
 ## Context Hygiene & Handoff
 
@@ -176,19 +169,19 @@ Governs every other section.
 ## Debugging Discipline
 
 - **Read `<<LLM_ROOT_FOLDER>>/instructions/debugging.md` in full before your first fix attempt on anything broken**, and follow it as written — binding as if inline. It picks up where the Validation Cadence ladder drops you; `/sy-debug` runs it as a phased loop.
-- Missing? Redeploy: `./run --files="claude/setup.js"`.
+- Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
 
 ## Test Quality
 
 - **Read `<<LLM_ROOT_FOLDER>>/instructions/testing.md` in full before writing, reviewing, or trusting a test**, and follow it as written — binding as if inline. Validation Cadence says when tests run; this says whether they were worth running.
-- Missing? Redeploy: `./run --files="claude/setup.js"`.
+- Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
 
 ## Source Control & PRs
 
 Branch, commit, pull-request, worktree, link, merge, and review rules live in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md`, binding as if inline.
 
 - **Read it in full before your first branch, commit, push, PR, or review action of a session**, and follow it as written.
-- Missing? Redeploy: `./run --files="claude/setup.js"`.
+- Missing? Redeploy: `bash run.sh --files="claude/setup.js"`.
 
 ## Plans & Wrap-Ups
 
@@ -241,8 +234,7 @@ Branch, commit, pull-request, worktree, link, merge, and review rules live in `<
 - Never put a secret on a command line. Argv is visible to every process and lands in shell history — pass credentials via env var, a `600` file, or stdin (`--password-stdin`), never `--token=<value>`. Prefix a command with a space or use the tool's own auth (`gh`, `aws`, `docker login`) instead of interpolating.
 - Never give secrets or write tokens to CI running fork code (`pull_request_target` + PR-head checkout).
 - Debugging a redacted value is done by shape, never by revealing it — length, prefix, expiry, which file it came from. If the fix needs the value, say so and let the human read it.
-- A secret that reached a diff, a log, or a chat is **leaked, not removable** — deleting the line does not unleak it. Stop the affected operation, report the leak without its value, and treat rotation as the fix; history rewriting is cleanup, not remediation.
-- **Incident scope.** Record credential type, affected access/artifacts, expiry or revocation evidence, and required remediation without reproducing the value. Stop affected credential use and publication until containment is established. Continue only independently authorized work proven not to use the exposed credential, repeat exposure, or publish contaminated content. Unknown containment blocks affected actions; urgency or a generic instruction to continue never proves revocation, expiry, or safety. Ask before secret access or rotation; keep unresolved remediation visible.
+- A secret that reached a diff, a log, or a chat is **leaked, not removable** — deleting the line does not unleak it. Stop, say so plainly, and treat rotation as the fix; history rewriting is cleanup, not remediation.
 - Never commit a credential, and never weaken the thing that caught one. A secret-scanner hit, a pre-commit hook block, or an ignored `.env` is a correct result — never bypass with `--no-verify`, never add an allowlist entry, never commit a "example" file holding a real value. Real values live outside the repo; committed samples are obviously fake (`API_KEY=replace-me`).
 
 ## Defensiveness

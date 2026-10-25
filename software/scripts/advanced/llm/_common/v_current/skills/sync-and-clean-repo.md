@@ -37,8 +37,6 @@ This skill owns single-repo maintenance sequencing. Shared PR instructions own s
    - Stop and ask only when resolution needs judgment.
    - After resolving: `git add <files>` and `git commit --no-edit`.
 
-   - **CodeGraph checkpoint:** after the default branch fast-forward and after each completed branch checkout/merge, run `codegraph_refresh "<absolute-worktree-root>"` before graph-backed exploration or switching to the next branch. Refresh once after that branch's conflict resolution and generated-source changes. Keep unfinished operations deferred; report failed/unavailable graph refresh separately from successful Git work and use direct source tools meanwhile.
-
 7. **Push where upstream exists.** For each branch that was merged and has an upstream: `git push`. Never force-push. Branches without an upstream are left for the user to push manually.
 
 8. **Report.** Emit a summary per repo:
@@ -49,7 +47,6 @@ This skill owns single-repo maintenance sequencing. Shared PR instructions own s
    - Branches with conflicts resolved (count + files)
    - Branches skipped (no upstream / already current / diverged)
    - Push status per branch
-   - CodeGraph JSON status and reason for each refreshed checkout; the index describes only the branch currently checked out there
 
 ## Rules
 

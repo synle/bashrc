@@ -9,7 +9,7 @@
   - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
   - **PWD keyword** — one of the PWD keyword set (see below, case-insensitive). Same as default PWD scope above.
-  - **Explicit PR refs** — one or more PR refs: full URL (`http://github.com/<owner>/<repo>/pull/<n>` or the HTTPS equivalent), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name — see Repo Identification). Explicit-refs scope is author-agnostic (you asked for those PRs).
+  - **Explicit PR refs** — one or more PR refs: full URL (`https://github.com/<owner>/<repo>/pull/<n>`), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name — see Repo Identification). Explicit-refs scope is author-agnostic (you asked for those PRs).
 - **Author** (only meaningful in `all` scope): a GitHub handle, a full name, or one of `me`/`mine`/`self` (= current user). Defaults to `@me`.
 
 **PWD keyword set:** `pwd`, `.`, `./`, `here`, `cwd`, `this folder`, `this-folder` (case-insensitive, trimmed). This vocabulary is defined here and referenced by `/sy-babysit-prs`.
@@ -285,8 +285,6 @@ Standalone PRs always come last, ordered by the normal group display order and w
 
 ## Output format
 
-**GitHub links in every format follow Writing Rules' GitHub link display.** Render the verified PR URL as bare `http://github.com/<owner>/<repo>/pull/<number>`, including in tables, pulse sentences, and queue references. This is presentation only: do not change CLI JSON, API requests, or stored canonical URLs. Consumers of `short`, `links`, and `clusters` must accept both HTTP and HTTPS, normalize to HTTPS before requests and de-duplication, and ignore headings.
-
 Print groups in this fixed display order. Skip empty groups (don't print the heading if `N == 0`). Each group heading is `## <Group Name> (N)`.
 
 ### Mixed-author disclosure
@@ -323,11 +321,11 @@ For each PR in each group, print just the full URL on its own line:
 
 ```
 ## NEEDS ATTENTION (2)
-http://github.com/owner/repo-a/pull/123
-http://github.com/owner/repo-b/pull/456
+https://github.com/owner/repo-a/pull/123
+https://github.com/owner/repo-b/pull/456
 
 ## READY TO MERGE (1)
-http://github.com/owner/repo-c/pull/789
+https://github.com/owner/repo-c/pull/789
 ```
 
 Mixed-author lists carry the breakdown in the heading; the URL lines are unchanged:
@@ -336,8 +334,8 @@ Mixed-author lists carry the breakdown in the heading; the URL lines are unchang
 Mixed authors: @me (1), @alice (1)
 
 ## NEEDS ATTENTION (2 — @me 1, @alice 1)
-http://github.com/owner/repo-a/pull/123
-http://github.com/owner/repo-b/pull/456
+https://github.com/owner/repo-a/pull/123
+https://github.com/owner/repo-b/pull/456
 ```
 
 ### Format: `long`
@@ -347,14 +345,14 @@ For each PR, print a short description line, then the full URL, then a blank lin
 ```
 ## NEEDS ATTENTION (2)
 #123 [owner/repo-a] Add user signup flow — 🔴 CI FAILED — unit-tests
-http://github.com/owner/repo-a/pull/123
+https://github.com/owner/repo-a/pull/123
 
 #456 [owner/repo-b] Refactor auth middleware — 🔴 CHANGES REQUESTED
-http://github.com/owner/repo-b/pull/456
+https://github.com/owner/repo-b/pull/456
 
 ## READY TO MERGE (1)
 #789 [owner/repo-c] Bump deps to latest — 🟢 CI PASSED · APPROVED
-http://github.com/owner/repo-c/pull/789
+https://github.com/owner/repo-c/pull/789
 ```
 
 The short description line is: `#<number> [<owner/repo>] <title> — <color emoji> <status>`. On a mixed-author list, insert the author after the repo: `#<number> [<owner/repo>] @<author> — <title> — <color emoji> <status>`. Strip a leading `[<repo>] ` prefix from `<title>` when it matches the repo already printed on that line — the repo is its own field, so keeping it in the title prints it twice.
@@ -381,14 +379,14 @@ On a mixed-author list, insert an `Author` column immediately after `Repo`, fill
 A bare bullet list of PR URLs — one `- <url>` per line. **Nothing else** — no group headings, no counts, no blank lines between groups, no `Mixed authors:` line, no titles, no status. The whole output is a clean link list you can paste into Slack, a PR body, or notes, and that another command can read line-by-line after stripping the `- ` prefix.
 
 ```
-- http://github.com/owner/repo-a/pull/123
-- http://github.com/owner/repo-b/pull/456
-- http://github.com/owner/repo-c/pull/789
+- https://github.com/owner/repo-a/pull/123
+- https://github.com/owner/repo-b/pull/456
+- https://github.com/owner/repo-c/pull/789
 ```
 
 - Every line is exactly `- ` followed by the URL. No numbering, no nesting, no indentation, no trailing punctuation.
 - Classification still runs — it only drives the **order**. Emit the groups in the same display order as every other format (NEEDS ATTENTION → READY TO MERGE → READY TO MERGE (with comments) → NEED APPROVAL → NOT READY / WIP / DRAFT), with the same within-group sort, then flatten to one bullet per line.
-- Print the full `http://github.com/<owner>/<repo>/pull/<number>` display form. Consumers accept both schemes and normalize to HTTPS before requests.
+- Print the full `https://github.com/<owner>/<repo>/pull/<number>` form here — `links` output is meant to be consumed by other commands, and the scheme keeps every consumer happy.
 - Zero PRs → print nothing at all (empty output). No "no PRs found" line: an empty list is the correct machine answer, and a prose line would be parsed as a link by whatever is reading.
 - `links` is the strictest machine-input format in this file. The `- ` prefix is the only decoration — never add a handle, title, status, annotation, or code fence.
 
@@ -398,17 +396,17 @@ The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see 
 
 ```
 ### oauth-migration (3) — acme/api, acme/web, acme/widget-store
-- http://github.com/acme/api/pull/51 — pr1 — issue refresh tokens on the token endpoint — 🔴 CI FAILED — unit-tests
-- http://github.com/acme/web/pull/7 — pr2 — swap the login form to the new flow — 🟡 AWAITING REVIEW
-- http://github.com/acme/widget-store/pull/109 — pr3 — drop the old session cookie reader — 🟢 CI PASSED · APPROVED
+- https://github.com/acme/api/pull/51 — pr1 — issue refresh tokens on the token endpoint — 🔴 CI FAILED — unit-tests
+- https://github.com/acme/web/pull/7 — pr2 — swap the login form to the new flow — 🟡 AWAITING REVIEW
+- https://github.com/acme/widget-store/pull/109 — pr3 — drop the old session cookie reader — 🟢 CI PASSED · APPROVED
 
 ### ABC-1234 (2) — acme/api, acme/web
-- http://github.com/acme/api/pull/60 — pr4 — add the org-fields column to the sync payload — 🟡 BUILD IN PROGRESS (2 running)
-- http://github.com/acme/web/pull/18 — pr5 — render org fields on the profile card — 🟡 AWAITING REVIEW
+- https://github.com/acme/api/pull/60 — pr4 — add the org-fields column to the sync payload — 🟡 BUILD IN PROGRESS (2 running)
+- https://github.com/acme/web/pull/18 — pr5 — render org fields on the profile card — 🟡 AWAITING REVIEW
 
 ### Standalone (2)
-- http://github.com/acme/widget-store/pull/113 — pr6 — retry token refresh on 401 — 🔴 MERGE CONFLICT
-- http://github.com/acme/api/pull/42 — pr7 — drop the legacy /v1 search endpoint — 🟢 CI PASSED · APPROVED
+- https://github.com/acme/widget-store/pull/113 — pr6 — retry token refresh on 401 — 🔴 MERGE CONFLICT
+- https://github.com/acme/api/pull/42 — pr7 — drop the legacy /v1 search endpoint — 🟢 CI PASSED · APPROVED
 ```
 
 - **Cluster heading**: `### <label> (<n>) — <repo>, <repo>, …`, repos comma-separated in the order their PRs appear. The repo list is the whole point of the heading: it answers "which repos does this feature still need" without reading a single URL. Single-repo clusters (two PRs in the same repo) still print the repo once.
@@ -418,7 +416,7 @@ The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see 
 - **Every line says what its PR does** — `<description>` is ≤8 words of plain English written from that PR's title and body, never the title pasted verbatim, never the branch name, never a restatement of the status. Without it a reader gets a bare number and a color and has to open every link to triage. Cannot tell from title and body what it does → say the narrowest true thing (`config change in the ingest job`), never invent a purpose.
 - **Inside a cluster, `<description>` is what that PR contributes, not what the feature is** — the `###` heading already said the feature, so repeating it on all three lines burns the one field that could tell them apart. Write the differentiator: `issue refresh tokens on the token endpoint`, not `oauth migration`.
 - **Numbering is global, continuous, and display-ordered** — `pr1` through `pr<N>` across the whole render, never restarting per cluster. The handle is stable only within one render; it is a pointer for the next message, not an identifier to store.
-- **Consumers read the URL token from each line.** It is the second whitespace-separated field, immediately after `- `, displayed as `http://github.com/<owner>/<repo>/pull/<number>`. Accept both HTTP and HTTPS input; normalize to HTTPS before requests, identity comparisons, and de-duplication. Heading lines carry no URL token and are skipped.
+- **Consumers read the `https://` token from each line.** That token is always the full `https://github.com/<owner>/<repo>/pull/<number>` form and always the second whitespace-separated field, immediately after the `- `. Heading lines carry no `https://` token, so a URL-extracting parser skips them for free — the same property that lets `/sy-babysit-prs` read `short` past its `##` headings.
 - **Ordering is Feature clustering's, not this section's** — cluster rank by most-urgent member, then size, then age; within a cluster, dependency order first. Do not re-sort here.
 - When a cluster came from inference (Feature clustering signals 4–5), append ` — grouped by <signal>` to its heading, e.g. `### retry-token-refresh (2) — acme/api, acme/web — grouped by matching branch name`. A guess says it's a guess.
 - Zero PRs → print nothing at all, same as `links`.
@@ -442,28 +440,28 @@ PRs Scanned (5):
 Pulse (2 moved, 2 steady, 1 new):
 
 **oauth-migration** — slots 1–2 · 3 PRs · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
-- Δ http://github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
-- ▫️ http://github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
-- 🆕 http://github.com/acme/api/pull/51 — new to the board, CI still running; second in slot 2, first pass not yet run.
+- Δ github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
+- ▫️ github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
+- 🆕 github.com/acme/api/pull/51 — new to the board, CI still running; second in slot 2, first pass not yet run.
 
 **Standalone** — 2 PRs · acme/widget-store, acme/api
-- ▫️ http://github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
-- Δ http://github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
+- ▫️ github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
+- Δ github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
 
 ### 🌊 oauth-migration (3) — slots 1–2 · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
 
 | PR | Description | Status | Agent |
 | --- | --- | --- | --- |
-| http://github.com/acme/widget-store/pull/109 | **@alice** · `alice/oauth-migration/token-retry` · **Retry token refresh on 401** · created 2026-10-20 · auto-merge off | Δ 🔴 CI FAILED — `unit-tests` · AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) · slot 1 · started 17:12 · running 22m · 💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
-| http://github.com/acme/web/pull/7 | `@me` · `syle/oauth-migration/split-auth-middleware` · **WIP: Split auth middleware** · created 2026-10-19 · auto-merge off | ▫️ 🔴 CI PASSED · CHANGES REQUESTED · MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) · slot 1 · stopped 17:01 · ran 19m — needs human · 💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
-| http://github.com/acme/api/pull/51 | **@bob** · `bob/signup-flow` · **Add signup flow** · created 2026-10-22 · 🤖 auto-merge (squash) | 🆕 🟡 BUILD IN PROGRESS (3 running) · AWAITING REVIEW | ⚪ NOT STARTED · slot 2, position 2 of 2 · behind http://github.com/acme/web/pull/7 · 💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
+| [github.com/acme/widget-store/pull/109](https://github.com/acme/widget-store/pull/109) | **@alice** · `alice/oauth-migration/token-retry` · **Retry token refresh on 401** · auto-merge off | Δ 🔴 CI FAILED — `unit-tests` · AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) · slot 1 · started 17:12 · running 22m · 💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| [github.com/acme/web/pull/7](https://github.com/acme/web/pull/7) | `@me` · `syle/oauth-migration/split-auth-middleware` · **WIP: Split auth middleware** · auto-merge off | ▫️ 🔴 CI PASSED · CHANGES REQUESTED · MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) · slot 1 · stopped 17:01 · ran 19m — needs human · 💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| [github.com/acme/api/pull/51](https://github.com/acme/api/pull/51) | **@bob** · `bob/signup-flow` · **Add signup flow** · 🤖 auto-merge (squash) | 🆕 🟡 BUILD IN PROGRESS (3 running) · AWAITING REVIEW | ⚪ NOT STARTED · slot 2, position 2 of 2 · behind github.com/acme/web/pull/7 · 💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
 
 ### 🌊 Standalone (2) — acme/widget-store, acme/api
 
 | PR | Description | Status | Agent |
 | --- | --- | --- | --- |
-| http://github.com/acme/widget-store/pull/113 | `@me` · `syle/drop-dead-flag` · **Drop dead feature flag** · created 2026-10-18 · auto-merge off | ▫️ 🟡 CI PASSED · AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) · slot 1 · ended 16:58 · ran 26m · next check 17:02 · 💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
-| http://github.com/acme/api/pull/42 | `@me` · `syle/bump-deps` · **Bump deps to latest** · created 2026-10-21 · 🤖 auto-merge (squash) | Δ 🟢 CI PASSED · APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) · slot 1 · ended 17:05 · 48m total · 💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
+| [github.com/acme/widget-store/pull/113](https://github.com/acme/widget-store/pull/113) | `@me` · `syle/drop-dead-flag` · **Drop dead feature flag** · auto-merge off | ▫️ 🟡 CI PASSED · AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) · slot 1 · ended 16:58 · ran 26m · next check 17:02 · 💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| [github.com/acme/api/pull/42](https://github.com/acme/api/pull/42) | `@me` · `syle/bump-deps` · **Bump deps to latest** · 🤖 auto-merge (squash) | Δ 🟢 CI PASSED · APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) · slot 1 · ended 17:05 · 48m total · 💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
 
 **Grouping — one feature set is one block, top to bottom.**
@@ -507,21 +505,18 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 **Every cell is ONE line. `<br>` is forbidden anywhere in this render.** The board used to pack four lines into the PR cell with `<br>`, and that is a bet on the renderer: the CLIs this board prints into render a markdown table as plain text, so the tag comes out as the literal characters `<br>` mid-sentence and the cell becomes unreadable. A cell holding several fields joins them with `·` instead — a separator that is just text and renders identically everywhere. Cells wrap on width by themselves; that is the renderer's job, not this spec's.
 
-**Use a bare URL in the PR cell; use inline code, bold, and plain text to distinguish Description fields.** The renderer controls theme colors. Never emit ANSI, an HTML `<span>`, or a color name inside a cell.
+**Fields inside a cell each get a different markdown span so the reader's theme colors them apart** — markdown link, inline code, bold, plain. Three distinct spans is the whole coloring mechanism: never emit ANSI, an HTML `<span>`, or a color name, all of which render as literal garbage in a table cell.
 
-- **PR** — exactly one bare `http://github.com/<owner>/<repo>/pull/<number>` URL, following Writing Rules' **GitHub link display**. No other field belongs in this cell.
+- **PR** — the link, and **nothing else**: `[<path>](<url>)`, where `<path>` is the full `github.com/<owner>/<repo>/pull/<number>`. One field per cell is what keeps the column narrow enough to scan, and a link is the one thing in the row a reader clicks rather than reads. **Never elide the owner to `…/<repo>/pull/<n>`** — a path with the org replaced by an ellipsis is not clickable, not greppable, and not pasteable.
 
-- **Description** — everything that says _what this PR is_, one line, `·`-separated, in this fixed order: `<author> · `<head branch>` · **<title>** · created YYYY-MM-DD · <auto-merge>`.
+- **Description** — everything that says _what this PR is_, one line, `·`-separated, in this fixed order: `<author> · `<head branch>` · **<title>** · <auto-merge>`.
 
   | Field       | Span                                   | Typical color | Notes                                                                                                                     |
   | ----------- | -------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------- |
   | Author      | `` `@me` `` mine / `**@alice**` theirs | code vs bold  | The one field with **two** spans on purpose — the color flip is what makes "mine vs theirs" scannable (see Author, below) |
   | Head branch | inline code, `` `<headRefName>` ``     | grey / dim    | `headRefName` verbatim, never the base branch, never a slug. The token you retype into `git checkout` / `worktree_create` |
   | Title       | bold, `**<title>**`                    | accent        | Normalized as every other render normalizes it (`WIP: ` form, `[draft]` prepended). Over ~60 chars → truncate with `…`    |
-  | Created     | plain text                             | default       | `created YYYY-MM-DD`, from `createdAt` in UTC, immediately after the title; `created ?` if missing or invalid             |
   | Auto-merge  | plain text                             | default       | `🤖 auto-merge (<method>)` when armed, `auto-merge off` when not — it decides whether a green row still needs a human     |
-
-  Read the creation date from the existing `createdAt` field, not `updatedAt`, activity time, or the agent clock. Keep `·` on both sides of the date. Title truncation never truncates the date or subsequent fields.
 
   Auto-merge is here rather than in `Status` because it is a property of the PR's configuration, not of its current health: an armed 🟡 needs nobody, the same row unarmed is waiting for someone to come back and click. Method comes from `autoMergeMethod` lowercased (`squash` / `merge` / `rebase`).
 
@@ -594,34 +589,30 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Nothing else goes in this cell. No open-thread counts (Agent cell), no timestamps (Agent cell), no free-form reason clause.
 
-- **Agent** — what the dispatched job is doing. **One line: `<state token>[ (pass N · <HH:MM> left)] · [slot <N> · ]<clock> · <counters>[ · <recovery telemetry>]`.** State, clock, and counters are one thought — "which state, since when, for how long, and how much is outstanding" — and they read worse split. The per-row `slot <N>` lives here because it is the only part of the old group line that varies row to row. No delta here; the marker leads the Status cell.
+- **Agent** — what the dispatched job is doing. **One line: `<state token>[ (pass N · <HH:MM> left)] · [slot <N> · ]<clock> · <counters>`.** State, clock, and counters are one thought — "which state, since when, for how long, and how much is outstanding" — and they read worse split. The per-row `slot <N>` lives here because it is the only part of the old group line that varies row to row. No delta here; the marker leads the Status cell.
 
   **State token and clock.**
 
-  | Token                   | When                                                                           | Clock                                                           |
-  | ----------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-  | `⚪ NOT STARTED`        | Enrolled, first pass not yet run                                               | `queued, position 2 of 5` (no clock; nothing started)           |
-  | `🔄 IN PROGRESS`        | Job actively working this pass                                                 | `started 17:12 · running 22m`                                   |
-  | `⏸️ WAITING`            | Pass done, polling until something moves                                       | `ended 16:58 · ran 19m · next check 17:02`                      |
-  | `🔍 WATCHING`           | **Not terminal** — no worker held, dispatcher polling cheaply                  | `blocked on Owner Approval · probe 4 · next check 17:02`        |
-  | `✅ COMPLETED`          | Job finished all passes, or the PR merged                                      | `ended 17:05 · 48m total`                                       |
-  | `⏭️ SKIPPED`            | **Terminal** — skipped, and the run budget is spent                            | `17:02 — draft, budget spent`                                   |
-  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, run budget still open                    | `17:02 — draft · next check 17:02`                              |
-  | `🙋 NEEDS_USER`         | **Not terminal on GitHub** — this run paused it for the operator               | `needs you — split request · asked 16:40 · revalidated current` |
-  | `⚠️ ESCALATED`          | Job stopped and needs human judgment                                           | `stopped 17:01 · ran 19m — needs human`                         |
-  | `❌ FAILED`             | Job errored out                                                                | `failed 16:44 · ran 4m — worktree conflict`                     |
-  | `⛔ OWNERSHIP BLOCKED`  | **Not terminal** — replacement authority or writer termination remains unknown | `ownership unknown — <missing proof> · next check <HH:MM>`      |
-
-  Ownership-blocked Agent state takes precedence while writer authority remains unresolved, even if GitHub merged or closed the PR.
-  Keep the GitHub state in Status; this token reports recovery debt, not a new ledger state or permission to free a slot.
+  | Token                   | When                                                             | Clock                                                           |
+  | ----------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
+  | `⚪ NOT STARTED`        | Enrolled, first pass not yet run                                 | `queued, position 2 of 5` (no clock; nothing started)           |
+  | `🔄 IN PROGRESS`        | Job actively working this pass                                   | `started 17:12 · running 22m`                                   |
+  | `⏸️ WAITING`            | Pass done, polling until something moves                         | `ended 16:58 · ran 19m · next check 17:02`                      |
+  | `🔍 WATCHING`           | **Not terminal** — no worker held, dispatcher polling cheaply    | `blocked on Owner Approval · probe 4 · next check 17:02`        |
+  | `✅ COMPLETED`          | Job finished all passes, or the PR merged                        | `ended 17:05 · 48m total`                                       |
+  | `⏭️ SKIPPED`            | **Terminal** — skipped, and the run budget is spent              | `17:02 — draft, budget spent`                                   |
+  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, run budget still open      | `17:02 — draft · next check 17:02`                              |
+  | `🙋 NEEDS_USER`         | **Not terminal on GitHub** — this run paused it for the operator | `needs you — split request · asked 16:40 · revalidated current` |
+  | `⚠️ ESCALATED`          | Job stopped and needs human judgment                             | `stopped 17:01 · ran 19m — needs human`                         |
+  | `❌ FAILED`             | Job errored out                                                  | `failed 16:44 · ran 4m — worktree conflict`                     |
 
   **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip while the run budget is still open is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-check ETA. Only when the budget is spent does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal _and_ loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
 
-  **`🔍 WATCHING` means the PR is being served cheaply, not that it was dropped.** This PR is externally blocked, so the dispatcher released its worker slot and is polling the state fingerprint itself (`/sy-babysit-prs` Step 4b, `/sy-review-prs` Step 5b). The row is **not terminal** — it keeps its pass counter and its next-check ETA, the pulse keeps running, and the dispatcher applies its wake policy. Babysit classifies changes through `/sy-babysit-pr` Step 12b; harmless CI progress stays read-only. Review dispatch retains its full-pass-on-change policy. Its clock reads `blocked on <what> · probe <N> · next check <HH:MM>`: what it is waiting on, how many probes it has spent there, and when the next one lands. Never render it as `⏸️ WAITING` (which claims a dispatched job is asleep) or as `⏭️ SKIPPED` (which claims nobody is coming back).
+  **`🔍 WATCHING` means the PR is being served cheaply, not that it was dropped.** This PR is externally blocked, so the dispatcher released its worker slot and is polling the state fingerprint itself (`/sy-babysit-prs` Step 4b, `/sy-review-prs` Step 5b). The row is **not terminal** — it keeps its pass counter and its next-check ETA, the pulse keeps running, and a worker is dispatched the instant the fingerprint moves. Its clock reads `blocked on <what> · probe <N> · next check <HH:MM>`: what it is waiting on, how many probes it has spent there, and when the next one lands. Never render it as `⏸️ WAITING` (which claims a dispatched job is asleep) or as `⏭️ SKIPPED` (which claims nobody is coming back).
 
-  **`🙋 NEEDS_USER` is a pause in this run, never a state on GitHub.** Pause only the blocked decision; retain probes and keepalive revalidation per the dispatcher's rules. For babysit, unchanged pulses show only `NEEDS_USER — unchanged; <next step>`; full question/state remains in memory and internal handoffs. Outside babysit's unchanged pulses, show the question, ask time, and latest verdict (`current` / `changed` / `conflicted` / `stale_unknown`); `cleared` returns to normal scheduling. Make no GitHub scheduler-state writes. Do not render this pause as `⚠️ ESCALATED` or terminal `⏭️ SKIPPED`.
+  **`🙋 NEEDS_USER` is a pause in this run, never a state on GitHub.** Pause only the blocked decision; retain probes and keepalive revalidation passes per the dispatcher's rules. Show the question, ask time, and latest verdict (`current` / `changed` / `conflicted` / `stale_unknown`); `cleared` returns to normal scheduling. Make no GitHub scheduler-state writes. Do not render this pause as `⚠️ ESCALATED` or terminal `⏭️ SKIPPED`.
 
-  **A merged or closed PR with reconciled ownership is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
+  **A merged or closed PR is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
 
   **Clock grammar.** Times are local `HH:MM`, 24-hour, no date (the header block already carries the date). Durations are `<N>m` under an hour, `<N>h <N>m` over it, always whole minutes — a pulse is a 10-minute heartbeat, so seconds are noise.
 
@@ -634,29 +625,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **The clock is excluded from the change-marker diff.** Elapsed time moves on every pulse by definition, so counting it as a change would render `Δ` on every running row forever and destroy the marker's only job. Diff the state token, the pass number, the Status cell, and the counters line — never `running <N>m`, never a recomputed `next check <HH:MM>`, never the remaining-budget figure. A row whose only difference is the clock ticking is `▫️`.
 
-  **Recovery telemetry — an optional suffix in the existing Agent cell.** With a recovery ledger, append these fragments after the thread counters:
-
-  `owner <active|idle|unknown> · hb <age|unknown|n/a> · op <operation|unknown|n/a> <duration|unknown> · progress <age|unknown> · recovery <decision>`
-
-  Use the existing whole-minute duration grammar; progress age measures time since last_progress_at, not the last heartbeat.
-  Idle owners show hb n/a and op n/a; omit the operation duration when no operation is active.
-  Unsupported active-pass heartbeat shows hb unknown; unknown owner state never becomes idle merely because no active entry was returned.
-  Recovery decision is `none`, `retain`, `resume`, `investigate`, `replace`, or `blocked`, with a short evidence-backed reason when needed.
-  A `blocked` decision shows the ownership-blocked token and missing proof or next action, not a fabricated clean watching state.
-  No caller ledger means no recovery suffix; standalone listing must not invent owner identity or liveness.
-
-  Recovery ledger fields: run_id, run_lifecycle, owner_state, heartbeat_supported (`true`, `false`, or `unknown`), last_heartbeat_at, last_progress_at, operation, operation_started_at, expected operation deadline, recovery_decision, recovery_reason, and recovery_next_action.
-  Unknown timestamps stay unknown. Read these fields from the caller's verified ledger, never infer them from PR updatedAt or pass age.
-  Missing telemetry never proves ownership, completion, or a free worker slot.
-
-  **Recovery movement.** Exclude last_heartbeat_at, heartbeat age, operation elapsed time, and progress age from movement.
-  Diff recovery_decision, recovery_reason, owner_state, operation identity, and last_progress_at alongside the existing stable row fields.
-  Operation identity is its label and saved operation_started_at; a new operation is movement, not merely a longer elapsed duration.
-  Heartbeat-only updates remain ▫️. A recovery transition such as investigate to blocked is Δ, never PR-readiness evidence.
-  Save the stable recovery fields in the previous rendered snapshot; recompute ages without checkpointing them as semantic changes.
-  Preserve 🆕 for a row without a prior snapshot and keep the existing four columns.
-
-  **Counters — the fixed thread fields on the same line.** Always printed, always all three fields, always this order, appended after the clock with the same `·` separator:
+  **Counters — the tail of the same line.** Always printed, always all three fields, always this order, appended after the clock with the same `·` separator:
 
   `💬 <n> open · ✔ <n> resolved · ⚠️ <n> need attention`
 
@@ -674,7 +643,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 **The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, Status fragments, and counters. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row's Status cell leads with `🆕`.
 
-**Renderer contract — the board is emitted exactly as specified, or not at all.** Every pulse, from the first baseline to the closing one, is the **same** table: four columns in the fixed order `PR | Description | Status | Agent`, one line per cell, bare `http://github.com/<owner>/<repo>/pull/<number>` URLs in the PR column. A caller under context pressure reliably drifts toward a "quick" board — abbreviated paths, three columns, a bespoke `Ping-pong 0 — baseline` header, columns invented on the spot — and every such variant destroys the one property the board exists for: two pulses ten minutes apart that can be compared without re-reading them. Before printing, check the render against this section: four columns in order, the PR cell carrying exactly one bare URL without a Markdown wrapper or duplicate label, the Description cell carrying author + branch + title + creation date + auto-merge in the documented spans, no `<br>` anywhere, no `…/` in a PR path, header block present, one table per feature set. A field you have no data for prints its documented empty form (`❓`, `?`, `⚪ NOT STARTED`) — never a dropped column and never a shortened row.
+**Renderer contract — the board is emitted exactly as specified, or not at all.** Every pulse, from the first baseline to the closing one, is the **same** table: four columns in the fixed order `PR | Description | Status | Agent`, one line per cell, full `github.com/<owner>/<repo>/pull/<number>` paths. A caller under context pressure reliably drifts toward a "quick" board — abbreviated paths, three columns, a bespoke `Ping-pong 0 — baseline` header, columns invented on the spot — and every such variant destroys the one property the board exists for: two pulses ten minutes apart that can be compared without re-reading them. Before printing, check the render against this section: four columns in order, the PR cell carrying nothing but the linked path, the Description cell carrying author + branch + title + auto-merge in their own spans, no `<br>` anywhere, no `…/` in a PR path, header block present, one table per feature set. A field you have no data for prints its documented empty form (`❓`, `?`, `⚪ NOT STARTED`) — never a dropped column and never a shortened row.
 
 **Never** decorate the PR path with extra prefixes or suffixes, never add or drop a column, and never split the board by readiness group — one table per **feature set**, ordered by Grouping above, is the format. Readiness lives in the Status column and in the group order; it never gets its own table.
 

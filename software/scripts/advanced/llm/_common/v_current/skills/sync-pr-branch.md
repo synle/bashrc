@@ -89,10 +89,7 @@ A delegated run never creates or removes a worktree, never touches the caller's 
    - **Never re-parent or edit a migration that belongs to an ancestor PR** (Step 6, downhill only). An ancestor and this branch adding sibling migrations is the cross-PR case `/sy-review-pr` flags — re-parent **this** branch's migration onto the ancestor's and say so in the report.
    - Re-verify (single head descending from the floor), commit the re-parented migration. Needs judgment you don't have → stop and ask, same escape hatch as the conflict resolver.
 
-8. **Refresh CodeGraph, pre-push gate, push, and report.**
-   - **CodeGraph freshness checkpoint, including skipped paths with a caller-provided workspace.** For a stable local workspace, run `codegraph_refresh "<absolute-worktree-root>"` once after the entire chain, conflict resolution, migration repairs, and generated-source changes. This also initializes a missing index when `workspace=` bypassed the creator. Consume its JSON status and reason; never infer readiness from Git success or a watcher being present.
-   - **Remote-only or interrupted paths:** `method: server-side` means local files were not updated: report `codegraph.status: deferred` with that reason, without refreshing old files. No local workspace also means deferred. Unfinished Git operations remain deferred until completed. On a skipped path with a local workspace, refresh its actual local state only; do not claim it matches the remote revision.
-   - **Failure is separate from Git success.** A missing helper/executable is `unavailable`; a failed refresh is `failed`. Preserve the Git outcome, report the reason, and use direct source tools until a later refresh succeeds. Never silently omit this checkpoint.
+8. **Pre-push gate, push, and report.**
    - **Pre-push gate — blocking, no exceptions** (see the Pre-push gate rule): commit-author identity check on every pending commit (`git log @{u}..HEAD --format='%H %ae %an'` vs `git config --get user.email` / `user.name`; on mismatch ask, default "no" → `git commit --amend --reset-author --no-edit`, preserving `Co-Authored-By:` trailers) plus a secret scan of `git log @{u}..HEAD -p`.
    - `push=now` → `git push`, or `git push origin HEAD:<headRefName>` from a detached workspace. **Never force-push.** `push=defer` → stop here and report the unpushed SHAs; the caller pushes.
    - **Emit the result block** — always, in both report modes. `report=prose` adds a human summary around it (PR link, fresh `mergeStateStatus`, and the re-triggered CI run from `gh run list --branch <headRefName> --limit 1`); `report=structured` emits the block alone:
@@ -106,16 +103,11 @@ A delegated run never creates or removes a worktree, never touches the caller's 
        floor:     <branch> (default-branch | release-line)
        sources:
          - <branch>: merged <n> commits | already up to date | conflicts resolved (<n> files) | skipped (<why>)
-       codegraph:
-         status: initialized | refreshed | failed | unavailable | deferred
-         workspace: <absolute path | none>
-         reason: <helper reason | remote-only update | no local workspace>
        migrations: single-head | re-parented <what> | none-detected | needs-human
        pushed:    <sha> | deferred (<n> local commits) | nothing-to-push
        flags:     retargeted | orphaned-base <link> | cycle | hop-cap | stopped-for-human <why>
      ```
 
-   - A caller **must** read `codegraph` separately from the Git outcome: only `initialized` or `refreshed` permits graph-backed exploration of that workspace. Other statuses require direct source tools and explicit reporting.
    - A caller **must** read `flags` and `migrations`: `stopped-for-human` and `needs-human` mean the sync did not finish — do not continue as if the branch were synced.
 
 ## Rules

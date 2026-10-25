@@ -82,7 +82,7 @@ Collapse mechanical noise: fifteen dependency bumps are one line ("15 dependency
 
 One line per item: what changed and why it mattered, in plain language, followed by the full link. Not the PR title verbatim — a title is written for reviewers who have the diff open, and a standup reader does not.
 
-- Good: `Fixed the token refresh race that logged users out mid-session — http://github.com/acme/widget-store/pull/413`
+- Good: `Fixed the token refresh race that logged users out mid-session — github.com/acme/widget-store/pull/413`
 - Bad: `Merged PR #413: refactor(auth): update token refresh handler`
 
 State the period and scope at the top. Keep the whole thing scannable — this is read in fifteen seconds, in a meeting.
