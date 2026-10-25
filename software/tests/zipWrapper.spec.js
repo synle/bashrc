@@ -117,9 +117,9 @@ describe("zip wrapper subprocess integration", () => {
   });
 
   it("treats spaces, quotes, Unicode, leading dashes, and wildcard characters literally", () => {
-    writeFileSync(path.join(output, "-patch '??[1]*.txt"), "literal input");
-    writeFileSync(path.join(output, "-patch '??1-other.txt"), "not selected");
-    const result = runZip(["./-patch '??[1]*.txt", "archive with spaces.zip"]);
+    writeFileSync(path.join(output, "-patch 'caf\u00e9[1]*.txt"), "literal input");
+    writeFileSync(path.join(output, "-patch 'caf\u00e91-other.txt"), "not selected");
+    const result = runZip(["./-patch 'caf\u00e9[1]*.txt", "archive with spaces.zip"]);
     expect(result.status, result.stdout + result.stderr).toBe(0);
     // macOS unzip sanitizes Unicode in listings but extracts the original filename.
     const extracted = spawnSync("unzip", ["-q", "archive with spaces.zip", "-d", "extracted"], {
@@ -128,8 +128,8 @@ describe("zip wrapper subprocess integration", () => {
       timeout: 5000,
     });
     expect(extracted.status, extracted.stderr).toBe(0);
-    expect(readdirSync(path.join(output, "extracted"))).toEqual(["-patch '??[1]*.txt"]);
-    expect(readFileSync(path.join(output, "extracted/-patch '??[1]*.txt"), "utf8")).toBe("literal input");
+    expect(readdirSync(path.join(output, "extracted"))).toEqual(["-patch 'caf\u00e9[1]*.txt"]);
+    expect(readFileSync(path.join(output, "extracted/-patch 'caf\u00e9[1]*.txt"), "utf8")).toBe("literal input");
   });
 
   it.each([

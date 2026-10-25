@@ -113,7 +113,7 @@ describe("unzip wrapper subprocess integration", () => {
 
   it.each([
     ["file.name.ZIP", "file.name"],
-    ["patch '??.zip", "patch '??"],
+    ["patch 'caf\u00e9.zip", "patch 'caf\u00e9"],
     ["-patch.zip", "-patch"],
   ])("uses the literal filename stem for %s", (name, stem) => {
     const result = runUnzip([archive(name)]);
