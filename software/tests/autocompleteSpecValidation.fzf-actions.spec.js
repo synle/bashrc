@@ -95,7 +95,7 @@ describe("bash-fzf.profile.bash (direct)", () => {
       fs.mkdirSync(path.join(tmpDir, dir), { recursive: true });
     }
     fs.writeFileSync(path.join(tmpDir, "node_modules", "pkg", "index.js"), "mod");
-    // .git at root would trigger git fast-path — create a nested one for filtering tests
+    // .git at root would trigger git fast-path; create a nested one for filtering tests
     fs.mkdirSync(path.join(tmpDir, "sub", ".git", "objects"), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, "sub", ".git", "objects", "abc"), "obj");
     fs.writeFileSync(path.join(tmpDir, "__pycache__", "mod.pyc"), "cache");
@@ -106,8 +106,9 @@ describe("bash-fzf.profile.bash (direct)", () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
+  /** Execute fixture shell code and return nonempty output lines; throws on failure. @param {string} script @returns {string[]} */
   function runFzfHelper(script) {
-    const full = `#!/usr/bin/env bash\nsource "${COMMON_ENV_PATH}"\nsource "${fzfTemplatePath}"\n${script}`;
+    const full = `#!/usr/bin/env bash\nLINE_BREAK_HASH=${JSON.stringify("#".repeat(80))}\nsource "${COMMON_ENV_PATH}"\nsource "${fzfTemplatePath}"\n${script}`;
     return execSync("bash", { input: full, encoding: "utf-8", cwd: tmpDir, timeout: 10000 })
       .trim()
       .split("\n")
@@ -234,7 +235,15 @@ describe("bash-fzf.profile.bash (direct)", () => {
         alias favorite_alias=${JSON.stringify(expansion)}
         fuzzy_favorite_command
       `);
-      expect(results).toEqual([`H1:${selection}`, "HR", "H1:favorite_alias is an alias", expansion, "HR", execution]);
+      expect(results).toEqual([
+        `H1:${selection}`,
+        "HR",
+        "H1:favorite_alias is an alias",
+        "#".repeat(80),
+        `H1:${expansion}`,
+        "HR",
+        execution,
+      ]);
     });
 
     it("should preserve function definitions and execute the selected function", () => {
@@ -246,6 +255,7 @@ describe("bash-fzf.profile.bash (direct)", () => {
         expected=$(type favorite_test_command)
         h1 favorite_test_command
         hr
+        printf '%s\\n' "$LINE_BREAK_HASH"
         h1 "$expected"
         hr
         echo EXECUTED
@@ -258,7 +268,7 @@ describe("bash-fzf.profile.bash (direct)", () => {
 
     it("should truncate long type output and frame it with hr separators", () => {
       // h1 / hr live in common-env.sh / profile-advanced.sh, which this harness
-      // does not source — stub them with markers so the framing order is visible.
+      // does not source; stub them with markers so the framing order is visible.
       const results = runFzfHelper(`
         function h1() { printf 'H1:%s\\n' "$@"; }
         function hr() { echo "HR"; }
@@ -267,14 +277,14 @@ describe("bash-fzf.profile.bash (direct)", () => {
         function type() { printf '%*s' 600 '' | tr ' ' x; }
         fuzzy_favorite_command
       `);
-      expect(results).toEqual(["H1:favorite_test_command", "HR", `H1:${"x".repeat(500)}`, "HR"]);
+      expect(results).toEqual(["H1:favorite_test_command", "HR", "#".repeat(80), `H1:${"x".repeat(500)}`, "HR"]);
     });
   });
 
   describe("fzf history timestamp filtering", () => {
     it("should filter lines starting with # from bash_history in fuzzy_history", () => {
       // fuzzy_history (in bash-history.profile.bash) is the single source of truth for
-      // history fzf search — used both by direct invocation and by the Ctrl+R bind in
+      // history fzf search; used both by direct invocation and by the Ctrl+R bind in
       // bash-keys.profile.bash. It uses grep -v '^#[0-9][0-9]*$' to strip bash
       // HISTTIMEFORMAT timestamp lines (e.g. #1774747858) while preserving user-typed
       // `# note` lines.

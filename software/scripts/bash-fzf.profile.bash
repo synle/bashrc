@@ -598,12 +598,19 @@ function add_bookmark_dir() {
 }
 
 # Ctrl+B — pick and execute a bookmarked command, then add it to history.
-# Display aliases as a name and expansion; retain type output for other commands.
+# Display each leading alias and its final expansion, stopping at repeated aliases.
+# Arguments: none. Prints at most 500 resolution characters; evaluates the original
+# selection and adds it to history. A plain hash separator marks the final result.
+# Other commands retain their type output.
+# Returns the status of history -s; command errors remain visible on stderr.
 function fuzzy_favorite_command() {
   local cmd
   local _MAX_TYPE_OUTPUT_CHARS=500
   local _cmd_type_output
   local _cmd_word
+  local _cmd_expansion _cmd_alias_value
+  local _cmd_alias_chain=""
+  local _cmd_seen_aliases=$'\n'
   cmd=$(command cat "$BOOKMARK_SYLE_PATH" 2> /dev/null | sort -u | fzf_run --prompt="bookmark> " \
     --header="(Ctrl+B) - bookmarked commands" \
     --preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"; } | bat --paging=never --style=plain --color=always --language=bash' \
@@ -615,15 +622,35 @@ function fuzzy_favorite_command() {
     _cmd_word=$(echo "$cmd" | awk '{print $1}')
     _cmd_type_output=$(LC_ALL=C type "$_cmd_word" 2>&1 || true)
     if [[ "$_cmd_type_output" == "$_cmd_word is aliased to "* ]]; then
-      # C locale fixes Bash's wrapper text; strip only its outer quotes.
-      _cmd_type_output="${_cmd_type_output#*\`}"
-      _cmd_type_output="$_cmd_word is an alias"$'\n'"${_cmd_type_output%\'}"
+      _cmd_expansion="$_cmd_word"
+      while [[ "$_cmd_type_output" == "$_cmd_word is aliased to "* ]]; do
+        # Bash also stops expanding an alias that already appears in its chain.
+        [[ "$_cmd_seen_aliases" == *$'\n'"$_cmd_word"$'\n'* ]] && break
+        _cmd_seen_aliases+="$_cmd_word"$'\n'
+        _cmd_alias_chain+="$_cmd_word is an alias"$'\n'
+        # C locale fixes Bash's wrapper text; strip only its outer quotes.
+        _cmd_alias_value="${_cmd_type_output#*\`}"
+        _cmd_alias_value="${_cmd_alias_value%\'}"
+        # Keep alias-supplied arguments literal; only execution may evaluate them.
+        _cmd_expansion="${_cmd_expansion#"${_cmd_expansion%%[![:space:]]*}"}"
+        _cmd_expansion="$_cmd_alias_value${_cmd_expansion#"$_cmd_word"}"
+        _cmd_word=$(command printf '%s\n' "$_cmd_expansion" | awk '{print $1}')
+        _cmd_type_output=$(LC_ALL=C type "$_cmd_word" 2>&1 || true)
+      done
+      _cmd_type_output="$_cmd_alias_chain$_cmd_expansion"
     fi
     if [ "${#_cmd_type_output}" -gt "$_MAX_TYPE_OUTPUT_CHARS" ]; then
       _cmd_type_output="${_cmd_type_output:0:$_MAX_TYPE_OUTPUT_CHARS}"
     fi
     h1 "$cmd"
     hr
+    # Split the capped resolution so the separator does not consume its budget.
+    if [ -n "$_cmd_alias_chain" ]; then
+      _cmd_alias_chain="${_cmd_alias_chain:0:$_MAX_TYPE_OUTPUT_CHARS}"
+      h1 "${_cmd_alias_chain%$'\n'}"
+      _cmd_type_output="${_cmd_type_output#"$_cmd_alias_chain"}"
+    fi
+    command printf '%s\n' "$LINE_BREAK_HASH"
     h1 "$_cmd_type_output"
     hr
     eval "$cmd"
