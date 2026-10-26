@@ -142,7 +142,6 @@ installDnfPackage shfmt
 installDnfPackage ShellCheck # used by `make ci_test_shellcheck` (dnf pkg name is capitalized)
 installDnfPackage yq
 installDnfPackage git-delta
-installDnfPackage zoxide
 installDnfPackage fd-find
 installDnfPackage tree
 installDnfPackage tldr

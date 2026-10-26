@@ -282,7 +282,7 @@ function expandSpecMacros(content, options) {
 }
 
 /**
- * @type {Array<{command: string, specFile?: string, specCommand?: string, os?: string, maxDepth?: number}>}
+ * @type {Array<{command: string, specFile?: string, specCommand?: string, os?: string, maxDepth?: number, disabled?: boolean}>}
  * Each entry must have either specFile (path to spec data) or specCommand (proxy to
  * another command's spec — avoids duplicating specFile paths for aliases).
  *
@@ -294,6 +294,8 @@ function expandSpecMacros(content, options) {
  *   - "mac,linux"     = mac + linux (skip windows)
  *   - "mac,windows"   = mac + windows (skip linux)
  *   - "linux,windows" = linux + windows (skip mac)
+ *
+ * disabled entries retain protected spec inventory without registering completion on any platform.
  *
  * maxDepth field overrides MAX_NESTED_DEPTH for __nested_*__ token expansion:
  *   - undefined  = use global MAX_NESTED_DEPTH (default 3)
@@ -333,8 +335,10 @@ const SPEC_COMMANDS = [
     os: "mac,linux",
   },
   {
+    // TODO: Remove this dormant entry and its protected spec after zoxide decommissioning finishes.
     command: "zoxide",
     specFile: "software/metadata/autocomplete-complete-spec/zoxide",
+    disabled: true,
   },
   // ---- File search and processing ----
   {
@@ -519,10 +523,12 @@ function _resolveSpecFile(entry) {
 // END software/metadata/autocomplete.common.js
 
 /**
- * Registers inline PowerShell autocomplete spec data as profile blocks via registerWithPowershellProfile.
+ * Queue inline PowerShell completion blocks for enabled registry entries.
+ * @returns {Promise<void>} Resolves after profile registration; disabled inventory emits no completion code.
  */
 async function _registerInlineSpecs() {
   for (const entry of SPEC_COMMANDS) {
+    if (entry.disabled) continue;
     const { command, os } = entry;
     if (os && !os.split(",").includes("windows")) continue;
     const resolvedSpecFile = _resolveSpecFile(entry);

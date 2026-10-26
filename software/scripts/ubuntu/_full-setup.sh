@@ -141,7 +141,6 @@ installAptPackage shfmt
 installAptPackage shellcheck # used by `make ci_test_shellcheck`
 installAptPackage yq
 installAptPackage git-delta
-installAptPackage zoxide
 installAptPackage fd-find
 installAptPackage tree
 installAptPackage tldr

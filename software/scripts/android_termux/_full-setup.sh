@@ -143,7 +143,6 @@ installPkgPackage jq
 installPkgPackage shfmt
 installPkgPackage yq
 installPkgPackage git-delta
-installPkgPackage zoxide
 installPkgPackage fd
 installPkgPackage tree
 installPkgPackage tldr

@@ -146,7 +146,7 @@ describe("profile marker validation", () => {
   );
 
   // post-profile blocks that use appendTextBlock directly on BASH_SYLE_PATH
-  const postProfileKeys = ["starship prompt", "zoxide init"];
+  const postProfileKeys = ["starship prompt"];
 
   it("should have a pre-placed marker for every registerWithBashSyleProfile call", () => {
     for (const key of bashProfileKeys) {

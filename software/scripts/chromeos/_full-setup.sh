@@ -136,7 +136,6 @@ installAptPackage shfmt
 installAptPackage yq
 installAptPackage git-delta
 installAptPackage git-filter-repo
-installAptPackage zoxide
 installAptPackage fd-find
 installAptPackage tree
 installAptPackage tldr

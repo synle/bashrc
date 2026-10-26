@@ -1165,7 +1165,7 @@ alias ...="cd ../../"
 alias ....="cd ../../../"
 alias clear='printf "\033[H\033[2J\033[3J"'
 
-# cd is provided by zoxide (init bash --cmd cd) — no wrapper needed.
+# cd uses the Bash builtin; navigation never delegates to a fuzzy jump tool.
 
 # --- find (fd wrapper) ---
 # `fd` is guaranteed on PATH by ensure_binary_alias (apt's fd-find installs as
@@ -2367,7 +2367,6 @@ _prompt_command_add "_bashrc_update_check_show"
 # BEGIN/END | Browser Launchers - Opera
 # BEGIN/END | Browser Launchers - Arc
 # BEGIN/END | starship prompt
-# BEGIN/END | zoxide init
 
 ################################################################################
 # --- Spec-based Autocomplete (bash-autocomplete-complete-spec.js) ---

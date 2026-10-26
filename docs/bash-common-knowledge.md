@@ -813,7 +813,6 @@ condition && echo "true" || echo "false"
 
 ```bash
 # Instead of if/then/fi for simple guards:
-type -P zoxide &>/dev/null && eval "$(zoxide init bash --cmd cd)"
 type -P fnm &>/dev/null && eval "$(fnm env --use-on-cd --shell bash)"
 ```
 

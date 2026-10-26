@@ -55,8 +55,8 @@
     "files": ["bash-inputrc.js", "fzf.js", "advanced/bash-autocomplete-complete-spec.js"],
   },
   "prompt": {
-    "description": "Building block: shell prompt + navigation — Starship prompt install/config and zoxide (smarter cd).",
-    "files": ["advanced/starship.sh", "advanced/starship-config.js", "zoxide.js"],
+    "description": "Building block: shell prompt — Starship prompt install/config.",
+    "files": ["advanced/starship.sh", "advanced/starship-config.js"],
   },
   "llm": {
     "description": "Building block: AI CLI clients — install + configure Claude Code, GitHub Copilot, Google Gemini, OpenCode, and Pi (settings, keybindings, shared instructions, slash commands). Claude is the base — all CLIs read the same `_common/v_current/instructions.md`, OpenCode symlinks Claude's `/sy-*` commands, and Pi reads the shared skills from `~/.agents/skills`.",

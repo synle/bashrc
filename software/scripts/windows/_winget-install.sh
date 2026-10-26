@@ -178,7 +178,6 @@ winget_packages=(
   "sharkdp.bat"
   "sharkdp.fd"
   "dandavison.delta"
-  "ajeetdsouza.zoxide"
   "dbrgn.tealdeer"
   "astral-sh.uv"
   "Cloudflare.cloudflared"

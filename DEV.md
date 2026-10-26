@@ -312,6 +312,19 @@ npx oxfmt --write AGENTS.md DEV.md ARCHITECTURE.md
 For a changed Markdown include directive, `node software/tools/build-include.js <target.md>` regenerates only that target.
 Edit the directive or included source, never the generated body; verify a second run makes no changes.
 
+## Native navigation
+
+`cd` uses the Bash builtin, including native options, previous-folder behavior, and failure status.
+Setup no longer installs zoxide, and the prompt preset no longer selects it.
+The temporary `zoxide.js` migration removes legacy managed initialization and completion blocks.
+On the next profile load, it clears zoxide-owned wrappers, prompt hooks, internal state, and completion callbacks without replacing unrelated customizations.
+Installed binaries, navigation history, and user `_ZO_*` preferences remain untouched.
+
+Run the narrow migration through `./run --files=zoxide.js`; the broad profile refresh is `./run`.
+Open a fresh shell afterward. Refresh active completion generators with `./run --files=advanced/bash-autocomplete-complete-spec.js` or the broader `./run --preset=terminal`.
+The protected zoxide completion spec stays dormant; neither Bash nor PowerShell registers it.
+TODO: Remove the migration script, its profile marker, and dormant completion inventory after every managed machine has decommissioned zoxide.
+
 ## Native file listing
 
 `ls` uses the native executable without an alias, wrapper, or injected arguments.

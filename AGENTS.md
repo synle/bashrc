@@ -313,7 +313,7 @@ Profile registration is buffered: `registerProfileBlock` /
   (`IFS= read -r -d '' js << 'JS_EOF' || true`, then `node -e "$js"`). Enforced by
   `profileSyntax.spec.js`.
 - **Prefer one-liner `&&` guards** for `eval`/`init`/`source`:
-  `type -P zoxide &>/dev/null && eval "$(zoxide init bash --cmd cd)"`.
+  `type -P fnm &>/dev/null && eval "$(fnm env --use-on-cd --shell bash)"`.
 - **grep patterns must work under both `grep` and `rg`** — `grep` may be aliased. Avoid
   `-E`; use basic regex (`[0-9][0-9]*`, not `[0-9]+`).
 - **No `disown`** — use `( … ) &`. **No `"""`/`'''`** — bash has no triple quotes.
@@ -384,6 +384,9 @@ Profile registration is buffered: `registerProfileBlock` /
 
 ### 7.3 Profile & config
 
+- **Native navigation** leaves `cd` as the Bash builtin. `zoxide.js` temporarily removes legacy initialization, owned wrappers, hooks, and completion.
+  Keep its cleanup marker until every managed machine has migrated; then remove the script and dormant protected completion inventory.
+  Do not delete independently installed binaries or navigation history. Regression: `software/tests/nativeCd.spec.js`.
 - **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as
   explicit native aliases; cover listing behavior in `software/tests/nativeLs.spec.js`.
 - **Windows Terminal folder inheritance** uses OSC 9;9 reporting from

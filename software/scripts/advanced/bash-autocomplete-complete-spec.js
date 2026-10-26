@@ -282,7 +282,7 @@ function expandSpecMacros(content, options) {
 }
 
 /**
- * @type {Array<{command: string, specFile?: string, specCommand?: string, os?: string, maxDepth?: number}>}
+ * @type {Array<{command: string, specFile?: string, specCommand?: string, os?: string, maxDepth?: number, disabled?: boolean}>}
  * Each entry must have either specFile (path to spec data) or specCommand (proxy to
  * another command's spec — avoids duplicating specFile paths for aliases).
  *
@@ -294,6 +294,8 @@ function expandSpecMacros(content, options) {
  *   - "mac,linux"     = mac + linux (skip windows)
  *   - "mac,windows"   = mac + windows (skip linux)
  *   - "linux,windows" = linux + windows (skip mac)
+ *
+ * disabled entries retain protected spec inventory without registering completion on any platform.
  *
  * maxDepth field overrides MAX_NESTED_DEPTH for __nested_*__ token expansion:
  *   - undefined  = use global MAX_NESTED_DEPTH (default 3)
@@ -333,8 +335,10 @@ const SPEC_COMMANDS = [
     os: "mac,linux",
   },
   {
+    // TODO: Remove this dormant entry and its protected spec after zoxide decommissioning finishes.
     command: "zoxide",
     specFile: "software/metadata/autocomplete-complete-spec/zoxide",
+    disabled: true,
   },
   // ---- File search and processing ----
   {
@@ -518,7 +522,10 @@ function _resolveSpecFile(entry) {
 // MAX_NESTED_DEPTH is defined in index.js (shared global for all scripts)
 // END software/metadata/autocomplete.common.js
 
-/** Registers spec-based bash autocomplete for each command in SPEC_COMMANDS. */
+/**
+ * Queue Bash completion blocks for enabled SPEC_COMMANDS entries.
+ * @returns {Promise<void>} Resolves after profile registration; disabled inventory emits no completion code.
+ */
 async function doWork() {
   const commonFunctions = await readText`software/scripts/advanced/bash-autocomplete-complete-spec.common.bash`;
   const template = await readText`software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash`;
@@ -526,6 +533,7 @@ async function doWork() {
   // emit shared helpers (__to_opts, __to_opts_sorted, __spec_complete) once at the top
   const parts = [commonFunctions];
   for (const entry of SPEC_COMMANDS) {
+    if (entry.disabled) continue;
     const { command, os } = entry;
     if (os) {
       const allowed = os.split(",");
