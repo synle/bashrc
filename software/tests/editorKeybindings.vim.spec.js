@@ -77,6 +77,13 @@ describe("Vim toggle keybindings", () => {
     expect(VIM_SETTINGS).not.toContain("nnoremap <silent> ,w :wq<CR>");
     expect(VIM_SETTINGS).not.toContain("<Bslash>x");
   });
+
+  it("keeps Tab out of the comma prefix and maps Tab indent choices", () => {
+    expect(VIM_SETTINGS).not.toContain("nmap <Tab> ,");
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Tab>1 :call <SID>SetIndentStyle('soft', 2)<CR>");
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Tab>2 :call <SID>SetIndentStyle('soft', 4)<CR>");
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Tab>3 :call <SID>SetIndentStyle('hard', 0)<CR>");
+  });
 });
 
 describe("Vim Visual-Multi case keybindings", () => {

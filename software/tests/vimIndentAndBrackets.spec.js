@@ -83,6 +83,36 @@ describe("Vim indentation integration", () => {
   });
 
   it.each([
+    ["comma 2-space", ",1", [1, 2, 2, 2]],
+    ["comma 4-space", ",2", [1, 4, 4, 4]],
+    ["comma hard-tab", ",3", [0, 0, 2, 2]],
+    ["Tab 2-space", "\\<Tab>1", [1, 2, 2, 2]],
+    ["Tab 4-space", "\\<Tab>2", [1, 4, 4, 4]],
+    ["Tab hard-tab", "\\<Tab>3", [0, 0, 2, 2]],
+  ])("selects %s indentation", (_name, keys, expected) => {
+    const result = editInVim("alpha", [`call feedkeys("${keys}", "xt")`]);
+    expect(result.indent).toEqual(expected);
+  });
+
+  it.each([
+    ["Tab 2-space", "\\<Tab>1", "  Xalpha"],
+    ["Tab 4-space", "\\<Tab>2", "    Xalpha"],
+    ["Tab hard-tab", "\\<Tab>3", "\tXalpha"],
+  ])("uses %s selection for Insert-mode Tab", (_name, choice, expected) => {
+    const result = editInVim("alpha", [`call feedkeys("${choice}gg0i\\<Tab>X\\<Esc>", "xt")`]);
+    expect(result.lines).toEqual([expected]);
+  });
+
+  it.each([
+    ["Tab 2-space", "\\<Tab>1", "  alpha"],
+    ["Tab 4-space", "\\<Tab>2", "    alpha"],
+    ["Tab hard-tab", "\\<Tab>3", "\talpha"],
+  ])("uses %s selection for Visual-mode Tab", (_name, choice, expected) => {
+    const result = editInVim("alpha", [`call feedkeys("${choice}ggV\\<Tab>\\<Esc>", "xt")`]);
+    expect(result.lines).toEqual([expected]);
+  });
+
+  it.each([
     ["spaces", "    alpha\n", "  X"],
     ["hard tabs", "\talpha\n", "\tX"],
   ])("inserts %s with the actual insert-mode Tab key", (_name, input, expected) => {

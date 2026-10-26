@@ -755,15 +755,17 @@ including empty Makefiles. In Insert mode, `Tab` indents the current line and
 `shift+Tab` dedents it from any cursor position, without leaving Insert mode.
 Both keys change leading indentation rather than inserting whitespace within text.
 Visual `Tab` / `shift+Tab` use the same buffer settings and keep the selection
-for repeated shifts. Normal-mode `Tab` remains a comma-prefix shortcut.
+for repeated shifts. Normal-mode `Tab` is no longer a comma-prefix shortcut; a
+bare `Tab` keeps Vim's stock jumplist-forward behavior.
 
-Choose indentation for the current buffer in Normal mode:
+Choose indentation for the current buffer in Normal mode with `,1`–`,3` or
+`Tab` followed by `1`–`3`:
 
-| Key  | Indentation                                  |
-| ---- | -------------------------------------------- |
-| `,1` | 2 spaces                                     |
-| `,2` | 4 spaces                                     |
-| `,3` | Hard tabs, keeping the current display width |
+| Key           | Indentation                                  |
+| ------------- | -------------------------------------------- |
+| `,1`, `Tab 1` | 2 spaces                                     |
+| `,2`, `Tab 2` | 4 spaces                                     |
+| `,3`, `Tab 3` | Hard tabs, keeping the current display width |
 
 These shortcuts change buffer-local settings, not existing text or other buffers.
 Insert and Visual indentation use the selected width and tab style. Reading a file

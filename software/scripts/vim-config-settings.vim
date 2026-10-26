@@ -154,16 +154,32 @@ set expandtab                 " Use spaces unless file contents or filetype requ
 set autoindent                " Copy indentation from the current line when starting a new line
 set smartindent               " Auto-indent after {, if, etc. — smarter than autoindent alone
 
+" Set buffer-local indentation without rewriting text. Style is 'soft' or
+" 'hard'; width applies to soft indentation. Hard tabs keep the current tabstop.
+function! s:SetIndentStyle(style, width) abort
+  if a:style ==# 'hard'
+    let &l:expandtab = 0
+    let &l:softtabstop = 0
+    let &l:shiftwidth = &l:tabstop
+  elseif a:style ==# 'soft'
+    let &l:expandtab = 1
+    let &l:softtabstop = a:width
+    let &l:shiftwidth = a:width
+    let &l:tabstop = a:width
+  else
+    throw 'Vim indent: expected soft or hard'
+  endif
+endfunction
+
 " Set buffer-local indent options without rewriting text, moving the cursor, or
 " changing search history. Any tab-led content selects hard tabs at the current
 " tabstop width; otherwise use 2 spaces. Preserve a hard-tab filetype's default
 " when no space-led content exists (including an empty Makefile).
 function! s:DetectIndentStyle() abort
   if search('^\t\+\s*\S', 'nw') || (!&l:expandtab && !search('^ \+\S', 'nw'))
-    setlocal noexpandtab softtabstop=0
-    let &l:shiftwidth = &l:tabstop
+    call s:SetIndentStyle('hard', 0)
   else
-    setlocal expandtab softtabstop=2 shiftwidth=2 tabstop=2
+    call s:SetIndentStyle('soft', 2)
   endif
 endfunction
 augroup SyIndentStyle
@@ -281,9 +297,14 @@ nnoremap <silent> ,<F5> :edit!<CR>
 
 " Select indentation for this buffer without rewriting existing text.
 " Hard tabs keep the current display width and shift by one complete tab.
-nnoremap <silent> ,1 :setlocal expandtab softtabstop=2 shiftwidth=2 tabstop=2<CR>
-nnoremap <silent> ,2 :setlocal expandtab softtabstop=4 shiftwidth=4 tabstop=4<CR>
-nnoremap <silent> ,3 :setlocal noexpandtab softtabstop=0<Bar>let &l:shiftwidth = &l:tabstop<CR>
+" Tab followed by 1/2/3 selects the same styles without the comma prefix.
+" Insert and Visual Tab/Shift+Tab use these buffer-local values.
+nnoremap <silent> ,1 :call <SID>SetIndentStyle('soft', 2)<CR>
+nnoremap <silent> ,2 :call <SID>SetIndentStyle('soft', 4)<CR>
+nnoremap <silent> ,3 :call <SID>SetIndentStyle('hard', 0)<CR>
+nnoremap <silent> <Tab>1 :call <SID>SetIndentStyle('soft', 2)<CR>
+nnoremap <silent> <Tab>2 :call <SID>SetIndentStyle('soft', 4)<CR>
+nnoremap <silent> <Tab>3 :call <SID>SetIndentStyle('hard', 0)<CR>
 
 " } (shift+]) to toggle soft wrap — matches VS Code/Sublime/Zed's
 " ctrl+shift+OS_KEY+\ chord conceptually (one-key wrap toggle).
@@ -573,12 +594,6 @@ inoremap . <C-g>u.
 """""""""""""""""""""""""""""""""""""""""""""""""
 " ,n to clear search highlighting
 nnoremap <silent> ,n :nohlsearch<CR>
-
-" Tab is a second ',' prefix in normal mode: Tab g == ,g, Tab v == ,v, and so on.
-" Recursive nmap so the inserted ',' joins the next typed key. Normal mode only —
-" visual-mode Tab / Shift+Tab indent / dedent instead. Trade-off: terminals send Tab and
-" Ctrl-I as the same byte, so Ctrl-I (jumplist forward) is gone; Ctrl-O still works.
-nmap <Tab> ,
 
 " Multi-cursor (vim-visual-multi) — Sublime parity:
 "   ,g          select every match of the word under cursor (case-insensitive)
