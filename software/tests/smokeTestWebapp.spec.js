@@ -259,7 +259,11 @@ describe("webapp smoke test", () => {
 
         // Click Show More on the first collapsed block to expand it.
         await page.click('[data-testid="code-block"][data-collapsed="true"] [data-testid="show-more-toggle"]');
-        await new Promise((r) => setTimeout(r, 500));
+        await page.waitForFunction(
+          (collapsedCount) => document.querySelectorAll('[data-testid="code-block"][data-collapsed="true"]').length < collapsedCount,
+          { timeout: 10000 },
+          initialCollapsed,
+        );
 
         const afterExpand = await page.$$eval('[data-testid="code-block"][data-collapsed="true"]', (els) => els.length);
         expect(afterExpand).toBeLessThan(initialCollapsed);

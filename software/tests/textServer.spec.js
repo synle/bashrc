@@ -1,85 +1,19 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-
 import fs from "fs";
-
 import http from "http";
-
 import os from "os";
-
-import net from "net";
-
 import path from "path";
-
-import { spawn } from "child_process";
-
 import { createRequire } from "module";
-
 import { fileURLToPath } from "url";
+import { createTextServerHarness } from "./textServer.helpers.js";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-
-const SERVER_SCRIPT = path.join(ROOT_DIR, "software/scripts/text-server.cjs");
-
 const { STYLESHEET_TAG_PATTERN, SCRIPT_TAG_PATTERN } = createRequire(import.meta.url)(
   path.join(ROOT_DIR, "software/tools/build-text-server.js"),
 );
-
-const START_TIMEOUT_MS = 10000;
-
 const IS_ROOT = typeof process.getuid === "function" && process.getuid() === 0;
-
-const running = [];
-
+const serverHarness = createTextServerHarness();
 let sandbox = "";
-
-function freePort() {
-  return new Promise((resolve, reject) => {
-    const probe = net.createServer();
-    probe.once("error", reject);
-    probe.listen(0, "0.0.0.0", () => {
-      const { port } = probe.address();
-      probe.close(() => resolve(port));
-    });
-  });
-}
-
-function startServer(folder, port, allowCd) {
-  const child = spawn(process.execPath, [SERVER_SCRIPT, folder, String(port), allowCd], { stdio: ["ignore", "ignore", "pipe"] });
-  running.push(child);
-  let stderr = "";
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`text-server did not start:\n${stderr}`)), START_TIMEOUT_MS);
-    child.once("exit", (code) => reject(new Error(`text-server exited ${code}:\n${stderr}`)));
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk;
-      const match = stderr.match(/open http:\/\/localhost:(\d+)\//);
-      if (match) {
-        clearTimeout(timer);
-        resolve({ port: Number(match[1]), stderr: () => stderr });
-      }
-    });
-  });
-}
-
-async function waitForLog(stderr, text) {
-  const deadline = Date.now() + START_TIMEOUT_MS;
-  while (!stderr().includes(text)) {
-    if (Date.now() > deadline) throw new Error(`log line never appeared: ${text}\n${stderr()}`);
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
-}
-
-async function call(port, route, method = "GET") {
-  const res = await fetch(`http://127.0.0.1:${port}${route}`, { method });
-  const text = await res.text();
-  let body = text;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    // non-JSON bodies (the page, empty 404s) stay as text
-  }
-  return { status: res.status, body };
-}
 
 beforeAll(() => {
   sandbox = fs.mkdtempSync(path.join(os.tmpdir(), "text-server-spec-"));
@@ -92,45 +26,48 @@ beforeAll(() => {
   fs.chmodSync(path.join(sandbox, "root", "locked"), 0o000);
 });
 
-afterAll(() => {
-  for (const child of running) child.kill();
-  fs.chmodSync(path.join(sandbox, "root", "locked"), 0o755);
-  fs.rmSync(sandbox, { recursive: true, force: true });
+afterAll(async () => {
+  try {
+    await serverHarness.stop();
+  } finally {
+    fs.chmodSync(path.join(sandbox, "root", "locked"), 0o755);
+    fs.rmSync(sandbox, { recursive: true, force: true });
+  }
 });
 
 describe("text-server path confinement", () => {
   let port;
   beforeAll(async () => {
-    ({ port } = await startServer(path.join(sandbox, "root"), await freePort(), "1"));
+    ({ port } = await serverHarness.start(path.join(sandbox, "root"), await serverHarness.freePort(), "1"));
   });
 
   it("serves a file inside the root", async () => {
-    expect(await call(port, "/api/file?path=a.txt")).toEqual({ status: 200, body: { path: "a.txt", content: "hello" } });
+    expect(await serverHarness.call(port, "/api/file?path=a.txt")).toEqual({ status: 200, body: { path: "a.txt", content: "hello" } });
   });
 
   it("rejects a .. escape with 403", async () => {
-    expect(await call(port, "/api/file?path=" + encodeURIComponent("../outside.txt"))).toEqual({
+    expect(await serverHarness.call(port, "/api/file?path=" + encodeURIComponent("../outside.txt"))).toEqual({
       status: 403,
       body: { error: "path outside root" },
     });
   });
 
   it("rejects an absolute path with 403", async () => {
-    expect(await call(port, "/api/file?path=" + encodeURIComponent(path.join(sandbox, "outside.txt")))).toEqual({
+    expect(await serverHarness.call(port, "/api/file?path=" + encodeURIComponent(path.join(sandbox, "outside.txt")))).toEqual({
       status: 403,
       body: { error: "path outside root" },
     });
   });
 
   it("rejects a symlink that points outside the root with 403", async () => {
-    expect(await call(port, "/api/file?path=escape.txt")).toEqual({ status: 403, body: { error: "path outside root" } });
+    expect(await serverHarness.call(port, "/api/file?path=escape.txt")).toEqual({ status: 403, body: { error: "path outside root" } });
   });
 });
 
 describe("text-server upload (drag and drop)", () => {
   let port;
   beforeAll(async () => {
-    ({ port } = await startServer(path.join(sandbox, "root"), await freePort(), "1"));
+    ({ port } = await serverHarness.start(path.join(sandbox, "root"), await serverHarness.freePort(), "1"));
   });
 
   /**
@@ -225,7 +162,7 @@ describe("text-server raw media and download", () => {
   beforeAll(async () => {
     fs.writeFileSync(path.join(sandbox, "root", "pic.png"), PNG);
     fs.writeFileSync(path.join(sandbox, "root", "notes.txt"), "text body");
-    ({ port } = await startServer(path.join(sandbox, "root"), await freePort(), "1"));
+    ({ port } = await serverHarness.start(path.join(sandbox, "root"), await serverHarness.freePort(), "1"));
   });
 
   it("serves an image's exact bytes with its content type", async () => {
@@ -248,7 +185,10 @@ describe("text-server raw media and download", () => {
   });
 
   it("refuses to view a non-media file inline with 415", async () => {
-    expect(await call(port, "/api/raw?path=notes.txt")).toEqual({ status: 415, body: { error: "not a viewable media type" } });
+    expect(await serverHarness.call(port, "/api/raw?path=notes.txt")).toEqual({
+      status: 415,
+      body: { error: "not a viewable media type" },
+    });
   });
 
   it("downloads any file as an attachment named after it", async () => {
@@ -263,31 +203,37 @@ describe("text-server raw media and download", () => {
 describe("text-server error mapping", () => {
   let port;
   beforeAll(async () => {
-    ({ port } = await startServer(path.join(sandbox, "root"), await freePort(), "1"));
+    ({ port } = await serverHarness.start(path.join(sandbox, "root"), await serverHarness.freePort(), "1"));
   });
 
   it("returns 404 not found for a missing file", async () => {
-    expect(await call(port, "/api/file?path=missing.txt")).toEqual({ status: 404, body: { error: "not found" } });
+    expect(await serverHarness.call(port, "/api/file?path=missing.txt")).toEqual({ status: 404, body: { error: "not found" } });
   });
 
   it.skipIf(IS_ROOT)("returns 403 permission denied for an unreadable folder", async () => {
-    expect(await call(port, "/api/list?path=locked")).toEqual({ status: 403, body: { error: "permission denied (EACCES)" } });
+    expect(await serverHarness.call(port, "/api/list?path=locked")).toEqual({ status: 403, body: { error: "permission denied (EACCES)" } });
   });
 
   it("returns 409 already exists when creating an existing folder", async () => {
-    expect(await call(port, "/api/folder?path=existing", "POST")).toEqual({ status: 409, body: { error: "already exists (EEXIST)" } });
+    expect(await serverHarness.call(port, "/api/folder?path=existing", "POST")).toEqual({
+      status: 409,
+      body: { error: "already exists (EEXIST)" },
+    });
   });
 
   it("returns 404 unknown route for an unknown API path", async () => {
-    expect(await call(port, "/api/bogus")).toEqual({ status: 404, body: { error: "unknown route" } });
+    expect(await serverHarness.call(port, "/api/bogus")).toEqual({ status: 404, body: { error: "unknown route" } });
   });
 
   it("answers the deep-link lookup on /api/info, not the ad-blocked /api/stat", async () => {
-    expect(await call(port, "/api/info?path=a.txt")).toEqual({ status: 200, body: { path: "a.txt", folder: false, size: 5 } });
+    expect(await serverHarness.call(port, "/api/info?path=a.txt")).toEqual({
+      status: 200,
+      body: { path: "a.txt", folder: false, size: 5 },
+    });
   });
 
   it("omits size for a folder in /api/info", async () => {
-    expect(await call(port, "/api/info?path=existing")).toEqual({ status: 200, body: { path: "existing", folder: true } });
-    expect((await call(port, "/api/stat?path=a.txt")).status).toBe(404);
+    expect(await serverHarness.call(port, "/api/info?path=existing")).toEqual({ status: 200, body: { path: "existing", folder: true } });
+    expect((await serverHarness.call(port, "/api/stat?path=a.txt")).status).toBe(404);
   });
 });

@@ -17,14 +17,18 @@ describe("webapp smoke test", () => {
 
         // Blocks default to collapsed; the first click on the global toggle expands all.
         await page.click('[data-testid="global-collapse"]');
-        await new Promise((r) => setTimeout(r, 1000));
+        await page.waitForFunction(() => document.querySelectorAll('[data-testid="code-block"][data-collapsed="false"]').length > 0, {
+          timeout: 10000,
+        });
 
         const expandedAfterExpand = await page.$$eval('[data-testid="code-block"][data-collapsed="false"]', (els) => els.length);
         expect(expandedAfterExpand).toBeGreaterThan(0);
 
         // Second click collapses everything back.
         await page.click('[data-testid="global-collapse"]');
-        await new Promise((r) => setTimeout(r, 1000));
+        await page.waitForFunction(() => document.querySelectorAll('[data-testid="code-block"][data-collapsed="false"]').length === 0, {
+          timeout: 10000,
+        });
 
         const expandedAfterCollapse = await page.$$eval('[data-testid="code-block"][data-collapsed="false"]', (els) => els.length);
         expect(expandedAfterCollapse).toBe(0);
@@ -62,7 +66,11 @@ describe("webapp smoke test", () => {
 
         // Click theme toggle
         await page.click('[data-testid="theme-toggle"]');
-        await new Promise((r) => setTimeout(r, 500));
+        await page.waitForFunction(
+          (theme) => document.documentElement.getAttribute("data-theme") !== theme,
+          { timeout: 10000 },
+          initialTheme,
+        );
 
         // Theme should have changed
         const newTheme = await page.$eval("html", (el) => el.getAttribute("data-theme"));
