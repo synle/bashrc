@@ -103,20 +103,19 @@ describe("filterRepoScripts", () => {
       "software/scripts/~cleanup.js",
       "software/scripts/mac/_only.js",
       "software/scripts/mac/_init.js",
-      "software/scripts/zoxide.js",
+      "software/scripts/bash-inputrc.js",
       "software/scripts/~wrapup.sh",
     ]);
     const cleanupIdx = result.indexOf("software/scripts/~cleanup.js");
     const wrapupIdx = result.indexOf("software/scripts/~wrapup.sh");
     const macOnlyIdx = result.indexOf("software/scripts/mac/_only.js");
     const macInitIdx = result.indexOf("software/scripts/mac/_init.js");
-    const zoxideIdx = result.indexOf("software/scripts/zoxide.js");
 
     // all regular scripts come before ~ scripts
     expect(macOnlyIdx).toBeLessThan(cleanupIdx);
     expect(macInitIdx).toBeLessThan(cleanupIdx);
     expect(macOnlyIdx).toBeLessThan(wrapupIdx);
-    expect(zoxideIdx).toBeLessThan(cleanupIdx);
+    expect(result.indexOf("software/scripts/bash-inputrc.js")).toBeLessThan(cleanupIdx);
   });
 
   it("should pin _init.js first via firstFiles", () => {

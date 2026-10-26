@@ -133,7 +133,7 @@ Governs every other section.
 
 ## Shell Command Execution
 
-- Use native commands first; fall back to `command <cmd>` only on failure to bypass aliases or wrappers (`ls` → `command ls`). Dotfile wrappers (`cat`→`bat`, `grep`→`rg`, `cd`→`zoxide`) can alter output, exit codes, or accepted flags. This governs agent invocations; repo scripts follow repo conventions.
+- Use native commands first; fall back to `command <cmd>` only on failure to bypass aliases or wrappers (`ls` → `command ls`). Dotfile wrappers (`cat`→`bat`, `grep`→`rg`) can alter output, exit codes, or accepted flags. This governs agent invocations; repo scripts follow repo conventions.
 - Every command must terminate on its own. You have no terminal to type into, so anything waiting for a human hangs until the timeout kills it. Three shapes, each with a fix: a **pager** (`git log` / `diff` / `show` — use `git --no-pager`, or `PAGER=cat`); a **prompt** (package installs, credential reads — pass `-y` / `--yes` / `--no-input` or `DEBIAN_FRONTEND=noninteractive`, never `-i`); a **watcher or server** (`npm run dev`, `vitest` without `run`, `tail -f`, `less`, an editor — run the one-shot form, or background it and poll). A command legitimately running for minutes gets an explicit timeout, named up front.
 
 ## File Editing

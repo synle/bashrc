@@ -82,7 +82,6 @@ function _prompt_command_add() {
 }
 
 # --- Pre-core Profile Blocks (registerWithBashSyleProfile) ---
-# BEGIN/END | Retired zoxide cleanup
 # BEGIN/END | Profile Generated Timestamp
 # BEGIN/END | fnm - fast node manager
 # BEGIN/END | format script

@@ -1,6 +1,0 @@
-add
-edit
-import|--from,--merge
-init|bash,zsh,fish,nushell,powershell,--cmd,--hook,--no-cmd
-query|--all,--exclude,--interactive,--list,--score
-remove

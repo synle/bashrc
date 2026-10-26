@@ -384,9 +384,8 @@ Profile registration is buffered: `registerProfileBlock` /
 
 ### 7.3 Profile & config
 
-- **Native navigation** leaves `cd` as the Bash builtin. `zoxide.js` temporarily removes legacy initialization, owned wrappers, hooks, and completion.
-  Keep its cleanup marker until every managed machine has migrated; then remove the script and dormant protected completion inventory.
-  Do not delete independently installed binaries or navigation history. Regression: `software/tests/nativeCd.spec.js`.
+- **Native navigation** leaves `cd` as the Bash builtin, preserving native options, previous-folder behavior, and failure status.
+  Keep parent-folder aliases and native folder completion covered by `software/tests/nativeCd.spec.js`.
 - **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as
   explicit native aliases; cover listing behavior in `software/tests/nativeLs.spec.js`.
 - **Windows Terminal folder inheritance** uses OSC 9;9 reporting from

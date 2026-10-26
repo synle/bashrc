@@ -1,144 +1,126 @@
-/** Regression tests for retiring zoxide without changing unrelated shell behavior. */
+/** Subprocess regressions for native Bash navigation and folder completion. */
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import os from "os";
 import path from "path";
 import vm from "vm";
-import { fileSystem, getIndexConstant, getIndexFunction } from "./setup.js";
+import { getIndexFunction } from "./setup.js";
 
-/** Managed Bash profile used by the real block helpers. */
-const PROFILE = getIndexConstant("BASH_SYLE_PATH");
-/** Legacy block fixture includes unrelated commands that migration must preserve. */
-const LEGACY_PROFILE =
-  '# BEGIN zoxide init\nprintf "old-init\\n"\n# END zoxide init\n# BEGIN zoxide Spec Autocomplete\nprintf "old-completion\\n"\n# END zoxide Spec Autocomplete\n: # keep\n';
-
-/**
- * Execute the real migration using production profile-block helpers.
- * @param {string} initial Initial managed profile bytes.
- * @param {boolean} binaryFound Whether the legacy binary remains installed.
- * @returns {Promise<string>} Persisted profile after queued changes are flushed.
- */
-async function migrate(initial = LEGACY_PROFILE, binaryFound = true) {
-  fileSystem[PROFILE] = initial;
-  const context = {
-    code: getIndexFunction("code"),
-    registerWithBashSyleProfile: getIndexFunction("registerWithBashSyleProfile"),
-    removeFromBashSyleProfile: getIndexFunction("removeFromBashSyleProfile"),
-    isBinaryFound: async () => binaryFound,
-    log: () => {},
-  };
-  vm.runInNewContext(readFileSync("software/scripts/zoxide.js", "utf8"), context);
-  await context.doWork();
-  await getIndexFunction("flushProfileBlocks")();
-  return fileSystem[PROFILE];
-}
+/** Actual navigation aliases loaded by the advanced profile. */
+const NAVIGATION = readFileSync("software/bootstrap/profile-advanced.sh", "utf8")
+  .split("# --- Aliases: Navigation ---\n")[1]
+  .split("# --- find (fd wrapper) ---")[0];
 
 /**
- * Source generated cleanup in a Bash subprocess with an owned filesystem fixture.
- * @param {string} profile Generated profile bytes.
- * @param {string} before Shell state left by an old session.
- * @param {string} after Observable navigation or prompt operation.
- * @returns {import("child_process").SpawnSyncReturns<string>} Captured output and status.
+ * Load navigation aliases twice in an isolated Bash session and run a caller operation.
+ * @param {string} invocation Shell operation whose status and output are observed.
+ * @param {string[]} [args=[]] Arguments passed without interpolation.
+ * @param {string} [before=""] Existing shell customizations loaded before the profile.
+ * @returns {import("child_process").SpawnSyncReturns<string>} Captured subprocess status and output.
  * @throws {Error} If fixture setup fails; removes only the owned temporary folder.
  */
-function runShell(profile, before, after) {
+function runNavigation(invocation, args = [], before = "") {
   const folder = mkdtempSync(path.join(os.tmpdir(), "native-cd-"));
   try {
-    mkdirSync(path.join(folder, "folder with spaces"));
-    writeFileSync(path.join(folder, "profile.bash"), profile);
-    return spawnSync("/bin/bash", ["--noprofile", "--norc", "-O", "expand_aliases"], {
-      input: `${before}\n. ./profile.bash\n. ./profile.bash\n${after}\n`,
-      cwd: folder,
-      env: { ...process.env, BASH_ENV: "/dev/null", PATH: "/usr/bin:/bin", TERM: "dumb" },
-      encoding: "utf8",
-      timeout: 5000,
-    });
+    mkdirSync(path.join(folder, "folder with spaces/child/grandchild"), { recursive: true });
+    mkdirSync(path.join(folder, "-dash"));
+    symlinkSync("folder with spaces", path.join(folder, "linked"));
+    writeFileSync(path.join(folder, "regular-file"), "fixture\n");
+    writeFileSync(path.join(folder, "navigation.bash"), NAVIGATION);
+    return spawnSync(
+      "/bin/bash",
+      [
+        "--noprofile",
+        "--norc",
+        "-O",
+        "expand_aliases",
+        "-c",
+        `START_FOLDER="$PWD"\n${before}\n. ./navigation.bash\n. ./navigation.bash\n${invocation}`,
+        "test",
+        ...args,
+      ],
+      {
+        cwd: folder,
+        env: { ...process.env, BASH_ENV: "/dev/null", HOME: folder, PATH: "/usr/bin:/bin", TERM: "dumb" },
+        encoding: "utf8",
+        timeout: 5000,
+      },
+    );
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }
 }
 
-describe("native cd migration", () => {
-  it("removes legacy initialization and completion without requiring the binary", async () => {
-    const profile = await migrate(LEGACY_PROFILE, false);
-    expect(profile).not.toContain("old-init");
-    expect(profile).not.toContain("old-completion");
-    expect(profile).toContain(": # keep");
-    expect(profile).not.toContain("zoxide init bash");
-  });
-
-  it("writes the same profile when migration runs twice", async () => {
-    const first = await migrate();
-    const second = await migrate(first);
-    expect(second).toBe(first);
-  });
-
-  it("restores native cd options, spaced paths, previous folder, and failure status", async () => {
-    const result = runShell(
-      await migrate(),
-      'function __zoxide_z() { printf "wrong\\n"; }; function cd() { __zoxide_z "$@"; }; function cdi() { __zoxide_zi "$@"; }',
-      'type -t cd\ncd -- "folder with spaces" && printf "%s\\n" "${PWD##*/}"\ncd - >/dev/null && printf "%s\\n" "${OLDPWD##*/}"\ncd missing 2>/dev/null; printf "status=%s\\n" "$?"\ntype -t cdi || true',
-    );
-    expect(result.status).toBe(0);
-    expect(result.stderr).toBe("");
-    expect(result.stdout).toBe("builtin\nfolder with spaces\nfolder with spaces\nstatus=1\n");
-  });
-
-  it.each([
-    ['PROMPT_COMMAND="__zoxide_hook"', ""],
-    ['PROMPT_COMMAND="printf first;__zoxide_hook"', "first"],
-    ['PROMPT_COMMAND="__zoxide_hook;printf last"', "last"],
-    ['PROMPT_COMMAND="printf first; __zoxide_hook ;printf last"', "firstlast"],
-    ['PROMPT_COMMAND=("printf first" "__zoxide_hook" "printf last")', "firstlast"],
-    ['PROMPT_COMMAND=("__zoxide_hook" "__zoxide_hook")', ""],
-    ['PROMPT_COMMAND=""', ""],
-    ['PROMPT_COMMAND="__zoxide_hook;__zoxide_hook;printf last"', "last"],
-    ["unset PROMPT_COMMAND", ""],
-  ])("preserves other prompt commands after %s", async (setup, expected) => {
-    const result = runShell(
-      await migrate(),
-      `function __zoxide_hook() { printf wrong; }; ${setup}`,
-      'for hook in "${PROMPT_COMMAND[@]}"; do eval "$hook"; done',
-    );
-    expect(result.status).toBe(0);
-    expect(result.stderr).toBe("");
-    expect(result.stdout).toBe(expected);
-  });
-
-  it("removes zoxide aliases, completions, internal functions, and internal state", async () => {
-    const result = runShell(
-      await migrate(),
-      'function __zoxide_hook() { :; }; function __zoxide_z_complete() { :; }; alias cd="__zoxide_z"; alias cdi="__zoxide_zi"; complete -F __zoxide_z_complete cd; __zoxide_oldpwd=old; __zoxide_z_prefix="z#"',
-      "type -t cd\ncompgen -A function __zoxide_\ncompgen -A variable __zoxide_\ncomplete -p cd 2>/dev/null || true",
-    );
+describe("native cd subprocess", () => {
+  it("keeps cd as the Bash builtin after repeated profile loads", () => {
+    const result = runNavigation("type -t cd");
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toBe("builtin\n");
   });
 
-  it("removes the old managed standalone zoxide completer from an existing shell", async () => {
-    const result = runShell(
-      await migrate(),
-      "function __spec_complete_zoxide() { :; }; complete -F __spec_complete_zoxide zoxide",
-      "type -t __spec_complete_zoxide\ncomplete -p zoxide 2>/dev/null || true",
-    );
+  it.each(["folder with spaces", "-dash"])("preserves explicit options and the path %s", (folder) => {
+    const result = runNavigation('cd -- "$@" && printf "%s\\n" "${PWD##*/}"', [folder]);
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toBe("");
+    expect(result.stdout).toBe(`${folder}\n`);
   });
 
-  it("preserves user navigation, native completion, prompt hooks, and the Zed alias", async () => {
-    const result = runShell(
-      await migrate(),
-      'function cd() { builtin cd "$@"; }; alias cdi="printf custom"; alias z=zed; function custom_complete() { :; }; complete -F custom_complete cd; PROMPT_COMMAND="printf prompt"; _ZO_DATA_DIR=keep',
-      'declare -f cd\nalias cdi z\ncomplete -p cd\nprintf "%s\\n" "$PROMPT_COMMAND" "$_ZO_DATA_DIR"',
+  it("returns to the previous folder and updates OLDPWD", () => {
+    const result = runNavigation('cd -- "$1" && cd - >/dev/null && printf "%s\\n" "${OLDPWD##*/}"; test "$PWD" = "$START_FOLDER"', [
+      "folder with spaces",
+    ]);
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toBe("folder with spaces\n");
+  });
+
+  it("uses HOME when called without arguments", () => {
+    const result = runNavigation('cd -- "folder with spaces" && cd && test "$PWD" = "$HOME" && printf "home\\n"');
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toBe("home\n");
+  });
+
+  it.each([
+    ["-L", "linked\n"],
+    ["-P", "folder with spaces\n"],
+  ])("preserves native symlink resolution with %s", (option, expected) => {
+    const result = runNavigation('cd "$1" linked && printf "%s\\n" "${PWD##*/}"', [option]);
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toBe(expected);
+  });
+
+  it("keeps parent aliases on native navigation after repeated loads", () => {
+    const result = runNavigation(
+      'cd "folder with spaces/child/grandchild"\n..\nprintf "%s\\n" "${PWD##*/}"\n...\ntest "$PWD" = "$START_FOLDER"',
     );
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toBe(
-      "cd () \n{ \n    builtin cd \"$@\"\n}\nalias cdi='printf custom'\nalias z='zed'\ncomplete -F custom_complete cd\nprintf prompt\nkeep\n",
+    expect(result.stdout).toBe("child\n");
+  });
+
+  it.each(["missing-folder", "regular-file"])("preserves failure status and working folder for %s", (target) => {
+    const result = runNavigation(
+      'if cd -- "$1"; then exit 99; else status=$?; fi\ntest "$PWD" = "$START_FOLDER" && printf "unchanged\\n"\nexit "$status"',
+      [target],
     );
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(target);
+    expect(result.stdout).toBe("unchanged\n");
+  });
+
+  it("preserves existing prompt hooks and folder completion", () => {
+    const result = runNavigation(
+      'eval "$PROMPT_COMMAND"\ncomplete -p cd',
+      [],
+      'PROMPT_COMMAND="printf prompt"; function current_complete() { :; }; complete -F current_complete cd',
+    );
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toBe("promptcomplete -F current_complete cd\n");
   });
 });
 
@@ -166,7 +148,7 @@ async function completionOutput(file) {
   return blocks.join("\n");
 }
 
-describe("retired zoxide completions", () => {
+describe("native folder completion", () => {
   it("generates Bash completion code that the oldest local Bash can parse", async () => {
     const result = spawnSync("/bin/bash", ["-n"], {
       input: await completionOutput("software/scripts/advanced/bash-autocomplete-complete-spec.js"),
@@ -179,12 +161,10 @@ describe("retired zoxide completions", () => {
     expect(result.stderr).toBe("");
   });
 
-  it.each(["software/scripts/advanced/bash-autocomplete-complete-spec.js", "software/scripts/windows/powershell.js"])(
-    "omits zoxide while preserving native cd completion in %s",
-    async (file) => {
-      const output = await completionOutput(file);
-      expect(output).not.toContain("zoxide");
-      expect(output).toMatch(/__spec_complete_cd|_Register-SpecCompleter -Command "cd"/);
-    },
-  );
+  it.each([
+    ["software/scripts/advanced/bash-autocomplete-complete-spec.js", "function __spec_complete_cd()"],
+    ["software/scripts/windows/powershell.js", '_Register-SpecCompleter -Command "cd"'],
+  ])("generates native cd completion in %s", async (file, expected) => {
+    expect(await completionOutput(file)).toContain(expected);
+  });
 });
