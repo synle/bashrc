@@ -1,5 +1,6 @@
 /** doWork tests for software/scripts/git.js. */
 import { describe, it, expect } from "vitest";
+import fs from "fs";
 import { fileSystem, fetchResponses, runScript, getIndexConstant } from "../setup.js";
 
 const BASE_HOMEDIR_LINUX = getIndexConstant("BASE_HOMEDIR_LINUX");
@@ -14,6 +15,26 @@ describe("git.js doWork", () => {
     const gitconfig = fileSystem[`${BASE_HOMEDIR_LINUX}/.gitconfig`];
     expect(gitconfig).toBeDefined();
     expect(gitconfig).toContain("[alias]");
+  });
+
+  it("preserves occupied suffix names while generating available layout twins", async () => {
+    fetchResponses["software/scripts/git.gitconfig"] = fs
+      .readFileSync("software/scripts/git.gitconfig", "utf8")
+      .replace(
+        "[alias]",
+        "[alias]\ncustom = status\ncustom2 = status --short\ndiff2 = diff --stat\nshow2 = show --stat\nlog2 = log --oneline",
+      );
+    await runScript("software/scripts/git.js");
+    const config = fileSystem[`${BASE_HOMEDIR_LINUX}/.gitconfig`];
+    expect(config).toContain("custom2 = status --short");
+    expect(config).not.toMatch(/^custom2 = "!git/m);
+    expect(config).toContain("diff2 = diff --stat");
+    expect(config).not.toMatch(/^diff2 = "!git/m);
+    expect(config).toContain("show2 = show --stat");
+    expect(config).not.toMatch(/^show2 = "!git/m);
+    expect(config).toContain("log2 = log --oneline");
+    expect(config).not.toMatch(/^log2 = "!git/m);
+    expect(config).toContain('d2 = "!git -c delta.side-by-side=true d --word-diff=none"');
   });
 
   it("should preserve existing email from current .gitconfig", async () => {

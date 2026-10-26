@@ -269,7 +269,7 @@ GitHub's "Squash and merge" button does the same. After merging, your local feat
 Quick snapshot of uncommitted work, restorable later.
 
 ```bash
-git stash                            # stash tracked changes
+git stash                            # managed shell: tracked + untracked; native Git: tracked only
 git stash -u                         # include untracked
 git stash -a                         # include untracked + ignored
 git stash push -m "wip: foo"         # named stash
@@ -286,6 +286,9 @@ git stash clear                      # delete all stashes
 
 git stash branch new-branch          # create branch from stash + apply + drop
 ```
+
+The managed shell wrapper changes only bare `git stash` to `git stash push -u`; ignored files remain untouched.
+Explicit subcommands and flags keep native behavior. Use `command git stash` to bypass the shell default.
 
 Stash is a stack (newest at `stash@{0}`). Stashes survive across branch switches, are local-only (never pushed), and live in `.git/refs/stash` + reflog.
 
@@ -860,6 +863,8 @@ The full list lives in `software/scripts/git.gitconfig`. Highlights:
 git s                    # status -sb + diff --stat -w
 git stat                 # short status with branch info
 git a / aa / ap / au     # add / add -A / add -p / add -u
+git aac                  # add -A, then git c (includes untracked files)
+git auc                  # add -u, then git c (tracked files only)
 
 # Commit
 git c "msg"              # commit --no-verify
@@ -896,9 +901,12 @@ git r0                   # rebase -i --root
 git ls / lls             # pretty log (chronological / author-date order)
 git l / ll               # ls/lls + --stat
 git d / dh / ds          # diff / diff HEAD^ / diff --staged (word-diff -w)
-git d1 / dh1 / ds1       # inline (no side-by-side) variants
+git d1 / dh1 / ds1       # explicit one-column compatibility aliases
+git d2 / dh2 / ds2       # optional two-column Delta diffs, ignoring whitespace
 git show1 <sha>          # show commit inline
-git dhs                  # diff --stat HEAD~1
+git show2 <sha>          # show commit in two columns, ignoring whitespace
+git diff2 / log2         # optional two-column native diff/log views
+git dhs                  # diff -w --stat HEAD~1
 git stats                # shortlog -sn (commits per author)
 git last / lastd         # last commit summary / + file stats
 
@@ -921,6 +929,11 @@ git clean-and-fetch      # reset fetch refspec + gc + fap
 git undo                 # reset HEAD~1 --mixed
 ```
 
+Delta defaults to one column in every bootstrapped Git config. Managed diff aliases ignore whitespace, and the shell wrapper adds `-w` to direct `git diff` calls.
+The bootstrap generates suffix-`2` twins from the alias registry, except `r*` and `patch*`; existing names are never overwritten.
+Twins of explicit one-column aliases reverse their layout override. Two-column diffs disable Git word-diff markup so Delta receives unified patch input.
+`aac` and `auc` both call `git c`, which retains its existing `--no-verify` behavior. No `aau` alias is added.
+
 Numbered convenience aliases also exist for common N values: `git r5`, `git r10`, `git patch-get5`, etc. (generated up to N=1000 in 50-step increments).
 
 ---
@@ -941,6 +954,8 @@ patch_plain_str /tmp/fix.patch # apply an existing plain diff, then open the com
 ```
 
 Both modes share one generator, one applier, and one 50-hash separator definition.
+After applying, `patch`, `patch_64`, and `patch_plain_str` copy the commit message and run `git aac` for an interactive commit.
+This stages all non-ignored changes, including newly created files and unrelated work, and calls `git c` with its existing `--no-verify` behavior.
 Plain sections place matching separators immediately after BEGIN and immediately before END; Base64 frames use the same separators around their encoded payloads.
 Creation leaves staged, unstaged, and untracked work untouched.
 Without an upstream, creation warns and exports only the latest commit. Multiple commits retain the existing per-patch confirmation prompts.

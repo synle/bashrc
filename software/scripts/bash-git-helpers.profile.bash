@@ -1136,16 +1136,16 @@ function _git_patch_copy_message() {
 }
 
 # _git_patch_commit_applied: the post-apply half of `patch` — message to clipboard, then commit
-# `git add -u` on purpose: a patch only ever touches files it already knows about, and
-# -A would sweep in whatever else the tree was holding. The commit is left interactive so
-# the message can be pasted (and edited) rather than committed blind.
+# `git aac` stages all non-ignored changes, including files created by the patch and
+# unrelated work. It delegates to git c, preserving that alias's hook behavior.
+# The commit stays interactive so the copied message can be pasted and edited.
 # $1 is the decoded patch file; returns nonzero on message-copy or commit failure.
 function _git_patch_commit_applied() {
   local patch_file="$1"
 
   _git_patch_copy_message "$patch_file" || return 1
-  echo ">>> staging tracked changes and committing — paste the message in the editor"
-  git add -u && git commit
+  echo ">>> staging all non-ignored changes with git aac — paste the message in the editor"
+  git aac
 }
 
 # _git_patch_apply_from_dropbox: apply the newest shared patch, then commit and archive it
@@ -1434,7 +1434,8 @@ function _git_patch_transfer() {
   stays untouched. Without an upstream, only the latest commit is exported.
   Exports print, copy, save, and upload; Base64 files use .patch.b64.
   After apply, copy the original commit message (minus Co-authored-by), then run
-  'git add -u && git commit'; paste the message into the editor.
+  'git aac'; paste the message into the editor. This stages all non-ignored work,
+  including unrelated new files, and uses git c's hook behavior.
   Examples:
     $name                    offer clipboard apply, else export unpushed commits
     $name -y                 apply matching clipboard without asking

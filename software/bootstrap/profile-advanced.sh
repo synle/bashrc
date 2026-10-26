@@ -1178,16 +1178,34 @@ alias vi="vim"
 alias v="vim"
 alias c="command cat"
 # --- Aliases: Git ---
-# git wrapper: invalidates branch cache on state-changing commands
+# git: default diffs to -w and a bare stash to -u; preserve native arguments and exit status.
+# Accepts Git global options and subcommands. Explicit stash operations stay unchanged.
+# Mutations invalidate the branch cache; command git bypasses these shell defaults.
 function git() {
-  command git "$@"
+  local _git_args=("$@") _git_index=0 _git_command
+  while [ "$_git_index" -lt "${#_git_args[@]}" ]; do
+    case "${_git_args[$_git_index]}" in
+    -c | -C | --git-dir | --work-tree | --namespace | --config-env)
+      _git_index=$((_git_index + 2))
+      ;;
+    -*) _git_index=$((_git_index + 1)) ;;
+    *) break ;;
+    esac
+  done
+  _git_command="${_git_args[$_git_index]-}"
+  if [ "$_git_command" = diff ]; then
+    _git_args=("${_git_args[@]:0:$_git_index}" diff -w "${_git_args[@]:$((_git_index + 1))}")
+  elif [ "$_git_command" = stash ] && [ "$#" -eq "$((_git_index + 1))" ]; then
+    _git_args=("${_git_args[@]:0:$_git_index}" stash push -u)
+  fi
+  command git "${_git_args[@]}"
   local _git_exit=$?
   # Invalidate git branch cache on state-changing commands (write/subcommand groups only).
   # Collapsed from six identical branches into one pattern list.
-  case "${1-}" in
+  case "${_git_command%2}" in
   checkout | switch | pull | push | fetch | merge | rebase | commit | reset | \
     stash | cherry-pick | revert | am | apply | \
-    c | cm | amend | amendm | wip | unwip | \
+    c | cm | amend | amendm | wip | unwip | aac | auc | \
     co | cob | del | gone | \
     p | pu | po | pof | fap | fapr | track | \
     r | rc | ri | rv | rvc | mc | cp | cpc | cpn | \

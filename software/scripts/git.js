@@ -36,7 +36,36 @@ function _getNumberedAliasSnippet() {
 }
 
 /**
- * Builds the full git config content from a template, injecting email, core configs, and numbered aliases.
+ * Generate optional two-column twins from the existing aliases without replacing reserved names.
+ * Rebase and patch families retain their numbered meanings. Explicit one-column aliases
+ * are copied with their layout reversed; ordinary twins inherit configuration through Git.
+ * @param {string} config - Git configuration containing the source alias section.
+ * @returns {string} New Git alias entries, including diff2, show2, and log2.
+ */
+function _getTwoColumnAliasSnippet(config) {
+  const aliases = [...(config.split("[alias]")[1] || "").matchAll(/^([A-Za-z0-9][A-Za-z0-9_.-]*)\s*=\s*(.+)$/gm)];
+  const names = new Set(aliases.map(([, name]) => name));
+  const twins = aliases
+    .filter(([, name]) => !/^(r|patch)/.test(name) && !names.has(`${name}2`))
+    .map(([, name, value]) => {
+      if (value.includes("delta.side-by-side=false")) {
+        return `${name}2 = ${value
+          .replace(/delta\.side-by-side=false/g, "delta.side-by-side=true")
+          .replace(/--word-diff\b/g, "--word-diff=none")
+          .replace(/\s+#.*$/, "")} # Two-column compatibility twin`;
+      }
+      // Delta needs unified patch input to render two columns, not Git's inline word markup.
+      const diffOptions = value.includes("--word-diff") ? " --word-diff=none" : "";
+      return `${name}2 = "!git -c delta.side-by-side=true ${name}${diffOptions}"`;
+    });
+  for (const command of ["diff", "show", "log"]) {
+    if (!names.has(`${command}2`)) twins.push(`${command}2 = "!git -c delta.side-by-side=true ${command} -w"`);
+  }
+  return twins.join("\n");
+}
+
+/**
+ * Builds the full git config content from a template, injecting identity, core settings, and alias variants.
  * @param {object} options - Configuration options.
  * @param {string} options.email - The git user email to inject.
  * @param {string} [options.extraCoreConfigs] - Additional git core config entries. Defaults to
@@ -59,6 +88,7 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
     templateGitConfig = appendTextBlock(templateGitConfig, "GIT_USER_EMAIL", email);
     templateGitConfig = appendTextBlock(templateGitConfig, "GIT_PERSONAL_IDENTITY", _getPersonalIdentityIncludes());
     templateGitConfig = appendTextBlock(templateGitConfig, "GIT_EXTRA_CORE_CONFIGS", extraCoreConfigs);
+    templateGitConfig = appendTextBlock(templateGitConfig, "GIT_TWO_COLUMN_ALIASES", _getTwoColumnAliasSnippet(templateGitConfig));
     templateGitConfig = appendTextBlock(templateGitConfig, "GIT_NUMBERED_ALIASES", _getNumberedAliasSnippet());
     templateGitConfig = templateGitConfig.trim();
 

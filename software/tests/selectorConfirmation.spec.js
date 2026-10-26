@@ -46,6 +46,14 @@ afterEach(() => {
   for (const [key, value] of Object.entries(originals)) setSandboxGlobal(key, value);
 });
 
+/** Escapes backslashes and renders ANSI escapes visibly without losing distinctions.
+ * @param {Array<[string]>} calls - Captured one-message output calls.
+ * @returns {Array<[string]>} Calls with backslashes doubled and ESC bytes shown as literal `\\x1b`.
+ */
+function snapshotOutputCalls(calls) {
+  return calls.map(([message]) => [message.replace(/\\/g, "\\\\").replace(/\x1b/g, "\\x1b")]);
+}
+
 describe("selector confirmation", () => {
   it("does not invoke terminal transport when no keyword has multiple matches", async () => {
     await confirm([]);
@@ -70,7 +78,15 @@ describe("selector confirmation", () => {
   it("keeps the explicit warning visible when colors are disabled", async () => {
     setSandboxGlobal("IS_NO_COLOR", true);
     await confirm([{ keyword: "a*", mode: "files", matches: ["a.js", "another.js"] }]);
-    expect(output.mock.calls).toEqual([["Warning: This keyword matches multiple files: a*\n- a.js\n- another.js"]]);
+    expect(snapshotOutputCalls(output.mock.calls)).toMatchInlineSnapshot(`
+      [
+        [
+          "Warning: This keyword matches multiple files: a*
+      - a.js
+      - another.js",
+        ],
+      ]
+    `);
     expect(shell.mock.calls[0][1].env.BASHRC_SELECTOR_PROMPT).toBe("Do you wish to continue");
   });
 
@@ -111,10 +127,20 @@ describe("selector confirmation", () => {
         throw Object.assign(new Error("No"), { status: 1 });
       });
     await expect(runSelected()).rejects.toThrow("Selection cancelled: *.js");
-    expect(output.mock.calls).toEqual([
-      ["\x1b[1;31mWarning: This keyword matches multiple presets: bundle*\n- bundle-a\n- bundle-b\x1b[0m"],
-      ["\x1b[1;31mWarning: This keyword matches multiple files: *.js\n- software/scripts/a.js\n- software/scripts/b.js\x1b[0m"],
-    ]);
+    expect(snapshotOutputCalls(output.mock.calls)).toMatchInlineSnapshot(`
+      [
+        [
+          "\\x1b[1;31mWarning: This keyword matches multiple presets: bundle*
+      - bundle-a
+      - bundle-b\\x1b[0m",
+        ],
+        [
+          "\\x1b[1;31mWarning: This keyword matches multiple files: *.js
+      - software/scripts/a.js
+      - software/scripts/b.js\\x1b[0m",
+        ],
+      ]
+    `);
     expect(runner).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();
   });
@@ -135,9 +161,15 @@ describe("selector confirmation", () => {
     setSandboxGlobal("_parsedArgs", { skipPrompt: true, confirmations: [] });
     await runSelected();
     expect(shell).not.toHaveBeenCalled();
-    expect(output.mock.calls).toEqual([
-      ["\x1b[1;31mWarning: This keyword matches multiple files: *.js\n- software/scripts/a.js\n- software/scripts/b.js\x1b[0m"],
-    ]);
+    expect(snapshotOutputCalls(output.mock.calls)).toMatchInlineSnapshot(`
+      [
+        [
+          "\\x1b[1;31mWarning: This keyword matches multiple files: *.js
+      - software/scripts/a.js
+      - software/scripts/b.js\\x1b[0m",
+        ],
+      ]
+    `);
     expect(runner).toHaveBeenCalledWith(
       ["software/scripts/a.js", "software/scripts/b.js", "~refresh-source.standalone.js"],
       ["software/scripts/a.js", "software/scripts/b.js"],

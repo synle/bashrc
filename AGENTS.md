@@ -384,6 +384,11 @@ Profile registration is buffered: `registerProfileBlock` /
 
 ### 7.3 Profile & config
 
+- **Git defaults** keep Delta single-column in the source template. The bootstrap generates suffix-`2` twins, excluding `r*` and `patch*` families.
+  Explicit `*1` compatibility aliases remain single-column; their generated twins reverse that override. Two-column diffs use unified input instead of word-diff markup.
+  The shell `git()` wrapper adds `-w` to direct diffs, including calls with global options, and turns only a bare stash into `stash push -u`.
+  Explicit stash subcommands and flags retain native behavior. Preserve `aac = !git aa && git c` and `auc = !git au && git c`; do not add `aau`.
+  Patch transfer application uses `aac`, staging all non-ignored changes, including unrelated new files. Regression coverage lives in `gitDefaults` and `gitPatchNewFiles`.
 - **Native navigation** leaves `cd` as the Bash builtin, preserving native options, previous-folder behavior, and failure status.
   Keep parent-folder aliases and native folder completion covered by `software/tests/nativeCd.spec.js`.
 - **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as

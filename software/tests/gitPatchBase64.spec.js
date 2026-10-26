@@ -78,13 +78,15 @@ beforeEach(() => {
   git("config", "user.email", "dev@example.com");
   git("config", "commit.gpgsign", "false");
   git("config", "maintenance.auto", "false");
-  git(
-    "config",
-    "alias.patch-clean",
-    execFileSync("git", ["config", "--file", path.resolve("software/scripts/git.gitconfig"), "--get", "alias.patch-clean"], {
-      encoding: "utf8",
-    }).trim(),
-  );
+  for (const alias of ["aa", "aac", "c", "patch-clean"]) {
+    git(
+      "config",
+      `alias.${alias}`,
+      execFileSync("git", ["config", "--file", path.resolve("software/scripts/git.gitconfig"), "--get", `alias.${alias}`], {
+        encoding: "utf8",
+      }).trim(),
+    );
+  }
   git("remote", "add", "origin", "https://github.com/acme/widget-store.git");
   fs.writeFileSync(path.join(folder, "note.txt"), BEFORE);
   git("add", "note.txt");
@@ -95,7 +97,6 @@ beforeEach(() => {
   fs.mkdirSync(path.join(folder, ".git/shared"));
   fs.writeFileSync(path.join(folder, ".git/editor.sh"), '#!/bin/sh\ncp .git/clipboard "$1"\n');
 });
-
 afterEach(() => {
   fs.rmSync(folder, { recursive: true, force: true });
 });

@@ -2,7 +2,7 @@
  * Guards every git alias against referencing a command that does not exist.
  *
  * The numbered aliases in `software/scripts/git.js` are generated, so a typo in the
- * delegation target is invisible until someone actually runs the alias — the generator
+ * delegation target is invisible until someone actually runs the alias; the generator
  * happily emitted `patch-view1 = "!git patch-viewn 1"` for every N, and git only
  * complained at call time with `git: 'patch-viewn' is not a git command`. This spec
  * renders the same config the installer writes and resolves every `git <word>`
@@ -33,14 +33,16 @@ function loadGitScriptSandbox() {
   return sandbox;
 }
 
-/** Renders the gitconfig exactly as `_getGitConfig` does, with numbered aliases expanded. */
+/** Render both generated alias families for delegation checks; returns Git config text. */
 function renderGitConfig() {
-  const { _getNumberedAliasSnippet } = loadGitScriptSandbox();
+  const { _getNumberedAliasSnippet, _getTwoColumnAliasSnippet } = loadGitScriptSandbox();
   expect(typeof _getNumberedAliasSnippet).toBe("function");
 
   const template = fs.readFileSync(GIT_CONFIG_TEMPLATE, "utf-8");
   expect(template).toMatch(NUMBERED_ALIAS_MARKER);
-  return template.replace(NUMBERED_ALIAS_MARKER, _getNumberedAliasSnippet());
+  return template
+    .replace(/^# BEGIN\/END - GIT_TWO_COLUMN_ALIASES$/m, _getTwoColumnAliasSnippet(template))
+    .replace(NUMBERED_ALIAS_MARKER, _getNumberedAliasSnippet());
 }
 
 /** Returns every alias name defined in the `[alias]` section of `config`. */
@@ -213,7 +215,7 @@ describe("git alias resolution", () => {
 
   it("should quote every git format placeholder so sh does not choke on the parens", () => {
     // `--format=%(upstream:track)` is handed to `sh -c` verbatim, and `(` is a shell
-    // metacharacter — sh aborts with `syntax error near unexpected token '('` and the
+    // metacharacter; sh aborts with `syntax error near unexpected token '('` and the
     // enclosing command substitution silently yields an empty string, so the alias keeps
     // running with a wrong value instead of failing. `sh -n` does not catch this because
     // command substitutions are only parsed at expansion time, hence the quote-state scan.

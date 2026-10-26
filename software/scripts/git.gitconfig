@@ -103,7 +103,7 @@ strategy = incremental
 # Harmless if delta is not installed — git ignores unrecognized sections.
 [delta]
 navigate = true
-side-by-side = true
+side-by-side = false
 line-numbers = true
 # Use the terminal's own ANSI palette for syntax highlighting instead of delta's
 # bundled default. Every other pager and picker on the machine already inherits it
@@ -192,7 +192,7 @@ r0-code = "!GIT_EDITOR=\"code --wait\" git rebase -i --root"
 r0-subl = "!GIT_EDITOR=\"subl --wait\" git rebase -i --root"
 
 # ---- Log & Diff ----
-logbaseline = log --decorate --abbrev-commit --date=short --graph
+logbaseline = log -w --decorate --abbrev-commit --date=short --graph
 ls = "!f() { git -c color.ui=always logbaseline --decorate-refs=refs/tags --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(red)%D %C(green)%an %C(reset)%s\" \"$@\" | sed 's/  */ /g' | $(git var GIT_PAGER); }; f"
 lls = "!f() { git -c color.ui=always logbaseline --decorate-refs=refs/tags --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(red)%D %C(green)%an %C(reset)%s\" --author-date-order \"$@\" | sed 's/  */ /g' | $(git var GIT_PAGER); }; f"
 l = "!git ls --stat" # Log with file stats
@@ -203,8 +203,8 @@ ds = diff --word-diff -w --staged # Diff staged changes
 d1 = "!git -c delta.side-by-side=false diff --word-diff -w" # Inline diff (no side-by-side)
 dh1 = "!git -c delta.side-by-side=false diff --word-diff -w HEAD^" # Inline diff against previous commit
 ds1 = "!git -c delta.side-by-side=false diff --word-diff -w --staged" # Inline diff staged changes
-show1 = "!git -c delta.side-by-side=false show" # Show commit inline (no side-by-side)
-dhs = diff --stat HEAD~1 # File change stats for last commit
+show1 = "!git -c delta.side-by-side=false show -w" # Show commit inline (no side-by-side)
+dhs = diff -w --stat HEAD~1 # File change stats for last commit
 stats = shortlog -sn # Commit counts per author
 
 # ---- Cherry-pick ----
@@ -239,6 +239,9 @@ clean-merged-branches-and-tags = "!f() { d=$(git symbolic-ref --short refs/remot
 worktree-path = "!f() { command worktree_create --path-only \"$1\"; }; f" # Compatibility wrapper; worktree_create owns path derivation
 create-worktree = "!f() { command worktree_create \"$1\"; }; f" # Compatibility wrapper; worktree_create owns creation and recovery
 clean-worktree = "!f() { git worktree prune; def=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@'); main=$(git rev-parse --show-toplevel); git worktree list --porcelain | sed -n 's/^worktree //p' | while IFS= read -r w; do [ \"$w\" = \"$main\" ] && continue; if [ -n \"$(git -C \"$w\" status --porcelain 2>/dev/null)\" ]; then echo \"  -> skip (dirty): $w\"; continue; fi; b=$(git -C \"$w\" symbolic-ref --short -q HEAD); [ -z \"$b\" ] && continue; up=$(git -C \"$w\" for-each-ref --format='%(upstream:track)' \"refs/heads/$b\" 2>/dev/null); merged=no; if [ -n \"$def\" ] && git merge-base --is-ancestor \"$b\" \"origin/$def\" 2>/dev/null; then merged=yes; fi; if [ \"$up\" = \"[gone]\" ] || [ \"$merged\" = yes ]; then echo \"  -> removing ($w)\"; git worktree remove \"$w\" 2>/dev/null || echo \"     (skip: could not remove)\"; else echo \"  -> keep (active): $w\"; fi; done; }; f" # Prune stale worktree records, then remove worktrees whose branch is merged or gone upstream (skips dirty)
+
+# ---- Two-column Aliases (generated) ----
+# BEGIN/END - GIT_TWO_COLUMN_ALIASES
 
 # ---- Numbered Aliases (generated) ----
 # BEGIN/END - GIT_NUMBERED_ALIASES
