@@ -73,6 +73,11 @@ Appearance refresh queries the terminal on `FocusGained`, `WinEnter`, and `TabEn
 Native navigation checks execute actual split/tab switches and normal/insert input before observing the emitted background query.
 The probe keeps stdin open, reports Vim exceptions, and checks both process status and persisted results.
 Accepted startup observations were recaptured after the color-response opt-out was removed; only the settings hash changed.
+
+The current settings fingerprint was revalidated after later indentation and picker changes, using the same installed Vim and plugins.
+The opt-in probe now compares every recorded group's resolved foreground, background, and target after each appearance switch.
+Both initial appearances preserve all eleven recorded groups, Signify startup, and Lightline startup; only the accepted settings fingerprint needed refreshing.
+The static source-hash guard remains unchanged and continues to reject stale evidence.
 These checks do not establish live Ghostty/macOS appearance notifications or desktop rendering.
 
 The initial apparent Signify defect came from inspecting uninitialized groups, not a lost-link regression.

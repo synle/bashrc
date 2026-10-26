@@ -1072,7 +1072,7 @@
   "vim": {
     "version": 9011752,
     "mechanism": "Full deployed vimrc startup with real installed Jetpack, Signify and Lightline; native highlight setup, then dark/light/dark switches.",
-    "settingsSha256": "f28aa6a1e97119ecd50c602b279407d310c3d827cd90f086216ee10e5cd409e9",
+    "settingsSha256": "19669c63d7b899a866e1553bf5a066ca11205e554beb69e6d2d4b7f3ffb0c8f1",
     "signifyLoaded": true,
     "lightlineLoaded": true,
     "appearances": [
