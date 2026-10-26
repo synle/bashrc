@@ -228,12 +228,11 @@ nnoremap <silent> <C-a> ^
 nnoremap <silent> <C-e> $
 xnoremap <silent> <C-a> ^
 xnoremap <silent> <C-e> $
-" Ctrl+M follows Vim's % matching-pair motion in every editing mode.
-" Traditional terminals also encode Enter as Ctrl+M, so editing-mode Enter
-" jumps too. Command-line Enter is deliberately unchanged.
+" Ctrl+M follows Vim's % matching-pair motion in normal and visual mode.
+" Traditional terminals encode Enter as Ctrl+M, so insert mode keeps the stock
+" newline behavior instead of jumping. Command-line Enter is unchanged.
 nnoremap <silent> <C-m> %
 xnoremap <silent> <C-m> %
-inoremap <silent> <C-m> <C-o>%
 " Insert mode uses true line start/end, matching readline/bash editor behavior.
 " This intentionally replaces Vim's stock Ctrl-A (insert previously inserted text)
 " and Ctrl-E (scroll the window down one line) commands.

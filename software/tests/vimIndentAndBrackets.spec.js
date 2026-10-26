@@ -265,12 +265,12 @@ describe("Vim Ctrl+M bracket navigation integration", () => {
     expect(result.lines).toEqual([""]);
   });
 
-  it("jumps in insert mode and resumes inserting at the matching bracket", () => {
-    const result = editInVim("(abc)", ['call feedkeys("gg0i\\<C-m>X\\<Esc>", "xt")']);
-    expect(result.lines).toEqual(["(abcX)"]);
+  it("inserts a newline for Enter instead of jumping to the matching bracket", () => {
+    const result = editInVim("(abc)", ['call feedkeys("gg0i\\<CR>X\\<Esc>", "xt")']);
+    expect(result.lines).toEqual(["", "X(abc)"]);
   });
 
-  it("treats editing-mode Enter as the same key but leaves command-line Enter usable", () => {
+  it("jumps on normal-mode Enter and leaves command-line Enter usable", () => {
     const result = editInVim("(abc)", [
       'execute "normal gg0\\<CR>"',
       "let g:observations.jump = col('.')",

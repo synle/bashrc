@@ -702,14 +702,13 @@ visual-mode deletion from Vim's insert-mode defaults.
 
 ### Insert Mode
 
-| Key              | Action                                       | Status |
-| ---------------- | -------------------------------------------- | :----: |
-| `ctrl+a`         | Beginning of line                            |   ✅   |
-| `ctrl+e`         | End of line                                  |   ✅   |
-| `ctrl+w`         | Delete previous word                         |   ✅   |
-| `ctrl+backspace` | Delete previous word                         |   ✅   |
-| `ctrl+delete`    | Delete next word, remain in insert mode      |   ✅   |
-| `ctrl+m`         | Jump to matching pair, remain in insert mode |   ✅   |
+| Key              | Action                                  | Status |
+| ---------------- | --------------------------------------- | :----: |
+| `ctrl+a`         | Beginning of line                       |   ✅   |
+| `ctrl+e`         | End of line                             |   ✅   |
+| `ctrl+w`         | Delete previous word                    |   ✅   |
+| `ctrl+backspace` | Delete previous word                    |   ✅   |
+| `ctrl+delete`    | Delete next word, remain in insert mode |   ✅   |
 
 These mappings match readline/bash. They replace Vim's stock insert-mode `ctrl+a`
 (insert previously inserted text) and `ctrl+e` (scroll the window down one line).
@@ -730,7 +729,7 @@ The terminal must send a distinct Ctrl+Delete code rather than ordinary Delete.
 | `ctrl+x`, `ctrl+q`, `,w`                | Close split                          |
 | `ctrl+left/right` (normal and insert)   | Previous / next word                 |
 | `ctrl+up/down` (normal, insert, visual) | Page up / page down                  |
-| `ctrl+m` (normal, visual, insert)       | Jump to matching pair (`%`)          |
+| `ctrl+m` (normal, visual)               | Jump to matching pair (`%`)          |
 | `,arrow`                                | Navigate splits                      |
 | `,4` … `,9`                             | Go to Nth buffer tab (tabline order) |
 
@@ -740,10 +739,10 @@ Use `,b` for the buffer picker or `:bprevious` / `:bnext` for previous / next
 buffer navigation.
 
 In traditional terminals, `ctrl+m` and Enter both send carriage return. Enter
-therefore also jumps to the matching pair in normal, visual, and insert modes.
-Command-line Enter remains unchanged, so `:w`
-and other Ex commands still execute normally. Visual mode extends the selection;
-insert mode resumes insertion at the destination. Matching follows Vim's `%`
+therefore also jumps to the matching pair in normal and visual modes. Insert
+mode keeps the stock newline behavior so Enter still starts a new line.
+Command-line Enter remains unchanged, so `:w` and other Ex commands still
+execute normally. Visual mode extends the selection. Matching follows Vim's `%`
 behavior, including searching forward on the current line for a bracket.
 
 ### Indentation and Save Cleanup
