@@ -952,18 +952,21 @@ Copy all desired complete blocks, including matching markers and one-line messag
 ```text
 # BEGIN SY_GIT_PATCH_64_v2 · acme/widget-store · patch 1 of 2 · <short-sha-1>
 # Commit: Commit subjects and bodies consolidated into one line
-### ------------------- ###
+##################################################
 <Base64 payload for patch 1>
+##################################################
 # END SY_GIT_PATCH_64_v2 · acme/widget-store · patch 1 of 2 · <short-sha-1>
 
 # BEGIN SY_GIT_PATCH_64_v2 · acme/widget-store · patch 2 of 2 · <short-sha-2>
 # Commit: Commit subjects and bodies consolidated into one line
-### ------------------- ###
+##################################################
 <Base64 payload for patch 2>
+##################################################
 # END SY_GIT_PATCH_64_v2 · acme/widget-store · patch 2 of 2 · <short-sha-2>
 ```
 
-Each preview summarizes the selected batch, combines commit messages oldest first, collapses whitespace and control characters, and omits Co-authored-by trailers.
+Each preview summarizes the selected batch, combines commit messages oldest first, collapses whitespace and control characters to single spaces, and omits Co-authored-by trailers.
+This includes repeated or mixed spaces, tabs, carriage returns, and newlines. Each payload has matching 50-hash dividers.
 The preview is display-only: decoding preserves the original patch bytes and commit messages inside the payload.
 The receiver applies blocks in their pasted order; selecting a later patch alone still requires its prerequisite changes.
 ASCII spaces, tabs, CR, and LF inside the payload are tolerated. Node is required to encode and decode portably.

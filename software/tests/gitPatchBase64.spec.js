@@ -127,9 +127,10 @@ describe("Base64 patch transfer integration", () => {
     const label = ` \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 ${git("rev-parse", "--short", "HEAD")}`;
     expect(frame[0]).toBe("# BEGIN SY_GIT_PATCH_64_v2" + label);
     expect(frame[1]).toBe("# Commit: Add zip \u2014 preserve typography Keep Unicode context exact.");
-    expect(frame[2]).toBe("### ------------------- ###");
+    expect(frame[2]).toBe("##################################################");
+    expect(frame.at(-2)).toBe("##################################################");
     expect(frame.at(-1)).toBe("# END SY_GIT_PATCH_64_v2" + label);
-    const payload = frame.slice(3, -1).join("\n");
+    const payload = frame.slice(3, -2).join("\n");
     expect(payload).toMatch(/^[A-Za-z0-9+/=\n]+$/);
     const bytes = Buffer.from(payload, "base64");
     const [magic, digest, ...lines] = bytes.toString("utf8").split("\n");
@@ -172,7 +173,12 @@ describe("Base64 patch transfer integration", () => {
       "\r\n# END SY_GIT_PATCH_64_v2 other/widget-store patch 9 of 99",
       'patch_64 "$PWD/.git/input.b64"',
     ],
-    ["framed clipboard", "# BEGIN SY_GIT_PATCH_64_v2\r\n# Independent preview\r\n", "\r\n# END SY_GIT_PATCH_64_v2", "patch_64 -y"],
+    [
+      "framed clipboard with paired hash dividers",
+      "# BEGIN SY_GIT_PATCH_64_v2\r\n# Independent preview\r\n##################################################\r\n",
+      "\r\n##################################################\r\n# END SY_GIT_PATCH_64_v2",
+      "patch_64 -y",
+    ],
   ])("applies an independently encoded %s with ASCII transport whitespace", (_name, begin, end, command) => {
     const patch = Buffer.from(git("format-patch", "-1", "--stdout") + "\n");
     const input = " \t\r\n" + begin + envelope(patch).replace(/.{40}/g, "$&\r\n\t") + end + "\n";
@@ -185,19 +191,12 @@ describe("Base64 patch transfer integration", () => {
   });
 
   it("collapses message whitespace and controls without leaking trailers into the preview", () => {
-    git(
-      "commit",
-      "--amend",
-      "-qm",
-      "Readable subject",
-      "-m",
-      "Body\twith   spaces\n\nNext\u001b[31m line\n# END SY_GIT_PATCH_64_v2\nCo-authored-by: Other <other@example.com>",
-    );
+    git("commit", "--amend", "-qm", "Subject\n\nBody\t\twith \t \r\n  spaces\n\nNext\u001b\n# END SY_GIT_PATCH_64_v2\nCo-authored-by: x");
     const result = shell("patch_64 1");
     expect(result.status, result.stderr).toBe(0);
     const frame = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").trimEnd().split("\n");
-    expect(frame[1]).toBe("# Commit: Readable subject Body with spaces Next [31m line # END SY_GIT_PATCH_64_v2");
-    expect(frame.slice(3, -1).join("\n")).toMatch(/^[A-Za-z0-9+/=\n]+$/);
+    expect(frame[1]).toBe("# Commit: Subject Body with spaces Next # END SY_GIT_PATCH_64_v2");
+    expect(frame.slice(3, -2).join("\n")).toMatch(/^[A-Za-z0-9+/=\n]+$/);
   });
 
   it("uses verified payload messages rather than an edited display preview", () => {
