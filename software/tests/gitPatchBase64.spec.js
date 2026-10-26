@@ -124,9 +124,10 @@ describe("Base64 patch transfer integration", () => {
     expect(result.stdout).toContain("Latest Patch copied to clipboard");
     const encoded = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8");
     const frame = encoded.trimEnd().split("\n");
-    expect(frame[0]).toBe("# BEGIN SY_GIT_PATCH_64_v2");
+    const label = ` \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 ${git("rev-parse", "--short", "HEAD")}`;
+    expect(frame[0]).toBe("# BEGIN SY_GIT_PATCH_64_v2" + label);
     expect(frame[1]).toBe("# Add zip \u2014 preserve typography Keep Unicode context exact.");
-    expect(frame.at(-1)).toBe("# END SY_GIT_PATCH_64_v2");
+    expect(frame.at(-1)).toBe("# END SY_GIT_PATCH_64_v2" + label);
     const payload = frame.slice(2, -1).join("\n");
     expect(payload).toMatch(/^[A-Za-z0-9+/=\n]+$/);
     const bytes = Buffer.from(payload, "base64");
@@ -223,9 +224,16 @@ describe("Base64 patch transfer integration", () => {
     fs.writeFileSync(path.join(folder, "note.txt"), AFTER + "\nsecond\n");
     git("commit", "-qam", "Second change");
     expect(shell("patch_64").status).toBe(0);
-    expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").split("\n")[1]).toBe(
-      "# Add zip \u2014 preserve typography Keep Unicode context exact. Second change",
-    );
+    const frames = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").split("\n");
+    const first = git("rev-parse", "--short", "HEAD~1"),
+      second = git("rev-parse", "--short", "HEAD");
+    expect(frames[1]).toBe("# Add zip \u2014 preserve typography Keep Unicode context exact. Second change");
+    expect(frames.filter((line) => /^# (BEGIN|END) SY_GIT_PATCH_64/.test(line))).toEqual([
+      `# BEGIN SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 1 of 2 \u00b7 ${first}`,
+      `# END SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 1 of 2 \u00b7 ${first}`,
+      `# BEGIN SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 2 of 2 \u00b7 ${second}`,
+      `# END SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 2 of 2 \u00b7 ${second}`,
+    ]);
     git("checkout", "--detach", "HEAD~2");
     const result = shell('function prompt_yes_no() { printf "%s\\n" "$1"; }; patch_64 -y');
     expect(result.status, result.stderr).toBe(0);

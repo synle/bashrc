@@ -115,6 +115,18 @@ describe("Base64 patch rejection integration", () => {
     ["missing end", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope()],
     ["missing begin", "# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
     ["mismatched version", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v3"],
+    [
+      "mismatched repository",
+      "# BEGIN SY_GIT_PATCH_64_v2 acme/widget-store patch 1 of 1\n# Preview\n" +
+        envelope() +
+        "\n# END SY_GIT_PATCH_64_v2 other/widget-store patch 1 of 1",
+    ],
+    [
+      "mismatched order",
+      "# BEGIN SY_GIT_PATCH_64_v2 acme/widget-store patch 1 of 2\n# Preview\n" +
+        envelope() +
+        "\n# END SY_GIT_PATCH_64_v2 acme/widget-store patch 2 of 2",
+    ],
     ["missing preview", "# BEGIN SY_GIT_PATCH_64_v2\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
     ["nested begin", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n# BEGIN SY_GIT_PATCH_64_v2\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
     ["trailing text", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2\nextra"],
@@ -128,6 +140,19 @@ describe("Base64 patch rejection integration", () => {
   it("checks the digest inside a valid display wrapper before applying", () => {
     const payload = Buffer.from(Buffer.from(envelope(), "base64").toString("utf8").replace("-base \u2014", "-base -")).toString("base64");
     expect(reject("# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + payload + "\n# END SY_GIT_PATCH_64_v2").stderr).toContain("SHA-256 mismatch");
+  });
+
+  it.each(["file", "clipboard"])("validates the later checksum before applying any frame from %s", (source) => {
+    const valid =
+      "# BEGIN SY_GIT_PATCH_64_v2 acme/widget-store patch 1 of 2\n# Preview\n" +
+      envelope() +
+      "\n# END SY_GIT_PATCH_64_v2 acme/widget-store patch 1 of 2\n";
+    const corrupt = Buffer.from(Buffer.from(envelope(), "base64").toString("utf8").replace("+changed", "+damaged")).toString("base64");
+    const later =
+      "# BEGIN SY_GIT_PATCH_64_v2 acme/widget-store patch 2 of 2\n# Preview\n" +
+      corrupt +
+      "\n# END SY_GIT_PATCH_64_v2 acme/widget-store patch 2 of 2\n";
+    expect(reject(valid + later, source).stderr).toContain("SHA-256 mismatch");
   });
 
   it("rejects a plain clipboard diff rather than applying it or replacing it", () => {

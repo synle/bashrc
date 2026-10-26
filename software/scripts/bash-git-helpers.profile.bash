@@ -757,9 +757,10 @@ function _git_patch_looks_like_patch() {
 
 # _git_patch_64_codec: encode/decode $2 into $3 with an embedded SHA-256 digest.
 # $1 is encode or decode; _PATCH_64_MESSAGE supplies the display-only export preview.
-# Exports include paired markers; decoding also accepts legacy bare Base64.
+# Exports use one paired, repo/order/SHA-labelled frame per plain patch section.
+# Decoding accepts frame sequences, legacy unlabelled frames, and bare Base64.
 # Returns 0 on success, 1 on corruption/I/O failure, or 2 for unrelated clipboard
-# text. Decoding writes only after validating the entire wrapper and payload.
+# text. Decoding writes only after validating every wrapper and payload.
 function _git_patch_64_codec() {
   if ! type -P node > /dev/null 2>&1; then
     echo "patch_64: node is required for the Base64 envelope" >&2
@@ -783,46 +784,62 @@ function fail(message) {
 try {
   const input = fs.readFileSync(process.env._PATCH_64_INPUT);
   if (process.env._PATCH_64_MODE === 'encode') {
-    const digest = crypto.createHash('sha256').update(input).digest('hex');
-    const encoded = Buffer.concat([Buffer.from(magic + digest + '\n'), input]).toString('base64');
     const preview = process.env._PATCH_64_MESSAGE.split(/\r?\n/)
       .filter(line => !/^\s*Co-authored-by:/i.test(line)).join(' ')
       .replace(/[\s\x00-\x1f\x7f-\x9f]+/g, ' ').trim();
-    fs.writeFileSync(process.env._PATCH_64_OUTPUT,
-      begin + '\n# ' + preview + '\n' + encoded.match(/.{1,76}/g).join('\n') + '\n' + end + '\n');
+    // Latin-1 slicing preserves every patch byte; labels alone are UTF-8 text.
+    const source = input.toString('latin1');
+    const sections = [...source.matchAll(/^# BEGIN SY_GIT_PATCH_BOUNDARY_v1([^\n]*)\n[\s\S]*?^# END SY_GIT_PATCH_BOUNDARY_v1\1\n\n/gm)];
+    if (!sections.length || sections.map(section => section[0]).join('') !== source) {
+      fail('malformed plain patch boundaries');
+    }
+    const frames = sections.map(section => {
+      const patch = Buffer.from(section[0], 'latin1');
+      const label = Buffer.from(section[1], 'latin1').toString('utf8');
+      const digest = crypto.createHash('sha256').update(patch).digest('hex');
+      const encoded = Buffer.concat([Buffer.from(magic + digest + '\n'), patch]).toString('base64');
+      return begin + label + '\n# ' + preview + '\n' + encoded.match(/.{1,76}/g).join('\n') + '\n' + end + label + '\n';
+    });
+    fs.writeFileSync(process.env._PATCH_64_OUTPUT, frames.join('\n'));
   } else {
-    let text = input.toString('latin1').replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, '');
+    const text = input.toString('latin1').replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, '');
     const framed = text.includes('# BEGIN ' + family) || text.includes('# END ' + family);
+    let payloads = [text];
     if (framed) {
-      const lines = text.split(/\r?\n/);
-      if (lines.shift() !== begin || lines.pop() !== end || !/^# /.test(lines.shift() || '')) {
+      const framePattern = /^# BEGIN SY_GIT_PATCH_64_v2((?:[ \t][^\r\n]*)?)\r?\n# [^\r\n]*\r?\n([\s\S]*?)\r?\n# END SY_GIT_PATCH_64_v2\1(?=\r?\n|$)/gm;
+      const frames = [...text.matchAll(framePattern)];
+      if (!frames.length || text.replace(framePattern, '').replace(/[ \t\r\n]/g, '') !== '') {
         fail('malformed Base64 envelope boundaries or preview');
       }
-      // The preview is display-only; commit messages come from verified patch bytes.
-      text = lines.join('\n');
+      // Labels must pair exactly; previews remain display-only, outside the digest.
+      payloads = frames.map(frame => frame[2]);
     }
-    // Only ASCII transport whitespace is ignorable, never punctuation or Unicode.
-    const encoded = text.replace(/[ \t\r\n]/g, '');
-    const decoded = Buffer.from(encoded, 'base64');
-    const hasFamily = decoded.subarray(0, family.length).toString('latin1') === family;
-    // Long Base64-looking input may have a damaged magic prefix; never overwrite it.
-    const minimumEnvelopeLength = Math.ceil((magic.length + 64 + 1) / 3) * 4;
-    const looksEncoded = encoded.length >= minimumEnvelopeLength && /^[A-Za-z0-9+/=]+$/.test(encoded);
-    if (!hasFamily && !looksEncoded) {
-      if (framed) fail('invalid Base64 envelope payload');
-      process.exit(2);
-    }
-    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || decoded.toString('base64') !== encoded) {
-      fail('invalid or noncanonical Base64 envelope');
-    }
-    const version = decoded.subarray(0, magic.length).toString('latin1');
-    if (version !== magic && version !== family + '_v1\n') fail('unsupported Base64 envelope version');
-    const digestEnd = magic.length + 64;
-    const digest = decoded.subarray(magic.length, digestEnd).toString('latin1');
-    if (!/^[0-9a-f]{64}$/.test(digest) || decoded[digestEnd] !== 10) fail('malformed Base64 envelope digest');
-    const patch = decoded.subarray(digestEnd + 1);
-    if (crypto.createHash('sha256').update(patch).digest('hex') !== digest) fail('SHA-256 mismatch; patch not applied');
-    fs.writeFileSync(process.env._PATCH_64_OUTPUT, patch);
+    // Validate the entire batch before writing anything the applier can consume.
+    const patches = payloads.map(payload => {
+      // Only ASCII transport whitespace is ignorable, never punctuation or Unicode.
+      const encoded = payload.replace(/[ \t\r\n]/g, '');
+      const decoded = Buffer.from(encoded, 'base64');
+      const hasFamily = decoded.subarray(0, family.length).toString('latin1') === family;
+      // Long Base64-looking input may have a damaged magic prefix; never overwrite it.
+      const minimumEnvelopeLength = Math.ceil((magic.length + 64 + 1) / 3) * 4;
+      const looksEncoded = encoded.length >= minimumEnvelopeLength && /^[A-Za-z0-9+/=]+$/.test(encoded);
+      if (!hasFamily && !looksEncoded) {
+        if (framed) fail('invalid Base64 envelope payload');
+        process.exit(2);
+      }
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || decoded.toString('base64') !== encoded) {
+        fail('invalid or noncanonical Base64 envelope');
+      }
+      const version = decoded.subarray(0, magic.length).toString('latin1');
+      if (version !== magic && version !== family + '_v1\n') fail('unsupported Base64 envelope version');
+      const digestEnd = magic.length + 64;
+      const digest = decoded.subarray(magic.length, digestEnd).toString('latin1');
+      if (!/^[0-9a-f]{64}$/.test(digest) || decoded[digestEnd] !== 10) fail('malformed Base64 envelope digest');
+      const patch = decoded.subarray(digestEnd + 1);
+      if (crypto.createHash('sha256').update(patch).digest('hex') !== digest) fail('SHA-256 mismatch; patch not applied');
+      return patch;
+    });
+    fs.writeFileSync(process.env._PATCH_64_OUTPUT, Buffer.concat(patches));
   }
 } catch (error) {
   if (!error.code) throw error;

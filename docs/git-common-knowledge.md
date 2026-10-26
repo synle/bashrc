@@ -946,16 +946,23 @@ After application, the command copies the original commit message to the clipboa
 A failed commit returns failure, even when the patch has already changed files.
 
 Base64 mode encodes before printing, copying, or uploading. Saved and uploaded envelopes use `.patch.b64`; plain files retain `.patch`.
-Copy the complete block, including its matching markers and one-line message preview, but not status messages or Markdown fences:
+Each commit gets its own block, oldest first, using the same repository, patch order, and short SHA labels as `patch_plain_str`.
+Copy all desired complete blocks, including matching markers and one-line message previews, but not status messages or Markdown fences:
 
 ```text
-# BEGIN SY_GIT_PATCH_64_v2
-# Commit subject and body consolidated into one line
-<Base64 payload>
-# END SY_GIT_PATCH_64_v2
+# BEGIN SY_GIT_PATCH_64_v2 · acme/widget-store · patch 1 of 2 · <short-sha-1>
+# Commit subjects and bodies consolidated into one line
+<Base64 payload for patch 1>
+# END SY_GIT_PATCH_64_v2 · acme/widget-store · patch 1 of 2 · <short-sha-1>
+
+# BEGIN SY_GIT_PATCH_64_v2 · acme/widget-store · patch 2 of 2 · <short-sha-2>
+# Commit subjects and bodies consolidated into one line
+<Base64 payload for patch 2>
+# END SY_GIT_PATCH_64_v2 · acme/widget-store · patch 2 of 2 · <short-sha-2>
 ```
 
-The preview combines selected commit messages oldest first, collapses whitespace and control characters, and omits Co-authored-by trailers.
+Each preview summarizes the selected batch, combines commit messages oldest first, collapses whitespace and control characters, and omits Co-authored-by trailers.
+The receiver applies blocks in their pasted order; selecting a later patch alone still requires its prerequisite changes.
 It is display-only: decoding preserves the original patch bytes and commit messages inside the payload.
 ASCII spaces, tabs, CR, and LF inside the payload are tolerated. Node is required to encode and decode portably.
 
@@ -968,7 +975,8 @@ SY_GIT_PATCH_64_v2\n
 ```
 
 The digest covers the original patch bytes only, not the visible preview.
-Decoding rejects malformed marker pairs, noncanonical Base64, unsupported versions, malformed digests, and checksum mismatches before applying.
+Decoding requires matching BEGIN/END labels and rejects malformed pairs, noncanonical Base64, unsupported versions, malformed digests, and checksum mismatches.
+The receiver validates every block before applying any patch.
 Recognized damaged envelopes and long Base64-looking clipboard input fail instead of triggering a new export that overwrites the clipboard.
 An explicit file with invalid input always fails. Unrelated clipboard prose still falls back to creation.
 `patch_64` rejects plain diffs; use `patch_plain_str` rather than weakening matching or normalizing Unicode.
@@ -976,8 +984,9 @@ SHA-256 detects accidental corruption; it does not authenticate the sender. Base
 
 ### Migration and compatibility
 
-Updated receivers accept complete v2 marked blocks, bare v2 payloads, and legacy bare v1 payloads.
-Older receivers require an updated profile; removing the markers does not downgrade a v2 payload to v1.
+Updated receivers accept sequences of labeled v2 blocks, previous unlabeled v2 blocks, bare v2 payloads, and legacy bare v1 payloads.
+Older receivers require an updated profile for labeled blocks or block sequences.
+Removing markers from a single block does not downgrade its v2 payload to v1; do not concatenate bare payloads from multiple blocks.
 
 Replace old `patch /path/to/plain.patch` calls with `patch_plain_str /path/to/plain.patch`.
 Likewise, call `patch_plain_str` when the clipboard contains an old plain diff.
