@@ -34,7 +34,7 @@ describe("git.js doWork", () => {
     expect(config).not.toMatch(/^show2 = "!git/m);
     expect(config).toContain("log2 = log --oneline");
     expect(config).not.toMatch(/^log2 = "!git/m);
-    expect(config).toContain('d2 = "!git -c delta.side-by-side=true d --word-diff=none"');
+    expect(config).toContain('d2 = "!git -c delta.side-by-side=true d"');
   });
 
   it("should preserve existing email from current .gitconfig", async () => {

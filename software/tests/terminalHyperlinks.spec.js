@@ -37,20 +37,29 @@ sys.exit(os.waitstatus_to_exitcode(status))
 `;
 /** PTY coverage requires Python's standard library on Unix hosts. */
 const HAS_PTY = process.platform !== "win32" && spawnSync("python3", ["--version"]).status === 0;
-/** Run shell output through a real Unix PTY or ordinary captured pipes. */
+/**
+ * Run shell output with deterministic terminal settings through a Unix PTY or captured pipes.
+ * @param {string} source - Production shell source containing the selected helper.
+ * @param {string} command - Shell invocation to execute.
+ * @param {object} [options] - Terminal mode, TERM value, and helper name.
+ * @returns {{status: number|null, output: string, error: string}} Captured process result.
+ */
 function render(source, command, { tty = false, term = "xterm-256color", name = "format_hyperlink" } = {}) {
   const help = COMMON.match(/^function is_help_arg\(\) \{[\s\S]*?^\}/m)[0];
   const script = `${help}\n${shellFunction(source, name)}\n${command}`;
+  // Make exports NO_COLOR=0; ripgrep disables hyperlinks whenever that variable exists.
+  const env = { ...process.env, BASH_ENV: "/dev/null", TERM: term };
+  delete env.NO_COLOR;
   const result = tty
     ? spawnSync("python3", ["-c", PTY_DRIVER, script], {
         encoding: "utf8",
         timeout: 5000,
-        env: { ...process.env, BASH_ENV: "/dev/null", TERM: term },
+        env,
       })
     : spawnSync("/bin/bash", ["--noprofile", "--norc", "-c", script], {
         encoding: "utf8",
         timeout: 5000,
-        env: { ...process.env, BASH_ENV: "/dev/null", TERM: term },
+        env,
       });
   return { status: result.status, output: result.stdout, error: result.stderr };
 }
