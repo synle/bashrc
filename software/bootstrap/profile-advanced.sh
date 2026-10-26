@@ -1554,84 +1554,226 @@ function pwd2() {
 ################################################################################
 # --- Diff (file diff or git hash compare) ---
 ################################################################################
+# The core profile may install a `diff` alias. Remove it before defining this function,
+# so repeated profile loads leave the smart dispatcher callable.
+unalias diff 2> /dev/null || true
+
 # smart diff for files or git commits
 function diff() {
+  local mode=delta1 mode_selected=false
+  case "${1:-}" in
+  -delta1)
+    mode_selected=true
+    shift
+    ;;
+  -delta2)
+    mode=delta2
+    mode_selected=true
+    shift
+    ;;
+  -code)
+    mode=code
+    mode_selected=true
+    shift
+    ;;
+  -zed | -z)
+    mode=zed
+    mode_selected=true
+    shift
+    ;;
+  -winmerge)
+    mode=winmerge
+    mode_selected=true
+    shift
+    ;;
+  -smerge | -sublime_merge)
+    mode=smerge
+    mode_selected=true
+    shift
+    ;;
+  esac
+
   if is_help_arg "${1:-}"; then
     echo "
       diff: smart diff for files or git commits
-        diff file1 file2       side-by-side diff (VS Code if available)
-        diff abc123 def456     git diff between two commit hashes
-        diff <flags> <files>   forward to /usr/bin/diff
-        diff help              show this help
+        diff file1 file2                 Delta one-column diff (file1 left, file2 right)
+        diff -delta2 file1 file2         Delta two-column diff
+        diff -code file1 file2           open in VS Code
+        diff -zed|-z file1 file2         open in Zed
+        diff -winmerge file1 file2       open in WinMerge
+        diff -smerge|-sublime_merge file1 file2  open in Sublime Merge
+        diff abc123 def456               compare two Git commits
+        diff [Delta mode] [Git args]     show tracked changes or Git diff options
+        diff <diff flags> <files>        forward explicit flags to native diff
+        diff help                        show this help
     "
-    return
-  fi
-  if [ $# -ne 2 ]; then
-    command diff -w --color -y --suppress-common-lines "$@"
-    return
+    return 0
   fi
 
-  local file1_valid=false file2_valid=false
-  [ -f "$1" ] && file1_valid=true
-  [ -f "$2" ] && file2_valid=true
+  local file1 file2 option_ended=false
+  if [ "${1:-}" = "--" ]; then
+    option_ended=true
+    shift
+  fi
+  if [ "$mode" != delta1 ] && [ "$mode" != delta2 ]; then
+    if [ "$#" -ne 2 ]; then
+      echo "diff: editor mode requires exactly two files" >&2
+      return 2
+    fi
+    file1=$1
+    file2=$2
+    if [ ! -f "$file1" ]; then
+      echo "File not found: $file1" >&2
+      return 1
+    fi
+    if [ ! -f "$file2" ]; then
+      echo "File not found: $file2" >&2
+      return 1
+    fi
 
-  # both files exist — diff them
-  if $file1_valid && $file2_valid; then
-    if type -P code &> /dev/null; then
-      code --diff "$1" "$2"
+    local editor_binary editor_args=()
+    case "$mode" in
+    code)
+      editor_binary=code
+      editor_args=(--diff)
+      ;;
+    zed)
+      editor_binary=zed
+      editor_args=(--diff)
+      ;;
+    winmerge) editor_binary=winmergeu.exe ;;
+    smerge)
+      editor_args=(mergetool)
+      if is_runnable_command smerge; then
+        editor_binary=smerge
+      else
+        editor_binary=smerge.exe
+      fi
+      ;;
+    esac
+    if ! is_runnable_command "$editor_binary"; then
+      echo "diff: required command not found: $editor_binary" >&2
+      return 127
+    fi
+    "$editor_binary" "${editor_args[@]}" "$file1" "$file2"
+    return $?
+  fi
+
+  # Unselected native flags retain diff behavior; selected Delta modes accept Git flags.
+  if [ "$mode_selected" = false ] && [ "$option_ended" = false ]; then
+    case "${1:-}" in
+    -*)
+      command diff "$@"
+      return $?
+      ;;
+    esac
+  elif [ "$mode_selected" = true ] && [ "$#" -gt 0 ]; then
+    case "$1" in
+    -*)
+      if [ "$mode" = delta2 ]; then
+        git -c delta.side-by-side=true diff "$@"
+      else
+        git -c delta.side-by-side=false diff "$@"
+      fi
+      return $?
+      ;;
+    esac
+  fi
+
+  if [ "$#" -eq 2 ] && [ -f "$1" ] && [ -f "$2" ]; then
+    if [ "$mode" = delta2 ]; then
+      git -c delta.side-by-side=true diff --no-index -- "$1" "$2"
     else
-      command diff -w --color -y --suppress-common-lines "$1" "$2"
+      git -c delta.side-by-side=false diff --no-index -- "$1" "$2"
     fi
-    return
+    return $?
   fi
 
-  # one file exists, one doesn't
-  if $file1_valid && ! $file2_valid; then
-    echo "File not found: $2"
+  if [ "$#" -eq 2 ]; then
+    local file1_valid=false file2_valid=false
+    local hash_re='^[a-f0-9]{4,40}$'
+    local hash1_valid=false hash2_valid=false
+    [ -f "$1" ] && file1_valid=true
+    [ -f "$2" ] && file2_valid=true
+    if [[ "$1" =~ $hash_re ]] && git rev-parse --verify "$1" &> /dev/null; then hash1_valid=true; fi
+    if [[ "$2" =~ $hash_re ]] && git rev-parse --verify "$2" &> /dev/null; then hash2_valid=true; fi
+
+    if $file1_valid && ! $file2_valid; then
+      echo "File not found: $2" >&2
+      return 1
+    fi
+    if ! $file1_valid && $file2_valid; then
+      echo "File not found: $1" >&2
+      return 1
+    fi
+    if $hash1_valid && $hash2_valid; then
+      echo "git diff $1 $2"
+      git diff "$1" "$2"
+      local diff_status=$?
+
+      local repo_url
+      repo_url=$(git config --get remote.origin.url 2> /dev/null)
+      if [ -n "$repo_url" ] && is_runnable_command open; then
+        repo_url="${repo_url#*:}"
+        repo_url="${repo_url%.git}"
+        repo_url="${repo_url#*github.com/}"
+        local compare_url="https://github.com/${repo_url}/compare/${1}...${2}"
+        echo "$compare_url"
+        open "$compare_url"
+      fi
+      return "$diff_status"
+    fi
+    if ! $hash1_valid && ! $file1_valid; then echo "File or hash not found: $1" >&2; fi
+    if ! $hash2_valid && ! $file2_valid; then echo "File or hash not found: $2" >&2; fi
     return 1
   fi
-  if ! $file1_valid && $file2_valid; then
-    echo "File not found: $1"
-    return 1
+
+  if [ "$#" -gt 2 ]; then
+    command diff "$@"
+    return $?
   fi
 
-  # neither file exists — check if they look like git hashes
-  local hash_re='^[a-f0-9]{4,40}$'
-  local hash1_valid=false hash2_valid=false
-  if [[ "$1" =~ $hash_re ]] && git rev-parse --verify "$1" &> /dev/null; then
-    hash1_valid=true
-  fi
-  if [[ "$2" =~ $hash_re ]] && git rev-parse --verify "$2" &> /dev/null; then
-    hash2_valid=true
-  fi
-
-  if $hash1_valid && $hash2_valid; then
-    echo "git diff $1 $2"
-    git diff "$1" "$2"
-
-    # open github compare if remote is available
-    local repo_url
-    repo_url=$(git config --get remote.origin.url 2> /dev/null)
-    if [ -n "$repo_url" ]; then
-      repo_url="${repo_url#*:}"
-      repo_url="${repo_url%.git}"
-      repo_url="${repo_url#*github.com/}"
-      local compare_url="https://github.com/${repo_url}/compare/${1}...${2}"
-      echo "$compare_url"
-      open "$compare_url"
+  if [ "$#" -eq 1 ]; then
+    if [ ! -f "$1" ]; then
+      echo "File not found: $1" >&2
+      return 1
     fi
-    return
+    if git rev-parse --is-inside-work-tree &> /dev/null; then
+      if git ls-files --error-unmatch -- "$1" &> /dev/null; then
+        if [ "$mode" = delta2 ]; then
+          git -c delta.side-by-side=true diff -- "$1"
+        else
+          git -c delta.side-by-side=false diff -- "$1"
+        fi
+        return $?
+      fi
+      if [ "$mode" = delta2 ]; then
+        git -c delta.side-by-side=true diff --no-index -- /dev/null "$1"
+      else
+        git -c delta.side-by-side=false diff --no-index -- /dev/null "$1"
+      fi
+      return $?
+    fi
+    command diff "$1"
+    return $?
   fi
 
-  # partial match — tell user which is invalid
-  if ! $hash1_valid && ! $file1_valid; then
-    echo "File or hash not found: $1"
+  if [ "$mode" = delta2 ]; then
+    git -c delta.side-by-side=true diff "$@"
+  else
+    git -c delta.side-by-side=false diff "$@"
   fi
-  if ! $hash2_valid && ! $file2_valid; then
-    echo "File or hash not found: $2"
-  fi
-  return 1
+  return $?
 }
+
+alias diff_delta1='diff -delta1'
+alias diff_delta2='diff -delta2'
+alias diff_code='diff -code'
+alias diff_zed='diff -zed'
+alias diff_z='diff -zed'
+alias diff_winmerge='diff -winmerge'
+alias diff_smerge='diff -smerge'
+alias diff_sublime_merge='diff -smerge'
 
 # SOURCE | software/scripts/bash-git-helpers.profile.bash
 

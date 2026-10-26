@@ -352,6 +352,24 @@ Regression coverage lives in `software/tests/nativeCd.spec.js`.
 These shortcuts are explicit aliases, not generated command variants.
 Long listings use native timestamps and permission columns.
 
+## Smart file diff
+
+`diff file1 file2` compares arbitrary files in Delta's one-column layout; `file1` stays left, `file2` stays right. `diff -delta2 file1 file2` selects two columns.
+
+Both layouts use Git's no-index comparison, including inside repositories. For Delta styling, configure Delta as Git's pager; Git controls terminal rendering.
+
+Use `diff -code file1 file2` for VS Code. Use `diff -zed` or `diff -z` for Zed, and `diff -winmerge` for WinMerge. Use `diff -smerge` or `diff -sublime_merge` for Sublime Merge.
+
+Sublime Merge uses `smerge` first, then falls back to `smerge.exe`. Other editor modes require their named command or launcher. Missing commands produce an error instead of silently changing tools.
+
+Shortcuts: `diff_delta1`, `diff_delta2`, `diff_code`, `diff_zed`, `diff_z`, `diff_winmerge`, `diff_smerge`, and `diff_sublime_merge`. Each alias accepts its matching mode's arguments.
+
+With no selector, two file paths compare by default. Two commit hashes compare Git revisions; an available GitHub remote preserves the existing compare-page opening.
+
+Inside a repository, no arguments show tracked working changes. One path shows tracked changes or compares an untracked file against empty content. Outside a repository, one path is compared against standard input by native `diff`.
+
+Prefix a leading-dash filename with `--`. Unselected leading flags such as `-u` pass directly to native `diff`. Explicit `-delta1` and `-delta2` modes accept Git diff flags.
+
 ## Shared theme sources
 
 `theme/sy/_palette_{dark,light}.jsonc` owns foundation colors, aliases, and `{from, over, alpha}` recipes.
