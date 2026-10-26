@@ -87,45 +87,126 @@ describe("Vim shared theme deployment", () => {
 });
 
 describe("Vim native theme consumer", () => {
-  it.each([
-    ["dark", "sy-dark", "#e8e8e8", "#5ca0d7", [["#0a0a0a", "#5ca0d7"]]],
-    ["light", "sy-light", "#1e1e1e", "#9b2c2c", [["#f8f8f8", "#0252ad"]]],
-  ])("loads %s palette, semantic TSX links, and matching Lightline data", async (appearance, scheme, foreground, tag, mode) => {
+  it("loads both palettes, semantic TSX links, and matching Lightline data", async () => {
     const selection = await getIndexFunction("_doVimTheme")([]);
-    const result = await probeTheme(selection, appearance);
-
-    expect(result).toMatchObject({ scheme, background: appearance, foreground, tag, mode: { left: mode } });
+    const results = await Promise.all(["dark", "light"].map(async (appearance) => {
+      const { scheme, background, foreground, tag, mode } = await probeTheme(selection, appearance);
+      return { scheme, background, foreground, tag, mode: { left: mode.left } };
+    }));
+    expect(results).toMatchInlineSnapshot(`
+      [
+        {
+          "background": "dark",
+          "foreground": "#e8e8e8",
+          "mode": {
+            "left": [
+              [
+                "#0a0a0a",
+                "#5ca0d7",
+              ],
+            ],
+          },
+          "scheme": "sy-dark",
+          "tag": "#5ca0d7",
+        },
+        {
+          "background": "light",
+          "foreground": "#1e1e1e",
+          "mode": {
+            "left": [
+              [
+                "#f8f8f8",
+                "#0252ad",
+              ],
+            ],
+          },
+          "scheme": "sy-light",
+          "tag": "#9b2c2c",
+        },
+      ]
+    `);
   });
 
   it("switches dark to light after startup through the background option", async () => {
     const selection = await getIndexFunction("_doVimTheme")([]);
     const result = await probeTheme(selection, "dark", ["set background=light"]);
 
-    expect(result).toMatchObject({ scheme: "sy-light", background: "light", foreground: "#1e1e1e", tag: "#9b2c2c" });
+    expect({ scheme: result.scheme, background: result.background, foreground: result.foreground, tag: result.tag }).toMatchInlineSnapshot(`
+      {
+        "background": "light",
+        "foreground": "#1e1e1e",
+        "scheme": "sy-light",
+        "tag": "#9b2c2c",
+      }
+    `);
   });
 
   it("switches light to dark after startup through the background option", async () => {
     const selection = await getIndexFunction("_doVimTheme")([]);
     const result = await probeTheme(selection, "light", ["set background=dark"]);
 
-    expect(result).toMatchObject({ scheme: "sy-dark", background: "dark", foreground: "#e8e8e8", tag: "#5ca0d7" });
+    expect({ scheme: result.scheme, background: result.background, foreground: result.foreground, tag: result.tag }).toMatchInlineSnapshot(`
+      {
+        "background": "dark",
+        "foreground": "#e8e8e8",
+        "scheme": "sy-dark",
+        "tag": "#5ca0d7",
+      }
+    `);
   });
 
-  it.skipIf(!hasColorResponsePlugin).each([
-    ["dark", "ffff/ffff/ffff", "sy-light", "light", "#1e1e1e", "#9b2c2c"],
-    ["light", "0000/0000/0000", "sy-dark", "dark", "#e8e8e8", "#5ca0d7"],
-    ["dark", "0000/0000/0000", "sy-dark", "dark", "#e8e8e8", "#5ca0d7"],
-    ["light", "ffff/ffff/ffff", "sy-light", "light", "#1e1e1e", "#9b2c2c"],
-  ])("selects the matching palette after a late terminal reply from %s (%s)", async (initial, rgb, scheme, background, foreground, tag) => {
+  it.skipIf(!hasColorResponsePlugin)("selects matching palettes after late terminal replies from either appearance", async () => {
     const selection = await getIndexFunction("_doVimTheme")([]);
-    const result = await probeTheme(selection, initial, [
-      "set term=xterm",
-      "runtime plugin/colorresp.vim",
-      `call test_feedinput("\\e]11;rgb:${rgb}\\x07")`,
-      "call getchar(0)",
-    ]);
-
-    expect(result).toMatchObject({ scheme, background, foreground, tag });
+    const results = await Promise.all([
+      ["dark", "ffff/ffff/ffff"],
+      ["light", "0000/0000/0000"],
+      ["dark", "0000/0000/0000"],
+      ["light", "ffff/ffff/ffff"],
+    ].map(async ([initial, rgb]) => {
+      const { scheme, background, foreground, tag } = await probeTheme(selection, initial, [
+        "set term=xterm",
+        "runtime plugin/colorresp.vim",
+        `call test_feedinput("\\e]11;rgb:${rgb}\\x07")`,
+        "call getchar(0)",
+      ]);
+      return { initial, rgb, scheme, background, foreground, tag };
+    }));
+    expect(results).toMatchInlineSnapshot(`
+      [
+        {
+          "background": "light",
+          "foreground": "#1e1e1e",
+          "initial": "dark",
+          "rgb": "ffff/ffff/ffff",
+          "scheme": "sy-light",
+          "tag": "#9b2c2c",
+        },
+        {
+          "background": "dark",
+          "foreground": "#e8e8e8",
+          "initial": "light",
+          "rgb": "0000/0000/0000",
+          "scheme": "sy-dark",
+          "tag": "#5ca0d7",
+        },
+        {
+          "background": "dark",
+          "foreground": "#e8e8e8",
+          "initial": "dark",
+          "rgb": "0000/0000/0000",
+          "scheme": "sy-dark",
+          "tag": "#5ca0d7",
+        },
+        {
+          "background": "light",
+          "foreground": "#1e1e1e",
+          "initial": "light",
+          "rgb": "ffff/ffff/ffff",
+          "scheme": "sy-light",
+          "tag": "#9b2c2c",
+        },
+      ]
+    `);
   });
 
   it("preserves the current palette when the terminal background query is unavailable", async () => {
@@ -133,7 +214,14 @@ describe("Vim native theme consumer", () => {
     const result = await probeTheme(selection, "light", ["set t_RB=", "doautocmd FocusGained"]);
 
     expect(result.terminalOutput).not.toContain("\u001b]11;?");
-    expect(result).toMatchObject({ scheme: "sy-light", background: "light", foreground: "#1e1e1e", tag: "#9b2c2c" });
+    expect({ scheme: result.scheme, background: result.background, foreground: result.foreground, tag: result.tag }).toMatchInlineSnapshot(`
+      {
+        "background": "light",
+        "foreground": "#1e1e1e",
+        "scheme": "sy-light",
+        "tag": "#9b2c2c",
+      }
+    `);
   });
 
   it("routes disabled custom themes through the registry fallback without loading Sy colors", async () => {
@@ -146,7 +234,14 @@ describe("Vim native theme consumer", () => {
       const result = await probeTheme(selection, "light", [], {
         "owned-fixture": "let g:colors_name = 'owned-fixture'\nhighlight Normal guifg=#123456 guibg=#ffffff\n",
       });
-      expect(result).toMatchObject({ scheme: "owned-fixture", background: "light", ayu: "light", foreground: "#123456" });
+      expect({ scheme: result.scheme, background: result.background, ayu: result.ayu, foreground: result.foreground }).toMatchInlineSnapshot(`
+        {
+          "ayu": "light",
+          "background": "light",
+          "foreground": "#123456",
+          "scheme": "owned-fixture",
+        }
+      `);
     } finally {
       registry.vim = original;
     }

@@ -39,6 +39,28 @@ function contrast(a, b) {
 
 const apps = ["vscode", "sublime", "zed", "vim", "ghostty", "windows_terminal", "termux", "claude", "pi", "opencode", "gemini"];
 
+it("stores native Vim spelling diagnostics for both appearances", () => {
+  expect({
+    dark: read("theme/sy/vim_dark.jsonc").highlights.SpellBad,
+    light: read("theme/sy/vim_light.jsonc").highlights.SpellBad,
+  }).toMatchInlineSnapshot(`
+    {
+      "dark": {
+        "background": "NONE",
+        "foreground": "NONE",
+        "special": "#f67070",
+        "style": "undercurl",
+      },
+      "light": {
+        "background": "NONE",
+        "foreground": "NONE",
+        "special": "#840000",
+        "style": "undercurl",
+      },
+    }
+  `);
+});
+
 describe.each(["dark", "light"])("active %s templates", (mode) => {
   it.each(apps)("keeps %s as a native-shaped, fully rendered marker template", (app) => {
     const file = `theme/sy/${app}_${mode}.jsonc`;
@@ -46,7 +68,13 @@ describe.each(["dark", "light"])("active %s templates", (mode) => {
     const native = read(file);
     expect(native).not.toHaveProperty("definition");
     expect(raw).toContain(`{{${mode}.`);
-    expect(buildInclude.processInlineMarkers(raw, buildInclude.COLOR_MAP, file)).toMatchObject({ changed: false, warnings: [] });
+    const { changed, warnings } = buildInclude.processInlineMarkers(raw, buildInclude.COLOR_MAP, file);
+    expect({ changed, warnings }).toMatchInlineSnapshot(`
+      {
+        "changed": false,
+        "warnings": [],
+      }
+    `);
   });
 
   it("makes actual Sublime find foreground readable, not just its unrelated variable", () => {
@@ -112,7 +140,6 @@ describe.each(["dark", "light"])("active %s templates", (mode) => {
   it("stores Vim groups, terminal colors, and status-line modes in its template", () => {
     const vim = read(`theme/sy/vim_${mode}.jsonc`);
     expect(vim.highlights.MatchParen.foreground).toBe(buildInclude.COLOR_MAP[mode].foreground);
-    expect(vim.highlights.SpellBad).toMatchObject({ foreground: "NONE", special: buildInclude.COLOR_MAP[mode].red, style: "undercurl" });
     expect(vim.terminal).toHaveLength(16);
     expect(vim.lightline).toHaveProperty("insert");
   });

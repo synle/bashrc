@@ -58,7 +58,15 @@ describe("theme marker replacement", () => {
   });
   it("checks active bindings and native JSONC before a caller writes anything", () => {
     const source = '{\n  "foreground": "#000000" // {{dark.blue}}\n}';
-    expect(buildInclude.compileThemeTemplate(source, palette, "active.jsonc")).toMatchObject({ warnings: [], changed: true });
+    expect(buildInclude.compileThemeTemplate(source, palette, "active.jsonc")).toMatchInlineSnapshot(`
+      {
+        "changed": true,
+        "content": "{
+        "foreground": "#5ca0d7" // {{dark.blue}}
+      }",
+        "warnings": [],
+      }
+    `);
     expect(
       buildInclude.compileThemeTemplate('{"color":"#000000","fontStyle":"bold"} // {{dark.blue}}', palette, "active.jsonc").warnings[0],
     ).toContain("unbound theme marker");
@@ -69,10 +77,12 @@ describe("theme marker replacement", () => {
 
   it("does not interpret marker-looking text inside a native string as a comment", () => {
     const source = '{"note":"// {{dark.blue}}"}';
-    expect(buildInclude.compileThemeTemplate(source, palette, "active.jsonc")).toMatchObject({
-      content: source,
-      changed: false,
-      warnings: [],
-    });
+    expect(buildInclude.compileThemeTemplate(source, palette, "active.jsonc")).toMatchInlineSnapshot(`
+      {
+        "changed": false,
+        "content": "{"note":"// {{dark.blue}}"}",
+        "warnings": [],
+      }
+    `);
   });
 });

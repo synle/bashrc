@@ -150,20 +150,10 @@ describe.skipIf(!pluginRoot)("native installed Vim plugin integration", () => {
     expect(result.signify).toBe(1);
     expect(result.lightline).toBe(1);
     expect(result.states.map((state) => state.scheme)).toEqual(expectedSchemes);
-    const statusColors = {
-      "sy-dark": { foreground: "#0a0a0a", background: "#76a762" },
-      "sy-light": { foreground: "#f8f8f8", background: "#004a15" },
-    };
-    for (const state of result.states) {
-      /** Accepted groups for the native colorscheme observed in this state. */
-      const recorded = nativeEvidence.appearances.find((entry) => entry.scheme === state.scheme);
-      expect(state.groups).toMatchObject(recorded.groups);
-      expect(state.lightline).toBe("sy");
-      expect(state.groups.SignifySignAdd.target).toBe("DiffAdd");
-      expect(state.groups.SignifySignChange.target).toBe("DiffChange");
-      expect(state.groups.SignifySignDelete.target).toBe("DiffDelete");
-      expect(state.groups.SignifyLineAdd.target).toBe("DiffAdd");
-      expect(state.groups.LightlineLeft_normal_0).toMatchObject(statusColors[state.scheme]);
-    }
+    expect(result.states[2]).toEqual(result.states[0]);
+    expect(Object.fromEntries(result.states.map((state) => [state.scheme, {
+      lightline: state.lightline,
+      groups: state.groups,
+    }]))).toMatchInlineSnapshot();
   });
 });

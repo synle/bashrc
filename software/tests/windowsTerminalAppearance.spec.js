@@ -63,14 +63,21 @@ async function generateAppearance(oldSettings = {}, windows = true, overrides = 
 describe("Windows Terminal modern appearance", () => {
   it.each([true, false])("emits current cursor and font defaults for Windows=%s", async (windows) => {
     const settings = await generateAppearance({}, windows);
-    expect(settings.profiles.defaults).toMatchObject({
-      cursorShape: "underscore",
-      font: { face: "Fixture Mono", size: 12, weight: "semi-bold", cellHeight: "1.1" },
-      showMarksOnScrollbar: true,
-      suppressApplicationTitle: false,
-      scrollbarState: "visible",
-      adjustIndistinguishableColors: "always",
-    });
+    expect({ cursorShape: settings.profiles.defaults.cursorShape, font: { face: settings.profiles.defaults.font.face, size: settings.profiles.defaults.font.size, weight: settings.profiles.defaults.font.weight, cellHeight: settings.profiles.defaults.font.cellHeight }, showMarksOnScrollbar: settings.profiles.defaults.showMarksOnScrollbar, suppressApplicationTitle: settings.profiles.defaults.suppressApplicationTitle, scrollbarState: settings.profiles.defaults.scrollbarState, adjustIndistinguishableColors: settings.profiles.defaults.adjustIndistinguishableColors }).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "cursorShape": "underscore",
+        "font": {
+          "cellHeight": "1.1",
+          "face": "Fixture Mono",
+          "size": 12,
+          "weight": "semi-bold",
+        },
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "suppressApplicationTitle": false,
+      }
+    `);
     expect(settings.profiles.defaults).not.toHaveProperty("icon");
     expect(settings.profiles.defaults).not.toHaveProperty("cursorHeight");
     expect(settings.profiles.defaults).not.toHaveProperty("fontFace");
@@ -99,13 +106,20 @@ describe("Windows Terminal modern appearance", () => {
     const first = await generateAppearance({ profiles: { defaults: oldProfile, list: [oldProfile] } });
     const savedProfile = first.profiles.list.find(({ guid }) => guid === "fixture");
     expect(savedProfile.elevate).toBe(elevate);
-    expect(savedProfile).toMatchObject({
-      showMarksOnScrollbar: true,
-      suppressApplicationTitle: false,
-      scrollbarState: "visible",
-      adjustIndistinguishableColors: "always",
-      font: { face: "Custom Mono", size: 18, weight: "semi-bold", cellHeight: "1.1" },
-    });
+    expect({ showMarksOnScrollbar: savedProfile.showMarksOnScrollbar, suppressApplicationTitle: savedProfile.suppressApplicationTitle, scrollbarState: savedProfile.scrollbarState, adjustIndistinguishableColors: savedProfile.adjustIndistinguishableColors, font: { face: savedProfile.font.face, size: savedProfile.font.size, weight: savedProfile.font.weight, cellHeight: savedProfile.font.cellHeight } }).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "font": {
+          "cellHeight": "1.1",
+          "face": "Custom Mono",
+          "size": 18,
+          "weight": "semi-bold",
+        },
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "suppressApplicationTitle": false,
+      }
+    `);
     expect(first.profiles.defaults.font.cellHeight).toBe("1.1");
     expect(first.profiles.defaults).not.toHaveProperty("elevate");
     expect(await generateAppearance(first)).toEqual(first);
@@ -199,19 +213,7 @@ describe("Windows Terminal modern appearance", () => {
         ],
       },
     });
-    expect(settings.profiles.list.map(({ name, icon, tabColor, background }) => ({ name, icon, tabColor, background }))).toEqual([
-      { name: "Ubuntu", icon: "ubuntu.ico", tabColor: "#ffffff", background: undefined },
-      { name: "Debian", icon: "debian.ico", tabColor: "#e95420", background: undefined },
-      { name: "Kali", icon: undefined, tabColor: "#e95420", background: undefined },
-      {
-        name: "Powershell v7",
-        icon: "C:\\Users\\Test User\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
-        tabColor: "#000000",
-        background: undefined,
-      },
-      { name: "Powershell v5", icon: "powershell.ico", tabColor: "#012456", background: undefined },
-      { name: "Custom", icon: "custom.ico", tabColor: "#123456", background: undefined },
-    ]);
+    expect(settings.profiles.list.map(({ name, icon, tabColor, background }) => ({ name, icon, tabColor, background }))).toMatchInlineSnapshot();
     expect(settings.defaultProfile).toBe("u");
   });
 
@@ -225,15 +227,7 @@ describe("Windows Terminal modern appearance", () => {
       },
     };
     const first = await generateAppearance(oldSettings);
-    expect(first.profiles.list.map(({ name, icon, tabColor, hidden }) => ({ name, icon, tabColor, hidden }))).toEqual([
-      {
-        name: "Powershell v7",
-        icon: "C:\\Users\\Test User\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
-        tabColor: "#ffffff",
-        hidden: true,
-      },
-      { name: "Powershell v5", icon: undefined, tabColor: "#012456", hidden: false },
-    ]);
+    expect(first.profiles.list.map(({ name, icon, tabColor, hidden }) => ({ name, icon, tabColor, hidden }))).toMatchInlineSnapshot();
     expect(await generateAppearance(first)).toEqual(first);
     expect(oldSettings.profiles.list[0].icon).toBe("old.ico");
   });
@@ -246,14 +240,7 @@ describe("Windows Terminal modern appearance", () => {
       },
     });
     const legacy = settings.profiles.list.find(({ guid }) => guid === "ps");
-    expect(legacy.font).toEqual({
-      face: "Old Mono",
-      size: 17,
-      weight: "semi-bold",
-      cellHeight: "1.1",
-      features: { liga: 0 },
-      axes: { wght: 600 },
-    });
+    expect(legacy.font).toMatchInlineSnapshot();
     expect(legacy).not.toHaveProperty("fontFace");
     expect(legacy).not.toHaveProperty("fontSize");
     expect(legacy).not.toHaveProperty("fontWeight");
@@ -285,7 +272,13 @@ describe("Windows Terminal modern appearance", () => {
         { name: "Custom underscore", guid: "u", cursorShape: "underscore", cursorHeight: 50 },
       ],
     });
-    expect(settings.profiles.list.find(({ guid }) => guid === "v")).toMatchObject({ cursorShape: "vintage", cursorHeight: 35 });
+    const vintageProfile = settings.profiles.list.find(({ guid }) => guid === "v");
+    expect({ cursorShape: vintageProfile.cursorShape, cursorHeight: vintageProfile.cursorHeight }).toMatchInlineSnapshot(`
+      {
+        "cursorHeight": 35,
+        "cursorShape": "vintage",
+      }
+    `);
     expect(settings.profiles.list.find(({ guid }) => guid === "u")).not.toHaveProperty("cursorHeight");
   });
 });

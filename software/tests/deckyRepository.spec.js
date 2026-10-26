@@ -55,7 +55,17 @@ describe("Decky repository ZIP distribution (real archives, offline transport)",
       },
     });
     expect(calls).toEqual([runtime.CACHE_URL]);
-    expect(pins[0]).toMatchObject({ root: "native-plugin", name: "Example", version: "2.0" });
+    expect(pins[0]).toMatchInlineSnapshot(`
+      {
+        "local_path": "assets/steamos/decky_loader_plugins/Example_v2.0.zip",
+        "name": "Example",
+        "path": "decky_plugin/Example_v2.0.zip",
+        "root": "native-plugin",
+        "sha256": "7e09380043a5f87098ada646b99ed869af21acbe75a38d381e76fc4f405707cd",
+        "source": "assets/steamos/decky_loader_plugins/Example_v2.0.zip",
+        "version": "2.0",
+      }
+    `);
     expect(fs.readFileSync(path.join(f.root, "staged/decky_plugin/Example_v2.0.zip"))).toEqual(artifact("repo-selected"));
   });
 
@@ -93,7 +103,17 @@ describe("Decky repository ZIP distribution (real archives, offline transport)",
       },
     });
     expect(calls).toEqual(["https://example.test/repo/HEAD/assets/steamos/decky_loader_plugins/Example_v2.0.zip"]);
-    expect(result[0]).toMatchObject({ root: "native-plugin", version: "2.0" });
+    expect(result[0]).toMatchInlineSnapshot(`
+      {
+        "local_path": "assets/steamos/decky_loader_plugins/Example_v2.0.zip",
+        "name": "Example",
+        "path": "decky_plugin/Example_v2.0.zip",
+        "root": "native-plugin",
+        "sha256": "d230efcaf9675231f97916b38a9b79fcc0bebdc2d74e364aa549db21d9b82e11",
+        "source": "assets/steamos/decky_loader_plugins/Example_v2.0.zip",
+        "version": "2.0",
+      }
+    `);
     expect(fs.readFileSync(path.join(f.root, "staged/decky_plugin/Example_v2.0.zip"))).toEqual(artifact("remote repo bytes"));
   });
 

@@ -149,11 +149,26 @@ describe("parseRawArgs", () => {
       "editor-pro": { files: ["b.js"] },
     });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editor*"]);
-    expect(parseRawArgs()).toMatchObject({
-      files: "a.js,b.js",
-      presets: ["editors", "editor-pro"],
-      confirmations: [{ keyword: "editor*", mode: "presets", matches: ["editors", "editor-pro"] }],
-    });
+    const { files, presets, confirmations } = parseRawArgs();
+    expect({ files, presets, confirmations }).toMatchInlineSnapshot(`
+      {
+        "confirmations": [
+          {
+            "keyword": "editor*",
+            "matches": [
+              "editors",
+              "editor-pro",
+            ],
+            "mode": "presets",
+          },
+        ],
+        "files": "a.js,b.js",
+        "presets": [
+          "editors",
+          "editor-pro",
+        ],
+      }
+    `);
   });
 
   it("should still resolve presets by EXACT name regardless of prefix style", () => {

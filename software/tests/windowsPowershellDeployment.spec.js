@@ -113,7 +113,35 @@ describe("PowerShell 7 Terminal launch", () => {
     expect(modern.hidden).toBe(false);
     expect(settings.defaultProfile).toBe(modern.guid);
     expect(settings.profiles.list).toHaveLength(2);
-    expect(settings.profiles.list[1]).toMatchObject({ guid: "legacy", name: "Powershell v5", commandline: "powershell.exe" });
+    expect(settings.profiles.list[1]).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "antialiasingMode": "cleartype",
+        "bellStyle": "all",
+        "colorScheme": {
+          "dark": "Campbell",
+          "light": "One Half Light",
+        },
+        "commandline": "powershell.exe",
+        "cursorShape": "underscore",
+        "font": {
+          "cellHeight": "1.1",
+          "face": undefined,
+          "size": 12,
+          "weight": "semi-bold",
+        },
+        "guid": "legacy",
+        "hidden": false,
+        "historySize": undefined,
+        "intenseTextStyle": "bright",
+        "name": "Powershell v5",
+        "padding": "10, 8, 10, 8",
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "suppressApplicationTitle": false,
+        "tabColor": "#012456",
+      }
+    `);
   });
 
   it("uses PATH pwsh when fixed locations are absent", async () => {
@@ -141,13 +169,27 @@ describe("PowerShell 7 Terminal launch", () => {
     expect(settings.defaultProfile).toBe("legacy");
     expect(settings.profiles.list).toHaveLength(2);
     // Managed appearance may add fields without changing this user's shell identity.
-    expect(settings.profiles.list[1]).toMatchObject({
-      guid: "core",
-      name: "Custom shell",
-      source: "Windows.Terminal.PowershellCore",
-      commandline: "pwsh.exe -NoLogo",
-      hidden: true,
-    });
+    expect(settings.profiles.list[1]).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "colorScheme": {
+          "dark": "Campbell",
+          "light": "One Half Light",
+        },
+        "commandline": "pwsh.exe -NoLogo",
+        "font": {
+          "cellHeight": "1.1",
+          "weight": "semi-bold",
+        },
+        "guid": "core",
+        "hidden": true,
+        "name": "Custom shell",
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "source": "Windows.Terminal.PowershellCore",
+        "suppressApplicationTitle": false,
+      }
+    `);
   });
 
   it("defaults a renamed quoted pwsh profile to hidden without deleting or duplicating it", async () => {

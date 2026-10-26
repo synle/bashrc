@@ -8,6 +8,7 @@
     "format": "oxfmt --write .",
     "setup:hosts": "curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/run.sh | bash -s -- --files=\"software/scripts/etc-hosts.su.js\"",
     "test": "vitest run --config vitest.config.js",
+    "test:update": "vitest run --config vitest.config.js --update",
     "test:smoke": "vitest run --config vitest.smoke.config.js",
     "test:smoke:local": "vitest run --config vitest.smoke.local.config.js",
     "test:profile": "vitest run --config vitest.profile.config.js",

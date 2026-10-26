@@ -44,12 +44,15 @@ async function generatePreferences(oldSettings, windows) {
 
 describe("Windows Terminal requested window/tab preferences", () => {
   it.each([true, false])("writes the requested defaults for Windows=%s", async (windows) => {
-    expect(await generatePreferences({}, windows)).toMatchObject({
-      windowingBehavior: "useAnyExisting",
-      tabSwitcherMode: "inOrder",
-      showTabsFullscreen: true,
-      newTabPosition: "afterCurrentTab",
-    });
+    const settings = await generatePreferences({}, windows);
+    expect({ windowingBehavior: settings.windowingBehavior, tabSwitcherMode: settings.tabSwitcherMode, showTabsFullscreen: settings.showTabsFullscreen, newTabPosition: settings.newTabPosition }).toMatchInlineSnapshot(`
+      {
+        "newTabPosition": "afterCurrentTab",
+        "showTabsFullscreen": true,
+        "tabSwitcherMode": "inOrder",
+        "windowingBehavior": "useAnyExisting",
+      }
+    `);
   });
 
   it("overrides old preferences without changing unrelated settings, including on repeated deployment", async () => {
@@ -63,13 +66,15 @@ describe("Windows Terminal requested window/tab preferences", () => {
       },
       true,
     );
-    expect(settings).toMatchObject({
-      windowingBehavior: "useAnyExisting",
-      tabSwitcherMode: "inOrder",
-      showTabsFullscreen: true,
-      newTabPosition: "afterCurrentTab",
-      alwaysOnTop: true,
-    });
+    expect({ windowingBehavior: settings.windowingBehavior, tabSwitcherMode: settings.tabSwitcherMode, showTabsFullscreen: settings.showTabsFullscreen, newTabPosition: settings.newTabPosition, alwaysOnTop: settings.alwaysOnTop }).toMatchInlineSnapshot(`
+      {
+        "alwaysOnTop": true,
+        "newTabPosition": "afterCurrentTab",
+        "showTabsFullscreen": true,
+        "tabSwitcherMode": "inOrder",
+        "windowingBehavior": "useAnyExisting",
+      }
+    `);
     expect(await generatePreferences(settings, true)).toEqual(settings);
   });
 });

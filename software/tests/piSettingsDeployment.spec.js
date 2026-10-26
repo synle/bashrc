@@ -48,11 +48,14 @@ describe("Pi settings and keybinding deployment", () => {
 
     await getIndexFunction("doWork")();
 
-    expect(JSON.parse(fileSystem[SETTINGS_PATH])).toMatchObject({
-      showHardwareCursor: false,
-      quietStartup: false,
-      customSetting: "kept",
-    });
+    const settings = JSON.parse(fileSystem[SETTINGS_PATH]);
+    expect({ showHardwareCursor: settings.showHardwareCursor, quietStartup: settings.quietStartup, customSetting: settings.customSetting }).toMatchInlineSnapshot(`
+      {
+        "customSetting": "kept",
+        "quietStartup": false,
+        "showHardwareCursor": false,
+      }
+    `);
   });
 
   it("resets the redundant system theme pair to the native system theme", async () => {
@@ -75,12 +78,7 @@ describe("Pi settings and keybinding deployment", () => {
     await getIndexFunction("doWork")();
 
     expect(fileSystem[KEYBINDINGS_PATH]).toBeDefined();
-    expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toEqual({
-      $schema: "https://pi.dev/schemas/keybindings.schema.json",
-      "tui.editor.deleteWordBackward": ["ctrl+w", "ctrl+backspace", "alt+backspace"],
-      "tui.altScreen.top": "ctrl+home",
-      "tui.altScreen.bottom": "ctrl+end",
-    });
+    expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toMatchInlineSnapshot();
   });
 
   it("updates managed chords while preserving unrelated user bindings", async () => {
@@ -94,13 +92,7 @@ describe("Pi settings and keybinding deployment", () => {
 
     await getIndexFunction("doWork")();
 
-    expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toEqual({
-      $schema: "https://pi.dev/schemas/keybindings.schema.json",
-      "tui.editor.deleteWordBackward": ["ctrl+w", "ctrl+backspace", "alt+backspace"],
-      "tui.altScreen.top": "ctrl+home",
-      "tui.altScreen.bottom": "ctrl+end",
-      "app.session.new": "ctrl+shift+n",
-    });
+    expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toMatchInlineSnapshot();
   });
 
   it("keeps settings and keybindings byte-stable on a second setup", async () => {

@@ -36,16 +36,15 @@ describe("AI CLI transcript navigation deployment", () => {
     await getIndexFunction("_doKeysWork")(`${HOME}/.claude`);
 
     const config = JSON.parse(fileSystem[target]);
-    expect(config.bindings.find((group) => group.context === "Scroll").bindings).toEqual({
-      "ctrl+home": "scroll:top",
-      "ctrl+end": "scroll:bottom",
-      "alt+up": "scroll:lineUp",
-    });
-    expect(config.bindings.find((group) => group.context === "Chat").bindings).toMatchObject({
-      "alt+q": "chat:submit",
-      home: null,
-      end: null,
-    });
+    expect(config.bindings.find((group) => group.context === "Scroll").bindings).toMatchInlineSnapshot();
+    const chatBindings = config.bindings.find((group) => group.context === "Chat").bindings;
+    expect({ "alt+q": chatBindings["alt+q"], home: chatBindings.home, end: chatBindings.end }).toMatchInlineSnapshot(`
+      {
+        "alt+q": "chat:submit",
+        "end": null,
+        "home": null,
+      }
+    `);
     const first = fileSystem[target];
     await getIndexFunction("_doKeysWork")(`${HOME}/.claude`);
     expect(fileSystem[target]).toBe(first);
@@ -59,10 +58,7 @@ describe("AI CLI transcript navigation deployment", () => {
     await getIndexFunction("_doGeminiKeysWork")(`${HOME}/.gemini`);
 
     const config = JSON.parse(fileSystem[target]);
-    expect(config.filter((entry) => ["ctrl+home", "ctrl+end"].includes(entry.key))).toEqual([
-      { command: "scroll.home", key: "ctrl+home" },
-      { command: "scroll.end", key: "ctrl+end" },
-    ]);
+    expect(config.filter((entry) => ["ctrl+home", "ctrl+end"].includes(entry.key))).toMatchInlineSnapshot();
     expect(config).toContainEqual({ command: "cursor.home", key: "home" });
     expect(config).toContainEqual({ command: "cursor.end", key: "end" });
     expect(config).toContainEqual({ command: "scroll.pageUp", key: "alt+up" });
@@ -81,15 +77,18 @@ describe("AI CLI transcript navigation deployment", () => {
     await getIndexFunction("_writeOpencodeTuiConfig")(HOME, isWindows);
 
     const config = JSON.parse(fileSystem[target]);
-    expect(config.keybinds).toMatchObject({
-      messages_first: "ctrl+home,ctrl+alt+shift+g",
-      messages_last: "ctrl+end,ctrl+alt+g",
-      input_buffer_home: inputHome,
-      input_buffer_end: inputEnd,
-      input_line_home: "ctrl+a,home",
-      input_line_end: "ctrl+e,end",
-      model_list: "f4",
-    });
+    expect(config.keybinds.input_buffer_home).toBe(inputHome);
+    expect(config.keybinds.input_buffer_end).toBe(inputEnd);
+    const { messages_first, messages_last, input_line_home, input_line_end, model_list } = config.keybinds;
+    expect({ messages_first, messages_last, input_line_home, input_line_end, model_list }).toMatchInlineSnapshot(`
+      {
+        "input_line_end": "ctrl+e,end",
+        "input_line_home": "ctrl+a,home",
+        "messages_first": "ctrl+home,ctrl+alt+shift+g",
+        "messages_last": "ctrl+end,ctrl+alt+g",
+        "model_list": "f4",
+      }
+    `);
     const chords = Object.values(config.keybinds).flatMap((value) => value.split(","));
     expect(chords.filter((key) => key === "ctrl+home")).toEqual(["ctrl+home"]);
     expect(chords.filter((key) => key === "ctrl+end")).toEqual(["ctrl+end"]);

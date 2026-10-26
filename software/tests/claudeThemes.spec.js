@@ -23,16 +23,32 @@ describe("Claude Sy themes", () => {
 
     const dark = JSON.parse(fileSystem[`${targetFolder}/themes/sy-dark.json`]);
     const light = JSON.parse(fileSystem[`${targetFolder}/themes/sy-light.json`]);
-    expect(dark).toMatchObject({
-      name: "Sy Dark",
-      base: "dark",
-      overrides: { claude: "#5ca0d7", text: "#e8e8e8", error: "#f67070", userMessageBackground: "#161616", selectionBg: "#1b3c5e" },
-    });
-    expect(light).toMatchObject({
-      name: "Sy Light",
-      base: "light",
-      overrides: { claude: "#0252ad", text: "#1e1e1e", error: "#840000", userMessageBackground: "#ececec", selectionBg: "#96c6fa" },
-    });
+    expect({ name: dark.name, base: dark.base, overrides: { claude: dark.overrides.claude, text: dark.overrides.text, error: dark.overrides.error, userMessageBackground: dark.overrides.userMessageBackground, selectionBg: dark.overrides.selectionBg } }).toMatchInlineSnapshot(`
+      {
+        "base": "dark",
+        "name": "Sy Dark",
+        "overrides": {
+          "claude": "#5ca0d7",
+          "error": "#f67070",
+          "selectionBg": "#1b3c5e",
+          "text": "#e8e8e8",
+          "userMessageBackground": "#161616",
+        },
+      }
+    `);
+    expect({ name: light.name, base: light.base, overrides: { claude: light.overrides.claude, text: light.overrides.text, error: light.overrides.error, userMessageBackground: light.overrides.userMessageBackground, selectionBg: light.overrides.selectionBg } }).toMatchInlineSnapshot(`
+      {
+        "base": "light",
+        "name": "Sy Light",
+        "overrides": {
+          "claude": "#0252ad",
+          "error": "#840000",
+          "selectionBg": "#96c6fa",
+          "text": "#1e1e1e",
+          "userMessageBackground": "#ececec",
+        },
+      }
+    `);
     expect(JSON.parse(fileSystem[`${targetFolder}/settings.json`]).theme).toBe("custom:sy-dark");
   });
 
@@ -43,10 +59,15 @@ describe("Claude Sy themes", () => {
 
       await getIndexFunction("_doSettingsWork")(targetFolder);
 
-      expect(JSON.parse(fileSystem[`${targetFolder}/settings.json`])).toMatchObject({
-        theme: "custom:sy-light",
-        env: { USER_SETTING: "kept" },
-      });
+      const deployedSettings = JSON.parse(fileSystem[`${targetFolder}/settings.json`]);
+    expect({ theme: deployedSettings.theme, env: { USER_SETTING: deployedSettings.env.USER_SETTING } }).toMatchInlineSnapshot(`
+      {
+        "env": {
+          "USER_SETTING": "kept",
+        },
+        "theme": "custom:sy-light",
+      }
+    `);
     },
   );
 
@@ -62,7 +83,13 @@ describe("Claude Sy themes", () => {
     expect(fileSystem[`${targetFolder}/themes/sy-dark.json`]).toBe(dark);
     expect(fileSystem[`${targetFolder}/themes/sy-light.json`]).toBe(light);
     expect(fileSystem[`${targetFolder}/settings.json`]).toBe(settings);
-    expect(JSON.parse(settings)).toMatchObject({ theme: "custom:sy-dark", model: "sonnet" });
+    const deployedSettings = JSON.parse(settings);
+    expect({ theme: deployedSettings.theme, model: deployedSettings.model }).toMatchInlineSnapshot(`
+      {
+        "model": "sonnet",
+        "theme": "custom:sy-dark",
+      }
+    `);
   });
 
   it("selects Ayu defaults through the existing custom-theme opt-out", async () => {
@@ -71,16 +98,32 @@ describe("Claude Sy themes", () => {
 
     await getIndexFunction("_doSettingsWork")(targetFolder);
 
-    expect(JSON.parse(fileSystem[`${targetFolder}/themes/ayu-dark.json`])).toMatchObject({
-      name: "Ayu Dark",
-      base: "dark",
-      overrides: { claude: "#e6b450", text: "#bfbdb6", error: "#d95757", userMessageBackground: "#141821" },
-    });
-    expect(JSON.parse(fileSystem[`${targetFolder}/themes/ayu-light.json`])).toMatchObject({
-      name: "Ayu Light",
-      base: "light",
-      overrides: { claude: "#f29718", text: "#5c6166", error: "#e65050", userMessageBackground: "#f8f9fa" },
-    });
+    const dark = JSON.parse(fileSystem[`${targetFolder}/themes/ayu-dark.json`]);
+    expect({ name: dark.name, base: dark.base, overrides: { claude: dark.overrides.claude, text: dark.overrides.text, error: dark.overrides.error, userMessageBackground: dark.overrides.userMessageBackground } }).toMatchInlineSnapshot(`
+      {
+        "base": "dark",
+        "name": "Ayu Dark",
+        "overrides": {
+          "claude": "#e6b450",
+          "error": "#d95757",
+          "text": "#bfbdb6",
+          "userMessageBackground": "#141821",
+        },
+      }
+    `);
+    const light = JSON.parse(fileSystem[`${targetFolder}/themes/ayu-light.json`]);
+    expect({ name: light.name, base: light.base, overrides: { claude: light.overrides.claude, text: light.overrides.text, error: light.overrides.error, userMessageBackground: light.overrides.userMessageBackground } }).toMatchInlineSnapshot(`
+      {
+        "base": "light",
+        "name": "Ayu Light",
+        "overrides": {
+          "claude": "#f29718",
+          "error": "#e65050",
+          "text": "#5c6166",
+          "userMessageBackground": "#f8f9fa",
+        },
+      }
+    `);
     expect(JSON.parse(fileSystem[`${targetFolder}/settings.json`]).theme).toBe("custom:ayu-light");
     expect(fileSystem).not.toHaveProperty(`${targetFolder}/themes/sy-dark.json`);
   });

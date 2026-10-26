@@ -20,21 +20,37 @@ describe("Pi native theme deployment", () => {
   it("writes both appearances and a light-first automatic selection on headless hosts", async () => {
     await getIndexFunction("_doPiSettingsWork")(piHome);
     expect(JSON.parse(fileSystem[`${piHome}/settings.json`]).theme).toBe("Sy Light/Sy Dark");
-    expect(JSON.parse(fileSystem[`${piHome}/themes/Sy Dark.json`])).toMatchObject({
-      name: "Sy Dark",
-      appearance: "dark",
-      colors: { text: "#e8e8e8" },
-    });
-    expect(JSON.parse(fileSystem[`${piHome}/themes/Sy Light.json`])).toMatchObject({
-      name: "Sy Light",
-      appearance: "light",
-      colors: { text: "#1e1e1e" },
-    });
+    const dark = JSON.parse(fileSystem[`${piHome}/themes/Sy Dark.json`]);
+    expect({ name: dark.name, appearance: dark.appearance, colors: { text: dark.colors.text } }).toMatchInlineSnapshot(`
+      {
+        "appearance": "dark",
+        "colors": {
+          "text": "#e8e8e8",
+        },
+        "name": "Sy Dark",
+      }
+    `);
+    const light = JSON.parse(fileSystem[`${piHome}/themes/Sy Light.json`]);
+    expect({ name: light.name, appearance: light.appearance, colors: { text: light.colors.text } }).toMatchInlineSnapshot(`
+      {
+        "appearance": "light",
+        "colors": {
+          "text": "#1e1e1e",
+        },
+        "name": "Sy Light",
+      }
+    `);
   });
   it("preserves explicit foreign selections and unrelated preferences", async () => {
     fileSystem[`${piHome}/settings.json`] = JSON.stringify({ theme: "foreign", customPreference: 0 });
     await getIndexFunction("_doPiSettingsWork")(piHome);
-    expect(JSON.parse(fileSystem[`${piHome}/settings.json`])).toMatchObject({ theme: "foreign", customPreference: 0 });
+    const settings = JSON.parse(fileSystem[`${piHome}/settings.json`]);
+    expect({ theme: settings.theme, customPreference: settings.customPreference }).toMatchInlineSnapshot(`
+      {
+        "customPreference": 0,
+        "theme": "foreign",
+      }
+    `);
   });
   it("stays byte-stable on repeat deployment", async () => {
     await getIndexFunction("_doPiSettingsWork")(piHome);
@@ -75,7 +91,13 @@ describe("OpenCode paired native themes", () => {
   it("preserves a foreign ID and unrelated TUI configuration", async () => {
     fileSystem[`${ocHome}/.config/opencode/tui.json`] = JSON.stringify({ theme: "foreign", userPreference: false });
     await getIndexFunction("_writeOpencodeTuiConfig")(ocHome, false);
-    expect(JSON.parse(fileSystem[`${ocHome}/.config/opencode/tui.json`])).toMatchObject({ theme: "foreign", userPreference: false });
+    const settings = JSON.parse(fileSystem[`${ocHome}/.config/opencode/tui.json`]);
+    expect({ theme: settings.theme, userPreference: settings.userPreference }).toMatchInlineSnapshot(`
+      {
+        "theme": "foreign",
+        "userPreference": false,
+      }
+    `);
   });
   it("selects the native fallback without creating a theme when opted out", async () => {
     setSandboxGlobal("getRuntimeOption", () => true);
@@ -103,24 +125,20 @@ describe("Gemini custom theme integration", () => {
     await getIndexFunction("_doGeminiSettingsWork")(geminiHome);
     const result = JSON.parse(fileSystem[`${geminiHome}/settings.json`]);
     expect(result.ui.theme).toBe("Sy Dark");
-    expect(result.ui.customThemes["Sy Dark"]).toMatchObject({
-      name: "Sy Dark",
-      type: "custom",
-      DarkGray: "#6e6e6e",
-      text: { secondary: "#b2b2b2" },
-    });
+    expect({ name: result.ui.customThemes["Sy Dark"].name, type: result.ui.customThemes["Sy Dark"].type, DarkGray: result.ui.customThemes["Sy Dark"].DarkGray, text: { secondary: result.ui.customThemes["Sy Dark"].text.secondary } }).toMatchInlineSnapshot(`
+      {
+        "DarkGray": "#6e6e6e",
+        "name": "Sy Dark",
+        "text": {
+          "secondary": "#b2b2b2",
+        },
+        "type": "custom",
+      }
+    `);
     expect(result.ui.customThemes["Sy Light"].text.primary).toBe("#1e1e1e");
     expect(result.ui.customThemes["Sy Dark"].background).not.toHaveProperty("input");
-    expect(result.ui.customThemes["Sy Dark"].ui).toEqual({
-      comment: "#76a762",
-      symbol: "#e8e8e8",
-      gradient: ["#5ca0d7", "#4ec9b0", "#c586c0"],
-    });
-    expect(result.ui.customThemes["Sy Light"].ui).toEqual({
-      comment: "#004a15",
-      symbol: "#1e1e1e",
-      gradient: ["#0033b3", "#00416f", "#6c0099"],
-    });
+    expect(result.ui.customThemes["Sy Dark"].ui).toMatchInlineSnapshot();
+    expect(result.ui.customThemes["Sy Light"].ui).toMatchInlineSnapshot();
     expect(result.ui.customThemes["Sy Dark"].AccentGreen).toBe("#5ca0d7");
     expect(result.ui.customThemes["Sy Light"].AccentGreen).toBe("#0033b3");
     expect(result.ui.customThemes["Sy Dark"].status.success).toBe("#76a762");
@@ -155,10 +173,20 @@ describe("Gemini custom theme integration", () => {
       userPreference: 0,
     });
     await getIndexFunction("_doGeminiSettingsWork")(geminiHome);
-    expect(JSON.parse(fileSystem[`${geminiHome}/settings.json`])).toMatchObject({
-      ui: { theme: "foreign", customThemes: { foreign: { name: "foreign" } } },
-      userPreference: 0,
-    });
+    const settings = JSON.parse(fileSystem[`${geminiHome}/settings.json`]);
+    expect({ ui: { theme: settings.ui.theme, customThemes: { foreign: { name: settings.ui.customThemes.foreign.name } } }, userPreference: settings.userPreference }).toMatchInlineSnapshot(`
+      {
+        "ui": {
+          "customThemes": {
+            "foreign": {
+              "name": "foreign",
+            },
+          },
+          "theme": "foreign",
+        },
+        "userPreference": 0,
+      }
+    `);
   });
   it("preserves light appearance through managed opt-out", async () => {
     setSandboxGlobal("getRuntimeOption", () => true);

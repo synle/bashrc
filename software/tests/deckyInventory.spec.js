@@ -66,18 +66,29 @@ describe("compact Decky repository inventory", () => {
     expect(pins.find((p) => p.name === "Decky LSFG-VK").version).toBe("0.14.4");
     expect(pins.find((p) => p.name === "HLTB for Deck").version).toBe("2.0.12");
     expect(pins.find((p) => p.name === "ProtonDB Badges").version).toBe("1.3.4");
-    expect(pins.find((p) => p.name === "HueSync")).toMatchObject({
-      path: "decky_plugin/HueSync_v3.9.0.zip",
-      root: "HueSync",
-      version: "3.9.0",
-      local_path: "assets/steamos/decky_loader_plugins/HueSync_v3.9.0.zip",
-      sha256: "7510c96ed22278a914a3aae591c2393ff4e25812a765d1d633f77baa8a593e1f",
-    });
-    expect(pins.find((p) => p.name === "Centered Home")).toMatchObject({
-      path: "decky_css_loader/Centered_Home_v1.3.zip",
-      root: "Centered Home",
-      theme_id: "865407ae-fb14-4db7-b123-61f6995ed757",
-    });
+    expect(pins.find((p) => p.name === "HueSync")).toMatchInlineSnapshot(`
+      {
+        "local_path": "assets/steamos/decky_loader_plugins/HueSync_v3.9.0.zip",
+        "name": "HueSync",
+        "path": "decky_plugin/HueSync_v3.9.0.zip",
+        "root": "HueSync",
+        "sha256": "7510c96ed22278a914a3aae591c2393ff4e25812a765d1d633f77baa8a593e1f",
+        "source": "assets/steamos/decky_loader_plugins/HueSync_v3.9.0.zip",
+        "version": "3.9.0",
+      }
+    `);
+    expect(pins.find((p) => p.name === "Centered Home")).toMatchInlineSnapshot(`
+      {
+        "local_path": "assets/steamos/decky_loader_plugins/Centered_Home_v1.3.zip",
+        "name": "Centered Home",
+        "path": "decky_css_loader/Centered_Home_v1.3.zip",
+        "root": "Centered Home",
+        "sha256": "3432aee99cfbca1fefa5660a819a3223683d8d80c3dd5fe83aa94c4e48e26ba2",
+        "source": "assets/steamos/decky_loader_plugins/Centered_Home_v1.3.zip",
+        "theme_id": "865407ae-fb14-4db7-b123-61f6995ed757",
+        "version": "1.3",
+      }
+    `);
   });
 
   it("pins the verified Framegen stable archive without committing the oversized ZIP", () => {
@@ -96,17 +107,34 @@ describe("compact Decky repository inventory", () => {
   it("does not assume the archive root matches the filename or display name", () => {
     const f = fixture();
     const [pin] = packages.resolvePackages([f.selection], f.root);
-    expect(pin).toMatchObject({ path: "decky_plugin/Example_v2.0.zip", root: "Native Root", name: "Example", version: "2.0" });
+    expect(pin).toMatchInlineSnapshot(`
+      {
+        "local_path": "assets/steamos/decky_loader_plugins/Example_v2.0.zip",
+        "name": "Example",
+        "path": "decky_plugin/Example_v2.0.zip",
+        "root": "Native Root",
+        "sha256": "b0ca98a642b990cd155956f3cfa1ff16a2cb9dad5ec5774072288466dcae24b1",
+        "source": "assets/steamos/decky_loader_plugins/Example_v2.0.zip",
+        "version": "2.0",
+      }
+    `);
     expect(packages.readRepositoryArchive(f.selection.path, f.root)).toEqual(f.payload);
   });
 
   it("derives theme IDs and verifies their embedded version", () => {
     const f = fixture({ theme: true });
-    expect(packages.resolvePackages([f.selection], f.root)[0]).toMatchObject({
-      path: "decky_css_loader/Example_v2.0.zip",
-      theme_id: "theme-id",
-      root: "Native Root",
-    });
+    expect(packages.resolvePackages([f.selection], f.root)[0]).toMatchInlineSnapshot(`
+      {
+        "local_path": "assets/steamos/decky_loader_plugins/Example_v2.0.zip",
+        "name": "Example",
+        "path": "decky_css_loader/Example_v2.0.zip",
+        "root": "Native Root",
+        "sha256": "43d28ab5a10874bd979e9cf643c61423f4fa98737c5c72619468ed5c2e9e8e03",
+        "source": "assets/steamos/decky_loader_plugins/Example_v2.0.zip",
+        "theme_id": "theme-id",
+        "version": "2.0",
+      }
+    `);
   });
 
   it("retains rich HTTPS/hash entries without requiring a local ZIP", () => {

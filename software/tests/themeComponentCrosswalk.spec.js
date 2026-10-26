@@ -138,7 +138,15 @@ describe("complete bounded source union", () => {
       disposition: "reference_only_requires_reachability_review",
     });
     const copilot = report.entries.find((entry) => entry.app === "copilot" && entry.mode === "dark");
-    expect(copilot).toMatchObject({ capability: "capability_limit", reference: "unavailable", components: [] });
+    expect(copilot).toMatchInlineSnapshot(`
+      {
+        "app": "copilot",
+        "capability": "capability_limit",
+        "components": [],
+        "mode": "dark",
+        "reference": "unavailable",
+      }
+    `);
     expect(JSON.stringify(report)).not.toMatch(/#[0-9a-f]{3,8}\b/i);
     expect(
       report.entries.flatMap((entry) => entry.components.filter((component) => !component.active && !component.capturedReference)),

@@ -20,7 +20,14 @@ describe("Vim native navigation integration", () => {
     const result = await probeTheme(selection, "dark", ['let &t_RB = "\\e]11;?\\x07"', `doautocmd ${event}`]);
 
     expect(result.terminalOutput).toContain("\u001b]11;?\u0007");
-    expect(result).toMatchObject({ scheme: "sy-dark", background: "dark", foreground: "#e8e8e8", tag: "#5ca0d7" });
+    expect({ scheme: result.scheme, background: result.background, foreground: result.foreground, tag: result.tag }).toMatchInlineSnapshot(`
+      {
+        "background": "dark",
+        "foreground": "#e8e8e8",
+        "scheme": "sy-dark",
+        "tag": "#5ca0d7",
+      }
+    `);
   });
 
   it.each([
@@ -37,7 +44,14 @@ describe("Vim native navigation integration", () => {
     ]);
 
     expect(result.terminalOutput.split("navigation-ready")[1]).toContain("\u001b]11;?\u0007");
-    expect(result).toMatchObject({ scheme: "sy-dark", background: "dark", foreground: "#e8e8e8", tag: "#5ca0d7" });
+    expect({ scheme: result.scheme, background: result.background, foreground: result.foreground, tag: result.tag }).toMatchInlineSnapshot(`
+      {
+        "background": "dark",
+        "foreground": "#e8e8e8",
+        "scheme": "sy-dark",
+        "tag": "#5ca0d7",
+      }
+    `);
   });
 
   it.each([
@@ -55,7 +69,14 @@ describe("Vim native navigation integration", () => {
     ]);
 
     expect(result.terminalOutput.split("navigation-ready")[1]).toContain("\u001b]11;?\u0007");
-    expect(result).toMatchObject({ scheme: "sy-dark", background: "dark", line, text });
+    expect(result.line).toBe(line);
+    expect(result.text).toBe(text);
+    expect({ scheme: result.scheme, background: result.background }).toMatchInlineSnapshot(`
+      {
+        "background": "dark",
+        "scheme": "sy-dark",
+      }
+    `);
   });
 
   it("reports native Vim command errors instead of waiting for the process timeout", async () => {

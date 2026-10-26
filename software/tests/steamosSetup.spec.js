@@ -288,10 +288,14 @@ describe("SteamOS setup", () => {
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
     const shortcuts = readShortcuts(fs.readFileSync(shortcutsPath));
     expect(shortcuts).toHaveLength(2);
-    expect(shortcuts.find((shortcut) => shortcut.AppName === "Moonlight")).toMatchObject({
-      Exe: `"${newExecutable}"`,
-      StartDir: '"/old"',
-      LaunchOptions: "--old",
-    });
+    const { Exe, StartDir, LaunchOptions } = shortcuts.find((shortcut) => shortcut.AppName === "Moonlight");
+    expect(Exe).toBe(`"${newExecutable}"`);
+    expect({ Exe: Exe.replace(home, "<home>"), StartDir, LaunchOptions }).toMatchInlineSnapshot(`
+      {
+        "Exe": ""<home>/Apps/Moonlight.AppImage"",
+        "LaunchOptions": "--old",
+        "StartDir": ""/old"",
+      }
+    `);
   });
 });

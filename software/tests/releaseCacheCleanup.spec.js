@@ -86,7 +86,30 @@ describe("manual binary-cache cleanup (owned transport simulation)", () => {
     expect(test.run({ CLEAN_PRECOMPILED_PROFILES: "true" }).deleted).toEqual(["bashrc-profile__profile_bashrc_mac.sh"]);
     expect(test.state.assets).toEqual(original.slice(1));
     expect(test.requests).toContainEqual(["DELETE", "repos/acme/example/releases/assets/101"]);
-    expect(test.logs[0]).toMatchObject({ event: "plan", assets: [{ id: 101, name: "bashrc-profile__profile_bashrc_mac.sh", size: 42 }] });
+    expect(test.logs[0]).toMatchInlineSnapshot(`
+      {
+        "assets": [
+          {
+            "id": 101,
+            "name": "bashrc-profile__profile_bashrc_mac.sh",
+            "size": 42,
+          },
+        ],
+        "event": "plan",
+        "kept": [
+          "url-porter__url-porter.zip",
+          "url-porter__version.json",
+          "bashrc-installer__install-bashrc.sh",
+          "text-server__text-server",
+          "steamos-decky__bundle.zip",
+          "steamos-decky__bundle.previous-123-1.zip",
+          "steamos-decky__bundle.candidate-123-1.zip",
+          "unknown__archive.zip",
+          "steamos-decky__other.zip",
+        ],
+        "release": "binary-cache",
+      }
+    `);
     expect(test.logs.at(-1)).toEqual({ event: "complete", deleted: 1, kept: 9 });
   });
   it("deletes tool ZIPs, related metadata, bootstrap installer, and unzipped tool binaries without touching Decky", () => {

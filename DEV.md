@@ -218,6 +218,25 @@ npx vitest run --config vitest.config.js software/tests/parseRawArgs.spec.js
 npx vitest run --config vitest.config.js -t "parses --files flag"
 ```
 
+### Inline snapshots
+
+Prefer `toMatchInlineSnapshot` for stable structured output instead of `toMatchObject`, external `toMatchSnapshot`, or bulky literal-object assertions.
+Snapshot only relevant fields and normalize nondeterministic values such as temporary folder names.
+Keep explicit assertions for scalar values, predicates, absence, and round-trip behavior when they communicate intent better.
+Use distinct snapshot locations when parameterized cases produce different output.
+
+Refresh existing inline snapshots with Vitest's one-shot update mode:
+
+```bash
+npm run test:update -- software/tests/piSettingsDeployment.spec.js # one spec (preferred)
+npm run test:update                                             # all default-suite snapshots
+npm run test:buildconfig:update                                 # generated-config snapshots, separate suite
+```
+
+These commands rewrite expectations in test source; they do not delete tests or reset fixtures.
+Inspect every snapshot diff against the intended behavior, then rerun without update mode before committing.
+Never accept updated snapshots merely to silence a regression.
+
 ### Vitest configs
 
 One config per suite:

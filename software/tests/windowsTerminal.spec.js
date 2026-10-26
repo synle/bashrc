@@ -98,7 +98,33 @@ describe("Windows Terminal generated settings", () => {
       hidden: false,
       tabColor: "#000000",
     });
-    expect(settings.profiles.list[1]).toMatchObject({ name: "Powershell v5", guid: "ps", commandline: "powershell.exe", hidden: false });
+    expect(settings.profiles.list[1]).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "antialiasingMode": "cleartype",
+        "bellStyle": "all",
+        "colorScheme": {
+          "dark": "Sy Dark",
+          "light": "Sy Light",
+        },
+        "commandline": "powershell.exe",
+        "cursorShape": "underscore",
+        "font": {
+          "cellHeight": "1.1",
+          "size": null,
+          "weight": "semi-bold",
+        },
+        "guid": "ps",
+        "hidden": false,
+        "intenseTextStyle": "bright",
+        "name": "Powershell v5",
+        "padding": "10, 8, 10, 8",
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "suppressApplicationTitle": false,
+        "tabColor": "#012456",
+      }
+    `);
     expect(settings.defaultProfile).toBe("{91c9f255-5190-4a5e-9ee5-d05d36dece87}");
   });
 
@@ -124,16 +150,35 @@ describe("Windows Terminal generated settings", () => {
       },
     };
     const first = await generateSettings(oldSettings, ["pwsh"]);
-    expect(first.profiles.list[1]).toMatchObject({
-      name: "Powershell v5",
-      guid: "ps",
-      commandline: "powershell.exe",
-      padding: "4",
-      hidden: true,
-      font: { face: "Custom Mono", size: 15 },
-      opacity: 73,
-      colorScheme: { dark: "Sy Dark", light: "Sy Light" },
-    });
+    expect(first.profiles.list[1]).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "antialiasingMode": "cleartype",
+        "bellStyle": "all",
+        "colorScheme": {
+          "dark": "Sy Dark",
+          "light": "Sy Light",
+        },
+        "commandline": "powershell.exe",
+        "cursorShape": "underscore",
+        "font": {
+          "cellHeight": "1.1",
+          "face": "Custom Mono",
+          "size": 15,
+          "weight": "semi-bold",
+        },
+        "guid": "ps",
+        "hidden": true,
+        "intenseTextStyle": "bright",
+        "name": "Powershell v5",
+        "opacity": 73,
+        "padding": "4",
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "suppressApplicationTitle": false,
+        "tabColor": "#012456",
+      }
+    `);
     expect(first.profiles.list[1]).not.toHaveProperty("background");
     expect(first.profiles.list[0].colorScheme).toEqual({ dark: "Sy Dark", light: "Sy Light" });
     expect(first.schemes).toEqual(expect.arrayContaining(oldSettings.schemes));
@@ -146,13 +191,33 @@ describe("Windows Terminal generated settings", () => {
       profiles: [{ name: "Windows PowerShell", guid: "ps", colorScheme: "Campbell", cursorShape: "bar" }],
     });
     expect(settings.profiles.list).toHaveLength(1);
-    expect(settings.profiles.list[0]).toMatchObject({
-      name: "Powershell v5",
-      guid: "ps",
-      colorScheme: { dark: "Sy Dark", light: "Sy Light" },
-      cursorShape: "bar",
-      hidden: false,
-    });
+    expect(settings.profiles.list[0]).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "antialiasingMode": "cleartype",
+        "bellStyle": "all",
+        "colorScheme": {
+          "dark": "Sy Dark",
+          "light": "Sy Light",
+        },
+        "commandline": "powershell.exe",
+        "cursorShape": "bar",
+        "font": {
+          "cellHeight": "1.1",
+          "size": null,
+          "weight": "semi-bold",
+        },
+        "guid": "ps",
+        "hidden": false,
+        "intenseTextStyle": "bright",
+        "name": "Powershell v5",
+        "padding": "10, 8, 10, 8",
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "suppressApplicationTitle": false,
+        "tabColor": "#012456",
+      }
+    `);
     expect(settings.profiles.list[0].commandline).toBe("powershell.exe");
     expect(settings.defaultProfile).toBe("ps");
   });
@@ -283,10 +348,34 @@ describe("Windows Terminal generated settings", () => {
       expect(profile).not.toHaveProperty("selectionBackground");
     }
     expect(result.profiles.list.map((profile) => profile.tabColor)).toEqual(["#112233", "#223344", "#334455", "#445566", "#556677", null]);
-    expect(result.profiles.list[0]).toMatchObject({
-      tabTitle: "Linux",
-      unfocusedAppearance: { colorScheme: { dark: "Sy Dark", light: "Sy Light" }, opacity: 60 },
-    });
+    expect(result.profiles.list[0]).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "colorScheme": {
+          "dark": "Sy Dark",
+          "light": "Sy Light",
+        },
+        "font": {
+          "cellHeight": "1.1",
+          "weight": "semi-bold",
+        },
+        "guid": "u",
+        "hidden": false,
+        "name": "Ubuntu",
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "suppressApplicationTitle": false,
+        "tabColor": "#112233",
+        "tabTitle": "Linux",
+        "unfocusedAppearance": {
+          "colorScheme": {
+            "dark": "Sy Dark",
+            "light": "Sy Light",
+          },
+          "opacity": 60,
+        },
+      }
+    `);
     expect(result.profiles.list[0].unfocusedAppearance).not.toHaveProperty("background");
     expect(result.profiles.list[0].unfocusedAppearance).not.toHaveProperty("foreground");
     expect(result.theme).toBe("dark");

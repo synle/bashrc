@@ -79,12 +79,39 @@ describe.each(["dark", "light"])("%s native consumption evidence", (mode) => {
     expect(result.globals.findForeground).toBe(source.globals.find_highlight_foreground);
     expect(source.globals.selection_foreground).toBe("var(fg)");
     expect(result.globals.selectionForeground).toBe(source.variables.fg);
-    expect(scopes.find((scope) => scope.scope === "source.js comment.line.double-slash.js")).toMatchObject({
-      foreground: mode === "dark" ? "#76a762" : "#004a15",
-      source: `Packages/User/Sy ${mode === "dark" ? "Dark" : "Light"}.sublime-color-scheme`,
-    });
     expect(evidence.sublime.ui.status).toBe("derived_chrome_not_visually_verified");
   });
+});
+
+it("records the native Sublime comment foreground and source for both appearances", () => {
+  expect(evidence.sublime.modes.map((record) => ({
+    mode: record.mode,
+    comment: record.grammars.flatMap((grammar) => grammar.scopes)
+      .find((scope) => scope.scope === "source.js comment.line.double-slash.js"),
+  }))).toMatchInlineSnapshot(`
+    [
+      {
+        "comment": {
+          "foreground": "#76a762",
+          "inheritsForeground": false,
+          "scope": "source.js comment.line.double-slash.js",
+          "source": "Packages/User/Sy Dark.sublime-color-scheme",
+          "sourceLine": 85,
+        },
+        "mode": "dark",
+      },
+      {
+        "comment": {
+          "foreground": "#004a15",
+          "inheritsForeground": false,
+          "scope": "source.js comment.line.double-slash.js",
+          "source": "Packages/User/Sy Light.sublime-color-scheme",
+          "sourceLine": 85,
+        },
+        "mode": "light",
+      },
+    ]
+  `);
 });
 
 describe("full Vim startup evidence", () => {

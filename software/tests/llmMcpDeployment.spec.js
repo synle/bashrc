@@ -226,7 +226,11 @@ describe("shared MCP write safety", () => {
         await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json");
         expect(JSON.parse(fileSystem["/mock/mcp.json"]).mcpServers.browser.command).toBe("npx");
       } else {
-        await expect(getIndexFunction("deploySharedMcpServers")("/mock/mcp.json")).rejects.toMatchObject({ code });
+        await expect(getIndexFunction("deploySharedMcpServers")("/mock/mcp.json")).rejects.toMatchInlineSnapshot({ code }, `
+          {
+            "code": "EACCES",
+          }
+        `);
         expect(fileSystem["/mock/mcp.json"]).toBeUndefined();
         expect(backup).not.toHaveBeenCalled();
       }
@@ -279,10 +283,17 @@ describe("shared MCP write safety", () => {
     setSandboxGlobal("backupConfigFile", backup);
     await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json");
     expect(backup).toHaveBeenCalledWith("/mock/mcp.json");
-    expect(JSON.parse(fileSystem["/mock/mcp.json"])).toMatchObject({
-      autoEnableCodemode: false,
-      mcpServers: { personal: { command: "custom" } },
-    });
+    const config = JSON.parse(fileSystem["/mock/mcp.json"]);
+    expect({ autoEnableCodemode: config.autoEnableCodemode, mcpServers: { personal: { command: config.mcpServers.personal.command } } }).toMatchInlineSnapshot(`
+      {
+        "autoEnableCodemode": false,
+        "mcpServers": {
+          "personal": {
+            "command": "custom",
+          },
+        },
+      }
+    `);
   });
 
   it("does not write or back up when no registry entries or managed settings exist", async () => {
