@@ -780,9 +780,9 @@ Vim uses backslash-prefixed two-key toggles and matching comma aliases in normal
 
 | Key                                             | Action                                                             |
 | ----------------------------------------------- | ------------------------------------------------------------------ |
-| `\\`, `,\`                                      | Toggle line numbers                                                |
+| `\\`, `,\`                                      | Toggle soft wrap (`set wrap!`)                                     |
 | `\[`, `,[`                                      | Toggle whitespace markers (invisibles)                             |
-| `\]`, `,]`                                      | Toggle soft wrap (`set wrap!`)                                     |
+| `\]`, `,]`                                      | Toggle line numbers                                                |
 | `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)               |
 | `\s`                                            | Save file (`:w`)                                                   |
 | `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                |

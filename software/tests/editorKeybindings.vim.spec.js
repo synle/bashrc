@@ -60,6 +60,17 @@ Case testing makes patterns visible
 case testing shows lowercase matches
 C`;
 
+describe("Vim toggle keybindings", () => {
+  it("maps the backslash double-press to soft wrap and the bracket pair to numbers and whitespace", () => {
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Bslash><Bslash> :set wrap!<CR>");
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Bslash>[ :set list!<CR>");
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Bslash>] :set number! norelativenumber<CR>");
+    expect(VIM_SETTINGS).toContain("nmap <silent> ,<Bslash> <Bslash><Bslash>");
+    expect(VIM_SETTINGS).toContain("nmap <silent> ,[ <Bslash>[");
+    expect(VIM_SETTINGS).toContain("nmap <silent> ,] <Bslash>]");
+  });
+});
+
 describe("Vim Visual-Multi case keybindings", () => {
   it("keeps the supplied sample's case-sensitive match counts distinct", () => {
     expect(MULTI_CURSOR_SAMPLE.match(/alpha/gi)).toHaveLength(3);

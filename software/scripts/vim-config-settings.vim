@@ -253,9 +253,9 @@ nnoremap <silent> <C-g> <C-b>
 " Keybindings — Toggle
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Backslash-prefix toggles / actions:
-"   \\       toggle absolute line numbers (relative numbers stay off)
+"   \\       toggle soft wrap
 "   \[       toggle whitespace visualization (invisibles)
-"   \]       toggle soft wrap
+"   \]       toggle absolute line numbers (relative numbers stay off)
 "   \<Space> trim trailing whitespace (whole file)
 "   \s       save file
 "   \a       select whole file (`ggvG$`)
@@ -263,9 +263,9 @@ nnoremap <silent> <C-g> <C-b>
 "   \y       redo
 "   \<F5>    reload current file from disk (`:edit!`, discard unsaved changes)
 " Keep plain '\' free as a prefix so these two-key mappings fire reliably.
-nnoremap <silent> <Bslash><Bslash> :set number! norelativenumber<CR>
+nnoremap <silent> <Bslash><Bslash> :set wrap!<CR>
 nnoremap <silent> <Bslash>[ :set list!<CR>
-nnoremap <silent> <Bslash>] :set wrap!<CR>
+nnoremap <silent> <Bslash>] :set number! norelativenumber<CR>
 nnoremap <silent> <Bslash><Space> :TrimTrailingWhitespace<CR>
 nnoremap <silent> <Bslash>s :w<CR>
 nnoremap <silent> <Bslash>a ggvG$
@@ -290,7 +290,7 @@ xnoremap <silent> ,y <Esc><C-r>
 nnoremap <silent> ,<F5> :edit!<CR>
 nnoremap <silent> <Bslash><F5> :edit!<CR>
 
-" Comma aliases reuse the backslash toggles: numbers, whitespace, and wrap.
+" Comma aliases reuse the backslash toggles: wrap, whitespace, and numbers.
 " These replace the previous/next-buffer bindings on ,[ / ,].
 nmap <silent> ,<Bslash> <Bslash><Bslash>
 nmap <silent> ,[ <Bslash>[
@@ -605,7 +605,7 @@ nmap <Tab> ,
 "   ,l (visual) one cursor per selected line
 "   ctrl+n      plugin default: add the next match (Sublime OS_KEY+d)
 " Esc leaves multi-cursor mode. Set before the plugin loads (vimrc runs first).
-" VM_leader moves the plugin's own prefix off its default '\\' so the '\' line-number
+" VM_leader moves the plugin's own prefix off its default '\\' so the '\' wrap
 " toggle fires instantly instead of entering (and exiting) Visual-Multi.
 let g:VM_leader = ',m'
 let g:VM_maps = {}
