@@ -679,9 +679,10 @@ function git_create_worktree() {
 
 ################################################################################
 # --- Git Patch Transfer ---
-# Moving a commit between machines, in exactly two verbs:
-#   git_patch_create  — last commit -> stdout + clipboard + temp file + shared folder
-#   git_patch_apply   — patch file arg -> clipboard -> newest shared-folder patch
+# Moving commits between machines through a shared plain/Base64 workflow:
+#   patch / patch_64  — verified Base64 envelope; apply or export unpushed commits
+#   patch_plain_str  — the same workflow with a plain diff
+#   git_patch_create / git_patch_apply — explicit legacy plain create/apply verbs
 #
 # Both sides funnel through one generator (_git_patch_write) and one applier
 # (_git_patch_apply_file), so whatever `create` emitted is exactly what `apply`
@@ -754,29 +755,120 @@ function _git_patch_looks_like_patch() {
   command head -n 40 "$patch_file" | command grep -q -e "^diff --git " -e "^--- " -e "^From [0-9a-f]"
 }
 
-# _git_patch_clipboard_file: capture the clipboard into a temp patch file when it holds a diff
-# Sets _GIT_PATCH_CLIPBOARD_FILE to the captured path on success. Returns non-zero and
-# leaves nothing behind when the clipboard is empty, unreadable, or not a unified diff.
+# _git_patch_64_codec: encode/decode $2 into $3 with an embedded SHA-256 digest.
+# $1 is encode or decode. Returns 0 on success, 1 on corruption/I/O failure, or
+# 2 for unrelated clipboard text. Decoding writes only after full validation.
+function _git_patch_64_codec() {
+  if ! type -P node > /dev/null 2>&1; then
+    echo "patch_64: node is required for the Base64 envelope" >&2
+    return 1
+  fi
+  local codec_js
+  IFS= read -r -d '' codec_js << '_PATCH_64_EOF_' || true
+/** Encode a versioned byte envelope or validate it before writing decoded bytes. */
+const fs = require('fs'), crypto = require('crypto');
+/** Wire magic includes the version; the digest covers only the original patch. */
+const magic = 'SY_GIT_PATCH_64_v1\n';
+/** Envelope family distinguishes damaged transfers from unrelated clipboard text. */
+const family = 'SY_GIT_PATCH_64';
+/** Reject malformed input without writing output; message is safe diagnostic text. */
+function fail(message) {
+  process.stderr.write('patch_64: ' + message + '\n');
+  process.exit(1);
+}
+try {
+  const input = fs.readFileSync(process.env._PATCH_64_INPUT);
+  if (process.env._PATCH_64_MODE === 'encode') {
+    const digest = crypto.createHash('sha256').update(input).digest('hex');
+    const encoded = Buffer.concat([Buffer.from(magic + digest + '\n'), input]).toString('base64');
+    fs.writeFileSync(process.env._PATCH_64_OUTPUT, encoded.match(/.{1,76}/g).join('\n') + '\n');
+  } else {
+    // Only ASCII transport whitespace is ignorable, never punctuation or Unicode.
+    const encoded = input.toString('latin1').replace(/[ \t\r\n]/g, '');
+    const decoded = Buffer.from(encoded, 'base64');
+    const hasFamily = decoded.subarray(0, family.length).toString('latin1') === family;
+    // Long Base64-looking input may have a damaged magic prefix; never overwrite it.
+    const minimumEnvelopeLength = Math.ceil((magic.length + 64 + 1) / 3) * 4;
+    const looksEncoded = encoded.length >= minimumEnvelopeLength && /^[A-Za-z0-9+/=]+$/.test(encoded);
+    if (!hasFamily && !looksEncoded) process.exit(2);
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || decoded.toString('base64') !== encoded) {
+      fail('invalid or noncanonical Base64 envelope');
+    }
+    if (decoded.subarray(0, magic.length).toString('latin1') !== magic) fail('unsupported Base64 envelope version');
+    const digestEnd = magic.length + 64;
+    const digest = decoded.subarray(magic.length, digestEnd).toString('latin1');
+    if (!/^[0-9a-f]{64}$/.test(digest) || decoded[digestEnd] !== 10) fail('malformed Base64 envelope digest');
+    const patch = decoded.subarray(digestEnd + 1);
+    if (crypto.createHash('sha256').update(patch).digest('hex') !== digest) fail('SHA-256 mismatch; patch not applied');
+    fs.writeFileSync(process.env._PATCH_64_OUTPUT, patch);
+  }
+} catch (error) {
+  if (!error.code) throw error;
+  fail('cannot read or write Base64 envelope (' + error.code + ')');
+}
+_PATCH_64_EOF_
+  _PATCH_64_MODE="$1" _PATCH_64_INPUT="$2" _PATCH_64_OUTPUT="$3" node -e "$codec_js"
+}
+
+# _git_patch_read_file: prepare $2 in plain/base64 format $1 for the shared applier.
+# Sets _GIT_PATCH_INPUT_FILE; returns 2 for non-envelope input, 1 for an invalid
+# file/envelope, or 0 for a readable patch. Never applies or changes the source.
+function _git_patch_read_file() {
+  local format="$1" patch_file="$2"
+  _GIT_PATCH_INPUT_FILE=""
+  if [ ! -f "$patch_file" ]; then
+    echo "patch: patch file '$patch_file' not found." >&2
+    return 1
+  fi
+  if [ "$format" = base64 ]; then
+    local decoded_file status
+    decoded_file=$(_git_patch_temp_file decoded.patch) || return 1
+    _git_patch_64_codec decode "$patch_file" "$decoded_file"
+    status=$?
+    [ "$status" -eq 0 ] || return "$status"
+    if ! _git_patch_looks_like_patch "$decoded_file"; then
+      echo "patch_64: Base64 envelope contains no patch" >&2
+      command rm -f "$decoded_file"
+      return 1
+    fi
+    patch_file="$decoded_file"
+  fi
+  _GIT_PATCH_INPUT_FILE="$patch_file"
+}
+
+# _git_patch_clipboard_file: capture a patch in optional $1 format (default plain).
+# Sets _GIT_PATCH_CLIPBOARD_FILE on success. Returns 2 for no readable patch,
+# 1 for damaged input or allocation failure; never replace recognized damaged input.
 function _git_patch_clipboard_file() {
   _GIT_PATCH_CLIPBOARD_FILE=""
-
-  local patch_file
+  local format="${1:-plain}" patch_file status
   if ! patch_file=$(_git_patch_temp_file "clipboard.patch"); then
     echo ">>> could not create a temp folder for the clipboard patch" >&2
     return 1
   fi
 
-  # `paste` with no args is raw by design — do NOT add --unwrap here, it
-  # would trim the single-space blank context lines a unified diff needs.
-  paste > "$patch_file" 2> /dev/null
-
-  if ! _git_patch_looks_like_patch "$patch_file"; then
+  # Raw paste preserves significant context whitespace for the plain path too.
+  if ! paste > "$patch_file" 2> /dev/null; then
     command rm -f "$patch_file"
+    return 2
+  fi
+  if [ "$format" = plain ]; then
+    if ! _git_patch_looks_like_patch "$patch_file"; then
+      command rm -f "$patch_file"
+      return 2
+    fi
+  elif _git_patch_looks_like_patch "$patch_file"; then
+    echo "patch_64: plain diff rejected; use patch_plain_str for plain patches" >&2
     return 1
   fi
-
+  _git_patch_read_file "$format" "$patch_file"
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    command rm -f "$patch_file"
+    return "$status"
+  fi
   echo ">>> patch file created $patch_file"
-  _GIT_PATCH_CLIPBOARD_FILE="$patch_file"
+  _GIT_PATCH_CLIPBOARD_FILE="$_GIT_PATCH_INPUT_FILE"
 }
 
 # _git_patch_apply_clipboard: apply the clipboard when it holds a diff
@@ -784,7 +876,7 @@ function _git_patch_clipboard_file() {
 # The 2 is what lets each caller pick its own fallback — dropbox for git_patch_apply,
 # cutting a fresh patch for `patch`.
 function _git_patch_apply_clipboard() {
-  _git_patch_clipboard_file || return 2
+  _git_patch_clipboard_file || return $?
 
   echo ">>> applying patch from clipboard"
   _git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
@@ -878,7 +970,8 @@ function _git_patch_apply_file() {
   return 1
 }
 
-# _git_patch_upload: copy a patch into the shared dropbox folder when it is reachable
+# _git_patch_upload: copy $1 to reachable shared storage using repo prefix $2.
+# Preserve .patch.b64 for encoded input; missing storage is a nonfatal skip.
 function _git_patch_upload() {
   local patch_file="$1"
   local repo_name="$2"
@@ -891,8 +984,9 @@ function _git_patch_upload() {
 
   # Same repo-date prefix `git patch-rename` uses, plus the sha so two patches
   # cut in the same minute cannot collide.
-  local target
-  target="${dropbox_folder}/${repo_name}-$(command date +%Y_%m_%d_%H_%M)-$(git rev-parse --short HEAD 2> /dev/null).patch"
+  local target suffix=".patch"
+  [[ "$patch_file" = *.b64 ]] && suffix=".patch.b64"
+  target="${dropbox_folder}/${repo_name}-$(command date +%Y_%m_%d_%H_%M)-$(git rev-parse --short HEAD 2> /dev/null)${suffix}"
   if command cp "$patch_file" "$target" 2> /dev/null; then
     echo ">>> patch uploaded $target"
     # macOS writes ._ sidecars onto network shares; the reader skips them, but
@@ -909,12 +1003,15 @@ function _git_patch_upload() {
 # report no subject at all. Every patch this repo produces goes through that filter, so
 # reading the header alone silently commits every transferred patch as "applied patch".
 # Try the header first (uncleaned patches, RFC-2047 decoding), then the fence.
+# $1 is a patch file; prints its subject, or returns nonzero if the file is missing.
+# Remove outer boundaries before mailinfo so an encoded subject stays decodable.
 function _git_patch_subject() {
   local patch_file="$1"
   [ -f "$patch_file" ] || return 1
 
   local subject
-  subject=$(git mailinfo /dev/null /dev/null < "$patch_file" 2> /dev/null \
+  subject=$(command sed '/^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/d' "$patch_file" \
+    | git mailinfo /dev/null /dev/null 2> /dev/null \
     | command grep "^Subject: " | sed 's/^Subject: //')
   if [ -n "$subject" ]; then
     echo "$subject"
@@ -969,6 +1066,7 @@ function _git_patch_message() {
 # _git_patch_copy_message: put a patch's commit message on the clipboard, ready to paste
 # `copy --raw` is required — unwrap() joins wrapped-looking lines and would collapse a
 # multi-line commit body into one paragraph.
+# $1 is a decoded patch file; returns nonzero if the message is absent or copy fails.
 function _git_patch_copy_message() {
   local patch_file="$1"
 
@@ -979,7 +1077,7 @@ function _git_patch_copy_message() {
     return 1
   fi
 
-  printf '%s\n' "$message" | copy --raw
+  printf '%s\n' "$message" | copy --raw || return 1
   echo ">>> commit message copied to clipboard:"
   printf '%s\n' "$message"
 }
@@ -988,10 +1086,11 @@ function _git_patch_copy_message() {
 # `git add -u` on purpose: a patch only ever touches files it already knows about, and
 # -A would sweep in whatever else the tree was holding. The commit is left interactive so
 # the message can be pasted (and edited) rather than committed blind.
+# $1 is the decoded patch file; returns nonzero on message-copy or commit failure.
 function _git_patch_commit_applied() {
   local patch_file="$1"
 
-  _git_patch_copy_message "$patch_file"
+  _git_patch_copy_message "$patch_file" || return 1
   echo ">>> staging tracked changes and committing — paste the message in the editor"
   git add -u && git commit
 }
@@ -1057,6 +1156,7 @@ _PATCH_FIND_EOF_
 # _git_patch_send_to_copy_servers: fire-and-forget copy-to-server for a new patch
 #
 # Sends the patch to every CODE_SERVER_REMOTE copy-server as <repo>-<date_time>.patch
+# or .patch.b64, preserving the input encoding.
 # (copy-to-server also overwrites clipboard.txt there, so copy-from-server on the
 # other machine returns this patch). Runs in the background so a slow or down
 # server never delays `patch`; output goes to <patch>.copy-to-server.log beside the
@@ -1080,19 +1180,32 @@ function _git_patch_send_to_copy_servers() {
     echo ">>> copy-servers: skipped (no CODE_SERVER_REMOTE hosts; re-run run.sh)"
     return 0
   fi
-  local remote_name="${repo_name}-$(date +%Y-%m-%d_%H-%M-%S).patch"
+  local suffix=".patch"
+  [[ "$patch_file" = *.b64 ]] && suffix=".patch.b64"
+  local remote_name
+  remote_name="${repo_name}-$(date +%Y-%m-%d_%H-%M-%S)${suffix}"
   local log_file="${patch_file}.copy-to-server.log"
   (copy-to-server --no-copy-url --name "$remote_name" "$patch_file" < /dev/null > "$log_file" 2>&1 &)
   echo ">>> copy-servers: sending $remote_name in the background to $CODE_SERVER_REMOTE_HOSTS (log: $log_file)"
   return 0
 }
 
-# git_patch_create: export the last commit as a patch — print, copy, save, upload
+# git_patch_create: export [count=1] commits as plain patches to every transport.
+# Returns creation status; does not modify the repository.
 function git_patch_create() {
+  _git_patch_create plain "$@"
+}
+
+# _git_patch_create: generate once, then encode before all transports when requested.
+# $1 is plain/base64, $2 is count (default 1). Returns nonzero on generation,
+# encoding, or clipboard failure; preserves the repository and raw patch file.
+function _git_patch_create() {
+  local format="$1"
+  shift
   if is_help_arg "${1:-}"; then
     echo "git_patch_create: export the last commit as a patch and hand it to every transport
   Usage: git_patch_create [count=1]
-  Does all four, in order:
+  Does all five, in order:
     1. prints the patch
     2. copies it to the clipboard ('copy --raw' — unwrap would corrupt the diff)
     3. saves it to a fresh /tmp/patch-<rand>/<repo>.patch
@@ -1127,10 +1240,13 @@ function git_patch_create() {
     return 1
   fi
 
-  # --raw is required: copy() otherwise pipes through unwrap(), which trims
-  # blank context lines and joins wrapped-looking body lines, producing a
-  # patch that git rejects with "corrupt patch at line N".
-  copy --raw "$patch_file"
+  if [ "$format" = base64 ]; then
+    _git_patch_64_codec encode "$patch_file" "${patch_file}.b64" || return 1
+    patch_file="${patch_file}.b64"
+  fi
+
+  # Never let clipboard formatting alter either the plain diff or its envelope.
+  copy --raw "$patch_file" || return 1
 
   command cat "$patch_file"
 
@@ -1142,7 +1258,11 @@ function git_patch_create() {
   # paths are repo-relative, so the default "cd to the file's folder" block sent
   # you into the throwaway /tmp patch folder — not a git repo — where every hunk
   # failed with "No such file or directory" and the patch looked corrupt.
-  print_action_summary --run-folder="$repo_root" "$patch_file" git_patch_apply
+  if [ "$format" = base64 ]; then
+    print_action_summary --run-folder="$repo_root" "$patch_file" patch_64
+  else
+    print_action_summary --run-folder="$repo_root" "$patch_file" git_patch_apply
+  fi
 }
 
 # git_patch_apply: apply a patch from a file, the clipboard, or the shared folder
@@ -1204,53 +1324,69 @@ function _git_patch_outcome_line() {
   esac
 }
 
-# _git_patch_create_unpushed: create every commit ahead of upstream, or latest commit
-# with a warning when this branch has no upstream.
+# _git_patch_create_unpushed: export commits ahead of upstream in $1 format.
+# Defaults to plain; without upstream, warns and exports HEAD. Returns creation status.
 function _git_patch_create_unpushed() {
-  local count
+  local format="${1:-plain}" count
   if count=$(git rev-list --count '@{upstream}..HEAD' 2> /dev/null); then
-    git_patch_create "$count"
+    _git_patch_create "$format" "$count"
     return $?
   fi
   printf '\033[0;31m>>> branch has no upstream; generating only the latest commit\033[0m\n' >&2
-  git_patch_create 1
+  _git_patch_create "$format" 1
 }
 
-# patch: one word for the whole transfer pair — apply when there is something to
-# apply, otherwise export commits without changing HEAD, the index, or local files.
-# Accepts [-y] [count | patch_file]; returns the selected operation's status.
-# Creation copies/saves/sends the patch; application can modify files and commit.
-# This shadows /usr/bin/patch; reach the binary with `command patch`.
-function patch() {
+# patch_plain_str: apply a plain patch when one is at hand, otherwise cut a new one.
+# Accepts [-y] [count | patch_file]; application modifies files and can commit.
+function patch_plain_str() {
+  _git_patch_transfer plain "$@"
+}
+
+# patch_64: transfer only Base64 envelopes, verifying SHA-256 before applying.
+# Accepts [-y] [count | patch_file]; application modifies files and can commit.
+function patch_64() {
+  _git_patch_transfer base64 "$@"
+}
+
+# `patch` intentionally changes wire format; explicit plain commands stay available.
+alias patch='patch_64'
+
+# _git_patch_transfer: shared selection, generation, application, and commit workflow.
+# $1 is plain/base64, remaining args are [-y] [count | patch_file]. Returns the
+# selected operation's status, including commit failure; rejects damaged input.
+function _git_patch_transfer() {
+  local format="$1" name=patch_plain_str
+  [ "$format" = base64 ] && name=patch_64
+  shift
   if is_help_arg "${1:-}"; then
-    echo "patch: apply a patch when one is at hand, otherwise cut a new one
-  Usage: patch [-y] [count | patch_file]
+    echo "$name: apply a patch when one is at hand, otherwise cut a new one
+  Usage: $name [-y] [count | patch_file]
+  Format: $format. patch is an alias for patch_64; use patch_plain_str for plain diffs.
+  Base64 wraps version + SHA-256 + original patch bytes; verification precedes apply.
+  Base64 is not encryption or authentication. Plain input is not accepted by patch_64.
   Options:
-    -y, --yes  assume yes to the clipboard apply prompt (skip it, apply)
+    -y, --yes  skip only the clipboard apply prompt
   Resolution order:
-    0. <count>, a positive number     -> git_patch_create <count> (last N commits,
-                                         oldest first, each fenced by
-                                         '# BEGIN/END SY_GIT_PATCH_BOUNDARY_v1 · <owner>/<repo> · patch <i> of <total> · <sha>')
-    1. <patch_file>, when given       -> git_patch_apply <patch_file>
-    2. clipboard reads like a diff    -> asks first, then applies it
-    3. declined, empty, or not a diff -> export every commit ahead of upstream
+    1. positive count -> export last N commits, oldest first, with commit boundaries
+    2. file -> apply it in this command's format
+    3. matching clipboard -> ask first, then apply (unless -y)
+    4. declined or unrelated clipboard -> export every commit ahead of upstream
+  Recognized damaged envelopes fail without applying or replacing the clipboard.
   Creation exports committed changes only; staged, unstaged, and untracked work
-  stays untouched. No stash, staging, or commit is needed to create a patch.
-  After a successful apply it copies the patch's own commit message (minus any
-  Co-authored-by trailer) to the clipboard, then runs 'git add -u && git commit'
-  so the message can be pasted straight into the editor.
+  stays untouched. Without an upstream, only the latest commit is exported.
+  Exports print, copy, save, and upload; Base64 files use .patch.b64.
+  After apply, copy the original commit message (minus Co-authored-by), then run
+  'git add -u && git commit'; paste the message into the editor.
   Examples:
-    patch                  offer to apply the clipboard diff, else export unpushed commits
-    patch -y               apply the clipboard diff without asking, else export unpushed commits
-    patch 3                export the last 3 commits (patch 1 = oldest, patch 3 = HEAD)
-    patch /tmp/fix.patch   apply an existing patch file
-  Shadows /usr/bin/patch — reach the binary with 'command patch'."
+    $name                    offer clipboard apply, else export unpushed commits
+    $name -y                 apply matching clipboard without asking
+    $name 3                  export the last 3 commits
+    $name /tmp/transfer.patch apply an existing file in $format format
+  patch shadows /usr/bin/patch — reach the binary with 'command patch'."
     return 1
   fi
 
-  # -y / --yes assumes yes to the clipboard apply prompt below; consume it so it
-  # is never mistaken for a patch_file.
-  local assume_yes=0
+  local assume_yes=0 status patch_file
   case "${1:-}" in
   -y | --yes)
     assume_yes=1
@@ -1258,13 +1394,10 @@ function patch() {
     ;;
   esac
 
-  local status
-
-  # A bare positive number means "create from the last N commits" — never a file.
   case "${1:-}" in
   '' | *[!0-9]* | 0) ;;
   *)
-    git_patch_create "$1"
+    _git_patch_create "$format" "$1"
     status=$?
     [ "$status" -eq 0 ] && _git_patch_outcome_line copied
     return "$status"
@@ -1272,38 +1405,40 @@ function patch() {
   esac
 
   if [ -n "${1:-}" ]; then
-    git_patch_apply "$@"
+    _git_patch_read_file "$format" "$1"
     status=$?
-    if [ "$status" -eq 0 ]; then
-      _git_patch_commit_applied "$1"
-      _git_patch_outcome_line applied
+    if [ "$status" -ne 0 ]; then
+      [ "$status" -eq 2 ] && echo "patch_64: expected a Base64 patch envelope; use patch_plain_str for plain patches" >&2
+      return 1
     fi
-    return "$status"
-  fi
-
-  # Ask before applying: a clipboard diff is often something you just cut and
-  # want to send, not something to land here. Declining falls through to cutting
-  # a fresh patch, same as an empty clipboard.
-  if _git_patch_clipboard_file; then
-    if ((assume_yes)) || prompt_yes_no "Clipboard holds a patch that has not been applied here — apply it now?" Y; then
-      _git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
-      status=$?
-      if [ "$status" -eq 0 ]; then
-        _git_patch_commit_applied "$_GIT_PATCH_CLIPBOARD_FILE"
-        _git_patch_outcome_line applied
-      fi
-      return "$status"
-    fi
-    echo ">>> leaving the clipboard patch alone — creating patches from unpushed commits instead"
+    patch_file="$_GIT_PATCH_INPUT_FILE"
   else
-    echo ">>> clipboard holds no patch — creating patches from unpushed commits instead"
+    _git_patch_clipboard_file "$format"
+    status=$?
+    if [ "$status" -eq 1 ]; then
+      return 1
+    fi
+    if [ "$status" -eq 0 ]; then
+      if ((assume_yes)) || prompt_yes_no "Clipboard holds a patch that has not been applied here — apply it now?" Y; then
+        patch_file="$_GIT_PATCH_CLIPBOARD_FILE"
+      else
+        echo ">>> leaving the clipboard patch alone — creating patches from unpushed commits instead"
+      fi
+    else
+      echo ">>> clipboard holds no patch — creating patches from unpushed commits instead"
+    fi
   fi
 
-  _git_patch_create_unpushed
-  status=$?
-  if [ "$status" -eq 0 ]; then
-    _git_patch_outcome_line copied
+  if [ -n "$patch_file" ]; then
+    _git_patch_apply_file "$patch_file" || return 1
+    _git_patch_commit_applied "$patch_file" || return 1
+    _git_patch_outcome_line applied
+    return 0
   fi
+
+  _git_patch_create_unpushed "$format"
+  status=$?
+  [ "$status" -eq 0 ] && _git_patch_outcome_line copied
   return "$status"
 }
 

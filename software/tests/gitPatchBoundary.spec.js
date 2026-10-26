@@ -88,7 +88,7 @@ describe("Git patch creation integration", () => {
           ? "function paste() { git format-patch -1 --stdout; }; function prompt_yes_no() { return 1; }; "
           : "";
 
-      const result = shell(CREATE_PATCH + clipboard + "patch");
+      const result = shell(CREATE_PATCH + clipboard + "patch_plain_str");
 
       expect(result.status, result.stderr).toBe(0);
       expect(result.stdout).toContain("Latest Patch copied to clipboard");
@@ -96,7 +96,7 @@ describe("Git patch creation integration", () => {
       expect(exported).toContain("Subject: [PATCH] First change");
       expect(exported).toContain("+first\n");
       expect(exported).not.toContain("draft");
-      const repeated = shell(CREATE_PATCH + clipboard + "patch");
+      const repeated = shell(CREATE_PATCH + clipboard + "patch_plain_str");
       expect(repeated.status, repeated.stderr).toBe(0);
       expect(repeated.stdout).toContain("Latest Patch copied to clipboard");
       expect(fs.readFileSync(path.join(folder, ".git/copied.patch"), "utf8")).toBe(exported);

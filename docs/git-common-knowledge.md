@@ -925,6 +925,56 @@ Numbered convenience aliases also exist for common N values: `git r5`, `git r10`
 
 ---
 
+## Byte-exact patch transfer
+
+The shell command `patch` now aliases `patch_64`, which transfers a verified Base64 envelope rather than a plain diff.
+Use `patch_plain_str` for the previous plain-text workflow. These commands come from `software/scripts/bash-git-helpers.profile.bash`.
+
+```bash
+patch 1                       # export the latest committed change as Base64
+patch 3                       # export the last three commits, oldest first
+patch                         # offer clipboard apply, otherwise export unpushed commits
+patch -y                      # skip only the clipboard apply prompt
+patch_64 /tmp/change.patch.b64 # verify, decode, apply, then open the commit editor
+patch_plain_str 1             # export a plain diff instead
+patch_plain_str /tmp/fix.patch # apply an existing plain diff, then open the commit editor
+```
+
+Both modes share one generator and one applier. Creation leaves staged, unstaged, and untracked work untouched.
+Without an upstream, creation warns and exports only the latest commit. Multiple commits retain the existing per-patch confirmation prompts.
+After application, the command copies the original commit message to the clipboard and opens the commit editor; paste the message there.
+A failed commit returns failure, even when the patch has already changed files.
+
+Base64 mode encodes before printing, copying, or uploading. Saved and uploaded envelopes use `.patch.b64`; plain files retain `.patch`.
+Copy only the Base64 block, not status messages or Markdown fences. ASCII spaces, tabs, CR, and LF inside the block are tolerated.
+Node is required to encode and decode portably.
+
+The wire format is Base64 of these bytes, wrapped at 76 columns:
+
+```text
+SY_GIT_PATCH_64_v1\n
+<64 lowercase hexadecimal SHA-256 characters>\n
+<original patch bytes>
+```
+
+The digest covers the original patch bytes only. Decoding rejects noncanonical Base64, unsupported versions, malformed digests, and checksum mismatches before applying.
+Recognized damaged envelopes and long Base64-looking clipboard input fail instead of triggering a new export that overwrites the clipboard.
+An explicit file with invalid input always fails. Unrelated clipboard prose still falls back to creation.
+`patch_64` rejects plain diffs; use `patch_plain_str` rather than weakening matching or normalizing Unicode.
+SHA-256 detects accidental corruption; it does not authenticate the sender. Base64 is not encryption.
+
+### Migration and compatibility
+
+Replace old `patch /path/to/plain.patch` calls with `patch_plain_str /path/to/plain.patch`.
+Likewise, call `patch_plain_str` when the clipboard contains an old plain diff.
+The explicit `git_patch_create` / `git_patch_apply` commands and their existing create/apply aliases remain plain.
+The plain shared-folder fallback selects only `.patch` files; apply an encoded shared file explicitly through `patch_64`.
+`command patch` still invokes the system patch utility rather than this shell alias.
+
+After updating the profile through the normal setup flow, open a new shell to load the alias.
+Local regression checks use isolated Git repositories and clipboard/shared-folder adapters, not a live clipboard manager or remote copy-server.
+They verify Unicode byte preservation, checksum rejection, plain-mode compatibility, and commit-failure reporting.
+
 ## Further Reading
 
 The official docs are excellent and worth reading at least once:
