@@ -666,18 +666,18 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 ### Common Shortcuts (matching editors)
 
-| Key                                | Action                                              | Status |
-| ---------------------------------- | --------------------------------------------------- | :----: |
-| `alt+up/down`                      | Page up/down                                        |   ✅   |
-| `alt+left/right`                   | Home / end                                          |   ✅   |
-| `alt+z`, `\z`, `,z`                | Undo                                                |   ✅   |
-| `alt+shift+z`, `alt+y`, `\y`, `,y` | Redo                                                |   ✅   |
-| `alt+s`, `,s`                      | Save                                                |   ✅   |
-| `,w`                               | Save and quit                                       |   ✅   |
-| `,q`                               | Quit all; discard unsaved changes without prompting |   ✅   |
-| `alt+w`                            | Close buffer                                        |   ✅   |
-| `alt+l`                            | Select line                                         |   ✅   |
-| `alt+backspace`                    | Delete to BOL                                       |   ✅   |
+| Key                          | Action                                              | Status |
+| ---------------------------- | --------------------------------------------------- | :----: |
+| `alt+up/down`                | Page up/down                                        |   ✅   |
+| `alt+left/right`             | Home / end                                          |   ✅   |
+| `alt+z`, `,z`                | Undo                                                |   ✅   |
+| `alt+shift+z`, `alt+y`, `,y` | Redo                                                |   ✅   |
+| `alt+s`, `,s`                | Save                                                |   ✅   |
+| `,w`                         | Close split                                         |   ✅   |
+| `,q`                         | Quit all; discard unsaved changes without prompting |   ✅   |
+| `alt+w`                      | Close buffer                                        |   ✅   |
+| `alt+l`                      | Select line                                         |   ✅   |
+| `alt+backspace`              | Delete to BOL                                       |   ✅   |
 
 ### Read Mode (vim -R / less)
 
@@ -727,16 +727,17 @@ The terminal must send a distinct Ctrl+Delete code rather than ordinary Delete.
 | --------------------------------------- | ------------------------------------ |
 | `ctrl+d`, `,d`                          | Vertical split                       |
 | `,'`                                    | Horizontal split                     |
-| `ctrl+x`, `ctrl+q`, `,x`                | Close split                          |
+| `ctrl+x`, `ctrl+q`, `,w`                | Close split                          |
 | `ctrl+left/right` (normal and insert)   | Previous / next word                 |
 | `ctrl+up/down` (normal, insert, visual) | Page up / page down                  |
 | `ctrl+m` (normal, visual, insert)       | Jump to matching pair (`%`)          |
 | `,arrow`                                | Navigate splits                      |
 | `,4` … `,9`                             | Go to Nth buffer tab (tabline order) |
 
-`,1`–`,3` now select indentation instead of buffer tabs. `,[` / `,]` now toggle
-whitespace / wrap instead of switching buffers. Use `,b` for the buffer picker
-or `:bprevious` / `:bnext` for previous / next buffer navigation.
+`,1`–`,3` now select indentation instead of buffer tabs. `,[` toggles whitespace,
+`,]` toggles line numbers, and `,\` toggles wrap instead of switching buffers.
+Use `,b` for the buffer picker or `:bprevious` / `:bnext` for previous / next
+buffer navigation.
 
 In traditional terminals, `ctrl+m` and Enter both send carriage return. Enter
 therefore also jumps to the matching pair in normal, visual, and insert modes.
@@ -769,26 +770,26 @@ These shortcuts change buffer-local settings, not existing text or other buffers
 Insert and Visual indentation use the selected width and tab style. Reading a file
 or changing its filetype runs automatic detection again and may reset the selection.
 
-Every save (`:w`, `,s`, or `\s`) removes whole leading blank/whitespace-only
+Every save (`:w` or `,s`) removes whole leading blank/whitespace-only
 lines, removes trailing whitespace, and retains the existing single blank line
 at EOF. First-content indentation and interior blank lines are preserved.
 Empty and all-blank files retain their previous EOF normalization.
 
 ### Toggles (normal mode)
 
-Vim uses backslash-prefixed two-key toggles and matching comma aliases in normal mode. Defaults are ON for line numbers, whitespace markers, and soft wrap. `}` still overrides vim's default next-paragraph motion as a one-key soft-wrap toggle.
+Vim uses comma-prefixed two-key toggles in normal mode. Defaults are ON for line numbers, whitespace markers, and soft wrap. `}` still overrides vim's default next-paragraph motion as a one-key soft-wrap toggle.
 
 | Key                                             | Action                                                             |
 | ----------------------------------------------- | ------------------------------------------------------------------ |
-| `\\`, `,\`                                      | Toggle soft wrap (`set wrap!`)                                     |
-| `\[`, `,[`                                      | Toggle whitespace markers (invisibles)                             |
-| `\]`, `,]`                                      | Toggle line numbers                                                |
-| `\space`, `,space`                              | Trim trailing whitespace (`:TrimTrailingWhitespace`)               |
-| `\s`                                            | Save file (`:w`)                                                   |
-| `\a`, `,a`                                      | Select whole file (`ggvG$`) in normal + visual mode                |
-| `\z`, `,z`                                      | Undo (`u`) in normal + visual mode                                 |
-| `\y`, `,y`                                      | Redo (`ctrl+r`) in normal + visual mode                            |
-| `\F5`, `,F5`                                    | Reload current file from disk (`:edit!`; discards unsaved changes) |
+| `,\`                                            | Toggle soft wrap (`set wrap!`)                                     |
+| `,[`                                            | Toggle whitespace markers (invisibles)                             |
+| `,]`                                            | Toggle line numbers                                                |
+| `,space`                                        | Trim trailing whitespace (`:TrimTrailingWhitespace`)               |
+| `,s`                                            | Save file (`:w`)                                                   |
+| `,a`                                            | Select whole file (`ggvG$`) in normal + visual mode                |
+| `,z`                                            | Undo (`u`) in normal + visual mode                                 |
+| `,y`                                            | Redo (`ctrl+r`) in normal + visual mode                            |
+| `,F5`                                           | Reload current file from disk (`:edit!`; discards unsaved changes) |
 | `}`                                             | Toggle soft wrap (`set wrap!`)                                     |
 | `Tab` / `shift+Tab` (visual mode)               | Indent / dedent, keep selection (repeat to keep shifting)          |
 | `ctrl+shift+enter` / `cmd+shift+enter` (MacVim) | Toggle soft wrap (GUI vim or CSI-u terminals only)                 |
@@ -828,12 +829,12 @@ prevents the picker from receiving it.
 
 ### Clipboard
 
-| Key                                         | Action                                                                                                              |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `,c`, `\c`                                  | Copy buffer (or selection) to system clipboard                                                                      |
-| `\x`                                        | Cut line/selection (`+clipboard` when available)                                                                    |
-| `p` (normal), `ctrl+v` (insert), `,v`, `\v` | Paste clipboard image as `@<path>` (saved to Desktop), else paste text with trailing `\r`, `\n`, and spaces removed |
-| `ctrl+q` (insert)                           | Insert next key literally (vim's stock `ctrl+v`)                                                                    |
+| Key                                   | Action                                                                                                              |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `,c`                                  | Copy buffer (or selection) to system clipboard                                                                      |
+| `,x`                                  | Cut line/selection (`+clipboard` when available)                                                                    |
+| `p` (normal), `ctrl+v` (insert), `,v` | Paste clipboard image as `@<path>` (saved to Desktop), else paste text with trailing `\r`, `\n`, and spaces removed |
+| `ctrl+q` (insert)                     | Insert next key literally (vim's stock `ctrl+v`)                                                                    |
 
 `ctrl+v` image paste exists for prompts edited in vim via an AI CLI's `ctrl+g`: the image is
 saved by `~/.local/bin/save_clipboard_image` (`software/scripts/clipboard-image.js`) and its

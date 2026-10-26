@@ -178,7 +178,7 @@ augroup TrimTrailingWhitespaceOnSave
   autocmd BufWritePre * TrimTrailingWhitespace | TrimLeadingBlankLines | TrimTrailingBlankLines
 augroup END
 
-" Whitespace visualization (default ON; toggle with \[)
+" Whitespace visualization (default ON; toggle with ,[)
 set listchars=tab:>-          " Show tabs as >---
 set listchars+=space:␣        " Show spaces as ␣
 set listchars+=trail:·        " Show trailing spaces as ·
@@ -252,30 +252,21 @@ nnoremap <silent> <C-g> <C-b>
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Toggle
 """""""""""""""""""""""""""""""""""""""""""""""""
-" Backslash-prefix toggles / actions:
-"   \\       toggle soft wrap
-"   \[       toggle whitespace visualization (invisibles)
-"   \]       toggle absolute line numbers (relative numbers stay off)
-"   \<Space> trim trailing whitespace (whole file)
-"   \s       save file
-"   \a       select whole file (`ggvG$`)
-"   \z       undo
-"   \y       redo
-"   \<F5>    reload current file from disk (`:edit!`, discard unsaved changes)
-" Keep plain '\' free as a prefix so these two-key mappings fire reliably.
-nnoremap <silent> <Bslash><Bslash> :set wrap!<CR>
-nnoremap <silent> <Bslash>[ :set list!<CR>
-nnoremap <silent> <Bslash>] :set number! norelativenumber<CR>
-nnoremap <silent> <Bslash><Space> :TrimTrailingWhitespace<CR>
-nnoremap <silent> <Bslash>s :w<CR>
-nnoremap <silent> <Bslash>a ggvG$
-xnoremap <silent> <Bslash>a <Esc>ggvG$
-nnoremap <silent> <Bslash>z u
-xnoremap <silent> <Bslash>z <Esc>u
-nnoremap <silent> <Bslash>y <C-r>
-xnoremap <silent> <Bslash>y <Esc><C-r>
+" Comma-prefix toggles / actions:
+"   ,\       toggle soft wrap
+"   ,[       toggle whitespace visualization (invisibles)
+"   ,]       toggle absolute line numbers (relative numbers stay off)
+"   ,<Space> trim trailing whitespace (whole file)
+"   ,s       save file
+"   ,a       select whole file (`ggvG$`)
+"   ,z       undo
+"   ,y       redo
+"   ,<F5>    reload current file from disk (`:edit!`, discard unsaved changes)
+nnoremap <silent> ,<Bslash> :set wrap!<CR>
+nnoremap <silent> ,[ :set list!<CR>
+nnoremap <silent> ,] :set number! norelativenumber<CR>
 
-" ,<Space> also trims trailing whitespace (whole file).
+" ,<Space> trims trailing whitespace (whole file).
 nnoremap <silent> ,<Space> :TrimTrailingWhitespace<CR>
 " ,a selects the whole file (`ggvG$`) in normal and visual mode.
 nnoremap <silent> ,a ggvG$
@@ -286,15 +277,8 @@ xnoremap <silent> ,z <Esc>u
 nnoremap <silent> ,y <C-r>
 xnoremap <silent> ,y <Esc><C-r>
 
-" ,<F5> / \<F5> reload current file from disk (`:edit!`, discard unsaved changes).
+" ,<F5> reloads current file from disk (`:edit!`, discard unsaved changes).
 nnoremap <silent> ,<F5> :edit!<CR>
-nnoremap <silent> <Bslash><F5> :edit!<CR>
-
-" Comma aliases reuse the backslash toggles: wrap, whitespace, and numbers.
-" These replace the previous/next-buffer bindings on ,[ / ,].
-nmap <silent> ,<Bslash> <Bslash><Bslash>
-nmap <silent> ,[ <Bslash>[
-nmap <silent> ,] <Bslash>]
 
 " Select indentation for this buffer without rewriting existing text.
 " Hard tabs keep the current display width and shift by one complete tab.
@@ -316,7 +300,7 @@ xnoremap <Del> d
 " Tab / Shift+Tab in visual mode indent / dedent and keep the selection, so
 " repeated presses keep shifting — VS Code/Sublime parity. Buffer-local
 " expandtab/shiftwidth/tabstop select the chosen space width or one hard tab.
-" Replaces the old visual-mode Tab wrap toggle; \] / } still toggle wrap.
+" Replaces the old visual-mode Tab wrap toggle; ,\ / } still toggle wrap.
 xnoremap <Tab> >gv
 xnoremap <S-Tab> <gv
 
@@ -405,10 +389,9 @@ for s:i in range(4, 9)
   execute printf('nmap <silent> ,%d <Plug>lightline#bufferline#go(%d)', s:i, s:i)
 endfor
 
-" ,w saves and quits; ,q quits all without saving; ,x closes the current split
-nnoremap <silent> ,w :wq<CR>
+" ,w closes the current split; ,q quits all without saving.
+nnoremap <silent> ,w <c-w>q
 nnoremap <silent> ,q :qa!<CR>
-nnoremap <silent> ,x <c-w>q
 
 " Ctrl+Arrow for editor-style text navigation; ,Arrow remains split navigation.
 " Ctrl+Home/End move across the buffer; Shift starts or extends Visual selection.
@@ -605,8 +588,8 @@ nmap <Tab> ,
 "   ,l (visual) one cursor per selected line
 "   ctrl+n      plugin default: add the next match (Sublime OS_KEY+d)
 " Esc leaves multi-cursor mode. Set before the plugin loads (vimrc runs first).
-" VM_leader moves the plugin's own prefix off its default '\\' so the '\' wrap
-" toggle fires instantly instead of entering (and exiting) Visual-Multi.
+" VM_leader moves the plugin's own prefix off its default '\\' so the ','
+" toggles fire without entering (and exiting) Visual-Multi.
 let g:VM_leader = ',m'
 let g:VM_maps = {}
 " Free Ctrl+Up/Down for page navigation; Visual-Multi defaults these to cursor creation.
@@ -689,15 +672,14 @@ endfunction
 if exists('s:clipboard_copy_cmd')
   nnoremap <silent> ,c :call <SID>CopyToClipboard(0)<CR>
   vnoremap <silent> ,c :<C-u>call <SID>CopyToClipboard(1)<CR>
-  nnoremap <silent> <Bslash>c :call <SID>CopyToClipboard(0)<CR>
-  vnoremap <silent> <Bslash>c :<C-u>call <SID>CopyToClipboard(1)<CR>
 endif
+" ,x cuts the current line or selection (clipboard register when available).
 if has('clipboard')
-  nnoremap <silent> <Bslash>x "+dd
-  vnoremap <silent> <Bslash>x "+d
+  nnoremap <silent> ,x "+dd
+  vnoremap <silent> ,x "+d
 else
-  nnoremap <silent> <Bslash>x dd
-  vnoremap <silent> <Bslash>x d
+  nnoremap <silent> ,x dd
+  vnoremap <silent> ,x d
 endif
 " Clipboard paste commands remove terminal newlines so pasted text does not add blank lines.
 
@@ -755,5 +737,4 @@ if executable(s:save_clipboard_image)
   inoremap <silent> <C-v> <C-o>:call <SID>PasteClipboardImageOrText()<CR>
 endif
 nnoremap <silent> ,v :call <SID>PasteClipboardImageOrText()<CR>
-nnoremap <silent> <Bslash>v :call <SID>PasteClipboardImageOrText()<CR>
 nnoremap <silent> p :call <SID>PasteClipboardImageOrText()<CR>

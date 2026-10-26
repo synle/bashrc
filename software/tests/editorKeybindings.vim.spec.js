@@ -61,13 +61,21 @@ case testing shows lowercase matches
 C`;
 
 describe("Vim toggle keybindings", () => {
-  it("maps the backslash double-press to soft wrap and the bracket pair to numbers and whitespace", () => {
-    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Bslash><Bslash> :set wrap!<CR>");
-    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Bslash>[ :set list!<CR>");
-    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Bslash>] :set number! norelativenumber<CR>");
-    expect(VIM_SETTINGS).toContain("nmap <silent> ,<Bslash> <Bslash><Bslash>");
-    expect(VIM_SETTINGS).toContain("nmap <silent> ,[ <Bslash>[");
-    expect(VIM_SETTINGS).toContain("nmap <silent> ,] <Bslash>]");
+  it("maps comma toggles directly to wrap, whitespace, and line numbers", () => {
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> ,<Bslash> :set wrap!<CR>");
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> ,[ :set list!<CR>");
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> ,] :set number! norelativenumber<CR>");
+    expect(VIM_SETTINGS).not.toContain("<Bslash><Bslash>");
+    expect(VIM_SETTINGS).not.toContain("<Bslash>[");
+    expect(VIM_SETTINGS).not.toContain("<Bslash>]");
+  });
+
+  it("closes splits with comma-w and cuts with comma-x", () => {
+    expect(VIM_SETTINGS).toContain("nnoremap <silent> ,w <c-w>q");
+    expect(VIM_SETTINGS).toContain('nnoremap <silent> ,x "+dd');
+    expect(VIM_SETTINGS).toContain('vnoremap <silent> ,x "+d');
+    expect(VIM_SETTINGS).not.toContain("nnoremap <silent> ,w :wq<CR>");
+    expect(VIM_SETTINGS).not.toContain("<Bslash>x");
   });
 });
 
@@ -101,7 +109,7 @@ describe("Vim Visual-Multi case keybindings", () => {
     expect(VIM_SETTINGS).toContain("call deletebufline(bufnr('%'), line('$'))");
     expect(VIM_SETTINGS).toContain("let l:text = substitute(l:text, '[\\r\\n ]\\+$', '', '')");
     expect(VIM_SETTINGS).toContain("nnoremap <silent> ,v :call <SID>PasteClipboardImageOrText()<CR>");
-    expect(VIM_SETTINGS).toContain("nnoremap <silent> <Bslash>v :call <SID>PasteClipboardImageOrText()<CR>");
+    expect(VIM_SETTINGS).not.toContain("<Bslash>v");
     expect(VIM_SETTINGS).toContain("nnoremap <silent> p :call <SID>PasteClipboardImageOrText()<CR>");
   });
 });

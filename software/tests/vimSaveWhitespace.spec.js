@@ -12,7 +12,6 @@ const SETTINGS = path.resolve("software/scripts/vim-config-settings.vim");
 const SAVE_ROUTES = [
   [":w", 'execute "normal! :w\\<CR>"'],
   [",s", "normal ,s"],
-  ["\\s", "normal \\s"],
 ];
 
 /** Exact expected bytes, including characterization of existing EOF normalization. */
