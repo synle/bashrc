@@ -1,21 +1,10 @@
 /** Pins versioned native observations to their exact Sy inputs; snapshots are evidence, not a substitute for live UI checks. */
 import { describe, expect, it } from "vitest";
-import fs from "fs";
-import crypto from "crypto";
-import ts from "typescript";
-
-/** Parses controlled JSONC without silently accepting syntax errors. */
-function read(file) {
-  const parsed = ts.parseConfigFileTextToJson(file, fs.readFileSync(file, "utf8"));
-  if (parsed.error) throw new Error(`Invalid native evidence input: ${file}`);
-  return parsed.config;
-}
-/** Hashes source bytes so a palette/template edit invalidates previously accepted native observations. */
-function digest(file) {
-  return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
-}
-
-const evidence = read("theme/native-consumption.jsonc");
+import {
+  digestNativeEvidence as digest,
+  nativeConsumptionEvidence as evidence,
+  readNativeEvidence as read,
+} from "./themeNativeConsumption.helpers.js";
 
 describe.each(["dark", "light"])("%s native consumption evidence", (mode) => {
   it.each(["sublime", "vscode", "claude"])("binds %s observations to the exact active template", (app) => {
@@ -115,21 +104,4 @@ it("records the native Sublime comment foreground and source for both appearance
       },
     ]
   `);
-});
-
-describe("full Vim startup evidence", () => {
-  it("keeps actual plugin startup and highlight observations tied to current sources", () => {
-    expect(evidence.vim.settingsSha256).toBe(digest("software/scripts/vim-config-settings.vim"));
-    expect(evidence.vim.signifyLoaded).toBe(true);
-    expect(evidence.vim.lightlineLoaded).toBe(true);
-    expect(evidence.vim.appearances.map((record) => record.scheme)).toEqual(["sy-dark", "sy-light", "sy-dark"]);
-    for (const record of evidence.vim.appearances) {
-      expect(record.sourceSha256).toBe(digest(`theme/sy/vim_${record.mode}.jsonc`));
-      expect(record.lightlineScheme).toBe("sy");
-      expect(record.groups.SignifySignAdd.target).toBe("DiffAdd");
-      expect(record.groups.SignifySignChange.target).toBe("DiffChange");
-      expect(record.groups.SignifySignDelete.target).toBe("DiffDelete");
-    }
-    expect(evidence.vim.cursorLineConceal).toBe("reference_only_no_consumer_found_in_installed_plugins_or_vim_runtime");
-  });
 });

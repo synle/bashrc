@@ -24,9 +24,12 @@
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
+    "@iarna/toml": "^2.2.5",
     "@vitejs/plugin-react": "^6.1.0",
     "@vitest/coverage-istanbul": "^4.1.5",
+    "fast-xml-parser": "^5.11.2",
     "istanbul-lib-instrument": "^6.0.3",
+    "jsonc-parser": "^3.3.1",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.79.0",
     "puppeteer": "^24.42.0",
@@ -34,6 +37,7 @@
     "typescript": "^5.9.3",
     "vite": "^8.2.2",
     "vite-plugin-singlefile": "^2.3.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "yaml": "^2.9.1"
   }
 }

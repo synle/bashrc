@@ -634,6 +634,10 @@ file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
   Preserve explicit scalar, predicate, absence, and round-trip assertions when they express the contract more clearly.
   Keep parameterized cases refreshable without sharing one inline-snapshot location across different expected outputs.
   Refresh with `npm run test:update -- <spec>` and review every changed expectation before accepting it; never update snapshots to hide failures.
+- **Generated `.build/` configuration tests.** Test structured config outputs only; exclude shell-like scripts, archives, binaries, and previews. Group files by application across OS variants, and give each artifact its own `describe(".build/<filename>")` block with its assertions and snapshots.
+  Parse JSON/JSONC with `jsonc-parser`; parse `.build/windows-classic-start-menu.xml` and other XML with `fast-xml-parser`; parse YAML with `yaml`; parse TOML with `@iarna/toml`. Snapshot the parsed JavaScript values. Use app-native handling for custom formats; do not treat Ghostty's repeated-key config as standard TOML.
+  Snapshot compact objects whole; split large objects into meaningful property groups. For keyboard-binding counts, hard-code each minimum as `floor(0.5 × current count)` and maximum as `ceil(1.5 × current count)` inline. Snapshot representative bindings; never assert exact counts alone.
+  Never snapshot private hostnames, IP addresses, or environment-specific paths. After intentional config changes, run `npm run test:buildconfig:update`, review every changed snapshot against its generator and source, then rerun `npm run test:buildconfig` without update mode.
 - **ASCII-only test source.** Never write test source containing literal non-ASCII characters, including emoji and typographic punctuation.
   This applies to code, identifiers, test names, comments, test helpers, text fixtures, and snapshots.
   Unicode behavior is not an exception: represent required characters with ASCII escape sequences or construct their bytes at runtime.
