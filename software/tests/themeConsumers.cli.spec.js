@@ -137,8 +137,28 @@ describe("Gemini custom theme integration", () => {
     `);
     expect(result.ui.customThemes["Sy Light"].text.primary).toBe("#1e1e1e");
     expect(result.ui.customThemes["Sy Dark"].background).not.toHaveProperty("input");
-    expect(result.ui.customThemes["Sy Dark"].ui).toMatchInlineSnapshot();
-    expect(result.ui.customThemes["Sy Light"].ui).toMatchInlineSnapshot();
+    expect(result.ui.customThemes["Sy Dark"].ui).toMatchInlineSnapshot(`
+      {
+        "comment": "#76a762",
+        "gradient": [
+          "#5ca0d7",
+          "#4ec9b0",
+          "#c586c0",
+        ],
+        "symbol": "#e8e8e8",
+      }
+    `);
+    expect(result.ui.customThemes["Sy Light"].ui).toMatchInlineSnapshot(`
+      {
+        "comment": "#004a15",
+        "gradient": [
+          "#0033b3",
+          "#00416f",
+          "#6c0099",
+        ],
+        "symbol": "#1e1e1e",
+      }
+    `);
     expect(result.ui.customThemes["Sy Dark"].AccentGreen).toBe("#5ca0d7");
     expect(result.ui.customThemes["Sy Light"].AccentGreen).toBe("#0033b3");
     expect(result.ui.customThemes["Sy Dark"].status.success).toBe("#76a762");

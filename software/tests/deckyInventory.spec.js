@@ -92,15 +92,17 @@ describe("compact Decky repository inventory", () => {
   });
 
   it("pins the verified Framegen stable archive without committing the oversized ZIP", () => {
-    expect(inventory.decky_packages.find((p) => p.name === "Decky-Framegen")).toEqual({
-      path: "decky_plugin/Decky-Framegen_v0.17.zip",
-      name: "Decky-Framegen",
-      version: "0.17",
-      root: "Decky-Framegen",
-      source: "https://github.com/xXJSONDeruloXx/Decky-Framegen",
-      url: "https://github.com/xXJSONDeruloXx/Decky-Framegen/releases/download/v0.17/Decky-Framegen.zip",
-      sha256: "3300b617e3d979b483d03f995c75c829d6d54beaa4ac8dfae300c2560e4fc60f",
-    });
+    expect(inventory.decky_packages.find((p) => p.name === "Decky-Framegen")).toMatchInlineSnapshot(`
+      {
+        "name": "Decky-Framegen",
+        "path": "decky_plugin/Decky-Framegen_v0.17.zip",
+        "root": "Decky-Framegen",
+        "sha256": "3300b617e3d979b483d03f995c75c829d6d54beaa4ac8dfae300c2560e4fc60f",
+        "source": "https://github.com/xXJSONDeruloXx/Decky-Framegen",
+        "url": "https://github.com/xXJSONDeruloXx/Decky-Framegen/releases/download/v0.17/Decky-Framegen.zip",
+        "version": "0.17",
+      }
+    `);
     expect(fs.existsSync("assets/steamos/decky_loader_plugins/Decky-Framegen_v0.17.zip")).toBe(false);
   });
 

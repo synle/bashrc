@@ -36,7 +36,13 @@ describe("AI CLI transcript navigation deployment", () => {
     await getIndexFunction("_doKeysWork")(`${HOME}/.claude`);
 
     const config = JSON.parse(fileSystem[target]);
-    expect(config.bindings.find((group) => group.context === "Scroll").bindings).toMatchInlineSnapshot();
+    expect(config.bindings.find((group) => group.context === "Scroll").bindings).toMatchInlineSnapshot(`
+      {
+        "alt+up": "scroll:lineUp",
+        "ctrl+end": "scroll:bottom",
+        "ctrl+home": "scroll:top",
+      }
+    `);
     const chatBindings = config.bindings.find((group) => group.context === "Chat").bindings;
     expect({ "alt+q": chatBindings["alt+q"], home: chatBindings.home, end: chatBindings.end }).toMatchInlineSnapshot(`
       {
@@ -58,7 +64,18 @@ describe("AI CLI transcript navigation deployment", () => {
     await getIndexFunction("_doGeminiKeysWork")(`${HOME}/.gemini`);
 
     const config = JSON.parse(fileSystem[target]);
-    expect(config.filter((entry) => ["ctrl+home", "ctrl+end"].includes(entry.key))).toMatchInlineSnapshot();
+    expect(config.filter((entry) => ["ctrl+home", "ctrl+end"].includes(entry.key))).toMatchInlineSnapshot(`
+      [
+        {
+          "command": "scroll.home",
+          "key": "ctrl+home",
+        },
+        {
+          "command": "scroll.end",
+          "key": "ctrl+end",
+        },
+      ]
+    `);
     expect(config).toContainEqual({ command: "cursor.home", key: "home" });
     expect(config).toContainEqual({ command: "cursor.end", key: "end" });
     expect(config).toContainEqual({ command: "scroll.pageUp", key: "alt+up" });

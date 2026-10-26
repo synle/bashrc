@@ -213,7 +213,46 @@ describe("Windows Terminal modern appearance", () => {
         ],
       },
     });
-    expect(settings.profiles.list.map(({ name, icon, tabColor, background }) => ({ name, icon, tabColor, background }))).toMatchInlineSnapshot();
+    expect(settings.profiles.list.map(({ name, icon, tabColor, background }) => ({ name, icon, tabColor, background }))).toMatchInlineSnapshot(`
+      [
+        {
+          "background": undefined,
+          "icon": "ubuntu.ico",
+          "name": "Ubuntu",
+          "tabColor": "#ffffff",
+        },
+        {
+          "background": undefined,
+          "icon": "debian.ico",
+          "name": "Debian",
+          "tabColor": "#e95420",
+        },
+        {
+          "background": undefined,
+          "icon": undefined,
+          "name": "Kali",
+          "tabColor": "#e95420",
+        },
+        {
+          "background": undefined,
+          "icon": "C:\\Users\\Test User\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
+          "name": "Powershell v7",
+          "tabColor": "#000000",
+        },
+        {
+          "background": undefined,
+          "icon": "powershell.ico",
+          "name": "Powershell v5",
+          "tabColor": "#012456",
+        },
+        {
+          "background": undefined,
+          "icon": "custom.ico",
+          "name": "Custom",
+          "tabColor": "#123456",
+        },
+      ]
+    `);
     expect(settings.defaultProfile).toBe("u");
   });
 
@@ -227,7 +266,22 @@ describe("Windows Terminal modern appearance", () => {
       },
     };
     const first = await generateAppearance(oldSettings);
-    expect(first.profiles.list.map(({ name, icon, tabColor, hidden }) => ({ name, icon, tabColor, hidden }))).toMatchInlineSnapshot();
+    expect(first.profiles.list.map(({ name, icon, tabColor, hidden }) => ({ name, icon, tabColor, hidden }))).toMatchInlineSnapshot(`
+      [
+        {
+          "hidden": true,
+          "icon": "C:\\Users\\Test User\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
+          "name": "Powershell v7",
+          "tabColor": "#ffffff",
+        },
+        {
+          "hidden": false,
+          "icon": undefined,
+          "name": "Powershell v5",
+          "tabColor": "#012456",
+        },
+      ]
+    `);
     expect(await generateAppearance(first)).toEqual(first);
     expect(oldSettings.profiles.list[0].icon).toBe("old.ico");
   });
@@ -240,7 +294,20 @@ describe("Windows Terminal modern appearance", () => {
       },
     });
     const legacy = settings.profiles.list.find(({ guid }) => guid === "ps");
-    expect(legacy.font).toMatchInlineSnapshot();
+    expect(legacy.font).toMatchInlineSnapshot(`
+      {
+        "axes": {
+          "wght": 600,
+        },
+        "cellHeight": "1.1",
+        "face": "Old Mono",
+        "features": {
+          "liga": 0,
+        },
+        "size": 17,
+        "weight": "semi-bold",
+      }
+    `);
     expect(legacy).not.toHaveProperty("fontFace");
     expect(legacy).not.toHaveProperty("fontSize");
     expect(legacy).not.toHaveProperty("fontWeight");

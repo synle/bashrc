@@ -130,13 +130,17 @@ describe("complete bounded source union", () => {
     expect(report.entries).toHaveLength(24);
     expect(report.boundary).toContain("not every native schema");
     const dark = report.entries.find((entry) => entry.app === "vim" && entry.mode === "dark");
-    expect(dark.components.find((entry) => entry.key === "highlights/CursorLineConceal")).toEqual({
-      key: "highlights/CursorLineConceal",
-      states: ["cursor"],
-      active: false,
-      capturedReference: true,
-      disposition: "reference_only_requires_reachability_review",
-    });
+    expect(dark.components.find((entry) => entry.key === "highlights/CursorLineConceal")).toMatchInlineSnapshot(`
+      {
+        "active": false,
+        "capturedReference": true,
+        "disposition": "reference_only_requires_reachability_review",
+        "key": "highlights/CursorLineConceal",
+        "states": [
+          "cursor",
+        ],
+      }
+    `);
     const copilot = report.entries.find((entry) => entry.app === "copilot" && entry.mode === "dark");
     expect(copilot).toMatchInlineSnapshot(`
       {

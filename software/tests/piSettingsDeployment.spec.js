@@ -78,7 +78,18 @@ describe("Pi settings and keybinding deployment", () => {
     await getIndexFunction("doWork")();
 
     expect(fileSystem[KEYBINDINGS_PATH]).toBeDefined();
-    expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toMatchInlineSnapshot();
+    expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toMatchInlineSnapshot(`
+      {
+        "$schema": "https://pi.dev/schemas/keybindings.schema.json",
+        "tui.altScreen.bottom": "ctrl+end",
+        "tui.altScreen.top": "ctrl+home",
+        "tui.editor.deleteWordBackward": [
+          "ctrl+w",
+          "ctrl+backspace",
+          "alt+backspace",
+        ],
+      }
+    `);
   });
 
   it("updates managed chords while preserving unrelated user bindings", async () => {
@@ -92,7 +103,19 @@ describe("Pi settings and keybinding deployment", () => {
 
     await getIndexFunction("doWork")();
 
-    expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toMatchInlineSnapshot();
+    expect(JSON.parse(fileSystem[KEYBINDINGS_PATH])).toMatchInlineSnapshot(`
+      {
+        "$schema": "https://pi.dev/schemas/keybindings.schema.json",
+        "app.session.new": "ctrl+shift+n",
+        "tui.altScreen.bottom": "ctrl+end",
+        "tui.altScreen.top": "ctrl+home",
+        "tui.editor.deleteWordBackward": [
+          "ctrl+w",
+          "ctrl+backspace",
+          "alt+backspace",
+        ],
+      }
+    `);
   });
 
   it("keeps settings and keybindings byte-stable on a second setup", async () => {

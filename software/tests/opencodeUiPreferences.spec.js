@@ -93,7 +93,17 @@ describe("OpenCode explicit UI preferences", () => {
     await getIndexFunction("_writeOpencodeTuiConfig")(HOME, false);
     const state = startup();
     await deployedPlugin().tui(state.api);
-    expect(state.saved).toMatchInlineSnapshot();
+    expect(state.saved).toMatchInlineSnapshot(`
+      {
+        "diff_wrap_mode": "word",
+        "paste_summary_enabled": true,
+        "scrollbar_visible": true,
+        "sidebar": "hide",
+        "terminal_title_enabled": true,
+        "timestamps": "show",
+        "tool_details_visibility": true,
+      }
+    `);
     expect(state.commands).toEqual([]);
   });
 
@@ -119,7 +129,21 @@ describe("OpenCode explicit UI preferences", () => {
       customPreference: 0,
     });
     await deployedPlugin().tui(state.api);
-    expect(state.saved).toMatchInlineSnapshot();
+    expect(state.saved).toMatchInlineSnapshot(`
+      {
+        "animations_enabled": false,
+        "customPreference": 0,
+        "diff_wrap_mode": "word",
+        "paste_summary_enabled": true,
+        "scrollbar_visible": true,
+        "sidebar": "hide",
+        "terminal_title_enabled": true,
+        "theme": "foreign",
+        "thinking_mode": "hide",
+        "timestamps": "show",
+        "tool_details_visibility": true,
+      }
+    `);
   });
 
   it("stays byte-stable and avoids duplicate registrations on repeat deployment", async () => {
