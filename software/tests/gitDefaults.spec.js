@@ -113,6 +113,31 @@ describe("Git defaults integration", () => {
     expect(git(alias)).not.toContain("note.txt");
   });
 
+  it("renders editor links and portable diff styling in the generated config", () => {
+    expect(git("config", "--get-regexp", "^delta\\.").split("\n")).toMatchInlineSnapshot(`
+      [
+        "delta.navigate true",
+        "delta.side-by-side false",
+        "delta.line-numbers true",
+        "delta.hyperlinks true",
+        "delta.hyperlinks-file-link-format vscode://file/{path}:{line}",
+        "delta.true-color auto",
+        "delta.features decorations",
+        "delta.syntax-theme ansi",
+        "delta.plus-style syntax auto",
+        "delta.minus-style syntax auto",
+        "delta.decorations.commit-decoration-style bold yellow box ul",
+        "delta.decorations.file-style bold yellow ul",
+        "delta.decorations.file-decoration-style none",
+        "delta.decorations.hunk-header-decoration-style cyan box ul",
+        "delta.line-numbers.line-numbers-left-style cyan",
+        "delta.line-numbers.line-numbers-right-style cyan",
+        "delta.line-numbers.line-numbers-minus-style red",
+        "delta.line-numbers.line-numbers-plus-style green",
+      ]
+    `);
+  });
+
   it("defaults to one column and preserves explicit one-column compatibility", () => {
     expect(git("config", "--get", "delta.side-by-side")).toBe("false");
     expect(git("config", "--get", "alias.show1")).toContain("delta.side-by-side=false");
