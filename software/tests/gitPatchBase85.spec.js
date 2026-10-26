@@ -148,14 +148,39 @@ describe("Base85 patch transfer", () => {
     const lines = frame.trimEnd().split("\n");
 
     expect(result.status, result.stderr).toBe(0);
-    expect(lines[0]).toMatch(/^# BEGIN SY_GIT_PATCH_85_v1 · acme\/widget-store · patch 1 of 1 · /);
+    expect(lines[0]).toMatch(/^# BEGIN SY_GIT_PATCH_85_v1 \u00b7 acme\/widget-store \u00b7 patch 1 of 1 \u00b7 /);
     expect(lines[1]).toBe("# Commit: Change text");
     expect(lines[2]).toBe("##################################################");
     expect(lines.at(-2)).toBe("##################################################");
-    expect(lines.at(-1)).toMatch(/^# END SY_GIT_PATCH_85_v1 · acme\/widget-store · patch 1 of 1 · /);
+    expect(lines.at(-1)).toMatch(/^# END SY_GIT_PATCH_85_v1 \u00b7 acme\/widget-store \u00b7 patch 1 of 1 \u00b7 /);
     expect(readPayload(frame).toString("utf8")).toContain("+after \u2014 text");
     expect(fs.readdirSync(path.join(folder, ".git/shared"))[0]).toMatch(/\.patch\.b85$/);
     expect(result.stdout).toContain("patch_85");
+  });
+
+  it.each([
+    ["ordinary prose", "ordinary clipboard text\n"],
+    ["URL", "https://example.com/report?v=1"],
+    ["Unicode prose", "review \u2014 ready \ud83d\ude80\n"],
+    ["empty clipboard", ""],
+    ["short noncanonical input", "!"],
+    ["short overflowing input", "uuuuu"],
+  ])("exports unpushed commits with %s instead of rejecting the clipboard", (_label, clipboard) => {
+    fs.writeFileSync(path.join(folder, ".git/clipboard"), clipboard);
+    git("update-ref", "refs/remotes/origin/main", "HEAD~1");
+    git("branch", "--set-upstream-to=origin/main");
+    const head = git("rev-parse", "HEAD");
+
+    const result = shell("eval 'patch'");
+    const frame = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8");
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("Latest Patch copied to clipboard");
+    expect(result.stderr).not.toContain("invalid or noncanonical Base85 envelope");
+    expect(readPayload(frame).toString("utf8")).toContain("+after \u2014 text");
+    expect(git("rev-parse", "HEAD")).toBe(head);
+    expect(git("status", "--porcelain")).toBe("");
+    expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe(AFTER);
   });
 
   it.each(["clipboard", "file"])("round-trips Unicode patch bytes through %s", (source) => {
@@ -173,6 +198,30 @@ describe("Base85 patch transfer", () => {
     expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe(AFTER);
     expect(git("log", "-1", "--format=%s")).toBe("Change text");
     expect(git("status", "--porcelain")).toBe("");
+  });
+
+  it.each([
+    ["long bare payload without magic", "!".repeat(110), "clipboard"],
+    ["long overflowing payload", "u".repeat(110), "clipboard"],
+    ["malformed framed payload", "# BEGIN SY_GIT_PATCH_85_v1\n# Commit: Invalid\nuuuuu\n# END SY_GIT_PATCH_85_v1\n", "clipboard"],
+    ["unrelated explicit file", "ordinary clipboard text\n", "file"],
+  ])("rejects %s without applying or exporting", (_label, input, source) => {
+    const head = git("rev-parse", "HEAD");
+    fs.writeFileSync(path.join(folder, ".git/clipboard"), input);
+    fs.writeFileSync(path.join(folder, ".git/input.b85"), input);
+
+    const result = shell(source === "clipboard" ? "patch_85 -y" : 'patch_85 "$PWD/.git/input.b85"');
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toMatch(/Base85|base85/);
+    expect(result.stdout).not.toContain("patch copied to clipboard");
+    expect(result.stdout).not.toContain("Patch Applied");
+    expect(git("rev-parse", "HEAD")).toBe(head);
+    expect(git("status", "--porcelain")).toBe("");
+    expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe(AFTER);
+    expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8")).toBe(input);
+    expect(fs.readFileSync(path.join(folder, ".git/input.b85"), "utf8")).toBe(input);
+    expect(fs.readdirSync(path.join(folder, ".git/shared"))).toEqual([]);
   });
 
   it("rejects a corrupted clipboard frame without applying or replacing it", () => {

@@ -884,7 +884,8 @@ function _git_patch_format_name() {
 }
 
 # _git_patch_85_codec: encode/decode $2 into $3 using canonical unframed ASCII85.
-# Arguments: encode/decode, input file, output file. Returns 2 for unrelated clipboard text.
+# Arguments: encode/decode, input file, output file. Writes only verified patch bytes.
+# Returns 2 for unrelated clipboard text, 1 for malformed envelopes or I/O failures.
 function _git_patch_85_codec() {
   _snip_require_binary node || return 1
   _ensure_base85_module || return $?
@@ -954,19 +955,21 @@ try {
       try {
         decoded = base85.decode(encoded, 'a85');
       } catch (error) {
-        fail('invalid or noncanonical Base85 envelope');
+        if (!(error instanceof RangeError)) throw error;
+        decoded = false;
       }
-      if (decoded === false || base85.encode(decoded, 'a85') !== encoded) {
-        fail('invalid or noncanonical Base85 envelope');
-      }
-      const hasFamily = decoded.subarray(0, family.length).toString('latin1') === family;
-      // Long Base85-looking clipboard text may have a damaged magic prefix.
+      const hasFamily = decoded !== false && decoded.subarray(0, family.length).toString('latin1') === family;
+      // Classify before canonical validation so unrelated clipboard text can export.
+      // Long Base85-looking text still fails closed when its magic is damaged.
       const envelopeLength = magic.length + 64 + 1;
       const minimumEnvelopeLength = Math.ceil(envelopeLength / 4) * 5;
       const looksEncoded = encoded.length >= minimumEnvelopeLength && /^[!-u]+$/.test(encoded);
       if (!hasFamily && !looksEncoded) {
         if (framed) fail('invalid Base85 envelope payload');
         process.exit(2);
+      }
+      if (decoded === false || base85.encode(decoded, 'a85') !== encoded) {
+        fail('invalid or noncanonical Base85 envelope');
       }
       const version = decoded.subarray(0, magic.length).toString('latin1');
       if (version !== magic) fail('unsupported Base85 envelope version');
