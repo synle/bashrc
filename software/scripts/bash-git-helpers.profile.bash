@@ -757,8 +757,9 @@ function _git_patch_looks_like_patch() {
 
 # _git_patch_64_codec: encode/decode $2 into $3 with an embedded SHA-256 digest.
 # $1 is encode or decode; _PATCH_64_MESSAGE supplies the display-only export preview.
-# Exports use one paired, repo/order/SHA-labelled frame per plain patch section.
-# Decoding accepts frame sequences, legacy unlabelled frames, and bare Base64.
+# Exports use one repo/order/SHA-labelled frame per section, with Commit preview
+# and divider. Decoding pairs marker prefixes only; suffixes are display-only.
+# Accepts frame sequences, older previews without dividers, and bare Base64.
 # Returns 0 on success, 1 on corruption/I/O failure, or 2 for unrelated clipboard
 # text. Decoding writes only after validating every wrapper and payload.
 function _git_patch_64_codec() {
@@ -776,6 +777,8 @@ const magic = 'SY_GIT_PATCH_64_v2\n';
 const family = 'SY_GIT_PATCH_64';
 /** Display boundaries share the wire version but sit outside the encoded bytes. */
 const begin = '# BEGIN ' + magic.trim(), end = '# END ' + magic.trim();
+/** Human-visible separator between the commit preview and encoded payload. */
+const divider = '### ------------------- ###';
 /** Reject malformed input without writing output; message is safe diagnostic text. */
 function fail(message) {
   process.stderr.write('patch_64: ' + message + '\n');
@@ -798,7 +801,7 @@ try {
       const label = Buffer.from(section[1], 'latin1').toString('utf8');
       const digest = crypto.createHash('sha256').update(patch).digest('hex');
       const encoded = Buffer.concat([Buffer.from(magic + digest + '\n'), patch]).toString('base64');
-      return begin + label + '\n# ' + preview + '\n' + encoded.match(/.{1,76}/g).join('\n') + '\n' + end + label + '\n';
+      return begin + label + '\n# Commit: ' + preview + '\n' + divider + '\n' + encoded.match(/.{1,76}/g).join('\n') + '\n' + end + label + '\n';
     });
     fs.writeFileSync(process.env._PATCH_64_OUTPUT, frames.join('\n'));
   } else {
@@ -806,13 +809,13 @@ try {
     const framed = text.includes('# BEGIN ' + family) || text.includes('# END ' + family);
     let payloads = [text];
     if (framed) {
-      const framePattern = /^# BEGIN SY_GIT_PATCH_64_v2((?:[ \t][^\r\n]*)?)\r?\n# [^\r\n]*\r?\n([\s\S]*?)\r?\n# END SY_GIT_PATCH_64_v2\1(?=\r?\n|$)/gm;
+      const framePattern = new RegExp('^' + begin + '[^\\r\\n]*\\r?\\n# [^\\r\\n]*\\r?\\n([\\s\\S]*?)\\r?\\n' + end + '[^\\r\\n]*(?=\\r?\\n|$)', 'gm');
       const frames = [...text.matchAll(framePattern)];
       if (!frames.length || text.replace(framePattern, '').replace(/[ \t\r\n]/g, '') !== '') {
         fail('malformed Base64 envelope boundaries or preview');
       }
-      // Labels must pair exactly; previews remain display-only, outside the digest.
-      payloads = frames.map(frame => frame[2]);
+      // Only prefixes define pairs. Old frames need no divider or Commit label.
+      payloads = frames.map(frame => frame[1].replace(/^### -+(?: ###)?\r?\n/, ''));
     }
     // Validate the entire batch before writing anything the applier can consume.
     const patches = payloads.map(payload => {

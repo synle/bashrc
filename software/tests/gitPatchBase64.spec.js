@@ -126,9 +126,10 @@ describe("Base64 patch transfer integration", () => {
     const frame = encoded.trimEnd().split("\n");
     const label = ` \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 ${git("rev-parse", "--short", "HEAD")}`;
     expect(frame[0]).toBe("# BEGIN SY_GIT_PATCH_64_v2" + label);
-    expect(frame[1]).toBe("# Add zip \u2014 preserve typography Keep Unicode context exact.");
+    expect(frame[1]).toBe("# Commit: Add zip \u2014 preserve typography Keep Unicode context exact.");
+    expect(frame[2]).toBe("### ------------------- ###");
     expect(frame.at(-1)).toBe("# END SY_GIT_PATCH_64_v2" + label);
-    const payload = frame.slice(2, -1).join("\n");
+    const payload = frame.slice(3, -1).join("\n");
     expect(payload).toMatch(/^[A-Za-z0-9+/=\n]+$/);
     const bytes = Buffer.from(payload, "base64");
     const [magic, digest, ...lines] = bytes.toString("utf8").split("\n");
@@ -166,9 +167,9 @@ describe("Base64 patch transfer integration", () => {
     ["legacy file", "", "", 'patch_64 "$PWD/.git/input.b64"'],
     ["legacy clipboard", "", "", "patch_64 -y"],
     [
-      "framed file",
-      "# BEGIN SY_GIT_PATCH_64_v2\r\n# Independent preview\r\n",
-      "\r\n# END SY_GIT_PATCH_64_v2",
+      "framed file with different display labels and a divider",
+      "# BEGIN SY_GIT_PATCH_64_v2 acme/widget-store patch 1 of 2\r\n# Commit: Independent preview\r\n### -------------------\r\n",
+      "\r\n# END SY_GIT_PATCH_64_v2 other/widget-store patch 9 of 99",
       'patch_64 "$PWD/.git/input.b64"',
     ],
     ["framed clipboard", "# BEGIN SY_GIT_PATCH_64_v2\r\n# Independent preview\r\n", "\r\n# END SY_GIT_PATCH_64_v2", "patch_64 -y"],
@@ -195,14 +196,14 @@ describe("Base64 patch transfer integration", () => {
     const result = shell("patch_64 1");
     expect(result.status, result.stderr).toBe(0);
     const frame = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").trimEnd().split("\n");
-    expect(frame[1]).toBe("# Readable subject Body with spaces Next [31m line # END SY_GIT_PATCH_64_v2");
-    expect(frame.slice(2, -1).join("\n")).toMatch(/^[A-Za-z0-9+/=\n]+$/);
+    expect(frame[1]).toBe("# Commit: Readable subject Body with spaces Next [31m line # END SY_GIT_PATCH_64_v2");
+    expect(frame.slice(3, -1).join("\n")).toMatch(/^[A-Za-z0-9+/=\n]+$/);
   });
 
   it("uses verified payload messages rather than an edited display preview", () => {
     expect(shell("patch_64 1").status).toBe(0);
     const framed = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8");
-    fs.writeFileSync(path.join(folder, ".git/clipboard"), framed.replace(/^# Add zip.*$/m, "# Display only"));
+    fs.writeFileSync(path.join(folder, ".git/clipboard"), framed.replace(/^# Commit: Add zip.*$/m, "# Display only"));
     git("checkout", "--detach", "HEAD~1");
     const result = shell("patch_64 -y");
     expect(result.status, result.stderr).toBe(0);
@@ -227,7 +228,7 @@ describe("Base64 patch transfer integration", () => {
     const frames = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").split("\n");
     const first = git("rev-parse", "--short", "HEAD~1"),
       second = git("rev-parse", "--short", "HEAD");
-    expect(frames[1]).toBe("# Add zip \u2014 preserve typography Keep Unicode context exact. Second change");
+    expect(frames[1]).toBe("# Commit: Add zip \u2014 preserve typography Keep Unicode context exact. Second change");
     expect(frames.filter((line) => /^# (BEGIN|END) SY_GIT_PATCH_64/.test(line))).toEqual([
       `# BEGIN SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 1 of 2 \u00b7 ${first}`,
       `# END SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 1 of 2 \u00b7 ${first}`,

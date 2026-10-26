@@ -116,16 +116,14 @@ describe("Base64 patch rejection integration", () => {
     ["missing begin", "# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
     ["mismatched version", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v3"],
     [
-      "mismatched repository",
-      "# BEGIN SY_GIT_PATCH_64_v2 acme/widget-store patch 1 of 1\n# Preview\n" +
-        envelope() +
-        "\n# END SY_GIT_PATCH_64_v2 other/widget-store patch 1 of 1",
+      "extra end",
+      "# BEGIN SY_GIT_PATCH_64_v2 first\n# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2 changed\n# END SY_GIT_PATCH_64_v2",
     ],
     [
-      "mismatched order",
-      "# BEGIN SY_GIT_PATCH_64_v2 acme/widget-store patch 1 of 2\n# Preview\n" +
+      "unclosed later frame",
+      "# BEGIN SY_GIT_PATCH_64_v2 first\n# Preview\n" +
         envelope() +
-        "\n# END SY_GIT_PATCH_64_v2 acme/widget-store patch 2 of 2",
+        "\n# END SY_GIT_PATCH_64_v2 changed\n# BEGIN SY_GIT_PATCH_64_v2 next\n# Commit: Incomplete",
     ],
     ["missing preview", "# BEGIN SY_GIT_PATCH_64_v2\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
     ["nested begin", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n# BEGIN SY_GIT_PATCH_64_v2\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
