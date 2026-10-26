@@ -364,6 +364,15 @@ Sublime Merge uses `smerge` first, then falls back to `smerge.exe`. Other editor
 
 Shortcuts: `diff_delta1`, `diff_delta2`, `diff_code`, `diff_zed`, `diff_z`, `diff_winmerge`, `diff_smerge`, and `diff_sublime_merge`. Each alias accepts its matching mode's arguments.
 
+`pdiff [diff options] file` compares the clipboard on the left with the supplied file on the right, reusing `paste` and `diff`.
+The final argument is the file; preceding options pass unchanged to `diff`. Examples: `pdiff file`, `pdiff -delta2 file`, `pdiff -code file`, and `pdiff -u file`.
+Use `pdiff -- -filename` for a leading-dash filename.
+Matching shortcuts are `pdiff_delta1`, `pdiff_delta2`, `pdiff_code`, `pdiff_zed`, `pdiff_z`, `pdiff_winmerge`, `pdiff_smerge`, and `pdiff_sublime_merge`.
+
+Clipboard bytes go directly into a private `mktemp` file under `${TMPDIR:-/tmp}` without stripping trailing newlines.
+Successful captures remain as `pdiff.*` snapshots because GUI launchers may return before reading them; remove these clipboard-bearing files when done.
+Missing files and help requests do not read the clipboard. Failed captures remove partial snapshots and return the capture failure without launching a comparison.
+
 With no selector, two file paths compare by default. Two commit hashes compare Git revisions; an available GitHub remote preserves the existing compare-page opening.
 
 Inside a repository, no arguments show tracked working changes. One path shows tracked changes or compares an untracked file against empty content. Outside a repository, one path is compared against standard input by native `diff`.

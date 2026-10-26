@@ -389,6 +389,9 @@ Profile registration is buffered: `registerProfileBlock` /
   The shell `git()` wrapper adds `-w` to direct diffs, including calls with global options, and turns only a bare stash into `stash push -u`.
   Explicit stash subcommands and flags retain native behavior. Preserve `aac = !git aa && git c` and `auc = !git au && git c`; do not add `aau`.
   Patch transfer application uses `aac`, staging all non-ignored changes, including unrelated new files. Regression coverage lives in `gitDefaults` and `gitPatchNewFiles`.
+- **Clipboard diff** uses `pdiff [diff options] file` to compare a private `paste` snapshot on the left with the supplied file on the right.
+  Keep explicit `pdiff_*` aliases beside their `diff_*` counterparts in `profile-advanced.sh`; reuse the existing dispatcher.
+  Retain successful snapshots for asynchronous GUI readers, remove failed captures, and preserve failure status. Regression coverage lives in `software/tests/clipboardDiff.spec.js`.
 - **Native navigation** leaves `cd` as the Bash builtin, preserving native options, previous-folder behavior, and failure status.
   Keep parent-folder aliases and native folder completion covered by `software/tests/nativeCd.spec.js`.
 - **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as

@@ -1784,14 +1784,64 @@ function diff() {
   return $?
 }
 
+# pdiff: compare clipboard contents with a file
+# Args: leading diff options, then one file. Returns diff/capture status; invalid input is nonzero.
+# Writes a private snapshot via mktemp; successful captures remain for asynchronous GUI readers.
+function pdiff() {
+  local diff_args=() option_ended=0
+  while [ "$#" -gt 0 ]; do
+    if ((! option_ended)) && is_help_arg "$1"; then
+      echo "pdiff: compare clipboard contents with a file
+  Usage: pdiff [diff options] file
+  Clipboard is left; file is right. Leading options/selectors match diff.
+  Examples: pdiff file; pdiff -delta2 file; pdiff -code file; pdiff -u file
+  Use -- before a leading-dash filename.
+  Snapshots remain in \${TMPDIR:-/tmp}/pdiff.* for GUI readers; remove when done."
+      return 0
+    fi
+    [ "$#" -eq 1 ] && break
+    [ "$1" = "--" ] && option_ended=1
+    diff_args+=("$1")
+    shift
+  done
+
+  if [ "$#" -ne 1 ]; then
+    echo "pdiff: requires a file; usage: pdiff [diff options] file" >&2
+    return 2
+  fi
+  if [ ! -f "$1" ]; then
+    echo "File not found: $1" >&2
+    return 1
+  fi
+
+  local clipboard_file capture_status
+  clipboard_file=$(mktemp "${TMPDIR:-/tmp}/pdiff.XXXXXX") || return $?
+  if paste > "$clipboard_file"; then
+    diff "${diff_args[@]}" "$clipboard_file" "$1"
+    return $?
+  else
+    capture_status=$?
+    command rm -f -- "$clipboard_file"
+    return "$capture_status"
+  fi
+}
+
 alias diff_delta1='diff -delta1'
+alias pdiff_delta1='pdiff -delta1'
 alias diff_delta2='diff -delta2'
+alias pdiff_delta2='pdiff -delta2'
 alias diff_code='diff -code'
+alias pdiff_code='pdiff -code'
 alias diff_zed='diff -zed'
+alias pdiff_zed='pdiff -zed'
 alias diff_z='diff -zed'
+alias pdiff_z='pdiff -zed'
 alias diff_winmerge='diff -winmerge'
+alias pdiff_winmerge='pdiff -winmerge'
 alias diff_smerge='diff -smerge'
+alias pdiff_smerge='pdiff -smerge'
 alias diff_sublime_merge='diff -smerge'
+alias pdiff_sublime_merge='pdiff -smerge'
 
 # SOURCE | software/scripts/bash-git-helpers.profile.bash
 
