@@ -93,6 +93,8 @@ describe("Git patch creation integration", () => {
       expect(result.status, result.stderr).toBe(0);
       expect(result.stdout).toContain("Latest Patch copied to clipboard");
       const exported = fs.readFileSync(path.join(folder, ".git/copied.patch"), "utf8");
+      expect(exported.split("\n")[1]).toBe("##################################################");
+      expect(exported.trimEnd().split("\n").at(-2)).toBe("##################################################");
       expect(exported).toContain("Subject: [PATCH] First change");
       expect(exported).toContain("+first\n");
       expect(exported).not.toContain("draft");
@@ -124,8 +126,12 @@ describe("Git patch boundary integration", () => {
     expect(result.status, result.stderr).toBe(0);
     const patch = fs.readFileSync(path.join(folder, "output.patch"), "utf8");
     const sha = git("rev-parse", "--short", "HEAD");
-    expect(patch.split("\n")[0]).toBe(`# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · acme/widget-store · patch 1 of 1 · ${sha}`);
-    expect(patch.trimEnd().split("\n").at(-1)).toBe(`# END SY_GIT_PATCH_BOUNDARY_v1 · acme/widget-store · patch 1 of 1 · ${sha}`);
+    expect(patch.split("\n")[0]).toBe(`# BEGIN SY_GIT_PATCH_BOUNDARY_v1 \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 ${sha}`);
+    expect(patch.split("\n")[1]).toBe("##################################################");
+    expect(patch.trimEnd().split("\n").at(-2)).toBe("##################################################");
+    expect(patch.trimEnd().split("\n").at(-1)).toBe(
+      `# END SY_GIT_PATCH_BOUNDARY_v1 \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 ${sha}`,
+    );
   });
 
   it.each([1, 2])("round-trips %i commits through the real applier", (count) => {
@@ -144,7 +150,7 @@ describe("Git patch boundary integration", () => {
     const patch = git("format-patch", "-1", "--stdout");
     fs.writeFileSync(
       path.join(folder, "legacy.patch"),
-      `# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · 1/1 · abc123 · unknown\n${patch}\n# END SY_GIT_PATCH_BOUNDARY_v1 · 1/1 · abc123 · unknown\n`,
+      `# BEGIN SY_GIT_PATCH_BOUNDARY_v1 \u00b7 1/1 \u00b7 abc123 \u00b7 unknown\n${patch}\n# END SY_GIT_PATCH_BOUNDARY_v1 \u00b7 1/1 \u00b7 abc123 \u00b7 unknown\n`,
     );
     git("checkout", "--detach", "HEAD~1");
     const result = shell('_git_patch_apply_file "$PWD/legacy.patch"');
@@ -164,9 +170,9 @@ describe("Git patch boundary integration", () => {
 
   it.each([
     ["", ""],
-    [" · acme/widget-store · 1/1 · abc123", " · other/widget-store · 9/99 · def456"],
-    [" · acme/widget-store · patch 1 of 1 · abc123", " · changed label"],
-    ["custom 🪨 label", "\tanything goes"],
+    [" \u00b7 acme/widget-store \u00b7 1/1 \u00b7 abc123", " \u00b7 other/widget-store \u00b7 9/99 \u00b7 def456"],
+    [" \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 abc123", " \u00b7 changed label"],
+    ["custom \u{1faa8} label", "\tanything goes"],
   ])("applies boundaries with display-only suffixes %s / %s", (begin, end) => {
     const patch = git("format-patch", "-1", "--stdout");
     fs.writeFileSync(
@@ -187,7 +193,7 @@ describe("Git patch boundary integration", () => {
     const second = git("format-patch", "-1", "--stdout");
     fs.writeFileSync(
       path.join(folder, "custom.patch"),
-      `# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n${first}\n# END SY_GIT_PATCH_BOUNDARY_v1 old\n# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · patch 99 of 99\n${second}\n# END SY_GIT_PATCH_BOUNDARY_v1\n`,
+      `# BEGIN SY_GIT_PATCH_BOUNDARY_v1\n${first}\n# END SY_GIT_PATCH_BOUNDARY_v1 old\n# BEGIN SY_GIT_PATCH_BOUNDARY_v1 \u00b7 patch 99 of 99\n${second}\n# END SY_GIT_PATCH_BOUNDARY_v1\n`,
     );
     git("checkout", "--detach", "HEAD~2");
     const result = shell('function prompt_yes_no() { printf "%s\\n" "$1"; }; _git_patch_apply_file "$PWD/custom.patch"');

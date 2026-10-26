@@ -699,6 +699,9 @@ function git_create_worktree() {
 # `# --- Title ---` section marker.
 _GIT_PATCH_COMMIT_MSG_FENCE="# --- SY_GIT_PATCH_COMMIT_MSG_FENCE ---"
 
+# Shared 50-hash display divider for plain patch sections and Base64 frames.
+_GIT_PATCH_DIVIDER="##################################################"
+
 # _git_patch_temp_file: echo a patch path inside a fresh throwaway folder
 function _git_patch_temp_file() {
   # A throwaway mktemp folder gives uniqueness for free — no timestamp, no
@@ -712,7 +715,7 @@ function _git_patch_temp_file() {
 # _git_patch_write: render the last N commits into a patch file (the only generator)
 #   $1 = output file, $2 = commit count (default 1)
 #   Every count uses one section per commit, oldest first, fenced by the versioned
-#   repo-labelled boundary marker; patch 1 is oldest and patch N is HEAD (apply order).
+#   repo-labelled boundary marker and shared dividers; patch 1 is oldest and patch N is HEAD (apply order).
 #   Returns 1 without truncating output when origin has no valid owner/repo.
 function _git_patch_write() {
   local patch_file="$1"
@@ -738,7 +741,9 @@ function _git_patch_write() {
     short_sha=$(git rev-parse --short "$sha")
     {
       echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha"
+      printf '%s\n' "$_GIT_PATCH_DIVIDER"
       git --no-pager format-patch -1 "$sha" --stdout | git patch-clean
+      printf '%s\n' "$_GIT_PATCH_DIVIDER"
       echo "# END SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha"
       echo ""
     } >> "$patch_file" 2> /dev/null || return 1
@@ -777,8 +782,8 @@ const magic = 'SY_GIT_PATCH_64_v2\n';
 const family = 'SY_GIT_PATCH_64';
 /** Display boundaries share the wire version but sit outside the encoded bytes. */
 const begin = '# BEGIN ' + magic.trim(), end = '# END ' + magic.trim();
-/** Human-visible separator immediately before and after each encoded payload. */
-const divider = '##################################################';
+/** Shared shell-defined separator immediately before and after each payload. */
+const divider = process.env._PATCH_64_DIVIDER;
 /** Reject malformed input without writing output; message is safe diagnostic text. */
 function fail(message) {
   process.stderr.write('patch_64: ' + message + '\n');
@@ -851,7 +856,7 @@ try {
   fail('cannot read or write Base64 envelope (' + error.code + ')');
 }
 _PATCH_64_EOF_
-  _PATCH_64_MODE="$1" _PATCH_64_INPUT="$2" _PATCH_64_OUTPUT="$3" node -e "$codec_js"
+  _PATCH_64_MODE="$1" _PATCH_64_INPUT="$2" _PATCH_64_OUTPUT="$3" _PATCH_64_DIVIDER="$_GIT_PATCH_DIVIDER" node -e "$codec_js"
 }
 
 # _git_patch_read_file: prepare $2 in plain/base64 format $1 for the shared applier.
@@ -1048,13 +1053,17 @@ function _git_patch_upload() {
 # reading the header alone silently commits every transferred patch as "applied patch".
 # Try the header first (uncleaned patches, RFC-2047 decoding), then the fence.
 # $1 is a patch file; prints its subject, or returns nonzero if the file is missing.
-# Remove outer boundaries before mailinfo so an encoded subject stays decodable.
+# Remove boundary headers and their leading divider before mailinfo decodes subjects.
 function _git_patch_subject() {
   local patch_file="$1"
   [ -f "$patch_file" ] || return 1
 
   local subject
-  subject=$(command sed '/^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/d' "$patch_file" \
+  subject=$(command awk -v divider="$_GIT_PATCH_DIVIDER" '
+    /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/ { boundary = 1; next }
+    boundary && $0 == divider { boundary = 0; next }
+    { boundary = 0; print }
+  ' "$patch_file" \
     | git mailinfo /dev/null /dev/null 2> /dev/null \
     | command grep "^Subject: " | sed 's/^Subject: //')
   if [ -n "$subject" ]; then

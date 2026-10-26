@@ -940,7 +940,9 @@ patch_plain_str 1             # export a plain diff instead
 patch_plain_str /tmp/fix.patch # apply an existing plain diff, then open the commit editor
 ```
 
-Both modes share one generator and one applier. Creation leaves staged, unstaged, and untracked work untouched.
+Both modes share one generator, one applier, and one 50-hash separator definition.
+Plain sections place matching separators immediately after BEGIN and immediately before END; Base64 frames use the same separators around their encoded payloads.
+Creation leaves staged, unstaged, and untracked work untouched.
 Without an upstream, creation warns and exports only the latest commit. Multiple commits retain the existing per-patch confirmation prompts.
 After application, the command copies the original commit message to the clipboard and opens the commit editor; paste the message there.
 A failed commit returns failure, even when the patch has already changed files.
