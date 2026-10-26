@@ -84,11 +84,14 @@ describe.each(["dark", "light"])("%s native consumption evidence", (mode) => {
 });
 
 it("records the native Sublime comment foreground and source for both appearances", () => {
-  expect(evidence.sublime.modes.map((record) => ({
-    mode: record.mode,
-    comment: record.grammars.flatMap((grammar) => grammar.scopes)
-      .find((scope) => scope.scope === "source.js comment.line.double-slash.js"),
-  }))).toMatchInlineSnapshot(`
+  expect(
+    evidence.sublime.modes.map((record) => ({
+      mode: record.mode,
+      comment: record.grammars
+        .flatMap((grammar) => grammar.scopes)
+        .find((scope) => scope.scope === "source.js comment.line.double-slash.js"),
+    })),
+  ).toMatchInlineSnapshot(`
     [
       {
         "comment": {

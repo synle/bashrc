@@ -89,10 +89,12 @@ describe("Vim shared theme deployment", () => {
 describe("Vim native theme consumer", () => {
   it("loads both palettes, semantic TSX links, and matching Lightline data", async () => {
     const selection = await getIndexFunction("_doVimTheme")([]);
-    const results = await Promise.all(["dark", "light"].map(async (appearance) => {
-      const { scheme, background, foreground, tag, mode } = await probeTheme(selection, appearance);
-      return { scheme, background, foreground, tag, mode: { left: mode.left } };
-    }));
+    const results = await Promise.all(
+      ["dark", "light"].map(async (appearance) => {
+        const { scheme, background, foreground, tag, mode } = await probeTheme(selection, appearance);
+        return { scheme, background, foreground, tag, mode: { left: mode.left } };
+      }),
+    );
     expect(results).toMatchInlineSnapshot(`
       [
         {
@@ -157,20 +159,22 @@ describe("Vim native theme consumer", () => {
 
   it.skipIf(!hasColorResponsePlugin)("selects matching palettes after late terminal replies from either appearance", async () => {
     const selection = await getIndexFunction("_doVimTheme")([]);
-    const results = await Promise.all([
-      ["dark", "ffff/ffff/ffff"],
-      ["light", "0000/0000/0000"],
-      ["dark", "0000/0000/0000"],
-      ["light", "ffff/ffff/ffff"],
-    ].map(async ([initial, rgb]) => {
-      const { scheme, background, foreground, tag } = await probeTheme(selection, initial, [
-        "set term=xterm",
-        "runtime plugin/colorresp.vim",
-        `call test_feedinput("\\e]11;rgb:${rgb}\\x07")`,
-        "call getchar(0)",
-      ]);
-      return { initial, rgb, scheme, background, foreground, tag };
-    }));
+    const results = await Promise.all(
+      [
+        ["dark", "ffff/ffff/ffff"],
+        ["light", "0000/0000/0000"],
+        ["dark", "0000/0000/0000"],
+        ["light", "ffff/ffff/ffff"],
+      ].map(async ([initial, rgb]) => {
+        const { scheme, background, foreground, tag } = await probeTheme(selection, initial, [
+          "set term=xterm",
+          "runtime plugin/colorresp.vim",
+          `call test_feedinput("\\e]11;rgb:${rgb}\\x07")`,
+          "call getchar(0)",
+        ]);
+        return { initial, rgb, scheme, background, foreground, tag };
+      }),
+    );
     expect(results).toMatchInlineSnapshot(`
       [
         {
@@ -234,7 +238,8 @@ describe("Vim native theme consumer", () => {
       const result = await probeTheme(selection, "light", [], {
         "owned-fixture": "let g:colors_name = 'owned-fixture'\nhighlight Normal guifg=#123456 guibg=#ffffff\n",
       });
-      expect({ scheme: result.scheme, background: result.background, ayu: result.ayu, foreground: result.foreground }).toMatchInlineSnapshot(`
+      expect({ scheme: result.scheme, background: result.background, ayu: result.ayu, foreground: result.foreground })
+        .toMatchInlineSnapshot(`
         {
           "ayu": "light",
           "background": "light",

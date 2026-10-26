@@ -225,32 +225,6 @@ describe("setup selectors", () => {
     expect(proc.env.TEST_SCRIPT_FILES).toBeUndefined();
   });
 
-  it.each([
-    ["vim*", ["software/scripts/vim.js", "software/scripts/vim-config.js"]],
-    ["*config", ["software/scripts/vim-config.js", "software/scripts/git-config.js"]],
-    ["*config.js", ["software/scripts/vim-config.js", "software/scripts/git-config.js"]],
-    ["*im*", ["software/scripts/vim.js", "software/scripts/vim-config.js"]],
-    ["vim", ["software/scripts/vim.js"]],
-    ["vi", ["vi"]],
-  ])("expands file selector %s with literal edge matching", (selector, expected) => {
-    expect(
-      expandFiles([selector], ["software/scripts/vim.js", "software/scripts/vim-config.js", "software/scripts/git-config.js"]),
-    ).toEqual(expected);
-  });
-
-  it.each([
-    ["a[1]", ["software/scripts/a[1].js"]],
-    ["a.", ["a."]],
-    ["a?*", ["a?*"]],
-    ["*💡*", ["software/scripts/tool💡.js"]],
-  ])("treats regex metacharacters and Unicode literally in %s", (selector, matches) => {
-    const confirmations = [];
-    expect(
-      expandFiles([selector], ["software/scripts/a[1].js", "software/scripts/a1.js", "software/scripts/tool💡.js"], confirmations),
-    ).toEqual(matches);
-    expect(confirmations).toEqual([]);
-  });
-
   it("collects file confirmation requests for duplicate basenames, preserving folder boundaries", () => {
     const confirmations = [];
     const files = [

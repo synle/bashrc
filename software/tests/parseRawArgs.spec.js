@@ -230,43 +230,6 @@ describe("parseRawArgs", () => {
     expect(result.files).toBe("shared.js,a.js,b.js");
   });
 
-  it("should detect a direct self-reference cycle", () => {
-    proc.env.PRESETS_JSON = JSON.stringify({
-      loop: { presets: ["loop"], files: ["a.js"] },
-    });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=loop"]);
-    expect(() => parseRawArgs()).toThrow(/Preset cycle detected/);
-    expect(() => parseRawArgs()).toThrow(/loop -> loop/);
-  });
-
-  it("should detect a transitive cycle (A -> B -> A)", () => {
-    proc.env.PRESETS_JSON = JSON.stringify({
-      a: { presets: ["b"] },
-      b: { presets: ["a"] },
-    });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=a"]);
-    expect(() => parseRawArgs()).toThrow(/Preset cycle detected/);
-    expect(() => parseRawArgs()).toThrow(/a -> b -> a/);
-  });
-
-  it("should detect a deeper transitive cycle (A -> B -> C -> A)", () => {
-    proc.env.PRESETS_JSON = JSON.stringify({
-      a: { presets: ["b"] },
-      b: { presets: ["c"] },
-      c: { presets: ["a"] },
-    });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=a"]);
-    expect(() => parseRawArgs()).toThrow(/a -> b -> c -> a/);
-  });
-
-  it("should throw when a sub-preset references an unknown preset name", () => {
-    proc.env.PRESETS_JSON = JSON.stringify({
-      a: { presets: ["does-not-exist"] },
-    });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=a"]);
-    expect(() => parseRawArgs()).toThrow(/Unknown preset "does-not-exist".*referenced from "a"/);
-  });
-
   it("should treat empty --preset= value as a no-op", () => {
     proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset="]);

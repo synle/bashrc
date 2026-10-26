@@ -49,7 +49,8 @@ describe("Pi settings and keybinding deployment", () => {
     await getIndexFunction("doWork")();
 
     const settings = JSON.parse(fileSystem[SETTINGS_PATH]);
-    expect({ showHardwareCursor: settings.showHardwareCursor, quietStartup: settings.quietStartup, customSetting: settings.customSetting }).toMatchInlineSnapshot(`
+    expect({ showHardwareCursor: settings.showHardwareCursor, quietStartup: settings.quietStartup, customSetting: settings.customSetting })
+      .toMatchInlineSnapshot(`
       {
         "customSetting": "kept",
         "quietStartup": false,

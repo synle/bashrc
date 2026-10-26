@@ -45,7 +45,12 @@ async function generatePreferences(oldSettings, windows) {
 describe("Windows Terminal requested window/tab preferences", () => {
   it.each([true, false])("writes the requested defaults for Windows=%s", async (windows) => {
     const settings = await generatePreferences({}, windows);
-    expect({ windowingBehavior: settings.windowingBehavior, tabSwitcherMode: settings.tabSwitcherMode, showTabsFullscreen: settings.showTabsFullscreen, newTabPosition: settings.newTabPosition }).toMatchInlineSnapshot(`
+    expect({
+      windowingBehavior: settings.windowingBehavior,
+      tabSwitcherMode: settings.tabSwitcherMode,
+      showTabsFullscreen: settings.showTabsFullscreen,
+      newTabPosition: settings.newTabPosition,
+    }).toMatchInlineSnapshot(`
       {
         "newTabPosition": "afterCurrentTab",
         "showTabsFullscreen": true,
@@ -66,7 +71,13 @@ describe("Windows Terminal requested window/tab preferences", () => {
       },
       true,
     );
-    expect({ windowingBehavior: settings.windowingBehavior, tabSwitcherMode: settings.tabSwitcherMode, showTabsFullscreen: settings.showTabsFullscreen, newTabPosition: settings.newTabPosition, alwaysOnTop: settings.alwaysOnTop }).toMatchInlineSnapshot(`
+    expect({
+      windowingBehavior: settings.windowingBehavior,
+      tabSwitcherMode: settings.tabSwitcherMode,
+      showTabsFullscreen: settings.showTabsFullscreen,
+      newTabPosition: settings.newTabPosition,
+      alwaysOnTop: settings.alwaysOnTop,
+    }).toMatchInlineSnapshot(`
       {
         "alwaysOnTop": true,
         "newTabPosition": "afterCurrentTab",

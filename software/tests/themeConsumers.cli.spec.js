@@ -125,7 +125,12 @@ describe("Gemini custom theme integration", () => {
     await getIndexFunction("_doGeminiSettingsWork")(geminiHome);
     const result = JSON.parse(fileSystem[`${geminiHome}/settings.json`]);
     expect(result.ui.theme).toBe("Sy Dark");
-    expect({ name: result.ui.customThemes["Sy Dark"].name, type: result.ui.customThemes["Sy Dark"].type, DarkGray: result.ui.customThemes["Sy Dark"].DarkGray, text: { secondary: result.ui.customThemes["Sy Dark"].text.secondary } }).toMatchInlineSnapshot(`
+    expect({
+      name: result.ui.customThemes["Sy Dark"].name,
+      type: result.ui.customThemes["Sy Dark"].type,
+      DarkGray: result.ui.customThemes["Sy Dark"].DarkGray,
+      text: { secondary: result.ui.customThemes["Sy Dark"].text.secondary },
+    }).toMatchInlineSnapshot(`
       {
         "DarkGray": "#6e6e6e",
         "name": "Sy Dark",
@@ -194,7 +199,10 @@ describe("Gemini custom theme integration", () => {
     });
     await getIndexFunction("_doGeminiSettingsWork")(geminiHome);
     const settings = JSON.parse(fileSystem[`${geminiHome}/settings.json`]);
-    expect({ ui: { theme: settings.ui.theme, customThemes: { foreign: { name: settings.ui.customThemes.foreign.name } } }, userPreference: settings.userPreference }).toMatchInlineSnapshot(`
+    expect({
+      ui: { theme: settings.ui.theme, customThemes: { foreign: { name: settings.ui.customThemes.foreign.name } } },
+      userPreference: settings.userPreference,
+    }).toMatchInlineSnapshot(`
       {
         "ui": {
           "customThemes": {

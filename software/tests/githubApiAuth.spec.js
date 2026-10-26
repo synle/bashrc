@@ -130,12 +130,15 @@ describe("fetchGitHubReleaseVersion", () => {
     // `class`, which is lexically scoped inside the vm script and never becomes a sandbox
     // property, so a constructor-identity check here would silently compare against
     // undefined and pass for any thrown value at all.
-    await expect(getIndexFunction("fetchGitHubReleaseVersion")("synle/url-porter")).rejects.toMatchInlineSnapshot({
-      name: "ScriptSkipError",
-    }, `
+    await expect(getIndexFunction("fetchGitHubReleaseVersion")("synle/url-porter")).rejects.toMatchInlineSnapshot(
+      {
+        name: "ScriptSkipError",
+      },
+      `
       {
         "name": "ScriptSkipError",
       }
-    `);
+    `,
+    );
   });
 });

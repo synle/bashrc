@@ -23,7 +23,17 @@ describe("Claude Sy themes", () => {
 
     const dark = JSON.parse(fileSystem[`${targetFolder}/themes/sy-dark.json`]);
     const light = JSON.parse(fileSystem[`${targetFolder}/themes/sy-light.json`]);
-    expect({ name: dark.name, base: dark.base, overrides: { claude: dark.overrides.claude, text: dark.overrides.text, error: dark.overrides.error, userMessageBackground: dark.overrides.userMessageBackground, selectionBg: dark.overrides.selectionBg } }).toMatchInlineSnapshot(`
+    expect({
+      name: dark.name,
+      base: dark.base,
+      overrides: {
+        claude: dark.overrides.claude,
+        text: dark.overrides.text,
+        error: dark.overrides.error,
+        userMessageBackground: dark.overrides.userMessageBackground,
+        selectionBg: dark.overrides.selectionBg,
+      },
+    }).toMatchInlineSnapshot(`
       {
         "base": "dark",
         "name": "Sy Dark",
@@ -36,7 +46,17 @@ describe("Claude Sy themes", () => {
         },
       }
     `);
-    expect({ name: light.name, base: light.base, overrides: { claude: light.overrides.claude, text: light.overrides.text, error: light.overrides.error, userMessageBackground: light.overrides.userMessageBackground, selectionBg: light.overrides.selectionBg } }).toMatchInlineSnapshot(`
+    expect({
+      name: light.name,
+      base: light.base,
+      overrides: {
+        claude: light.overrides.claude,
+        text: light.overrides.text,
+        error: light.overrides.error,
+        userMessageBackground: light.overrides.userMessageBackground,
+        selectionBg: light.overrides.selectionBg,
+      },
+    }).toMatchInlineSnapshot(`
       {
         "base": "light",
         "name": "Sy Light",
@@ -60,7 +80,7 @@ describe("Claude Sy themes", () => {
       await getIndexFunction("_doSettingsWork")(targetFolder);
 
       const deployedSettings = JSON.parse(fileSystem[`${targetFolder}/settings.json`]);
-    expect({ theme: deployedSettings.theme, env: { USER_SETTING: deployedSettings.env.USER_SETTING } }).toMatchInlineSnapshot(`
+      expect({ theme: deployedSettings.theme, env: { USER_SETTING: deployedSettings.env.USER_SETTING } }).toMatchInlineSnapshot(`
       {
         "env": {
           "USER_SETTING": "kept",
@@ -99,7 +119,16 @@ describe("Claude Sy themes", () => {
     await getIndexFunction("_doSettingsWork")(targetFolder);
 
     const dark = JSON.parse(fileSystem[`${targetFolder}/themes/ayu-dark.json`]);
-    expect({ name: dark.name, base: dark.base, overrides: { claude: dark.overrides.claude, text: dark.overrides.text, error: dark.overrides.error, userMessageBackground: dark.overrides.userMessageBackground } }).toMatchInlineSnapshot(`
+    expect({
+      name: dark.name,
+      base: dark.base,
+      overrides: {
+        claude: dark.overrides.claude,
+        text: dark.overrides.text,
+        error: dark.overrides.error,
+        userMessageBackground: dark.overrides.userMessageBackground,
+      },
+    }).toMatchInlineSnapshot(`
       {
         "base": "dark",
         "name": "Ayu Dark",
@@ -112,7 +141,16 @@ describe("Claude Sy themes", () => {
       }
     `);
     const light = JSON.parse(fileSystem[`${targetFolder}/themes/ayu-light.json`]);
-    expect({ name: light.name, base: light.base, overrides: { claude: light.overrides.claude, text: light.overrides.text, error: light.overrides.error, userMessageBackground: light.overrides.userMessageBackground } }).toMatchInlineSnapshot(`
+    expect({
+      name: light.name,
+      base: light.base,
+      overrides: {
+        claude: light.overrides.claude,
+        text: light.overrides.text,
+        error: light.overrides.error,
+        userMessageBackground: light.overrides.userMessageBackground,
+      },
+    }).toMatchInlineSnapshot(`
       {
         "base": "light",
         "name": "Ayu Light",

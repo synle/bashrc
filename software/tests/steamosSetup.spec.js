@@ -290,9 +290,8 @@ describe("SteamOS setup", () => {
     expect(shortcuts).toHaveLength(2);
     const { Exe, StartDir, LaunchOptions } = shortcuts.find((shortcut) => shortcut.AppName === "Moonlight");
     expect(Exe).toBe(`"${newExecutable}"`);
-    expect({ Exe: Exe.replace(home, "<home>"), StartDir, LaunchOptions }).toMatchInlineSnapshot(`
+    expect({ StartDir, LaunchOptions }).toMatchInlineSnapshot(`
       {
-        "Exe": ""<home>/Apps/Moonlight.AppImage"",
         "LaunchOptions": "--old",
         "StartDir": ""/old"",
       }

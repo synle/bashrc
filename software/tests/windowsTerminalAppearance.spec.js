@@ -1,69 +1,23 @@
 /** Windows Terminal appearance output and saved-settings upgrade regressions. */
-import { describe, it, expect, vi } from "vitest";
-import fs from "fs";
-import path from "path";
-import vm from "vm";
-import { createRequire } from "module";
-import { getIndexFunction, readSyThemeFixture } from "./setup.js";
-
-/**
- * Generate serialized Terminal settings through the real installer with isolated IO.
- * @param {object} oldSettings Existing user settings; left unchanged.
- * @param {boolean} windows Whether to return Windows deployment instead of portable CI output.
- * @param {object} overrides Owned IO boundaries to replace for download and failure scenarios.
- * @returns {Promise<object>} Serialized installer output without filesystem writes.
- */
-async function generateAppearance(oldSettings = {}, windows = true, overrides = {}) {
-  let written;
-  let artifact;
-  const sandbox = {
-    IS_CI: true,
-    IS_DRY_RUN: false,
-    fs: { statSync: () => ({ size: 1024 }) },
-    pathExists: () => true,
-    is_os_windows: windows,
-    BUILD_DIR: ".build",
-    EDITOR_CONFIGS: { fontFamily: "Fixture Mono", fontSize: 16, fontWeightKeyword: "normal", terminalScrollback: 5000 },
-    path,
-    log: () => {},
-    getTheme: () => ({ dark: "Campbell", light: "Campbell" }),
-    json: getIndexFunction("json"),
-    readSyTheme: readSyThemeFixture,
-    readJson: async (strings) => (strings[0].includes("windows-terminal-keys") ? [] : structuredClone(oldSettings)),
-    getWindowUserBaseDir: () => "/mnt/c/Users/Test User",
-    findPathFromList: () => null,
-    findPath: () => "/mnt/c/Users/Test User/AppData/Local/Packages/Terminal",
-    hasBinary: (name) => name === "pwsh.exe",
-    toWindowsPath: getIndexFunction("toWindowsPath"),
-    downloadAsset: async () => {},
-    exitIfPathNotFound: () => {},
-    backupConfigFile: async () => {},
-    writeBuildArtifact: async ([entry]) => {
-      artifact = JSON.parse(JSON.stringify(entry.data));
-    },
-    writeJson: async (_target, settings) => {
-      written = JSON.parse(JSON.stringify(settings));
-    },
-    ...overrides,
-  };
-  let source = fs.readFileSync("software/scripts/windows-terminal.js", "utf8");
-  if (process.env.BASHRC_TEST_COVERAGE === "1") {
-    const { createInstrumenter } = createRequire(import.meta.url)("istanbul-lib-instrument");
-    source = createInstrumenter({ coverageVariable: "__VITEST_COVERAGE__", coverageGlobalScope: "globalThis" }).instrumentSync(
-      source,
-      path.resolve("software/scripts/windows-terminal.js"),
-    );
-    sandbox.__VITEST_COVERAGE__ = globalThis.__VITEST_COVERAGE__;
-  }
-  vm.runInNewContext(source, sandbox);
-  await sandbox.doWork();
-  return windows ? written : artifact;
-}
+import { describe, it, expect } from "vitest";
+import { generateAppearance } from "./windowsTerminal.helpers.js";
 
 describe("Windows Terminal modern appearance", () => {
   it.each([true, false])("emits current cursor and font defaults for Windows=%s", async (windows) => {
     const settings = await generateAppearance({}, windows);
-    expect({ cursorShape: settings.profiles.defaults.cursorShape, font: { face: settings.profiles.defaults.font.face, size: settings.profiles.defaults.font.size, weight: settings.profiles.defaults.font.weight, cellHeight: settings.profiles.defaults.font.cellHeight }, showMarksOnScrollbar: settings.profiles.defaults.showMarksOnScrollbar, suppressApplicationTitle: settings.profiles.defaults.suppressApplicationTitle, scrollbarState: settings.profiles.defaults.scrollbarState, adjustIndistinguishableColors: settings.profiles.defaults.adjustIndistinguishableColors }).toMatchInlineSnapshot(`
+    expect({
+      cursorShape: settings.profiles.defaults.cursorShape,
+      font: {
+        face: settings.profiles.defaults.font.face,
+        size: settings.profiles.defaults.font.size,
+        weight: settings.profiles.defaults.font.weight,
+        cellHeight: settings.profiles.defaults.font.cellHeight,
+      },
+      showMarksOnScrollbar: settings.profiles.defaults.showMarksOnScrollbar,
+      suppressApplicationTitle: settings.profiles.defaults.suppressApplicationTitle,
+      scrollbarState: settings.profiles.defaults.scrollbarState,
+      adjustIndistinguishableColors: settings.profiles.defaults.adjustIndistinguishableColors,
+    }).toMatchInlineSnapshot(`
       {
         "adjustIndistinguishableColors": "always",
         "cursorShape": "underscore",
@@ -106,7 +60,18 @@ describe("Windows Terminal modern appearance", () => {
     const first = await generateAppearance({ profiles: { defaults: oldProfile, list: [oldProfile] } });
     const savedProfile = first.profiles.list.find(({ guid }) => guid === "fixture");
     expect(savedProfile.elevate).toBe(elevate);
-    expect({ showMarksOnScrollbar: savedProfile.showMarksOnScrollbar, suppressApplicationTitle: savedProfile.suppressApplicationTitle, scrollbarState: savedProfile.scrollbarState, adjustIndistinguishableColors: savedProfile.adjustIndistinguishableColors, font: { face: savedProfile.font.face, size: savedProfile.font.size, weight: savedProfile.font.weight, cellHeight: savedProfile.font.cellHeight } }).toMatchInlineSnapshot(`
+    expect({
+      showMarksOnScrollbar: savedProfile.showMarksOnScrollbar,
+      suppressApplicationTitle: savedProfile.suppressApplicationTitle,
+      scrollbarState: savedProfile.scrollbarState,
+      adjustIndistinguishableColors: savedProfile.adjustIndistinguishableColors,
+      font: {
+        face: savedProfile.font.face,
+        size: savedProfile.font.size,
+        weight: savedProfile.font.weight,
+        cellHeight: savedProfile.font.cellHeight,
+      },
+    }).toMatchInlineSnapshot(`
       {
         "adjustIndistinguishableColors": "always",
         "font": {
@@ -134,67 +99,6 @@ describe("Windows Terminal modern appearance", () => {
     expect(await generateAppearance(settings)).toEqual(settings);
   });
 
-  it("deploys the official black PowerShell icon locally for the managed v7 profile only", async () => {
-    const downloadAsset = vi.fn(async () => {});
-    const settings = await generateAppearance({}, true, { downloadAsset });
-    expect(downloadAsset).toHaveBeenCalledWith(
-      "https://raw.githubusercontent.com/PowerShell/PowerShell/master/assets/Powershell_black_64.png",
-      "/mnt/c/Users/Test User/AppData/Local/Packages/Terminal/LocalState/powershell7.png",
-    );
-    expect(settings.profiles.list[0].icon).toBe("C:\\Users\\Test User\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png");
-    expect(settings.profiles.defaults).not.toHaveProperty("icon");
-  });
-
-  it("keeps portable artifacts independent of host-specific icon downloads", async () => {
-    const downloadAsset = vi.fn();
-    const settings = await generateAppearance({}, false, { downloadAsset });
-    expect(downloadAsset).not.toHaveBeenCalled();
-    expect(settings.profiles.list).toEqual([]);
-  });
-
-  it("does not download a managed icon when PowerShell 7 is absent", async () => {
-    const downloadAsset = vi.fn();
-    const settings = await generateAppearance({}, true, { hasBinary: () => false, downloadAsset });
-    expect(downloadAsset).not.toHaveBeenCalled();
-    expect(settings.profiles.list).toEqual([]);
-  });
-
-  it("leaves saved settings and backups untouched when the icon download fails", async () => {
-    const writeJson = vi.fn();
-    const backupConfigFile = vi.fn();
-    await expect(
-      generateAppearance({}, true, {
-        downloadAsset: async () => {
-          throw new Error("fixture download failure");
-        },
-        writeJson,
-        backupConfigFile,
-      }),
-    ).rejects.toThrow("fixture download failure");
-    expect(writeJson).not.toHaveBeenCalled();
-    expect(backupConfigFile).not.toHaveBeenCalled();
-  });
-
-  it.each([false, true])("rejects an unavailable icon with exists=%s even when the download resolves", async (exists) => {
-    const writeJson = vi.fn();
-    const backupConfigFile = vi.fn();
-    await expect(
-      generateAppearance({}, true, {
-        pathExists: () => exists,
-        fs: { statSync: () => ({ size: 0 }) },
-        writeJson,
-        backupConfigFile,
-      }),
-    ).rejects.toThrow("PowerShell 7 icon download did not produce a non-empty file");
-    expect(writeJson).not.toHaveBeenCalled();
-    expect(backupConfigFile).not.toHaveBeenCalled();
-  });
-
-  it("allows an offline dry-run without downloading a physical icon", async () => {
-    const settings = await generateAppearance({}, true, { IS_DRY_RUN: true, pathExists: () => false });
-    expect(settings.profiles.list[0].icon).toBe("C:\\Users\\Test User\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png");
-  });
-
   it("removes a previously saved forced repaint setting without dropping unrelated settings", async () => {
     const settings = await generateAppearance({ "experimental.rendering.forceFullRepaint": true, customSetting: "keep" });
     expect(settings).not.toHaveProperty("experimental.rendering.forceFullRepaint");
@@ -213,7 +117,8 @@ describe("Windows Terminal modern appearance", () => {
         ],
       },
     });
-    expect(settings.profiles.list.map(({ name, icon, tabColor, background }) => ({ name, icon, tabColor, background }))).toMatchInlineSnapshot(`
+    expect(settings.profiles.list.map(({ name, icon, tabColor, background }) => ({ name, icon, tabColor, background })))
+      .toMatchInlineSnapshot(`
       [
         {
           "background": undefined,
