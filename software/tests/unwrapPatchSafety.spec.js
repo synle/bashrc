@@ -136,7 +136,7 @@ describe("raw clipboard path", () => {
   it("git_patch_create copies raw", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     // The patch is rendered to a file once, then both the clipboard and stdout are
-    // served from that file — but the clipboard hop is still the raw one.
+    // served from that file, but the clipboard hop is still the raw one.
     expect(source).toContain('git --no-pager format-patch -1 "$sha" --stdout | git patch-clean');
     expect(source).toContain('copy --raw "$patch_file"');
     expect(source).not.toMatch(/^\s*copy "\$patch_file"\s*$/m);
@@ -177,10 +177,11 @@ describe("raw clipboard path", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     expect(source).toContain('patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1" "$patch_file"');
     expect(source).toContain('output = folder "/patch-" patch_number ".patch"');
-    expect(source).toContain(
-      'if [ "$patch_count" -gt 1 ] && ! prompt_yes_no "$(printf \'\\033[0;31mApplying patch %s/%s: Continue?\\033[0m\'',
-    );
-    expect(source).toContain('if ! _git_patch_apply_file "$patch_part"; then');
+    expect(source).toContain('metadata = folder "/patch-" patch_number ".meta"');
+    expect(source).toContain('if [ -n "$mismatch_prompt" ] && ! prompt_yes_no "$mismatch_prompt" N; then');
+    expect(source).toContain('_git_patch_prompt_choice "$choice_prompt"');
+    expect(source).toContain('case "$choice_status" in');
+    expect(source).toContain('if ! _git_patch_apply_file "$patch_part" "$patch_metadata"; then');
     expect(source).toContain('command rm -rf "$patch_folder"');
   });
 
@@ -193,7 +194,7 @@ describe("raw clipboard path", () => {
 
   it("wraps one generated commit with the same versioned boundary", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
-    expect(source).toContain('echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha');
+    expect(source).toContain('echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 \u00b7 $repo_slug \u00b7 patch $index of $count \u00b7 $short_sha');
     expect(source).toContain("function _git_patch_create_unpushed()");
     expect(source).toContain("git rev-list --count '@{upstream}..HEAD'");
     expect(source).toContain("branch has no upstream; generating only the latest commit");
@@ -224,7 +225,7 @@ describe("saved patch files", () => {
     // go through _git_patch_temp_file.
     expect(mktempFolders.length).toBe(1);
 
-    // No hand-rolled destination folder, and no timestamped file name — the
+    // No hand-rolled destination folder or timestamped file name; the
     // random mktemp folder is the only uniqueness mechanism.
     expect(source).not.toMatch(/patch_folder="\$\{BASHRC_TEMP_ROOT_DIR/);
     expect(source).not.toMatch(/patch_file=.*\$\(date /);
@@ -244,11 +245,11 @@ describe("saved patch files", () => {
     expect(source).toContain('print_action_summary --run-folder="$repo_root" "$patch_file" git_patch_apply');
 
     // The bug this pins: `git apply` resolves paths relative to the repo, but the
-    // default action-summary block cds to the folder holding the target file — a
+    // default action-summary block cds to the folder holding the target file, a
     // throwaway /tmp/patch-XXXXXX. Following the printed block verbatim landed you
     // outside any git repo, where every hunk failed with "No such file or directory"
     // and the patch itself looked corrupt.
-    expect(source, "the cd target must be overridden — the bare form cds to the /tmp patch folder").not.toContain(
+    expect(source, "the cd target must be overridden; the bare form cds to the /tmp patch folder").not.toContain(
       'print_action_summary "$patch_file" git_patch_apply',
     );
   });

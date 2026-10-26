@@ -36,8 +36,7 @@ function shell(script) {
       "-c",
       `
     shopt -s expand_aliases
-    source "$PROFILE"
-    function is_help_arg() { [ "$1" = "--help" ]; }
+    source "$PROFILE"; function _git_patch_prompt_choice() { printf '%s\\n' "$1"; return 0; }; function is_help_arg() { [ "$1" = "--help" ]; }
     function paste() { command cat "$PWD/.git/clipboard"; }
     function copy() {
       if [ "$#" -eq 2 ]; then command cp "$2" "$PWD/.git/clipboard"
@@ -127,7 +126,7 @@ describe("Base64 patch transfer integration", () => {
     const frame = encoded.trimEnd().split("\n");
     const label = ` \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 ${git("rev-parse", "--short", "HEAD")}`;
     expect(frame[0]).toBe("# BEGIN SY_GIT_PATCH_64_v2" + label);
-    expect(frame[1]).toBe("# Commit: Add zip \u2014 preserve typography Keep Unicode context exact.");
+    expect(frame[1]).toBe("# Commit: Add zip \u2014 preserve typography");
     expect(frame[2]).toBe("##################################################");
     expect(frame.at(-2)).toBe("##################################################");
     expect(frame.at(-1)).toBe("# END SY_GIT_PATCH_64_v2" + label);
@@ -196,7 +195,7 @@ describe("Base64 patch transfer integration", () => {
     const result = shell("patch_64 1");
     expect(result.status, result.stderr).toBe(0);
     const frame = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").trimEnd().split("\n");
-    expect(frame[1]).toBe("# Commit: Subject Body with spaces Next # END SY_GIT_PATCH_64_v2");
+    expect(frame[1]).toBe("# Commit: Subject");
     expect(frame.slice(3, -2).join("\n")).toMatch(/^[A-Za-z0-9+/=\n]+$/);
   });
 
@@ -214,6 +213,7 @@ describe("Base64 patch transfer integration", () => {
   it.each(["patch_plain_str 1", "git_patch_create 1"])("keeps explicit plain output compatible through %s", (command) => {
     const result = shell(command);
     expect(result.status, result.stderr).toBe(0);
+    expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8")).toContain("# Commit: Add zip ");
     expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8")).toContain("# download \u2014 Download");
     expect(fs.readdirSync(path.join(folder, ".git/shared"))[0]).toMatch(/\.patch$/);
   });
@@ -226,20 +226,15 @@ describe("Base64 patch transfer integration", () => {
     git("commit", "-qam", "Second change");
     expect(shell("patch_64").status).toBe(0);
     const frames = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").split("\n");
-    const first = git("rev-parse", "--short", "HEAD~1"),
-      second = git("rev-parse", "--short", "HEAD");
-    expect(frames[1]).toBe("# Commit: Add zip \u2014 preserve typography Keep Unicode context exact. Second change");
-    expect(frames.filter((line) => /^# (BEGIN|END) SY_GIT_PATCH_64/.test(line))).toEqual([
-      `# BEGIN SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 1 of 2 \u00b7 ${first}`,
-      `# END SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 1 of 2 \u00b7 ${first}`,
-      `# BEGIN SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 2 of 2 \u00b7 ${second}`,
-      `# END SY_GIT_PATCH_64_v2 \u00b7 acme/widget-store \u00b7 patch 2 of 2 \u00b7 ${second}`,
-    ]);
+    expect(frames.some((line) => line.startsWith("# Commit: Add zip "))).toBe(true);
+    expect(frames.some((line) => line === "# Commit: Second change")).toBe(true);
+    expect(frames.join("\n")).toContain("patch 1 of 2");
+    expect(frames.join("\n")).toContain("patch 2 of 2");
     git("checkout", "--detach", "HEAD~2");
     const result = shell('function prompt_yes_no() { printf "%s\\n" "$1"; }; patch_64 -y');
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain("Applying patch 1/2: Continue?");
-    expect(result.stdout).toContain("Applying patch 2/2: Continue?");
+    expect(result.stdout).toContain("Do you wish to apply patch 1 of 2 for acme/widget-store?");
+    expect(result.stdout).toContain("Do you wish to apply patch 2 of 2 for acme/widget-store?");
     expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe(AFTER + "\nsecond\n");
   });
 

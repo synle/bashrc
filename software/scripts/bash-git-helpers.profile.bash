@@ -712,35 +712,46 @@ function _git_patch_temp_file() {
   echo "$patch_folder/${1:-patch.patch}"
 }
 
-# _git_patch_write: render the last N commits into a patch file (the only generator)
-#   $1 = output file, $2 = commit count (default 1)
-#   Every count uses one section per commit, oldest first, fenced by the versioned
-#   repo-labelled boundary marker and shared dividers; patch 1 is oldest and patch N is HEAD (apply order).
-#   Returns 1 without truncating output when origin has no valid owner/repo.
-function _git_patch_write() {
-  local patch_file="$1"
-  local count="${2:-1}"
-  local shas
-  shas=$(git rev-list --reverse -n "$count" HEAD 2> /dev/null) || return 1
-  [ -n "$shas" ] || return 1
-
-  local remote_url repo_slug
-  remote_url=$(git remote get-url origin 2> /dev/null)
+# _git_patch_repo_slug: normalize a remote URL to owner/repo.
+# $1 is an optional remote URL; otherwise reads origin. Returns nonzero for invalid remotes.
+function _git_patch_repo_slug() {
+  local remote_url
+  if [ "$#" -gt 0 ]; then
+    remote_url="$1"
+  else
+    remote_url=$(git remote get-url origin 2> /dev/null) || return 1
+  fi
   remote_url="${remote_url%/}"
   remote_url="${remote_url%.git}"
   if [[ "$remote_url" =~ [:/]([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)$ ]]; then
-    repo_slug="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
-  else
+    printf '%s/%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+    return 0
+  fi
+  return 1
+}
+
+# _git_patch_write: render the last N commits into a patch file (the only generator).
+# $1 is output file; $2 is commit count. Writes oldest-first repo labels and commit subjects.
+# Returns nonzero when commits or the origin owner/repo cannot be resolved.
+function _git_patch_write() {
+  local patch_file="$1" count="${2:-1}" shas remote_url repo_slug
+  shas=$(git rev-list --reverse -n "$count" HEAD 2> /dev/null) || return 1
+  [ -n "$shas" ] || return 1
+  remote_url=$(git remote get-url origin 2> /dev/null) || remote_url=""
+  if ! repo_slug=$(_git_patch_repo_slug "$remote_url"); then
     echo ">>> could not resolve origin owner/repo for patch boundaries" >&2
     return 1
   fi
   : > "$patch_file"
-  local index=0 sha short_sha
+  local index=0 sha short_sha commit_subject
   while IFS= read -r sha; do
     index=$((index + 1))
-    short_sha=$(git rev-parse --short "$sha")
+    short_sha=$(git rev-parse --short "$sha") || return 1
+    commit_subject=$(git log -1 --format=%s "$sha") || return 1
+    commit_subject=$(printf '%s' "$commit_subject" | command tr '\001-\037\177' ' ')
     {
       echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha"
+      echo "# Commit: $commit_subject"
       printf '%s\n' "$_GIT_PATCH_DIVIDER"
       git --no-pager format-patch -1 "$sha" --stdout | git patch-clean
       printf '%s\n' "$_GIT_PATCH_DIVIDER"
@@ -761,7 +772,7 @@ function _git_patch_looks_like_patch() {
 }
 
 # _git_patch_64_codec: encode/decode $2 into $3 with an embedded SHA-256 digest.
-# $1 is encode or decode; _PATCH_64_MESSAGE supplies the display-only export preview.
+# $1 is encode or decode; exports take each display preview from its patch boundary.
 # Exports use one repo/order/SHA-labelled frame per section, with Commit preview
 # and paired dividers. Decoding pairs marker prefixes only; suffixes are display-only.
 # Accepts frame sequences, older previews without dividers, and bare Base64.
@@ -792,9 +803,6 @@ function fail(message) {
 try {
   const input = fs.readFileSync(process.env._PATCH_64_INPUT);
   if (process.env._PATCH_64_MODE === 'encode') {
-    const preview = process.env._PATCH_64_MESSAGE.split(/\r?\n/)
-      .filter(line => !/^\s*Co-authored-by:/i.test(line)).join(' ')
-      .replace(/[\s\x00-\x1f\x7f-\x9f]+/g, ' ').trim();
     // Latin-1 slicing preserves every patch byte; labels alone are UTF-8 text.
     const source = input.toString('latin1');
     const sections = [...source.matchAll(/^# BEGIN SY_GIT_PATCH_BOUNDARY_v1([^\n]*)\n[\s\S]*?^# END SY_GIT_PATCH_BOUNDARY_v1\1\n\n/gm)];
@@ -805,6 +813,10 @@ try {
       const patch = Buffer.from(section[0], 'latin1');
       const label = Buffer.from(section[1], 'latin1').toString('utf8');
       const digest = crypto.createHash('sha256').update(patch).digest('hex');
+      const commitLine = section[0].match(/^# Commit: ([^\n]*)$/m);
+      const preview = commitLine
+        ? Buffer.from(commitLine[1], 'latin1').toString('utf8').replace(/[\x00-\x1f\x7f-\x9f]/g, ' ').trim()
+        : '';
       const encoded = Buffer.concat([Buffer.from(magic + digest + '\n'), patch]).toString('base64');
       return begin + label + '\n# Commit: ' + preview + '\n' + divider + '\n' + encoded.match(/.{1,76}/g).join('\n') + '\n' + divider + '\n' + end + label + '\n';
     });
@@ -931,90 +943,194 @@ function _git_patch_apply_clipboard() {
   _git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
 }
 
-# _git_patch_apply_file: the only applier — prompt between fenced patches, then
-# clean when it can, --reject when it must. $1 = patch file; boundary suffixes are
-# display-only. Returns non-zero on unpaired/nested boundaries or rejected hunks;
-# validates all pairs before changing the working tree.
-function _git_patch_apply_file() {
-  local patch_file="$1"
-
-  # Fenced files split before applying so each commit sees the tree left by its
-  # predecessor. Validate pair structure, not labels that may have been edited.
-  local patch_count
-  patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1" "$patch_file" 2> /dev/null)
-  if [ "${patch_count:-0}" -gt 0 ] || command grep -q "^# END SY_GIT_PATCH_BOUNDARY_v1" "$patch_file"; then
-    local patch_folder patch_index patch_part
-    patch_folder=$(command dirname "$(_git_patch_temp_file multi.patch)") || return 1
-    command awk -v folder="$patch_folder" '
-      BEGIN { valid = 1 }
-      /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/ {
-        if (inside) {
-          valid = 0
-          next
-        }
-        inside = 1
-        patch_number++
-        output = folder "/patch-" patch_number ".patch"
-        next
+# _git_patch_boundary_repo: parse a safe owner/repo slug from a saved boundary line.
+# $1 is the one-line metadata file; prints an empty string when the label is legacy or invalid.
+function _git_patch_boundary_repo() {
+  local metadata_file="$1"
+  command awk '
+    /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/ {
+      header = $0
+      sub(/^# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · /, "", header)
+      if (match(header, / · patch [0-9][0-9]* of [0-9][0-9]* · [[:xdigit:]]+$/)) {
+        repo = substr(header, 1, RSTART - 1)
+        if (repo ~ /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/) print repo
       }
-      /^# END SY_GIT_PATCH_BOUNDARY_v1/ {
-        if (!inside) {
-          valid = 0
-          next
-        }
-        inside = 0
-        close(output)
-        next
-      }
-      inside { print > output }
-      END {
-        if (inside || !valid || patch_number == 0) exit 1
-      }
-    ' "$patch_file" || {
-      echo ">>> patch boundary metadata is malformed" >&2
-      command rm -rf "$patch_folder"
-      return 1
+      exit
     }
+  ' "$metadata_file"
+}
 
-    patch_index=0
-    while [ "$patch_index" -lt "$patch_count" ]; do
-      patch_index=$((patch_index + 1))
-      patch_part="$patch_folder/patch-$patch_index.patch"
-      if [ ! -s "$patch_part" ]; then
-        echo ">>> patch $patch_index/$patch_count is empty or malformed" >&2
-        command rm -rf "$patch_folder"
-        return 1
-      fi
-      if [ "$patch_count" -gt 1 ] && ! prompt_yes_no "$(printf '\033[0;31mApplying patch %s/%s: Continue?\033[0m' "$patch_index" "$patch_count")" N; then
-        echo ">>> patch apply stopped before patch $patch_index/$patch_count" >&2
-        command rm -rf "$patch_folder"
-        return 1
-      fi
-      if ! _git_patch_apply_file "$patch_part"; then
-        command rm -rf "$patch_folder"
-        return 1
-      fi
-    done
-    command rm -rf "$patch_folder"
-    return 0
+# _git_patch_boundary_commit: read a display subject, falling back to the patch headers.
+# $1 is a decoded patch part; prints one sanitized commit subject or a placeholder.
+function _git_patch_boundary_commit() {
+  local patch_file="$1" subject
+  subject=$(command awk '
+    /^# Commit: / { sub(/^# Commit: /, ""); print; exit }
+  ' "$patch_file")
+  if [ -z "$subject" ]; then
+    subject=$(_git_patch_subject "$patch_file") || subject=""
+  fi
+  subject=$(printf '%s' "$subject" | command tr '\001-\037\177' ' ')
+  printf '%s\n' "${subject:-unknown commit message}"
+}
+
+# _git_patch_prompt_choice: return 0 to apply, 1 to skip, or 2 to quit.
+# $1 is the prompt; reads /dev/tty and defaults to Yes on Enter, or quits on EOF.
+function _git_patch_prompt_choice() {
+  local prompt="$1" reply
+  if ! (: < /dev/tty) 2> /dev/null; then
+    echo "patch: no terminal available for the per-patch decision; stopping" >&2
+    return 2
+  fi
+  while :; do
+    if ! IFS= read -r -p "$prompt " reply < /dev/tty; then
+      return 2
+    fi
+    reply=$(printf '%s' "$reply" | command tr '[:upper:]' '[:lower:]')
+    reply=$(printf '%s' "$reply" | command sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    case "$reply" in
+    '' | y | yes) return 0 ;;
+    n | no) return 1 ;;
+    q | quit) return 2 ;;
+    esac
+    printf 'Enter y, n, or q.\n' > /dev/tty
+  done
+}
+
+# _git_patch_record_applied: count a successful patch and retain the first full message.
+# $1 is the applied patch file; updates shared state for the bundle-level commit step.
+function _git_patch_record_applied() {
+  _GIT_PATCH_APPLIED_PATCH_COUNT=$((${_GIT_PATCH_APPLIED_PATCH_COUNT:-0} + 1))
+  if [ "$_GIT_PATCH_APPLIED_PATCH_COUNT" -eq 1 ]; then
+    _GIT_PATCH_FIRST_APPLIED_MESSAGE=$(_git_patch_message "$1")
+  fi
+}
+
+# _git_patch_apply_file: validate and apply every framed patch through one applier.
+# $1 is a patch file; $2 is an optional boundary metadata file for an extracted section.
+# Returns nonzero for malformed bundles, quit, or rejected hunks; earlier applied hunks remain.
+function _git_patch_apply_file() {
+  local patch_file="$1" boundary_file="${2:-}"
+
+  if [ -z "$boundary_file" ]; then
+    _GIT_PATCH_APPLIED_PATCH_COUNT=0
+    _GIT_PATCH_FIRST_APPLIED_MESSAGE=""
   fi
 
-  # Dry-run first so a corrupt or already-applied patch is named as such before
-  # anything touches the working tree.
+  # Split and validate every boundary before prompting or changing the working tree.
+  local patch_count=0
+  if [ -z "$boundary_file" ]; then
+    patch_count=$(command grep -c "^# BEGIN SY_GIT_PATCH_BOUNDARY_v1" "$patch_file" 2> /dev/null)
+    if [ "${patch_count:-0}" -gt 0 ] || command grep -q "^# END SY_GIT_PATCH_BOUNDARY_v1" "$patch_file"; then
+      local patch_folder patch_index patch_part patch_metadata current_repo patch_repo patch_subject patch_repo_label mismatch_prompt choice_prompt choice_status
+      patch_folder=$(command dirname "$(_git_patch_temp_file multi.patch)") || return 1
+      command awk -v folder="$patch_folder" '
+        BEGIN { valid = 1 }
+        /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/ {
+          if (inside) {
+            valid = 0
+            next
+          }
+          inside = 1
+          patch_number++
+          output = folder "/patch-" patch_number ".patch"
+          metadata = folder "/patch-" patch_number ".meta"
+          print $0 > metadata
+          close(metadata)
+          next
+        }
+        /^# END SY_GIT_PATCH_BOUNDARY_v1/ {
+          if (!inside) {
+            valid = 0
+            next
+          }
+          inside = 0
+          close(output)
+          next
+        }
+        inside { print > output }
+        END {
+          if (inside || !valid || patch_number == 0) exit 1
+        }
+      ' "$patch_file" || {
+        echo ">>> patch boundary metadata is malformed" >&2
+        command rm -rf "$patch_folder"
+        return 1
+      }
+
+      current_repo=$(_git_patch_repo_slug) || current_repo=""
+      patch_index=0
+      while [ "$patch_index" -lt "$patch_count" ]; do
+        patch_index=$((patch_index + 1))
+        patch_part="$patch_folder/patch-$patch_index.patch"
+        patch_metadata="$patch_folder/patch-$patch_index.meta"
+        if [ ! -s "$patch_part" ]; then
+          echo ">>> patch $patch_index/$patch_count is empty or malformed" >&2
+          command rm -rf "$patch_folder"
+          return 1
+        fi
+
+        patch_repo=$(_git_patch_boundary_repo "$patch_metadata")
+        mismatch_prompt=""
+        if [ -z "$patch_repo" ]; then
+          mismatch_prompt="Patch repository is not identified in this legacy boundary; current repository is '${current_repo:-unknown (origin unavailable)}'. Continue applying this patch?"
+        elif [ -z "$current_repo" ]; then
+          mismatch_prompt="Patch repository '$patch_repo' cannot be matched because the current origin repository is unavailable. Continue applying this patch?"
+        elif [ "$patch_repo" != "$current_repo" ]; then
+          mismatch_prompt="Patch repository '$patch_repo' does not match current repository '$current_repo'. Continue applying this patch?"
+        fi
+        if [ -n "$mismatch_prompt" ] && ! prompt_yes_no "$mismatch_prompt" N; then
+          echo ">>> skipped patch $patch_index/$patch_count after repository mismatch"
+          continue
+        fi
+
+        patch_repo_label="${patch_repo:-unknown repository}"
+        patch_subject=$(_git_patch_boundary_commit "$patch_part")
+        choice_prompt=$(printf 'Do you wish to apply patch %s of %s for %s?\nCommit: %s\nChoose [quit/n/Y]' "$patch_index" "$patch_count" "$patch_repo_label" "$patch_subject")
+        _git_patch_prompt_choice "$choice_prompt"
+        choice_status=$?
+        case "$choice_status" in
+        0) ;;
+        1)
+          echo ">>> skipped patch $patch_index/$patch_count"
+          continue
+          ;;
+        *)
+          echo ">>> patch application quit before patch $patch_index/$patch_count" >&2
+          if [ "${_GIT_PATCH_APPLIED_PATCH_COUNT:-0}" -gt 0 ]; then
+            echo ">>> earlier patches remain in the working tree and are not committed" >&2
+          fi
+          command rm -rf "$patch_folder"
+          return 1
+          ;;
+        esac
+
+        if ! _git_patch_apply_file "$patch_part" "$patch_metadata"; then
+          command rm -rf "$patch_folder"
+          return 1
+        fi
+      done
+      command rm -rf "$patch_folder"
+      return 0
+    fi
+  fi
+
+  # Dry-run first so a corrupt or already-applied patch is named before the tree changes.
   if git apply --check "$patch_file" 2> /dev/null; then
     git apply --whitespace=fix "$patch_file" || return 1
+    _git_patch_record_applied "$patch_file"
     echo ">>> patch applied cleanly $patch_file"
     return 0
   fi
 
   echo ">>> $patch_file does not apply cleanly — retrying with --reject" >&2
   git apply --reject --whitespace=fix "$patch_file" && {
+    _git_patch_record_applied "$patch_file"
     echo ">>> patch applied $patch_file"
     return 0
   }
 
-  # --reject exits non-zero when any hunk was rejected, having still applied the
-  # rest. Say that out loud: the tree is half-patched and .rej files are waiting.
+  # --reject may leave applied hunks plus .rej files; report the partial state explicitly.
   echo ">>> patch partially applied — resolve the .rej files, nothing was committed" >&2
   return 1
 }
@@ -1061,6 +1177,7 @@ function _git_patch_subject() {
   local subject
   subject=$(command awk -v divider="$_GIT_PATCH_DIVIDER" '
     /^# BEGIN SY_GIT_PATCH_BOUNDARY_v1/ { boundary = 1; next }
+    boundary && /^# Commit: / { next }
     boundary && $0 == divider { boundary = 0; next }
     { boundary = 0; print }
   ' "$patch_file" \
@@ -1116,15 +1233,15 @@ function _git_patch_message() {
   } | command grep -v -i "co-authored-by"
 }
 
-# _git_patch_copy_message: put a patch's commit message on the clipboard, ready to paste
-# `copy --raw` is required — unwrap() joins wrapped-looking lines and would collapse a
-# multi-line commit body into one paragraph.
-# $1 is a decoded patch file; returns nonzero if the message is absent or copy fails.
+# _git_patch_copy_message: put a patch's commit message on the clipboard, ready to paste.
+# $1 is a decoded patch file; $2 optionally supplies its already parsed full message.
+# Returns nonzero when the message is absent or copying fails.
 function _git_patch_copy_message() {
-  local patch_file="$1"
+  local patch_file="$1" message="${2:-}"
 
-  local message
-  message=$(_git_patch_message "$patch_file")
+  if [ -z "$message" ]; then
+    message=$(_git_patch_message "$patch_file")
+  fi
   if [ -z "$message" ]; then
     echo ">>> patch carries no fenced commit message — clipboard left alone" >&2
     return 1
@@ -1135,15 +1252,12 @@ function _git_patch_copy_message() {
   printf '%s\n' "$message"
 }
 
-# _git_patch_commit_applied: the post-apply half of `patch` — message to clipboard, then commit
-# `git aac` stages all non-ignored changes, including files created by the patch and
-# unrelated work. It delegates to git c, preserving that alias's hook behavior.
-# The commit stays interactive so the copied message can be pasted and edited.
-# $1 is the decoded patch file; returns nonzero on message-copy or commit failure.
+# _git_patch_commit_applied: copy the first applied patch's message, then commit the bundle.
+# $1 is the decoded bundle; returns nonzero on message-copy or commit failure.
 function _git_patch_commit_applied() {
   local patch_file="$1"
 
-  _git_patch_copy_message "$patch_file" || return 1
+  _git_patch_copy_message "$patch_file" "${_GIT_PATCH_FIRST_APPLIED_MESSAGE:-}" || return 1
   echo ">>> staging all non-ignored changes with git aac — paste the message in the editor"
   git aac
 }
@@ -1250,9 +1364,8 @@ function git_patch_create() {
 }
 
 # _git_patch_create: generate once, then encode before all transports when requested.
-# $1 is plain/base64, $2 is count (default 1); Base64 adds markers and a one-line
-# preview of the selected commit messages. Returns nonzero on generation, message
-# lookup, encoding, or clipboard failure; preserves the repository and raw patch.
+# $1 is plain/base64; $2 is count (default 1). Both formats carry one subject preview per patch.
+# Returns nonzero on generation, encoding, or clipboard failure; preserves repository state.
 function _git_patch_create() {
   local format="$1"
   shift
@@ -1295,9 +1408,7 @@ function _git_patch_create() {
   fi
 
   if [ "$format" = base64 ]; then
-    local message
-    message=$(git --no-pager log --reverse -n "${1:-1}" --format=%B) || return 1
-    _PATCH_64_MESSAGE="$message" _git_patch_64_codec encode "$patch_file" "${patch_file}.b64" || return 1
+    _git_patch_64_codec encode "$patch_file" "${patch_file}.b64" || return 1
     patch_file="${patch_file}.b64"
   fi
 
@@ -1419,11 +1530,11 @@ function _git_patch_transfer() {
   Usage: $name [-y] [count | patch_file]
   Format: $format. patch is an alias for patch_64; use patch_plain_str for plain diffs.
   Base64 wraps version + SHA-256 + original patch bytes; verification precedes apply.
-  Exports add matching BEGIN/END markers and a one-line commit-message preview.
+  Both formats label each patch with its repository and commit subject.
   Apply accepts the complete marked block or legacy bare Base64; previews are display-only.
   Base64 is not encryption or authentication. Plain input is not accepted by patch_64.
   Options:
-    -y, --yes  skip only the clipboard apply prompt
+    -y, --yes  skip only the clipboard apply prompt; patch and repository prompts remain
   Resolution order:
     1. positive count -> export last N commits, oldest first, with commit boundaries
     2. file -> apply it in this command's format
@@ -1433,8 +1544,10 @@ function _git_patch_transfer() {
   Creation exports committed changes only; staged, unstaged, and untracked work
   stays untouched. Without an upstream, only the latest commit is exported.
   Exports print, copy, save, and upload; Base64 files use .patch.b64.
-  After apply, copy the original commit message (minus Co-authored-by), then run
-  'git aac'; paste the message into the editor. This stages all non-ignored work,
+  Every framed patch asks [quit/n/Y]: Yes applies, No skips, Quit stops. A quit after
+  earlier patches leaves those changes uncommitted. After apply, copy the first applied
+  commit message (minus Co-authored-by), then run 'git aac'; paste it into the editor.
+  This stages all non-ignored work,
   including unrelated new files, and uses git c's hook behavior.
   Examples:
     $name                    offer clipboard apply, else export unpushed commits
@@ -1490,6 +1603,10 @@ function _git_patch_transfer() {
 
   if [ -n "$patch_file" ]; then
     _git_patch_apply_file "$patch_file" || return 1
+    if [ "${_GIT_PATCH_APPLIED_PATCH_COUNT:-0}" -eq 0 ]; then
+      echo ">>> No patches applied; no commit created"
+      return 0
+    fi
     _git_patch_commit_applied "$patch_file" || return 1
     _git_patch_outcome_line applied
     return 0

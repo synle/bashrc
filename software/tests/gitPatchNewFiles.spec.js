@@ -32,6 +32,7 @@ function shell(script) {
       `
     shopt -s expand_aliases
     source "$PROFILE"
+    function _git_patch_prompt_choice() { printf '%s\\n' "$1"; return 0; }
     function is_help_arg() { [ "$1" = --help ]; }
     function copy() {
       if [ "$#" -eq 2 ]; then command cp "$2" .git/clipboard

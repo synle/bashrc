@@ -23,12 +23,16 @@ function git(...args) {
 
 /** Source the real profile and run a script, returning its exit status and output. */
 function shell(script) {
-  return spawnSync("/bin/bash", ["--noprofile", "--norc", "-c", 'source "$PROFILE"; ' + script], {
-    cwd: folder,
-    encoding: "utf8",
-    timeout: 10000,
-    env: { ...process.env, PROFILE, BASH_ENV: "/dev/null", GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
-  });
+  return spawnSync(
+    "/bin/bash",
+    ["--noprofile", "--norc", "-c", 'source "$PROFILE"; function _git_patch_prompt_choice() { printf "%s\\n" "$1"; return 0; }; ' + script],
+    {
+      cwd: folder,
+      encoding: "utf8",
+      timeout: 10000,
+      env: { ...process.env, PROFILE, BASH_ENV: "/dev/null", GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+    },
+  );
 }
 
 beforeEach(() => {
@@ -93,7 +97,8 @@ describe("Git patch creation integration", () => {
       expect(result.status, result.stderr).toBe(0);
       expect(result.stdout).toContain("Latest Patch copied to clipboard");
       const exported = fs.readFileSync(path.join(folder, ".git/copied.patch"), "utf8");
-      expect(exported.split("\n")[1]).toBe("##################################################");
+      expect(exported.split("\n")[1]).toBe("# Commit: First change");
+      expect(exported.split("\n")[2]).toBe("##################################################");
       expect(exported.trimEnd().split("\n").at(-2)).toBe("##################################################");
       expect(exported).toContain("Subject: [PATCH] First change");
       expect(exported).toContain("+first\n");
@@ -127,7 +132,8 @@ describe("Git patch boundary integration", () => {
     const patch = fs.readFileSync(path.join(folder, "output.patch"), "utf8");
     const sha = git("rev-parse", "--short", "HEAD");
     expect(patch.split("\n")[0]).toBe(`# BEGIN SY_GIT_PATCH_BOUNDARY_v1 \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 ${sha}`);
-    expect(patch.split("\n")[1]).toBe("##################################################");
+    expect(patch.split("\n")[1]).toBe("# Commit: First change");
+    expect(patch.split("\n")[2]).toBe("##################################################");
     expect(patch.trimEnd().split("\n").at(-2)).toBe("##################################################");
     expect(patch.trimEnd().split("\n").at(-1)).toBe(
       `# END SY_GIT_PATCH_BOUNDARY_v1 \u00b7 acme/widget-store \u00b7 patch 1 of 1 \u00b7 ${sha}`,
@@ -153,7 +159,7 @@ describe("Git patch boundary integration", () => {
       `# BEGIN SY_GIT_PATCH_BOUNDARY_v1 \u00b7 1/1 \u00b7 abc123 \u00b7 unknown\n${patch}\n# END SY_GIT_PATCH_BOUNDARY_v1 \u00b7 1/1 \u00b7 abc123 \u00b7 unknown\n`,
     );
     git("checkout", "--detach", "HEAD~1");
-    const result = shell('_git_patch_apply_file "$PWD/legacy.patch"');
+    const result = shell('function prompt_yes_no() { return 0; }; _git_patch_apply_file "$PWD/legacy.patch"');
     expect(result.status, result.stderr).toBe(0);
     expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe("base\nfirst\n");
   });
@@ -180,7 +186,7 @@ describe("Git patch boundary integration", () => {
       `# BEGIN SY_GIT_PATCH_BOUNDARY_v1${begin}\n${patch}\n# END SY_GIT_PATCH_BOUNDARY_v1${end}\n`,
     );
     git("checkout", "--detach", "HEAD~1");
-    const result = shell('_git_patch_apply_file "$PWD/custom.patch"');
+    const result = shell('function prompt_yes_no() { return 0; }; _git_patch_apply_file "$PWD/custom.patch"');
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("patch applied cleanly");
     expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe("base\nfirst\n");
@@ -198,8 +204,9 @@ describe("Git patch boundary integration", () => {
     git("checkout", "--detach", "HEAD~2");
     const result = shell('function prompt_yes_no() { printf "%s\\n" "$1"; }; _git_patch_apply_file "$PWD/custom.patch"');
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain("Applying patch 1/2: Continue?");
-    expect(result.stdout).toContain("Applying patch 2/2: Continue?");
+    expect(result.stdout).toContain("Patch repository is not identified in this legacy boundary");
+    expect(result.stdout).toContain("Do you wish to apply patch 1 of 2 for unknown repository?");
+    expect(result.stdout).toContain("Do you wish to apply patch 2 of 2 for unknown repository?");
     expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe("base\nfirst\nsecond\n");
   });
 
