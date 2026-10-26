@@ -1148,9 +1148,10 @@ function _git_patch_record_applied() {
 
 # _git_patch_apply_file: validate and apply every framed patch through one applier.
 # $1 is a patch file; $2 is an optional boundary metadata file for an extracted section.
+# $3 defaults to prompt; clipboard-confirmed reuses explicit acceptance for a single patch only.
 # Returns nonzero for malformed bundles, quit, or rejected hunks; earlier applied hunks remain.
 function _git_patch_apply_file() {
-  local patch_file="$1" boundary_file="${2:-}"
+  local patch_file="$1" boundary_file="${2:-}" confirmation="${3:-prompt}"
 
   if [ -z "$boundary_file" ]; then
     _GIT_PATCH_APPLIED_PATCH_COUNT=0
@@ -1226,9 +1227,14 @@ function _git_patch_apply_file() {
 
         patch_repo_label="${patch_repo:-unknown repository}"
         patch_subject=$(_git_patch_boundary_commit "$patch_part")
-        choice_prompt=$(printf 'Do you wish to apply patch %s of %s for %s?\nCommit: %s\nChoose [quit/n/Y]' "$patch_index" "$patch_count" "$patch_repo_label" "$patch_subject")
-        _git_patch_prompt_choice "$choice_prompt"
-        choice_status=$?
+        choice_status=0
+        if [ "$patch_count" -eq 1 ] && [ "$confirmation" = clipboard-confirmed ]; then
+          printf '>>> applying patch %s of %s for %s\nCommit: %s\n' "$patch_index" "$patch_count" "$patch_repo_label" "$patch_subject"
+        else
+          choice_prompt=$(printf 'Do you wish to apply patch %s of %s for %s?\nCommit: %s\nChoose [quit/n/Y]' "$patch_index" "$patch_count" "$patch_repo_label" "$patch_subject")
+          _git_patch_prompt_choice "$choice_prompt"
+          choice_status=$?
+        fi
         case "$choice_status" in
         0) ;;
         1)
@@ -1673,6 +1679,7 @@ alias patch='patch_85'
 # _git_patch_transfer: shared selection, generation, application, and commit workflow.
 # $1 is plain, base64, or base85; remaining args are [-y] [count | patch_file].
 # Returns the selected operation's status, including commit failure; rejects damaged input.
+# Explicit clipboard acceptance also confirms a single patch, but never bypasses repository checks.
 function _git_patch_transfer() {
   local format="$1" name
   name=$(_git_patch_format_name "$format") || return 2
@@ -1696,8 +1703,10 @@ function _git_patch_transfer() {
   Creation exports committed changes only; staged, unstaged, and untracked work
   stays untouched. Without an upstream, only the latest commit is exported.
   Exports print, copy, save, and upload; encoded files use .patch.b64 or .patch.b85.
-  Every framed patch asks [quit/n/Y]: Yes applies, No skips, Quit stops. A quit after
-  earlier patches leaves those changes uncommitted. After apply, copy the first applied
+  Framed patches ask [quit/n/Y]: Yes applies, No skips, Quit stops.
+  A single patch reuses an accepted clipboard prompt; repository checks still ask when needed.
+  Files and -y retain per-patch choices. A quit after earlier patches leaves those changes
+  uncommitted. After apply, copy the first applied
   commit message (minus Co-authored-by), then run 'git aac'; paste it into the editor.
   This stages all non-ignored work,
   including unrelated new files, and uses git c's hook behavior.
@@ -1710,7 +1719,7 @@ function _git_patch_transfer() {
     return 1
   fi
 
-  local assume_yes=0 status patch_file
+  local assume_yes=0 status patch_file confirmation=prompt
   case "${1:-}" in
   -y | --yes)
     assume_yes=1
@@ -1747,6 +1756,7 @@ function _git_patch_transfer() {
     if [ "$status" -eq 0 ]; then
       if ((assume_yes)) || prompt_yes_no "Clipboard holds a patch that has not been applied here — apply it now?" Y; then
         patch_file="$_GIT_PATCH_CLIPBOARD_FILE"
+        ((assume_yes)) || confirmation=clipboard-confirmed
       else
         echo ">>> leaving the clipboard patch alone — creating patches from unpushed commits instead"
       fi
@@ -1756,7 +1766,7 @@ function _git_patch_transfer() {
   fi
 
   if [ -n "$patch_file" ]; then
-    _git_patch_apply_file "$patch_file" || return 1
+    _git_patch_apply_file "$patch_file" "" "$confirmation" || return 1
     if [ "${_GIT_PATCH_APPLIED_PATCH_COUNT:-0}" -eq 0 ]; then
       echo ">>> No patches applied; no commit created"
       return 0

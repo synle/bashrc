@@ -116,12 +116,33 @@ strategy = incremental
 navigate = true
 side-by-side = false
 line-numbers = true
+hyperlinks = true
+hyperlinks-file-link-format = "vscode://file/{path}:{line}"
+# Respect terminal RGB support, including older and remote sessions.
+true-color = auto
+features = decorations
 # Use the terminal's own ANSI palette for syntax highlighting instead of delta's
 # bundled default. Every other pager and picker on the machine already inherits it
 # (`bat --theme=ansi`, fzf sets no --color, starship and the [color "diff"] block
 # above use named colors), so without this delta was the only tool rendering a
 # palette nothing else shared.
 syntax-theme = ansi
+# Highlight both sides with backgrounds that adapt to dark/light terminals.
+plus-style = syntax auto
+minus-style = syntax auto
+
+[delta "decorations"]
+commit-decoration-style = bold yellow box ul
+file-style = bold yellow ul
+file-decoration-style = none
+hunk-header-decoration-style = cyan box ul
+
+[delta "line-numbers"]
+line-numbers-left-style = cyan
+line-numbers-right-style = cyan
+# Named ANSI colors follow the terminal palette instead of fixed 256-color values.
+line-numbers-minus-style = red
+line-numbers-plus-style = green
 
 [alias]
 # ---- Status & Staging ----
@@ -203,17 +224,19 @@ r0-code = "!GIT_EDITOR=\"code --wait\" git rebase -i --root"
 r0-subl = "!GIT_EDITOR=\"subl --wait\" git rebase -i --root"
 
 # ---- Log & Diff ----
-logbaseline = log -w --decorate --abbrev-commit --date=short --graph
+# Graph prefixes obscure patch headers from Delta; retain the graph for ordinary history.
+logbaseline = "!f() { graph=--graph; for arg in \"$@\"; do case \"$arg\" in -p|-u|--patch|--patch-with-stat|--patch-with-raw) graph=--no-graph; break ;; esac; done; git log -w --decorate --abbrev-commit --date=short \"$graph\" \"$@\"; }; f"
 ls = "!f() { git -c color.ui=always logbaseline --decorate-refs=refs/tags --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(red)%D %C(green)%an %C(reset)%s\" \"$@\" | sed 's/  */ /g' | $(git var GIT_PAGER); }; f"
 lls = "!f() { git -c color.ui=always logbaseline --decorate-refs=refs/tags --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(red)%D %C(green)%an %C(reset)%s\" --author-date-order \"$@\" | sed 's/  */ /g' | $(git var GIT_PAGER); }; f"
 l = "!git ls --stat" # Log with file stats
 ll = "!git lls --stat" # Oneline log with file stats
-d = diff --word-diff -w # Word-level diff ignoring whitespace
-dh = diff --word-diff -w HEAD^ # Diff against previous commit
-ds = diff --word-diff -w --staged # Diff staged changes
-d1 = "!git -c delta.side-by-side=false diff --word-diff -w" # Inline diff (no side-by-side)
-dh1 = "!git -c delta.side-by-side=false diff --word-diff -w HEAD^" # Inline diff against previous commit
-ds1 = "!git -c delta.side-by-side=false diff --word-diff -w --staged" # Inline diff staged changes
+# Delta highlights words itself; Git word-diff markup bypasses its normal line rendering.
+d = diff -w # Unified diff ignoring whitespace
+dh = diff -w HEAD^ # Diff against previous commit
+ds = diff -w --staged # Diff staged changes
+d1 = "!git -c delta.side-by-side=false diff -w" # Inline diff (no side-by-side)
+dh1 = "!git -c delta.side-by-side=false diff -w HEAD^" # Inline diff against previous commit
+ds1 = "!git -c delta.side-by-side=false diff -w --staged" # Inline diff staged changes
 show1 = "!git -c delta.side-by-side=false show -w" # Show commit inline (no side-by-side)
 dhs = diff -w --stat HEAD~1 # File change stats for last commit
 stats = shortlog -sn # Commit counts per author
@@ -299,12 +322,12 @@ ls2 = "!git -c delta.side-by-side=true ls"
 lls2 = "!git -c delta.side-by-side=true lls"
 l2 = "!git -c delta.side-by-side=true l"
 ll2 = "!git -c delta.side-by-side=true ll"
-d2 = "!git -c delta.side-by-side=true d --word-diff=none"
-dh2 = "!git -c delta.side-by-side=true dh --word-diff=none"
-ds2 = "!git -c delta.side-by-side=true ds --word-diff=none"
-d12 = "!git -c delta.side-by-side=true diff --word-diff=none -w" # Two-column compatibility twin
-dh12 = "!git -c delta.side-by-side=true diff --word-diff=none -w HEAD^" # Two-column compatibility twin
-ds12 = "!git -c delta.side-by-side=true diff --word-diff=none -w --staged" # Two-column compatibility twin
+d2 = "!git -c delta.side-by-side=true d"
+dh2 = "!git -c delta.side-by-side=true dh"
+ds2 = "!git -c delta.side-by-side=true ds"
+d12 = "!git -c delta.side-by-side=true diff -w" # Two-column compatibility twin
+dh12 = "!git -c delta.side-by-side=true diff -w HEAD^" # Two-column compatibility twin
+ds12 = "!git -c delta.side-by-side=true diff -w --staged" # Two-column compatibility twin
 show12 = "!git -c delta.side-by-side=true show -w" # Two-column compatibility twin
 dhs2 = "!git -c delta.side-by-side=true dhs"
 stats2 = "!git -c delta.side-by-side=true stats"
