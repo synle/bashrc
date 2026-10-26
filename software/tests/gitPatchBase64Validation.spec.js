@@ -9,9 +9,9 @@ import { execFileSync, spawnSync } from "child_process";
 /** Real profile; an override supports before/after regression proofs. */
 const PROFILE = process.env.PATCH_PROFILE || path.resolve("software/scripts/bash-git-helpers.profile.bash");
 /** Independently specified unified diff, not produced by the shell generator. */
-const PATCH = "diff --git a/note.txt b/note.txt\n--- a/note.txt\n+++ b/note.txt\n@@ -1 +1 @@\n-base —\n+changed —\n";
+const PATCH = "diff --git a/note.txt b/note.txt\n--- a/note.txt\n+++ b/note.txt\n@@ -1 +1 @@\n-base \u2014\n+changed \u2014\n";
 /** Original bytes checked after every rejection. */
-const BEFORE = "base —\n";
+const BEFORE = "base \u2014\n";
 /** Each test owns its repository, input file, and clipboard. */
 let folder;
 /** HEAD before a rejected operation must remain unchanged. */
@@ -30,7 +30,7 @@ function git(...args) {
 
 /** Independent producer for the documented envelope, with optional patch payload. */
 function envelope(patch = PATCH) {
-  return Buffer.from(`SY_GIT_PATCH_64_v1\n${createHash("sha256").update(patch).digest("hex")}\n${patch}`).toString("base64");
+  return Buffer.from(`SY_GIT_PATCH_64_v2\n${createHash("sha256").update(patch).digest("hex")}\n${patch}`).toString("base64");
 }
 
 /** Run file/clipboard rejection through the real command and check all observable effects. */
@@ -93,7 +93,7 @@ afterEach(() => {
 
 describe("Base64 patch rejection integration", () => {
   it.each(["file", "clipboard"])("rejects a checksum mismatch from %s before all side effects", (source) => {
-    const input = Buffer.from(Buffer.from(envelope(), "base64").toString("utf8").replace("-base —", "-base -")).toString("base64");
+    const input = Buffer.from(Buffer.from(envelope(), "base64").toString("utf8").replace("-base \u2014", "-base -")).toString("base64");
     expect(reject(input, source).stderr).toContain("SHA-256 mismatch");
   });
 
@@ -105,10 +105,29 @@ describe("Base64 patch rejection integration", () => {
     ["noncanonical padding", envelope() + "="],
     ["Unicode whitespace", envelope() + "\u00a0"],
     ["no patch payload", envelope("")],
-    ["wrong version", Buffer.from(Buffer.from(envelope(), "base64").toString("utf8").replace("_v1", "_v2")).toString("base64")],
-    ["malformed digest", Buffer.from("SY_GIT_PATCH_64_v1\ninvalid\n" + PATCH).toString("base64")],
+    ["wrong version", Buffer.from(Buffer.from(envelope(), "base64").toString("utf8").replace("_v2", "_v3")).toString("base64")],
+    ["malformed digest", Buffer.from("SY_GIT_PATCH_64_v2\ninvalid\n" + PATCH).toString("base64")],
   ])("rejects %s file without touching the repository", (_name, input) => {
     expect(reject(input).stderr).toMatch(/Base64|base64|envelope/);
+  });
+
+  it.each([
+    ["missing end", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope()],
+    ["missing begin", "# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
+    ["mismatched version", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v3"],
+    ["missing preview", "# BEGIN SY_GIT_PATCH_64_v2\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
+    ["nested begin", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n# BEGIN SY_GIT_PATCH_64_v2\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
+    ["trailing text", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2\nextra"],
+    ["leading text", "extra\n# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope() + "\n# END SY_GIT_PATCH_64_v2"],
+    ["empty payload", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n\n# END SY_GIT_PATCH_64_v2"],
+    ["invalid alphabet", "# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + envelope() + "!\n# END SY_GIT_PATCH_64_v2"],
+  ])("rejects framed input with %s before all clipboard side effects", (_name, input) => {
+    expect(reject(input, "clipboard").stderr).toContain("Base64 envelope");
+  });
+
+  it("checks the digest inside a valid display wrapper before applying", () => {
+    const payload = Buffer.from(Buffer.from(envelope(), "base64").toString("utf8").replace("-base \u2014", "-base -")).toString("base64");
+    expect(reject("# BEGIN SY_GIT_PATCH_64_v2\n# Preview\n" + payload + "\n# END SY_GIT_PATCH_64_v2").stderr).toContain("SHA-256 mismatch");
   });
 
   it("rejects a plain clipboard diff rather than applying it or replacing it", () => {

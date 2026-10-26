@@ -634,10 +634,11 @@ file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
   Preserve explicit scalar, predicate, absence, and round-trip assertions when they express the contract more clearly.
   Keep parameterized cases refreshable without sharing one inline-snapshot location across different expected outputs.
   Refresh with `npm run test:update -- <spec>` and review every changed expectation before accepting it; never update snapshots to hide failures.
-- **ASCII-first tests.** Write test code, names, comments, and routine fixture data in ASCII.
-  Never use emoji or other non-ASCII characters unless Unicode behavior is the specific subject, such as encoding, normalization, or Unicode filenames.
-  For those cases, prefer ASCII escape sequences and state why Unicode is required.
-  Use literal Unicode only when the literal representation itself is under test; text conversion can otherwise corrupt it.
+- **ASCII-only test source.** Never write test source containing literal non-ASCII characters, including emoji and typographic punctuation.
+  This applies to code, identifiers, test names, comments, test helpers, text fixtures, and snapshots.
+  Unicode behavior is not an exception: represent required characters with ASCII escape sequences or construct their bytes at runtime.
+  Preserve meaningful Unicode coverage; never delete or weaken assertions merely to satisfy this rule.
+  Before finishing, scan changed test sources for non-ASCII characters and remove every literal occurrence.
 
 ### Enforced conventions — one spec each
 

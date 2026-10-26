@@ -756,8 +756,10 @@ function _git_patch_looks_like_patch() {
 }
 
 # _git_patch_64_codec: encode/decode $2 into $3 with an embedded SHA-256 digest.
-# $1 is encode or decode. Returns 0 on success, 1 on corruption/I/O failure, or
-# 2 for unrelated clipboard text. Decoding writes only after full validation.
+# $1 is encode or decode; _PATCH_64_MESSAGE supplies the display-only export preview.
+# Exports include paired markers; decoding also accepts legacy bare Base64.
+# Returns 0 on success, 1 on corruption/I/O failure, or 2 for unrelated clipboard
+# text. Decoding writes only after validating the entire wrapper and payload.
 function _git_patch_64_codec() {
   if ! type -P node > /dev/null 2>&1; then
     echo "patch_64: node is required for the Base64 envelope" >&2
@@ -768,9 +770,11 @@ function _git_patch_64_codec() {
 /** Encode a versioned byte envelope or validate it before writing decoded bytes. */
 const fs = require('fs'), crypto = require('crypto');
 /** Wire magic includes the version; the digest covers only the original patch. */
-const magic = 'SY_GIT_PATCH_64_v1\n';
+const magic = 'SY_GIT_PATCH_64_v2\n';
 /** Envelope family distinguishes damaged transfers from unrelated clipboard text. */
 const family = 'SY_GIT_PATCH_64';
+/** Display boundaries share the wire version but sit outside the encoded bytes. */
+const begin = '# BEGIN ' + magic.trim(), end = '# END ' + magic.trim();
 /** Reject malformed input without writing output; message is safe diagnostic text. */
 function fail(message) {
   process.stderr.write('patch_64: ' + message + '\n');
@@ -781,20 +785,38 @@ try {
   if (process.env._PATCH_64_MODE === 'encode') {
     const digest = crypto.createHash('sha256').update(input).digest('hex');
     const encoded = Buffer.concat([Buffer.from(magic + digest + '\n'), input]).toString('base64');
-    fs.writeFileSync(process.env._PATCH_64_OUTPUT, encoded.match(/.{1,76}/g).join('\n') + '\n');
+    const preview = process.env._PATCH_64_MESSAGE.split(/\r?\n/)
+      .filter(line => !/^\s*Co-authored-by:/i.test(line)).join(' ')
+      .replace(/[\s\x00-\x1f\x7f-\x9f]+/g, ' ').trim();
+    fs.writeFileSync(process.env._PATCH_64_OUTPUT,
+      begin + '\n# ' + preview + '\n' + encoded.match(/.{1,76}/g).join('\n') + '\n' + end + '\n');
   } else {
+    let text = input.toString('latin1').replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, '');
+    const framed = text.includes('# BEGIN ' + family) || text.includes('# END ' + family);
+    if (framed) {
+      const lines = text.split(/\r?\n/);
+      if (lines.shift() !== begin || lines.pop() !== end || !/^# /.test(lines.shift() || '')) {
+        fail('malformed Base64 envelope boundaries or preview');
+      }
+      // The preview is display-only; commit messages come from verified patch bytes.
+      text = lines.join('\n');
+    }
     // Only ASCII transport whitespace is ignorable, never punctuation or Unicode.
-    const encoded = input.toString('latin1').replace(/[ \t\r\n]/g, '');
+    const encoded = text.replace(/[ \t\r\n]/g, '');
     const decoded = Buffer.from(encoded, 'base64');
     const hasFamily = decoded.subarray(0, family.length).toString('latin1') === family;
     // Long Base64-looking input may have a damaged magic prefix; never overwrite it.
     const minimumEnvelopeLength = Math.ceil((magic.length + 64 + 1) / 3) * 4;
     const looksEncoded = encoded.length >= minimumEnvelopeLength && /^[A-Za-z0-9+/=]+$/.test(encoded);
-    if (!hasFamily && !looksEncoded) process.exit(2);
+    if (!hasFamily && !looksEncoded) {
+      if (framed) fail('invalid Base64 envelope payload');
+      process.exit(2);
+    }
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || decoded.toString('base64') !== encoded) {
       fail('invalid or noncanonical Base64 envelope');
     }
-    if (decoded.subarray(0, magic.length).toString('latin1') !== magic) fail('unsupported Base64 envelope version');
+    const version = decoded.subarray(0, magic.length).toString('latin1');
+    if (version !== magic && version !== family + '_v1\n') fail('unsupported Base64 envelope version');
     const digestEnd = magic.length + 64;
     const digest = decoded.subarray(magic.length, digestEnd).toString('latin1');
     if (!/^[0-9a-f]{64}$/.test(digest) || decoded[digestEnd] !== 10) fail('malformed Base64 envelope digest');
@@ -1197,8 +1219,9 @@ function git_patch_create() {
 }
 
 # _git_patch_create: generate once, then encode before all transports when requested.
-# $1 is plain/base64, $2 is count (default 1). Returns nonzero on generation,
-# encoding, or clipboard failure; preserves the repository and raw patch file.
+# $1 is plain/base64, $2 is count (default 1); Base64 adds markers and a one-line
+# preview of the selected commit messages. Returns nonzero on generation, message
+# lookup, encoding, or clipboard failure; preserves the repository and raw patch.
 function _git_patch_create() {
   local format="$1"
   shift
@@ -1241,7 +1264,9 @@ function _git_patch_create() {
   fi
 
   if [ "$format" = base64 ]; then
-    _git_patch_64_codec encode "$patch_file" "${patch_file}.b64" || return 1
+    local message
+    message=$(git --no-pager log --reverse -n "${1:-1}" --format=%B) || return 1
+    _PATCH_64_MESSAGE="$message" _git_patch_64_codec encode "$patch_file" "${patch_file}.b64" || return 1
     patch_file="${patch_file}.b64"
   fi
 
@@ -1342,7 +1367,7 @@ function patch_plain_str() {
   _git_patch_transfer plain "$@"
 }
 
-# patch_64: transfer only Base64 envelopes, verifying SHA-256 before applying.
+# patch_64: transfer framed Base64 with a one-line preview; verify before applying.
 # Accepts [-y] [count | patch_file]; application modifies files and can commit.
 function patch_64() {
   _git_patch_transfer base64 "$@"
@@ -1363,6 +1388,8 @@ function _git_patch_transfer() {
   Usage: $name [-y] [count | patch_file]
   Format: $format. patch is an alias for patch_64; use patch_plain_str for plain diffs.
   Base64 wraps version + SHA-256 + original patch bytes; verification precedes apply.
+  Exports add matching BEGIN/END markers and a one-line commit-message preview.
+  Apply accepts the complete marked block or legacy bare Base64; previews are display-only.
   Base64 is not encryption or authentication. Plain input is not accepted by patch_64.
   Options:
     -y, --yes  skip only the clipboard apply prompt

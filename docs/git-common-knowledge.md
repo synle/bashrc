@@ -946,24 +946,38 @@ After application, the command copies the original commit message to the clipboa
 A failed commit returns failure, even when the patch has already changed files.
 
 Base64 mode encodes before printing, copying, or uploading. Saved and uploaded envelopes use `.patch.b64`; plain files retain `.patch`.
-Copy only the Base64 block, not status messages or Markdown fences. ASCII spaces, tabs, CR, and LF inside the block are tolerated.
-Node is required to encode and decode portably.
-
-The wire format is Base64 of these bytes, wrapped at 76 columns:
+Copy the complete block, including its matching markers and one-line message preview, but not status messages or Markdown fences:
 
 ```text
-SY_GIT_PATCH_64_v1\n
+# BEGIN SY_GIT_PATCH_64_v2
+# Commit subject and body consolidated into one line
+<Base64 payload>
+# END SY_GIT_PATCH_64_v2
+```
+
+The preview combines selected commit messages oldest first, collapses whitespace and control characters, and omits Co-authored-by trailers.
+It is display-only: decoding preserves the original patch bytes and commit messages inside the payload.
+ASCII spaces, tabs, CR, and LF inside the payload are tolerated. Node is required to encode and decode portably.
+
+The payload remains Base64 of these bytes, wrapped at 76 columns:
+
+```text
+SY_GIT_PATCH_64_v2\n
 <64 lowercase hexadecimal SHA-256 characters>\n
 <original patch bytes>
 ```
 
-The digest covers the original patch bytes only. Decoding rejects noncanonical Base64, unsupported versions, malformed digests, and checksum mismatches before applying.
+The digest covers the original patch bytes only, not the visible preview.
+Decoding rejects malformed marker pairs, noncanonical Base64, unsupported versions, malformed digests, and checksum mismatches before applying.
 Recognized damaged envelopes and long Base64-looking clipboard input fail instead of triggering a new export that overwrites the clipboard.
 An explicit file with invalid input always fails. Unrelated clipboard prose still falls back to creation.
 `patch_64` rejects plain diffs; use `patch_plain_str` rather than weakening matching or normalizing Unicode.
 SHA-256 detects accidental corruption; it does not authenticate the sender. Base64 is not encryption.
 
 ### Migration and compatibility
+
+Updated receivers accept complete v2 marked blocks, bare v2 payloads, and legacy bare v1 payloads.
+Older receivers require an updated profile; removing the markers does not downgrade a v2 payload to v1.
 
 Replace old `patch /path/to/plain.patch` calls with `patch_plain_str /path/to/plain.patch`.
 Likewise, call `patch_plain_str` when the clipboard contains an old plain diff.

@@ -9,9 +9,9 @@ import { execFileSync, spawnSync } from "child_process";
 /** Profile override permits regression checks against an unmodified source copy. */
 const PROFILE = process.env.PATCH_PROFILE || path.resolve("software/scripts/bash-git-helpers.profile.bash");
 /** File content includes typography, blank context, tabs, and a missing final newline. */
-const BEFORE = "# download — Download a file from a URL via curl\n\nkeep\n\t‘quote’ café 🪨\nlast";
+const BEFORE = "# download \u2014 Download a file from a URL via curl\n\nkeep\n\t\u2018quote\u2019 caf\u00e9 \u{1faa8}\nlast";
 /** Expected result after applying the committed patch. */
-const AFTER = "# download — Download a file from a URL via curl\nzip\n\nkeep\n\t‘quote’ café 🪨\nlast";
+const AFTER = "# download \u2014 Download a file from a URL via curl\nzip\n\nkeep\n\t\u2018quote\u2019 caf\u00e9 \u{1faa8}\nlast";
 /** Each test owns one temporary repository and clipboard. */
 let folder;
 
@@ -90,7 +90,7 @@ beforeEach(() => {
   git("add", "note.txt");
   git("commit", "-qm", "Base");
   fs.writeFileSync(path.join(folder, "note.txt"), AFTER);
-  git("commit", "-qam", "Add zip — preserve typography", "-m", "Keep Unicode context exact.");
+  git("commit", "-qam", "Add zip \u2014 preserve typography", "-m", "Keep Unicode context exact.");
   fs.writeFileSync(path.join(folder, ".git/clipboard"), "ordinary clipboard text\n");
   fs.mkdirSync(path.join(folder, ".git/shared"));
   fs.writeFileSync(path.join(folder, ".git/editor.sh"), '#!/bin/sh\ncp .git/clipboard "$1"\n');
@@ -103,7 +103,7 @@ afterEach(() => {
 describe("Base64 patch transfer integration", () => {
   it("reproduces a typography substitution rejecting an otherwise valid plain hunk", () => {
     const patch = git("format-patch", "-1", "--stdout");
-    fs.writeFileSync(path.join(folder, ".git/corrupt.patch"), patch.replaceAll("—", "-"));
+    fs.writeFileSync(path.join(folder, ".git/corrupt.patch"), patch.replaceAll("\u2014", "-"));
     git("checkout", "--detach", "HEAD~1");
     const result = shell('git_patch_apply "$PWD/.git/corrupt.patch"');
     expect(result.status).toBe(1);
@@ -118,23 +118,28 @@ describe("Base64 patch transfer integration", () => {
     expect(result.stdout.trim()).toBe("alias patch='patch_64'");
   });
 
-  it.each(["patch_64 1", "eval 'patch 1'"])("exports only Base64 through clipboard and shared file with %s", (command) => {
+  it.each(["patch_64 1", "eval 'patch 1'"])("exports framed Base64 through clipboard and shared file with %s", (command) => {
     const result = shell(command);
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("Latest Patch copied to clipboard");
     const encoded = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8");
-    expect(encoded).toMatch(/^[A-Za-z0-9+/=\r\n]+$/);
-    const bytes = Buffer.from(encoded, "base64");
+    const frame = encoded.trimEnd().split("\n");
+    expect(frame[0]).toBe("# BEGIN SY_GIT_PATCH_64_v2");
+    expect(frame[1]).toBe("# Add zip \u2014 preserve typography Keep Unicode context exact.");
+    expect(frame.at(-1)).toBe("# END SY_GIT_PATCH_64_v2");
+    const payload = frame.slice(2, -1).join("\n");
+    expect(payload).toMatch(/^[A-Za-z0-9+/=\n]+$/);
+    const bytes = Buffer.from(payload, "base64");
     const [magic, digest, ...lines] = bytes.toString("utf8").split("\n");
-    expect(magic).toBe("SY_GIT_PATCH_64_v1");
+    expect(magic).toBe("SY_GIT_PATCH_64_v2");
     expect(digest).toBe(createHash("sha256").update(lines.join("\n")).digest("hex"));
-    expect(lines.join("\n")).toContain("# download — Download");
+    expect(lines.join("\n")).toContain("# download \u2014 Download");
     const shared = fs.readdirSync(path.join(folder, ".git/shared"));
     expect(shared).toHaveLength(1);
     expect(shared[0]).toMatch(/\.patch\.b64$/);
     expect(fs.readFileSync(path.join(folder, ".git/shared", shared[0]), "utf8")).toBe(encoded);
     expect(result.stdout).toContain(encoded);
-    expect(result.stdout).not.toContain("# download — Download");
+    expect(result.stdout).not.toContain("# download \u2014 Download");
     expect(result.stdout).toContain("patch_64");
   });
 
@@ -151,24 +156,63 @@ describe("Base64 patch transfer integration", () => {
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("Patch Applied");
     expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe(AFTER);
-    expect(git("log", "-1", "--format=%B")).toBe("Add zip — preserve typography\n\nKeep Unicode context exact.");
-    expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8")).toContain("Add zip — preserve typography");
+    expect(git("log", "-1", "--format=%B")).toBe("Add zip \u2014 preserve typography\n\nKeep Unicode context exact.");
+    expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8")).toContain("Add zip \u2014 preserve typography");
     expect(git("status", "--porcelain")).toBe("");
   });
 
-  it("applies an independently encoded envelope with ASCII transport whitespace", () => {
+  it.each([
+    ["legacy file", "", "", 'patch_64 "$PWD/.git/input.b64"'],
+    ["legacy clipboard", "", "", "patch_64 -y"],
+    [
+      "framed file",
+      "# BEGIN SY_GIT_PATCH_64_v2\r\n# Independent preview\r\n",
+      "\r\n# END SY_GIT_PATCH_64_v2",
+      'patch_64 "$PWD/.git/input.b64"',
+    ],
+    ["framed clipboard", "# BEGIN SY_GIT_PATCH_64_v2\r\n# Independent preview\r\n", "\r\n# END SY_GIT_PATCH_64_v2", "patch_64 -y"],
+  ])("applies an independently encoded %s with ASCII transport whitespace", (_name, begin, end, command) => {
     const patch = Buffer.from(git("format-patch", "-1", "--stdout") + "\n");
-    fs.writeFileSync(path.join(folder, ".git/input.b64"), " \t\r\n" + envelope(patch).replace(/.{40}/g, "$&\r\n\t") + "\n");
+    const input = " \t\r\n" + begin + envelope(patch).replace(/.{40}/g, "$&\r\n\t") + end + "\n";
+    fs.writeFileSync(path.join(folder, ".git/input.b64"), input);
+    fs.writeFileSync(path.join(folder, ".git/clipboard"), input);
     git("checkout", "--detach", "HEAD~1");
-    const result = shell('patch_64 "$PWD/.git/input.b64"');
+    const result = shell(command);
     expect(result.status, result.stderr).toBe(0);
     expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe(AFTER);
+  });
+
+  it("collapses message whitespace and controls without leaking trailers into the preview", () => {
+    git(
+      "commit",
+      "--amend",
+      "-qm",
+      "Readable subject",
+      "-m",
+      "Body\twith   spaces\n\nNext\u001b[31m line\n# END SY_GIT_PATCH_64_v2\nCo-authored-by: Other <other@example.com>",
+    );
+    const result = shell("patch_64 1");
+    expect(result.status, result.stderr).toBe(0);
+    const frame = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").trimEnd().split("\n");
+    expect(frame[1]).toBe("# Readable subject Body with spaces Next [31m line # END SY_GIT_PATCH_64_v2");
+    expect(frame.slice(2, -1).join("\n")).toMatch(/^[A-Za-z0-9+/=\n]+$/);
+  });
+
+  it("uses verified payload messages rather than an edited display preview", () => {
+    expect(shell("patch_64 1").status).toBe(0);
+    const framed = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8");
+    fs.writeFileSync(path.join(folder, ".git/clipboard"), framed.replace(/^# Add zip.*$/m, "# Display only"));
+    git("checkout", "--detach", "HEAD~1");
+    const result = shell("patch_64 -y");
+    expect(result.status, result.stderr).toBe(0);
+    expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe(AFTER);
+    expect(git("log", "-1", "--format=%B")).toBe("Add zip \u2014 preserve typography\n\nKeep Unicode context exact.");
   });
 
   it.each(["patch_plain_str 1", "git_patch_create 1"])("keeps explicit plain output compatible through %s", (command) => {
     const result = shell(command);
     expect(result.status, result.stderr).toBe(0);
-    expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8")).toContain("# download — Download");
+    expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8")).toContain("# download \u2014 Download");
     expect(fs.readdirSync(path.join(folder, ".git/shared"))[0]).toMatch(/\.patch$/);
   });
 
@@ -179,6 +223,9 @@ describe("Base64 patch transfer integration", () => {
     fs.writeFileSync(path.join(folder, "note.txt"), AFTER + "\nsecond\n");
     git("commit", "-qam", "Second change");
     expect(shell("patch_64").status).toBe(0);
+    expect(fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8").split("\n")[1]).toBe(
+      "# Add zip \u2014 preserve typography Keep Unicode context exact. Second change",
+    );
     git("checkout", "--detach", "HEAD~2");
     const result = shell('function prompt_yes_no() { printf "%s\\n" "$1"; }; patch_64 -y');
     expect(result.status, result.stderr).toBe(0);
