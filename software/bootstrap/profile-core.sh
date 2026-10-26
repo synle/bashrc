@@ -93,6 +93,8 @@ export EDITOR='vim'
 export VISUAL="$EDITOR"
 # Preserve OSC 8 hyperlinks and colors in supported less versions.
 export PAGER="less -R"
+# Use terminal palette slots instead of fd's fixed vivid fallback; preserve custom and empty values.
+export LS_COLORS="${LS_COLORS-di=34:ln=36:ex=32:pi=33:so=35:bd=33:cd=33:or=31:mi=31:su=31:sg=33:tw=34:ow=34:st=34}"
 export GIT_EDITOR="$EDITOR"
 export BASH_PATH=~/.bash_syle
 export LINE_BREAK_COUNT=80

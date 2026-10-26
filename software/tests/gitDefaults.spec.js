@@ -15,6 +15,32 @@ const WRAPPER = fs
   .split("# --- Aliases: Git ---\n")[1]
   .split("# --- Aliases: Editors ---")[0];
 
+/** Native pager integration needs Delta and Python's Unix PTY support. */
+const HAS_DELTA_PTY =
+  process.platform !== "win32" && spawnSync("delta", ["--version"]).status === 0 && spawnSync("python3", ["--version"]).status === 0;
+/** Capture terminal output without an interactive pager or terminal color query. */
+const PAGER_PTY = `
+import errno, os, pty, sys
+pid, master = pty.fork()
+if pid == 0:
+    os.execvp("git", ["git", "-c", "core.pager=delta", "-c", "delta.detect-dark-light=never", *sys.argv[1:]])
+try:
+    while True:
+        try:
+            data = os.read(master, 65536)
+        except OSError as error:
+            if error.errno != errno.EIO:
+                raise
+            break
+        if not data:
+            break
+        os.write(1, data)
+finally:
+    os.close(master)
+_, status = os.waitpid(pid, 0)
+sys.exit(os.waitstatus_to_exitcode(status))
+`;
+
 /** Execute real Git in the fixture; return stdout or throw on failure. */
 function git(...args) {
   return execFileSync("git", args, {
@@ -143,6 +169,22 @@ describe("Git defaults integration", () => {
     expect(git("config", "--get", "alias.show1")).toContain("delta.side-by-side=false");
   });
 
+  it.each(["d", "dh", "ds", "d1", "dh1", "ds1", "d2", "dh2", "ds2", "d12", "dh12", "ds12"])(
+    'feeds unified patch lines to Delta through "%s"',
+    (alias) => {
+      fs.writeFileSync(path.join(folder, "note.txt"), "committed line\n");
+      git("commit", "-qam", "Changed");
+      fs.writeFileSync(path.join(folder, "note.txt"), "new line\n");
+      git("add", "note.txt");
+      fs.writeFileSync(path.join(folder, "note.txt"), "working line\n");
+      const output = git(alias);
+      expect(output).toMatch(/^-.*line$/m);
+      expect(output).toMatch(/^\+.*line$/m);
+      expect(output).not.toContain("[-");
+      expect(output).not.toContain("{+");
+    },
+  );
+
   it.each(["d2", "dh2", "ds2", "show2", "ls2", "l2", "s2", "d12", "show12"])('propagates two-column layout through "%s"', (alias) => {
     fs.writeFileSync(path.join(folder, ".git/layout.sh"), "#!/bin/sh\ngit config --get delta.side-by-side\n", { mode: 0o755 });
     git("config", "diff.external", "./.git/layout.sh");
@@ -157,6 +199,34 @@ describe("Git defaults integration", () => {
     expect(result.stdout).toContain("true\n");
     expect(result.stdout).not.toContain("false\n");
   });
+
+  it
+    .skipIf(!HAS_DELTA_PTY)
+    .each(["diff", "show", "log", "d", "dh", "ds", "d1", "dh1", "ds1", "d2", "dh2", "ds2", "show1", "show2", "ls", "lls", "l", "ll"])(
+    'renders "%s" through the real global Delta pager on a terminal',
+    (alias) => {
+      fs.writeFileSync(path.join(folder, "note.txt"), "committed line\n");
+      git("commit", "-qam", "Changed");
+      fs.writeFileSync(path.join(folder, "note.txt"), "staged line\n");
+      git("add", "note.txt");
+      fs.writeFileSync(path.join(folder, "note.txt"), "working line\n");
+      const env = {
+        ...process.env,
+        BASH_ENV: "/dev/null",
+        TERM: "xterm-256color",
+        DELTA_PAGER: "cat",
+        GIT_CONFIG_GLOBAL: path.join(folder, ".git/test.config"),
+        GIT_CONFIG_NOSYSTEM: "1",
+      };
+      delete env.GIT_PAGER;
+      const result = spawnSync("python3", ["-c", PAGER_PTY, alias, "-p"], { cwd: folder, env, encoding: "utf8", timeout: 5000 });
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toContain("note.txt");
+      expect(result.stdout).toContain("\u2502");
+      expect(result.stdout).not.toContain("[-");
+      expect(result.stdout).not.toContain("{+");
+    },
+  );
 
   it("preserves numbered rebase and patch aliases without duplicate keys", () => {
     const names = git("config", "--get-regexp", "^alias\\.")

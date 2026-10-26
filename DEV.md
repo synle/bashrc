@@ -371,6 +371,17 @@ Agent replies use Markdown links where supported, otherwise complete plain URLs.
 Refresh the profile with `./run`; refresh Git tooling with `./run --files=git-functions.js` or the broader `./run --preset=terminal`.
 Unsupported applications keep their native output. Byte-level PTY tests do not prove physical clicking in every emulator.
 
+### File search colors and Git diffs
+
+The profile defaults `LS_COLORS` to terminal ANSI colors, avoiding fd's bright fixed 256-color fallback.
+Regular file names use the terminal foreground; folders, links, and executables retain native palette distinctions.
+Custom values, including an explicitly empty `LS_COLORS`, remain unchanged.
+
+Git's `d`, `dh`, `ds`, and their one-/two-column variants send unified patches to the configured pager.
+Delta performs word highlighting itself; Git's `--word-diff` markup prevents normal Delta line rendering even when the pager runs.
+Log shortcuts keep their graph for ordinary history and disable it for explicit patch flags so Delta can recognize patch headers.
+Explicit `--no-pager`, `GIT_PAGER`, and command-specific pager settings still follow Git's native precedence.
+
 Test terminal support directly:
 
 ```bash

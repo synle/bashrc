@@ -213,17 +213,19 @@ r0-code = "!GIT_EDITOR=\"code --wait\" git rebase -i --root"
 r0-subl = "!GIT_EDITOR=\"subl --wait\" git rebase -i --root"
 
 # ---- Log & Diff ----
-logbaseline = log -w --decorate --abbrev-commit --date=short --graph
+# Graph prefixes obscure patch headers from Delta; retain the graph for ordinary history.
+logbaseline = "!f() { graph=--graph; for arg in \"$@\"; do case \"$arg\" in -p|-u|--patch|--patch-with-stat|--patch-with-raw) graph=--no-graph; break ;; esac; done; git log -w --decorate --abbrev-commit --date=short \"$graph\" \"$@\"; }; f"
 ls = "!f() { git -c color.ui=always logbaseline --decorate-refs=refs/tags --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(red)%D %C(green)%an %C(reset)%s\" \"$@\" | sed 's/  */ /g' | $(git var GIT_PAGER); }; f"
 lls = "!f() { git -c color.ui=always logbaseline --decorate-refs=refs/tags --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(red)%D %C(green)%an %C(reset)%s\" --author-date-order \"$@\" | sed 's/  */ /g' | $(git var GIT_PAGER); }; f"
 l = "!git ls --stat" # Log with file stats
 ll = "!git lls --stat" # Oneline log with file stats
-d = diff --word-diff -w # Word-level diff ignoring whitespace
-dh = diff --word-diff -w HEAD^ # Diff against previous commit
-ds = diff --word-diff -w --staged # Diff staged changes
-d1 = "!git -c delta.side-by-side=false diff --word-diff -w" # Inline diff (no side-by-side)
-dh1 = "!git -c delta.side-by-side=false diff --word-diff -w HEAD^" # Inline diff against previous commit
-ds1 = "!git -c delta.side-by-side=false diff --word-diff -w --staged" # Inline diff staged changes
+# Delta highlights words itself; Git word-diff markup bypasses its normal line rendering.
+d = diff -w # Unified diff ignoring whitespace
+dh = diff -w HEAD^ # Diff against previous commit
+ds = diff -w --staged # Diff staged changes
+d1 = "!git -c delta.side-by-side=false diff -w" # Inline diff (no side-by-side)
+dh1 = "!git -c delta.side-by-side=false diff -w HEAD^" # Inline diff against previous commit
+ds1 = "!git -c delta.side-by-side=false diff -w --staged" # Inline diff staged changes
 show1 = "!git -c delta.side-by-side=false show -w" # Show commit inline (no side-by-side)
 dhs = diff -w --stat HEAD~1 # File change stats for last commit
 stats = shortlog -sn # Commit counts per author

@@ -400,6 +400,11 @@ Profile registration is buffered: `registerProfileBlock` /
   Keep parent-folder aliases and native folder completion covered by `software/tests/nativeCd.spec.js`.
 - **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as
   explicit native aliases; cover listing behavior in `software/tests/nativeLs.spec.js`.
+- **File search colors** default `LS_COLORS` to native ANSI palette slots in `profile-core.sh`, avoiding fd's fixed vivid fallback.
+  Preserve custom and explicitly empty values; cover native fd output in `software/tests/fdColors.spec.js`.
+- **Delta diff input** keeps `d`, `dh`, `ds`, and their layout variants on unified patches; Delta performs word highlighting itself.
+  Git's `--word-diff` markup bypasses Delta's normal line rendering even when `core.pager=delta` is active.
+  Log shortcuts disable graph prefixes for explicit patch flags so Delta recognizes patch headers; ordinary history retains its graph.
 - **Windows Terminal folder inheritance** uses OSC 9;9 reporting from
   `_windows_terminal_report_folder` in `profile-advanced.sh` and
   `Write-WindowsTerminalWorkingFolder` in `powershell-profile.ps1.bash`. Keep both
