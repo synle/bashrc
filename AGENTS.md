@@ -963,6 +963,7 @@ Use **squash merges only** for PRs, never merge commits or rebase merges.
 Sync feature branches by merging the resolved default branch; never rebase a shared feature branch.
 Before an authorized default-branch push, use `git pull --rebase`, then fast-forward push.
 This solo+bots repo normally uses direct default-branch pushes, but pushing still requires authorization.
+For requested build/CI/test triage in this personal repository, work in the primary checkout on `main`; do not create a worktree or feature branch. Preserve unrelated changes, and do not push unless explicitly authorized.
 
 `worktree_create <branch>` owns worktree creation, recovery, reuse, and branch-derived paths.
 `git create-worktree <branch>` and `git worktree-path <branch>` are compatibility wrappers, not slot-based creators.

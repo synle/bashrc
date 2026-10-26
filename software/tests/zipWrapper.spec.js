@@ -47,17 +47,14 @@ afterEach(() => rmSync(sandbox, { recursive: true, force: true }));
  */
 function runZip(args, { confirm = 1, realPrompt = false, loads = 1 } = {}) {
   const prompt = realPrompt ? "" : 'function prompt_yes_no() { printf "PROMPT: %s\\n" "$1" >&2; return "$PROMPT_STATUS"; }';
-  return spawnSync(
-    "/bin/bash",
-    ["--noprofile", "--norc", "-c", `${HELPERS}\n${PROFILE.repeat(loads)}\n${prompt}\nzip "$@"`, "test", ...args],
-    {
-      encoding: "utf8",
-      cwd: output,
-      detached: true,
-      env: { ...process.env, BASH_ENV: "/dev/null", PATH: `${sandbox}/bin:/usr/bin:/bin`, PROMPT_STATUS: String(confirm), ZIPOPT: "" },
-      timeout: 5000,
-    },
-  );
+  return spawnSync("/bin/bash", ["--noprofile", "--norc", "-s", "--", ...args], {
+    encoding: "utf8",
+    input: `${HELPERS}\n${PROFILE.repeat(loads)}\n${prompt}\nzip "$@"`,
+    cwd: output,
+    detached: true,
+    env: { ...process.env, BASH_ENV: "/dev/null", PATH: `${sandbox}/bin:/usr/bin:/bin`, PROMPT_STATUS: String(confirm), ZIPOPT: "" },
+    timeout: 5000,
+  });
 }
 
 /**
@@ -88,7 +85,7 @@ function content(archive, member) {
 describe("zip wrapper subprocess integration", () => {
   it("stores an absolute input file at the archive root in the caller's folder", () => {
     const result = runZip([path.join(sandbox, "inputs/patch-TOZUe3/bashrc.patch")], { loads: 2 });
-    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.status, [result.error?.message, result.signal, result.stdout, result.stderr].filter(Boolean).join("\n")).toBe(0);
     expect(readdirSync(output)).toEqual([`bashrc.patch-${STAMP}.zip`]);
     expect(entries(path.join(output, `bashrc.patch-${STAMP}.zip`))).toEqual(["bashrc.patch"]);
     expect(content(path.join(output, `bashrc.patch-${STAMP}.zip`), "bashrc.patch")).toBe("patch bytes\n");

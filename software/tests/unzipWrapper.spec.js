@@ -65,24 +65,21 @@ function archive(name = ARCHIVE, members = ["bashrc.patch"]) {
  */
 function runUnzip(args, { confirm = 1, realPrompt = false, loads = 1 } = {}) {
   const prompt = realPrompt ? "" : 'function prompt_yes_no() { printf "PROMPT: %s\\n" "$1" >&2; return "$PROMPT_STATUS"; }';
-  return spawnSync(
-    "/bin/bash",
-    ["--noprofile", "--norc", "-c", `${HELPERS}\n${PROFILE.repeat(loads)}\n${prompt}\nunzip "$@"`, "test", ...args],
-    {
-      encoding: "utf8",
-      cwd: output,
-      detached: true,
-      env: { ...process.env, BASH_ENV: "/dev/null", PROMPT_STATUS: String(confirm), UNZIP: "", UNZIPOPT: "" },
-      timeout: 5000,
-    },
-  );
+  return spawnSync("/bin/bash", ["--noprofile", "--norc", "-s", "--", ...args], {
+    encoding: "utf8",
+    input: `${HELPERS}\n${PROFILE.repeat(loads)}\n${prompt}\nunzip "$@"`,
+    cwd: output,
+    detached: true,
+    env: { ...process.env, BASH_ENV: "/dev/null", PROMPT_STATUS: String(confirm), UNZIP: "", UNZIPOPT: "" },
+    timeout: 5000,
+  });
 }
 
 describe("unzip wrapper subprocess integration", () => {
   it("extracts the example archive into its filename stem instead of scattering members", () => {
     archive();
     const result = runUnzip([`../${ARCHIVE}`], { loads: 2 });
-    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.status, [result.error?.message, result.signal, result.stdout, result.stderr].filter(Boolean).join("\n")).toBe(0);
     expect(readdirSync(output)).toEqual(["bashrc.patch-20261025-090534"]);
     expect(readFileSync(path.join(output, "bashrc.patch-20261025-090534/bashrc.patch"), "utf8")).toBe("patch bytes\n");
   });
