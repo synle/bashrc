@@ -2582,6 +2582,7 @@ _prompt_command_add "_bashrc_update_check_show"
 # --- Spec-based Autocomplete (bash-autocomplete-complete-spec.js) ---
 ################################################################################
 # BEGIN/END | Spec Autocomplete
+# SOURCE | software/scripts/bash-base85.profile.bash
 # SOURCE | software/scripts/bash-command-wrappers.profile.bash
 # SOURCE | software/scripts/docker-shares.profile.bash
 # SOURCE | software/scripts/bash-snip-command-wrappers.profile.bash

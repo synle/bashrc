@@ -679,9 +679,10 @@ function git_create_worktree() {
 
 ################################################################################
 # --- Git Patch Transfer ---
-# Moving commits between machines through a shared plain/Base64 workflow:
-#   patch / patch_64  — verified Base64 envelope; apply or export unpushed commits
-#   patch_plain_str  — the same workflow with a plain diff
+# Moving commits between machines through plain, Base64, or Base85 workflows:
+#   patch / patch_85  — verified Base85 envelope; apply or export unpushed commits
+#   patch_64          — verified Base64 envelope
+#   patch_plain_str   — the same workflow with a plain diff
 #   git_patch_create / git_patch_apply — explicit legacy plain create/apply verbs
 #
 # Both sides funnel through one generator (_git_patch_write) and one applier
@@ -871,24 +872,158 @@ _PATCH_64_EOF_
   _PATCH_64_MODE="$1" _PATCH_64_INPUT="$2" _PATCH_64_OUTPUT="$3" _PATCH_64_DIVIDER="$_GIT_PATCH_DIVIDER" node -e "$codec_js"
 }
 
-# _git_patch_read_file: prepare $2 in plain/base64 format $1 for the shared applier.
+# _git_patch_format_name: return the public command name for one transfer format.
+# Returns nonzero for unknown formats.
+function _git_patch_format_name() {
+  case "$1" in
+  plain) printf '%s\n' patch_plain_str ;;
+  base64) printf '%s\n' patch_64 ;;
+  base85) printf '%s\n' patch_85 ;;
+  *) return 1 ;;
+  esac
+}
+
+# _git_patch_85_codec: encode/decode $2 into $3 using canonical unframed ASCII85.
+# Arguments: encode/decode, input file, output file. Returns 2 for unrelated clipboard text.
+function _git_patch_85_codec() {
+  _snip_require_binary node || return 1
+  _ensure_base85_module || return $?
+  local codec_js module_path="$HOME/.local/lib/node_modules/base85"
+  IFS= read -r -d '' codec_js << '_PATCH_85_EOF_' || true
+/** Encode a versioned byte envelope or validate it before writing decoded bytes. */
+const fs = require('fs'), crypto = require('crypto');
+const base85 = require(process.env._PATCH_85_MODULE_PATH);
+/** Wire magic includes the version; the digest covers only the original patch. */
+const magic = 'SY_GIT_PATCH_85_v1\n';
+/** Envelope family distinguishes damaged transfers from unrelated clipboard text. */
+const family = 'SY_GIT_PATCH_85';
+/** Display boundaries share the wire version but sit outside the encoded bytes. */
+const begin = '# BEGIN ' + magic.trim(), end = '# END ' + magic.trim();
+/** Shared shell-defined separator immediately before and after each payload. */
+const divider = process.env._PATCH_85_DIVIDER;
+/** Reject malformed input without writing output; message is safe diagnostic text. */
+function fail(message) {
+  process.stderr.write('patch_85: ' + message + '\n');
+  process.exit(1);
+}
+try {
+  const input = fs.readFileSync(process.env._PATCH_85_INPUT);
+  if (process.env._PATCH_85_MODE === 'encode') {
+    // Latin-1 slicing preserves every patch byte; labels alone are UTF-8 text.
+    const source = input.toString('latin1');
+    const sections = [...source.matchAll(/^# BEGIN SY_GIT_PATCH_BOUNDARY_v1([^\n]*)\n[\s\S]*?^# END SY_GIT_PATCH_BOUNDARY_v1\1\n\n/gm)];
+    if (!sections.length || sections.map(section => section[0]).join('') !== source) {
+      fail('malformed plain patch boundaries');
+    }
+    const frames = sections.map(section => {
+      const patch = Buffer.from(section[0], 'latin1');
+      const label = Buffer.from(section[1], 'latin1').toString('utf8');
+      const digest = crypto.createHash('sha256').update(patch).digest('hex');
+      const commitLine = section[0].match(/^# Commit: ([^\n]*)$/m);
+      const preview = commitLine
+        ? Buffer.from(commitLine[1], 'latin1').toString('utf8').replace(/[\x00-\x1f\x7f-\x9f]/g, ' ').trim()
+        : '';
+      const envelope = Buffer.concat([Buffer.from(magic + digest + '\n'), patch]);
+      const encoded = base85.encode(envelope, 'a85');
+      if (encoded === false) fail('Base85 encoding failed');
+      const payload = (encoded.match(/.{1,76}/g) || ['']).map(line => '> ' + line).join('\n');
+      return begin + label + '\n# Commit: ' + preview + '\n' + divider + '\n' + payload + '\n' + divider + '\n' + end + label + '\n';
+    });
+    fs.writeFileSync(process.env._PATCH_85_OUTPUT, frames.join('\n'));
+  } else {
+    const text = input.toString('latin1').replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, '');
+    const framed = text.includes('# BEGIN ' + family) || text.includes('# END ' + family);
+    let payloads = [text];
+    if (framed) {
+      const framePattern = new RegExp('^' + begin + '[^\\r\\n]*\\r?\\n# [^\\r\\n]*\\r?\\n([\\s\\S]*?)\\r?\\n' + end + '[^\\r\\n]*(?=\\r?\\n|$)', 'gm');
+      const frames = [...text.matchAll(framePattern)];
+      if (!frames.length || text.replace(framePattern, '').replace(/[ \t\r\n]/g, '') !== '') {
+        fail('malformed Base85 envelope boundaries or preview');
+      }
+      // Only marker prefixes define pairs; encoded lines use a visible quote prefix.
+      payloads = frames.map(frame => frame[1]
+        .replace(/^### -+(?: ###)?\r?\n/, '')
+        .replace(new RegExp('^' + divider + '\\r?\\n|\\r?\\n' + divider + '$', 'g'), '')
+        .replace(/^> /gm, ''));
+    }
+    // Validate every frame before writing any patch the applier can consume.
+    const patches = payloads.map(payload => {
+      // Only ASCII transport whitespace is ignorable, never punctuation or Unicode.
+      const encoded = payload.replace(/[ \t\r\n]/g, '');
+      let decoded;
+      try {
+        decoded = base85.decode(encoded, 'a85');
+      } catch (error) {
+        fail('invalid or noncanonical Base85 envelope');
+      }
+      if (decoded === false || base85.encode(decoded, 'a85') !== encoded) {
+        fail('invalid or noncanonical Base85 envelope');
+      }
+      const hasFamily = decoded.subarray(0, family.length).toString('latin1') === family;
+      // Long Base85-looking clipboard text may have a damaged magic prefix.
+      const envelopeLength = magic.length + 64 + 1;
+      const minimumEnvelopeLength = Math.ceil(envelopeLength / 4) * 5;
+      const looksEncoded = encoded.length >= minimumEnvelopeLength && /^[!-u]+$/.test(encoded);
+      if (!hasFamily && !looksEncoded) {
+        if (framed) fail('invalid Base85 envelope payload');
+        process.exit(2);
+      }
+      const version = decoded.subarray(0, magic.length).toString('latin1');
+      if (version !== magic) fail('unsupported Base85 envelope version');
+      const digestEnd = magic.length + 64;
+      const digest = decoded.subarray(magic.length, digestEnd).toString('latin1');
+      if (!/^[0-9a-f]{64}$/.test(digest) || decoded[digestEnd] !== 10) {
+        fail('malformed Base85 envelope digest');
+      }
+      const patch = decoded.subarray(digestEnd + 1);
+      if (crypto.createHash('sha256').update(patch).digest('hex') !== digest) {
+        fail('SHA-256 mismatch; patch not applied');
+      }
+      return patch;
+    });
+    fs.writeFileSync(process.env._PATCH_85_OUTPUT, Buffer.concat(patches));
+  }
+} catch (error) {
+  if (!error.code) throw error;
+  fail('cannot read or write Base85 envelope (' + error.code + ')');
+}
+_PATCH_85_EOF_
+  _PATCH_85_MODE="$1" _PATCH_85_INPUT="$2" _PATCH_85_OUTPUT="$3" \
+    _PATCH_85_DIVIDER="$_GIT_PATCH_DIVIDER" _PATCH_85_MODULE_PATH="$module_path" \
+    node -e "$codec_js"
+}
+
+# _git_patch_codec: dispatch the requested encoded format to its byte codec.
+# Arguments: format, encode/decode, input file, output file.
+function _git_patch_codec() {
+  local format="$1"
+  shift
+  case "$format" in
+  base64) _git_patch_64_codec "$@" ;;
+  base85) _git_patch_85_codec "$@" ;;
+  *) return 2 ;;
+  esac
+}
+
+# _git_patch_read_file: prepare $2 in plain, Base64, or Base85 format $1.
 # Sets _GIT_PATCH_INPUT_FILE; returns 2 for non-envelope input, 1 for an invalid
 # file/envelope, or 0 for a readable patch. Never applies or changes the source.
 function _git_patch_read_file() {
-  local format="$1" patch_file="$2"
+  local format="$1" patch_file="$2" command_name
   _GIT_PATCH_INPUT_FILE=""
   if [ ! -f "$patch_file" ]; then
     echo "patch: patch file '$patch_file' not found." >&2
     return 1
   fi
-  if [ "$format" = base64 ]; then
+  if [ "$format" = base64 ] || [ "$format" = base85 ]; then
+    command_name=$(_git_patch_format_name "$format") || return 2
     local decoded_file status
     decoded_file=$(_git_patch_temp_file decoded.patch) || return 1
-    _git_patch_64_codec decode "$patch_file" "$decoded_file"
+    _git_patch_codec "$format" decode "$patch_file" "$decoded_file"
     status=$?
     [ "$status" -eq 0 ] || return "$status"
     if ! _git_patch_looks_like_patch "$decoded_file"; then
-      echo "patch_64: Base64 envelope contains no patch" >&2
+      echo "$command_name: $format envelope contains no patch" >&2
       command rm -f "$decoded_file"
       return 1
     fi
@@ -919,7 +1054,9 @@ function _git_patch_clipboard_file() {
       return 2
     fi
   elif _git_patch_looks_like_patch "$patch_file"; then
-    echo "patch_64: plain diff rejected; use patch_plain_str for plain patches" >&2
+    local command_name
+    command_name=$(_git_patch_format_name "$format") || command_name=patch
+    echo "$command_name: plain diff rejected; use patch_plain_str for plain patches" >&2
     return 1
   fi
   _git_patch_read_file "$format" "$patch_file"
@@ -1136,7 +1273,7 @@ function _git_patch_apply_file() {
 }
 
 # _git_patch_upload: copy $1 to reachable shared storage using repo prefix $2.
-# Preserve .patch.b64 for encoded input; missing storage is a nonfatal skip.
+# Preserve encoded extensions; missing storage is a nonfatal skip.
 function _git_patch_upload() {
   local patch_file="$1"
   local repo_name="$2"
@@ -1151,6 +1288,7 @@ function _git_patch_upload() {
   # cut in the same minute cannot collide.
   local target suffix=".patch"
   [[ "$patch_file" = *.b64 ]] && suffix=".patch.b64"
+  [[ "$patch_file" = *.b85 ]] && suffix=".patch.b85"
   target="${dropbox_folder}/${repo_name}-$(command date +%Y_%m_%d_%H_%M)-$(git rev-parse --short HEAD 2> /dev/null)${suffix}"
   if command cp "$patch_file" "$target" 2> /dev/null; then
     echo ">>> patch uploaded $target"
@@ -1322,8 +1460,8 @@ _PATCH_FIND_EOF_
 
 # _git_patch_send_to_copy_servers: fire-and-forget copy-to-server for a new patch
 #
-# Sends the patch to every CODE_SERVER_REMOTE copy-server as <repo>-<date_time>.patch
-# or .patch.b64, preserving the input encoding.
+# Sends the patch to every CODE_SERVER_REMOTE copy-server as <repo>-<date_time>.patch,
+# .patch.b64, or .patch.b85, preserving the input encoding.
 # (copy-to-server also overwrites clipboard.txt there, so copy-from-server on the
 # other machine returns this patch). Runs in the background so a slow or down
 # server never delays `patch`; output goes to <patch>.copy-to-server.log beside the
@@ -1349,6 +1487,7 @@ function _git_patch_send_to_copy_servers() {
   fi
   local suffix=".patch"
   [[ "$patch_file" = *.b64 ]] && suffix=".patch.b64"
+  [[ "$patch_file" = *.b85 ]] && suffix=".patch.b85"
   local remote_name
   remote_name="${repo_name}-$(date +%Y-%m-%d_%H-%M-%S)${suffix}"
   local log_file="${patch_file}.copy-to-server.log"
@@ -1407,9 +1546,11 @@ function _git_patch_create() {
     return 1
   fi
 
-  if [ "$format" = base64 ]; then
-    _git_patch_64_codec encode "$patch_file" "${patch_file}.b64" || return 1
-    patch_file="${patch_file}.b64"
+  if [ "$format" = base64 ] || [ "$format" = base85 ]; then
+    local suffix
+    [ "$format" = base64 ] && suffix=.b64 || suffix=.b85
+    _git_patch_codec "$format" encode "$patch_file" "${patch_file}${suffix}" || return 1
+    patch_file="${patch_file}${suffix}"
   fi
 
   # Never let clipboard formatting alter either the plain diff or its envelope.
@@ -1425,8 +1566,10 @@ function _git_patch_create() {
   # paths are repo-relative, so the default "cd to the file's folder" block sent
   # you into the throwaway /tmp patch folder — not a git repo — where every hunk
   # failed with "No such file or directory" and the patch looked corrupt.
-  if [ "$format" = base64 ]; then
-    print_action_summary --run-folder="$repo_root" "$patch_file" patch_64
+  if [ "$format" = base64 ] || [ "$format" = base85 ]; then
+    local command_name
+    command_name=$(_git_patch_format_name "$format") || return 1
+    print_action_summary --run-folder="$repo_root" "$patch_file" "$command_name"
   else
     print_action_summary --run-folder="$repo_root" "$patch_file" git_patch_apply
   fi
@@ -1515,24 +1658,30 @@ function patch_64() {
   _git_patch_transfer base64 "$@"
 }
 
-# `patch` intentionally changes wire format; explicit plain commands stay available.
-alias patch='patch_64'
+# patch_85: transfer framed Base85 with a one-line preview; verify before applying.
+# Accepts [-y] [count | patch_file]; application modifies files and can commit.
+function patch_85() {
+  _git_patch_transfer base85 "$@"
+}
+
+# `patch` defaults to Base85; explicit Base64 and plain commands remain available.
+alias patch='patch_85'
 
 # _git_patch_transfer: shared selection, generation, application, and commit workflow.
-# $1 is plain/base64, remaining args are [-y] [count | patch_file]. Returns the
-# selected operation's status, including commit failure; rejects damaged input.
+# $1 is plain, base64, or base85; remaining args are [-y] [count | patch_file].
+# Returns the selected operation's status, including commit failure; rejects damaged input.
 function _git_patch_transfer() {
-  local format="$1" name=patch_plain_str
-  [ "$format" = base64 ] && name=patch_64
+  local format="$1" name
+  name=$(_git_patch_format_name "$format") || return 2
   shift
   if is_help_arg "${1:-}"; then
     echo "$name: apply a patch when one is at hand, otherwise cut a new one
   Usage: $name [-y] [count | patch_file]
-  Format: $format. patch is an alias for patch_64; use patch_plain_str for plain diffs.
-  Base64 wraps version + SHA-256 + original patch bytes; verification precedes apply.
-  Both formats label each patch with its repository and commit subject.
-  Apply accepts the complete marked block or legacy bare Base64; previews are display-only.
-  Base64 is not encryption or authentication. Plain input is not accepted by patch_64.
+  Format: $format. patch aliases patch_85; use patch_64 for Base64 or patch_plain_str for plain diffs.
+  Encoded formats wrap version + SHA-256 + original patch bytes; verification precedes apply.
+  All formats label each patch with its repository and commit subject.
+  Apply accepts complete marked blocks; patch_64 also accepts legacy bare Base64.
+  Base64 and Base85 are not encryption or authentication. Plain input is not accepted by encoded modes.
   Options:
     -y, --yes  skip only the clipboard apply prompt; patch and repository prompts remain
   Resolution order:
@@ -1543,7 +1692,7 @@ function _git_patch_transfer() {
   Recognized damaged envelopes fail without applying or replacing the clipboard.
   Creation exports committed changes only; staged, unstaged, and untracked work
   stays untouched. Without an upstream, only the latest commit is exported.
-  Exports print, copy, save, and upload; Base64 files use .patch.b64.
+  Exports print, copy, save, and upload; encoded files use .patch.b64 or .patch.b85.
   Every framed patch asks [quit/n/Y]: Yes applies, No skips, Quit stops. A quit after
   earlier patches leaves those changes uncommitted. After apply, copy the first applied
   commit message (minus Co-authored-by), then run 'git aac'; paste it into the editor.
@@ -1580,7 +1729,9 @@ function _git_patch_transfer() {
     _git_patch_read_file "$format" "$1"
     status=$?
     if [ "$status" -ne 0 ]; then
-      [ "$status" -eq 2 ] && echo "patch_64: expected a Base64 patch envelope; use patch_plain_str for plain patches" >&2
+      if [ "$status" -eq 2 ]; then
+        echo "$name: expected a $format patch envelope; use patch_plain_str for plain patches" >&2
+      fi
       return 1
     fi
     patch_file="$_GIT_PATCH_INPUT_FILE"

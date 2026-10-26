@@ -7,8 +7,11 @@ import { execFileSync, spawnSync } from "child_process";
 
 /** Actual patch workflow source, loaded without the user's shell profile. */
 const PROFILE = process.env.PATCH_PROFILE || path.resolve("software/scripts/bash-git-helpers.profile.bash");
+const BASE85_PROFILE = path.resolve("software/scripts/bash-base85.profile.bash");
+const BASE85_MODULE = path.resolve("node_modules/base85");
 /** Each test owns its repository, transport files, and hooks. */
 let folder;
+let home;
 
 /** Execute real Git in the isolated repository, throwing on failure and returning stdout. */
 function git(...args) {
@@ -31,6 +34,9 @@ function shell(script) {
       "-c",
       `
     shopt -s expand_aliases
+    function _snip_require_binary() { type -P "$1" > /dev/null 2>&1; }
+    function _snip_run() { command "$@"; }
+    source "$BASE85_PROFILE"
     source "$PROFILE"
     function _git_patch_prompt_choice() { printf '%s\\n' "$1"; return 0; }
     function is_help_arg() { [ "$1" = --help ]; }
@@ -56,13 +62,25 @@ function shell(script) {
       cwd: folder,
       encoding: "utf8",
       timeout: 10000,
-      env: { ...process.env, PROFILE, BASH_ENV: "/dev/null", GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+      env: {
+        ...process.env,
+        PROFILE,
+        BASE85_PROFILE,
+        HOME: home,
+        BASH_ENV: "/dev/null",
+        GIT_CONFIG_GLOBAL: "/dev/null",
+        GIT_CONFIG_NOSYSTEM: "1",
+      },
     },
   );
 }
 
 beforeEach(() => {
   folder = fs.mkdtempSync(path.join(os.tmpdir(), "patch-new-files-"));
+  home = fs.mkdtempSync(path.join(os.tmpdir(), "patch-new-files-home-"));
+  const moduleFolder = path.join(home, ".local/lib/node_modules");
+  fs.mkdirSync(moduleFolder, { recursive: true });
+  fs.symlinkSync(BASE85_MODULE, path.join(moduleFolder, "base85"), "dir");
   git("init", "-q");
   git("config", "user.name", "Test Dev");
   git("config", "user.email", "dev@example.invalid");
@@ -90,25 +108,23 @@ beforeEach(() => {
 
 afterEach(() => {
   fs.rmSync(folder, { recursive: true, force: true });
+  fs.rmSync(home, { recursive: true, force: true });
 });
 
 describe("Patch add-all commit integration", () => {
-  it.each(["patch_plain_str", "patch_64", "eval patch"])(
-    "%s commits new and unrelated files through aac while skipping hooks",
-    (command) => {
-      const exported = shell(command + " 1");
-      expect(exported.status, exported.stderr).toBe(0);
-      expect(exported.stdout).toContain("Latest Patch copied to clipboard");
-      git("checkout", "--detach", "HEAD~1");
-      fs.writeFileSync(path.join(folder, "unrelated.txt"), "also staged by aac\n");
-      fs.writeFileSync(path.join(folder, ".git/hooks/pre-commit"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
-      const result = shell(command + " -y");
-      expect(result.status, result.stderr).toBe(0);
-      expect(result.stdout).toContain("Patch Applied");
-      expect(git("show", "HEAD:added file.txt")).toBe("new content");
-      expect(git("show", "HEAD:unrelated.txt")).toBe("also staged by aac");
-      expect(git("log", "-1", "--format=%s")).toBe("Add new file");
-      expect(git("status", "--porcelain")).toBe("");
-    },
-  );
+  it.each(["patch_plain_str", "patch_64", "patch_85"])("%s commits new and unrelated files through aac while skipping hooks", (command) => {
+    const exported = shell(command + " 1");
+    expect(exported.status, exported.stderr).toBe(0);
+    expect(exported.stdout).toContain("Latest Patch copied to clipboard");
+    git("checkout", "--detach", "HEAD~1");
+    fs.writeFileSync(path.join(folder, "unrelated.txt"), "also staged by aac\n");
+    fs.writeFileSync(path.join(folder, ".git/hooks/pre-commit"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    const result = shell(command + " -y");
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("Patch Applied");
+    expect(git("show", "HEAD:added file.txt")).toBe("new content");
+    expect(git("show", "HEAD:unrelated.txt")).toBe("also staged by aac");
+    expect(git("log", "-1", "--format=%s")).toBe("Add new file");
+    expect(git("status", "--porcelain")).toBe("");
+  });
 });

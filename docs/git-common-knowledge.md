@@ -940,29 +940,30 @@ Numbered convenience aliases also exist for common N values: `git r5`, `git r10`
 
 ## Byte-exact patch transfer
 
-The shell command `patch` now aliases `patch_64`, which transfers a verified Base64 envelope rather than a plain diff.
-Use `patch_plain_str` for the previous plain-text workflow. These commands come from `software/scripts/bash-git-helpers.profile.bash`.
+The shell command `patch` aliases `patch_85`, which transfers a verified Base85 envelope.
+Use `patch_64` for Base64 envelopes and `patch_plain_str` for plain diffs. These commands come from `software/scripts/bash-git-helpers.profile.bash`.
 
 ```bash
-patch 1                       # export the latest committed change as Base64
-patch 3                       # export the last three commits, oldest first
-patch                         # offer clipboard apply, otherwise export unpushed commits
-patch -y                      # skip only the clipboard apply prompt
-patch_64 /tmp/change.patch.b64 # verify, decode, apply, then open the commit editor
-patch_plain_str 1             # export a plain diff instead
-patch_plain_str /tmp/fix.patch # apply an existing plain diff, then open the commit editor
+patch 1                           # export the latest committed change as Base85
+patch 3                           # export the last three commits, oldest first
+patch                               # offer clipboard apply, otherwise export unpushed commits
+patch -y                            # skip only the clipboard apply prompt
+patch_85 /tmp/change.patch.b85      # verify, decode, apply, then open the commit editor
+patch_64 /tmp/change.patch.b64      # use Base64 instead
+patch_plain_str 1                   # export a plain diff instead
+patch_plain_str /tmp/fix.patch      # apply an existing plain diff, then open the commit editor
 ```
 
-Both modes share one generator, one applier, and one 50-hash separator definition.
-After applying, `patch`, `patch_64`, and `patch_plain_str` copy the commit message and run `git aac` for an interactive commit.
+Plain, Base64, and Base85 modes share one generator, one applier, and one 50-hash separator definition.
+After applying, `patch`, `patch_85`, `patch_64`, and `patch_plain_str` copy the commit message and run `git aac` for an interactive commit.
 This stages all non-ignored changes, including newly created files and unrelated work, and calls `git c` with its existing `--no-verify` behavior.
-Plain sections place matching separators immediately after BEGIN and immediately before END; Base64 frames use the same separators around their encoded payloads.
+Plain sections place matching separators immediately after BEGIN and immediately before END; encoded frames use the same separators around their payloads.
 Creation leaves staged, unstaged, and untracked work untouched.
 Without an upstream, creation warns and exports only the latest commit. Multiple commits retain the existing per-patch confirmation prompts.
 After application, the command copies the original commit message to the clipboard and opens the commit editor; paste the message there.
 A failed commit returns failure, even when the patch has already changed files.
 
-Base64 mode encodes before printing, copying, or uploading. Saved and uploaded envelopes use `.patch.b64`; plain files retain `.patch`.
+Base64 and Base85 modes encode before printing, copying, or uploading. Saved and uploaded envelopes use `.patch.b64` or `.patch.b85`; plain files retain `.patch`.
 Each commit gets its own block, oldest first, using the same repository, patch order, and short SHA labels as `patch_plain_str`.
 Copy all desired complete blocks, including matching markers and one-line message previews, but not status messages or Markdown fences:
 
@@ -982,13 +983,22 @@ Copy all desired complete blocks, including matching markers and one-line messag
 # END SY_GIT_PATCH_64_v2 · acme/widget-store · patch 2 of 2 · <short-sha-2>
 ```
 
+```text
+# BEGIN SY_GIT_PATCH_85_v1 · acme/widget-store · patch 1 of 1 · <short-sha>
+# Commit: Commit subjects and bodies consolidated into one line
+##################################################
+> <Base85 payload, wrapped at 76 characters per line>
+##################################################
+# END SY_GIT_PATCH_85_v1 · acme/widget-store · patch 1 of 1 · <short-sha>
+```
+
 Each preview summarizes the selected batch, combines commit messages oldest first, collapses whitespace and control characters to single spaces, and omits Co-authored-by trailers.
 This includes repeated or mixed spaces, tabs, carriage returns, and newlines. Each payload has matching 50-hash dividers.
 The preview is display-only: decoding preserves the original patch bytes and commit messages inside the payload.
 The receiver applies blocks in their pasted order; selecting a later patch alone still requires its prerequisite changes.
 ASCII spaces, tabs, CR, and LF inside the payload are tolerated. Node is required to encode and decode portably.
 
-The payload remains Base64 of these bytes, wrapped at 76 columns:
+The Base64 payload remains wrapped at 76 columns:
 
 ```text
 SY_GIT_PATCH_64_v2\n
@@ -996,26 +1006,29 @@ SY_GIT_PATCH_64_v2\n
 <original patch bytes>
 ```
 
-The digest covers the original patch bytes only, not the visible preview.
-Pair matching uses only the `# BEGIN SY_GIT_PATCH_64_v2` and `# END SY_GIT_PATCH_64_v2` prefixes; suffixes are display-only and may differ.
-Decoding still rejects missing, orphaned, or nested markers, noncanonical Base64, unsupported wire versions, malformed digests, and checksum mismatches.
+The Base85 payload uses `SY_GIT_PATCH_85_v1\n`, the same digest line, and the original patch bytes.
+It uses unframed `a85` encoding, wraps at 76 columns, and prefixes displayed payload lines with `> ` to prevent frame-marker collisions.
+Both digests cover the original patch bytes only, not the visible preview.
+Base64 pairing matches the `SY_GIT_PATCH_64_v2` prefixes; Base85 pairing matches the `SY_GIT_PATCH_85_v1` prefixes. Frame suffixes are display-only and may differ.
+Decoding rejects missing, orphaned, or nested markers, noncanonical Base64 or Base85, unsupported wire versions, malformed digests, and checksum mismatches.
 The receiver validates every block before applying any patch.
-Recognized damaged envelopes and long Base64-looking clipboard input fail instead of triggering a new export that overwrites the clipboard.
+Recognized damaged envelopes and long Base64- or Base85-looking clipboard input fail instead of triggering a new export that overwrites the clipboard.
 An explicit file with invalid input always fails. Unrelated clipboard prose still falls back to creation.
-`patch_64` rejects plain diffs; use `patch_plain_str` rather than weakening matching or normalizing Unicode.
-SHA-256 detects accidental corruption; it does not authenticate the sender. Base64 is not encryption.
+`patch_64` and `patch_85` reject plain diffs; use `patch_plain_str` instead.
+SHA-256 detects accidental corruption; it does not authenticate the sender. Base64 and Base85 are not encryption.
 
 ### Migration and compatibility
 
-Updated receivers accept sequences of labeled v2 blocks, previous unlabeled v2 blocks, bare v2 payloads, and legacy bare v1 payloads.
+Updated receivers accept Base64 labeled v2 blocks, previous unlabeled v2 blocks, bare v2 payloads, and legacy bare v1 payloads.
+They also accept Base85 labeled v1 blocks or bare v1 payloads.
 Older `# <preview>` lines without `Commit:` remain valid. The divider is optional; when present, its closing ` ###` is optional too.
-Older receivers require an updated profile for labeled blocks or block sequences.
+Older Base64 receivers require an updated profile for labeled blocks or block sequences. Older profiles cannot read Base85.
 Removing markers from a single block does not downgrade its v2 payload to v1; do not concatenate bare payloads from multiple blocks.
 
 Replace old `patch /path/to/plain.patch` calls with `patch_plain_str /path/to/plain.patch`.
 Likewise, call `patch_plain_str` when the clipboard contains an old plain diff.
 The explicit `git_patch_create` / `git_patch_apply` commands and their existing create/apply aliases remain plain.
-The plain shared-folder fallback selects only `.patch` files; apply an encoded shared file explicitly through `patch_64`.
+The plain shared-folder fallback selects only `.patch` files; apply encoded shared files explicitly through `patch_64` or `patch_85`.
 `command patch` still invokes the system patch utility rather than this shell alias.
 
 After updating the profile through the normal setup flow, open a new shell to load the alias.

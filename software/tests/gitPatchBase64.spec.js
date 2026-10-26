@@ -112,14 +112,14 @@ describe("Base64 patch transfer integration", () => {
     expect(fs.existsSync(path.join(folder, "note.txt.rej"))).toBe(true);
   });
 
-  it("makes patch an alias of the Base64 command", () => {
+  it("makes patch an alias of the Base85 command", () => {
     const result = shell("alias patch");
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout.trim()).toBe("alias patch='patch_64'");
+    expect(result.stdout.trim()).toBe("alias patch='patch_85'");
   });
 
-  it.each(["patch_64 1", "eval 'patch 1'"])("exports framed Base64 through clipboard and shared file with %s", (command) => {
-    const result = shell(command);
+  it("exports framed Base64 through clipboard and shared file with patch_64", () => {
+    const result = shell("patch_64 1");
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("Latest Patch copied to clipboard");
     const encoded = fs.readFileSync(path.join(folder, ".git/clipboard"), "utf8");
