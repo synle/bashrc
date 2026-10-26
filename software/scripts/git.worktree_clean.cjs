@@ -70,16 +70,17 @@ function paint(text, code, enabled) {
 /**
  * Turn any URL inside a display string into an OSC 8 terminal hyperlink so it is
  * clickable, but only when color/TTY human output is enabled. Piped output (enabled =
- * false) is returned untouched so logs stay greppable. Byte-equivalent to
- * format_hyperlink() in common-functions.bash — duplicated because this script deploys as
- * a standalone executable. See AGENTS.md (Terminal links).
+ * false) or a dumb terminal is returned untouched so logs stay greppable.
+ * Each link includes a clickable hint. Standalone deployment prevents sharing the shell
+ * helper. See AGENTS.md (Terminal links).
  * @param {string} text
  * @param {boolean} enabled
  * @returns {string}
  */
 function linkify(text, enabled) {
   if (!enabled) return text;
-  return text.replace(/https?:\/\/\S+/g, (url) => `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`);
+  if (!process.env.TERM || process.env.TERM === `dumb`) return text;
+  return text.replace(/https?:\/\/\S+/g, (url) => `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\ (clickable link)`);
 }
 
 /**

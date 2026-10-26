@@ -366,17 +366,21 @@ Profile registration is buffered: `registerProfileBlock` /
 - **`getGitHubRawUrl(path)` / `get_github_raw_url <path>`** for GitHub raw URLs; always
   `https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{path}` — `github.com/.../blob`
   has no CORS and `api.github.com/.../contents` returns JSON.
-- **Terminal links: emit clickable URLs as OSC 8 hyperlinks, TTY-gated.** Human-facing
-  terminal output that prints a URL wraps it so modern terminals (and tmux 3.4+ with the
-  `hyperlinks` terminal-feature, set in `tmux.config`) render it clickable. Shell uses
-  `format_hyperlink <url> [label]` (`common-functions.bash`); each standalone `git.*.cjs`
-  carries a byte-equivalent local `formatLink()` because they deploy as separate
-  executables and cannot source that file (duplication is forced by the deploy model, not
-  a choice). **Always gate on a TTY** (`[ -t 1 ]` / `process.std{out,err}.isTTY`): piped,
-  redirected, and machine-consumed output (`list_prs --links`, anything another tool
-  parses) stays the bare URL so it remains greppable. Agent chat/markdown is NOT terminal
-  output — never emit raw OSC 8 escapes there; render a full-path link as prose per the
-  PR-workflow rules. The escape is `ESC ]8;; <url> ST <label> ESC ]8;; ST`.
+- **Terminal links: emit real OSC 8 hyperlinks on supported human output.**
+  `log()` uses `formatTerminalLinks()` on stderr; stdout remains generated shell.
+  Shell callers use `format_hyperlink <url> [label]`, available in
+  `common-functions.bash` and `profile-core.sh`; keep their function bodies identical.
+  Call directly, not inside `$(...)`: command substitution hides the final output TTY.
+  Standalone `git.*.cjs` tools keep local renderers because they deploy independently.
+  Gate on the actual output stream's TTY and a non-dumb `TERM`.
+  Retain full destinations and add `(clickable link)` only to human terminal output.
+  Pipes, logs, JSON, clipboard data, `--links`, and other machine output stay escape-free and retain their existing contracts.
+  Reject unsafe protocols and control bytes before constructing OSC 8; percent-encode local file paths.
+  Keep native `ls`, `rg`, and `fd` unchanged. GNU `ll` enables `--hyperlink=auto`
+  only when advertised; `rg_link` and `fd_link` probe support before adding flags.
+  Delta uses its configured hyperlink target; `less -R` preserves links on supported versions.
+  tmux keeps the append-only `hyperlinks` terminal feature; terminal mouse bypass remains documented.
+  Agent replies use renderer-native links, never raw OSC 8; follow the shared link-display rules.
 - **Lowercase hex colors** — `#1e1e1e`, not `#1E1E1E`.
 - Async by default (`await execBash`, `await writeText`). Catch the narrowest error;
   never swallow silently in a diagnostic or rollback path. Two-space indent; `oxfmt`

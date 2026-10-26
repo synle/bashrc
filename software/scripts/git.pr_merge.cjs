@@ -37,15 +37,15 @@ function colorize(color, message) {
 
 /**
  * Render a URL as an OSC 8 terminal hyperlink so it is clickable, but only when stderr is
- * a TTY. Piped/redirected output stays the bare URL so captured logs remain greppable.
- * Byte-equivalent to format_hyperlink() in common-functions.bash — duplicated because this
- * script deploys as a standalone executable. See AGENTS.md (Terminal links).
+ * a non-dumb TTY. Include a clickable hint; captured logs retain the bare URL.
+ * Standalone deployment prevents sharing the shell helper. See AGENTS.md (Terminal links).
  * @param {string} url
  * @returns {string}
  */
 function formatLink(url) {
   if (!process.stderr.isTTY) return url;
-  return `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`;
+  if (!process.env.TERM || process.env.TERM === `dumb`) return url;
+  return `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\ (clickable link)`;
 }
 
 /**

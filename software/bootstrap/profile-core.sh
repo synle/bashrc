@@ -91,7 +91,8 @@ function _prompt_command_add() {
 
 export EDITOR='vim'
 export VISUAL="$EDITOR"
-export PAGER="less"
+# Preserve OSC 8 hyperlinks and colors in supported less versions.
+export PAGER="less -R"
 export GIT_EDITOR="$EDITOR"
 export BASH_PATH=~/.bash_syle
 export LINE_BREAK_COUNT=80
@@ -104,6 +105,34 @@ export LINE_BREAK_SLASH
 printf -v LINE_BREAK_EQUAL '%*s' "$LINE_BREAK_COUNT" ''
 LINE_BREAK_EQUAL=${LINE_BREAK_EQUAL// /=}
 export LINE_BREAK_EQUAL
+
+# format_hyperlink <url> [label] - Print a clickable HTTP(S)/file URL on terminal stdout.
+# Returns 2 without output for unsafe schemes, whitespace in URLs, or control bytes.
+# Pipes and dumb terminals retain plain text; explicit labels keep their existing contract.
+# Call directly, never inside command substitution: capture hides the final output TTY.
+# Usage: printf 'PR: '; format_hyperlink "$url"; printf '\n'
+# Mirror the function body in profile-core.sh; standalone Git tools deploy independently.
+function format_hyperlink() {
+  if is_help_arg "${1:-}"; then
+    echo "format_hyperlink: print a clickable HTTP(S)/file URL on terminal stdout
+  Usage: format_hyperlink <url> [label]
+  Call directly, not inside command substitution. Pipes retain plain text.
+  Returns 2 without output for unsafe URLs or control bytes."
+    return 0
+  fi
+  local url="${1:-}" label="${2:-${1:-}}"
+  case "$url" in
+  http://?* | https://?* | file:///?*) ;;
+  *) return 2 ;;
+  esac
+  case "$url" in *[[:space:][:cntrl:]]*) return 2 ;; esac
+  case "$label" in *[[:cntrl:]]*) return 2 ;; esac
+  if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ]; then
+    printf '\033]8;;%s\033\\%s\033]8;;\033\\ (clickable link)' "$url" "$label"
+  else
+    printf '%s' "$label"
+  fi
+}
 
 # --- Help-Trigger Helper ---
 # Single source of truth for the "is this arg a --help request?" check used by
@@ -661,10 +690,48 @@ function lsfa() {
   find "${1:-$PWD}" -mindepth 1 -maxdepth 1 -type f -exec realpath {} \; | sort
 }
 
+# rg_link: search with clickable file paths when ripgrep supports OSC 8.
+# Arguments and status pass through unchanged; pipes and old binaries keep native output.
+function rg_link() {
+  if is_help_arg "${1:-}"; then
+    echo "rg_link: search with clickable file paths where supported
+  Usage: rg_link [ripgrep options] <pattern> [paths...]
+  Terminal paths are clickable links; pipes and older binaries stay plain."
+    return 0
+  fi
+  if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ] && command rg --help 2> /dev/null | command grep -q -- --hyperlink-format; then
+    [ -t 2 ] && printf '%s\n' 'File paths are clickable links (OSC 8).' >&2
+    command rg --hyperlink-format=default "$@"
+  else
+    command rg "$@"
+  fi
+}
+
+# fd_link: find with clickable file paths when fd supports OSC 8.
+# Arguments and status pass through unchanged; pipes and old binaries keep native output.
+function fd_link() {
+  if is_help_arg "${1:-}"; then
+    echo "fd_link: find with clickable file paths where supported
+  Usage: fd_link [fd options] [pattern] [path...]
+  Terminal paths are clickable links; pipes and older binaries stay plain."
+    return 0
+  fi
+  if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ] && command fd --help 2> /dev/null | command grep -q -- --hyperlink; then
+    [ -t 2 ] && printf '%s\n' 'File paths are clickable links (OSC 8).' >&2
+    command fd --hyperlink=auto "$@"
+  else
+    command fd "$@"
+  fi
+}
+
 alias grep='command grep --color=auto'
 # --- Aliases: File Listing (native ls) ---
 if command ls --version 2> /dev/null | command grep -q GNU; then
-  alias ll="command ls -lahF --color=auto"
+  if command ls --help 2> /dev/null | command grep -q -- --hyperlink; then
+    alias ll="command ls -lahF --color=auto --hyperlink=auto"
+  else
+    alias ll="command ls -lahF --color=auto"
+  fi
 else
   alias ll="command ls -lahFG"
 fi

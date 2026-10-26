@@ -352,6 +352,33 @@ Regression coverage lives in `software/tests/nativeCd.spec.js`.
 These shortcuts are explicit aliases, not generated command variants.
 Long listings use native timestamps and permission columns.
 
+## Clickable terminal links
+
+Human terminal output marks links with `(clickable link)`. Open them with your terminal's link gesture; modifier keys vary by terminal.
+Agent replies use Markdown links where supported, otherwise complete plain URLs. Raw OSC 8 bytes belong only in terminal programs.
+
+- Shell: call `format_hyperlink "$url"` directly between `printf` calls, never through command substitution.
+- Installer diagnostics: `log()` linkifies HTTP(S) and file URLs on stderr without changing generated stdout.
+- Git helpers: PR and worktree links emit OSC 8 only on their human output TTY.
+- Delta: hyperlink behavior follows the active Git configuration. File targets may require an installed editor URI handler.
+- Pager: `PAGER="less -R"` preserves OSC 8 on supported less versions. Do not use unsafe `less -r` as a workaround.
+- Listing: native `ls` remains unchanged. `ll` requests automatic hyperlinks only when GNU ls advertises support; BSD ls keeps its existing flags.
+- Search: `rg_link` and `fd_link` add native hyperlink flags only on a non-dumb terminal when the binary advertises support.
+- tmux: the configured append-only `hyperlinks` feature enables forwarding on supported versions.
+- Ghostty inside tmux: Shift bypasses mouse capture; the existing macOS gesture is Shift+Cmd+click.
+- Pipes, redirected output, JSON, clipboard contents, and machine-only link lists receive no added OSC 8 escapes or clickable hints.
+
+Refresh the profile with `./run`; refresh Git tooling with `./run --files=git-functions.js` or the broader `./run --preset=terminal`.
+Unsupported applications keep their native output. Byte-level PTY tests do not prove physical clicking in every emulator.
+
+Test terminal support directly:
+
+```bash
+printf '\033]8;;https://example.com\033\\This is a clickable link\033]8;;\033\\\n'
+```
+
+The [Delta hyperlink manual](https://dandavison.github.io/delta/hyperlinks.html) describes file and commit targets.
+
 ## Smart file diff
 
 `diff file1 file2` compares arbitrary files in Delta's one-column layout; `file1` stays left, `file2` stays right. `diff -delta2 file1 file2` selects two columns.

@@ -5505,14 +5505,40 @@ function _applyAutoColor(data) {
 }
 
 /**
+ * Link diagnostic HTTP(S)/file URLs only on a non-dumb output TTY.
+ * Existing OSC 8 text is preserved; URL text and query parameters remain visible.
+ * @param {string} value Diagnostic text, not machine output.
+ * @param {boolean} [isTTY] Whether the final output stream is a terminal.
+ * @param {string} [term] Terminal type; dumb terminals receive plain text.
+ * @returns {string} Text with OSC 8 links and clickable hints when supported.
+ */
+function formatTerminalLinks(value, isTTY = process.stderr?.isTTY, term = process.env.TERM) {
+  if (!isTTY || !term || term === "dumb" || value.includes("\x1b]8;")) return value;
+  return value.replace(/(?:https?:\/\/|file:\/\/\/)[^\s\x00-\x20\x7f-\x9f<>"'`]+/g, (match) => {
+    let url = match.replace(/[.,;]+$/, "");
+    // Remove prose delimiters, but keep balanced parentheses used by real URL paths.
+    for (const [open, close] of [
+      ["(", ")"],
+      ["[", "]"],
+      ["{", "}"],
+    ]) {
+      while (url.endsWith(close) && url.split(close).length > url.split(open).length) url = url.slice(0, -1);
+    }
+    const suffix = match.slice(url.length);
+    return `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\ (clickable link)${suffix}`;
+  });
+}
+
+/**
  * Logs colored text to stderr via console.error. Safe in the `node | bash` pipeline
  * because stderr is never piped to bash. Auto-applies colors based on marker keywords
- * and indentation level. Use this for all diagnostic and user-facing output.
- * Never use raw console.log — it goes to stdout and gets executed as bash commands.
- * @param {...string} data - Strings to log (colors applied automatically)
+ * and indentation level, then adds clickable links on terminal stderr.
+ * Use this for diagnostics; raw console.log would execute text as bash commands.
+ * @param {...string} data - Diagnostic strings, with automatic colors and terminal links.
+ * @returns {void} Writes only to stderr.
  */
 function log(...data) {
-  const coloredData = _applyAutoColor(data);
+  const coloredData = _applyAutoColor(data).map((value) => formatTerminalLinks(String(value)));
   console.error(...coloredData);
 }
 

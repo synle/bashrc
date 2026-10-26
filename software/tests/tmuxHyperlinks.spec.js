@@ -8,7 +8,7 @@
  *    `pr_list` (software/scripts/git.pr_list.cjs, sourced by git-functions.js) wraps
  *    each PR URL in `ESC ]8;; <url> ST <text> ESC ]8;; ST` via formatLink(). A
  *    regression that dropped the OSC 8 escape would still look identical on screen
- *    (formatLink also applies blue+underline ANSI), so the eye can't catch it — only
+ *    (formatLink also applies blue+underline ANSI), so the eye can't catch it - only
  *    an assertion on the escape bytes can.
  *
  * 2. tmux must forward the OSC 8 sequence to the outer terminal. tmux only does this
@@ -19,7 +19,7 @@
  * 3. The terminal must let the click reach it. With tmux `mouse on`, every click is
  *    forwarded to tmux, so Ghostty never detects or opens a link. Ghostty's
  *    `mouse-shift-capture = false` (the default) lets Shift bypass tmux and hand the
- *    event to Ghostty — Shift+hover highlights, Shift+Cmd+click opens. Setting it to
+ *    event to Ghostty - Shift+hover highlights, Shift+Cmd+click opens. Setting it to
  *    true forwards Shift+click to the app and silently breaks link clicking in tmux.
  */
 import { describe, it, expect } from "vitest";
@@ -70,7 +70,7 @@ describe("pr_list emits real OSC 8 hyperlinks", () => {
     // The OSC 8 open (ESC ]8;; <url> ST) and close (ESC ]8;; ST) must both be present
     // in the color branch of formatLink. \x1b]8;; is the OSC 8 introducer.
     expect(source).toMatch(/\\x1b\]8;;\$\{url\}\\x1b\\\\/); // open with the URL
-    expect(source).toMatch(/\\x1b\]8;;\\x1b\\\\`/); // close with empty URI
+    expect(source).toMatch(/\\x1b\]8;;\\x1b\\\\ \(clickable link\)`/); // close with empty URI
   });
 
   it("returns the bare URL when color is disabled so piped output stays greppable", () => {
@@ -109,7 +109,7 @@ describe("shared shell hyperlink helper (format_hyperlink)", () => {
     expect(out).not.toContain("\x1b]8;;");
   });
 
-  it("uses the label as the visible text but keeps piped output as the bare label", () => {
+  it("preserves the custom label in piped output", () => {
     const out = execFileSync("bash", ["-c", `source "${COMMON_FUNCTIONS}"; format_hyperlink "https://example.com/pr/1" "PR 1"`], {
       encoding: "utf8",
     });

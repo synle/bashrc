@@ -16,7 +16,7 @@ function _removeLegacyPayload() {
   log(`Removed legacy ${TEXT_SERVER_LEGACY_PAYLOAD}`);
 }
 
-/** Register the `text-server` bash function. */
+/** Register browser file-transfer commands with TTY-only clickable URL output. */
 async function doWork() {
   _removeLegacyPayload();
 
@@ -25,7 +25,8 @@ async function doWork() {
     code`
       # text-server: tiny browser file editor (Node, no deps) on 0.0.0.0, no auth.
       # Same arguments as code-server. Locked to files directly in <path> unless --allow-cd.
-      # Server code is curl-fetched from the repo each run. Side effects: copies the LAN URL, opens the browser.
+      # Server code is curl-fetched from the repo each run. Side effects: copies the plain LAN URL, opens the browser.
+      # Terminal URLs are clickable; pipes retain plain text. Arguments and exit statuses are unchanged.
       function text-server() {
         if is_help_arg "\${1:-}"; then
           echo "
@@ -156,8 +157,8 @@ async function doWork() {
 
         print_action_summary "$folder"
         echo "text-server:"
-        echo "  LAN:   $url"
-        echo "  Local: $local_url"
+        printf '  LAN:   '; format_hyperlink "$url"; printf '\\n'
+        printf '  Local: '; format_hyperlink "$local_url"; printf '\\n'
         if ((allow_cd)); then
           echo "  Mode:  subfolders allowed (still confined to $folder)"
         else
@@ -303,7 +304,7 @@ async function doWork() {
             [ "$name" = "clipboard.txt" ] \
               || command curl -fs --max-time 5 -X PUT --data-binary @"$payload" "http://$host/api/file?path=clipboard.txt" > /dev/null 2>&1 \
               || echo "  warn   http://$host: history file sent, clipboard.txt update failed" >&2
-            echo "  sent   http://$host/?path=$target"
+            printf '  sent   '; format_hyperlink "http://$host/?path=$target"; printf '\\n'
             [ -n "$first_url" ] || first_url="http://$host/?path=$target"
             sent=$((sent + 1))
           else
@@ -315,7 +316,8 @@ async function doWork() {
         echo "copy-to-server: $sent sent, $failed failed"
         if ((copy_url)) && [ -n "$first_url" ]; then
           printf '%s' "$first_url" | copy --raw
-          echo "copy-to-server: URL copied to the clipboard: $first_url"
+          printf 'copy-to-server: URL copied to the clipboard: '
+          format_hyperlink "$first_url"; printf '\\n'
         fi
         ((sent > 0))
       }

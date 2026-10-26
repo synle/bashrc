@@ -367,7 +367,7 @@ Print one markdown table per group with these columns:
 
 On a mixed-author list, insert an `Author` column immediately after `Repo`, filled in for **every** row (including your own) so the rows stay comparable.
 
-- **PR**: PR number and branch name on separate lines (e.g. `#123` then `feature-branch` below it).
+- **PR**: Full verified clickable PR URL, then the branch name in a separate span. Use renderer-native links where supported; plain-text fallback retains the scheme and full destination. Never substitute a bare PR number.
 - **CI Status**: `CI PASSED` / `CI FAILED — <check>` / `BUILD IN PROGRESS (<n> running)` — same vocabulary as the `pingpong` Status cell, so one reader learns one set of words for the whole command.
 - **Approvals**: `APPROVED (<n>)` / `CHANGES REQUESTED` / `AWAITING REVIEW`.
 - **Comments**: count of unresolved review threads (`0` if none).
@@ -507,7 +507,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 **Fields inside a cell each get a different markdown span so the reader's theme colors them apart** — markdown link, inline code, bold, plain. Three distinct spans is the whole coloring mechanism: never emit ANSI, an HTML `<span>`, or a color name, all of which render as literal garbage in a table cell.
 
-- **PR** — the link, and **nothing else**: `[<path>](<url>)`, where `<path>` is the full `github.com/<owner>/<repo>/pull/<number>`. One field per cell is what keeps the column narrow enough to scan, and a link is the one thing in the row a reader clicks rather than reads. **Never elide the owner to `…/<repo>/pull/<n>`** — a path with the org replaced by an ellipsis is not clickable, not greppable, and not pasteable.
+- **PR** — the link, and **nothing else**: `[<path>](<url>)`, where `<path>` is the full `github.com/<owner>/<repo>/pull/<number>`. One field per cell is what keeps the column narrow enough to scan, and a link is the one thing in the row a reader clicks rather than reads. **Never elide the owner to `…/<repo>/pull/<n>`** — a path with the org replaced by an ellipsis is not clickable, not greppable, and not pasteable. Use Markdown only when the renderer supports links; otherwise show the complete scheme-prefixed URL in this cell. Add one `Links are clickable where supported.` hint above human-facing tables, never inside cells or machine-readable `links`, `short`, or `clusters` output.
 
 - **Description** — everything that says _what this PR is_, one line, `·`-separated, in this fixed order: `<author> · `<head branch>` · **<title>** · <auto-merge>`.
 

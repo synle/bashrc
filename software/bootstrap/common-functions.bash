@@ -546,18 +546,29 @@ function get_github_raw_url() {
   echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
-# format_hyperlink <url> [label] - Wrap a URL in an OSC 8 terminal hyperlink so it is
-# clickable in modern terminals (label defaults to the URL). ONLY emits the escape when
-# stdout is a TTY - piped/redirected output stays the bare URL so it remains greppable and
-# machine-parseable. This is the canonical way to print a clickable link from shell; the
-# standalone git.*.cjs tools carry a byte-equivalent formatLink() because they deploy as
-# separate executables and cannot source this file. See AGENTS.md (Terminal links).
-# Usage: echo "PR: $(format_hyperlink "https://github.com/o/r/pull/1")"
+# format_hyperlink <url> [label] - Print a clickable HTTP(S)/file URL on terminal stdout.
+# Returns 2 without output for unsafe schemes, whitespace in URLs, or control bytes.
+# Pipes and dumb terminals retain plain text; explicit labels keep their existing contract.
+# Call directly, never inside command substitution: capture hides the final output TTY.
+# Usage: printf 'PR: '; format_hyperlink "$url"; printf '\n'
+# Mirror the function body in profile-core.sh; standalone Git tools deploy independently.
 function format_hyperlink() {
-  local url="$1"
-  local label="${2:-$1}"
-  if [ -t 1 ]; then
-    printf '\033]8;;%s\033\\%s\033]8;;\033\\' "$url" "$label"
+  if is_help_arg "${1:-}"; then
+    echo "format_hyperlink: print a clickable HTTP(S)/file URL on terminal stdout
+  Usage: format_hyperlink <url> [label]
+  Call directly, not inside command substitution. Pipes retain plain text.
+  Returns 2 without output for unsafe URLs or control bytes."
+    return 0
+  fi
+  local url="${1:-}" label="${2:-${1:-}}"
+  case "$url" in
+  http://?* | https://?* | file:///?*) ;;
+  *) return 2 ;;
+  esac
+  case "$url" in *[[:space:][:cntrl:]]*) return 2 ;; esac
+  case "$label" in *[[:cntrl:]]*) return 2 ;; esac
+  if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ]; then
+    printf '\033]8;;%s\033\\%s\033]8;;\033\\ (clickable link)' "$url" "$label"
   else
     printf '%s' "$label"
   fi
