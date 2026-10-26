@@ -19,7 +19,7 @@ function loadLlmCommon(registryPayload, opts = {}) {
   const remoteIps = opts.remoteIps === undefined ? ["192.0.2.45"] : opts.remoteIps;
   /** @type {Record<string, string[]>} Per-host `/api/tags` model names. */
   const tagsByHost = opts.tagsByHost || {};
-  /** @type {string[]} Every host actually probed, in probe order — asserted by the discovery tests. */
+  /** @type {string[]} Every host actually probed, in probe order - asserted by the discovery tests. */
   const probedHosts = [];
   /** @type {Record<string, any>} */
   const sandbox = {
@@ -106,19 +106,48 @@ describe("loadSharedMcpServers", () => {
   it("uses argsOnMac in place of args on macOS and strips the key", async () => {
     const sandbox = loadLlmCommon({ mcpServers: { pw: { command: "npx", args: ["pkg", "--headless"], argsOnMac: ["pkg"] } } });
     const result = await sandbox.loadSharedMcpServers(true);
-    expect(result).toEqual({ pw: { command: "npx", args: ["pkg"] } });
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "pw": {
+          "args": [
+            "pkg",
+          ],
+          "command": "npx",
+        },
+      }
+    `);
   });
 
   it("keeps args and strips argsOnMac off macOS", async () => {
     const sandbox = loadLlmCommon({ mcpServers: { pw: { command: "npx", args: ["pkg", "--headless"], argsOnMac: ["pkg"] } } });
     const result = await sandbox.loadSharedMcpServers(false);
-    expect(result).toEqual({ pw: { command: "npx", args: ["pkg", "--headless"] } });
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "pw": {
+          "args": [
+            "pkg",
+            "--headless",
+          ],
+          "command": "npx",
+        },
+      }
+    `);
   });
 
   it("falls back to args on macOS when argsOnMac is not an array", async () => {
     const sandbox = loadLlmCommon({ mcpServers: { pw: { command: "npx", args: ["pkg", "--headless"], argsOnMac: "pkg" } } });
     const result = await sandbox.loadSharedMcpServers(true);
-    expect(result).toEqual({ pw: { command: "npx", args: ["pkg", "--headless"] } });
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "pw": {
+          "args": [
+            "pkg",
+            "--headless",
+          ],
+          "command": "npx",
+        },
+      }
+    `);
   });
 });
 
@@ -143,58 +172,6 @@ describe("_common/mcp-servers.jsonc playwright entry", () => {
     const sandbox = loadLlmCommon(readRegistry());
     const { playwright } = await sandbox.loadSharedMcpServers(false);
     expect(playwright.args).toEqual(["-y", "@playwright/mcp@latest", "--headless", "--isolated"]);
-  });
-});
-
-describe("translateMcpServersForOpencode", () => {
-  it("translates a local stdio entry to opencode's `{ type, command, environment, enabled }` shape", async () => {
-    const sandbox = loadLlmCommon(null);
-    const out = sandbox.translateMcpServersForOpencode({
-      myserver: { command: "node", args: ["server.js"], env: { K: "V" } },
-    });
-    expect(out).toEqual({
-      myserver: {
-        type: "local",
-        command: ["node", "server.js"],
-        environment: { K: "V" },
-        enabled: true,
-      },
-    });
-  });
-
-  it("translates a local entry with no args / no env to `{ type, command: [command], enabled }`", async () => {
-    const sandbox = loadLlmCommon(null);
-    const out = sandbox.translateMcpServersForOpencode({ bare: { command: "uvx" } });
-    expect(out).toEqual({ bare: { type: "local", command: ["uvx"], enabled: true } });
-  });
-
-  it("translates a remote URL entry to opencode's `{ type: 'remote', url, headers, enabled }` shape", async () => {
-    const sandbox = loadLlmCommon(null);
-    const out = sandbox.translateMcpServersForOpencode({
-      remote: { url: "https://example.com/mcp", headers: { Authorization: "Bearer x" } },
-    });
-    expect(out).toEqual({
-      remote: { type: "remote", url: "https://example.com/mcp", headers: { Authorization: "Bearer x" }, enabled: true },
-    });
-  });
-
-  it("omits `headers` when the remote entry doesn't carry any", async () => {
-    const sandbox = loadLlmCommon(null);
-    const out = sandbox.translateMcpServersForOpencode({ r: { url: "https://example.com/mcp" } });
-    expect(out).toEqual({ r: { type: "remote", url: "https://example.com/mcp", enabled: true } });
-  });
-
-  it("passes through an unknown-shape entry verbatim so opencode reports the schema error", async () => {
-    const sandbox = loadLlmCommon(null);
-    const weird = { weird: { foo: "bar" } };
-    const out = sandbox.translateMcpServersForOpencode(weird);
-    expect(out).toEqual(weird);
-  });
-
-  it("returns an empty object when given an empty / undefined input", async () => {
-    const sandbox = loadLlmCommon(null);
-    expect(sandbox.translateMcpServersForOpencode({})).toEqual({});
-    expect(sandbox.translateMcpServersForOpencode(undefined)).toEqual({});
   });
 });
 

@@ -88,39 +88,85 @@ describe("Decky CI publication (local API simulation, not a live GitHub release)
     const result = publish({ failure: "upload" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("fixture transport failure");
-    expect(result.assets).toEqual([{ id: 101, name: asset, bytes: "previous bundle" }]);
+    expect(result.assets).toMatchInlineSnapshot(`
+      [
+        {
+          "bytes": "previous bundle",
+          "id": 101,
+          "name": "steamos-decky__bundle.zip",
+        },
+      ]
+    `);
   });
   it.each([true, false])("publishes the completed candidate with previous asset present=%s", (previous) => {
     const result = publish({ previous });
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.assets).toEqual([{ id: 202, name: asset, bytes: "verified new bundle" }]);
+    expect(result.assets).toMatchInlineSnapshot(`
+      [
+        {
+          "bytes": "verified new bundle",
+          "id": 202,
+          "name": "steamos-decky__bundle.zip",
+        },
+      ]
+    `);
   });
   it("restores the previous consumer-visible asset when candidate activation fails", () => {
     const result = publish({ failure: "activation" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("fixture transport failure");
-    expect(result.assets).toEqual([
-      { id: 101, name: asset, bytes: "previous bundle" },
-      { id: 202, name: "steamos-decky__bundle.candidate-123-1.zip", bytes: "verified new bundle" },
-    ]);
+    expect(result.assets).toMatchInlineSnapshot(`
+      [
+        {
+          "bytes": "previous bundle",
+          "id": 101,
+          "name": "steamos-decky__bundle.zip",
+        },
+        {
+          "bytes": "verified new bundle",
+          "id": 202,
+          "name": "steamos-decky__bundle.candidate-123-1.zip",
+        },
+      ]
+    `);
   });
   it("retains the previous backup and reports a failed rollback without claiming success", () => {
     const result = publish({ failure: "activation-and-rollback" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Decky cache rollback failed; previous asset retained as steamos-decky__bundle.previous-123-1.zip");
-    expect(result.assets).toEqual([
-      { id: 101, name: "steamos-decky__bundle.previous-123-1.zip", bytes: "previous bundle" },
-      { id: 202, name: "steamos-decky__bundle.candidate-123-1.zip", bytes: "verified new bundle" },
-    ]);
+    expect(result.assets).toMatchInlineSnapshot(`
+      [
+        {
+          "bytes": "previous bundle",
+          "id": 101,
+          "name": "steamos-decky__bundle.previous-123-1.zip",
+        },
+        {
+          "bytes": "verified new bundle",
+          "id": 202,
+          "name": "steamos-decky__bundle.candidate-123-1.zip",
+        },
+      ]
+    `);
   });
   it("keeps the activated bundle and reports retained backup when cleanup fails", () => {
     const result = publish({ failure: "cleanup" });
     expect(result.status).toBe(0);
     expect(result.stderr).toContain("Decky cache published; retained backup steamos-decky__bundle.previous-123-1.zip");
-    expect(result.assets).toEqual([
-      { id: 101, name: "steamos-decky__bundle.previous-123-1.zip", bytes: "previous bundle" },
-      { id: 202, name: asset, bytes: "verified new bundle" },
-    ]);
+    expect(result.assets).toMatchInlineSnapshot(`
+      [
+        {
+          "bytes": "previous bundle",
+          "id": 101,
+          "name": "steamos-decky__bundle.previous-123-1.zip",
+        },
+        {
+          "bytes": "verified new bundle",
+          "id": 202,
+          "name": "steamos-decky__bundle.zip",
+        },
+      ]
+    `);
   });
 });

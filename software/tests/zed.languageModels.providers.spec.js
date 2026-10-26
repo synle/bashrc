@@ -7,7 +7,7 @@ import { getIndexFunction, expandSourceMarkers } from "./setup.js";
 
 const clone = getIndexFunction("clone");
 
-// ---- Load zed.js (with every SOURCE marker — editor.common.js + llm-common.js — inlined) ----
+// ---- Load zed.js (with every SOURCE marker - editor.common.js + llm-common.js - inlined) ----
 const zedRaw = fs.readFileSync("software/scripts/advanced/zed.js", "utf-8");
 const zedSource = expandSourceMarkers(zedRaw);
 
@@ -59,9 +59,9 @@ function loadZed(overrides = {}) {
     writeJson: async () => {},
     readJson: async () => ({}),
     writeBuildArtifact: async () => {},
-    // llm-common.js helpers — inlined via SOURCE; mock the ip-address.config lookup so the
+    // llm-common.js helpers - inlined via SOURCE; mock the ip-address.config lookup so the
     // sourced module's top-level evaluation doesn't try to hit the real filesystem.
-    // 192.0.2.45 is RFC 5737 TEST-NET-1 (documentation range) — the real address is declared
+    // 192.0.2.45 is RFC 5737 TEST-NET-1 (documentation range) - the real address is declared
     // only in software/metadata/ip-address.config, never in code or tests.
     getOllamaHosts: async () => [
       { ip: "192.0.2.45", hostname: "my-desktop", tags: ["OLLAMA_REMOTE"], isDefault: true, isLocal: false },
@@ -90,7 +90,12 @@ describe("_buildZedLanguageModelsBlock > local provider", () => {
   it("registers `language_models.ollama` with auto_discover when local 127.0.0.1 is among providers", () => {
     const zed = loadZed();
     const result = zed._buildZedLanguageModelsBlock([makeProvider("127.0.0.1", ["qwen2.5-coder:3b"])]);
-    expect(result.languageModels.ollama).toEqual({ api_url: "http://127.0.0.1:11434", auto_discover: true });
+    expect(result.languageModels.ollama).toMatchInlineSnapshot(`
+      {
+        "api_url": "http://127.0.0.1:11434",
+        "auto_discover": true,
+      }
+    `);
   });
 
   it("does NOT register `language_models.ollama` when no local provider is in the array", () => {
@@ -115,12 +120,19 @@ describe("_buildZedLanguageModelsBlock > remote provider", () => {
     const remote = result.languageModels.openai_compatible["Ollama (my-desktop)"];
     expect(remote.api_url).toBe("http://192.0.2.45:11434/v1");
     expect(remote.available_models).toHaveLength(2);
-    expect(remote.available_models[0]).toEqual({
-      name: "qwen3.6:latest",
-      display_name: "qwen3.6:latest",
-      max_tokens: 32768,
-      capabilities: { tools: true, images: false, parallel_tool_calls: false, prompt_cache_key: false },
-    });
+    expect(remote.available_models[0]).toMatchInlineSnapshot(`
+      {
+        "capabilities": {
+          "images": false,
+          "parallel_tool_calls": false,
+          "prompt_cache_key": false,
+          "tools": true,
+        },
+        "display_name": "qwen3.6:latest",
+        "max_tokens": 32768,
+        "name": "qwen3.6:latest",
+      }
+    `);
   });
 });
 
@@ -131,7 +143,12 @@ describe("_buildZedLanguageModelsBlock > default_model selection", () => {
       makeProvider("127.0.0.1", ["qwen2.5-coder:3b"]),
       makeProvider("192.0.2.45", ["qwen3.6:latest"]),
     ]);
-    expect(result.defaultModel).toEqual({ provider: "ollama", model: "qwen2.5-coder:3b" });
+    expect(result.defaultModel).toMatchInlineSnapshot(`
+      {
+        "model": "qwen2.5-coder:3b",
+        "provider": "ollama",
+      }
+    `);
   });
 
   it("falls back to the remote `Ollama (my-desktop)` provider for default_model when only remote is reachable", () => {
@@ -139,7 +156,12 @@ describe("_buildZedLanguageModelsBlock > default_model selection", () => {
     // openai_compatible providers under provider_id = JSON key, so the key is stable.
     const zed = loadZed();
     const result = zed._buildZedLanguageModelsBlock([makeProvider("192.0.2.45", ["qwen3.6:latest"])]);
-    expect(result.defaultModel).toEqual({ provider: "Ollama (my-desktop)", model: "qwen3.6:latest" });
+    expect(result.defaultModel).toMatchInlineSnapshot(`
+      {
+        "model": "qwen3.6:latest",
+        "provider": "Ollama (my-desktop)",
+      }
+    `);
   });
 
   it("returns null defaultModel + empty languageModels when no providers reachable", () => {

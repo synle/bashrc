@@ -184,22 +184,30 @@ describe("Windows Terminal generated settings", () => {
       ["pwsh"],
     );
     expect(settings.profiles.list).toHaveLength(2);
-    expect(settings.profiles.list[0]).toEqual({
-      name: "Powershell v7",
-      guid: "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
-      hidden: true,
-      commandline: "pwsh",
-      tabTitle: "Mine",
-      startingDirectory: "D:/",
-      icon: "C:\\Users\\test\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
-      colorScheme: { dark: "Sy Dark", light: "Sy Light" },
-      tabColor: "#000000",
-      font: { weight: "semi-bold", cellHeight: "1.1" },
-      showMarksOnScrollbar: true,
-      suppressApplicationTitle: false,
-      scrollbarState: "visible",
-      adjustIndistinguishableColors: "always",
-    });
+    expect(settings.profiles.list[0]).toMatchInlineSnapshot(`
+      {
+        "adjustIndistinguishableColors": "always",
+        "colorScheme": {
+          "dark": "Sy Dark",
+          "light": "Sy Light",
+        },
+        "commandline": "pwsh",
+        "font": {
+          "cellHeight": "1.1",
+          "weight": "semi-bold",
+        },
+        "guid": "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
+        "hidden": true,
+        "icon": "C:\\Users\\test\\AppData\\Local\\Packages\\Terminal\\LocalState\\powershell7.png",
+        "name": "Powershell v7",
+        "scrollbarState": "visible",
+        "showMarksOnScrollbar": true,
+        "startingDirectory": "D:/",
+        "suppressApplicationTitle": false,
+        "tabColor": "#000000",
+        "tabTitle": "Mine",
+      }
+    `);
     expect(settings.defaultProfile).toBe("ps");
   });
 
@@ -215,13 +223,30 @@ describe("Windows Terminal generated settings", () => {
       },
       ["pwsh"],
     );
-    expect(settings.profiles.list.map(({ name, hidden }) => [name, hidden])).toEqual([
-      ["Ubuntu", false],
-      ["Powershell v7", false],
-      ["Powershell v5", false],
-      ["Azure", false],
-      ["Command Prompt", true],
-    ]);
+    expect(settings.profiles.list.map(({ name, hidden }) => [name, hidden])).toMatchInlineSnapshot(`
+      [
+        [
+          "Ubuntu",
+          false,
+        ],
+        [
+          "Powershell v7",
+          false,
+        ],
+        [
+          "Powershell v5",
+          false,
+        ],
+        [
+          "Azure",
+          false,
+        ],
+        [
+          "Command Prompt",
+          true,
+        ],
+      ]
+    `);
     expect(settings.defaultProfile).toBe("u");
   });
 

@@ -95,7 +95,15 @@ describe("_buildChatLanguageModels", () => {
     const vs = loadVsCode();
     const existing = [{ name: "Ollama", vendor: "ollama", url: "http://stale.example:11434" }];
     const result = vs._buildChatLanguageModels([makeProvider("127.0.0.1")], existing);
-    expect(result).toEqual([{ name: "ollama-local", vendor: "ollama", url: "http://127.0.0.1:11434" }]);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "name": "ollama-local",
+          "url": "http://127.0.0.1:11434",
+          "vendor": "ollama",
+        },
+      ]
+    `);
   });
 
   it("preserves non-ollama vendors (UI-added providers like anthropic / openai survive a re-run)", () => {
@@ -105,10 +113,20 @@ describe("_buildChatLanguageModels", () => {
       { name: "Ollama", vendor: "ollama", url: "http://stale.example:11434" },
     ];
     const result = vs._buildChatLanguageModels([makeProvider("127.0.0.1")], existing);
-    expect(result).toEqual([
-      { name: "Claude", vendor: "anthropic", url: "https://api.anthropic.com" },
-      { name: "ollama-local", vendor: "ollama", url: "http://127.0.0.1:11434" },
-    ]);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "name": "Claude",
+          "url": "https://api.anthropic.com",
+          "vendor": "anthropic",
+        },
+        {
+          "name": "ollama-local",
+          "url": "http://127.0.0.1:11434",
+          "vendor": "ollama",
+        },
+      ]
+    `);
   });
 
   it("returns only passthrough entries when no providers were discovered (clears stale ollama rows)", () => {
@@ -118,7 +136,15 @@ describe("_buildChatLanguageModels", () => {
       { name: "Ollama", vendor: "ollama", url: "http://stale.example:11434" },
     ];
     const result = vs._buildChatLanguageModels([], existing);
-    expect(result).toEqual([{ name: "Claude", vendor: "anthropic", url: "https://api.anthropic.com" }]);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "name": "Claude",
+          "url": "https://api.anthropic.com",
+          "vendor": "anthropic",
+        },
+      ]
+    `);
   });
 
   it("returns an empty array when neither providers nor existing entries are present", () => {

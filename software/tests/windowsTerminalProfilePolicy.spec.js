@@ -17,14 +17,34 @@ describe("Windows Terminal profile policy", () => {
         { name: "Kali", source: "Microsoft.WSL" },
         { name: "Ubuntu" },
       ]).map(({ name, hidden }) => [name, hidden]),
-    ).toEqual([
-      ["Ubuntu", false],
-      ["Kali", false],
-      ["Windows PowerShell", false],
-      ["Azure", false],
-      ["Developer PowerShell for VS 2022", true],
-      ["Command Prompt", true],
-    ]);
+    ).toMatchInlineSnapshot(`
+      [
+        [
+          "Ubuntu",
+          false,
+        ],
+        [
+          "Kali",
+          false,
+        ],
+        [
+          "Windows PowerShell",
+          false,
+        ],
+        [
+          "Azure",
+          false,
+        ],
+        [
+          "Developer PowerShell for VS 2022",
+          true,
+        ],
+        [
+          "Command Prompt",
+          true,
+        ],
+      ]
+    `);
   });
 
   it("preserves explicit true and false visibility for every profile category", () => {
@@ -44,10 +64,20 @@ describe("Windows Terminal profile policy", () => {
         { name: "Custom", colorScheme: "old" },
         { name: "Command Prompt", colorScheme: "Campbell" },
       ]),
-    ).toEqual([
-      { name: "Custom", colorScheme: "old", hidden: true },
-      { name: "Command Prompt", colorScheme: "Campbell", hidden: true },
-    ]);
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "colorScheme": "old",
+          "hidden": true,
+          "name": "Custom",
+        },
+        {
+          "colorScheme": "Campbell",
+          "hidden": true,
+          "name": "Command Prompt",
+        },
+      ]
+    `);
   });
 
   it("handles empty lists and normalizes non-boolean hidden values without mutating input", () => {
@@ -55,10 +85,18 @@ describe("Windows Terminal profile policy", () => {
       { name: "Windows PowerShell", hidden: null },
       { name: "Custom", hidden: "false" },
     ];
-    expect(prioritizeProfiles(input)).toEqual([
-      { name: "Windows PowerShell", hidden: false },
-      { name: "Custom", hidden: true },
-    ]);
+    expect(prioritizeProfiles(input)).toMatchInlineSnapshot(`
+      [
+        {
+          "hidden": false,
+          "name": "Windows PowerShell",
+        },
+        {
+          "hidden": true,
+          "name": "Custom",
+        },
+      ]
+    `);
     expect(input).toEqual([
       { name: "Windows PowerShell", hidden: null },
       { name: "Custom", hidden: "false" },

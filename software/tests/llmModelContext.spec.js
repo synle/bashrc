@@ -52,13 +52,26 @@ describe("Other clients retain native or user-owned context metadata", () => {
 
     try {
       const config = getIndexFunction("_buildOpencodeConfig")([]);
-      expect(JSON.parse(JSON.stringify(config.provider["github-copilot"].models))).toEqual({
-        "catalog-model": { name: "github-copilot / catalog-model" },
-        "fast-model": {
-          name: "github-copilot / fast-model",
-          variants: { fast: { options: { speed: "fast" }, headers: { "X-Fast": "enabled" } } },
-        },
-      });
+      expect(JSON.parse(JSON.stringify(config.provider["github-copilot"].models))).toMatchInlineSnapshot(`
+        {
+          "catalog-model": {
+            "name": "github-copilot / catalog-model",
+          },
+          "fast-model": {
+            "name": "github-copilot / fast-model",
+            "variants": {
+              "fast": {
+                "headers": {
+                  "X-Fast": "enabled",
+                },
+                "options": {
+                  "speed": "fast",
+                },
+              },
+            },
+          },
+        }
+      `);
     } finally {
       setSandboxGlobal("LLM_COPILOT_MODEL_EXTENSIONS", registry);
     }

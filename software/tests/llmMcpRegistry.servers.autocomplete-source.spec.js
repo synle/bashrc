@@ -19,7 +19,7 @@ function loadLlmCommon(registryPayload, opts = {}) {
   const remoteIps = opts.remoteIps === undefined ? ["192.0.2.45"] : opts.remoteIps;
   /** @type {Record<string, string[]>} Per-host `/api/tags` model names. */
   const tagsByHost = opts.tagsByHost || {};
-  /** @type {string[]} Every host actually probed, in probe order — asserted by the discovery tests. */
+  /** @type {string[]} Every host actually probed, in probe order - asserted by the discovery tests. */
   const probedHosts = [];
   /** @type {Record<string, any>} */
   const sandbox = {
@@ -66,11 +66,13 @@ describe("getAutocompleteProvider > tagged host discovery", () => {
       remoteIps: ["192.0.2.45"],
       tagsByHost: { "192.0.2.45": ["qwen2.5-coder:3b-base"], "127.0.0.1": ["qwen2.5-coder:1.5b-base"] },
     });
-    expect(await sandbox.getAutocompleteProvider()).toEqual({
-      host: "127.0.0.1",
-      port: 11434,
-      model: "qwen2.5-coder:1.5b-base",
-    });
+    expect(await sandbox.getAutocompleteProvider()).toMatchInlineSnapshot(`
+      {
+        "host": "127.0.0.1",
+        "model": "qwen2.5-coder:1.5b-base",
+        "port": 11434,
+      }
+    `);
   });
 
   it("falls back to a remote host when localhost serves nothing", async () => {
@@ -78,11 +80,13 @@ describe("getAutocompleteProvider > tagged host discovery", () => {
       remoteIps: ["192.0.2.45"],
       tagsByHost: { "192.0.2.45": ["qwen2.5-coder:1.5b-base"] },
     });
-    expect(await sandbox.getAutocompleteProvider()).toEqual({
-      host: "192.0.2.45",
-      port: 11434,
-      model: "qwen2.5-coder:1.5b-base",
-    });
+    expect(await sandbox.getAutocompleteProvider()).toMatchInlineSnapshot(`
+      {
+        "host": "192.0.2.45",
+        "model": "qwen2.5-coder:1.5b-base",
+        "port": 11434,
+      }
+    `);
   });
 
   it("returns null when no reachable host has a preferred model", async () => {
@@ -96,7 +100,7 @@ describe("_common/mcp-servers.jsonc (checked-in source-of-truth)", () => {
   it("parses as valid JSONC and exposes an `mcpServers` map", () => {
     const sandbox = loadLlmCommon({});
     const raw = fs.readFileSync(path.join(ROOT, "software/scripts/advanced/llm/_common/mcp-servers.jsonc"), "utf-8");
-    // Strip comments + trailing commas the same way the runtime does — sandbox's parser is JSON.
+    // Strip comments + trailing commas the same way the runtime does - sandbox's parser is JSON.
     // Use the same minimal stripper as `parseJsonWithComments` would: kill `//` lines and `/* */` blocks.
     const cleaned = raw
       .replace(/\/\*[\s\S]*?\*\//g, "")

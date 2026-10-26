@@ -13,27 +13,63 @@ describe("getOllamaHosts", () => {
       "192.0.2.12: box-c | NO_SSH",
     ].join("\n");
     const hosts = await getIndexFunction("getOllamaHosts")();
-    expect(hosts.map((h) => [h.ip, h.hostname, h.isDefault, h.isLocal])).toEqual([
-      ["192.0.2.11", "box-b", true, false],
-      ["192.0.2.10", "box-a", false, false],
-      ["127.0.0.1", "local", false, true],
-    ]);
+    expect(hosts.map((h) => [h.ip, h.hostname, h.isDefault, h.isLocal])).toMatchInlineSnapshot(`
+      [
+        [
+          "192.0.2.11",
+          "box-b",
+          true,
+          false,
+        ],
+        [
+          "192.0.2.10",
+          "box-a",
+          false,
+          false,
+        ],
+        [
+          "127.0.0.1",
+          "local",
+          false,
+          true,
+        ],
+      ]
+    `);
   });
 
   it("defaults to the first OLLAMA_REMOTE when no host is tagged OLLAMA_DEFAULT_SERVER", async () => {
     fetchResponses[CONFIG_PATH] = "192.0.2.20: box-a | OLLAMA_REMOTE\n192.0.2.21: box-b | OLLAMA_REMOTE";
     const hosts = await getIndexFunction("getOllamaHosts")();
-    expect(hosts.map((h) => [h.ip, h.isDefault])).toEqual([
-      ["192.0.2.20", true],
-      ["192.0.2.21", false],
-      ["127.0.0.1", false],
-    ]);
+    expect(hosts.map((h) => [h.ip, h.isDefault])).toMatchInlineSnapshot(`
+      [
+        [
+          "192.0.2.20",
+          true,
+        ],
+        [
+          "192.0.2.21",
+          false,
+        ],
+        [
+          "127.0.0.1",
+          false,
+        ],
+      ]
+    `);
   });
 
   it("makes 127.0.0.1 the default when no host is tagged", async () => {
     fetchResponses[CONFIG_PATH] = "192.0.2.30: box-a | WINDOWS_REMOTE";
     const hosts = await getIndexFunction("getOllamaHosts")();
-    expect(hosts.map((h) => [h.ip, h.isDefault, h.isLocal])).toEqual([["127.0.0.1", true, true]]);
+    expect(hosts.map((h) => [h.ip, h.isDefault, h.isLocal])).toMatchInlineSnapshot(`
+      [
+        [
+          "127.0.0.1",
+          true,
+          true,
+        ],
+      ]
+    `);
   });
 
   it("counts a host tagged only OLLAMA_DEFAULT_SERVER as a server", async () => {

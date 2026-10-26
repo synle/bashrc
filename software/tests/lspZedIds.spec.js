@@ -8,7 +8,7 @@ const LSP_COMMON_PATH = path.resolve("software/scripts/advanced/lsp/lsp-common.j
 
 /**
  * Evaluates lsp-common.js in a bare sandbox and returns the two things this spec asserts
- * on. The file is a plain script (no imports/exports — helpers are globals at runtime),
+ * on. The file is a plain script (no imports/exports - helpers are globals at runtime),
  * so a `vm` context is the only way to reach `LSP_SERVERS` / `buildZedLspBlock` without
  * booting the whole engine.
  * @returns {{ servers: Record<string, object>, zedBlock: Record<string, object> }}
@@ -21,7 +21,7 @@ function loadLspCommon() {
   return sandbox.__out;
 }
 
-describe("lsp-common — Zed language-server ids", () => {
+describe("lsp-common - Zed language-server ids", () => {
   const { servers, zedBlock } = loadLspCommon();
 
   it("keys the Zed lsp block on zedId, never on the internal LSP_SERVERS key", () => {
@@ -53,9 +53,16 @@ describe("lsp-common — Zed language-server ids", () => {
     // `basher` entry in zed-config.jsonc auto_install_extensions is what makes bash
     // diagnostics work at all.
     expect(servers.bash.zedId).toBe("bash-language-server");
-    expect(zedBlock["bash-language-server"]).toEqual({
-      binary: { path: "bash-language-server", arguments: ["--stdio"] },
-    });
+    expect(zedBlock["bash-language-server"]).toMatchInlineSnapshot(`
+      {
+        "binary": {
+          "arguments": [
+            "--stdio",
+          ],
+          "path": "bash-language-server",
+        },
+      }
+    `);
   });
 
   it("gives every emitted entry a binary path and an arguments array", () => {

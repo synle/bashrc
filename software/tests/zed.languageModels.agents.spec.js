@@ -7,7 +7,7 @@ import { getIndexFunction, expandSourceMarkers } from "./setup.js";
 
 const clone = getIndexFunction("clone");
 
-// ---- Load zed.js (with every SOURCE marker — editor.common.js + llm-common.js — inlined) ----
+// ---- Load zed.js (with every SOURCE marker - editor.common.js + llm-common.js - inlined) ----
 const zedRaw = fs.readFileSync("software/scripts/advanced/zed.js", "utf-8");
 const zedSource = expandSourceMarkers(zedRaw);
 
@@ -59,9 +59,9 @@ function loadZed(overrides = {}) {
     writeJson: async () => {},
     readJson: async () => ({}),
     writeBuildArtifact: async () => {},
-    // llm-common.js helpers — inlined via SOURCE; mock the ip-address.config lookup so the
+    // llm-common.js helpers - inlined via SOURCE; mock the ip-address.config lookup so the
     // sourced module's top-level evaluation doesn't try to hit the real filesystem.
-    // 192.0.2.45 is RFC 5737 TEST-NET-1 (documentation range) — the real address is declared
+    // 192.0.2.45 is RFC 5737 TEST-NET-1 (documentation range) - the real address is declared
     // only in software/metadata/ip-address.config, never in code or tests.
     getOllamaHosts: async () => [
       { ip: "192.0.2.45", hostname: "my-desktop", tags: ["OLLAMA_REMOTE"], isDefault: true, isLocal: false },
@@ -90,12 +90,19 @@ describe("_getZedSettings > agent merge", () => {
       is_prebuilt_config: false,
       defaultModel: { provider: "ollama", model: "qwen3.6:latest" },
     });
-    expect(result.agent).toEqual({
-      dock: "right",
-      tool_permissions: { default: "allow" },
-      always_allow_tool_actions: true,
-      default_model: { provider: "ollama", model: "qwen3.6:latest" },
-    });
+    expect(result.agent).toMatchInlineSnapshot(`
+      {
+        "always_allow_tool_actions": true,
+        "default_model": {
+          "model": "qwen3.6:latest",
+          "provider": "ollama",
+        },
+        "dock": "right",
+        "tool_permissions": {
+          "default": "allow",
+        },
+      }
+    `);
   });
 
   it("should not include language_models when languageModels option is omitted (CI prebuilt artifacts)", () => {
@@ -113,7 +120,14 @@ describe("_getZedSettings > agent merge", () => {
         languageModels: { ollama: { api_url: "http://127.0.0.1:11434", auto_discover: true } },
       },
     );
-    expect(result.language_models).toEqual({ ollama: { api_url: "http://127.0.0.1:11434", auto_discover: true } });
+    expect(result.language_models).toMatchInlineSnapshot(`
+      {
+        "ollama": {
+          "api_url": "http://127.0.0.1:11434",
+          "auto_discover": true,
+        },
+      }
+    `);
   });
 
   it("should leave agent untouched when defaultModel is null", () => {
@@ -124,7 +138,7 @@ describe("_getZedSettings > agent merge", () => {
     expect(result.agent.default_model).toBeUndefined();
   });
 
-  // Symmetric pair: edit_predictions mirrors the language_models behavior above —
+  // Symmetric pair: edit_predictions mirrors the language_models behavior above -
   // omitted when discovery returns null, present verbatim when getAutocompleteProvider()
   // resolved a host+model. Note the null path does NOT hand Zed back to its cloud Zeta
   // default: zed-config.jsonc's `disabled_globs: ["**/*"]` survives from baseConfig

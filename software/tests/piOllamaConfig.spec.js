@@ -33,10 +33,15 @@ describe("Pi Ollama provider refresh", () => {
     await getIndexFunction("_doPiModelsWork")([]);
 
     const result = JSON.parse(fileSystem[PI_MODELS_PATH]);
-    expect(result.providers["github-copilot"]).toEqual({
-      headers: { "X-User-Header": "kept", "Editor-Version": "vscode/1.107.0" },
-      customSetting: "kept",
-    });
+    expect(result.providers["github-copilot"]).toMatchInlineSnapshot(`
+      {
+        "customSetting": "kept",
+        "headers": {
+          "Editor-Version": "vscode/1.107.0",
+          "X-User-Header": "kept",
+        },
+      }
+    `);
   });
 
   it("migrates managed names and model headers to overrides without replacing native metadata", async () => {
@@ -56,13 +61,25 @@ describe("Pi Ollama provider refresh", () => {
     await getIndexFunction("_doPiModelsWork")([]);
 
     const copilot = JSON.parse(fileSystem[PI_MODELS_PATH]).providers["github-copilot"];
-    expect(copilot).toEqual({
-      headers: { "Editor-Version": "vscode/1.107.0", "X-User-Header": "kept" },
-      modelOverrides: {
-        "gpt-6.1-sol": { name: "GitHub Copilot / gpt-6.1-sol" },
-        "claude-opus-4.8": { name: "GitHub Copilot / claude-opus-4.8", headers: { "anthropic-beta": "test-beta" } },
-      },
-    });
+    expect(copilot).toMatchInlineSnapshot(`
+      {
+        "headers": {
+          "Editor-Version": "vscode/1.107.0",
+          "X-User-Header": "kept",
+        },
+        "modelOverrides": {
+          "claude-opus-4.8": {
+            "headers": {
+              "anthropic-beta": "test-beta",
+            },
+            "name": "GitHub Copilot / claude-opus-4.8",
+          },
+          "gpt-6.1-sol": {
+            "name": "GitHub Copilot / gpt-6.1-sol",
+          },
+        },
+      }
+    `);
 
     const firstRun = fileSystem[PI_MODELS_PATH];
     await getIndexFunction("_doPiModelsWork")([]);
@@ -89,17 +106,38 @@ describe("Pi Ollama provider refresh", () => {
 
     await getIndexFunction("_doPiModelsWork")([]);
 
-    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers["github-copilot"]).toEqual({
-      headers: { "Editor-Version": "vscode/1.107.0" },
-      models: [
-        { id: "custom", name: "User model", contextWindow: 64000 },
-        { id: "explicit", name: "GitHub Copilot / explicit", contextWindow: 256000 },
-      ],
-      modelOverrides: {
-        "gpt-6.1-sol": { name: "Personal name", contextWindow: 900000, headers: { "X-Legacy": "kept", "X-Shared": "new" } },
-        other: { name: "Other name" },
-      },
-    });
+    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers["github-copilot"]).toMatchInlineSnapshot(`
+      {
+        "headers": {
+          "Editor-Version": "vscode/1.107.0",
+        },
+        "modelOverrides": {
+          "gpt-6.1-sol": {
+            "contextWindow": 900000,
+            "headers": {
+              "X-Legacy": "kept",
+              "X-Shared": "new",
+            },
+            "name": "Personal name",
+          },
+          "other": {
+            "name": "Other name",
+          },
+        },
+        "models": [
+          {
+            "contextWindow": 64000,
+            "id": "custom",
+            "name": "User model",
+          },
+          {
+            "contextWindow": 256000,
+            "id": "explicit",
+            "name": "GitHub Copilot / explicit",
+          },
+        ],
+      }
+    `);
   });
 
   it("generates registry names and fast headers as overrides while retaining user model headers", async () => {
@@ -119,17 +157,26 @@ describe("Pi Ollama provider refresh", () => {
 
     try {
       await getIndexFunction("_doPiModelsWork")([]);
-      expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers["github-copilot"]).toEqual({
-        headers: { "Editor-Version": "vscode/1.107.0" },
-        modelOverrides: {
-          "catalog-model": { name: "GitHub Copilot / catalog-model" },
-          "fast-model": {
-            name: "GitHub Copilot / fast-model",
-            contextWindow: 500000,
-            headers: { "X-User": "kept", "X-Fast": "enabled" },
+      expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers["github-copilot"]).toMatchInlineSnapshot(`
+        {
+          "headers": {
+            "Editor-Version": "vscode/1.107.0",
           },
-        },
-      });
+          "modelOverrides": {
+            "catalog-model": {
+              "name": "GitHub Copilot / catalog-model",
+            },
+            "fast-model": {
+              "contextWindow": 500000,
+              "headers": {
+                "X-Fast": "enabled",
+                "X-User": "kept",
+              },
+              "name": "GitHub Copilot / fast-model",
+            },
+          },
+        }
+      `);
     } finally {
       setSandboxGlobal("LLM_COPILOT_MODEL_EXTENSIONS", registry);
     }
@@ -171,17 +218,33 @@ describe("Pi Ollama provider refresh", () => {
 
     await getIndexFunction("_doPiModelsWork")([]);
 
-    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers).toEqual({
-      "custom-local": { models: [{ id: "manual-model" }] },
-      "github-copilot": { headers: { "Editor-Version": "vscode/1.107.0" } },
-    });
+    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers).toMatchInlineSnapshot(`
+      {
+        "custom-local": {
+          "models": [
+            {
+              "id": "manual-model",
+            },
+          ],
+        },
+        "github-copilot": {
+          "headers": {
+            "Editor-Version": "vscode/1.107.0",
+          },
+        },
+      }
+    `);
   });
 
   it("creates the Copilot header config when models.json does not exist", async () => {
     await getIndexFunction("_doPiModelsWork")("/mock/home/.pi/agent", []);
 
-    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers["github-copilot"]).toEqual({
-      headers: { "Editor-Version": "vscode/1.107.0" },
-    });
+    expect(JSON.parse(fileSystem[PI_MODELS_PATH]).providers["github-copilot"]).toMatchInlineSnapshot(`
+      {
+        "headers": {
+          "Editor-Version": "vscode/1.107.0",
+        },
+      }
+    `);
   });
 });

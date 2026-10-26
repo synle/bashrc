@@ -44,13 +44,15 @@ describe("foundation recipe resolution", () => {
       white: "#FFFFFF",
       black: "#000000",
     };
-    expect(buildInclude.resolvePalette(input)).toEqual({
-      themeName: "Example",
-      white: "#ffffff",
-      black: "#000000",
-      mixed: "#808080",
-      alias: "#808080",
-    });
+    expect(buildInclude.resolvePalette(input)).toMatchInlineSnapshot(`
+      {
+        "alias": "#808080",
+        "black": "#000000",
+        "mixed": "#808080",
+        "themeName": "Example",
+        "white": "#ffffff",
+      }
+    `);
     expect(input.white).toBe("#FFFFFF");
     expect(input.alias).toEqual({ ref: "mixed" });
   });

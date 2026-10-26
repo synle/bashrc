@@ -7,7 +7,7 @@ import { getIndexFunction, expandSourceMarkers } from "./setup.js";
 
 const clone = getIndexFunction("clone");
 
-// ---- Load zed.js (with every SOURCE marker — editor.common.js + llm-common.js — inlined) ----
+// ---- Load zed.js (with every SOURCE marker - editor.common.js + llm-common.js - inlined) ----
 const zedRaw = fs.readFileSync("software/scripts/advanced/zed.js", "utf-8");
 const zedSource = expandSourceMarkers(zedRaw);
 
@@ -59,9 +59,9 @@ function loadZed(overrides = {}) {
     writeJson: async () => {},
     readJson: async () => ({}),
     writeBuildArtifact: async () => {},
-    // llm-common.js helpers — inlined via SOURCE; mock the ip-address.config lookup so the
+    // llm-common.js helpers - inlined via SOURCE; mock the ip-address.config lookup so the
     // sourced module's top-level evaluation doesn't try to hit the real filesystem.
-    // 192.0.2.45 is RFC 5737 TEST-NET-1 (documentation range) — the real address is declared
+    // 192.0.2.45 is RFC 5737 TEST-NET-1 (documentation range) - the real address is declared
     // only in software/metadata/ip-address.config, never in code or tests.
     getOllamaHosts: async () => [
       { ip: "192.0.2.45", hostname: "my-desktop", tags: ["OLLAMA_REMOTE"], isDefault: true, isLocal: false },
@@ -92,9 +92,17 @@ describe("_buildZedAgentServersBlock > custom agents", () => {
     const result = zed._buildZedAgentServersBlock([
       { id: "opencode", displayName: "OpenCode", binaryPath: "/mock/home/.local/bin/opencode", args: ["acp"] },
     ]);
-    expect(result).toEqual({
-      OpenCode: { type: "custom", command: "/mock/home/.local/bin/opencode", args: ["acp"] },
-    });
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "OpenCode": {
+          "args": [
+            "acp",
+          ],
+          "command": "/mock/home/.local/bin/opencode",
+          "type": "custom",
+        },
+      }
+    `);
   });
 
   it("uses the absolute binary path, never the bare binary name", () => {
@@ -125,10 +133,17 @@ describe("_buildZedAgentServersBlock > claude registry override", () => {
         executableEnvKey: "CLAUDE_CODE_EXECUTABLE",
       },
     ]);
-    expect(result).toEqual({
-      "claude-acp": { type: "registry", env: { CLAUDE_CODE_EXECUTABLE: "/mock/home/.local/bin/claude" } },
-    });
-    // Claude has no ACP mode of its own — a `command` here would spawn a TUI, not an agent.
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "claude-acp": {
+          "env": {
+            "CLAUDE_CODE_EXECUTABLE": "/mock/home/.local/bin/claude",
+          },
+          "type": "registry",
+        },
+      }
+    `);
+    // Claude has no ACP mode of its own - a `command` here would spawn a TUI, not an agent.
     expect(result["claude-acp"].command).toBeUndefined();
   });
 
@@ -170,15 +185,27 @@ describe("_getZedSettings > theme gate", () => {
   it("should name the custom themes when custom theming is on", () => {
     const zed = loadZed({ is_gui: 1 });
     const { theme } = zed._getZedSettings({}, { is_prebuilt_config: false });
-    expect(theme).toEqual({ mode: "system", light: "Sy Light", dark: "Sy Dark" });
+    expect(theme).toMatchInlineSnapshot(`
+      {
+        "dark": "Sy Dark",
+        "light": "Sy Light",
+        "mode": "system",
+      }
+    `);
   });
 
   // Without a GUI nothing writes themes/, so settings.json must not point at a file that
-  // does not exist — it names a Zed built-in instead.
+  // does not exist - it names a Zed built-in instead.
   it("should fall back to Zed built-ins when custom theming is off", () => {
     const zed = loadZed({ is_gui: 0 });
     const { theme } = zed._getZedSettings({}, { is_prebuilt_config: false });
-    expect(theme).toEqual({ mode: "system", light: "Ayu Light", dark: "Ayu Dark" });
+    expect(theme).toMatchInlineSnapshot(`
+      {
+        "dark": "Ayu Dark",
+        "light": "Ayu Light",
+        "mode": "system",
+      }
+    `);
   });
 
   // The prebuilt artifact ships next to zed-color-{dark,light}, so it always names them
@@ -186,7 +213,13 @@ describe("_getZedSettings > theme gate", () => {
   it("should keep the custom themes in the prebuilt artifact even with no GUI", () => {
     const zed = loadZed({ is_gui: 0 });
     const { theme } = zed._getZedSettings({}, { is_prebuilt_config: true });
-    expect(theme).toEqual({ mode: "system", light: "Sy Light", dark: "Sy Dark" });
+    expect(theme).toMatchInlineSnapshot(`
+      {
+        "dark": "Sy Dark",
+        "light": "Sy Light",
+        "mode": "system",
+      }
+    `);
   });
 });
 

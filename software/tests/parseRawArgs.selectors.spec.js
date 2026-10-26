@@ -236,13 +236,18 @@ describe("setup selectors", () => {
       "software/scripts/advanced/a/setup.js",
       "software/scripts/advanced/b/setup.js",
     ]);
-    expect(confirmations).toEqual([
-      {
-        keyword: "advanced/setup.js",
-        mode: "files",
-        matches: ["software/scripts/advanced/a/setup.js", "software/scripts/advanced/b/setup.js"],
-      },
-    ]);
+    expect(confirmations).toMatchInlineSnapshot(`
+      [
+        {
+          "keyword": "advanced/setup.js",
+          "matches": [
+            "software/scripts/advanced/a/setup.js",
+            "software/scripts/advanced/b/setup.js",
+          ],
+          "mode": "files",
+        },
+      ]
+    `);
     expect(files).toEqual([
       "software/scripts/advanced/a/setup.js",
       "software/scripts/advanced/b/setup.js",

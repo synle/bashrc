@@ -125,15 +125,16 @@ _add_url_steam_shortcut Netflix https://www.netflix.com///`,
     );
 
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
-    expect(readShortcuts(fs.readFileSync(shortcutsPath))).toEqual([
-      {
-        AppName: "Netflix",
-        Exe: '"/usr/bin/flatpak"',
-        StartDir: '"/usr/bin/"',
-        LaunchOptions:
-          '"run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "https://www.netflix.com"',
-      },
-    ]);
+    expect(readShortcuts(fs.readFileSync(shortcutsPath))).toMatchInlineSnapshot(`
+      [
+        {
+          "AppName": "Netflix",
+          "Exe": ""/usr/bin/flatpak"",
+          "LaunchOptions": ""run" "--command=brave" "com.brave.Browser" "--ozone-platform=x11" "--disable-smooth-scrolling" "--kiosk" "https://www.netflix.com"",
+          "StartDir": ""/usr/bin/"",
+        },
+      ]
+    `);
   });
 
   it("fails when SteamTinkerLaunch returns success without writing a shortcut", () => {

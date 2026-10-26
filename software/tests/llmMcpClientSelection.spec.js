@@ -16,14 +16,31 @@ describe("MCP client selection", () => {
       mcpServers: { lens: { command: "server", excludeClients: ["pi"] } },
     });
     await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json");
-    expect(JSON.parse(fileSystem["/mock/mcp.json"])).toEqual({ mcpServers: { lens: { command: "server" } } });
+    expect(JSON.parse(fileSystem["/mock/mcp.json"])).toMatchInlineSnapshot(`
+      {
+        "mcpServers": {
+          "lens": {
+            "command": "server",
+          },
+        },
+      }
+    `);
   });
 
   it("returns the unfiltered inventory when platform and client arguments are omitted", async () => {
     fetchResponses[REGISTRY_PATH] = JSON.stringify({
       mcpServers: { lens: { command: "server", argsOnMac: ["mac"], args: ["other"], excludeClients: ["pi"] } },
     });
-    expect(await getIndexFunction("loadSharedMcpServers")()).toEqual({ lens: { command: "server", args: ["other"] } });
+    expect(await getIndexFunction("loadSharedMcpServers")()).toMatchInlineSnapshot(`
+      {
+        "lens": {
+          "args": [
+            "other",
+          ],
+          "command": "server",
+        },
+      }
+    `);
   });
 
   it.each([
@@ -44,7 +61,16 @@ describe("MCP client selection", () => {
     fetchResponses[REGISTRY_PATH] = JSON.stringify({
       mcpServers: { lens: { command: "server", args: ["linux"], argsOnMac: ["mac"], excludeClients: [] } },
     });
-    expect(await getIndexFunction("loadSharedMcpServers")(true, "pi")).toEqual({ lens: { command: "server", args: ["mac"] } });
+    expect(await getIndexFunction("loadSharedMcpServers")(true, "pi")).toMatchInlineSnapshot(`
+      {
+        "lens": {
+          "args": [
+            "mac",
+          ],
+          "command": "server",
+        },
+      }
+    `);
   });
 
   it.each([null, "pi", [""], ["typo"], [0], [null], {}])("rejects invalid exclusions %j before writing", async (excludeClients) => {
@@ -72,13 +98,27 @@ describe("MCP client selection", () => {
     });
     fileSystem["/mock/mcp.json"] = '{"mcpServers":{"lens":{"command":"personal"}}}';
     await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json", {}, "standard", "pi");
-    expect(JSON.parse(fileSystem["/mock/mcp.json"])).toEqual({
-      mcpServers: { lens: { command: "personal" }, other: { command: "server" } },
-    });
+    expect(JSON.parse(fileSystem["/mock/mcp.json"])).toMatchInlineSnapshot(`
+      {
+        "mcpServers": {
+          "lens": {
+            "command": "personal",
+          },
+          "other": {
+            "command": "server",
+          },
+        },
+      }
+    `);
   });
 
   it("retains malformed entry shapes for native consumer validation", async () => {
     fetchResponses[REGISTRY_PATH] = '{"mcpServers":{"missing":null,"text":"bad"}}';
-    expect(await getIndexFunction("loadSharedMcpServers")(false, "pi")).toEqual({ missing: null, text: "bad" });
+    expect(await getIndexFunction("loadSharedMcpServers")(false, "pi")).toMatchInlineSnapshot(`
+      {
+        "missing": null,
+        "text": "bad",
+      }
+    `);
   });
 });

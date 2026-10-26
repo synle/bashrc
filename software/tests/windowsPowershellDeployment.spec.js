@@ -113,12 +113,26 @@ describe("PowerShell 7 Terminal launch", () => {
       ],
       { findPathFromList: () => "/mnt/c/Program Files/PowerShell/7/pwsh.exe" },
     );
-    expect(settings.profiles.list.map(({ guid, hidden }) => [guid, hidden])).toEqual([
-      ["wsl", false],
-      ["{91c9f255-5190-4a5e-9ee5-d05d36dece87}", false],
-      ["legacy", false],
-      ["core", true],
-    ]);
+    expect(settings.profiles.list.map(({ guid, hidden }) => [guid, hidden])).toMatchInlineSnapshot(`
+      [
+        [
+          "wsl",
+          false,
+        ],
+        [
+          "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",
+          false,
+        ],
+        [
+          "legacy",
+          false,
+        ],
+        [
+          "core",
+          true,
+        ],
+      ]
+    `);
   });
 
   it.each(["powershell", "pwsh", undefined])(
