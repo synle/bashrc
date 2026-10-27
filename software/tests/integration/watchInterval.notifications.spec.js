@@ -56,7 +56,16 @@ finally:
  * @returns {object} Process status, exact display bytes, titles, waits, and remaining caches.
  * @throws {Error} On fixture failures; always removes the owned sandbox.
  */
-function runTerminal({ frames = ["old\n", "new\n", "new\n"], sleepLimit = 4, interval = "30", outputMode = "terminal", term = "xterm-256color", flags = [], titleSupport = "available", compareStatus = 0 } = {}) {
+function runTerminal({
+  frames = ["old\n", "new\n", "new\n"],
+  sleepLimit = 4,
+  interval = "30",
+  outputMode = "terminal",
+  term = "xterm-256color",
+  flags = [],
+  titleSupport = "available",
+  compareStatus = 0,
+} = {}) {
   const folder = mkdtempSync(path.join(os.tmpdir(), "watch notice's "));
   try {
     const bin = path.join(folder, "bin");
@@ -67,13 +76,17 @@ function runTerminal({ frames = ["old\n", "new\n", "new\n"], sleepLimit = 4, int
     writeFileSync(path.join(folder, "sleep_count"), "0\n");
     frames.forEach((frame, index) => writeFileSync(path.join(folder, `frame.${index + 1}`), frame));
     writeFileSync(path.join(bin, "clear"), "#!/bin/bash\nprintf '<clear>\\n'\n", { mode: 0o755 });
-    writeFileSync(path.join(bin, "sleep"), `#!/bin/bash
+    writeFileSync(
+      path.join(bin, "sleep"),
+      `#!/bin/bash
 printf '%s\n' "$1" >> "$WAITS"
 IFS= read -r count < "$SLEEP_COUNT"
 count=$((count + 1))
 printf '%s\n' "$count" > "$SLEEP_COUNT"
 [ "$count" -lt "$SLEEP_LIMIT" ] || exit 73
-`, { mode: 0o755 });
+`,
+      { mode: 0o755 },
+    );
     if (titleSupport === "available") {
       writeFileSync(path.join(bin, "set_terminal_title"), '#!/bin/bash\nprintf "%s\\n" "$*" >> "$TITLES"\n', { mode: 0o755 });
     }
@@ -81,7 +94,9 @@ printf '%s\n' "$count" > "$SLEEP_COUNT"
       writeFileSync(path.join(bin, "cmp"), '#!/bin/bash\nexit "$COMPARE_STATUS"\n', { mode: 0o755 });
     }
     const runner = path.join(folder, "runner.bash");
-    writeFileSync(runner, `${HELP}\n${PROFILE}\n
+    writeFileSync(
+      runner,
+      `${HELP}\n${PROFILE}\n
 # Emit an owned completed frame; the wait boundary ends the loop without real sleeps.
 function probe() {
   local _count
@@ -91,7 +106,8 @@ function probe() {
   command cat "$FRAME_PREFIX.$_count"
 }
 watch_interval "$@" probe
-`);
+`,
+    );
     const options = {
       encoding: "utf8",
       timeout: 10000,
@@ -111,10 +127,17 @@ watch_interval "$@" probe
       },
     };
     // The driver receives argv literally; no command or fixture path enters shell syntax.
-    const result = outputMode === "terminal"
-      ? spawnSync("python3", ["-c", TERMINAL_DRIVER, runner, ...flags, interval], options)
-      : spawnSync("/bin/bash", ["--noprofile", "--norc", runner, ...flags, interval], options);
-    return { ...result, output: result.stdout.replace(/\r\n/g, "\n"), titles: readFileSync(path.join(folder, "titles"), "utf8"), waits: readFileSync(path.join(folder, "waits"), "utf8"), caches: readdirSync(folder).filter((name) => name.startsWith("watch_interval.")) };
+    const result =
+      outputMode === "terminal"
+        ? spawnSync("python3", ["-c", TERMINAL_DRIVER, runner, ...flags, interval], options)
+        : spawnSync("/bin/bash", ["--noprofile", "--norc", runner, ...flags, interval], options);
+    return {
+      ...result,
+      output: result.stdout.replace(/\r\n/g, "\n"),
+      titles: readFileSync(path.join(folder, "titles"), "utf8"),
+      waits: readFileSync(path.join(folder, "waits"), "utf8"),
+      caches: readdirSync(folder).filter((name) => name.startsWith("watch_interval.")),
+    };
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }
@@ -147,8 +170,8 @@ describe("watcher terminal notifications", () => {
     expect(result.waits).toBe("30\n30\n");
   });
 
-  it("never extends a one-second interval for the update indicator", () => {
-    const result = runTerminal({ interval: "1", sleepLimit: 3 });
+  it.each(["1", "01"])("never extends one-second interval %s for the update indicator", (interval) => {
+    const result = runTerminal({ interval, sleepLimit: 3 });
     expect(result.status, result.stderr).toBe(73);
     expect(result.waits).toBe("1\n1\n1\n");
     expect(result.titles).toBe("Refreshing\nWaiting\nRefreshing\nUpdated\nWaiting\nRefreshing\nWaiting\n");

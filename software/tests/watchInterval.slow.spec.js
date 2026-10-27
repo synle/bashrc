@@ -37,7 +37,15 @@ const MKTEMP = execFileSync("/bin/bash", ["-c", "type -P mktemp"], { encoding: "
  */
 function runWatcher(
   args,
-  { cycles = 2, commandStatus = 0, mktempStatus = 0, mktempFailureAt = 1, clearStatus = 0, signal = "", invocation = 'watch_interval "$@"' } = {},
+  {
+    cycles = 2,
+    commandStatus = 0,
+    mktempStatus = 0,
+    mktempFailureAt = 1,
+    clearStatus = 0,
+    signal = "",
+    invocation = 'watch_interval "$@"',
+  } = {},
 ) {
   const sandbox = mkdtempSync(path.join(os.tmpdir(), "watch-interval-' space-\u2603-"));
   try {
