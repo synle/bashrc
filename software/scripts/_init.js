@@ -1,6 +1,9 @@
 /** Bootstraps .bash_profile, .bashrc, and assembles .bash_syle with core and advanced profile content.
  * Empty BEGIN/END markers are pre-placed in profile-core.sh and profile-advanced.sh
  * so that later scripts can update blocks in place via registerWithBashSyleProfile.
+ * Shell entry points also source matching local work overlays at shell startup.
+ * @returns {Promise<void>} Resolves after writing profiles and startup files.
+ * @throws {Error} If profile generation or filesystem writes fail.
  */
 async function doWork() {
   // backup current profile files before any modifications
@@ -16,7 +19,7 @@ async function doWork() {
     await writeText(file, ``);
   }
 
-  // ---- assemble .bash_syle with profile-core and profile-advanced ----
+  // --- Assemble .bash_syle with profile-core and profile-advanced ---
   log(">> Setting up .bash_syle");
 
   let contentProfileCore = await readText`software/bootstrap/profile-core.sh`;
@@ -24,19 +27,19 @@ async function doWork() {
 
   contentProfileCore = `
 ${LINE_BREAK_HASH}
-# ---- begin core profile ----
+# --- Begin core profile ---
 ${LINE_BREAK_HASH}
 
 ${contentProfileCore}
 
 ${LINE_BREAK_HASH}
-# ---- end core profile ----
+# --- End core profile ---
 ${LINE_BREAK_HASH}
   `.trim();
 
   contentProfileAdvanced = `
 ${LINE_BREAK_HASH}
-# ---- begin advanced profile ----
+# --- Begin advanced profile ---
 # skipped in Claude Code sessions (CLAUDECODE=1) for a lean, fast shell
 ${LINE_BREAK_HASH}
 if [ -z "\$CLAUDECODE" ]; then
@@ -45,7 +48,7 @@ ${contentProfileAdvanced}
 
 fi
 ${LINE_BREAK_HASH}
-# ---- end advanced profile ----
+# --- End advanced profile ---
 ${LINE_BREAK_HASH}
   `.trim();
 
@@ -73,12 +76,16 @@ ${LINE_BREAK_HASH}
   const bashrcPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
 
   const entryPointSourceFiles = [BASH_SYLE_COMMON_PATH, ...coreBashProfileFiles, BASH_SYLE_CACHE_PATH];
+  /** @type {string} Startup block; work overlays are discovered by the user's shell, not the installer. */
   const entryPointContent = trimSpacesOnBothEnd(`
     # define safe_source for non-login shells that skip .bash_profile
     function safe_source() { if ! bash -n "$1" 2>/dev/null; then echo "[Warning] source $1 failed (syntax error)" >&2; return 1; fi; . "$1"; }
     ${entryPointSourceFiles.map((file) => 'safe_source "' + file + '"').join("\n")}
-    # optional per-machine work overlays: every ~/.bash_work* file, sourced in lexical glob order
-    for _sy_work_file in "\$HOME"/.bash_work*; do case "\${_sy_work_file##*/}" in .bash_work*) [ -f "\$_sy_work_file" ] && safe_source "\$_sy_work_file" ;; esac; done; unset _sy_work_file
+    # optional per-machine work overlays: ~/.work_*.bash, sourced in lexical glob order
+    for _sy_work_file in "\$HOME"/.work_*.bash; do
+      [ -f "\$_sy_work_file" ] && safe_source "\$_sy_work_file"
+    done
+    unset _sy_work_file
   `);
 
   // bootstrap .bash_profile (login shells on all platforms) — sources .bashrc

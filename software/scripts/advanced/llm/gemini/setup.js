@@ -374,7 +374,7 @@ async function _doGeminiInstructionsWork(targetDir) {
 
   // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when GEMINI.md is brand new or the markers are missing.
-  // Then refresh any user-authored `<!-- BEGIN <label> | <path> -->` block already in the file.
+  // Refresh existing path-keyed blocks and append newly discovered ~/.work_*_instructions.md sources.
   const merged =
     refreshPathKeyedBlocks(replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append")).trim() + "\n";
 

@@ -264,6 +264,7 @@ Branch, commit, pull-request, worktree, link, merge, and review rules live in `<
 
 ## Secret Handling
 
+- Never read files whose requested or resolved path contains `.secret.`; exclude them from searches and automatic instruction imports.
 - A secret read is not a secret printed. Never echo, `cat`, log, or paste a credential value into a message, commit, PR body, journal, plan file, or terminal — not `.env`, not `gh auth token`, not a `~/.aws/credentials` or `kubeconfig` block, not a `printenv` / `env` dump. Prove presence without disclosure: `[ -n "$TOKEN" ] && echo set`, or the key name and last four characters.
 - **Ask before touching secrets.** If a requested path looks like credentials, tokens, private keys, an `.env` file, or similar sensitive data, stop and get explicit confirmation before reading, copying, moving, or modifying it — relocating a secret exposes it as surely as printing it. Never blind-sweep a directory hunting for API keys. Ordinary files (`report.pdf`, `my-project.zip`) need no gate.
 - Never put a secret on a command line. Argv is visible to every process and lands in shell history — pass credentials via env var, a `600` file, or stdin (`--password-stdin`), never `--token=<value>`. Prefix a command with a space or use the tool's own auth (`gh`, `aws`, `docker login`) instead of interpolating.

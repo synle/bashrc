@@ -195,6 +195,22 @@ Implicit fuzzy abbreviations are no longer supported. Replace `--preset=editor` 
 For automation without a terminal, provide exact preset names or unambiguous file paths, or pass `--skip-prompt` to accept every eligible match.
 Both SteamOS setup installer calls pass `--skip-prompt` so matching-name confirmation cannot interrupt those delegations.
 
+## Local work files
+
+Shell startup loads regular files matching `~/.work_*.bash` through `safe_source` in lexical glob order.
+Refresh the profile with `./run` after changing the startup generator; it does not rename existing home files.
+
+Each LLM client setup discovers regular instruction documents matching `~/.work_*_instructions.md`.
+For example, `~/.work_acme_instructions.md` becomes a `Custom Work Prompt | ~/.work_acme_instructions.md` HTML BEGIN/END block.
+New documents append after the existing instructions; subsequent deployments refresh their blocks without duplicates.
+Existing manually added path-keyed blocks also refresh in place.
+Review-note files such as `~/.work_pr_reviews.md` remain on-demand references because their names do not match the instruction pattern.
+
+Instruction imports reject credential-shaped and `.secret.` paths, including resolved symlink targets.
+Sources must remain inside home and contain nonempty regular-file content.
+Invalid markers retain existing content and emit diagnostics.
+The shared instruction budget covers the common block; custom documents increase the final client file size.
+
 ## Testing
 
 Suites are split across dedicated Vitest configs so each can run independently:

@@ -897,12 +897,17 @@ the tail before model requests, and its compaction hook preserves the reminder i
 summary context. Restart OpenCode after deployment; existing sessions retain loaded
 configuration. These cues improve persistence, not guaranteed model compliance.
 
-**User-authored path-keyed blocks refresh on every deploy.** After upserting the managed
-block, each CLI setup runs `refreshPathKeyedBlocks()` (`llm-common.js`): any
-`<!-- BEGIN <label> | <path> -->` … `<!-- END … -->` block **already in** the target file
-gets the current bytes of `<path>` (`~/` / `$HOME/` expanded). Never adds a block — no
-marker, no change (why `CLAUDE.md` stays lean). Skips `synle/bashrc |` keys. Missing, empty,
-outside-home, credential-shaped source, or duplicate markers → old body kept, error logged.
+**Work instructions and path-keyed blocks refresh on every deploy.** After upserting the common block, all five clients call `refreshPathKeyedBlocks()` in `llm-common.js`.
+It discovers `~/.work_*_instructions.md` in lexical order and appends `Custom Work Prompt | ~/filename` HTML BEGIN/END blocks.
+Existing blocks refresh in place, including sources already included under another label or expanded home path.
+Unrelated user content and repository-owned blocks remain unchanged.
+Missing, empty, non-file, outside-home, credential-shaped, or `.secret.` sources retain the old body and emit diagnostics.
+Validate both requested and resolved paths before reading; symlinks cannot bypass these checks.
+Invalid, duplicate, or reversed markers and source bodies containing their own delimiters also leave content unchanged.
+
+Shell startup separately sources `~/.work_*.bash` in lexical glob order through `safe_source`.
+These shell overlays are not instruction documents; agents must never inspect `.secret.` files.
+Do not add automatic migration or rename logic for legacy local work files.
 
 After corpus changes, run focused instruction/skill registry and budget tests.
 Deploy through every configured client after satisfying Secret Handling; full setup can access credential stores.

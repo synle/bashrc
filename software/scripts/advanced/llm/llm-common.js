@@ -1527,64 +1527,106 @@ const LLM_PATH_KEYED_BEGIN_REGEX = /^<!-- BEGIN ((?:[^|\n]+?) \| ([^\n]+?)) -->$
  * @type {RegExp}
  */
 const LLM_PATH_KEYED_SECRET_REGEX =
-  /(^|\/)(\.env[^/]*|\.ssh|\.aws|\.gnupg|kubeconfig|id_[^/]*|[^/]*credential[^/]*|[^/]*\.pem|[^/]*\.key)(\/|$)/i;
+  /\.secret\.|(^|\/)(\.env[^/]*|\.ssh|\.aws|\.gnupg|kubeconfig|id_[^/]*|[^/]*credential[^/]*|[^/]*\.pem|[^/]*\.key)(\/|$)/i;
+
+/** @type {RegExp} Discoverable home documents whose names can safely appear in HTML markers. */
+const LLM_WORK_INSTRUCTION_FILENAME_REGEX = /^\.work_[^\r\n|<>]*_instructions\.md$/;
 
 /**
- * Refreshes every user-authored path-keyed block already present in an instructions file.
- * A block is `<!-- BEGIN <label> | <path> -->` … `<!-- END <label> | <path> -->`; its body
- * becomes the current contents of `<path>` (`~/` and `$HOME/` expand to `homeFolder`).
+ * Refreshes existing user path-keyed blocks and appends discovered work instruction documents.
+ * Home files matching `.work_*_instructions.md` receive `Custom Work Prompt | ~/filename`
+ * blocks in lexical discovery order. Existing blocks retain their labels and positions.
+ * Repository-owned keys remain the responsibility of each client's managed-block writer.
+ * Invalid markers, unreadable/empty sources, unsafe paths, and self-delimiting bodies
+ * leave existing content unchanged and emit diagnostics. No source files are modified.
  *
- * Only blocks already in the file are touched — nothing is ever added, so a CLI file
- * without a custom marker (e.g. `CLAUDE.md`) stays exactly as it was. Repo-owned keys
- * (`synle/bashrc | …`) are skipped; their setup step owns them. A block is left
- * unchanged, with an error logged, when its source is missing, empty, outside
- * `homeFolder`, credential-shaped, or its markers are not exactly one BEGIN + one END.
- *
- * @param {string} text - Full instructions file content.
- * @param {string} [homeFolder=BASE_HOMEDIR_LINUX] - Folder `~/` and `$HOME/` expand to; sources must live under it.
- * @returns {string} Content with every refreshable block replaced; unchanged when none are.
+ * @param {string} text - Full instructions file content, including the managed common block.
+ * @param {string} [homeFolder=BASE_HOMEDIR_LINUX] - Home for discovery and expansion of `~/` and `$HOME/`.
+ * @returns {string} Instructions with safe custom sources refreshed or appended without duplicates.
  */
 function refreshPathKeyedBlocks(text, homeFolder = BASE_HOMEDIR_LINUX) {
-  /** @type {string} Resolved home with a trailing separator, for containment checks. */
-  const homePrefix = path.resolve(homeFolder) + path.sep;
-  let result = text;
-  for (const match of text.matchAll(LLM_PATH_KEYED_BEGIN_REGEX)) {
-    const [, key, rawPath] = match;
-    if (key.startsWith("synle/bashrc |")) continue;
+  /** @type {string} Lexical home root; real targets receive a separate containment check. */
+  const homeRoot = path.resolve(homeFolder);
+  /** @type {{ key: string, rawPath: string, sourcePath: string, existing: boolean }[]} Existing and discovered sources. */
+  const blocks = [...text.matchAll(LLM_PATH_KEYED_BEGIN_REGEX)].map(([, key, rawPath]) => ({
+    key,
+    rawPath,
+    sourcePath: path.resolve(rawPath.trim().replace(/^(~|\$HOME)(?=\/)/, homeRoot)),
+    existing: true,
+  }));
+  /** @type {Set<string>} Paths already included under any user-authored label. */
+  const knownPaths = new Set(blocks.map(({ sourcePath }) => sourcePath));
+  try {
+    for (const name of fs.readdirSync(homeRoot).sort()) {
+      if (!LLM_WORK_INSTRUCTION_FILENAME_REGEX.test(name) || LLM_PATH_KEYED_SECRET_REGEX.test(name)) continue;
+      /** @type {string} Discovered source identity for deduplication against existing blocks. */
+      const sourcePath = path.join(homeRoot, name);
+      if (knownPaths.has(sourcePath)) continue;
+      blocks.push({ key: `Custom Work Prompt | ~/${name}`, rawPath: `~/${name}`, sourcePath, existing: false });
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") log("ERROR: work instruction discovery failed:", error.code || error.message);
+  }
 
+  let result = text;
+  for (const { key, rawPath, sourcePath, existing } of blocks) {
+    if (key.startsWith("synle/bashrc |")) continue;
+    /** @type {string} Stable opening delimiter for this source. */
     const begin = `<!-- BEGIN ${key} -->`;
+    /** @type {string} Stable closing delimiter for this source. */
     const end = `<!-- END ${key} -->`;
-    if (result.split(begin).length !== 2 || result.split(end).length !== 2) {
-      log(`ERROR: path-keyed block "${key}" needs exactly one BEGIN and one END marker; left unchanged`);
+    /** @type {number} Existing blocks require one pair; newly discovered blocks require none. */
+    const expectedCount = existing ? 1 : 0;
+    if (result.split(begin).length - 1 !== expectedCount || result.split(end).length - 1 !== expectedCount) {
+      log("ERROR: path-keyed block has invalid or duplicate markers; left unchanged:", key);
       continue;
     }
-
-    /** @type {string} Source path with `~/` / `$HOME/` expanded. */
-    const sourcePath = path.resolve(rawPath.trim().replace(/^(~|\$HOME)(?=\/)/, homeFolder));
-    if (!sourcePath.startsWith(homePrefix) || LLM_PATH_KEYED_SECRET_REGEX.test(sourcePath)) {
-      log(`ERROR: path-keyed block "${key}" source is outside home or credential-shaped; left unchanged`);
+    /** @type {number} Existing opening delimiter position, or -1 for a new block. */
+    const beginIdx = result.indexOf(begin);
+    /** @type {number} Existing closing delimiter position, or -1 for a new block. */
+    const endIdx = result.indexOf(end);
+    if (existing && endIdx < beginIdx) {
+      log("ERROR: path-keyed block END precedes BEGIN; left unchanged:", key);
+      continue;
+    }
+    if (
+      !sourcePath.startsWith(homeRoot + path.sep) ||
+      LLM_PATH_KEYED_SECRET_REGEX.test(rawPath) ||
+      LLM_PATH_KEYED_SECRET_REGEX.test(sourcePath)
+    ) {
+      log("ERROR: path-keyed block source is outside home or credential-shaped; left unchanged:", key);
       continue;
     }
 
     let body = "";
     try {
-      body = fs.readFileSync(fs.realpathSync(sourcePath), "utf-8").trim();
+      /** @type {string} Canonical source; symlinks cannot hide outside-home or secret targets. */
+      const realSource = fs.realpathSync(sourcePath);
+      /** @type {string} Canonical home supports symlinked homes and platform temporary roots. */
+      const realHomePrefix = fs.realpathSync(homeRoot) + path.sep;
+      if (!realSource.startsWith(realHomePrefix) || LLM_PATH_KEYED_SECRET_REGEX.test(realSource)) {
+        log("ERROR: path-keyed block target is outside home or credential-shaped; left unchanged:", key);
+        continue;
+      }
+      if (!fs.statSync(realSource).isFile()) {
+        log("ERROR: path-keyed block source is not a regular file; left unchanged:", key);
+        continue;
+      }
+      body = fs.readFileSync(realSource, "utf-8").trim();
     } catch (error) {
-      log(`ERROR: path-keyed block "${key}" source unreadable (${error.code || error.message}); left unchanged`);
+      log("ERROR: path-keyed block source unreadable; left unchanged:", key, error.code || error.message);
       continue;
     }
-    if (!body) {
-      log(`ERROR: path-keyed block "${key}" source is empty; left unchanged`);
+    if (!body || body.includes(begin) || body.includes(end)) {
+      log("ERROR: path-keyed block source is empty or contains its own markers; left unchanged:", key);
       continue;
     }
 
-    const beginIdx = result.indexOf(begin);
-    const endIdx = result.indexOf(end);
-    if (endIdx < beginIdx) {
-      log(`ERROR: path-keyed block "${key}" END precedes BEGIN; left unchanged`);
-      continue;
+    if (existing) {
+      result = `${result.slice(0, beginIdx)}${begin}\n${body}\n${result.slice(endIdx)}`;
+    } else {
+      result = `${result.trimEnd()}${result.trim() ? "\n\n" : ""}${begin}\n${body}\n${end}\n`;
     }
-    result = `${result.slice(0, beginIdx)}${begin}\n${body}\n${result.slice(endIdx)}`;
   }
   return result;
 }

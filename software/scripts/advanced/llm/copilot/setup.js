@@ -447,7 +447,7 @@ async function _doCopilotInstructionsWork(targetDir) {
   // insertMode: "prepend" creates the block at the top when copilot-instructions.md is
   // brand new or the markers are missing — so the persona directive is the first thing
   // the model reads, matching Claude and opencode.
-  // Then refresh any user-authored `<!-- BEGIN <label> | <path> -->` block already in the file.
+  // Refresh existing path-keyed blocks and append newly discovered ~/.work_*_instructions.md sources.
   const merged =
     refreshPathKeyedBlocks(replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "prepend")).trim() + "\n";
 
