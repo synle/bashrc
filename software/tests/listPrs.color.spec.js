@@ -45,8 +45,13 @@ function runCli(args = [], colorEnv = {}) {
     const bin = path.join(folder, "bin");
     mkdirSync(bin);
     writeFileSync(path.join(folder, "pr.json"), JSON.stringify(PR));
-    writeFileSync(path.join(folder, "search.json"), JSON.stringify([{ number: 1, repository: { nameWithOwner: "acme/widget-store" }, url: PR.data.repository.pullRequest.url }]));
-    writeFileSync(path.join(bin, "gh"), `#!/bin/bash
+    writeFileSync(
+      path.join(folder, "search.json"),
+      JSON.stringify([{ number: 1, repository: { nameWithOwner: "acme/widget-store" }, url: PR.data.repository.pullRequest.url }]),
+    );
+    writeFileSync(
+      path.join(bin, "gh"),
+      `#!/bin/bash
 case "$1" in
 --version) printf 'gh fixture\n' ;;
 search) command cat "$SEARCH_RESPONSE" ;;
@@ -54,11 +59,25 @@ api)
   if [ "$2" = user ]; then printf 'example\n'; else command cat "$PR_RESPONSE"; fi
   ;;
 esac
-`, { mode: 0o755 });
-    const env = { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}`, BASH_ENV: "/dev/null", TERM: "xterm-256color", SEARCH_RESPONSE: path.join(folder, "search.json"), PR_RESPONSE: path.join(folder, "pr.json") };
+`,
+      { mode: 0o755 },
+    );
+    const env = {
+      ...process.env,
+      PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+      BASH_ENV: "/dev/null",
+      TERM: "xterm-256color",
+      SEARCH_RESPONSE: path.join(folder, "search.json"),
+      PR_RESPONSE: path.join(folder, "pr.json"),
+    };
     delete env.NO_COLOR;
     delete env.FORCE_COLOR;
-    return spawnSync(process.execPath, [CLI, "--me=1", "--all", "acme/widget-store", ...args], { cwd: folder, env: { ...env, ...colorEnv }, encoding: "utf8", timeout: 5000 });
+    return spawnSync(process.execPath, [CLI, "--me=1", "--all", "acme/widget-store", ...args], {
+      cwd: folder,
+      env: { ...env, ...colorEnv },
+      encoding: "utf8",
+      timeout: 5000,
+    });
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }
@@ -72,12 +91,15 @@ describe("PR renderer captured color policy", () => {
     expect(result.stdout).toContain("\x1b]8;;https://github.com/acme/widget-store/pull/1");
   });
 
-  it.each([{}, { FORCE_COLOR: "0" }, { FORCE_COLOR: "invalid" }, { FORCE_COLOR: "1", NO_COLOR: "1" }])("keeps capture plain for policy %j", (env) => {
-    const result = runCli([], env);
-    expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain("topic");
-    expect(result.stdout).not.toContain("\x1b");
-  });
+  it.each([{}, { FORCE_COLOR: "0" }, { FORCE_COLOR: "invalid" }, { FORCE_COLOR: "1", NO_COLOR: "1" }])(
+    "keeps capture plain for policy %j",
+    (env) => {
+      const result = runCli([], env);
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toContain("topic");
+      expect(result.stdout).not.toContain("\x1b");
+    },
+  );
 
   it("keeps forced-color URL-only output free of escapes", () => {
     const result = runCli(["--links"], { FORCE_COLOR: "1" });
