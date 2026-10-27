@@ -201,7 +201,7 @@ Suites are split across dedicated Vitest configs so each can run independently:
 
 ```bash
 make test_unit             # software/tests unit, convention, and subprocess integration specs
-make precommit             # lint + default unit suite; format changed files separately before commits
+make precommit             # lint + complete default unit suite, quiet output
 make test_coverage         # Unit tests + istanbul coverage report
 make test_profile          # bash -n syntax checks for assembled profile scripts
 make test_smoke            # Puppeteer smokes against the live deploy
@@ -211,6 +211,10 @@ make test_dryrun           # Dry-runs every JS script; asserts no writes / clean
 make test_all              # unit + profile + live smoke + buildconfig + dryrun + shellcheck; no coverage
 make validate              # full local gate; routine agent work leaves heavier suites to CI
 ```
+
+`make precommit` uses dot reporting and shows console logs only for failing tests; direct subprocess or stderr output can still appear.
+`npm test`, `make test_unit`, and `make validate` retain verbose reporting. Test scope and assertions are identical.
+Format changed files separately before committing.
 
 Run a single spec or filter by test name:
 
@@ -258,7 +262,10 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 `software/index.js` or `software/tools/build-include.js`, add or update unit tests.
 Keep every test spec at **300 lines or fewer**. If a spec grows beyond 300 lines,
 split it by behavior into independently named `*.spec.js` files; never use numeric
-`partN` names. The convention-linter specs (one rule each) are listed in AGENTS.md §11.
+`partN` names. Name newly split slow native/subprocess specs `*.integration.spec.js`; these remain in the default suite.
+Keep short configuration checks together, and split expensive behavior into independently scheduled files.
+The Git-default specs copy a private prepared repository per case; copies do not share mutable Git state.
+The convention-linter specs (one rule each) are listed in AGENTS.md §11.
 
 The unit runner uses bounded Vitest fork workers and file parallelism. Keep tests independent:
 own fixtures and temp folders, no shared mutable state, no order assumptions. Use
@@ -305,7 +312,7 @@ make format_ci_binaries    # regenerate the ci-binary-checks block
 make build_all             # configs, hosts, webapp, postbuild
 make build_installer       # .build/install-bashrc.sh self-extracting installer
 make test_unit             # vitest, vitest.config.js
-make precommit             # lint + test_unit; format changed files separately before commits
+make precommit             # lint + complete default unit suite, dot reporter and failing-test console logs
 make lint                  # oxlint correctness pass (.oxlintrc.json)
 make test_coverage         # + istanbul; thresholds live in vitest.config.js
 make test_profile          # bash -n / profile invariants
@@ -313,7 +320,7 @@ make test_buildconfig      # inline-snapshot shape (…_update to refresh)
 make test_smoke[_local]    # puppeteer webapp (live / local dist)
 make test_dryrun           # run.sh --dryrun --setup; fails on non-zero exit or any script status "error" in run_timing.json
 make test_all              # unit, profile, smoke, buildconfig, dryrun, shellcheck
-make validate              # format + precommit + buildconfig + webapp + smoke_local + dryrun
+make validate              # format + lint + verbose test_unit + buildconfig + webapp + smoke_local + dryrun
                            #   + shellcheck, then gating profile tests; normally CI-owned
 make new-script name= os= type=
 make doctor                # environment diagnosis (shows last bench_profile result)

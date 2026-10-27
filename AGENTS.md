@@ -930,8 +930,9 @@ setup intent as Node. Its `node | tee | bash | tee` pipeline must preserve every
 
 ### 14.1 Validation cadence — fast local gate, heavier suites in CI
 
-`make precommit` runs `lint` and `test_unit`; format changed files separately before committing.
-Run it after the final edit and before each commit.
+`make precommit` runs `lint` and the complete default unit suite with dot reporting and failing-test console logs.
+`make test_unit` and `make validate` retain verbose reporting. Format changed files separately before committing.
+Run `make precommit` after the final edit and before each commit.
 After each commit, run only fast focused unit tests for changed behavior.
 The default unit suite includes subprocess fixtures.
 CI/CD owns additional build, browser, profile, dry-run, and shellcheck suites.
