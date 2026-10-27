@@ -30,11 +30,7 @@ const IS_COVERAGE_RUN = process.argv.includes("--coverage") || process.argv.incl
 export default defineConfig({
   test: {
     include: ["software/tests/**/*.spec.js"],
-    exclude: [
-      "software/tests/integration/**",
-      "software/tests/profileSyntax*.spec.js",
-      "software/tests/buildConfigShape*.spec.js",
-    ],
+    exclude: ["software/tests/integration/**", "software/tests/profileSyntax*.spec.js", "software/tests/buildConfigShape*.spec.js"],
     setupFiles: ["software/tests/setup.js"],
     env: {
       BASHRC_TEST_COVERAGE: IS_COVERAGE_RUN ? "1" : "0",

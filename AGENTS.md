@@ -399,7 +399,7 @@ Profile registration is buffered: `registerProfileBlock` /
   Retain successful snapshots for asynchronous GUI readers, remove failed captures, and preserve failure status. Regression coverage lives in `software/tests/clipboardDiff.spec.js`.
 - **Fuzzy folder navigation** tries native `cd` first, preserving options, exact paths, `CDPATH`, symlinks, previous-folder behavior, HOME, and failure status.
   Only missing relative folder names use breadth-first search, capped at 3 levels, 20,000 entries, and 2 seconds; shared ignored-folder patterns exclude caches unless their path components are explicit exact matches.
-  Unique results navigate directly; ambiguous results show at most five choices and require `/dev/tty`, never pipeline stdin. Keep parent aliases and native completion covered in `software/tests/nativeCd.spec.js` and fuzzy behavior in `software/tests/fuzzyCd.spec.js`.
+  Unique results navigate directly; ambiguous results show at most five choices and require `/dev/tty`, never pipeline stdin. Keep parent aliases and native completion covered in `software/tests/nativeCd.spec.js` and fuzzy behavior in `software/tests/integration/fuzzyCd.spec.js`.
 - **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as
   explicit native aliases; cover listing behavior in `software/tests/nativeLs.spec.js`.
 - **File search colors** default `LS_COLORS` to native ANSI palette slots in `profile-core.sh`, avoiding fd's fixed vivid fallback.
@@ -649,6 +649,12 @@ Testing / Vitest configs / Coverage**. Two rules that live here: register every 
 file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
 `software/index.js` or `software/tools/build-include.js`.
 
+- **Unit/integration boundary.** Put long-running or resource-sensitive subprocess, browser, native-tool, and network tests under `software/tests/integration/`.
+  This includes the audited tmux, autocomplete VCS, Git/Delta, Vim, and fuzzy-navigation fixtures, alongside browser and live URL checks.
+  Keep fast, isolated unit fixtures in the default suite; do not place new slow suites beside unit specs or rely on a `.slow.spec.js` suffix for exclusion.
+  The default unit configuration excludes the integration tree, so `make precommit` never runs those integration tests.
+  `make validate` runs `test_integration_local`; explicit live/local integration targets and CI retain the heavier checks.
+  Moving tests does not fix their subprocess deadlines or resource-isolation defects.
 - **Prefer inline snapshots.** Use `toMatchInlineSnapshot` for stable structured output instead of `toMatchObject`, external `toMatchSnapshot`, or bulky literal-object assertions.
   Keep snapshots small and behavior-focused; project relevant fields and normalize only nondeterministic values.
   Preserve explicit scalar, predicate, absence, and round-trip assertions when they express the contract more clearly.
@@ -687,7 +693,7 @@ file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
 | `profileShellSyntax`              | Every `*.profile.bash` / `*.bash` under `software/scripts/` (recursive, `.ps1.bash` excluded) and `software/bootstrap/` passes `bash -n` under both PATH bash and the oldest local bash. Runs in the **fast default suite** (no `.build/` needed), so `make test_unit` alone catches a botched partial — e.g. a deleted `function foo() {` header leaving an orphaned `}` body that breaks `source ~/.bash_syle`.                                  |
 | `filterFilesByOsGuard`            | Explicit `--files=` entries in an inactive OS folder are dropped, not run.                                                                                                                                                                                                                                                                                                                                                                         |
 | `osDetection`                     | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.                                                                                                                                                                                                                                                                                                 |
-| `smokeTestRawUrls`                | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                                                                                                                                                                                                                                                                   |
+| `integration/rawUrls`             | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                                                                                                                                                                                                                                                                   |
 
 ---
 
@@ -936,8 +942,9 @@ setup intent as Node. Its `node | tee | bash | tee` pipeline must preserve every
 `make test_unit` and `make validate` retain verbose reporting. Format changed files separately before committing.
 Run `make precommit` after the final edit and before each commit.
 After each commit, run only fast focused unit tests for changed behavior.
-The default unit suite includes subprocess fixtures.
-CI/CD owns additional build, browser, profile, dry-run, and shellcheck suites.
+The default unit suite includes short isolated subprocess fixtures, but excludes `software/tests/integration/**`.
+The audited native-process tests and browser checks run only through explicit integration targets, full validation, or CI.
+CI/CD owns additional build, integration, profile, dry-run, and shellcheck suites.
 `make validate` remains available for explicit local requests; routine agent work must not run it.
 
 | Rung | Command                                                                 | Cost    | When                                      |

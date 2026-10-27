@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 
 const BASE_URL = "https://github.com/synle/bashrc/blob/HEAD";
 const TIMEOUT = 15000;
+/** Repository-relative spec path excluded from its own source scan. @type {string} */
 const THIS_FILE = "software/tests/integration/rawUrls.spec.js";
 
 /** Recursively lists all files under a directory matching given extensions. */
@@ -41,7 +42,10 @@ function shouldSkip(filePath) {
   return false;
 }
 
-/** Scans source files for getGitHubRawUrl / get_github_raw_url calls and extracts resolved URLs. */
+/**
+ * Scans repository sources for literal GitHub raw-path helper calls without making network requests.
+ * @returns {{file: string, path: string}[]} Unique source paths and their first referring files.
+ */
 function extractRawUrls() {
   const entries = [];
   const rootDir = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -128,7 +132,8 @@ const FORM3_API_RE = /https:\/\/api\.github\.com\/repos\/[^/]+\/[^/]+\/contents\
 
 /**
  * Scans webapp source files for GitHub raw content URLs and categorizes them.
- * Returns entries with file, line number, matched URL, form type, and whether /HEAD/ is used.
+ * @returns {{file: string, lineNum: number, form: number, match: string, usesHead: boolean, line: string}[]} URL forms and source locations.
+ * @throws {Error} If a discovered webapp source cannot be read.
  */
 function extractWebappGitHubUrls() {
   const entries = [];

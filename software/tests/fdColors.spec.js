@@ -6,7 +6,11 @@ import { spawnSync } from "child_process";
 /** Native output checks require the optional fd executable. */
 const HAS_FD = spawnSync("fd", ["--version"]).status === 0;
 
-/** Execute only the profile's color default, avoiding unrelated shell startup effects. */
+/**
+ * Executes only the profile's color default against this spec's stable filename, without unrelated shell startup effects.
+ * @param {string} [colors] Explicit LS_COLORS value; undefined exercises the profile default.
+ * @returns {import("child_process").SpawnSyncReturns<string>} Native fd status and captured ANSI output.
+ */
 function search(colors) {
   const profile = fs.readFileSync("software/bootstrap/profile-core.sh", "utf8");
   const defaults = profile.match(/^export LS_COLORS=.*$/m)?.[0] || "";

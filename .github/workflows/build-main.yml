@@ -803,7 +803,7 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "</details>" >> "$GITHUB_STEP_SUMMARY"
 
-  # ---- Phase 4: Unit tests and smoke test ----
+  # ---- Phase 4: Unit and integration tests ----
   test:
     needs: [prep, build-ubuntu, build-rhel, build-arch, build-debian, build-mac, publish]
     if: ${{ needs.prep.result == 'success' && needs.build-ubuntu.result == 'success' && needs.build-rhel.result == 'success' && needs.build-arch.result == 'success' && needs.build-debian.result == 'success' && needs.build-mac.result == 'success' }}
@@ -1137,7 +1137,7 @@ jobs:
           run_test_suite "Unit Tests" "ci_test_unit"
           run_test_suite "Profile Syntax" "ci_test_profile"
           run_test_suite "Shellcheck & Bash 3.2" "ci_test_shellcheck"
-          run_test_suite "Smoke Tests" "ci_test_smoke"
+          run_test_suite "Integration Tests" "ci_test_integration"
           run_test_suite "Build Config Shape" "ci_test_buildconfig"
           run_test_suite "Coverage" "ci_test_coverage"
 

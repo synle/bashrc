@@ -130,7 +130,7 @@ Original measurements remain explicitly historical, not current failures.
         "theme/sy/vim_dark.jsonc",
         "theme/sy/vim_light.jsonc",
         "software/scripts/vim-config.js",
-        "software/tests/vimThemes.spec.js",
+        "software/tests/integration/vimThemes.spec.js",
       ],
     },
     {
@@ -280,8 +280,8 @@ Original measurements remain explicitly historical, not current failures.
       "resolution": "Full generated vimrc loads real installed Jetpack/Signify/Lightline. Native Signify default links and Lightline palettes survive both starting appearances and repeated switches. CursorLineConceal is reference-only with no installed consumer found; no runtime fix was necessary.",
       "remainingVerification": "Real asynchronous VCS hunk creation and terminal glyph rendering are separate from verified startup/highlight inheritance.",
       "evidence": [
-        "software/tests/vimThemes.plugins.spec.js",
-        "software/tests/vimThemes.spec.js",
+        "software/tests/integration/vimThemes.plugins.spec.js",
+        "software/tests/integration/vimThemes.spec.js",
         "theme/native-consumption.jsonc",
         "theme/NATIVE-VERIFICATION.md",
       ],

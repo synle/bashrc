@@ -132,8 +132,9 @@ Native merger acceptance does not prove every allowed role appears in every scre
 ## Reproduce focused checks
 
 ```bash
-BASHRC_VIM_PLUGIN_ROOT="$HOME/.vim" npx vitest run --config vitest.config.js \
-  software/tests/vimThemes.plugins.spec.js software/tests/vimThemes.spec.js software/tests/vimThemes.navigation.spec.js \
+BASHRC_VIM_PLUGIN_ROOT="$HOME/.vim" npx vitest run --config vitest.integration.config.js \
+  software/tests/integration/vimThemes.plugins.spec.js software/tests/integration/vimThemes.spec.js software/tests/integration/vimThemes.navigation.spec.js
+npx vitest run --config vitest.config.js \
   software/tests/themeComposition.spec.js software/tests/themeComponentCrosswalk.spec.js \
   software/tests/themeNativeConsumption.spec.js software/tests/themeAuditStatus.spec.js
 ```

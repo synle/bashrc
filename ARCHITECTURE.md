@@ -19,7 +19,7 @@ CI regenerates build artifacts under `.build/`.
 | `software/metadata/`                            | Build-time config: autocomplete specs, host blocklists, `presets.jsonc`, `ci-binaries.json`, file associations, hostname/IP groups, canonical script list.                                                                                                    |
 | `software/metadata/autocomplete-complete-spec/` | Tab-completion specs shared by bash + PowerShell; the folder and autocomplete registry define the current inventory.                                                                                                                                          |
 | `software/tools/`                               | Dev tooling: `build-include.js` (marker-inline builder), `build-installer.js`, `doctor.sh`, `new-script.sh`, formatters.                                                                                                                                      |
-| `software/tests/`                               | Vitest unit + smoke specs for the engine.                                                                                                                                                                                                                     |
+| `software/tests/`                               | Vitest unit + integration specs for the engine.                                                                                                                                                                                                               |
 | `webapp/`, `src/`                               | Vite + React demo site published to GitHub Pages.                                                                                                                                                                                                             |
 | `tests/`                                        | Webapp utility tests outside the `software/tests/**/*.spec.js` default unit glob; do not count them as covered by `npm test`.                                                                                                                                 |
 | `.build/`                                       | Generated artifacts committed back by CI (editor configs, host files). Per-OS `profile_bashrc_<os>.sh` not tracked in git — mirrored to the `binary-cache` release, copied into `dist/` by publish for same-origin Pages fetch.                               |
@@ -124,10 +124,10 @@ Composites: `lightweight`, `heavyweight` (= all building blocks: `editors`, `emu
 CI = `.github/workflows/build-main.yml`, phased:
 
 1. **Decky bundle** — builds and verifies the pinned package bundle in a read-only job before prep. Only trusted default-branch pushes publish its rolling cache asset.
-2. **Prep** (Ubuntu) — formatting, include generation, local smoke/dry-run checks, and installer/webapp builds; uploads the prep patch and distribution artifacts.
+2. **Prep** (Ubuntu) — formatting, include generation, local integration/dry-run checks, and installer/webapp builds; uploads the prep patch and distribution artifacts.
 3. **OS builds** — Ubuntu, RHEL, Arch, Debian, and macOS apply prep output and upload generated configurations/profiles. Arch and Debian are explicitly allowed to fail.
 4. **Publish** — combines generated artifacts, amends HEAD with `--force-with-lease`, copies profiles into `dist/`, and deploys Pages.
-5. **Test** — unit/profile/smoke/buildconfig/coverage jobs validate published output and render binary, timing, and coverage summaries. Successful builds use the installer version computed in prep, `v0.YYYYMMDD.HHMM.<short_sha>`.
+5. **Test** — unit/profile/integration/buildconfig/coverage jobs validate published output and render binary, timing, and coverage summaries. Successful builds use the installer version computed in prep, `v0.YYYYMMDD.HHMM.<short_sha>`.
 
 `workflow_dispatch` with `run_mode=test_only` skips rebuild phases; `.github/workflows/build-main.yml` owns exact conditions and dependencies.
 Publish can change the default-branch SHA. Before an authorized default-branch push, synchronize with `git pull --rebase`.

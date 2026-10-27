@@ -1,5 +1,7 @@
 name: CI Install Chrome
-description: Install (or restore from cache) the pinned Chrome build used by Puppeteer smoke tests, and export PUPPETEER_EXECUTABLE_PATH
+description: >-
+  Install (or restore from cache) the pinned Chrome build for
+  Puppeteer integration tests, and export PUPPETEER_EXECUTABLE_PATH
 
 inputs:
   chrome-version:
@@ -17,7 +19,7 @@ runs:
         path: /home/runner/.cache/puppeteer
         key: puppeteer-chrome-${{ runner.os }}-${{ inputs.chrome-version }}
 
-    - name: Install Chrome for Puppeteer smoke tests
+    - name: Install Chrome for Puppeteer integration tests
       shell: bash
       env:
         PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer

@@ -23,6 +23,7 @@ import path from "path";
 import { spawnSync } from "child_process";
 import { fileURLToPath } from "url";
 
+/** Checkout root resolved from the integration spec, independent of the working folder. @type {string} */
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const PAYLOAD = path.join(ROOT_DIR, "software/scripts/set_terminal_title.cli.bash");
 

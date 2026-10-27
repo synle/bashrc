@@ -200,22 +200,26 @@ Both SteamOS setup installer calls pass `--skip-prompt` so matching-name confirm
 Suites are split across dedicated Vitest configs so each can run independently:
 
 ```bash
-make test_unit             # software/tests unit, convention, and subprocess integration specs
+make test_unit             # fast unit/convention and short isolated subprocess specs
 make precommit             # lint + complete default unit suite, quiet output
 make test_coverage         # Unit tests + istanbul coverage report
 make test_profile          # bash -n syntax checks for assembled profile scripts
-make test_smoke            # Puppeteer smokes against the live deploy
-make test_smoke_local      # Puppeteer smokes against ./dist (local build)
+make test_integration      # native-process checks + browsers and URL checks against the live deploy
+make test_integration_local # native-process checks + browsers against ./dist
 make test_buildconfig      # Inline-snapshot shape checks for generated configs
 make test_dryrun           # Dry-runs every JS script; asserts no writes / clean stdout
-make test_all              # unit + profile + live smoke + buildconfig + dryrun + shellcheck; no coverage
+make test_all              # unit + profile + live integration + buildconfig + dryrun + shellcheck; no coverage
 make validate              # full local gate; routine agent work leaves heavier suites to CI
 ```
 
 `make precommit` uses dot reporting and shows console logs only for failing tests; direct subprocess or stderr output can still appear.
 Only precommit filters raw `>>> Decky ` progress lines from stderr; other diagnostics and the test exit status remain intact.
-`npm test`, `make test_unit`, and `make validate` retain verbose reporting. Test scope and assertions are identical.
+`npm test` and `make test_unit` retain verbose unit output. `make validate` additionally runs local integration; `make precommit` never runs integration.
 Format changed files separately before committing.
+
+Audited tmux, autocomplete VCS, Git/Delta, Vim, and fuzzy-navigation specs live under `software/tests/integration/`.
+Both integration configurations load the shared VM setup and cap workers at two. Only the live configuration includes `rawUrls.spec.js`.
+Moving these tests separates the gates; it does not repair their resource isolation or subprocess deadlines.
 
 Run a single spec or filter by test name:
 
@@ -243,18 +247,18 @@ These commands rewrite expectations in test source; they do not delete tests or 
 Inspect every snapshot diff against the intended behavior, then rerun without update mode before committing.
 Never accept updated snapshots merely to silence a regression.
 
-Browser integration specs live in `software/tests/smokes/webapp/` without a filename prefix.
+Browser integration specs live in `software/tests/integration/webapp/` without a filename prefix.
 `app.spec.js` snapshots all trimmed command labels with an explicit Mac browser model; `navigation.linux.spec.js` separately checks Ubuntu-first Linux ordering.
 Each `commands.<name>.spec.js` clicks its command and checks the exact main-body child count.
 Content entries snapshot the banner title and MD5 of rendered `innerText.trim()`; link groups retain nested labels and literal `href` values without URL hashing.
 Hidden form-data children remain counted and fingerprinted by their IDs. Browser platform and viewport are fixed for reproducible OS warnings and layout.
 Snapshots describe the current collapsed UI, not complete downloaded source files. Published profile headers and fetched content changes require intentional review.
 The Windows command currently records a missing published Windows Terminal artifact as an explicit error-state snapshot, not successful source loading.
-Local smoke serves actual published profiles when the webapp-only build omits them; no synthetic profile content is substituted.
+Local integration serves actual published profiles when the webapp-only build omits them; no synthetic profile content is substituted.
 
 ```bash
-npm run test:smoke:local -- --update=all software/tests/smokes/webapp/commands.wsl.spec.js
-npm run test:smoke:local -- software/tests/smokes/webapp/commands.wsl.spec.js
+npm run test:integration:local -- --update=all software/tests/integration/webapp/commands.wsl.spec.js
+npm run test:integration:local -- software/tests/integration/webapp/commands.wsl.spec.js
 ```
 
 Review every refreshed title, MD5, URL, count, and error state; rerun without update mode before accepting the change.
@@ -263,13 +267,13 @@ Review every refreshed title, MD5, URL, count, and error state; rerun without up
 
 One config per suite:
 
-| Config                         | Suite                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------- |
-| `vitest.config.js`             | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
-| `vitest.profile.config.js`     | `profileSyntax*.spec.js`                                                              |
-| `vitest.buildconfig.config.js` | `buildConfigShape*.spec.js`                                                           |
-| `vitest.smoke.config.js`       | `smokes/webapp/**/*.spec.js` + raw-URL smokes against the live site                   |
-| `vitest.smoke.local.config.js` | `smokes/webapp/**/*.spec.js` against local dist (Puppeteer)                           |
+| Config                               | Suite                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `vitest.config.js`                   | Fast unit suite; excludes integration, profile, and buildconfig specs; shared VM setup; 30s timeout |
+| `vitest.profile.config.js`           | `profileSyntax*.spec.js`                                                                            |
+| `vitest.buildconfig.config.js`       | `buildConfigShape*.spec.js`                                                                         |
+| `vitest.integration.config.js`       | `integration/**/*.spec.js`: native subprocesses, live browsers, and URL reachability                |
+| `vitest.integration.local.config.js` | Native subprocesses and local browsers; excludes live URL reachability                              |
 
 `software/tests/setup.js` loads `index.js` in a VM sandbox — reach in with
 `getIndexFunction(name)` / `getIndexConstant(name)`; `fileSystem` and `fetchResponses`
@@ -279,8 +283,8 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 `software/index.js` or `software/tools/build-include.js`, add or update unit tests.
 Keep every test spec at **300 lines or fewer**. If a spec grows beyond 300 lines,
 split it by behavior into independently named `*.spec.js` files; never use numeric
-`partN` names. Name long-running native/subprocess checks `*.slow.spec.js`; these remain in the default suite.
-Browser smoke tests are the application integration suite.
+`partN` names. Place the audited native-process suites under `software/tests/integration/`; the default unit configuration excludes that tree.
+Integration covers native Git/Delta, Vim, tmux, fuzzy-navigation, autocomplete VCS, browser behavior, and live URL reachability.
 Keep short configuration checks together, and split expensive behavior into independently scheduled files.
 The Git-default specs copy a private prepared repository per case; copies do not share mutable Git state.
 The convention-linter specs (one rule each) are listed in AGENTS.md §11.
@@ -335,10 +339,10 @@ make lint                  # oxlint correctness pass (.oxlintrc.json)
 make test_coverage         # + istanbul; thresholds live in vitest.config.js
 make test_profile          # bash -n / profile invariants
 make test_buildconfig      # inline-snapshot shape (…_update to refresh)
-make test_smoke[_local]    # puppeteer webapp (live / local dist)
+make test_integration[_local] # native-process checks + browsers (live / local dist)
 make test_dryrun           # run.sh --dryrun --setup; fails on non-zero exit or any script status "error" in run_timing.json
-make test_all              # unit, profile, smoke, buildconfig, dryrun, shellcheck
-make validate              # format + lint + verbose test_unit + buildconfig + webapp + smoke_local + dryrun
+make test_all              # unit, profile, integration, buildconfig, dryrun, shellcheck
+make validate              # format + lint + verbose test_unit + buildconfig + webapp + integration_local + dryrun
                            #   + shellcheck, then gating profile tests; normally CI-owned
 make new-script name= os= type=
 make doctor                # environment diagnosis (shows last bench_profile result)
@@ -372,7 +376,7 @@ The `..`, `...`, and `....` aliases use `cd`; folder completion keeps the shared
 
 Refresh the complete profile with `./run`, then open a fresh shell.
 Refresh completion alone with `./run --files=advanced/bash-autocomplete-complete-spec.js` or the broader `./run --preset=terminal`.
-Regression coverage lives in `software/tests/nativeCd.spec.js` and `software/tests/fuzzyCd.spec.js`.
+Regression coverage lives in `software/tests/nativeCd.spec.js` and `software/tests/integration/fuzzyCd.spec.js`.
 
 ## Native file listing
 

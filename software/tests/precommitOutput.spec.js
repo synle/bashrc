@@ -4,6 +4,8 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import unitConfig from "../../vitest.config.js";
+import integrationConfig from "../../vitest.integration.config.js";
 
 /** Expected unit and integration commands for each user-facing validation entry point. */
 const TARGETS = [
@@ -50,6 +52,18 @@ function makeWithDiagnostics(target, npmStatus) {
     fs.rmSync(folder, { recursive: true, force: true });
   }
 }
+
+describe("Test suite boundaries", () => {
+  it("excludes the integration tree from default unit discovery", () => {
+    expect(unitConfig.test.exclude).toContain("software/tests/integration/**");
+  });
+
+  it("discovers all integration specs with the shared native-fixture setup", () => {
+    expect(integrationConfig.test.include).toEqual(["software/tests/integration/**/*.spec.js"]);
+    expect(integrationConfig.test.setupFiles).toEqual(["software/tests/setup.js"]);
+    expect(integrationConfig.test.maxWorkers).toBe(2);
+  });
+});
 
 describe("Make test output", () => {
   it.each(TARGETS)("selects the intended reporter and test suites for %s", (target, command, integrationCommands) => {
