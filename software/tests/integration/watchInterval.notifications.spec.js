@@ -1,7 +1,7 @@
 /** Terminal-only watcher notification contracts using an isolated Unix PTY. */
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "child_process";
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "fs";
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import os from "os";
 import path from "path";
 
@@ -9,6 +9,12 @@ import path from "path";
 const PROFILE = readFileSync("software/scripts/bash-file-utils.profile.bash", "utf8");
 /** Production help predicate required by the watcher. */
 const HELP = readFileSync("software/bootstrap/profile-core.sh", "utf8").match(/^function is_help_arg\(\) \{[\s\S]*?^\}/m)[0];
+/** Actual clear alias, kept available when the executable is deliberately absent. */
+const CLEAR_ALIAS = readFileSync("software/bootstrap/profile-advanced.sh", "utf8").match(/^alias clear=.*$/m)[0];
+/** Native core tools for a PATH that deliberately contains no clear executable. */
+const CORE_TOOLS = spawnSync("/bin/bash", ["-c", "type -P cat mktemp cmp tr rm"], { encoding: "utf8" }).stdout.trim().split("\n");
+/** Resolve Python before the child fixture replaces PATH. */
+const PYTHON = spawnSync("/bin/bash", ["-c", "type -P python3"], { encoding: "utf8" }).stdout.trim();
 /** Bounded PTY transport; teardown kills only its own child process group. */
 const TERMINAL_DRIVER = String.raw`
 import errno, os, pty, select, signal, sys, time
@@ -53,6 +59,7 @@ finally:
  * @param {string[]} [options.flags=[]] - Public watcher options.
  * @param {string} [options.titleSupport="available"] - Available or missing title helper.
  * @param {number} [options.compareStatus=0] - Nonzero comparison failure injection.
+ * @param {string} [options.clearSupport="executable"] - Executable or alias-only clear support.
  * @returns {object} Process status, exact display bytes, titles, waits, and remaining caches.
  * @throws {Error} On fixture failures; always removes the owned sandbox.
  */
@@ -65,6 +72,7 @@ function runTerminal({
   flags = [],
   titleSupport = "available",
   compareStatus = 0,
+  clearSupport = "executable",
 } = {}) {
   const folder = mkdtempSync(path.join(os.tmpdir(), "watch notice's "));
   try {
@@ -75,7 +83,11 @@ function runTerminal({
     writeFileSync(path.join(folder, "count"), "0\n");
     writeFileSync(path.join(folder, "sleep_count"), "0\n");
     frames.forEach((frame, index) => writeFileSync(path.join(folder, `frame.${index + 1}`), frame));
-    writeFileSync(path.join(bin, "clear"), "#!/bin/bash\nprintf '<clear>\\n'\n", { mode: 0o755 });
+    if (clearSupport === "executable") {
+      writeFileSync(path.join(bin, "clear"), "#!/bin/bash\nprintf '<clear>\\n'\n", { mode: 0o755 });
+    } else {
+      CORE_TOOLS.forEach((binary) => symlinkSync(binary, path.join(bin, path.basename(binary))));
+    }
     writeFileSync(
       path.join(bin, "sleep"),
       `#!/bin/bash
@@ -96,7 +108,7 @@ printf '%s\n' "$count" > "$SLEEP_COUNT"
     const runner = path.join(folder, "runner.bash");
     writeFileSync(
       runner,
-      `${HELP}\n${PROFILE}\n
+      `${HELP}\nshopt -s expand_aliases\n${CLEAR_ALIAS}\n${PROFILE}\n
 # Emit an owned completed frame; the wait boundary ends the loop without real sleeps.
 function probe() {
   local _count
@@ -105,7 +117,7 @@ function probe() {
   printf '%s\n' "$_count" > "$COUNT"
   command cat "$FRAME_PREFIX.$_count"
 }
-watch_interval "$@" probe
+eval 'f5 "$@" probe'
 `,
     );
     const options = {
@@ -114,7 +126,7 @@ watch_interval "$@" probe
       env: {
         ...process.env,
         BASH_ENV: "/dev/null",
-        PATH: `${bin}:/usr/bin:/bin`,
+        PATH: clearSupport === "executable" ? `${bin}:/usr/bin:/bin` : bin,
         TERM: term,
         TMPDIR: folder,
         COUNT: path.join(folder, "count"),
@@ -129,7 +141,7 @@ watch_interval "$@" probe
     // The driver receives argv literally; no command or fixture path enters shell syntax.
     const result =
       outputMode === "terminal"
-        ? spawnSync("python3", ["-c", TERMINAL_DRIVER, runner, ...flags, interval], options)
+        ? spawnSync(PYTHON, ["-c", TERMINAL_DRIVER, runner, ...flags, interval], options)
         : spawnSync("/bin/bash", ["--noprofile", "--norc", runner, ...flags, interval], options);
     return {
       ...result,
@@ -144,6 +156,17 @@ watch_interval "$@" probe
 }
 
 describe("watcher terminal notifications", () => {
+  it.each([
+    [[], "Refreshing\nWaiting\n"],
+    [["--no-cache"], ""],
+  ])("clears without an executable when only the clear alias exists with flags %j", (flags, titles) => {
+    const result = runTerminal({ frames: ["old\n"], sleepLimit: 1, flags, clearSupport: "alias-only" });
+    expect(result.status, result.output + result.stderr).toBe(73);
+    expect(result.output).toBe("\x1b[H\x1b[2J\x1b[3Jold\n");
+    expect(result.titles).toBe(titles);
+    expect(result.caches).toEqual([]);
+  });
+
   it("uses plain status titles and renders the first frame without a bell", () => {
     const result = runTerminal({ frames: ["old\n"], sleepLimit: 1 });
     expect(result.status, result.stderr).toBe(73);

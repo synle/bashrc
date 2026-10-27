@@ -282,6 +282,7 @@ function watch() {
 # Cached stdout/stderr uses two private mktemp files removed on exit; identical frames are not redrawn.
 # Supported TTY output gets plain status titles and one bell per changed frame, never the first frame.
 # The Updated title lasts at most two seconds within the normal wait; no-cache has no notifications.
+# Uses native clear when available, otherwise Bash's printf with the profile alias's ANSI sequence.
 # Commands run in isolated subshells; failures are displayed and retried after the interval.
 function watch_interval() {
   (
@@ -290,6 +291,7 @@ function watch_interval() {
     local _has_rendered_output=0 _terminal_notifications=0 _remaining_seconds _title_path
     local _update_notice_seconds=2 _notice_seconds
     local -a _title_command=(:)
+    local -a _clear_command=(builtin printf '\033[H\033[2J\033[3J')
 
     if is_help_arg "${1:-}"; then
       echo "watch_interval: refresh command output periodically, keeping the previous display until ready
@@ -329,6 +331,9 @@ function watch_interval() {
     fi
     _interval_seconds=$((10#$_interval_seconds))
     _command="$1"
+    if type -P clear > /dev/null; then
+      _clear_command=(command clear)
+    fi
 
     # Keep cleanup and signal handlers local to this invocation, not the caller's shell.
     trap 'exit 130' INT
@@ -355,7 +360,7 @@ function watch_interval() {
 
     while true; do
       if [ "$_render_mode" = live ]; then
-        command clear || return $?
+        "${_clear_command[@]}" || return $?
         (eval "$_command") || :
         command sleep "$_interval_seconds" || return $?
         continue
@@ -381,7 +386,7 @@ function watch_interval() {
         ;;
       esac
 
-      command clear || return $?
+      "${_clear_command[@]}" || return $?
       command cat "$_next_cache" || return $?
       _cache_swap="$_output_cache"
       _output_cache="$_next_cache"
