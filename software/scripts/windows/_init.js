@@ -37,14 +37,22 @@ async function doWork() {
     if (pathExists(desktopPath)) {
       log(">> Copying PowerShell setup scripts to Desktop:", desktopPath);
       const bootstrapScript = await readText`software/scripts/windows/_full-setup-bootstrap.ps1.bash`;
-      const braveExecutablePath = toWindowsPath(
-        path.join(getWindowAppDataLocalUserPath(), "BraveSoftware", "Brave-Browser", "Application", "brave.exe"),
-      ).replace(/'/g, "''");
+      const braveApplicationPath = path.join(getWindowAppDataLocalUserPath(), "BraveSoftware", "Brave-Browser", "Application");
+      const braveExecutablePath = toWindowsPath(path.join(braveApplicationPath, "brave.exe")).replace(/'/g, "''");
+      const braveWorkingDirectory = toWindowsPath(braveApplicationPath).replace(/'/g, "''");
+      const windowsAppDataRoamingPath = toWindowsPath(getWindowAppDataRoamingUserPath()).replace(/'/g, "''");
+      const windowsUserHomePath = toWindowsPath(windowsUserDir).replace(/'/g, "''");
       const setupScript = resolvePlaceholders(await readText`software/scripts/windows/_full-setup.ps1.bash`, {
         IS_WORK_PROFILE: Number(is_work_profile),
+      });
+      const shortcutScript = resolvePlaceholders(await readText`software/scripts/windows/_shortcut.ps1.bash`, {
         BRAVE_EXECUTABLE_PATH: braveExecutablePath,
+        BRAVE_WORKING_DIRECTORY: braveWorkingDirectory,
+        WINDOWS_APPDATA_ROAMING_PATH: windowsAppDataRoamingPath,
+        WINDOWS_USER_HOME_PATH: windowsUserHomePath,
       });
       writeText(path.join(desktopPath, "_full-setup-bootstrap.ps1"), bootstrapScript);
+      writeText(path.join(desktopPath, "_shortcut.ps1"), shortcutScript);
       writeText(path.join(desktopPath, "_full-setup.ps1"), setupScript);
       await writeText(
         path.join(desktopPath, "windows-context-menu.ps1"),

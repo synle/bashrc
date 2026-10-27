@@ -13,10 +13,10 @@ const HAS_POWERSHELL =
   spawnSync("pwsh", ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "exit 0"], { timeout: 10000 }).status === 0;
 
 /**
- * Deploys the Windows setup script through its real Windows-user path helpers.
+ * Deploys the Windows setup scripts through their real Windows-user path helpers.
  * @param {string} [windowsUser] - Native Windows home to resolve.
  * @param {string} [windowsUserWsl] - WSL path for the same home.
- * @returns {Promise<string>} Rendered setup script.
+ * @returns {Promise<{ setupScript: string, shortcutScript: string }>} Rendered setup and shortcut scripts.
  */
 async function deployWindowsSetup(windowsUser = WINDOWS_USER, windowsUserWsl = WINDOWS_USER_WSL) {
   setSandboxGlobal("_windowUserBaseDir", undefined);
@@ -35,12 +35,16 @@ async function deployWindowsSetup(windowsUser = WINDOWS_USER, windowsUserWsl = W
     "software/scripts/windows/_full-setup.ps1.bash",
     "utf8",
   );
+  fetchResponses["software/scripts/windows/_shortcut.ps1.bash"] = fs.readFileSync("software/scripts/windows/_shortcut.ps1.bash", "utf8");
   fetchResponses["software/scripts/windows/windows-context-menu.ps1.bash"] = fs.readFileSync(
     "software/scripts/windows/windows-context-menu.ps1.bash",
     "utf8",
   );
   await runScript("software/scripts/windows/_init.js");
-  return fileSystem[`${windowsUserWsl}/Desktop/_full-setup.ps1`];
+  return {
+    setupScript: fileSystem[`${windowsUserWsl}/Desktop/_full-setup.ps1`],
+    shortcutScript: fileSystem[`${windowsUserWsl}/Desktop/_shortcut.ps1`],
+  };
 }
 
 describe("Windows setup deployment", () => {
@@ -57,21 +61,34 @@ describe("Windows setup deployment", () => {
 });
 
 describe("Windows Brave shortcut setup", () => {
-  it("renders the executable path for the resolved Windows user", async () => {
-    const setupScript = await deployWindowsSetup();
+  it("deploys the updater with resolved user paths and calls it from full setup", async () => {
+    const { setupScript, shortcutScript } = await deployWindowsSetup();
     const expectedExecutable = "C:\\Users\\Test User\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe";
 
-    expect(setupScript).toContain(`$braveExecutablePath = '${expectedExecutable}'`);
-    expect(setupScript).not.toContain("<<BRAVE_EXECUTABLE_PATH>>");
-    expect(setupScript).toContain("--disable-features=IPH_GMCSaveVideoFrame");
+    expect(setupScript).toContain('& "$PSScriptRoot\\_shortcut.ps1"');
+    expect(shortcutScript).toContain(`$braveExecutablePath = '${expectedExecutable}'`);
+    expect(shortcutScript).toContain(
+      "$braveWorkingDirectory = 'C:\\Users\\Test User\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application'",
+    );
+    expect(shortcutScript).toContain("$windowsAppDataRoamingPath = 'C:\\Users\\Test User\\AppData\\Roaming'");
+    expect(shortcutScript).toContain(
+      '$braveTaskbarShortcutFolder = "$windowsAppDataRoamingPath\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar"',
+    );
+    expect(shortcutScript).not.toContain("<<BRAVE_EXECUTABLE_PATH>>");
+    expect(shortcutScript).toContain("--source-shortcut-location=desktop");
+    expect(shortcutScript).toContain("--disable-features=IPH_GMCSaveVideoFrame");
   });
 
   it("escapes apostrophes in Windows account names for PowerShell", async () => {
-    const setupScript = await deployWindowsSetup("C:\\Users\\O'Neil", "/mnt/c/Users/O'Neil");
+    const { shortcutScript } = await deployWindowsSetup("C:\\Users\\O'Neil", "/mnt/c/Users/O'Neil");
 
-    expect(setupScript).toContain(
+    expect(shortcutScript).toContain(
       "$braveExecutablePath = 'C:\\Users\\O''Neil\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe'",
     );
+    expect(shortcutScript).toContain(
+      "$braveWorkingDirectory = 'C:\\Users\\O''Neil\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application'",
+    );
+    expect(shortcutScript).toContain("$windowsAppDataRoamingPath = 'C:\\Users\\O''Neil\\AppData\\Roaming'");
   });
 });
 
@@ -80,15 +97,13 @@ describe.skipIf(!HAS_POWERSHELL)("Windows Brave shortcut updater (PowerShell int
     setSandboxGlobal("_windowUserBaseDir", undefined);
   });
 
-  it("corrects the target, adds both flags, and saves only once across reruns", async () => {
-    const setupScript = await deployWindowsSetup();
-    const sectionStart = setupScript.indexOf("# --- Brave Browser Shortcut Flags ---");
-    const sectionEnd = setupScript.indexOf("# --- AI CLI Tools (npm-based) ---", sectionStart);
-    const shortcutSection = setupScript.slice(sectionStart, sectionEnd);
+  it("corrects target and Start In, adds launch flags, and saves once across reruns", async () => {
+    const { shortcutScript } = await deployWindowsSetup();
     const fixture = String.raw`
 $script:shortcut = [pscustomobject]@{
   TargetPath = 'C:\Users\Old User\AppData\Local\BraveSoftware\Brave-Browser\Application\brave.exe'
   Arguments = '--profile-directory=Default'
+  WorkingDirectory = 'C:\Users\Old User\AppData\Local\BraveSoftware\Brave-Browser\Application'
   SaveCount = 0
 }
 $script:shell = [pscustomobject]@{}
@@ -114,11 +129,12 @@ $update = [scriptblock]::Create($shortcutSource)
 [pscustomobject]@{
   TargetPath = $script:shortcut.TargetPath
   Arguments = $script:shortcut.Arguments
+  WorkingDirectory = $script:shortcut.WorkingDirectory
   SaveCount = $script:shortcut.SaveCount
 } | ConvertTo-Json -Compress
 `;
     const result = spawnSync("pwsh", ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", fixture], {
-      input: shortcutSection,
+      input: shortcutScript,
       encoding: "utf8",
       timeout: 10000,
     });
@@ -126,7 +142,9 @@ $update = [scriptblock]::Create($shortcutSource)
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(result.stdout.trim())).toEqual({
       TargetPath: "C:\\Users\\Test User\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
-      Arguments: "--profile-directory=Default --windows-native-window --disable-features=IPH_GMCSaveVideoFrame",
+      Arguments:
+        "--profile-directory=Default --source-shortcut-location=desktop --windows-native-window --disable-features=IPH_GMCSaveVideoFrame",
+      WorkingDirectory: "C:\\Users\\Test User\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application",
       SaveCount: 1,
     });
   });

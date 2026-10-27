@@ -584,50 +584,8 @@ Write-Host "Media extensions installed." -ForegroundColor Green
 # --- Brave Browser Shortcut Flags ---
 ################################################################################
 
-# Point Brave shortcuts at the current Windows user's install and add the native-window
-# and video-frame workaround flags.
-
-Write-Host "`n=== Updating Brave Browser Shortcuts ===" -ForegroundColor Cyan
-
-$braveExecutablePath = '<<BRAVE_EXECUTABLE_PATH>>'
-$braveFlags = @(
-    "--windows-native-window"
-    "--disable-features=IPH_GMCSaveVideoFrame"
-)
-$braveShortcutPaths = @(
-    "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar",
-    "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch",
-    "$env:PUBLIC\Desktop",
-    "$env:USERPROFILE\Desktop",
-    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs"
-)
-
-$wshShell = New-Object -ComObject WScript.Shell
-foreach ($searchPath in $braveShortcutPaths) {
-    if (!(Test-Path $searchPath)) { continue }
-    Get-ChildItem -Path $searchPath -Filter "*.lnk" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-        $lnk = $wshShell.CreateShortcut($_.FullName)
-        if ($lnk.TargetPath -like "*brave*") {
-            $shortcutChanged = $false
-            if ($lnk.TargetPath -ne $braveExecutablePath) {
-                $lnk.TargetPath = $braveExecutablePath
-                $shortcutChanged = $true
-            }
-            foreach ($braveFlag in $braveFlags) {
-                if ($lnk.Arguments -notlike "*$braveFlag*") {
-                    $lnk.Arguments = ("$($lnk.Arguments) $braveFlag").Trim()
-                    $shortcutChanged = $true
-                }
-            }
-            if ($shortcutChanged) {
-                $lnk.Save()
-                Write-Host "  Updated: $($_.FullName)" -ForegroundColor Green
-            } else {
-                Write-Host "  Already set: $($_.FullName)" -ForegroundColor Yellow
-            }
-        }
-    }
-}
+# Update existing Brave shortcuts only; this does not create or pin shortcuts.
+& "$PSScriptRoot\_shortcut.ps1"
 
 
 
