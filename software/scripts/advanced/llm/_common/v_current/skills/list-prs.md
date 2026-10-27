@@ -367,7 +367,8 @@ Print one markdown table per group with these columns:
 
 On a mixed-author list, insert an `Author` column immediately after `Repo`, filled in for **every** row (including your own) so the rows stay comparable.
 
-- **PR**: Full verified clickable PR URL, then the branch name in a separate span. Use renderer-native links where supported; plain-text fallback retains the scheme and full destination. Never substitute a bare PR number.
+- **PR**: Put the full verified URL in the PR cell, once. Use raw `https://github.com/<owner>/<repo>/pull/<number>` text only.
+  Do not add a display label, Markdown wrapper, branch name, or duplicate target. Never substitute a bare PR number.
 - **CI Status**: `CI PASSED` / `CI FAILED — <check>` / `BUILD IN PROGRESS (<n> running)` — same vocabulary as the `pingpong` Status cell, so one reader learns one set of words for the whole command.
 - **Approvals**: `APPROVED (<n>)` / `CHANGES REQUESTED` / `AWAITING REVIEW`.
 - **Comments**: count of unresolved review threads (`0` if none).
@@ -440,28 +441,28 @@ PRs Scanned (5):
 Pulse (2 moved, 2 steady, 1 new):
 
 **oauth-migration** — slots 1–2 · 3 PRs · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
-- Δ github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
-- ▫️ github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
-- 🆕 github.com/acme/api/pull/51 — new to the board, CI still running; second in slot 2, first pass not yet run.
+- Δ https://github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
+- ▫️ https://github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
+- 🆕 https://github.com/acme/api/pull/51 — new to the board, CI still running; second in slot 2, first pass not yet run.
 
 **Standalone** — 2 PRs · acme/widget-store, acme/api
-- ▫️ github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
-- Δ github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
+- ▫️ https://github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
+- Δ https://github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
 
 ### 🌊 oauth-migration (3) — slots 1–2 · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
 
 | PR | Description | Status | Agent |
 | --- | --- | --- | --- |
-| [github.com/acme/widget-store/pull/109](https://github.com/acme/widget-store/pull/109) | **@alice** · `alice/oauth-migration/token-retry` · **Retry token refresh on 401** · auto-merge off | Δ 🔴 CI FAILED — `unit-tests` · AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) · slot 1 · started 17:12 · running 22m · 💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
-| [github.com/acme/web/pull/7](https://github.com/acme/web/pull/7) | `@me` · `syle/oauth-migration/split-auth-middleware` · **WIP: Split auth middleware** · auto-merge off | ▫️ 🔴 CI PASSED · CHANGES REQUESTED · MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) · slot 1 · stopped 17:01 · ran 19m — needs human · 💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
-| [github.com/acme/api/pull/51](https://github.com/acme/api/pull/51) | **@bob** · `bob/signup-flow` · **Add signup flow** · 🤖 auto-merge (squash) | 🆕 🟡 BUILD IN PROGRESS (3 running) · AWAITING REVIEW | ⚪ NOT STARTED · slot 2, position 2 of 2 · behind github.com/acme/web/pull/7 · 💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
+| https://github.com/acme/widget-store/pull/109 | **@alice** · `alice/oauth-migration/token-retry` · **Retry token refresh on 401** · auto-merge off | Δ 🔴 CI FAILED — `unit-tests` · AWAITING REVIEW | 🔄 IN PROGRESS (pass 1 · 4:12 left) · slot 1 · started 17:12 · running 22m · 💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| https://github.com/acme/web/pull/7 | `@me` · `syle/oauth-migration/split-auth-middleware` · **WIP: Split auth middleware** · auto-merge off | ▫️ 🔴 CI PASSED · CHANGES REQUESTED · MERGE CONFLICT | ⚠️ ESCALATED (pass 2 · 4:12 left) · slot 1 · stopped 17:01 · ran 19m — needs human · 💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| https://github.com/acme/api/pull/51 | **@bob** · `bob/signup-flow` · **Add signup flow** · 🤖 auto-merge (squash) | 🆕 🟡 BUILD IN PROGRESS (3 running) · AWAITING REVIEW | ⚪ NOT STARTED · slot 2, position 2 of 2 · behind https://github.com/acme/web/pull/7 · 💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
 
 ### 🌊 Standalone (2) — acme/widget-store, acme/api
 
 | PR | Description | Status | Agent |
 | --- | --- | --- | --- |
-| [github.com/acme/widget-store/pull/113](https://github.com/acme/widget-store/pull/113) | `@me` · `syle/drop-dead-flag` · **Drop dead feature flag** · auto-merge off | ▫️ 🟡 CI PASSED · AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) · slot 1 · ended 16:58 · ran 26m · next check 17:02 · 💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
-| [github.com/acme/api/pull/42](https://github.com/acme/api/pull/42) | `@me` · `syle/bump-deps` · **Bump deps to latest** · 🤖 auto-merge (squash) | Δ 🟢 CI PASSED · APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) · slot 1 · ended 17:05 · 48m total · 💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
+| https://github.com/acme/widget-store/pull/113 | `@me` · `syle/drop-dead-flag` · **Drop dead feature flag** · auto-merge off | ▫️ 🟡 CI PASSED · AWAITING REVIEW | ⏸️ WAITING (pass 2 · 4:12 left) · slot 1 · ended 16:58 · ran 26m · next check 17:02 · 💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| https://github.com/acme/api/pull/42 | `@me` · `syle/bump-deps` · **Bump deps to latest** · 🤖 auto-merge (squash) | Δ 🟢 CI PASSED · APPROVED | ✅ COMPLETED (pass 3 · 4:12 left) · slot 1 · ended 17:05 · 48m total · 💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
 
 **Grouping — one feature set is one block, top to bottom.**
@@ -497,7 +498,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 - `PRs Scanned (<count>):` followed by one `- <owner>/<repo>: <n>` line per repo. Repos with zero matching PRs still get a line with `0` — a scanned-but-empty repo is a real answer.
 - `Pulse (<n> moved, <n> steady, <n> new):` followed by **one sentence per PR**, bucketed under its feature-set group line (see Grouping) — the high-level read, before anyone looks at the tables. This is the part a human skims on a phone; the tables are where they go when a sentence makes them want detail.
 
-  Each line is `- <change marker> <full PR path> — <one sentence>`. Stay high level and plain English: what moved (or that nothing did) and what the agent is doing about it, in one sentence, ≤20 words, no counters, no `Δ` fragments, no status tokens. The counts and the tokens are the tables' job; duplicating them here just makes the top of the pulse as dense as the bottom, which is the thing this block exists to avoid.
+  Each line is `- <change marker> <full https:// PR URL> — <one sentence>`. The URL must appear once in full; never substitute a `github.com/...` label. Stay high level and plain English: what moved (or that nothing did) and what the agent is doing about it, in one sentence, ≤20 words, no counters, no `Δ` fragments, no status tokens. The counts and the tokens are the tables' job; duplicating them here just makes the top of the pulse as dense as the bottom, which is the thing this block exists to avoid.
 
   Group order and within-group order match the tables exactly, so the reader can drop from a sentence straight to its row. The `(<n> moved, <n> steady, <n> new)` tally is across the **whole** board, not per group — a one-glance answer to "did anything happen in the last 10 minutes?".
 
@@ -505,9 +506,9 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 **Every cell is ONE line. `<br>` is forbidden anywhere in this render.** The board used to pack four lines into the PR cell with `<br>`, and that is a bet on the renderer: the CLIs this board prints into render a markdown table as plain text, so the tag comes out as the literal characters `<br>` mid-sentence and the cell becomes unreadable. A cell holding several fields joins them with `·` instead — a separator that is just text and renders identically everywhere. Cells wrap on width by themselves; that is the renderer's job, not this spec's.
 
-**Fields inside a cell each get a different markdown span so the reader's theme colors them apart** — markdown link, inline code, bold, plain. Three distinct spans is the whole coloring mechanism: never emit ANSI, an HTML `<span>`, or a color name, all of which render as literal garbage in a table cell.
+**Use markdown spans only for fields specified below** — inline code, bold, and plain text. Keep PR URLs as raw text; some clients display both a Markdown link label and its destination. Never emit ANSI, an HTML `<span>`, or a color name in a table cell.
 
-- **PR** — the link, and **nothing else**: `[<path>](<url>)`, where `<path>` is the full `github.com/<owner>/<repo>/pull/<number>`. One field per cell is what keeps the column narrow enough to scan, and a link is the one thing in the row a reader clicks rather than reads. **Never elide the owner to `…/<repo>/pull/<n>`** — a path with the org replaced by an ellipsis is not clickable, not greppable, and not pasteable. Use Markdown only when the renderer supports links; otherwise show the complete scheme-prefixed URL in this cell.
+- **PR** — print exactly one full URL as raw text: `https://github.com/<owner>/<repo>/pull/<number>`. Do not add a `github.com/...` label, Markdown wrapper, branch name, or second URL. The scheme, owner, repo, and number must all remain visible.
 
 - **Description** — everything that says _what this PR is_, one line, `·`-separated, in this fixed order: `<author> · `<head branch>` · **<title>** · <auto-merge>`.
 
@@ -643,7 +644,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 **The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, Status fragments, and counters. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row's Status cell leads with `🆕`.
 
-**Renderer contract — the board is emitted exactly as specified, or not at all.** Every pulse, from the first baseline to the closing one, is the **same** table: four columns in the fixed order `PR | Description | Status | Agent`, one line per cell, full `github.com/<owner>/<repo>/pull/<number>` paths. A caller under context pressure reliably drifts toward a "quick" board — abbreviated paths, three columns, a bespoke `Ping-pong 0 — baseline` header, columns invented on the spot — and every such variant destroys the one property the board exists for: two pulses ten minutes apart that can be compared without re-reading them. Before printing, check the render against this section: four columns in order, the PR cell carrying nothing but the linked path, the Description cell carrying author + branch + title + auto-merge in their own spans, no `<br>` anywhere, no `…/` in a PR path, header block present, one table per feature set. A field you have no data for prints its documented empty form (`❓`, `?`, `⚪ NOT STARTED`) — never a dropped column and never a shortened row.
+**Renderer contract — the board is emitted exactly as specified, or not at all.** Every pulse, from the first baseline to the closing one, is the **same** table: four columns in the fixed order `PR | Description | Status | Agent`, one line per cell, full `https://github.com/<owner>/<repo>/pull/<number>` URLs. A caller under context pressure reliably drifts toward a "quick" board — abbreviated paths, three columns, a bespoke `Ping-pong 0 — baseline` header, columns invented on the spot — and every such variant destroys the one property the board exists for: two pulses ten minutes apart that can be compared without re-reading them. Before printing, check the render against this section: four columns in order, the PR cell carrying exactly one raw full URL, without a label or Markdown wrapper, the Description cell carrying author + branch + title + auto-merge in their own spans, no `<br>` anywhere, no `…/` in a PR path, header block present, one table per feature set. A field you have no data for prints its documented empty form (`❓`, `?`, `⚪ NOT STARTED`) — never a dropped column and never a shortened row.
 
 **Never** decorate the PR path with extra prefixes or suffixes, never add or drop a column, and never split the board by readiness group — one table per **feature set**, ordered by Grouping above, is the format. Readiness lives in the Status column and in the group order; it never gets its own table.
 
