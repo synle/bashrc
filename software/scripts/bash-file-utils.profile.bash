@@ -10,6 +10,7 @@
 # tree     — Display directory tree (falls back to find+sed)
 # cp2      — Copy with progress bar via pv (supports file->file)
 # watch    — Run a command when files change (md5-based polling)
+# watch_interval — Refresh command output periodically (cached by default)
 #
 # --- Copy Chain (dependency order: base -> helpers -> consumers) ---
 # _cp_node_helpers — [internal] Shared Node.js helpers piped into node heredocs
@@ -274,6 +275,79 @@ function watch() {
     sleep 2
   done
 }
+
+# watch_interval: refresh command output periodically, keeping the previous display until ready
+# Args: optional --no-cache, optional integer seconds (1-86400, default 30), one shell command string.
+# Returns 0 for help, 1 for invalid input, 130/143 on INT/TERM, or the failed cache/render/sleep status.
+# Clears the terminal; cached mode combines stdout/stderr in a private mktemp file removed on exit.
+# Commands run in isolated subshells; failures are displayed and retried after the interval.
+function watch_interval() {
+  (
+    local _interval_seconds=30 _command _render_mode=cached _output_cache _cache_cleanup
+
+    if is_help_arg "${1:-}"; then
+      echo "watch_interval: refresh command output periodically, keeping the previous display until ready
+  Usage: watch_interval [--no-cache] [interval_seconds] <command>
+  interval_seconds: whole seconds from 1 to 86400 (default: 30).
+  Default: capture stdout/stderr, then clear and display completed output.
+  --no-cache: clear first and run live; never create a temporary cache.
+  Quote commands containing arguments or shell syntax. Press Ctrl+C to stop.
+  Alias: f5 (for example: f5 pr_list).
+  Examples:
+    watch_interval pr_list
+    watch_interval 5 'pr_list | head -20'
+    watch_interval --no-cache 5 'pr_list'"
+      return 0
+    fi
+
+    if [ "${1:-}" = --no-cache ]; then
+      _render_mode=live
+      shift
+    fi
+    case "${1:-}" in
+    '' | *[!0-9]*) ;;
+    *)
+      _interval_seconds="$1"
+      shift
+      ;;
+    esac
+    if [ "$#" -ne 1 ] || [ -z "${1:-}" ]; then
+      echo "watch_interval: expected one command string; see watch_interval --help" >&2
+      return 1
+    fi
+    if [ "${#_interval_seconds}" -gt 5 ] || [ "$_interval_seconds" -lt 1 ] || [ "$_interval_seconds" -gt 86400 ]; then
+      echo "watch_interval: interval_seconds must be a whole number from 1 to 86400" >&2
+      return 1
+    fi
+    _command="$1"
+
+    # Keep cleanup and signal handlers local to this invocation, not the caller's shell.
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    if [ "$_render_mode" = cached ]; then
+      _output_cache=$(command mktemp "${TMPDIR:-/tmp}/watch_interval.XXXXXX") || return $?
+      # Bash 3.2 unwinds locals before EXIT on signals; freeze the safely quoted path now.
+      printf -v _cache_cleanup 'command rm -f -- %q' "$_output_cache"
+      trap "$_cache_cleanup" EXIT
+    fi
+
+    while true; do
+      if [ "$_render_mode" = cached ]; then
+        # One buffer suffices: the previous frame stays on screen while the file is rewritten.
+        (eval "$_command") > "$_output_cache" 2>&1 || :
+        command clear || return $?
+        command cat "$_output_cache" || return $?
+      else
+        command clear || return $?
+        (eval "$_command") || :
+      fi
+      command sleep "$_interval_seconds" || return $?
+    done
+  )
+}
+
+# f5: refresh command output with watch_interval (30 seconds by default).
+alias f5=watch_interval
 
 ################################################################################
 # --- Copy Chain: Internal Helpers ---
