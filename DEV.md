@@ -335,13 +335,18 @@ Edit the directive or included source, never the generated body; verify a second
 
 ## Native navigation
 
-`cd` uses the Bash builtin, including native options, previous-folder behavior, and failure status.
-The `..`, `...`, and `....` aliases navigate through that builtin; folder completion uses the shared completion registry.
-Profile refresh does not uninstall independently installed tools or delete navigation history.
+`cd` tries native Bash navigation first, preserving exact paths, options, `CDPATH`, symlinks, previous-folder behavior, HOME, and failure status.
+Only missing relative folder names use fuzzy matching; files, absolute paths, `..`, and option forms never trigger the search.
+An asynchronous breadth-first search considers at most 3 levels, 20,000 entries, and 2 seconds.
+The first matching depth wins. Within that depth, exact components rank above prefixes, prefixes above substrings, then shorter suffixes and lexical paths.
+Search reuses `_IGNORED_FOLDERS_JSON`; excluded cache folders stay hidden unless every matching excluded component appears exactly in the segmented query.
+One match prints `print_action_summary` and changes directory. Multiple matches show at most five paths; choose 1–5 or type the displayed relative path.
+Selection requires `/dev/tty`; piped stdin remains untouched. Searches with no safe match preserve Bash's native failure status.
+The `..`, `...`, and `....` aliases use `cd`; folder completion keeps the shared registry. Profile refresh does not remove navigation history.
 
 Refresh the complete profile with `./run`, then open a fresh shell.
 Refresh completion alone with `./run --files=advanced/bash-autocomplete-complete-spec.js` or the broader `./run --preset=terminal`.
-Regression coverage lives in `software/tests/nativeCd.spec.js`.
+Regression coverage lives in `software/tests/nativeCd.spec.js` and `software/tests/fuzzyCd.spec.js`.
 
 ## Native file listing
 

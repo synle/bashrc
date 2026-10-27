@@ -1165,7 +1165,241 @@ alias ...="cd ../../"
 alias ....="cd ../../../"
 alias clear='printf "\033[H\033[2J\033[3J"'
 
-# cd uses the Bash builtin; navigation never delegates to a fuzzy jump tool.
+# cd [folder] - change folders, matching nearby relative folder names when exact navigation fails.
+function cd() {
+  if [ "$#" -eq 0 ]; then
+    builtin cd
+    return $?
+  fi
+  if [ "$#" -ne 1 ]; then
+    builtin cd "$@"
+    return $?
+  fi
+
+  local _cd_query="$1"
+  case "$_cd_query" in
+  "" | - | -* | /*)
+    builtin cd "$@"
+    return $?
+    ;;
+  esac
+
+  # Probe native navigation first so CDPATH, symlinks, options, and exact paths keep Bash semantics.
+  if (builtin cd "$_cd_query" > /dev/null 2>&1); then
+    builtin cd "$_cd_query"
+    return $?
+  fi
+  if [ -e "$_cd_query" ] || [ -L "$_cd_query" ]; then
+    builtin cd "$@"
+    return $?
+  fi
+
+  if is_help_arg "$_cd_query"; then
+    echo "cd: change folders with native Bash behavior and bounded nearby-folder matching
+  Usage: cd [folder]
+  Exact paths and Bash options keep native behavior.
+  Missing relative paths search up to 3 folder levels for 2 seconds.
+  Ambiguous matches require a controlling terminal for selection."
+    return 0
+  fi
+
+  if [ -z "${_IGNORED_FOLDERS_JSON:-}" ] || ! type -P node > /dev/null 2>&1; then
+    builtin cd "$@"
+    return $?
+  fi
+
+  local _cd_node_script _cd_results _cd_status _cd_encoded _cd_decoded _cd_relative _cd_choice _cd_index _cd_target _cd_display
+  local -a _cd_matches=()
+  IFS= read -r -d '' _cd_node_script << 'CD_NODE' || true
+const fs = require('fs');
+const path = require('path');
+const query = process.argv[1];
+const MAX_DEPTH = 3;
+const MAX_ENTRIES = 20000;
+const TIMEOUT_MS = 2000;
+const deadlineTimer = setTimeout(() => {
+  process.stderr.write('cd: fuzzy folder search timed out\n');
+  process.exit(124);
+}, TIMEOUT_MS);
+function stop(message) {
+  clearTimeout(deadlineTimer);
+  process.stderr.write(`cd: fuzzy folder search ${message}\n`);
+  process.exitCode = 1;
+}
+function queryParts(value) {
+  const normalized = value.replace(/^(?:\.\/)+/, '');
+  const parts = normalized.split('/');
+  if (!normalized || parts.some((part) => !part || part === '.' || part === '..')) return null;
+  return parts;
+}
+function matchScore(parts, requested) {
+  const segmented = requested.length > 1;
+  const indexes = segmented ? requested.map((_, index) => index) : parts.map((_, index) => index);
+  let worst = 0;
+  let total = 0;
+  let extra = 0;
+  let found = false;
+  for (const index of indexes) {
+    if (!segmented && parts[index].toLowerCase().includes(requested[0].toLowerCase())) {
+      found = true;
+      const name = parts[index].toLowerCase();
+      const term = requested[0].toLowerCase();
+      const rank = name === term ? 0 : name.startsWith(term) ? 1 : 2;
+      worst = Math.max(worst, rank);
+      total += rank;
+      extra += name.length - term.length;
+      continue;
+    }
+    if (segmented) {
+      const name = (parts[index] || '').toLowerCase();
+      const term = requested[index].toLowerCase();
+      if (!name.includes(term)) return null;
+      found = true;
+      const rank = name === term ? 0 : name.startsWith(term) ? 1 : 2;
+      worst = Math.max(worst, rank);
+      total += rank;
+      extra += name.length - term.length;
+    }
+  }
+  return found ? [worst, total, extra] : null;
+}
+function isIgnored(parts, requested, patterns) {
+  for (let index = 0; index < parts.length; index += 1) {
+    const prefix = `${parts.slice(0, index + 1).join('/')}/`;
+    const segmentStart = prefix.length - parts[index].length - 1;
+    const ignored = patterns.some((pattern) => {
+      pattern.lastIndex = 0;
+      const match = pattern.exec(prefix);
+      return match && match.index + match[0].length > segmentStart;
+    });
+    if (!ignored) continue;
+    if (requested.length > 1 && requested[index] === parts[index]) continue;
+    return true;
+  }
+  return false;
+}
+(async () => {
+  let requested;
+  let patterns;
+  try {
+    requested = queryParts(query);
+    const rawPatterns = JSON.parse(process.env._IGNORED_FOLDERS_JSON);
+    if (!Array.isArray(rawPatterns) || rawPatterns.length === 0 || rawPatterns.some((pattern) => typeof pattern !== 'string')) {
+      throw new Error('shared ignored-folder rules are not a non-empty string array');
+    }
+    patterns = rawPatterns.map((pattern) => new RegExp(pattern));
+  } catch {
+    stop('could not load shared ignored-folder rules');
+    return;
+  }
+  if (!requested) {
+    clearTimeout(deadlineTimer);
+    process.exitCode = 1;
+    return;
+  }
+  let entriesVisited = 0;
+  let level = [{ absolute: process.cwd(), parts: [] }];
+  for (let depth = 1; depth <= MAX_DEPTH && level.length; depth += 1) {
+    const next = [];
+    const matches = [];
+    for (const parent of level) {
+      let entries;
+      try {
+        entries = await fs.promises.readdir(parent.absolute, { withFileTypes: true });
+      } catch {
+        stop('could not read a nearby folder');
+        return;
+      }
+      for (const entry of entries) {
+        entriesVisited += 1;
+        if (entriesVisited > MAX_ENTRIES) {
+          stop(`reached its ${MAX_ENTRIES}-entry safety limit`);
+          return;
+        }
+        if (!entry.isDirectory()) continue;
+        const parts = [...parent.parts, entry.name];
+        if (isIgnored(parts, requested, patterns)) continue;
+        const score = matchScore(parts, requested);
+        if (score) matches.push({ parts, score, relative: parts.join('/') });
+        if (depth < MAX_DEPTH) next.push({ absolute: path.join(parent.absolute, entry.name), parts });
+      }
+    }
+    if (matches.length) {
+      matches.sort((left, right) => left.score[0] - right.score[0] || left.score[1] - right.score[1] || left.score[2] - right.score[2] || left.relative.localeCompare(right.relative));
+      for (const match of matches.slice(0, 5)) process.stdout.write(`${Buffer.from(match.relative).toString('base64')}\n`);
+      clearTimeout(deadlineTimer);
+      return;
+    }
+    level = next;
+  }
+  clearTimeout(deadlineTimer);
+})().catch((error) => stop(`failed: ${error.message}`));
+CD_NODE
+
+  _cd_results=$(command node -e "$_cd_node_script" "$_cd_query")
+  _cd_status=$?
+  [ "$_cd_status" -eq 0 ] || return 1
+  while IFS= read -r _cd_encoded; do
+    [ -n "$_cd_encoded" ] && _cd_matches+=("$_cd_encoded")
+  done <<< "$_cd_results"
+
+  if [ "${#_cd_matches[@]}" -eq 0 ]; then
+    builtin cd "$@"
+    return $?
+  fi
+
+  if [ "${#_cd_matches[@]}" -eq 1 ]; then
+    _cd_encoded="${_cd_matches[0]}"
+  else
+    if [ ! -r /dev/tty ] || [ ! -w /dev/tty ]; then
+      echo "cd: multiple nearby folders match; a controlling terminal is required to choose one" >&2
+      return 1
+    fi
+    printf 'Your keyword matches multiple paths. Choose 1-5 or enter a full path:\n' > /dev/tty
+    for _cd_index in "${!_cd_matches[@]}"; do
+      _cd_decoded=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString() + String.fromCharCode(1))' "${_cd_matches[$_cd_index]}") || return 1
+      _cd_relative="${_cd_decoded%$'\001'}"
+      printf -v _cd_display '%q' "./$_cd_relative"
+      printf '%s %s\n' "$((_cd_index + 1))" "$_cd_display" > /dev/tty
+    done
+    if ! IFS= read -r _cd_choice < /dev/tty; then
+      echo "cd: folder selection cancelled" >&2
+      return 1
+    fi
+    case "$_cd_choice" in
+    [1-5])
+      _cd_index=$((_cd_choice - 1))
+      if [ "$_cd_index" -ge "${#_cd_matches[@]}" ]; then
+        echo "cd: selection is outside the displayed choices" >&2
+        return 1
+      fi
+      _cd_encoded="${_cd_matches[$_cd_index]}"
+      ;;
+    *)
+      _cd_encoded=""
+      for _cd_index in "${!_cd_matches[@]}"; do
+        _cd_decoded=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString() + String.fromCharCode(1))' "${_cd_matches[$_cd_index]}") || return 1
+        _cd_relative="${_cd_decoded%$'\001'}"
+        printf -v _cd_display '%q' "./$_cd_relative"
+        if [ "$_cd_choice" = "$_cd_display" ] || [ "$_cd_choice" = "./$_cd_relative" ] || [ "$_cd_choice" = "$PWD/$_cd_relative" ]; then
+          _cd_encoded="${_cd_matches[$_cd_index]}"
+          break
+        fi
+      done
+      if [ -z "$_cd_encoded" ]; then
+        echo "cd: selection must be 1-5 or a displayed full path" >&2
+        return 1
+      fi
+      ;;
+    esac
+  fi
+
+  _cd_decoded=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString() + String.fromCharCode(1))' "$_cd_encoded") || return 1
+  _cd_relative="${_cd_decoded%$'\001'}"
+  _cd_target="./$_cd_relative"
+  print_action_summary "$_cd_target"
+  builtin cd -- "$_cd_target"
+}
 
 # --- find (fd wrapper) ---
 # `fd` is guaranteed on PATH by ensure_binary_alias (apt's fd-find installs as

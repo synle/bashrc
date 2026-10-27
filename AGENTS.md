@@ -396,8 +396,9 @@ Profile registration is buffered: `registerProfileBlock` /
 - **Clipboard diff** uses `pdiff [diff options] file` to compare a private `paste` snapshot on the left with the supplied file on the right.
   Keep explicit `pdiff_*` aliases beside their `diff_*` counterparts in `profile-advanced.sh`; reuse the existing dispatcher.
   Retain successful snapshots for asynchronous GUI readers, remove failed captures, and preserve failure status. Regression coverage lives in `software/tests/clipboardDiff.spec.js`.
-- **Native navigation** leaves `cd` as the Bash builtin, preserving native options, previous-folder behavior, and failure status.
-  Keep parent-folder aliases and native folder completion covered by `software/tests/nativeCd.spec.js`.
+- **Fuzzy folder navigation** tries native `cd` first, preserving options, exact paths, `CDPATH`, symlinks, previous-folder behavior, HOME, and failure status.
+  Only missing relative folder names use breadth-first search, capped at 3 levels, 20,000 entries, and 2 seconds; shared ignored-folder patterns exclude caches unless their path components are explicit exact matches.
+  Unique results navigate directly; ambiguous results show at most five choices and require `/dev/tty`, never pipeline stdin. Keep parent aliases and native completion covered in `software/tests/nativeCd.spec.js` and fuzzy behavior in `software/tests/fuzzyCd.spec.js`.
 - **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as
   explicit native aliases; cover listing behavior in `software/tests/nativeLs.spec.js`.
 - **File search colors** default `LS_COLORS` to native ANSI palette slots in `profile-core.sh`, avoiding fd's fixed vivid fallback.

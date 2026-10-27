@@ -53,11 +53,11 @@ function runNavigation(invocation, args = [], before = "") {
 }
 
 describe("native cd subprocess", () => {
-  it("keeps cd as the Bash builtin after repeated profile loads", () => {
+  it("keeps the cd wrapper defined after repeated profile loads", () => {
     const result = runNavigation("type -t cd");
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toBe("builtin\n");
+    expect(result.stdout).toBe("function\n");
   });
 
   it.each(["folder with spaces", "-dash"])("preserves explicit options and the path %s", (folder) => {
