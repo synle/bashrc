@@ -211,8 +211,11 @@ The active guidance restores the pre-scheduler workflows. Use `sy-babysit-pr` fo
 Their plural workflows handle fan-out; each dispatcher owns its clock and passes `pass=single` to its workers.
 Creating a PR does not start babysitting. Watch loops still require an explicit request.
 
-The shared scheduler and execute-plan commands are retired. Their sources are no longer active, and deployment removes managed leftovers.
-The restored workflows do not expose the removed readiness-goal or all-feedback modes.
+The shared scheduler remains retired, and deployment removes its managed leftovers.
+`sy-execute-plan` is restored as a thin adapter around `sy-loop` and **PR publication milestones** in the shared PR workflow.
+It executes verified plan pieces, publishes implementation and validation checkpoints, then reconciles CI and reviewer feedback through the shared bounded workflow.
+The task loop owns implementation only; the PR workflow owns waiting and final completion. Local-only requests never publish.
+The restored review and babysit workflows do not expose the removed readiness-goal or all-feedback modes.
 Read the active single-PR skill for current repair, posting, approval, and automerge rules.
 A quiet probe does not replace keepalive or final verification.
 

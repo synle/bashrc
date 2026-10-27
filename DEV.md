@@ -213,6 +213,7 @@ make validate              # full local gate; routine agent work leaves heavier 
 ```
 
 `make precommit` uses dot reporting and shows console logs only for failing tests; direct subprocess or stderr output can still appear.
+Only precommit filters raw `>>> Decky ` progress lines from stderr; other diagnostics and the test exit status remain intact.
 `npm test`, `make test_unit`, and `make validate` retain verbose reporting. Test scope and assertions are identical.
 Format changed files separately before committing.
 
@@ -243,7 +244,8 @@ Inspect every snapshot diff against the intended behavior, then rerun without up
 Never accept updated snapshots merely to silence a regression.
 
 Browser integration specs live in `software/tests/smokes/webapp/` without a filename prefix.
-`app.spec.js` snapshots all trimmed command labels. Each `commands.<name>.spec.js` clicks its command and checks the exact main-body child count.
+`app.spec.js` snapshots all trimmed command labels with an explicit Mac browser model; `navigation.linux.spec.js` separately checks Ubuntu-first Linux ordering.
+Each `commands.<name>.spec.js` clicks its command and checks the exact main-body child count.
 Content entries snapshot the banner title and MD5 of rendered `innerText.trim()`; link groups retain nested labels and literal `href` values without URL hashing.
 Hidden form-data children remain counted and fingerprinted by their IDs. Browser platform and viewport are fixed for reproducible OS warnings and layout.
 Snapshots describe the current collapsed UI, not complete downloaded source files. Published profile headers and fetched content changes require intentional review.
@@ -364,7 +366,8 @@ An asynchronous breadth-first search considers at most 3 levels, 20,000 entries,
 The first matching depth wins. Within that depth, exact components rank above prefixes, prefixes above substrings, then shorter suffixes and lexical paths.
 Search reuses `_IGNORED_FOLDERS_JSON`; excluded cache folders stay hidden unless every matching excluded component appears exactly in the segmented query.
 One match prints `print_action_summary` and changes directory. Multiple matches show at most five paths; choose 1–5 or type the displayed relative path.
-Selection requires `/dev/tty`; piped stdin remains untouched. Searches with no safe match preserve Bash's native failure status.
+Selection requires terminal stdin and an accessible `/dev/tty`; piped stdin remains untouched even when a controlling terminal exists.
+Searches with no safe match preserve Bash's native failure status.
 The `..`, `...`, and `....` aliases use `cd`; folder completion keeps the shared registry. Profile refresh does not remove navigation history.
 
 Refresh the complete profile with `./run`, then open a fresh shell.

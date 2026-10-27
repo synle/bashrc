@@ -141,7 +141,7 @@ describe("retired PR guidance deployment", () => {
     expect(fs.readdirSync(common.LLM_SHARED_AGENTS_FOLDER)).toEqual([]);
   });
 
-  it("retires removed skills and owned links while deploying current sources twice", async () => {
+  it("replaces a legacy execute-plan skill and retires the scheduler on repeat deployment", async () => {
     for (const name of ["sy-pr-loop", "sy-execute-plan"]) {
       const oldSource = path.join(common.LLM_SHARED_SKILLS_FOLDER, name);
       fs.mkdirSync(oldSource, { recursive: true });
@@ -153,14 +153,29 @@ describe("retired PR guidance deployment", () => {
     }
 
     await common.deploySharedLLMSkills();
+    expect(common.LLM_COMMAND_DEPLOY_MAP["sy-execute-plan"]).toBe("execute-plan");
     const reviewer = path.join(common.LLM_SHARED_SKILLS_FOLDER, "sy-review-pr", "SKILL.md");
     const firstContent = fs.readFileSync(reviewer, "utf-8");
     const firstFile = fs.statSync(reviewer);
+    /** @type {string} Restored command's canonical deployed file. */
+    const executor = path.join(common.LLM_SHARED_SKILLS_FOLDER, "sy-execute-plan", "SKILL.md");
+    /** @type {string} First deployment bytes, used to prove repeatability. */
+    const executorContent = fs.readFileSync(executor, "utf-8");
+    /** @type {fs.Stats} First deployment identity and modification time. */
+    const executorFile = fs.statSync(executor);
     await common.deploySharedLLMSkills();
 
-    expect(common.LLM_COMMAND_RETIRED_NAMES).toEqual(expect.arrayContaining(["sy-pr-loop", "sy-execute-plan"]));
+    expect(common.LLM_COMMAND_RETIRED_NAMES).toContain("sy-pr-loop");
+    expect(common.LLM_COMMAND_RETIRED_NAMES).not.toContain("sy-execute-plan");
     expect(fs.existsSync(path.join(common.LLM_SHARED_SKILLS_FOLDER, "sy-pr-loop"))).toBe(false);
-    expect(fs.existsSync(path.join(common.LLM_SHARED_SKILLS_FOLDER, "sy-execute-plan"))).toBe(false);
+    expect(executorContent).toContain("name: sy-execute-plan\n");
+    expect(executorContent).toContain("skills/sy-loop/SKILL.md");
+    expect(executorContent).toContain("instructions/pr-workflow.md");
+    expect(executorContent).not.toContain("Old skill without a marker");
+    expect(executorContent).not.toMatch(/<<[A-Z_]+>>/);
+    expect(fs.readFileSync(executor, "utf-8")).toBe(executorContent);
+    expect(fs.statSync(executor).ino).toBe(executorFile.ino);
+    expect(fs.statSync(executor).mtimeMs).toBe(executorFile.mtimeMs);
     expect(firstContent).toContain("name: sy-review-pr\n");
     expect(firstContent).not.toMatch(/<<[A-Z_]+>>/);
     expect(fs.readFileSync(reviewer, "utf-8")).toBe(firstContent);
@@ -168,16 +183,16 @@ describe("retired PR guidance deployment", () => {
     expect(fs.statSync(reviewer).mtimeMs).toBe(firstFile.mtimeMs);
     for (const folder of common.LLM_SKILL_LINK_FOLDERS) {
       expect(fs.existsSync(path.join(folder, "sy-pr-loop"))).toBe(false);
-      expect(fs.existsSync(path.join(folder, "sy-execute-plan"))).toBe(false);
+      expect(fs.readlinkSync(path.join(folder, "sy-execute-plan"))).toBe(path.dirname(executor));
       expect(fs.readlinkSync(path.join(folder, "sy-review-pr"))).toBe(path.dirname(reviewer));
     }
   });
 
-  it("preserves private skill folders and foreign links named after retired skills", async () => {
+  it("preserves real restored-skill folders and foreign retired-skill links", async () => {
     const destination = common.LLM_SKILL_LINK_FOLDERS[0];
-    const privateFolder = path.join(destination, "sy-pr-loop");
+    const privateFolder = path.join(destination, "sy-execute-plan");
     const privateSource = path.join(home, "private-skill");
-    const privateLink = path.join(destination, "sy-execute-plan");
+    const privateLink = path.join(destination, "sy-pr-loop");
     fs.mkdirSync(privateFolder, { recursive: true });
     fs.mkdirSync(privateSource, { recursive: true });
     fs.writeFileSync(path.join(privateFolder, "SKILL.md"), "Private workflow\n");

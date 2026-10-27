@@ -781,7 +781,8 @@ keys are extension-less so one map serves file- and folder-based CLIs.
 
 PR scheduling lives in the restored single/batch babysit and review workflows.
 Each dispatcher owns its clock and invokes single-pass workers; there is no shared scheduler skill.
-The removed scheduler and execute-plan commands stay in `LLM_COMMAND_RETIRED_NAMES` so deployment sweeps managed leftovers.
+The removed scheduler stays in `LLM_COMMAND_RETIRED_NAMES` so deployment sweeps managed leftovers.
+`sy-execute-plan` proxies implementation to `sy-loop` and publication to the shared PR milestones; it does not restore the scheduler.
 Keep the general task loop separate from PR waiting.
 
 Deploy = one physical copy plus symlinks: `deploySharedLLMSkills()` writes

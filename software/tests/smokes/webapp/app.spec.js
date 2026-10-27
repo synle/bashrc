@@ -69,6 +69,8 @@ describe("webapp smoke test", () => {
       const browser = await puppeteer.default.launch({ headless: "new", args: ["--no-sandbox"] });
       try {
         const page = await browser.newPage();
+        // This ordered snapshot describes a Mac browser, not the runner\'s host OS.
+        await page.evaluateOnNewDocument(() => Object.defineProperty(navigator, "platform", { get: () => "MacIntel" }));
         await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
         await page.waitForSelector('[data-testid="tab-navigation"]', { timeout: 10000 });
 

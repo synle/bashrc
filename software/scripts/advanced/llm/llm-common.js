@@ -1636,6 +1636,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-debug": "debug",
   "sy-dep-bump": "dep-bump",
   "sy-draft-pr": "draft-pr",
+  "sy-execute-plan": "execute-plan",
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
   "sy-loop": "loop",
@@ -1707,8 +1708,7 @@ const LLM_SKILL_MARKERS = [LLM_SKILL_MARKER, "Sy Skill - "];
  * @type {string[]} deployed command names, no extension
  */
 const LLM_COMMAND_RETIRED_NAMES = [
-  // 2026-10-25: removed when restoring the pre-scheduler guidance.
-  "sy-execute-plan",
+  // 2026-10-25: scheduler removed when restoring the pre-scheduler guidance.
   "sy-pr-loop",
   // Keep until the 2026-08-26 rename has cleared the three-month and rollout window.
   "sy-sync-and-groom-repo", // renamed to sy-sync-and-clean-repo (2026-08-26)

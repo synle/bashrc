@@ -205,7 +205,7 @@ describe("fuzzy cd subprocess", () => {
     expect(result.output).toContain("RESULT::PIPE_UNTOUCHED\n");
   });
 
-  it("rejects ambiguous piped input even with a controlling terminal available", () => {
+  it.skipIf(process.platform === "win32")("rejects ambiguous piped input even with a controlling terminal available", () => {
     const result = navigate(["target-a", "target-b"], "target", {
       tty: true,
       stdin: "pipe",

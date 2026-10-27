@@ -22,19 +22,29 @@ function makeWithDiagnostics(target, npmStatus) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "precommit-output-"));
   try {
     fs.writeFileSync(path.join(folder, "npx"), "#!/bin/bash\nexit 0\n", { mode: 0o755 });
-    fs.writeFileSync(path.join(folder, "npm"), [
-      "#!/bin/bash",
-      "printf '%s\\n' 'RESULT:stub-tests'",
-      "printf '%s\\n' '>>> Decky phase=complete' >&2",
-      "printf '%s\\n' '>>> Other diagnostic' >&2",
-      'exit "$FAKE_NPM_STATUS"',
-      "",
-    ].join("\n"), { mode: 0o755 });
+    fs.writeFileSync(
+      path.join(folder, "npm"),
+      [
+        "#!/bin/bash",
+        "printf '%s\\n' 'RESULT:stub-tests'",
+        "printf '%s\\n' '>>> Decky phase=complete' >&2",
+        "printf '%s\\n' '>>> Other diagnostic' >&2",
+        'exit "$FAKE_NPM_STATUS"',
+        "",
+      ].join("\n"),
+      { mode: 0o755 },
+    );
     return spawnSync("make", ["--no-print-directory", "-f", path.resolve("Makefile"), target], {
       cwd: folder,
       encoding: "utf8",
       timeout: 5000,
-      env: { ...process.env, BASH_ENV: "/dev/null", MAKEFLAGS: "", PATH: `${folder}${path.delimiter}${process.env.PATH}`, FAKE_NPM_STATUS: String(npmStatus) },
+      env: {
+        ...process.env,
+        BASH_ENV: "/dev/null",
+        MAKEFLAGS: "",
+        PATH: `${folder}${path.delimiter}${process.env.PATH}`,
+        FAKE_NPM_STATUS: String(npmStatus),
+      },
     });
   } finally {
     fs.rmSync(folder, { recursive: true, force: true });
