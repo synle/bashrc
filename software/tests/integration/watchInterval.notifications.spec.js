@@ -12,7 +12,7 @@ const HELP = readFileSync("software/bootstrap/profile-core.sh", "utf8").match(/^
 /** Actual clear alias, kept available when the executable is deliberately absent. */
 const CLEAR_ALIAS = readFileSync("software/bootstrap/profile-advanced.sh", "utf8").match(/^alias clear=.*$/m)[0];
 /** Native core tools for a PATH that deliberately contains no clear executable. */
-const CORE_TOOLS = spawnSync("/bin/bash", ["-c", "type -P cat mktemp cmp tr rm"], { encoding: "utf8" }).stdout.trim().split("\n");
+const CORE_TOOLS = spawnSync("/bin/bash", ["-c", "type -P cat mktemp cmp tee tr rm"], { encoding: "utf8" }).stdout.trim().split("\n");
 /** Resolve Python before the child fixture replaces PATH. */
 const PYTHON = spawnSync("/bin/bash", ["-c", "type -P python3"], { encoding: "utf8" }).stdout.trim();
 /** Bounded PTY transport; teardown kills only its own child process group. */

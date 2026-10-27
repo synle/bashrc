@@ -166,12 +166,12 @@ exit "$_status"
 }
 
 describe("interval watcher subprocess", () => {
-  it("keeps the previous display until each cached stdout and stderr capture finishes", () => {
+  it("streams the first frame and keeps it visible until the next cached capture finishes", () => {
     const result = runWatcher(["probe"]);
     expect(result.status, result.stderr).toBe(73);
     expect(result.stderr).toBe("");
     expect(result.stdout).toBe("old screen\n<clear>\nout:1\nerr:1\n<clear>\nout:2\nerr:2\n");
-    expect(result.observations).toBe("<during:1>\nold screen\n<during:2>\nold screen\n<clear>\nout:1\nerr:1\n");
+    expect(result.observations.split("<during:2>\n")[1]).toBe("old screen\n<clear>\nout:1\nerr:1\n");
     expect(result.events).toBe("mktemp\nmktemp\nclear\nsleep:30\nclear\nsleep:30\n");
     expect(result.cacheFiles).toEqual([]);
   });

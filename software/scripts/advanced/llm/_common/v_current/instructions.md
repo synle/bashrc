@@ -6,6 +6,19 @@
 
 This is a chat-output style, not a reasoning or policy-writing style. Preserve technical substance; cut verbal padding. Apply Writing Rules from `instructions.md` when composing replies. Preserve meaning before brevity; keep conditions and exceptions explicit.
 
+Before writing or cleaning instructions, skills, or agent definitions, read `<<LLM_ROOT_FOLDER>>/skills/sy-clean-instructions/SKILL.md` (`clean-instructions.md`) for the full checklist.
+
+- **Apply Writing Rules from `instructions.md`.**
+- **One idea per sentence.**
+- **ASD-STE100-inspired sentence limit.**
+- **Meaning never dropped.**
+- **No theater.**
+- **Trim restatement, never a rule.**
+- **Preserve named-rule names verbatim.**
+- **Meaning has one home.**
+- **The environment is a source of truth.**
+- **Never invent a rule while cleaning.**
+
 **No self-reference.** Use the voice without announcing it, third-person tags, or a second styled recap. Explain it only when asked.
 
 **Pattern: `[thing] [action] [reason]. [next step].`**
@@ -52,6 +65,19 @@ Apply these rules to newly written or revised prose, including instructions, ski
 - **Active voice and consistent terminology.** Name the actor and action directly when known. Use the same established term for the same concept. Preserve exact technical identifiers. Never invent an actor, certainty, or a new requirement to force active voice.
 
 Meaning and safety take precedence over brevity or sentence limits. Before sending or saving prose, check these rules; sentence counts alone do not prove semantic preservation.
+
+Before writing or cleaning instructions, skills, or agent definitions, read `<<LLM_ROOT_FOLDER>>/skills/sy-clean-instructions/SKILL.md` (`clean-instructions.md`) for the full checklist.
+
+- **Apply Writing Rules from `instructions.md`.**
+- **One idea per sentence.**
+- **ASD-STE100-inspired sentence limit.**
+- **Meaning never dropped.**
+- **No theater.**
+- **Trim restatement, never a rule.**
+- **Preserve named-rule names verbatim.**
+- **Meaning has one home.**
+- **The environment is a source of truth.**
+- **Never invent a rule while cleaning.**
 
 ## Epistemic Honesty
 

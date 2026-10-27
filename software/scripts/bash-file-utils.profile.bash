@@ -279,7 +279,8 @@ function watch() {
 # watch_interval: refresh command output periodically, keeping the previous display until ready
 # Args: optional --no-cache, optional integer seconds (1-86400, default 30), one shell command string.
 # Returns 0 for help, 1 for invalid input, 130/143 on INT/TERM, or a cache/compare/render/sleep failure.
-# Cached stdout/stderr uses two private mktemp files removed on exit; identical frames are not redrawn.
+# First cached stdout/stderr streams live into a private file; later frames stay buffered and redraw only on change.
+# Both private mktemp files are removed on exit; the initial streamed frame is never rendered twice.
 # Supported TTY output gets plain status titles and one bell per changed frame, never the first frame.
 # The Updated title lasts at most two seconds within the normal wait; no-cache has no notifications.
 # Cached terminal captures request FORCE_COLOR without overriding explicit color opt-outs.
@@ -288,7 +289,7 @@ function watch() {
 function watch_interval() {
   (
     local _interval_seconds=30 _command _render_mode=cached
-    local _output_cache _next_cache _cache_cleanup _cache_swap _comparison_status
+    local _output_cache _next_cache _cache_cleanup _cache_swap _comparison_status _stream_status _tee_command
     local _has_rendered_output=0 _terminal_notifications=0 _remaining_seconds _title_path
     local _update_notice_seconds=2 _notice_seconds
     local -a _title_command=(:)
@@ -298,7 +299,7 @@ function watch_interval() {
       echo "watch_interval: refresh command output periodically, keeping the previous display until ready
   Usage: watch_interval [--no-cache] [interval_seconds] <command>
   interval_seconds: whole seconds from 1 to 86400 (default: 30).
-  Default: capture stdout/stderr; redraw only when completed output changes.
+  Default: stream initial output into cache; buffer later runs and redraw changes only.
   TTY titles: Refreshing, Updated, Waiting. Changed frames ring once, except the first.
   Updated lasts up to 2 seconds within the interval; pipes and dumb terminals get no alerts.
   TTY capture requests FORCE_COLOR for supporting programs; explicit color opt-outs remain honored.
@@ -345,6 +346,10 @@ function watch_interval() {
         echo "watch_interval: cmp executable required for cached rendering" >&2
         return 1
       fi
+      if ! _tee_command=$(type -P tee); then
+        echo "watch_interval: tee executable required to stream the initial cache" >&2
+        return 1
+      fi
       _output_cache=$(command mktemp "${TMPDIR:-/tmp}/watch_interval.XXXXXX") || return $?
       # Bash 3.2 unwinds locals before EXIT on signals; freeze each safely quoted path now.
       printf -v _cache_cleanup 'command rm -f -- %q' "$_output_cache"
@@ -360,6 +365,11 @@ function watch_interval() {
       fi
     fi
 
+    # The enclosing subshell keeps this color request private to the cached invocation.
+    if ((_terminal_notifications)) && [ -z "${NO_COLOR:-}" ]; then
+      export FORCE_COLOR="${FORCE_COLOR-1}"
+    fi
+
     while true; do
       if [ "$_render_mode" = live ]; then
         "${_clear_command[@]}" || return $?
@@ -369,13 +379,17 @@ function watch_interval() {
       fi
 
       "${_title_command[@]}" Refreshing
-      (
-        # A file is not a TTY; request supported styles only for the final human terminal.
-        if ((_terminal_notifications)) && [ -z "${NO_COLOR:-}" ]; then
-          export FORCE_COLOR="${FORCE_COLOR-1}"
+      if ((_has_rendered_output)); then
+        (eval "$_command") > "$_next_cache" 2>&1 || :
+      else
+        "${_clear_command[@]}" || return $?
+        _stream_status=0
+        # Command failures remain retryable; tee failures cannot establish a valid baseline.
+        (eval "$_command") 2>&1 | "$_tee_command" "$_next_cache" || _stream_status=${PIPESTATUS[1]}
+        if ((_stream_status != 0)); then
+          return "$_stream_status"
         fi
-        eval "$_command"
-      ) > "$_next_cache" 2>&1 || :
+      fi
       _comparison_status=1
       if ((_has_rendered_output)); then
         _comparison_status=0
@@ -394,8 +408,10 @@ function watch_interval() {
         ;;
       esac
 
-      "${_clear_command[@]}" || return $?
-      command cat "$_next_cache" || return $?
+      if ((_has_rendered_output)); then
+        "${_clear_command[@]}" || return $?
+        command cat "$_next_cache" || return $?
+      fi
       _cache_swap="$_output_cache"
       _output_cache="$_next_cache"
       _next_cache="$_cache_swap"

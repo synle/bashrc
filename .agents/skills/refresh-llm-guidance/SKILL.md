@@ -45,8 +45,22 @@ Resolve current default branch and HEAD every run. Never pin this registry to pr
 ## Rules
 
 - Distill behavior, not vendor voice or layout. Tighten the existing authoritative rule instead of adding a second definition; already-enforced advice stays out.
-- **Meaning never dropped.** Before tightening or merging guidance, read **Writing Rules** in `software/scripts/advanced/llm/_common/v_current/instructions.md`. Preserve its negation, exact-value, condition, exception, ordering, safety, and payload requirements.
-- **No theater.** Apply those Writing Rules and the established local tone, not upstream padding. Keep required checkpoints, never command-by-command chatter. Use plain prose when shorter; policy, skills, code, and written deliverables remain precise standard prose.
+
+Before writing or cleaning guidance, read `software/scripts/advanced/llm/_common/v_current/skills/clean-instructions.md` for the full checklist.
+
+Apply the established local tone, not upstream padding.
+
+- **Apply Writing Rules from `instructions.md`.**
+- **One idea per sentence.**
+- **ASD-STE100-inspired sentence limit.**
+- **Meaning never dropped.**
+- **No theater.**
+- **Trim restatement, never a rule.**
+- **Preserve named-rule names verbatim.**
+- **Meaning has one home.**
+- **The environment is a source of truth.**
+- **Never invent a rule while cleaning.**
+
 - Preserve local safety exceptions. Brevity and minimal-code rules never remove validation, authorization, security, data-loss prevention, accessibility, migration/rollback safety, concurrency guards, compatibility, or required proof.
 - Upstream absence is never evidence to remove a local rule. Removal needs local evidence that the rule is obsolete, duplicated, or contradicted by an intentional repo change.
 - Keep candidate-level provenance in the final report, not merged guidance or always-loaded context. The Core Upstreams registry retains source identity only to define `core` and `default`.

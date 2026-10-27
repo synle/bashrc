@@ -8,8 +8,22 @@ Reduce context load after additions, resolve duplicate or stale guidance, and mo
 
 ## Hard rules
 
+- **Apply Writing Rules from `instructions.md`.**
+- **One idea per sentence.**
+- **ASD-STE100-inspired sentence limit.**
+- **Meaning never dropped.**
+- **No theater.**
+- **Trim restatement, never a rule.**
+- **Preserve named-rule names verbatim.**
+- **Meaning has one home.**
+- **The environment is a source of truth.**
+- **Never invent a rule while cleaning.**
+
+## Checklist details
+
 - **Apply Writing Rules from `instructions.md`.** Read before writing or cleaning guidance. Apply the following checks without rewriting unrelated content.
-- **One idea per sentence.** Use ASD-STE100-inspired controlled English. Write at most <<SY_PROSE_SENTENCE_MAX_WORDS>> words per prose sentence. Use active voice. Use one established term per concept. Keep conditions and exceptions attached to their actions. Never invent an actor or certainty to force active voice.
+- **One idea per sentence.** Express one idea per prose sentence. Use active voice. Use one established term per concept. Keep conditions and exceptions attached to their actions. Never invent an actor or certainty to force active voice.
+- **ASD-STE100-inspired sentence limit.** Use ASD-STE100-inspired controlled English. Write at most <<SY_PROSE_SENTENCE_MAX_WORDS>> words per prose sentence. Meaning and safety take precedence over brevity or sentence limits. Do not rewrite code, commands, quoted payloads, identifiers, paths, URLs, or machine-readable data merely to meet the word limit.
 - **Meaning never dropped.** Optional articles may go. Never drop `not`, `never`, `no`, or `only`. Keep numbers and units exact. Preserve uncertainty, conditions, ordering, exceptions, safety gates, named rules, references, and technical payloads.
 - **No theater.** No "me think", roleplay, or chatter between tool calls. Keep required progress checkpoints. If Caveman phrasing is not shorter, use plain prose. Write rules and skills in precise standard English.
 - **Trim restatement, never a rule.** Preserve distinct behavior under **Meaning never dropped**; split behind a pointer when compression cannot meet the budget.
