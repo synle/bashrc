@@ -179,12 +179,13 @@ describe("Git patch interactive application", () => {
     const result = shell(`
       function prompt_yes_no() {
         printf '%s\\n' "$1"
-        case "$1" in Clipboard*) return 0 ;; *) return 1 ;; esac
+        case "$1" in *Clipboard*) return 0 ;; *) return 1 ;; esac
       }
       patch_plain_str
     `);
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("does not match current repository 'other/repo'");
+    expect(result.stdout).toContain("\u001b[41;37m[Need Attention]\u001b[0m");
     expect(result.stdout).toContain("No patches applied; no commit created");
     expect(git("rev-parse", "HEAD")).toBe(head);
     expect(fs.readFileSync(path.join(folder, "note.txt"), "utf8")).toBe("base\n");

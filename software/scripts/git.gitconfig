@@ -29,7 +29,7 @@ version = 4 # Path compression for large indexes
 workers = 0 # Parallel file checkout (auto-detect CPU)
 
 [fetch]
-writeCommitGraph = true # Keeps the commit graph updated on fetch
+writeCommitGraph = true # Keep commit graphs fresh; fap disables fetch-time writes to avoid lock races
 prune = true # Drop remote-tracking branches deleted on the remote
 # No fetch.pruneTags: it adds a non-forced refs/tags/* refspec, so a remote tag CI
 # force-moves (the rolling `binary-cache` release) fails every fetch with
@@ -186,7 +186,7 @@ current = branch --show-current # Print current branch name
 # ---- Pull / Push / Fetch ----
 f = "!git fapr" # Reuse fetch, prune, and rebase
 fp = "!git fapr && git po" # Reuse fetch/rebase, then push only on success
-fap = fetch --all --prune # Fetch all and purge deleted remotes
+fap = "!git -c fetch.writeCommitGraph=false fetch --all --prune" # Avoid commit-graph lock races during fetch
 fapr = "!git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git gc --prune=now && git fap && git r" # Reset fetch refspec, GC, fetch all, prune, then rebase
 p = pull
 pu = pull

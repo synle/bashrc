@@ -630,9 +630,10 @@ Full annotated list in **`DEV.md` → Make Targets**. The agent-relevant ones:
 `make format` (after touching BEGIN/END markers, the CI binary list, script indexes, or
 JSDoc), `make lint` (oxlint; `.oxlintrc.json` disables `no-unused-vars`,
 `no-useless-escape`, `no-control-regex` — SOURCE-inlined libs and bash/ANSI-generating
-code make them noise), `make test_unit`, `make test_profile`, `make test_buildconfig`,
-`make test_dryrun`, `make new-script name= os= type=`, `make doctor`, and `make validate`
-— the pre-push gate (§14.1). The formatter is **oxfmt** (`npm run format`), not prettier,
+code make them noise), `make test_unit`, `make precommit` (fast lint + unit tests; format changed files separately),
+`make test_profile`, `make test_buildconfig`, `make test_dryrun`,
+`make new-script name= os= type=`, `make doctor`, and `make validate` (the full gate; CI-owned
+for routine agent work; §14.1). The formatter is **oxfmt** (`npm run format`), not prettier,
 despite the `format_prettier` target name; shell formatting is `shfmt -w -i 2 -bn -sr`.
 The Makefile uses `.ONESHELL`; escape shell `$` as `$$`.
 
@@ -909,12 +910,15 @@ same commit.
 **Before you finish:**
 
 - Document touched functions, constants, and types in the language's native style.
-- Run changed discoverable scripts twice through `./run --files="<script>"` and check idempotency.
+- Leave changed discoverable-script execution and idempotency checks to CI/CD for routine work.
   Manual scripts and profile partials use their own validation paths in §14.1.
   Report unavailable target-host checks explicitly; do not provision an unrelated host.
 - Regenerate affected BEGIN/END blocks, CI binary lists, script indexes, and JSDoc output through their existing generators.
   Use `make format` when those changes require its full generation chain; keep unrelated generated churn out of commits.
-- Choose checks from §14.1. Runtime changes to `software/index.js`, `run.sh`, `bootstrap/`, or runtime include markers require `make validate` once before commit.
+- Choose checks from §14.1. Format changed files with the repository formatter.
+  Run `make precommit` once after the last edit and before each commit.
+  After each commit, run only fast focused unit tests for changed behavior.
+  Leave heavier integration suites to CI/CD unless explicitly requested.
   Shared-instruction Markdown and its include directives follow §13.3 instead.
 - Update this file when changing `software/index.js`, `run.sh`, `common-env.sh`, or `.github/actions/ci-build/action.yml`.
   Update `docs/editor-keybindings.md` for every keybinding change.
@@ -923,18 +927,21 @@ same commit.
 setup intent as Node. Its `node | tee | bash | tee` pipeline must preserve every
 `PIPESTATUS` entry; otherwise a generated-shell failure becomes a false-success exit.
 
-### 14.1 Validation cadence — batch it, don't run `make validate` per edit
+### 14.1 Validation cadence — fast local gate, heavier suites in CI
 
-`Makefile` defines the full gate: `format`, `lint`, `test_unit`, `test_buildconfig`,
-`build_webapp`, `test_smoke_local`, `test_dryrun`, and `ci_test_shellcheck`, followed by gating `test_profile`.
-This is a **pre-commit gate, not a save hook**. Finish edits first, then run the applicable gate once. Rungs:
+`make precommit` runs `lint` and `test_unit`; format changed files separately before committing.
+Run it after the final edit and before each commit.
+After each commit, run only fast focused unit tests for changed behavior.
+The default unit suite includes subprocess fixtures.
+CI/CD owns additional build, browser, profile, dry-run, and shellcheck suites.
+`make validate` remains available for explicit local requests; routine agent work must not run it.
 
-| Rung | Command                                                                 | Cost    | When                                   |
-| ---- | ----------------------------------------------------------------------- | ------- | -------------------------------------- |
-| 1    | `/bin/bash -n <file>.sh` / `node --check <file>.js`                     | instant | Right after editing one file           |
-| 2    | `npx vitest run --config vitest.config.js software/tests/<one>.spec.js` | ~1s     | After one file or one concern          |
-| 3    | `make test_unit`                                                        | varies  | After the last file in a related group |
-| 4    | `make validate`                                                         | minutes | **Once**, before commit / hand-off     |
+| Rung | Command                                                                 | Cost    | When                                      |
+| ---- | ----------------------------------------------------------------------- | ------- | ----------------------------------------- |
+| 1    | `/bin/bash -n <file>.sh` / `node --check <file>.js`                     | instant | Right after editing one file              |
+| 2    | `npx vitest run --config vitest.config.js software/tests/<one>.spec.js` | ~1s     | After one file or one concern             |
+| 3    | `make precommit`                                                        | varies  | After the last edit, before each commit   |
+| 4    | `make validate`                                                         | minutes | Explicit local request only; otherwise CI |
 
 Rung 2 accepts several specs and a name filter, so one call covers a related group:
 
@@ -943,23 +950,21 @@ npx vitest run --config vitest.config.js software/tests/{presets,osDetection}.sp
 npx vitest run --config vitest.config.js -t "should return defaults when BASHRC_RAW_ARGS is empty"
 ```
 
-Validation by scope; targeted checks do not replace the full runtime gate required by §14:
+Validation by scope; use focused local checks and leave heavier suites to CI/CD:
 
-| Touched                                                 | Required checks                                                                                            |
+| Touched                                                 | Required local checks                                                                                      |
 | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| A `software/scripts/` script                            | `./run --files="<script>"` (twice, for idempotency)                                                        |
-| `software/index.js`, `run.sh`, `bootstrap/`             | Focused specs, then `make validate` once                                                                   |
-| A `.sh` / `.bash` / profile partial                     | `/bin/bash -n <file>`, focused specs, then `make test_unit`; manual SteamOS setup follows `DEV.md`         |
-| BEGIN/END markers, `ci-binaries.json`, script indexes   | `make format && make test_buildconfig`                                                                     |
-| `presets.jsonc`                                         | `npx vitest run --config vitest.config.js software/tests/presets.spec.js`                                  |
+| A `software/scripts/` script                            | Focused unit spec, then `make precommit`; installer execution is CI-owned                                  |
+| `software/index.js`, `run.sh`, `bootstrap/`             | Focused specs, syntax checks, then `make precommit`; full integration gate is CI-owned                     |
+| A `.sh` / `.bash` / profile partial                     | `/bin/bash -n <file>`, focused specs, then `make precommit`; assembled profile checks are CI-owned         |
+| BEGIN/END markers, `ci-binaries.json`, script indexes   | Regenerate affected sources; focused specs and `make precommit`; buildconfig checks are CI-owned           |
+| `presets.jsonc`                                         | `npx vitest run --config vitest.config.js software/tests/presets.spec.js`, then `make precommit`           |
 | Ordinary `.md` / project maps                           | Scoped formatting, link/source verification, and diff review; no runtime gate                              |
 | Shared instructions / skills / their include directives | Focused registry/budget tests, scoped include regeneration where needed, and §13.3 deployment verification |
 
-Never re-run `make validate` on work unchanged since it last went green. A failure sends
-you **back down** the ladder: reproduce at rung 2 on that one spec, fix, confirm, then
-rerun rung 4. Announce the batching so it doesn't read as skipping. Mid-task full runs
-are legitimate only when a step's **output feeds the next edit** (`make format`
-regenerating a BEGIN/END block, a codegen pass, a dependency bump) — say so when you do.
+Never run `make validate` for routine agent work. CI owns the heavier suites; if a CI check
+fails, reproduce only that failure locally, fix it, and rerun `make precommit` before committing.
+Mid-task full runs are not part of the local workflow unless the user explicitly requests one.
 
 **Do not:**
 

@@ -258,10 +258,11 @@ test: test_all
 # ---- Workflow ----
 ################################################################################
 
-# Format code + run all tests (automated by PostToolUse hook)
-# Always add new test suites here.
-# test_profile runs last and gates — on failure, the output above shows which profile blocks have errors
-validate: format lint test_unit test_buildconfig build_webapp test_smoke_local test_dryrun ci_test_shellcheck
+# Fast local agent gate; format changed files separately before committing.
+precommit: lint test_unit
+
+# Full local/CI gate; profile tests run last and gate on failure.
+validate: format precommit test_buildconfig build_webapp test_smoke_local test_dryrun ci_test_shellcheck
 	make test_profile 2>&1 || { echo "FAIL: test_profile failed — check profile blocks above for syntax errors"; exit 1; }
 
 # Format + build webapp (used by CI workflow)

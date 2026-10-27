@@ -1220,6 +1220,9 @@ function _git_patch_apply_file() {
         elif [ "$patch_repo" != "$current_repo" ]; then
           mismatch_prompt="Patch repository '$patch_repo' does not match current repository '$current_repo'. Continue applying this patch?"
         fi
+        if [ -n "$mismatch_prompt" ]; then
+          mismatch_prompt=$(printf '\033[41;37m[Need Attention]\033[0m %s' "$mismatch_prompt")
+        fi
         if [ -n "$mismatch_prompt" ] && ! prompt_yes_no "$mismatch_prompt" N; then
           echo ">>> skipped patch $patch_index/$patch_count after repository mismatch"
           continue
@@ -1643,11 +1646,22 @@ function _git_patch_outcome_line() {
   esac
 }
 
+# _git_patch_unpushed_count: print commits ahead of upstream.
+# Returns nonzero when no upstream exists.
+function _git_patch_unpushed_count() {
+  git rev-list --count '@{upstream}..HEAD' 2> /dev/null
+}
+
 # _git_patch_create_unpushed: export commits ahead of upstream in $1 format.
-# Defaults to plain; without upstream, warns and exports HEAD. Returns creation status.
+# Defaults to plain; without upstream, warns and exports HEAD. Zero commits is a no-op.
+# Returns creation status.
 function _git_patch_create_unpushed() {
   local format="${1:-plain}" count
-  if count=$(git rev-list --count '@{upstream}..HEAD' 2> /dev/null); then
+  if count=$(_git_patch_unpushed_count); then
+    if [ "$count" -eq 0 ]; then
+      echo ">>> no unpushed commits — nothing to create"
+      return 0
+    fi
     _git_patch_create "$format" "$count"
     return $?
   fi
@@ -1655,7 +1669,7 @@ function _git_patch_create_unpushed() {
   _git_patch_create "$format" 1
 }
 
-# patch_plain_str: apply a plain patch when one is at hand, otherwise cut a new one.
+# patch_plain_str: apply a plain patch, otherwise export unpushed commits when present.
 # Accepts [-y] [count | patch_file]; application modifies files and can commit.
 function patch_plain_str() {
   _git_patch_transfer plain "$@"
@@ -1680,6 +1694,7 @@ alias patch='patch_85'
 # $1 is plain, base64, or base85; remaining args are [-y] [count | patch_file].
 # Returns the selected operation's status, including commit failure; rejects damaged input.
 # Explicit clipboard acceptance also confirms a single patch, but never bypasses repository checks.
+# No patch and zero commits ahead is a successful no-op; clipboard default follows ahead count.
 function _git_patch_transfer() {
   local format="$1" name
   name=$(_git_patch_format_name "$format") || return 2
@@ -1697,8 +1712,9 @@ function _git_patch_transfer() {
   Resolution order:
     1. positive count -> export last N commits, oldest first, with commit boundaries
     2. file -> apply it in this command's format
-    3. matching clipboard -> ask first, then apply (unless -y)
-    4. declined or unrelated clipboard -> export every commit ahead of upstream
+    3. matching clipboard -> apply by default when synced; otherwise create, unless -y
+    4. declined or unrelated clipboard -> export commits ahead of upstream, when any exist
+    5. no clipboard patch and zero commits ahead -> do nothing
   Recognized damaged envelopes fail without applying or replacing the clipboard.
   Creation exports committed changes only; staged, unstaged, and untracked work
   stays untouched. Without an upstream, only the latest commit is exported.
@@ -1719,7 +1735,7 @@ function _git_patch_transfer() {
     return 1
   fi
 
-  local assume_yes=0 status patch_file confirmation=prompt
+  local assume_yes=0 status patch_file confirmation=prompt unpushed_count apply_default apply_prompt
   case "${1:-}" in
   -y | --yes)
     assume_yes=1
@@ -1748,13 +1764,20 @@ function _git_patch_transfer() {
     fi
     patch_file="$_GIT_PATCH_INPUT_FILE"
   else
+    if ! unpushed_count=$(_git_patch_unpushed_count); then
+      unpushed_count=1
+    fi
+
     _git_patch_clipboard_file "$format"
     status=$?
     if [ "$status" -eq 1 ]; then
       return 1
     fi
     if [ "$status" -eq 0 ]; then
-      if ((assume_yes)) || prompt_yes_no "Clipboard holds a patch that has not been applied here — apply it now?" Y; then
+      apply_default=N
+      [ "$unpushed_count" -eq 0 ] && apply_default=Y
+      apply_prompt=$(printf '\033[0;33mClipboard holds a patch that has not been applied here — apply it now?\033[0m')
+      if ((assume_yes)) || prompt_yes_no "$apply_prompt" "$apply_default"; then
         patch_file="$_GIT_PATCH_CLIPBOARD_FILE"
         ((assume_yes)) || confirmation=clipboard-confirmed
       else
@@ -1773,6 +1796,15 @@ function _git_patch_transfer() {
     fi
     _git_patch_commit_applied "$patch_file" || return 1
     _git_patch_outcome_line applied
+    return 0
+  fi
+
+  if [ "${unpushed_count:-1}" -eq 0 ]; then
+    if [ "$status" -eq 2 ]; then
+      echo ">>> no clipboard patch and no unpushed commits — nothing to do"
+    else
+      echo ">>> no unpushed commits — nothing to create"
+    fi
     return 0
   fi
 

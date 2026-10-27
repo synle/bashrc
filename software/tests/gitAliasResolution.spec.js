@@ -191,6 +191,10 @@ describe("git alias resolution", () => {
     );
   });
 
+  it("should skip fetch-time commit-graph writes in fap", () => {
+    expect(config).toContain('fap = "!git -c fetch.writeCommitGraph=false fetch --all --prune"');
+  });
+
   it("should quote every command substitution used as a command argument", () => {
     // Windows (`C:\Users\First Last\...`) and macOS (`~/My Drive/...`) repo paths contain
     // spaces. In argument position an unquoted `$(...)` word-splits into two arguments; in
