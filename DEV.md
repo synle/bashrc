@@ -382,9 +382,9 @@ Regression coverage lives in `software/tests/nativeCd.spec.js` and `software/tes
 These shortcuts are explicit aliases, not generated command variants.
 Long listings use native timestamps and permission columns.
 
-## Clickable terminal links
+## Terminal links
 
-Human terminal output marks links with `(clickable link)`. Open them with your terminal's link gesture; modifier keys vary by terminal.
+Terminal link helpers render labels in blue without explanatory hints. Open links with your terminal's link gesture; modifier keys vary by terminal.
 Agent replies use Markdown links where supported, otherwise complete plain URLs. Raw OSC 8 bytes belong only in terminal programs.
 
 - Shell: call `format_hyperlink "$url"` directly between `printf` calls, never through command substitution.
@@ -396,7 +396,7 @@ Agent replies use Markdown links where supported, otherwise complete plain URLs.
 - Search: `rg_link` and `fd_link` add native hyperlink flags only on a non-dumb terminal when the binary advertises support.
 - tmux: the configured append-only `hyperlinks` feature enables forwarding on supported versions.
 - Ghostty inside tmux: Shift bypasses mouse capture; the existing macOS gesture is Shift+Cmd+click.
-- Pipes, redirected output, JSON, clipboard contents, and machine-only link lists receive no added OSC 8 escapes or clickable hints.
+- Pipes, redirected output, JSON, clipboard contents, and machine-only link lists receive no added OSC 8 or color escapes.
 
 Refresh the profile with `./run`; refresh Git tooling with `./run --files=git-functions.js` or the broader `./run --preset=terminal`.
 Unsupported applications keep their native output. Byte-level PTY tests do not prove physical clicking in every emulator.
@@ -415,7 +415,7 @@ Explicit `--no-pager`, `GIT_PAGER`, and command-specific pager settings still fo
 Test terminal support directly:
 
 ```bash
-printf '\033]8;;https://example.com\033\\This is a clickable link\033]8;;\033\\\n'
+printf '\033]8;;https://example.com\033\\\033[34mExample\033[0m\033]8;;\033\\\n'
 ```
 
 The [Delta hyperlink manual](https://dandavison.github.io/delta/hyperlinks.html) describes file and commit targets.

@@ -70,7 +70,7 @@ describe("pr_list emits real OSC 8 hyperlinks", () => {
     // The OSC 8 open (ESC ]8;; <url> ST) and close (ESC ]8;; ST) must both be present
     // in the color branch of formatLink. \x1b]8;; is the OSC 8 introducer.
     expect(source).toMatch(/\\x1b\]8;;\$\{url\}\\x1b\\\\/); // open with the URL
-    expect(source).toMatch(/\\x1b\]8;;\\x1b\\\\ \(clickable link\)`/); // close with empty URI
+    expect(source).toMatch(/\\x1b\]8;;\\x1b\\\\`/); // close with empty URI
   });
 
   it("returns the bare URL when color is disabled so piped output stays greppable", () => {
@@ -97,7 +97,7 @@ describe("shared shell hyperlink helper (format_hyperlink)", () => {
     // The escape must be TTY-gated so piped output stays bare/greppable.
     expect(source).toMatch(/\[ -t 1 \]/);
     // OSC 8 open + close in the printf format string.
-    expect(source).toMatch(/\\033\]8;;%s\\033\\\\%s\\033\]8;;\\033\\\\/);
+    expect(source).toMatch(/\\033\]8;;%s\\033\\\\\\033\[34m%s\\033\[0m\\033\]8;;\\033\\\\/);
   });
 
   it("returns the bare URL (no escape) when stdout is not a TTY", () => {

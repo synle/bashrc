@@ -108,7 +108,7 @@ printf -v LINE_BREAK_EQUAL '%*s' "$LINE_BREAK_COUNT" ''
 LINE_BREAK_EQUAL=${LINE_BREAK_EQUAL// /=}
 export LINE_BREAK_EQUAL
 
-# format_hyperlink <url> [label] - Print a clickable HTTP(S)/file URL on terminal stdout.
+# format_hyperlink <url> [label] - Print a blue HTTP(S)/file URL on terminal stdout.
 # Returns 2 without output for unsafe schemes, whitespace in URLs, or control bytes.
 # Pipes and dumb terminals retain plain text; explicit labels keep their existing contract.
 # Call directly, never inside command substitution: capture hides the final output TTY.
@@ -116,7 +116,7 @@ export LINE_BREAK_EQUAL
 # Mirror the function body in profile-core.sh; standalone Git tools deploy independently.
 function format_hyperlink() {
   if is_help_arg "${1:-}"; then
-    echo "format_hyperlink: print a clickable HTTP(S)/file URL on terminal stdout
+    echo "format_hyperlink: print a blue HTTP(S)/file URL on terminal stdout
   Usage: format_hyperlink <url> [label]
   Call directly, not inside command substitution. Pipes retain plain text.
   Returns 2 without output for unsafe URLs or control bytes."
@@ -130,7 +130,7 @@ function format_hyperlink() {
   case "$url" in *[[:space:][:cntrl:]]*) return 2 ;; esac
   case "$label" in *[[:cntrl:]]*) return 2 ;; esac
   if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ]; then
-    printf '\033]8;;%s\033\\%s\033]8;;\033\\ (clickable link)' "$url" "$label"
+    printf '\033]8;;%s\033\\\033[34m%s\033[0m\033]8;;\033\\' "$url" "$label"
   else
     printf '%s' "$label"
   fi
@@ -692,34 +692,32 @@ function lsfa() {
   find "${1:-$PWD}" -mindepth 1 -maxdepth 1 -type f -exec realpath {} \; | sort
 }
 
-# rg_link: search with clickable file paths when ripgrep supports OSC 8.
+# rg_link: search with native path hyperlinks when ripgrep supports OSC 8.
 # Arguments and status pass through unchanged; pipes and old binaries keep native output.
 function rg_link() {
   if is_help_arg "${1:-}"; then
-    echo "rg_link: search with clickable file paths where supported
+    echo "rg_link: search with native path hyperlinks where supported
   Usage: rg_link [ripgrep options] <pattern> [paths...]
-  Terminal paths are clickable links; pipes and older binaries stay plain."
+  Pipes and older binaries stay plain."
     return 0
   fi
   if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ] && command rg --help 2> /dev/null | command grep -q -- --hyperlink-format; then
-    [ -t 2 ] && printf '%s\n' 'File paths are clickable links (OSC 8).' >&2
     command rg --hyperlink-format=default "$@"
   else
     command rg "$@"
   fi
 }
 
-# fd_link: find with clickable file paths when fd supports OSC 8.
+# fd_link: find with native path hyperlinks when fd supports OSC 8.
 # Arguments and status pass through unchanged; pipes and old binaries keep native output.
 function fd_link() {
   if is_help_arg "${1:-}"; then
-    echo "fd_link: find with clickable file paths where supported
+    echo "fd_link: find with native path hyperlinks where supported
   Usage: fd_link [fd options] [pattern] [path...]
-  Terminal paths are clickable links; pipes and older binaries stay plain."
+  Pipes and older binaries stay plain."
     return 0
   fi
   if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ] && command fd --help 2> /dev/null | command grep -q -- --hyperlink; then
-    [ -t 2 ] && printf '%s\n' 'File paths are clickable links (OSC 8).' >&2
     command fd --hyperlink=auto "$@"
   else
     command fd "$@"

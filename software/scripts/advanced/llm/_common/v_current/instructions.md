@@ -210,9 +210,9 @@ Branch, commit, pull-request, worktree, link, merge, and review rules live in `<
 
 - **Clickable links follow the output surface.** Use verified, complete destinations; never invent a URL, silently change its target, or hide credentials inside a link.
 - Agent replies use Markdown links when the renderer supports them; keep the complete destination visible where identity matters. Otherwise print full scheme-prefixed URLs without backticks.
-- Terminal programs use real OSC 8 hyperlinks only on the final human-facing output TTY with supported terminal settings. Never paste raw terminal escapes into agent replies.
+- Terminal programs use real OSC 8 hyperlinks only on the final human-facing output TTY with supported terminal settings. Color helper-rendered terminal link labels blue. Never paste raw terminal escapes into agent replies.
 - Reuse existing hyperlink helpers and supported application auto modes; do not replace native commands or force escapes into pipes, logs, JSON, clipboard data, or machine-readable output.
-- Tell users once per human-facing output group that links are clickable. Do not add hints to machine-only formats or repeat them on every agent list item.
+- Do not add link-clickability hints to human-facing or machine-readable output.
 - Keep fallback URLs readable and copyable. Verify tool, pager, multiplexer, and terminal support before claiming end-to-end click behavior.
 
 ## Logging & Errors

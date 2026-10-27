@@ -254,8 +254,7 @@ function titleColorFor(signal, isPlaceholder = false) {
 }
 
 /**
- * Render a URL. On a color-capable TTY it becomes a blue, underlined OSC-8
- * hyperlink with a clickable hint, except on dumb terminals.
+ * Render a blue, underlined OSC 8 URL on a color-capable, non-dumb TTY without suffix hints.
  * Piped output retains the plain URL so machine consumers remain unchanged.
  * @param {string} url
  * @param {boolean} color Whether color/hyperlink escapes are allowed.
@@ -264,7 +263,7 @@ function titleColorFor(signal, isPlaceholder = false) {
 function formatLink(url, color) {
   if (!color) return url;
   if (!process.env.TERM || process.env.TERM === `dumb`) return url;
-  return `\x1b]8;;${url}\x1b\\${ANSI.blue}${ANSI.underline}${url}${ANSI.reset}\x1b]8;;\x1b\\ (clickable link)`;
+  return `\x1b]8;;${url}\x1b\\${ANSI.blue}${ANSI.underline}${url}${ANSI.reset}\x1b]8;;\x1b\\`;
 }
 
 /**

@@ -373,7 +373,8 @@ Profile registration is buffered: `registerProfileBlock` /
   Call directly, not inside `$(...)`: command substitution hides the final output TTY.
   Standalone `git.*.cjs` tools keep local renderers because they deploy independently.
   Gate on the actual output stream's TTY and a non-dumb `TERM`.
-  Retain full destinations and add `(clickable link)` only to human terminal output.
+  Retain full destinations and color helper-rendered terminal link labels blue.
+  Do not add link-clickability hints to terminal output or agent replies.
   Pipes, logs, JSON, clipboard data, `--links`, and other machine output stay escape-free and retain their existing contracts.
   Reject unsafe protocols and control bytes before constructing OSC 8; percent-encode local file paths.
   Keep native `ls`, `rg`, and `fd` unchanged. GNU `ll` enables `--hyperlink=auto`

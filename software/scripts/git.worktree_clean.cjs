@@ -21,6 +21,7 @@ const IGNORED_FOLDERS = new Set([`.git`, `.hg`, `.svn`, `build`, `coverage`, `di
 const ANSI = {
   reset: `\x1b[0m`,
   bold: `\x1b[1m`,
+  blue: `\x1b[34m`,
   cyan: `\x1b[36m`,
   dim: `\x1b[2m`,
   green: `\x1b[32m`,
@@ -68,11 +69,9 @@ function paint(text, code, enabled) {
 }
 
 /**
- * Turn any URL inside a display string into an OSC 8 terminal hyperlink so it is
- * clickable, but only when color/TTY human output is enabled. Piped output (enabled =
- * false) or a dumb terminal is returned untouched so logs stay greppable.
- * Each link includes a clickable hint. Standalone deployment prevents sharing the shell
- * helper. See AGENTS.md (Terminal links).
+ * Render display URLs as blue OSC 8 links only when color/TTY human output is enabled, without suffix hints.
+ * Piped output (enabled = false) and dumb terminals remain unchanged so logs stay greppable.
+ * Standalone deployment prevents sharing the shell helper. See AGENTS.md (Terminal links).
  * @param {string} text
  * @param {boolean} enabled
  * @returns {string}
@@ -80,7 +79,7 @@ function paint(text, code, enabled) {
 function linkify(text, enabled) {
   if (!enabled) return text;
   if (!process.env.TERM || process.env.TERM === `dumb`) return text;
-  return text.replace(/https?:\/\/\S+/g, (url) => `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\ (clickable link)`);
+  return text.replace(/https?:\/\/\S+/g, (url) => `\x1b]8;;${url}\x1b\\${paint(url, ANSI.blue, enabled)}\x1b]8;;\x1b\\`);
 }
 
 /**

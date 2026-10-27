@@ -546,7 +546,7 @@ function get_github_raw_url() {
   echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
-# format_hyperlink <url> [label] - Print a clickable HTTP(S)/file URL on terminal stdout.
+# format_hyperlink <url> [label] - Print a blue HTTP(S)/file URL on terminal stdout.
 # Returns 2 without output for unsafe schemes, whitespace in URLs, or control bytes.
 # Pipes and dumb terminals retain plain text; explicit labels keep their existing contract.
 # Call directly, never inside command substitution: capture hides the final output TTY.
@@ -554,7 +554,7 @@ function get_github_raw_url() {
 # Mirror the function body in profile-core.sh; standalone Git tools deploy independently.
 function format_hyperlink() {
   if is_help_arg "${1:-}"; then
-    echo "format_hyperlink: print a clickable HTTP(S)/file URL on terminal stdout
+    echo "format_hyperlink: print a blue HTTP(S)/file URL on terminal stdout
   Usage: format_hyperlink <url> [label]
   Call directly, not inside command substitution. Pipes retain plain text.
   Returns 2 without output for unsafe URLs or control bytes."
@@ -568,7 +568,7 @@ function format_hyperlink() {
   case "$url" in *[[:space:][:cntrl:]]*) return 2 ;; esac
   case "$label" in *[[:cntrl:]]*) return 2 ;; esac
   if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ]; then
-    printf '\033]8;;%s\033\\%s\033]8;;\033\\ (clickable link)' "$url" "$label"
+    printf '\033]8;;%s\033\\\033[34m%s\033[0m\033]8;;\033\\' "$url" "$label"
   else
     printf '%s' "$label"
   fi

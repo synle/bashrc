@@ -36,8 +36,8 @@ function colorize(color, message) {
 }
 
 /**
- * Render a URL as an OSC 8 terminal hyperlink so it is clickable, but only when stderr is
- * a non-dumb TTY. Include a clickable hint; captured logs retain the bare URL.
+ * Render a blue OSC 8 URL only on non-dumb terminal stderr, without suffix hints.
+ * Captured logs retain the bare URL.
  * Standalone deployment prevents sharing the shell helper. See AGENTS.md (Terminal links).
  * @param {string} url
  * @returns {string}
@@ -45,7 +45,7 @@ function colorize(color, message) {
 function formatLink(url) {
   if (!process.stderr.isTTY) return url;
   if (!process.env.TERM || process.env.TERM === `dumb`) return url;
-  return `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\ (clickable link)`;
+  return `\x1b]8;;${url}\x1b\\${colorize(34, url)}\x1b]8;;\x1b\\`;
 }
 
 /**
