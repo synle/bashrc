@@ -6,14 +6,14 @@
  * The whole reason this command exists is that a raw OSC `printf` cannot set
  * the title from an agent's tool shell: under a TUI harness that shell's stdout
  * is a captured pipe with no tty, so the escape is swallowed. This spec pins the
- * behaviors that route around that — the deterministic usage + no-op-safety
+ * behaviors that route around that - the deterministic usage + no-op-safety
  * paths always, and the tmux self-rename path when tmux is present:
  *
  *   - Usage: no args (or -h/--help) prints usage and exits non-zero.
  *   - No-op safety: given a title but no terminal and no owning tmux window, it
  *     exits 0 and writes nothing. A cosmetic title must never fail the caller.
  *   - Self-rename precision (tmux only): it renames ONLY its own window,
- *     resolved by process ancestry, and never a sibling window — the property
+ *     resolved by process ancestry, and never a sibling window - the property
  *     that lets parallel agents in sibling panes coexist without retitling each
  *     other. This is the bug the naive `tmux display-message` "current window"
  *     approach would ship.
@@ -23,7 +23,7 @@ import path from "path";
 import { spawnSync } from "child_process";
 import { fileURLToPath } from "url";
 
-const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const PAYLOAD = path.join(ROOT_DIR, "software/scripts/set_terminal_title.cli.bash");
 
 /** @type {boolean} Whether a usable tmux binary is on PATH for the self-rename test. */
@@ -31,7 +31,7 @@ const HAS_TMUX = spawnSync("bash", ["-c", "command -v tmux"], { encoding: "utf-8
 
 /**
  * Runs the payload through bash with stdio fully piped, so the child never sees
- * a controlling terminal — exactly the condition an agent tool shell runs in.
+ * a controlling terminal - exactly the condition an agent tool shell runs in.
  * @param {string[]} args - Arguments passed to set_terminal_title.
  * @returns {{status: number, stdout: string, stderr: string}} Captured result.
  */
@@ -58,8 +58,8 @@ describe("set_terminal_title", () => {
 
   it("no-ops (exit 0, no output) when there is no terminal and no owning tmux window", () => {
     // spawnSync gives the child piped stdio, so /dev/tty is unavailable and the
-    // test process is not a tmux pane descendant — the route-3 fall-through.
-    const result = runTitle(["🔨 Working — no terminal here"]);
+    // test process is not a tmux pane descendant - the route-3 fall-through.
+    const result = runTitle(["\u{1f528} Working \u2014 no terminal here"]);
     expect(result.status).toBe(0);
     expect(result.stdout).toBe("");
   });
@@ -93,7 +93,7 @@ describe("set_terminal_title", () => {
 
       const target = sh(`tmux display-message -p -t ${targetId} '#{window_name}'`).stdout.trim();
       expect([...target]).toHaveLength(40);
-      expect(target).toBe("x".repeat(39) + "…");
+      expect(target).toBe("x".repeat(39) + "\u2026");
     } finally {
       sh(`tmux kill-server`);
       spawnSync("rm", ["-rf", socketDir]);
@@ -102,7 +102,7 @@ describe("set_terminal_title", () => {
 
   it.skipIf(!HAS_TMUX)("renames only its own tmux window, never a sibling", () => {
     // A private tmux server the test fully owns, so it never sees, touches, or
-    // is influenced by a real session — critical on a dev box already running
+    // is influenced by a real session - critical on a dev box already running
     // agents on the default socket. TMUX_TMPDIR relocates tmux's default socket
     // (the one the payload's bare `tmux` uses), and `-f /dev/null` skips the
     // user's ~/.tmux.conf so `automatic-rename` cannot clobber the sibling name
@@ -138,7 +138,7 @@ describe("set_terminal_title", () => {
       const targetId = windowId("TARGET");
       const siblingId = windowId("SIBLING");
 
-      // wait-for gives a deterministic rendezvous — no sleep, no polling.
+      // wait-for gives a deterministic rendezvous - no sleep, no polling.
       sh(
         `tmux send-keys -t ${targetId} ` +
           `"export TMUX_TMPDIR='${socketDir}'; bash '${PAYLOAD}' 'RENAMED_BY_SPEC'; tmux wait-for -S ${session}_done" Enter`,

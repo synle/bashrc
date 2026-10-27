@@ -4,7 +4,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { spawnSync } from "child_process";
-import { fileSystem, getIndexConstant, runScript, setSandboxGlobal } from "./setup.js";
+import { fileSystem, getIndexConstant, runScript, setSandboxGlobal } from "../setup.js";
 
 /** Sandbox destination used by the real generator. */
 const HOME = getIndexConstant("BASE_HOMEDIR_LINUX");

@@ -11,7 +11,7 @@ import {
   mockFsExistence,
   runScript,
   setSandboxGlobal,
-} from "./setup.js";
+} from "../setup.js";
 
 /** @type {string} Real settings file, sourced without the network-enabled plugin bootstrap. */
 const settingsPath = path.resolve("software/scripts/vim-config-settings.vim");

@@ -4,7 +4,7 @@ import { spawnSync } from "child_process";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import os from "os";
 import path from "path";
-import { getIndexConstant } from "./setup.js";
+import { getIndexConstant } from "../setup.js";
 
 /** Production navigation loaded twice to verify repeatable profile initialization. */
 const NAVIGATION = readFileSync("software/bootstrap/profile-advanced.sh", "utf8")

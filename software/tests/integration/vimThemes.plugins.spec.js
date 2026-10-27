@@ -1,7 +1,7 @@
 /** Opt-in native integration: full generated vimrc with real, already-installed Jetpack/Signify/Lightline plugins. */
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import fs from "fs";
-import { fileSystem, loadScriptHelpers, setSandboxGlobal } from "./setup.js";
+import { fileSystem, loadScriptHelpers, setSandboxGlobal } from "../setup.js";
 import { pluginRoot, probe } from "./vimThemes.plugins.helpers.js";
 
 beforeAll(() => loadScriptHelpers("software/scripts/vim-config.js"));

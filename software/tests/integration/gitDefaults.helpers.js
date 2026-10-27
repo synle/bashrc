@@ -5,7 +5,7 @@ import os from "os";
 import path from "path";
 import vm from "vm";
 import { execFileSync, spawnSync } from "child_process";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction } from "../setup.js";
 
 /** Current test's private repository, never shared across files or cases. @type {string} */
 export let folder;

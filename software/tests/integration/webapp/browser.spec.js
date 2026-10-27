@@ -4,7 +4,7 @@ import { WEBAPP_URL } from "./urls.js";
 
 const TIMEOUT = 30000;
 
-describe("webapp smoke test", () => {
+describe("webapp integration test", () => {
   it(
     "phase 10 - global collapse/expand button toggles all blocks",
     async () => {

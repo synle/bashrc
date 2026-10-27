@@ -1,4 +1,4 @@
-/** Smoke test that scans source files for getGitHubRawUrl / get_github_raw_url calls and verifies each resolved URL is reachable. */
+/** Integration test that scans source files for getGitHubRawUrl / get_github_raw_url calls and verifies each resolved URL is reachable. */
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, dirname, relative } from "path";
@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 
 const BASE_URL = "https://github.com/synle/bashrc/blob/HEAD";
 const TIMEOUT = 15000;
-const THIS_FILE = "software/tests/smokeTestRawUrls.spec.js";
+const THIS_FILE = "software/tests/integration/rawUrls.spec.js";
 
 /** Recursively lists all files under a directory matching given extensions. */
 function listFiles(dir, extensions) {
@@ -44,7 +44,7 @@ function shouldSkip(filePath) {
 /** Scans source files for getGitHubRawUrl / get_github_raw_url calls and extracts resolved URLs. */
 function extractRawUrls() {
   const entries = [];
-  const rootDir = join(dirname(fileURLToPath(import.meta.url)), "../..");
+  const rootDir = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
   const jsFiles = [...listFiles(join(rootDir, "software"), [".js", ".jsx"]), ...listFiles(join(rootDir, "webapp"), [".js", ".jsx"])];
 
@@ -113,8 +113,8 @@ describe("raw content url check", () => {
  *   https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{path}
  *
  * These forms will cause CORS errors in the browser:
- *   Form 1 (blob):  https://github.com/{owner}/{repo}/blob/HEAD/{path}?raw=1   — 302 redirect, no CORS headers
- *   Form 3 (API):   https://api.github.com/repos/{owner}/{repo}/contents/{path} — requires auth token for CORS
+ *   Form 1 (blob):  https://github.com/{owner}/{repo}/blob/HEAD/{path}?raw=1   - 302 redirect, no CORS headers
+ *   Form 3 (API):   https://api.github.com/repos/{owner}/{repo}/contents/{path} - requires auth token for CORS
  */
 
 /** @type {RegExp} Matches Form 1: github.com blob URLs. */
@@ -132,7 +132,7 @@ const FORM3_API_RE = /https:\/\/api\.github\.com\/repos\/[^/]+\/[^/]+\/contents\
  */
 function extractWebappGitHubUrls() {
   const entries = [];
-  const rootDir = join(dirname(fileURLToPath(import.meta.url)), "../..");
+  const rootDir = join(dirname(fileURLToPath(import.meta.url)), "../../..");
   const webappFiles = listFiles(join(rootDir, "webapp"), [".js", ".jsx", ".ts", ".tsx"]);
 
   for (const file of webappFiles) {
@@ -180,7 +180,7 @@ describe("webapp github url CORS format check", () => {
 
   for (const entry of webappUrls) {
     it(`${entry.file}:${entry.lineNum}`, () => {
-      // Must use raw.githubusercontent.com (Form 2) — Forms 1 and 3 cause CORS errors
+      // Must use raw.githubusercontent.com (Form 2) - Forms 1 and 3 cause CORS errors
       expect(
         entry.form,
         `CORS error: must use https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{path}\n` +

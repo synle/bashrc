@@ -1,4 +1,4 @@
-/** Global setup that starts a local static server serving the dist folder for smoke tests. */
+/** Global setup that starts a local static server serving the dist folder for integration tests. */
 import { createServer } from "http";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join, extname } from "path";
@@ -67,9 +67,9 @@ export async function setup() {
         res.writeHead(200, { "Content-Type": "text/plain" });
         res.end(content);
       } catch (error) {
-        console.error("Published smoke profile unavailable:", urlPath, error);
+        console.error("Published integration profile unavailable:", urlPath, error);
         res.writeHead(502, { "Content-Type": "text/plain" });
-        res.end("Published smoke profile unavailable");
+        res.end("Published integration profile unavailable");
       }
       return;
     }
@@ -98,13 +98,13 @@ export async function setup() {
       resolve();
     });
   });
-  console.log(`Local smoke test server started at http://localhost:${PORT}/`);
+  console.log(`Local integration test server started at http://localhost:${PORT}/`);
 }
 
 /** Stop the owned local server after browser workers close. @returns {Promise<void>} Resolves when the listener closes. */
 export async function teardown() {
   if (server) {
     await new Promise((resolve) => server.close(resolve));
-    console.log("Local smoke test server stopped.");
+    console.log("Local integration test server stopped.");
   }
 }

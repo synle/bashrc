@@ -1,7 +1,7 @@
 /** Native navigation integration: actual focus, split/tab switches, cursor movement, and idle refresh. */
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import fs from "fs";
-import { fileSystem, getIndexFunction, loadScriptHelpers, setSandboxGlobal } from "./setup.js";
+import { fileSystem, getIndexFunction, loadScriptHelpers, setSandboxGlobal } from "../setup.js";
 import { probeTheme } from "./vimThemes.helpers.js";
 
 beforeAll(() => loadScriptHelpers("software/scripts/vim-config.js"));

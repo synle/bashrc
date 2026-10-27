@@ -5,7 +5,7 @@ import { COMMAND_SELECTOR } from "./commands.helpers.js";
 
 const TIMEOUT = 30000;
 
-describe("webapp smoke test", () => {
+describe("webapp integration test", () => {
   it(
     "phase 1 - site is alive and returns HTML",
     async () => {

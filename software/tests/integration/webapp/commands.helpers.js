@@ -10,7 +10,7 @@ const BROWSER_TIMEOUT = 60000;
 export const COMMAND_SELECTOR = "#topNavigationContainer > .nav-radio-group > button[data-nav-idx]";
 
 /**
- * Register a private browser lifecycle for one smoke spec, with a fixed Linux platform and viewport.
+ * Register a private browser lifecycle for one integration spec, with a fixed Linux platform and viewport.
  * @returns {{page: import("puppeteer").Page | undefined}} Page populated before tests; browser closes after failures too.
  */
 export function commandBrowser() {

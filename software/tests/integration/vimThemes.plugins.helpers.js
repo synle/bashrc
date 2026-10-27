@@ -4,7 +4,7 @@ import os from "os";
 import path from "path";
 import { spawn } from "child_process";
 import { expect, onTestFinished } from "vitest";
-import { fileSystem, getIndexConstant, getIndexFunction, runScript } from "./setup.js";
+import { fileSystem, getIndexConstant, getIndexFunction, runScript } from "../setup.js";
 
 /** Existing native runtime root; absent means an explicit optional integration skip, never a mocked plugin. */
 export const pluginRoot = process.env.BASHRC_VIM_PLUGIN_ROOT;

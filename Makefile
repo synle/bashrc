@@ -218,13 +218,13 @@ bench_profile:
 test_profile:
 	npm run test:profile
 
-# Run smoke tests against the live site
-test_smoke:
-	npm run test:smoke
+# Run integration tests against the live site
+test_integration:
+	npm run test:integration
 
-# Run smoke tests against the locally compiled dist
-test_smoke_local:
-	npm run test:smoke:local
+# Run integration tests against the locally compiled dist
+test_integration_local:
+	npm run test:integration:local
 
 # Run build config shape tests
 test_buildconfig:
@@ -249,8 +249,8 @@ test_dryrun:
 	node software/tools/check-dryrun-results.js "$$dryrun_start_ms" /tmp/synle/bashrc "$$(dirname "$$probe_folder")/synle/bashrc" "$$HOME/tmp/synle/bashrc" || exit 1
 	echo ">> Dry run test passed"
 
-# Run all test suites (unit, profile, smoke, buildconfig, dryrun, shellcheck)
-test_all: test_unit test_profile test_smoke test_buildconfig test_dryrun ci_test_shellcheck
+# Run all test suites (unit, profile, integration, buildconfig, dryrun, shellcheck)
+test_all: test_unit test_profile test_integration test_buildconfig test_dryrun ci_test_shellcheck
 
 test: test_all
 
@@ -263,7 +263,7 @@ precommit: lint
 	npm test -- --reporter=dot --silent=passed-only 2> >(command grep -v '^>>> Decky ' >&2)
 
 # Verbose full local/CI gate; do not inherit precommit's quiet reporter overrides.
-validate: format lint test_unit test_buildconfig build_webapp test_smoke_local test_dryrun ci_test_shellcheck
+validate: format lint test_unit test_buildconfig build_webapp test_integration_local test_dryrun ci_test_shellcheck
 	make test_profile 2>&1 || { echo "FAIL: test_profile failed — check profile blocks above for syntax errors"; exit 1; }
 
 # Format + build webapp (used by CI workflow)
@@ -286,8 +286,8 @@ build_hosts: build_update_hosts
 # ---- CI ----
 ################################################################################
 
-# CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, build installer + text-server bundle, and download release binaries
-ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun build_installer build_text_server ci_download_release_binaries
+# CI Phase 1: Format code, build autocomplete specs, build webapp, integration test local, dry-run test, build installer + text-server bundle, and download release binaries
+ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_integration_local test_dryrun build_installer build_text_server ci_download_release_binaries
 
 # Mirror latest release binaries (url-porter, sqlui-native, display-dj, skiff-files, proxie)
 # into the binary-cache rolling release on synle/bashrc. No local files are written —
@@ -309,13 +309,13 @@ ci_test_unit:
 ci_test_profile:
 	npm run test:profile -- --reporter=dot
 
-# Run smoke tests against the live site (CI, dot reporter)
-ci_test_smoke:
-	npm run test:smoke -- --reporter=dot
+# Run integration tests against the live site (CI, dot reporter)
+ci_test_integration:
+	npm run test:integration -- --reporter=dot
 
-# Run smoke tests against the locally compiled dist (CI, dot reporter)
-ci_test_smoke_local:
-	npm run test:smoke:local -- --reporter=dot
+# Run integration tests against the locally compiled dist (CI, dot reporter)
+ci_test_integration_local:
+	npm run test:integration:local -- --reporter=dot
 
 # Run build config shape tests (CI, dot reporter)
 ci_test_buildconfig:
@@ -365,7 +365,7 @@ ci_test_shellcheck:
 	echo "bash-3.2 runtime lint: PASS"
 
 # Run all CI test suites
-ci_test_all: ci_test_unit ci_test_profile ci_test_smoke ci_test_buildconfig ci_test_shellcheck
+ci_test_all: ci_test_unit ci_test_profile ci_test_integration ci_test_buildconfig ci_test_shellcheck
 
 ################################################################################
 # ---- Clean ----

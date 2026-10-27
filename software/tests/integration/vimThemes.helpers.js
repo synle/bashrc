@@ -4,7 +4,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { spawn, spawnSync } from "child_process";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction } from "../setup.js";
 
 /** Native configuration source, loaded without the network-enabled plugin bootstrap. */
 const settingsPath = path.resolve("software/scripts/vim-config-settings.vim");

@@ -15,7 +15,7 @@ function search(colors) {
   if (colors !== undefined) env.LS_COLORS = colors;
   return spawnSync(
     "/bin/bash",
-    ["--noprofile", "--norc", "-c", `${defaults}\ncommand fd --color=always '^gitDefaults[.]spec[.]js$' software/tests`],
+    ["--noprofile", "--norc", "-c", `${defaults}\ncommand fd --color=always '^fdColors[.]spec[.]js$' software/tests`],
     {
       env,
       encoding: "utf8",
@@ -28,19 +28,19 @@ describe.skipIf(!HAS_FD)("fd terminal palette", () => {
   it("uses terminal palette colors instead of fixed vivid colors", () => {
     const result = search();
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain("gitDefaults.spec.js");
+    expect(result.stdout).toContain("fdColors.spec.js");
     expect(result.stdout).not.toMatch(/\x1b\[[0-9;]*38;5;/);
   });
 
   it("preserves explicit custom extension colors", () => {
     const result = search("*.js=35");
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain("\x1b[35mgitDefaults.spec.js");
+    expect(result.stdout).toContain("\x1b[35mfdColors.spec.js");
   });
 
   it("preserves an explicitly empty LS_COLORS value", () => {
     const result = search("");
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toBe("\x1b[1;34msoftware/tests/\x1b[0mgitDefaults.spec.js\n");
+    expect(result.stdout).toBe("\x1b[1;34msoftware/tests/\x1b[0mfdColors.spec.js\n");
   });
 });

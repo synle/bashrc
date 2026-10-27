@@ -61,7 +61,7 @@ describe("dynamic token expansion (bash integration)", () => {
 
   beforeAll(() => {
     tmpDir = execSync("mktemp -d", { encoding: "utf-8" }).trim();
-    // create test file structure — legitimate folders
+    // create test file structure - legitimate folders
     fs.mkdirSync(path.join(tmpDir, "subdir"), { recursive: true });
     fs.mkdirSync(path.join(tmpDir, "another"), { recursive: true });
     fs.mkdirSync(path.join(tmpDir, "src", "components"), { recursive: true });
@@ -70,7 +70,7 @@ describe("dynamic token expansion (bash integration)", () => {
     fs.writeFileSync(path.join(tmpDir, "subdir", "nested.txt"), "nested");
     fs.writeFileSync(path.join(tmpDir, "subdir", "deep.sh"), "deep");
     fs.writeFileSync(path.join(tmpDir, "src", "components", "app.js"), "app");
-    // create ignored folders — all should be filtered by filter_unwanted
+    // create ignored folders - all should be filtered by filter_unwanted
     const ignoredDirs = [
       ".cache",
       ".DS_Store",
@@ -102,7 +102,7 @@ describe("dynamic token expansion (bash integration)", () => {
     fs.writeFileSync(path.join(tmpDir, "my file.txt"), "spaced");
     fs.writeFileSync(path.join(tmpDir, "My Documents", "report.js"), "doc");
     fs.writeFileSync(path.join(tmpDir, "Display DJ.app", "config.json"), "cfg");
-    // .git at root would trigger git fast-path — create nested for filtering tests
+    // .git at root would trigger git fast-path - create nested for filtering tests
     fs.mkdirSync(path.join(tmpDir, "sub", ".git", "hooks"), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, "sub", ".git", "hooks", "pre-commit"), "hook");
     // files inside ignored dirs should also be filtered
