@@ -7,7 +7,7 @@ Proxy plan implementation to the existing task loop, then complete the shared PR
 Argument: $ARGUMENTS — the plan file path, optionally followed by `max=<n>`. If absent or unexpanded, use the explicitly selected plan from the request; otherwise ask for its path and stop.
 
 Read the selected plan, `<<LLM_ROOT_FOLDER>>/skills/sy-loop/SKILL.md`, and `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` in full before acting.
-Apply the loop inline; this adapter changes only checkpoint publication and final completion ordering, not its iteration cap, stall detection, scope, or safety rules.
+Apply the loop inline; this adapter changes only publication/verification ordering and final completion, not its iteration cap, stall detection, scope, or safety rules.
 Use **PR publication milestones** as the authority for synchronization, title transitions, checks, reconciliation timing, and completion.
 
 An explicit request to execute a plan with checkpoint publication authorizes its milestone pushes without repeated prompts.
@@ -27,10 +27,11 @@ Skill selection alone does not grant publication authority. Honor local-only req
 
 ### 2. Implementation — execute, sync, and push reviewable pieces
 
-- Apply loop Phase 1: reread durable state, implement exactly one piece, verify it, and save progress before the next iteration.
-- At each reviewable implementation checkpoint, format changed files and pass syntax plus relevant targeted checks.
-  Commit only task hunks, delegate sync through the shared sync-PR-branch workflow, rerun affected checks, and push before extended validation or coverage.
-  Repository-required gates still win; do not publish known failures except documented wave-dependency failures allowed by the shared workflow.
+- Apply loop Phase 1 with publication inserted before its verification substep: reread durable state, implement exactly one piece, and publish as soon as it is reviewable.
+  Then verify the piece and save progress before the next iteration; verification must not delay the implementation push.
+- At each reviewable implementation checkpoint, commit only task hunks, delegate sync through the shared sync-PR-branch workflow, and push immediately for early feedback.
+  Follow the shared **Implementation checkpoint**: defer formatting, lint, syntax checks, tests, coverage, and ordinary failure repairs until after this push.
+  Repository-required publication gates, author/secret checks, hooks, downstream audits, and required sync still apply. Report known failures and unrun checks honestly.
 - After the first successful implementation push, remove only `Placeholder`, mark ready for review, and retain WIP throughout unfinished implementation and validation.
 - Update the plan and owned-PR memory with the pushed head, checks run, checks still pending, and remaining pieces. Continue after every push.
 - Loop implementation success is not whole-task success. Defer the loop's completion sentinel until all applicable checkpoints below succeed.
@@ -39,7 +40,7 @@ Skill selection alone does not grant publication authority. Honor local-only req
 ### 3. Validation — test, handle existing feedback, sync, and push
 
 - After all implementation pieces finish, apply loop Phase 2's final proof and the shared **Validation checkpoint**.
-  Run required tests, changed-code coverage where available, and the repository gate; do not repeat accepted checks on unchanged code.
+  Format changed files, then run required tests, changed-code coverage where available, and the repository gate; do not repeat accepted checks on unchanged code.
 - Before publication, fetch fresh, fully paginated PR feedback and latest-head checks. Address actionable comments already present under the shared disposition rules.
   Batch compatible fixes, rerun affected checks after edits, and preserve unresolved decisions as blockers rather than claiming validation complete.
 - Commit validation or feedback changes, delegate sync, rerun checks affected by sync, and push the validated result.

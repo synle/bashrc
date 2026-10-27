@@ -5,6 +5,10 @@ import path from "path";
 
 /** @type {string} Canonical shared plan-execution adapter. */
 const BODY = fs.readFileSync(path.resolve("software/scripts/advanced/llm/_common/v_current/skills/execute-plan.md"), "utf-8");
+/** @type {string} Shared publication policy that owns the early implementation exception. */
+const PR_WORKFLOW = fs.readFileSync(path.resolve("software/scripts/advanced/llm/_common/v_current/instructions-pr-workflow.md"), "utf-8");
+/** @type {string} Always-loaded rules that must not contradict early publication. */
+const CORE_RULES = fs.readFileSync(path.resolve("software/scripts/advanced/llm/_common/v_current/instructions.md"), "utf-8");
 
 describe("execute-plan guidance", () => {
   it("delegates implementation and publication to their existing owners", () => {
@@ -29,9 +33,25 @@ describe("execute-plan guidance", () => {
   it("keeps verified pieces resumable and publishes each reviewable implementation", () => {
     expect(BODY).toContain("Each piece is one loop item; follow dependency order");
     expect(BODY).toContain("Keep loop state in the selected plan rather than opening a duplicate ledger");
-    expect(BODY).toContain("At each reviewable implementation checkpoint, format changed files");
+    expect(BODY).toContain("publication inserted before its verification substep");
     expect(BODY).toContain("delegate sync through the shared sync-PR-branch workflow");
-    expect(BODY).toContain("push before extended validation or coverage");
+    expect(BODY).toContain("push immediately for early feedback");
+    expect(BODY).toContain("verification must not delay the implementation push");
+  });
+
+  it("defers ordinary implementation gates without weakening safety or final validation", () => {
+    expect(PR_WORKFLOW).toContain("Do not run formatting, lint, syntax checks, tests, coverage, or the full gate before this push");
+    expect(PR_WORKFLOW).toContain("Do not delay this checkpoint to fix ordinary code or check failures");
+    expect(PR_WORKFLOW).toContain("**Checkpoint safety** and required sync still apply; never bypass hooks");
+    expect(PR_WORKFLOW).toContain(
+      "**Validation checkpoint** \u2014 Format changed files, then run required tests, coverage, and the full gate",
+    );
+    expect(CORE_RULES).toContain("except authorized implementation-checkpoint commits");
+    expect(CORE_RULES).toContain("repository-required pre-commit formatting still wins");
+    expect(BODY).toContain(
+      "Repository-required publication gates, author/secret checks, hooks, downstream audits, and required sync still apply",
+    );
+    expect(BODY).not.toContain("format changed files and pass syntax plus relevant targeted checks");
   });
 
   it("handles existing feedback before validated publication without an empty checkpoint commit", () => {
