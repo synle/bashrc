@@ -258,9 +258,9 @@ test: test_all
 # ---- Workflow ----
 ################################################################################
 
-# Quiet local agent gate; keep the complete default suite and failing-test console logs.
+# Quiet local agent gate; keep other diagnostics and npm's failure status intact.
 precommit: lint
-	npm test -- --reporter=dot --silent=passed-only
+	npm test -- --reporter=dot --silent=passed-only 2> >(command grep -v '^>>> Decky ' >&2)
 
 # Verbose full local/CI gate; do not inherit precommit's quiet reporter overrides.
 validate: format lint test_unit test_buildconfig build_webapp test_smoke_local test_dryrun ci_test_shellcheck

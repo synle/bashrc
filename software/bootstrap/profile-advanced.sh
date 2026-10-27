@@ -1165,7 +1165,8 @@ alias ...="cd ../../"
 alias ....="cd ../../../"
 alias clear='printf "\033[H\033[2J\033[3J"'
 
-# cd [folder] - change folders, matching nearby relative folder names when exact navigation fails.
+# cd: change folders with native Bash behavior and bounded nearby-folder matching.
+# Args: native cd operands. Returns native status; fuzzy moves print a summary, and ambiguous interactive queries may prompt.
 function cd() {
   if [ "$#" -eq 0 ]; then
     builtin cd
@@ -1199,7 +1200,7 @@ function cd() {
   Usage: cd [folder]
   Exact paths and Bash options keep native behavior.
   Missing relative paths search up to 3 folder levels for 2 seconds.
-  Ambiguous matches require a controlling terminal for selection."
+  Ambiguous matches require terminal stdin and a controlling terminal for selection."
     return 0
   fi
 
@@ -1351,8 +1352,8 @@ CD_NODE
   if [ "${#_cd_matches[@]}" -eq 1 ]; then
     _cd_encoded="${_cd_matches[0]}"
   else
-    if [ ! -r /dev/tty ] || [ ! -w /dev/tty ]; then
-      echo "cd: multiple nearby folders match; a controlling terminal is required to choose one" >&2
+    if [ ! -t 0 ] || ! { : < /dev/tty > /dev/tty; } 2> /dev/null; then
+      echo "cd: multiple nearby folders match; terminal stdin and a controlling terminal are required to choose one" >&2
       return 1
     fi
     printf 'Your keyword matches multiple paths. Choose 1-5 or enter a full path:\n' > /dev/tty

@@ -19,6 +19,12 @@ const TERMINAL = String.raw`
 import errno, json, os, pty, select, signal, sys, time
 pid, terminal = pty.fork()
 if pid == 0:
+    if os.environ.get("CD_PIPE_INPUT") == "1":
+        pipe_read, pipe_write = os.pipe()
+        os.write(pipe_write, b"PIPE_UNTOUCHED\n")
+        os.close(pipe_write)
+        os.dup2(pipe_read, 0)
+        os.close(pipe_read)
     os.execv("/bin/bash", ["bash", "--noprofile", "--norc", "-c", sys.argv[1], "test", sys.argv[2]])
 output = b""
 replied = False
@@ -55,7 +61,7 @@ finally:
  * Run public cd against private filesystem fixtures, optionally through a real PTY.
  * @param {string[]} folders Folder names relative to the owned fixture root.
  * @param {string} query Argument supplied literally to cd.
- * @param {object} [options={}] Terminal reply, setup commands, environment, and caller operation.
+ * @param {object} [options={}] Terminal reply, optional pipe stdin, setup commands, environment, and caller operation.
  * @returns {{status: number, output: string, elapsed: number}} Actual status, normalized output, and duration in milliseconds.
  * @throws {Error} On fixture or terminal-driver failure; always removes the owned fixture.
  */
@@ -85,6 +91,7 @@ ${options.invocation || 'if cd "$1"; then status=0; else status=$?; fi\nprintf "
       NODE_OPTIONS: "",
       _IGNORED_FOLDERS_JSON: PATTERNS,
       CD_REPLY: Buffer.from((options.reply || "").replaceAll("<ROOT>", folder)).toString("hex"),
+      CD_PIPE_INPUT: options.stdin === "pipe" ? "1" : "0",
       ...options.env,
     };
     const start = performance.now();
@@ -196,6 +203,18 @@ describe("fuzzy cd subprocess", () => {
     });
     expect(result.status).toBe(0);
     expect(result.output).toContain("RESULT::PIPE_UNTOUCHED\n");
+  });
+
+  it("rejects ambiguous piped input even with a controlling terminal available", () => {
+    const result = navigate(["target-a", "target-b"], "target", {
+      tty: true,
+      stdin: "pipe",
+      reply: "1\n",
+      invocation: 'if cd "$1"; then exit 99; fi; IFS= read -r line; printf "RESULT:%s:%s\\n" "${PWD#"$START_FOLDER"}" "$line"',
+    });
+    expect(result.status).toBe(0);
+    expect(result.output).toContain("RESULT::PIPE_UNTOUCHED\n");
+    expect(result.output).not.toContain("Choose 1-5");
   });
 
   it("terminates a blocked asynchronous scan before three seconds without moving", () => {
