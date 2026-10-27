@@ -282,6 +282,7 @@ function watch() {
 # Cached stdout/stderr uses two private mktemp files removed on exit; identical frames are not redrawn.
 # Supported TTY output gets plain status titles and one bell per changed frame, never the first frame.
 # The Updated title lasts at most two seconds within the normal wait; no-cache has no notifications.
+# Cached terminal captures request FORCE_COLOR without overriding explicit color opt-outs.
 # Uses native clear when available, otherwise Bash's printf with the profile alias's ANSI sequence.
 # Commands run in isolated subshells; failures are displayed and retried after the interval.
 function watch_interval() {
@@ -300,6 +301,7 @@ function watch_interval() {
   Default: capture stdout/stderr; redraw only when completed output changes.
   TTY titles: Refreshing, Updated, Waiting. Changed frames ring once, except the first.
   Updated lasts up to 2 seconds within the interval; pipes and dumb terminals get no alerts.
+  TTY capture requests FORCE_COLOR for supporting programs; explicit color opt-outs remain honored.
   --no-cache: clear first and run live; never create a temporary cache or notifications.
   Quote commands containing arguments or shell syntax. Press Ctrl+C to stop.
   Alias: f5 (for example: f5 pr_list).
@@ -367,7 +369,13 @@ function watch_interval() {
       fi
 
       "${_title_command[@]}" Refreshing
-      (eval "$_command") > "$_next_cache" 2>&1 || :
+      (
+        # A file is not a TTY; request supported styles only for the final human terminal.
+        if ((_terminal_notifications)) && [ -z "${NO_COLOR:-}" ]; then
+          export FORCE_COLOR="${FORCE_COLOR-1}"
+        fi
+        eval "$_command"
+      ) > "$_next_cache" 2>&1 || :
       _comparison_status=1
       if ((_has_rendered_output)); then
         _comparison_status=0

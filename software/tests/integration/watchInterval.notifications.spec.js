@@ -60,6 +60,7 @@ finally:
  * @param {string} [options.titleSupport="available"] - Available or missing title helper.
  * @param {number} [options.compareStatus=0] - Nonzero comparison failure injection.
  * @param {string} [options.clearSupport="executable"] - Executable or alias-only clear support.
+ * @param {string} [options.colorPolicy="plain"] - Plain frames or auto/off/no-color color-aware output.
  * @returns {object} Process status, exact display bytes, titles, waits, and remaining caches.
  * @throws {Error} On fixture failures; always removes the owned sandbox.
  */
@@ -73,6 +74,7 @@ function runTerminal({
   titleSupport = "available",
   compareStatus = 0,
   clearSupport = "executable",
+  colorPolicy = "plain",
 } = {}) {
   const folder = mkdtempSync(path.join(os.tmpdir(), "watch notice's "));
   try {
@@ -115,7 +117,13 @@ function probe() {
   IFS= read -r _count < "$COUNT"
   _count=$((_count + 1))
   printf '%s\n' "$_count" > "$COUNT"
+  local _color=0
+  if [ "$COLOR_POLICY" != plain ] && [ "\${FORCE_COLOR:-}" = 1 ] && [ -z "\${NO_COLOR:-}" ]; then
+    _color=1
+    printf '\\033[35m'
+  fi
   command cat "$FRAME_PREFIX.$_count"
+  if ((_color)); then printf '\\033[0m'; fi
 }
 eval 'f5 "$@" probe'
 `,
@@ -136,8 +144,13 @@ eval 'f5 "$@" probe'
         SLEEP_COUNT: path.join(folder, "sleep_count"),
         SLEEP_LIMIT: String(sleepLimit),
         COMPARE_STATUS: String(compareStatus),
+        COLOR_POLICY: colorPolicy,
       },
     };
+    delete options.env.FORCE_COLOR;
+    delete options.env.NO_COLOR;
+    if (colorPolicy === "off") options.env.FORCE_COLOR = "0";
+    if (colorPolicy === "no-color") options.env.NO_COLOR = "1";
     // The driver receives argv literally; no command or fixture path enters shell syntax.
     const result =
       outputMode === "terminal"
@@ -164,6 +177,19 @@ describe("watcher terminal notifications", () => {
     expect(result.status, result.output + result.stderr).toBe(73);
     expect(result.output).toBe("\x1b[H\x1b[2J\x1b[3Jold\n");
     expect(result.titles).toBe(titles);
+    expect(result.caches).toEqual([]);
+  });
+
+  it.each([
+    ["auto", "terminal", "xterm-256color", "<clear>\n\x1b[35mold\n\x1b[0m"],
+    ["auto", "pipe", "xterm-256color", "<clear>\nold\n"],
+    ["auto", "terminal", "dumb", "<clear>\nold\n"],
+    ["off", "terminal", "xterm-256color", "<clear>\nold\n"],
+    ["no-color", "terminal", "xterm-256color", "<clear>\nold\n"],
+  ])("preserves color policy %s for %s output with TERM=%s", (colorPolicy, outputMode, term, output) => {
+    const result = runTerminal({ frames: ["old\n"], sleepLimit: 1, colorPolicy, outputMode, term });
+    expect(result.status, result.output + result.stderr).toBe(73);
+    expect(result.output).toBe(output);
     expect(result.caches).toEqual([]);
   });
 

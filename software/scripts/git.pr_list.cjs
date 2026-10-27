@@ -58,8 +58,8 @@
  *   `--links`      : just the URLs, one per line — paste-clean for other tools.
  *   `--json`       : the full enriched rows as JSON.
  *   `--activity`   : opt in to activity timestamps for scheduler consumers; default output is unchanged.
- *   Colors are emitted ONLY to an interactive TTY (and never when `NO_COLOR`
- *   is set), so piped / redirected / `--json` / `--links` output stays plain.
+ *   Colors default to interactive TTY output. FORCE_COLOR enables styled captures;
+ *   nonempty NO_COLOR, --json, and --links always keep output plain.
  *   All progress, warnings, and the summary footer go to STDERR, so STDOUT
  *   carries only the PR data — safe to pipe.
  *
@@ -75,7 +75,8 @@
  *   owner/repo ...      one or more explicit repos (overrides scope)
  *
  * ENV
- *   NO_COLOR                        disable ANSI color even on a TTY.
+ *   NO_COLOR                        nonempty values disable ANSI color, including forced color.
+ *   FORCE_COLOR                     empty/1/2/3 enable color in captures; 0/invalid disable it.
  *   BASHRC_PR_GATE_CHECK_PATTERN    regex overriding which check names count as
  *                                   human approval gates (vs real CI).
  */
@@ -207,8 +208,8 @@ function parseArgs(argv) {
 }
 
 // ---------------------------------------------------------------------------
-// ANSI color. Emitted only to an interactive TTY, never under NO_COLOR, and
-// never for --json / --links (both of which are meant to be machine-consumed).
+// ANSI color defaults to a TTY; FORCE_COLOR permits styled captures. NO_COLOR,
+// --json, and --links always suppress escapes for machine-consumed output.
 // ---------------------------------------------------------------------------
 
 const LINE_BREAK_EQUAL = `=`.repeat(80);
@@ -255,7 +256,7 @@ function titleColorFor(signal, isPlaceholder = false) {
 
 /**
  * Render a blue, underlined OSC 8 URL on a color-capable, non-dumb TTY without suffix hints.
- * Piped output retains the plain URL so machine consumers remain unchanged.
+ * Captured output retains the plain URL unless the caller explicitly requests color.
  * @param {string} url
  * @param {boolean} color Whether color/hyperlink escapes are allowed.
  * @returns {string}
@@ -1065,6 +1066,12 @@ function describeAudience(opts, author) {
 // Main.
 // ---------------------------------------------------------------------------
 
+/**
+ * Resolve CLI scope, query pull requests, and render human or machine output.
+ * Writes PR data to stdout and diagnostics to stderr; queries GitHub through gh.
+ * @returns {Promise<void>} Resolves after rendering or an empty result.
+ * @throws {Error} If an unhandled query, filesystem, or process operation fails.
+ */
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
 
@@ -1125,7 +1132,12 @@ async function main() {
   const sortRank = (row) => (row.isPlaceholder ? 2 : row.isWip || row.isDraft ? 1 : 0);
   filtered.sort((a, b) => sortRank(a) - sortRank(b) || a.createdAt.localeCompare(b.createdAt));
 
-  const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && !opts.asJson && !opts.linksOnly;
+  /** Explicit color preference; undefined retains automatic TTY detection. */
+  const forceColor = process.env.FORCE_COLOR;
+  /** Whether the caller requested terminal styles for this human view. */
+  const wantsColor = forceColor === undefined ? Boolean(process.stdout.isTTY) : [``, `1`, `2`, `3`].includes(forceColor);
+  /** Machine formats and NO_COLOR always suppress presentation escapes. */
+  const color = wantsColor && !process.env.NO_COLOR && !opts.asJson && !opts.linksOnly;
   render(filtered, opts, color, opts.mine !== true, me);
 
   const listedRepos = [...new Set(filtered.map((r) => r.repo))];
