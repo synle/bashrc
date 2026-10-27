@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { folder, git, HAS_DELTA_PTY, runPager } from "./gitDefaults.helpers.js";
 
-describe("Git defaults integration", () => {
+describe("Git defaults", () => {
   it.skipIf(!HAS_DELTA_PTY).each(["diff", "d", "dh", "ds", "d1", "dh1", "ds1", "d2", "dh2", "ds2"])(
     'renders "%s" through the real global Delta pager on a terminal',
     (alias) => {

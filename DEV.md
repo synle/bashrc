@@ -242,6 +242,21 @@ These commands rewrite expectations in test source; they do not delete tests or 
 Inspect every snapshot diff against the intended behavior, then rerun without update mode before committing.
 Never accept updated snapshots merely to silence a regression.
 
+Browser integration specs live in `software/tests/smokes/webapp/` without a filename prefix.
+`app.spec.js` snapshots all trimmed command labels. Each `commands.<name>.spec.js` clicks its command and checks the exact main-body child count.
+Content entries snapshot the banner title and MD5 of rendered `innerText.trim()`; link groups retain nested labels and literal `href` values without URL hashing.
+Hidden form-data children remain counted and fingerprinted by their IDs. Browser platform and viewport are fixed for reproducible OS warnings and layout.
+Snapshots describe the current collapsed UI, not complete downloaded source files. Published profile headers and fetched content changes require intentional review.
+The Windows command currently records a missing published Windows Terminal artifact as an explicit error-state snapshot, not successful source loading.
+Local smoke serves actual published profiles when the webapp-only build omits them; no synthetic profile content is substituted.
+
+```bash
+npm run test:smoke:local -- --update=all software/tests/smokes/webapp/commands.wsl.spec.js
+npm run test:smoke:local -- software/tests/smokes/webapp/commands.wsl.spec.js
+```
+
+Review every refreshed title, MD5, URL, count, and error state; rerun without update mode before accepting the change.
+
 ### Vitest configs
 
 One config per suite:
@@ -251,8 +266,8 @@ One config per suite:
 | `vitest.config.js`             | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
 | `vitest.profile.config.js`     | `profileSyntax*.spec.js`                                                              |
 | `vitest.buildconfig.config.js` | `buildConfigShape*.spec.js`                                                           |
-| `vitest.smoke.config.js`       | webapp + raw-URL smokes against the live site                                         |
-| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer)                                           |
+| `vitest.smoke.config.js`       | `smokes/webapp/**/*.spec.js` + raw-URL smokes against the live site                   |
+| `vitest.smoke.local.config.js` | `smokes/webapp/**/*.spec.js` against local dist (Puppeteer)                           |
 
 `software/tests/setup.js` loads `index.js` in a VM sandbox — reach in with
 `getIndexFunction(name)` / `getIndexConstant(name)`; `fileSystem` and `fetchResponses`
@@ -262,7 +277,8 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 `software/index.js` or `software/tools/build-include.js`, add or update unit tests.
 Keep every test spec at **300 lines or fewer**. If a spec grows beyond 300 lines,
 split it by behavior into independently named `*.spec.js` files; never use numeric
-`partN` names. Name newly split slow native/subprocess specs `*.integration.spec.js`; these remain in the default suite.
+`partN` names. Name long-running native/subprocess checks `*.slow.spec.js`; these remain in the default suite.
+Browser smoke tests are the application integration suite.
 Keep short configuration checks together, and split expensive behavior into independently scheduled files.
 The Git-default specs copy a private prepared repository per case; copies do not share mutable Git state.
 The convention-linter specs (one rule each) are listed in AGENTS.md §11.

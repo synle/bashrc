@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { folder, git, shell } from "./gitDefaults.helpers.js";
 
-describe("Git defaults integration", () => {
+describe("Git defaults", () => {
   it("stashes tracked and untracked files but leaves ignored files alone", () => {
     fs.writeFileSync(path.join(folder, "note.txt"), "changed\n");
     fs.writeFileSync(path.join(folder, "new file.txt"), "new\n");

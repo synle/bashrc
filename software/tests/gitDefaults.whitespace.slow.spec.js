@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { folder, git, shell } from "./gitDefaults.helpers.js";
 
-describe("Git defaults integration", () => {
+describe("Git defaults", () => {
   it.each([[[]], [["--no-pager"]], [["-c", "delta.side-by-side=true"]], [["-C", "."]]])(
     "ignores whitespace through the wrapper with global arguments %j",
     (prefix) => {

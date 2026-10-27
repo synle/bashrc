@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { folder, git } from "./gitDefaults.helpers.js";
 
-describe("Git defaults integration", () => {
+describe("Git defaults", () => {
   it.each(["d", "dh", "ds", "d1", "dh1", "ds1", "d2", "dh2", "ds2", "d12", "dh12", "ds12"])(
     'feeds unified patch lines to Delta through "%s"',
     (alias) => {

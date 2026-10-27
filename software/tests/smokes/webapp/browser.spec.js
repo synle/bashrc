@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-const WEBAPP_URL = process.env.WEBAPP_URL || "https://synle.github.io/bashrc/";
+import { WEBAPP_URL } from "./urls.js";
 
 const TIMEOUT = 30000;
 
@@ -104,7 +104,7 @@ describe("webapp smoke test", () => {
         // Poll the assertion until empty-block list is stable empty for two consecutive samples,
         // or until the 40s budget is exhausted. waitForNetworkIdle regressed in puppeteer-core 24.42,
         // and a one-shot waitForFunction is racy: each DynamicTextArea fetches independently in
-        // useEffect, blocks can transition empty → filled out of order, and re-renders briefly clear
+        // useEffect, blocks can transition empty \u2192 filled out of order, and re-renders briefly clear
         // content. Retrying gives the page time to settle and avoids flaking when one fetch lags.
         const queryEmpty = () =>
           page.$$eval('[data-testid="code-block"][data-collapsed="false"] .prism-code-block', (blocks) =>

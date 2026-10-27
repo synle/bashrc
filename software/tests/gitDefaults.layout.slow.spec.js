@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { folder, git, shell } from "./gitDefaults.helpers.js";
 
-describe("Git defaults integration", () => {
+describe("Git defaults", () => {
   it.each(["d2", "dh2", "ds2", "show2", "ls2", "l2", "s2", "d12", "show12"])('propagates two-column layout through "%s"', (alias) => {
     fs.writeFileSync(path.join(folder, ".git/layout.sh"), "#!/bin/sh\ngit config --get delta.side-by-side\n", { mode: 0o755 });
     git("config", "diff.external", "./.git/layout.sh");

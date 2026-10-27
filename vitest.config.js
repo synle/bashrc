@@ -31,7 +31,7 @@ export default defineConfig({
   test: {
     include: ["software/tests/**/*.spec.js"],
     exclude: [
-      "software/tests/smokeTestWebapp*.spec.js",
+      "software/tests/smokes/**",
       "software/tests/smokeTestRawUrls*.spec.js",
       "software/tests/profileSyntax*.spec.js",
       "software/tests/buildConfigShape*.spec.js",

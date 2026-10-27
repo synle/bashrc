@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { git, shell } from "./gitDefaults.helpers.js";
 
-describe("Git defaults integration", () => {
+describe("Git defaults", () => {
   it("renders editor links and portable diff styling in the generated config", () => {
     expect(git("config", "--get-regexp", "^delta\\.").split("\n")).toMatchInlineSnapshot(`
       [

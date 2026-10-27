@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-const WEBAPP_URL = process.env.WEBAPP_URL || "https://synle.github.io/bashrc/";
+import { WEBAPP_URL } from "./urls.js";
+import { COMMAND_SELECTOR } from "./commands.helpers.js";
 
 const TIMEOUT = 30000;
 
@@ -71,33 +72,27 @@ describe("webapp smoke test", () => {
         await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
         await page.waitForSelector('[data-testid="tab-navigation"]', { timeout: 10000 });
 
-        const tabLabels = await page.$$eval('[data-testid="tab-navigation"] button', (buttons) =>
-          buttons.map((b) => b.textContent.trim().toUpperCase()),
-        );
-
-        const expectedTabs = [
-          "SETUP MAC",
-          "SETUP WINDOWS",
-          "SETUP UBUNTU",
-          "SETUP REDHAT",
-          "SETUP ARCH LINUX",
-          "SETUP STEAMOS",
-          "SETUP ANDROID",
-          "TV - FIRETV",
-          "SETUP CHROMEOS",
-          "SETUP MINGW64",
-          "SETUP WSL",
-          "SETUP LIGHTWEIGHT PROFILE",
-          "SETUP ETC HOSTS",
-          "TEST FULL RUN LIVE",
-          "TEST CUSTOM RUN",
-        ];
-
-        for (const expected of expectedTabs) {
-          expect(tabLabels, `Missing tab: "${expected}"`).toContain(expected);
-        }
-
-        expect(tabLabels.length).toBe(expectedTabs.length);
+        const tabLabels = await page.$$eval(COMMAND_SELECTOR, (buttons) => buttons.map((button) => button.textContent.trim()));
+        expect(tabLabels).toHaveLength(15);
+        expect(tabLabels).toMatchInlineSnapshot(`
+          [
+            "Setup Mac",
+            "Setup Windows",
+            "Setup Ubuntu",
+            "Setup Redhat",
+            "Setup Arch Linux",
+            "Setup Steamos",
+            "Setup Android",
+            "Setup Chromeos",
+            "Setup Mingw64",
+            "Setup WSL",
+            "TV - FireTV",
+            "Setup Lightweight Profile",
+            "Setup Etc Hosts",
+            "Test Full Run live",
+            "Test Custom Run",
+          ]
+        `);
       } finally {
         await browser.close();
       }
@@ -112,7 +107,7 @@ describe("webapp smoke test", () => {
       const page = await browser.newPage();
       await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
       await page.waitForSelector('[data-testid="app-container"]', { timeout: 10000 });
-      // Wait for the actual end-state (banner links rendered) instead of waitForNetworkIdle —
+      // Wait for the actual end-state (banner links rendered) instead of waitForNetworkIdle \u2014
       // the latter regressed in puppeteer-core 24.42 against this webapp's continual fetches.
       await page.waitForFunction(
         () => {
