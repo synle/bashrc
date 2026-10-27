@@ -28,6 +28,7 @@ const MKTEMP = execFileSync("/bin/bash", ["-c", "type -P mktemp"], { encoding: "
  * @param {number} [options.cycles=2] - Completed iterations before sleep returns 73.
  * @param {number} [options.commandStatus=0] - Probe command exit status.
  * @param {number} [options.mktempStatus=0] - Cache creation boundary exit status.
+ * @param {number} [options.mktempFailureAt=1] - Cache creation attempt that can fail.
  * @param {number} [options.clearStatus=0] - Terminal clear boundary exit status.
  * @param {string} [options.signal=""] - Signal sent to the watcher during sleep.
  * @param {string} [options.invocation] - Fixed shell invocation for exercising alias expansion.
@@ -36,7 +37,7 @@ const MKTEMP = execFileSync("/bin/bash", ["-c", "type -P mktemp"], { encoding: "
  */
 function runWatcher(
   args,
-  { cycles = 2, commandStatus = 0, mktempStatus = 0, clearStatus = 0, signal = "", invocation = 'watch_interval "$@"' } = {},
+  { cycles = 2, commandStatus = 0, mktempStatus = 0, mktempFailureAt = 1, clearStatus = 0, signal = "", invocation = 'watch_interval "$@"' } = {},
 ) {
   const sandbox = mkdtempSync(path.join(os.tmpdir(), "watch-interval-' space-\u2603-"));
   try {
@@ -44,13 +45,20 @@ function runWatcher(
     mkdirSync(bin);
     writeFileSync(path.join(sandbox, "screen"), "old screen\n");
     writeFileSync(path.join(sandbox, "count"), "0\n");
+    writeFileSync(path.join(sandbox, "cache_attempts"), "0\n");
     writeFileSync(path.join(sandbox, "events"), "");
     writeFileSync(path.join(sandbox, "observations"), "");
     writeFileSync(
       path.join(bin, "mktemp"),
       `#!/bin/bash
 printf 'mktemp\n' >> "$EVENTS"
-[ "$MKTEMP_STATUS" -eq 0 ] || { printf 'cache creation failed\n' >&2; exit "$MKTEMP_STATUS"; }
+IFS= read -r attempt < "$CACHE_ATTEMPTS"
+attempt=$((attempt + 1))
+printf '%s\n' "$attempt" > "$CACHE_ATTEMPTS"
+if [ "$attempt" -eq "$MKTEMP_FAILURE_AT" ] && [ "$MKTEMP_STATUS" -ne 0 ]; then
+  printf 'cache creation failed\n' >&2
+  exit "$MKTEMP_STATUS"
+fi
 exec "$REAL_MKTEMP" "$@"
 `,
       { mode: 0o755 },
@@ -128,6 +136,8 @@ exit "$_status"
           CYCLES: String(cycles),
           COMMAND_STATUS: String(commandStatus),
           MKTEMP_STATUS: String(mktempStatus),
+          MKTEMP_FAILURE_AT: String(mktempFailureAt),
+          CACHE_ATTEMPTS: path.join(sandbox, "cache_attempts"),
           CLEAR_STATUS: String(clearStatus),
           STOP_SIGNAL: signal,
           INVOCATION: invocation,
@@ -154,7 +164,7 @@ describe("interval watcher subprocess", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toBe("old screen\n<clear>\nout:1\nerr:1\n<clear>\nout:2\nerr:2\n");
     expect(result.observations).toBe("<during:1>\nold screen\n<during:2>\nold screen\n<clear>\nout:1\nerr:1\n");
-    expect(result.events).toBe("mktemp\nclear\nsleep:30\nclear\nsleep:30\n");
+    expect(result.events).toBe("mktemp\nmktemp\nclear\nsleep:30\nclear\nsleep:30\n");
     expect(result.cacheFiles).toEqual([]);
   });
 
@@ -163,14 +173,14 @@ describe("interval watcher subprocess", () => {
     expect(result.status, result.stderr).toBe(73);
     expect(result.stderr).toBe("");
     expect(result.stdout).toBe("old screen\n<clear>\nout:1\nerr:1\n");
-    expect(result.events).toBe("mktemp\nclear\nsleep:30\n");
+    expect(result.events).toBe("mktemp\nmktemp\nclear\nsleep:30\n");
     expect(result.cacheFiles).toEqual([]);
   });
 
   it.each(["1", "5", "86400"])("uses explicit interval %s without waiting before the first run", (interval) => {
     const result = runWatcher([interval, "probe"], { cycles: 1 });
     expect(result.status, result.stderr).toBe(73);
-    expect(result.events).toBe(`mktemp\nclear\nsleep:${interval}\n`);
+    expect(result.events).toBe(`mktemp\nmktemp\nclear\nsleep:${interval}\n`);
     expect(result.stdout).toContain("<clear>\nout:1\nerr:1\n");
   });
 
@@ -249,6 +259,15 @@ describe("interval watcher subprocess", () => {
     expect(result.cacheFiles).toEqual([]);
   });
 
+  it("removes the first cache if creating the second cache fails", () => {
+    const result = runWatcher(["probe"], { mktempStatus: 65, mktempFailureAt: 2 });
+    expect(result.status).toBe(65);
+    expect(result.stdout).toBe("old screen\n");
+    expect(result.stderr).toContain("cache creation failed");
+    expect(result.events).toBe("mktemp\nmktemp\n");
+    expect(result.cacheFiles).toEqual([]);
+  });
+
   it("cleans the cache if terminal clearing fails", () => {
     const result = runWatcher(["probe"], { clearStatus: 66 });
     expect(result.status).toBe(66);
@@ -264,7 +283,7 @@ describe("interval watcher subprocess", () => {
     const result = runWatcher(["probe"], { signal });
     expect(result.status, result.stderr).toBe(status);
     expect(result.stdout).toContain("<clear>\nout:1\nerr:1\n");
-    expect(result.events).toBe("mktemp\nclear\nsleep:30\n");
+    expect(result.events).toBe("mktemp\nmktemp\nclear\nsleep:30\n");
     expect(result.cacheFiles).toEqual([]);
   });
 });

@@ -278,19 +278,27 @@ function watch() {
 
 # watch_interval: refresh command output periodically, keeping the previous display until ready
 # Args: optional --no-cache, optional integer seconds (1-86400, default 30), one shell command string.
-# Returns 0 for help, 1 for invalid input, 130/143 on INT/TERM, or the failed cache/render/sleep status.
-# Clears the terminal; cached mode combines stdout/stderr in a private mktemp file removed on exit.
+# Returns 0 for help, 1 for invalid input, 130/143 on INT/TERM, or a cache/compare/render/sleep failure.
+# Cached stdout/stderr uses two private mktemp files removed on exit; identical frames are not redrawn.
+# Supported TTY output gets plain status titles and one bell per changed frame, never the first frame.
+# The Updated title lasts at most two seconds within the normal wait; no-cache has no notifications.
 # Commands run in isolated subshells; failures are displayed and retried after the interval.
 function watch_interval() {
   (
-    local _interval_seconds=30 _command _render_mode=cached _output_cache _cache_cleanup
+    local _interval_seconds=30 _command _render_mode=cached
+    local _output_cache _next_cache _cache_cleanup _cache_swap _comparison_status
+    local _has_rendered_output=0 _terminal_notifications=0 _remaining_seconds _title_path
+    local _update_notice_seconds=2 _notice_seconds
+    local -a _title_command=(:)
 
     if is_help_arg "${1:-}"; then
       echo "watch_interval: refresh command output periodically, keeping the previous display until ready
   Usage: watch_interval [--no-cache] [interval_seconds] <command>
   interval_seconds: whole seconds from 1 to 86400 (default: 30).
-  Default: capture stdout/stderr, then clear and display completed output.
-  --no-cache: clear first and run live; never create a temporary cache.
+  Default: capture stdout/stderr; redraw only when completed output changes.
+  TTY titles: Refreshing, Updated, Waiting. Changed frames ring once, except the first.
+  Updated lasts up to 2 seconds within the interval; pipes and dumb terminals get no alerts.
+  --no-cache: clear first and run live; never create a temporary cache or notifications.
   Quote commands containing arguments or shell syntax. Press Ctrl+C to stop.
   Alias: f5 (for example: f5 pr_list).
   Examples:
@@ -319,29 +327,81 @@ function watch_interval() {
       echo "watch_interval: interval_seconds must be a whole number from 1 to 86400" >&2
       return 1
     fi
+    _interval_seconds=$((10#$_interval_seconds))
     _command="$1"
 
     # Keep cleanup and signal handlers local to this invocation, not the caller's shell.
     trap 'exit 130' INT
     trap 'exit 143' TERM
     if [ "$_render_mode" = cached ]; then
+      if ! type -P cmp > /dev/null; then
+        echo "watch_interval: cmp executable required for cached rendering" >&2
+        return 1
+      fi
       _output_cache=$(command mktemp "${TMPDIR:-/tmp}/watch_interval.XXXXXX") || return $?
-      # Bash 3.2 unwinds locals before EXIT on signals; freeze the safely quoted path now.
+      # Bash 3.2 unwinds locals before EXIT on signals; freeze each safely quoted path now.
       printf -v _cache_cleanup 'command rm -f -- %q' "$_output_cache"
       trap "$_cache_cleanup" EXIT
+      _next_cache=$(command mktemp "${TMPDIR:-/tmp}/watch_interval.XXXXXX") || return $?
+      printf -v _cache_cleanup 'command rm -f -- %q %q' "$_output_cache" "$_next_cache"
+      trap "$_cache_cleanup" EXIT
+      if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then
+        _terminal_notifications=1
+        if _title_path=$(type -P set_terminal_title); then
+          _title_command=("$_title_path")
+        fi
+      fi
     fi
 
     while true; do
-      if [ "$_render_mode" = cached ]; then
-        # One buffer suffices: the previous frame stays on screen while the file is rewritten.
-        (eval "$_command") > "$_output_cache" 2>&1 || :
-        command clear || return $?
-        command cat "$_output_cache" || return $?
-      else
+      if [ "$_render_mode" = live ]; then
         command clear || return $?
         (eval "$_command") || :
+        command sleep "$_interval_seconds" || return $?
+        continue
       fi
-      command sleep "$_interval_seconds" || return $?
+
+      "${_title_command[@]}" Refreshing
+      (eval "$_command") > "$_next_cache" 2>&1 || :
+      _comparison_status=1
+      if ((_has_rendered_output)); then
+        _comparison_status=0
+        command cmp -s "$_output_cache" "$_next_cache" || _comparison_status=$?
+      fi
+      case "$_comparison_status" in
+      0)
+        "${_title_command[@]}" Waiting
+        command sleep "$_interval_seconds" || return $?
+        continue
+        ;;
+      1) ;;
+      *)
+        echo "watch_interval: cache comparison failed" >&2
+        return "$_comparison_status"
+        ;;
+      esac
+
+      command clear || return $?
+      command cat "$_next_cache" || return $?
+      _cache_swap="$_output_cache"
+      _output_cache="$_next_cache"
+      _next_cache="$_cache_swap"
+      _remaining_seconds=$_interval_seconds
+      if ((_has_rendered_output && _terminal_notifications)); then
+        "${_title_command[@]}" Updated
+        printf '\a'
+        _notice_seconds=$_update_notice_seconds
+        if ((_notice_seconds > _interval_seconds)); then
+          _notice_seconds=$_interval_seconds
+        fi
+        command sleep "$_notice_seconds" || return $?
+        _remaining_seconds=$((_interval_seconds - _notice_seconds))
+      fi
+      _has_rendered_output=1
+      "${_title_command[@]}" Waiting
+      if ((_remaining_seconds > 0)); then
+        command sleep "$_remaining_seconds" || return $?
+      fi
     done
   )
 }
