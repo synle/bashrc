@@ -5,11 +5,11 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-/** Expected npm command for each user-facing validation entry point. */
+/** Expected unit and integration commands for each user-facing validation entry point. */
 const TARGETS = [
-  ["precommit", "npm test -- --reporter=dot --silent=passed-only 2> >(command grep -v '^>>> Decky ' >&2)"],
-  ["test_unit", "npm test"],
-  ["validate", "npm test"],
+  ["precommit", "npm test -- --reporter=dot --silent=passed-only 2> >(command grep -v '^>>> Decky ' >&2)", []],
+  ["test_unit", "npm test", []],
+  ["validate", "npm test", ["npm run test:integration:local"]],
 ];
 
 /**
@@ -52,7 +52,7 @@ function makeWithDiagnostics(target, npmStatus) {
 }
 
 describe("Make test output", () => {
-  it.each(TARGETS)("selects the intended reporter for %s", (target, command) => {
+  it.each(TARGETS)("selects the intended reporter and test suites for %s", (target, command, integrationCommands) => {
     const result = spawnSync("make", ["--no-print-directory", "--dry-run", target], {
       encoding: "utf8",
       timeout: 5000,
@@ -60,6 +60,7 @@ describe("Make test output", () => {
     });
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout.split("\n").filter((line) => /^npm test(?:\s|$)/.test(line))).toEqual([command]);
+    expect(result.stdout.split("\n").filter((line) => /^npm run test:integration(?:\s|:|$)/.test(line))).toEqual(integrationCommands);
   });
 
   it.each([
