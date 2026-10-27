@@ -37,8 +37,12 @@ async function doWork() {
     if (pathExists(desktopPath)) {
       log(">> Copying PowerShell setup scripts to Desktop:", desktopPath);
       const bootstrapScript = await readText`software/scripts/windows/_full-setup-bootstrap.ps1.bash`;
+      const braveExecutablePath = toWindowsPath(
+        path.join(getWindowAppDataLocalUserPath(), "BraveSoftware", "Brave-Browser", "Application", "brave.exe"),
+      ).replace(/'/g, "''");
       const setupScript = resolvePlaceholders(await readText`software/scripts/windows/_full-setup.ps1.bash`, {
         IS_WORK_PROFILE: Number(is_work_profile),
+        BRAVE_EXECUTABLE_PATH: braveExecutablePath,
       });
       writeText(path.join(desktopPath, "_full-setup-bootstrap.ps1"), bootstrapScript);
       writeText(path.join(desktopPath, "_full-setup.ps1"), setupScript);

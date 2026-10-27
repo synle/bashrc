@@ -584,12 +584,16 @@ Write-Host "Media extensions installed." -ForegroundColor Green
 # --- Brave Browser Shortcut Flags ---
 ################################################################################
 
-# Add --windows-native-window flag to all Brave shortcuts so it uses the native
-# Windows frame (easier to grab and resize)
+# Point Brave shortcuts at the current Windows user's install and add the native-window
+# and video-frame workaround flags.
 
 Write-Host "`n=== Updating Brave Browser Shortcuts ===" -ForegroundColor Cyan
 
-$braveFlag = "--windows-native-window"
+$braveExecutablePath = '<<BRAVE_EXECUTABLE_PATH>>'
+$braveFlags = @(
+    "--windows-native-window"
+    "--disable-features=IPH_GMCSaveVideoFrame"
+)
 $braveShortcutPaths = @(
     "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar",
     "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch",
@@ -604,12 +608,22 @@ foreach ($searchPath in $braveShortcutPaths) {
     Get-ChildItem -Path $searchPath -Filter "*.lnk" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
         $lnk = $wshShell.CreateShortcut($_.FullName)
         if ($lnk.TargetPath -like "*brave*") {
-            if ($lnk.Arguments -like "*$braveFlag*") {
-                Write-Host "  Already set: $($_.FullName)" -ForegroundColor Yellow
-            } else {
-                $lnk.Arguments = ("$($lnk.Arguments) $braveFlag").Trim()
+            $shortcutChanged = $false
+            if ($lnk.TargetPath -ne $braveExecutablePath) {
+                $lnk.TargetPath = $braveExecutablePath
+                $shortcutChanged = $true
+            }
+            foreach ($braveFlag in $braveFlags) {
+                if ($lnk.Arguments -notlike "*$braveFlag*") {
+                    $lnk.Arguments = ("$($lnk.Arguments) $braveFlag").Trim()
+                    $shortcutChanged = $true
+                }
+            }
+            if ($shortcutChanged) {
                 $lnk.Save()
                 Write-Host "  Updated: $($_.FullName)" -ForegroundColor Green
+            } else {
+                Write-Host "  Already set: $($_.FullName)" -ForegroundColor Yellow
             }
         }
     }

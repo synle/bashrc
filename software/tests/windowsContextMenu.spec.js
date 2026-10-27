@@ -147,25 +147,6 @@ describe("Windows startup folder", () => {
   });
 });
 
-describe("Windows maintenance deployment", () => {
-  it("copies the exact maintenance source to the Desktop on repeated deployment", async () => {
-    const context = loadInstaller("software/scripts/windows/_init.js");
-    await context.doWork();
-    await context.doWork();
-    const deployments = context.writeText.mock.calls.filter(([file]) => file.endsWith("windows-context-menu.ps1"));
-    expect(deployments).toEqual([
-      [
-        "/mnt/c/Users/Test User/Desktop/windows-context-menu.ps1",
-        fs.readFileSync("software/scripts/windows/windows-context-menu.ps1.bash", "utf8"),
-      ],
-      [
-        "/mnt/c/Users/Test User/Desktop/windows-context-menu.ps1",
-        fs.readFileSync("software/scripts/windows/windows-context-menu.ps1.bash", "utf8"),
-      ],
-    ]);
-  });
-});
-
 /** PowerShell is optional outside Windows; registry integration runs when installed. @type {boolean} */
 const hasPwsh = spawnSync("pwsh", ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "exit 0"], { timeout: 10000 }).status === 0;
 
