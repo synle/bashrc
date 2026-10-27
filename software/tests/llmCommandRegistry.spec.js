@@ -2,9 +2,9 @@
  * Registry integrity for the Sy-managed LLM command corpus.
  *
  * `LLM_COMMAND_DEPLOY_MAP` in `llm-common.js` is the single registry every CLI's
- * `setup.js` iterates (see AGENTS.md §13.1). Nothing else in the suite checks that
+ * `setup.js` iterates (see AGENTS.md section 13.1). Nothing else in the suite checks that
  * its entries actually resolve, so a typo in a value would deploy a command whose
- * body is missing — silently, on every machine, with no gate failing. These tests
+ * body is missing - silently, on every machine, with no gate failing. These tests
  * close that gap from both directions: every registered command has a source file,
  * and every source file is registered.
  */
@@ -22,7 +22,7 @@ const LLM_COMMON_PATH = path.join(ROOT, "software/scripts/advanced/llm/llm-commo
  *
  * `const`/`let` are rewritten to `var` so every top-level declaration becomes a
  * sandbox property, matching the approach already used by `llmMcpRegistry.spec.js`.
- * Only the globals referenced during top-level evaluation need seeding — the file
+ * Only the globals referenced during top-level evaluation need seeding - the file
  * declares functions and constants, so nothing that touches the filesystem runs.
  *
  * @returns {Record<string, any>} The populated sandbox.
@@ -126,13 +126,25 @@ describe("LLM_COMMAND_DEPLOY_MAP -> source files", () => {
     expect(missing, `registered commands with no source file:\n${missing.join("\n")}`).toEqual([]);
   });
 
-  it("every source file is registered — no orphans left behind by a rename", () => {
+  it("every source file is registered - no orphans left behind by a rename", () => {
     const referenced = new Set(Object.values(DEPLOY_MAP));
     const orphans = filesOnDisk.filter((name) => !referenced.has(name));
     expect(
       orphans,
       `command bodies present but not in LLM_COMMAND_DEPLOY_MAP (add an entry or delete the file):\n${orphans.join("\n")}`,
     ).toEqual([]);
+  });
+
+  it("routes both PR workflows through the shared reconciliation pass", () => {
+    const instructionsPath = path.join(ROOT, "software/scripts/advanced/llm/_common/v_current/instructions-pr-workflow.md");
+    const instructions = fs.readFileSync(instructionsPath, "utf-8");
+    const babysit = fs.readFileSync(sourcePath("babysit-pr"), "utf-8");
+
+    expect(DEPLOY_MAP["sy-pr-reconciliation-pass"]).toBe("pr-reconciliation-pass");
+    expect(instructions).toContain("/sy-pr-reconciliation-pass");
+    expect(instructions).toContain("scope=all-actionable");
+    expect(babysit).toContain("/sy-pr-reconciliation-pass");
+    expect(babysit).toContain("scope=caller-selected");
   });
 
   it("every command body is non-empty and starts with the [Sy] marker", () => {
@@ -164,7 +176,7 @@ describe("LLM_COMMAND_DEPLOY_MAP key hygiene", () => {
     expect(bad, `keys missing the sy- prefix: ${bad.join(", ")}`).toEqual([]);
   });
 
-  it("every key is extension-less — the folder-based CLIs append their own", () => {
+  it("every key is extension-less - the folder-based CLIs append their own", () => {
     const bad = Object.keys(DEPLOY_MAP).filter((key) => key.endsWith(".md"));
     expect(bad, `keys must not carry an extension: ${bad.join(", ")}`).toEqual([]);
   });
@@ -179,7 +191,7 @@ describe("LLM_COMMAND_DEPLOY_MAP key hygiene", () => {
     const conflicts = RETIRED.filter((name) => live.has(name));
     expect(
       conflicts,
-      `names in both LLM_COMMAND_RETIRED_NAMES and LLM_COMMAND_DEPLOY_MAP — a live command would be swept off disk: ${conflicts.join(", ")}`,
+      `names in both LLM_COMMAND_RETIRED_NAMES and LLM_COMMAND_DEPLOY_MAP - a live command would be swept off disk: ${conflicts.join(", ")}`,
     ).toEqual([]);
   });
 });

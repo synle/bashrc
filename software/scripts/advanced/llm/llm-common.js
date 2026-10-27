@@ -12,7 +12,7 @@
 /**
  * Shared prose and PR workflow tuning, resolved into deployed guidance by resolveLLMDocPlaceholders.
  * Change values here and redeploy; callers never maintain separate defaults.
- * Sentence limits use words, intervals use seconds, and budgets and thresholds use counts.
+ * Token names and comments state the units; values use words, seconds, minutes, rounds, and counts.
  * Numeric tokens stay separate from LLM_DOC_PATH_PLACEHOLDERS, which holds absolute folders.
  * @type {Record<string, string>}
  */
@@ -31,6 +31,10 @@ const LLM_DOC_TUNING_PLACEHOLDERS = {
   "<<SY_PR_RETRY_MAX_FAILURES>>": "5",
   /** How many actionable review comments activate babysit remediation. */
   "<<SY_PR_REVIEW_CHANGE_THRESHOLD>>": "5",
+  /** Maximum wait for one CI cycle during PR reconciliation. */
+  "<<SY_CI_WAIT_MINUTES>>": "20",
+  /** Maximum total runtime for PR feedback and CI reconciliation. */
+  "<<SY_CI_RECONCILIATION_BUDGET_MINUTES>>": "120",
 };
 
 // --- OS Modifier Keys (local mirror of editor.common.js bits the LLM scripts need) ---
@@ -1640,6 +1644,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-migrate-cross-agent-skills-and-context": "migrate-cross-agent-skills-and-context",
   "sy-onboard-repo": "onboard-repo",
   "sy-plan-grill-me": "plan-grill-me",
+  "sy-pr-reconciliation-pass": "pr-reconciliation-pass",
   // Single release entry-point. The command body checks $ARGUMENTS to decide
   // official vs beta — no per-channel alias files anymore (the old
   // /sy-release-{main,master,stable,official,beta} aliases were retired

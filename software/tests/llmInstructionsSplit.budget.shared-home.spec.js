@@ -108,11 +108,11 @@ const SPLIT_EXPECTATIONS = {
   // are SUPPOSED to appear in the always-loaded file too. `inlined` turns the
   // not-duplicated assertion off for exactly this file rather than weakening it for
   // all siblings. Why both copies: claude and gemini read only the always-loaded block,
-  // while opencode loads the standalone file as its own rules document — and position
+  // while opencode loads the standalone file as its own rules document - and position
   // matters for a persona, the smallest and oldest thing in a long context.
-  // Deployed as `~persona.md` so it sorts LAST — see LLM_PERSONA_INSTRUCTION_FILE.
+  // Deployed as `~persona.md` so it sorts LAST - see LLM_PERSONA_INSTRUCTION_FILE.
   "~persona.md": {
-    heading: "# Persona — Caveman Speak",
+    heading: "# Persona \u2014 Caveman Speak",
     sections: [],
     inlined: true,
     leads: [
@@ -146,7 +146,7 @@ function loadLlmCommon() {
     readJson: () => ({}),
     readText: () => "",
     getOllamaHosts: async () => [{ ip: "127.0.0.1", hostname: "local", tags: [], isDefault: true, isLocal: true }],
-    // The REAL resolver from index.js — never a stub, which would be a second
+    // The REAL resolver from index.js - never a stub, which would be a second
     // implementation free to disagree with the one that actually deploys. The
     // shared roots are pinned to the sandbox so these assertions never depend on
     // the home layout of whoever ran them.
@@ -224,7 +224,7 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
   it("should resolve every placeholder it uses to a real absolute folder", () => {
     // The LLM-only token plus the shared ones a doc gets for free. `<<SY_ROOT_FOLDER>>`
     // is resolved by COMMON_PLACEHOLDERS in index.js rather than declared here, so it
-    // is named explicitly — otherwise moving it to the shared registry would have
+    // is named explicitly - otherwise moving it to the shared registry would have
     // silently dropped it out of this assertion.
     const folderTokens = [...Object.keys(llm.LLM_DOC_PATH_PLACEHOLDERS), "<<SY_ROOT_FOLDER>>", "<<HOME>>"];
 
@@ -259,6 +259,11 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
     }
   });
 
+  it("should configure the PR reconciliation wait and total budget", () => {
+    expect(llm.LLM_DOC_TUNING_PLACEHOLDERS["<<SY_CI_WAIT_MINUTES>>"]).toBe("20");
+    expect(llm.LLM_DOC_TUNING_PLACEHOLDERS["<<SY_CI_RECONCILIATION_BUDGET_MINUTES>>"]).toBe("120");
+  });
+
   it("should deploy the shared babysit poll and run defaults", () => {
     const source = fs.readFileSync(path.join(ROOT, COMMON_FOLDER, "skills/babysit-pr.md"), "utf-8");
     const deployed = llm.resolveLLMDocPlaceholders(source);
@@ -275,7 +280,7 @@ describe("deployed docs name folders by placeholder, never by hardcoded path", (
 
   it("should route every deployed doc through the one reader that resolves placeholders", () => {
     // readText alone skips resolution, which ships `<<LLM_ROOT_FOLDER>>` verbatim to an
-    // agent — it reads as a literal folder name and fails silently. readLLMDocSource
+    // agent - it reads as a literal folder name and fails silently. readLLMDocSource
     // is the only sanctioned reader for a doc that gets deployed.
     const readerFiles = [
       "software/scripts/advanced/llm/llm-common.js",
