@@ -87,6 +87,19 @@ const mockFs = {
     if (filePath in fileSystem) return fileSystem[filePath];
     return "";
   },
+  // Keep app-bundle fixture copies in memory; VM tests must not write into host /Applications.
+  copyFileSync: (srcPath, destPath) => {
+    if (srcPath.startsWith("/Applications/") || destPath.startsWith("/Applications/")) {
+      if (!(srcPath in fileSystem)) {
+        const error = new Error(`ENOENT: no mocked source file '${srcPath}'`);
+        error.code = "ENOENT";
+        throw error;
+      }
+      fileSystem[destPath] = fileSystem[srcPath];
+      return;
+    }
+    return fs.copyFileSync(srcPath, destPath);
+  },
   existsSync: (targetPath) => {
     if (targetPath in mockFsExistence) return mockFsExistence[targetPath];
     return false;

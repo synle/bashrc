@@ -32,6 +32,7 @@ function installBrowserFixtures(browsers) {
     const iconPath = `${bundlePath}/Contents/Resources/app.icns`;
     fileSystem[`${bundlePath}/Contents/Info.plist`] =
       `<plist><dict><key>CFBundleExecutable</key><string>${executableName}</string><key>CFBundleIconFile</key><string>app.icns</string></dict></plist>`;
+    fileSystem[iconPath] = "mock browser icon bytes";
     mockFsExistence[executablePath] = true;
     mockFsExistence[iconPath] = true;
   }
@@ -86,7 +87,7 @@ describe("Mac browser app launchers", () => {
     expect(fileSystem["/Applications/Browser Chrome.app/Contents/Info.plist"]).toContain(
       "<key>CFBundleIconFile</key><string>app.icns</string>",
     );
-    expect(fileSystem["/Applications/Browser Chrome.app/Contents/Resources/app.icns"]).toBeDefined();
+    expect(fileSystem["/Applications/Browser Chrome.app/Contents/Resources/app.icns"]).toBe("mock browser icon bytes");
     expect(mockExecCommands.filter((command) => command.includes("codesign --force --sign -"))).toHaveLength(3);
 
     const syntax = spawnSync("/bin/bash", ["-n"], { input: chromeLauncher, encoding: "utf8" });
