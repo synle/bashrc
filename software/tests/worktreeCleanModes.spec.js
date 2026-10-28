@@ -7,8 +7,8 @@ import os from "os";
 import path from "path";
 import vm from "vm";
 
-/** Native CommonJS resolution for the standalone payload. */
-const require = createRequire(import.meta.url);
+/** Resolve sibling imports from the production payload, including when a coverage source override is active. */
+const require = createRequire(path.resolve("software/scripts/git.worktree_clean.cjs"));
 /** Typed process-exit signal so original and modified CLI sources share the same harness. */
 class CliExit extends Error {}
 /** Production payload; override permits isolated before/after and coverage proofs. */
@@ -191,8 +191,12 @@ describe("worktree cleanup modes", () => {
     git(context.repo, ["worktree", "add", "--quiet", "-b", "merged", merged]);
     const result = run(context, ["--mode", "interactive"], "y\n\n", () => expect(fs.existsSync(merged)).toBe(false));
     expect(result.status).toBe(0);
-    expect(result.prompts).toContain(`Delete pending worktree 1 of 2 \u00b7 acme/widget-store \u00b7 ${first}? [all/y/N]: `);
+    expect(result.prompts).toMatch(/\u{1f333} \[[^\]\n]+\] \ue0b1 a-dirty \ue0b1 /u);
+    expect(result.prompts).toContain(
+      ` \ue0b1 a-dirty \ue0b1 ${first}\nDelete pending worktree 1 of 2 \u00b7 acme/widget-store \u00b7 ${first}? [all/y/N]: `,
+    );
     expect(result.prompts).toContain("pending worktree 2 of 2");
+    expect(result.stdout).toMatch(/\u{1f9f9} REMOVED \[[^\]\n]+\] \ue0b1 a-dirty \ue0b1 [^\n]+ \ue0b1 confirmed deletion\n/u);
     expect(result.stdout).toContain("removed 2 \u00b7 kept 2");
     expect(fs.existsSync(first)).toBe(false);
     expect(fs.existsSync(second)).toBe(true);

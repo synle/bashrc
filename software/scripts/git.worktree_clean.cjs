@@ -10,6 +10,7 @@
 const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const { display, storageSize, worktreeInfo } = require("./git.worktree_info.cjs");
 
 /** @type {number} Maximum directory depth below the current working folder. */
 const MAX_DEPTH = 3;
@@ -434,7 +435,7 @@ function printHelp() {
 }
 
 /**
- * Ask for each pending deletion through a controlling terminal, after safe cleanup finishes.
+ * Show the shared sized worktree row and ask for each pending deletion after safe cleanup finishes.
  * @param {Array<{repoRoot: string, label: string, worktree: object}>} pending Kept linked worktrees.
  * @returns {{removed: number, removedPaths: Set<string>, failed: Set<string>}} Successful deletions and failed target paths.
  * @sideEffects Prompts on the terminal and force-removes only explicitly approved worktrees.
@@ -455,8 +456,11 @@ function confirmPending(pending) {
     info(`Approved deletions permanently remove uncommitted and untracked work. Primary and bare repositories stay.`);
     for (let index = 0; index < pending.length; index += 1) {
       const { repoRoot, label, worktree } = pending[index];
+      const branch = worktree.branch?.replace(/^refs\/heads\//, ``) ?? null;
+      const size = storageSize(worktree.path);
       let answer = `all`;
       if (!all) {
+        fs.writeSync(terminal, `${worktreeInfo({ ...worktree, branch }, { size })}\n`);
         answer = pendingChoice(
           terminal,
           `Delete pending worktree ${index + 1} of ${pending.length} · ${label} · ${worktree.path}? [all/y/N]: `,
@@ -473,10 +477,10 @@ function confirmPending(pending) {
       if (deletion.removed) {
         result.removed += 1;
         result.removedPaths.add(worktree.path);
-        print(`🧹 REMOVED ${worktree.path} · confirmed deletion`);
+        print(worktreeInfo({ ...worktree, branch }, { prefix: `🧹 REMOVED`, size, reason: `confirmed deletion` }));
       } else {
         result.failed.add(worktree.path);
-        info(`kept ${worktree.path}: ${deletion.reason}`);
+        info(worktreeInfo({ ...worktree, branch }, { prefix: `⚠️ KEEP`, size, reason: deletion.reason }));
       }
     }
   } finally {
@@ -514,7 +518,7 @@ function pendingChoice(terminal, question) {
 }
 
 /**
- * Perform scoped cleanup, then optional pending confirmations, and report actual removal counts.
+ * Perform scoped cleanup with one-line status rows, optional confirmations, and actual removal counts.
  * @returns {void} Sets a nonzero exit status for failed removals or unavailable interactive input.
  */
 function main() {
@@ -551,9 +555,9 @@ function main() {
     const defaultRef = defaultBranchRef(repoRoot);
     const worktrees = listWorktrees(repoRoot);
 
-    print(`\n${paint(`📦 REPO`, ANSI.bold + ANSI.cyan, color)} ${label}`);
-    print(`   ${paint(`ROOT`, ANSI.dim, color)} ${repoRoot}`);
-    print(`   ${paint(`DEFAULT`, ANSI.dim, color)} ${defaultRef || `unknown`}`);
+    print(
+      `\n${paint(`📦 REPO`, ANSI.bold + ANSI.cyan, color)} ${display(label)}  ${display(repoRoot)}  DEFAULT ${display(defaultRef ?? `unknown`)}`,
+    );
 
     if (!worktrees) {
       print(`   ${paint(`⚠️`, ANSI.yellow, color)} could not read worktrees`);
@@ -564,7 +568,8 @@ function main() {
     const primaryPath = worktrees[0]?.path || ``;
     for (const worktree of worktrees) {
       const decision = cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailable, options.force);
-      const branch = worktree.branch ? worktree.branch.replace(/^refs\/heads\//, ``) : `detached`;
+      const branch = worktree.branch?.replace(/^refs\/heads\//, ``) ?? null;
+      const size = storageSize(worktree.path);
       let icon = `⏭️`;
       let action = `KEEP`;
       let actionColor = ANSI.yellow;
@@ -598,8 +603,11 @@ function main() {
       if (options.mode === `interactive` && action === `KEEP` && worktree.path !== primaryPath && !worktree.bare) {
         pending.push({ repoRoot, label, worktree });
       }
-      print(`   ├─ ${icon} ${paint(action, actionColor, color)} ${worktree.path}`);
-      print(`   │  ${paint(`BRANCH`, ANSI.dim, color)} ${branch} · ${linkify(decision.reason, color)}`);
+      const row = worktreeInfo(
+        { ...worktree, branch },
+        { prefix: `${icon} ${paint(action, actionColor, color)}`, size, reason: decision.reason },
+      );
+      print(linkify(row, color));
     }
   }
 

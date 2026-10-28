@@ -418,7 +418,16 @@ worktree_list --raw     # JSON array
 ```
 
 Pretty output groups worktrees under `📦 <org>/<repo>  <root_path>` headers.
-Each worktree row uses `🌳  <branch_name> <worktree_path>`.
+Each worktree row uses `🌳 [<size>]  <branch_name>  <worktree_path>`.
+Interactive `worktree_clean --mode interactive` prints the same row before each pending all/y/N confirmation.
+Cleanup statuses use one line: `<icon> <action> [<size>]  <branch_name>  <worktree_path>  <reason>`.
+Sizes are measured before deletion so removed rows retain their storage information.
+Cleanup repository headers compact the repository, root path, and default ref onto one line.
+Both commands use the shared `git.worktree_info.cjs` formatter deployed beside them by the installer.
+Size is allocated disk usage from `du -skP`, including ignored and untracked content without following symlinks.
+Decimal labels use 1 MB = 1,000,000 bytes; shared Git objects outside linked worktrees are not counted.
+Missing, unreadable, unsupported, or timed-out measurements show `[unknown]`; each probe has a two-second deadline.
+Raw JSON does not probe sizes or add size fields.
 Raw records contain `branch_name`, `repo`, `org`, `worktree_path`, and `root_path`.
 `root_path` identifies the primary checkout; detached/bare branches and unknown organizations use JSON `null`.
 Repositories without a network origin use the primary folder name.

@@ -4,6 +4,7 @@
 const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const { display, worktreeInfo } = require("./git.worktree_info.cjs");
 
 /** @type {number} Maximum nested repository depth below the current folder. */
 const MAX_DEPTH = 3;
@@ -145,16 +146,7 @@ function findRepos(scanRoot) {
 }
 
 /**
- * Escape terminal control bytes in display text; raw JSON preserves the original strings.
- * @param {string} value Branch, identity, or path to display.
- * @returns {string} Single-line terminal-safe text.
- */
-function display(value) {
-  return value.replace(/[\x00-\x1f\x7f-\x9f]/g, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, `0`)}`);
-}
-
-/**
- * Render the requested output mode without changing repositories or worktrees.
+ * Render raw inventory or pretty rows with allocated disk usage; never mutate worktrees.
  * @returns {void} Writes the inventory or help to stdout.
  * @throws {Error} Arguments or local discovery fail; the CLI boundary reports the failure on stderr.
  */
@@ -165,7 +157,7 @@ function main() {
       `worktree_list: list local Git worktrees\n` +
         `Usage: worktree_list [--raw | --pretty]\n` +
         `Scope: current folder and nested repositories (depth ${MAX_DEPTH}); includes primary and linked worktrees.\n` +
-        `--pretty  Grouped repository headers and worktree rows (default).\n` +
+        `--pretty  Grouped headers and sized worktree rows (default); unknown when size is unavailable.\n` +
         `--raw     JSON array: branch_name, repo, org, worktree_path, root_path.\n` +
         `          Detached/bare branches and unknown organizations are null.\n` +
         `--help, -h  Show this help.\n`,
@@ -182,10 +174,7 @@ function main() {
   }
   const groups = repos.map(({ org, repo, root, worktrees }) => {
     const label = org === null ? repo : `${org}/${repo}`;
-    const rows = worktrees.map((worktree) => {
-      const branch = worktree.bare ? `(bare)` : (worktree.branch ?? `(detached)`);
-      return `🌳  ${display(branch)} ${display(worktree.path)}`;
-    });
+    const rows = worktrees.map((worktree) => worktreeInfo(worktree));
     return [`📦 ${display(label)}  ${display(root)}`, ...rows].join(`\n`);
   });
   process.stdout.write(groups.length === 0 ? `No Git repositories found.\n` : `${groups.join(`\n\n`)}\n`);

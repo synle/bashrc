@@ -140,11 +140,15 @@ describe("worktree_list", () => {
     const root = path.join(fixture(), "repo");
     repo(root);
     git(root, ["remote", "add", "origin", "https://example.invalid/acme/widget-store.git"]);
-    const result = run(root);
+    const bin = path.join(root, ".bin");
+    fs.mkdirSync(bin);
+    fs.writeFileSync(path.join(bin, "du"), '#!/bin/sh\nprintf "48828\\t%s\\n" "$2"\n', { mode: 0o755 });
+    const env = { PATH: `${bin}:${process.env.PATH}` };
+    const result = run(root, [], env);
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toBe(`\u{1f4e6} acme/widget-store \ue0b1 ${root}\n\u{1f333} \ue0b1 main ${root}\n`);
-    const explicit = run(root, ["--pretty"]);
+    expect(result.stdout).toBe(`\u{1f4e6} acme/widget-store \ue0b1 ${root}\n\u{1f333} [50MB] \ue0b1 main \ue0b1 ${root}\n`);
+    const explicit = run(root, ["--pretty"], env);
     expect(explicit.status).toBe(0);
     expect(explicit.stdout).toBe(result.stdout);
   });
@@ -175,7 +179,9 @@ describe("worktree_list", () => {
     expect(JSON.parse(result.stdout)[1]).toEqual({ branch_name: null, org: null, repo: "repo", root_path: root, worktree_path: linked });
     const pretty = run(root);
     expect(pretty.status).toBe(0);
-    expect(pretty.stdout).toContain(`\u{1f333} \ue0b1 (detached) ${parent}/space \\u0009line\\u000aquote"\\\u2603\n`);
+    expect(pretty.stdout.replace(/\[[^\]\n]+\]/g, "[size]")).toContain(
+      `\u{1f333} [size] \ue0b1 (detached) \ue0b1 ${parent}/space \\u0009line\\u000aquote"\\\u2603\n`,
+    );
   });
 
   it("lists bare repositories with a null branch and a bare display label", () => {
@@ -187,7 +193,7 @@ describe("worktree_list", () => {
     expect(JSON.parse(raw.stdout)).toEqual([{ branch_name: null, org: null, repo: "bare.git", root_path: root, worktree_path: root }]);
     const pretty = run(root);
     expect(pretty.status).toBe(0);
-    expect(pretty.stdout).toContain(`\u{1f333} \ue0b1 (bare) ${root}\n`);
+    expect(pretty.stdout.replace(/\[[^\]\n]+\]/g, "[size]")).toContain(`\u{1f333} [size] \ue0b1 (bare) \ue0b1 ${root}\n`);
   });
 
   it.each([
@@ -267,8 +273,11 @@ describe("worktree_list", () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toBe("[]\n");
     expect(fs.statSync(installed).mode & 0o777).toBe(0o755);
+    const shared = path.join(home, ".local", "bin", "git.worktree_info.cjs");
+    expect(fs.statSync(shared).mode & 0o777).toBe(0o644);
     await vm.runInContext("undoWork()", context);
     expect(fs.existsSync(installed)).toBe(false);
+    expect(fs.existsSync(shared)).toBe(false);
   });
 
   it("reports unavailable Git instead of returning an empty inventory", () => {
