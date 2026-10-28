@@ -119,6 +119,7 @@ _defaults_write_protected com.apple.Safari ShowFullURLInSmartSearchField -bool t
 echo '>> Applying system behavior tweaks'
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true # Prevents macOS from creating .DS_Store files on network drives (NAS, SMB shares)
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true     # Prevents macOS from creating .DS_Store files on USB/external drives
+defaults write com.apple.desktopservices DSDontWriteExternalStores -bool true # Prevents macOS from creating .DS_Store files on other external media (optical drives etc.)
 defaults write -g NSScrollAnimationEnabled -bool false                       # Disables momentum/smooth scrolling system-wide so scroll jumps instantly to position
 defaults write -g NSAutoFillHeuristicControllerEnabled -bool false           # Turns off predictive text/autofill heuristics that consume CPU in the background
 defaults write -g NSAutoHeuristicEnabled -bool false                         # Disables automatic heuristic-based suggestions (complements the above setting)
