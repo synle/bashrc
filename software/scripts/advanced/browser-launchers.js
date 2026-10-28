@@ -1,5 +1,5 @@
 /**
- * Browser launcher functions and shell aliases for Chromium-based browsers (brave/chrome/edge/chromium/vivaldi/opera/arc).
+ * Browser launcher functions for Chromium-based browsers (brave/chrome/edge/chromium/vivaldi/opera/arc).
  *
  * NOTE: Each launcher is emitted as `function name() { ... }` (not `name() { ... }`).
  * The `function` keyword is MANDATORY for two reasons:
@@ -10,6 +10,7 @@
  *      definition before the parser sees the `(`, avoiding the crash. See commits 43ca073/5fd4f9c.
  */
 // SOURCE software/scripts/advanced/browser.common.js
+// SOURCE software/scripts/advanced/browser-launch-options.common.js
 
 /** Registers browser launcher functions (find_browser, run_browser) and shell wrappers for each supported browser. */
 async function doWork() {
@@ -21,6 +22,13 @@ async function doWork() {
   }
 
   log(">> Registering browser launchers (find_browser, run_browser, brave, chrome, edge, chromium, vivaldi, opera, arc)");
+
+  const isLinux = is_os_ubuntu || is_os_arch_linux || is_os_steamos || is_os_redhat || is_os_chromeos;
+  let platform = "default";
+  if (is_os_mac) platform = "mac";
+  else if (is_os_windows || is_os_mingw64) platform = "windows";
+  else if (isLinux) platform = "linux";
+  registerWithBashSyleProfile("Browser Launch Options", renderBrowserLaunchOptionsForBash(platform));
 
   // Section 1: Brave Browser launcher
   registerWithBashSyleProfile(

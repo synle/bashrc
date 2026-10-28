@@ -1,31 +1,7 @@
 #!/usr/bin/env bash
 
-# Common Chromium flags applied by run_browser on every launch.
-# Kept to safe, non-destructive tweaks (no sync/security changes).
-#
-# Two groups:
-#   - Common Params: also written to the browser's Preferences file by
-#     browser-config.js. Duplicated here as launch flags so the
-#     behavior applies even before Prefs are written, and in case a profile's
-#     Prefs file gets reset.
-#   - CLI Only: no Preferences equivalent — must be passed at launch.
-_BROWSER_COMMON_ARGS=(
-  # ─── Common Params (mirrored in browser-config.js Preferences) ───
-  "--no-pings" # blocks <a ping=""> hyperlink-auditing beacons (mirrors enable_hyperlink_auditing)
-
-  # ─── CLI Only (no Preferences equivalent) ───
-  "--disable-smooth-scrolling"            # kills scroll-animation tween; snappier wheel/trackpad response (big win on macOS)
-  "--no-default-browser-check"            # suppresses the "Make me the default browser?" info bar
-  "--no-first-run"                        # skips the welcome wizard on fresh profiles
-  "--disable-search-engine-choice-screen" # skips the EU search-engine picker dialog (no-op outside EEA)
-  "--disable-breakpad"                    # no crash reports uploaded to Google; crashes still visible in chrome://crashes
-
-  # ─── Feature Toggles (Chromium only honors the LAST --disable-features= on the CLI, so these must be merged into one flag) ───
-  #   Translate                      — suppresses "Translate this page?" infobar (also mirrored as translate.enabled)
-  #   InterestFeedContentSuggestions — removes content-suggestion tiles on the new-tab page (CLI only)
-  #   OptimizationHints              — stops Google page-optimization telemetry (also mirrored as optimization_guide.fetching_hints_enabled)
-  "--disable-features=Translate,InterestFeedContentSuggestions,OptimizationHints"
-)
+# Browser flags come from browser-launch-options.common.js.
+# This file selects the browser binary and launches it with the generated arrays.
 
 # Parallel-array registry populated by `_register_browser` calls in each
 # browser-launchers.js block. Used by `list_browsers` for binary-availability triage.
@@ -72,13 +48,12 @@ function find_browser() {
   shift
   local result
   result=$(find_path "$@" --exec) && echo "$result" && return 0
-  echo "Error: $browser_name not found in search paths." >&2
+  echo "Error: $browser_name browser not installed." >&2
   return 1
 }
 
-# Launch a browser fully detached from the terminal with URLs/args.
-# Always prepends _BROWSER_COMMON_ARGS (e.g. --disable-smooth-scrolling) to the
-# user-supplied args. Caller sets `browser_args` array before invoking.
+# Launch a browser fully detached from the terminal with shared options and user arguments.
+# The caller sets `browser_args`; user arguments follow defaults so they can override them.
 #
 # Background launch pattern: `(nohup CMD > /dev/null 2>&1 &)`
 #   - outer `( ... )`      — subshell that exits immediately, reparenting the
@@ -95,18 +70,22 @@ function run_browser() {
   local target_binary
   target_binary=$(find_browser "$browser_name" "$@") || return 1
 
-  # Prepend common flags; user args come after so they can override.
-  local final_args=("${_BROWSER_COMMON_ARGS[@]}" "${browser_args[@]}")
+  # Select browser-specific options; user args come last so they can override defaults.
+  local -a browser_launch_options
+  case "$browser_name" in
+  brave) browser_launch_options=("${_BRAVE_LAUNCH_OPTIONS[@]}") ;;
+  chrome) browser_launch_options=("${_CHROME_LAUNCH_OPTIONS[@]}") ;;
+  edge) browser_launch_options=("${_EDGE_LAUNCH_OPTIONS[@]}") ;;
+  *) browser_launch_options=("${_CHROME_LAUNCH_OPTIONS[@]}") ;;
+  esac
+  local final_args=("${browser_launch_options[@]}" "${_BROWSER_PLATFORM_ARGS[@]}" "${browser_args[@]}")
 
   # Echo the exact command about to run so users can see / copy / re-run it.
   # Printed BEFORE the launch so the banner is visible even if the browser
   # crashes or the background subshell forks fail.
-  echo "
-====================================
-\"$target_binary\" ${final_args[@]}
-PWD:           $(pwd)
-====================================
-  "
+  printf '\n====================================\n"%s"' "$target_binary"
+  printf ' %q' "${final_args[@]}"
+  printf '\nPWD:           %s\n====================================\n\n' "$(pwd)"
 
   # Launch browser fully detached (same pattern on all platforms). run_native wraps
   # nohup (a real binary, not a shell function) so a browser launched from a Rosetta 2

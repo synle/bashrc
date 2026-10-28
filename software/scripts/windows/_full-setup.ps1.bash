@@ -21,7 +21,7 @@
 #     - NVIDIA RTX 5090 Desktop — Driver Tuning
 #   SOFTWARE INSTALLATION (slow — runs last)
 #     - Install Media Extensions (Microsoft Store)
-#     - Brave Browser Shortcut Flags
+#     - Chromium Browser Shortcut Flags
 #     - AI CLI Tools (npm-based)
 #
 # Winget package installs (Brave, VS Code, Git, Terminal, etc.) are handled
@@ -581,10 +581,10 @@ Write-Host "Media extensions installed." -ForegroundColor Green
 
 
 ################################################################################
-# --- Brave Browser Shortcut Flags ---
+# --- Chromium Browser Shortcut Flags ---
 ################################################################################
 
-# Update existing Brave shortcuts only; this does not create or pin shortcuts.
+# Update existing Brave, Chrome, and Edge shortcuts only; this does not create or pin shortcuts.
 & "$PSScriptRoot\_shortcut.ps1"
 
 

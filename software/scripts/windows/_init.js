@@ -1,4 +1,5 @@
 /** Platform init for Windows - creates common directories and initializes the PowerShell profile. */
+// SOURCE software/scripts/advanced/browser-launch-options.common.js
 async function doWork() {
   // fetch the PowerShell profile template and write it with placeholders intact
   // later scripts append blocks via registerWithPowershellProfile()
@@ -37,17 +38,14 @@ async function doWork() {
     if (pathExists(desktopPath)) {
       log(">> Copying PowerShell setup scripts to Desktop:", desktopPath);
       const bootstrapScript = await readText`software/scripts/windows/_full-setup-bootstrap.ps1.bash`;
-      const braveApplicationPath = path.join(getWindowAppDataLocalUserPath(), "BraveSoftware", "Brave-Browser", "Application");
-      const braveExecutablePath = toWindowsPath(path.join(braveApplicationPath, "brave.exe")).replace(/'/g, "''");
-      const braveWorkingDirectory = toWindowsPath(braveApplicationPath).replace(/'/g, "''");
+      const browserLaunchOptions = renderBrowserLaunchOptionsForPowerShell();
       const windowsAppDataRoamingPath = toWindowsPath(getWindowAppDataRoamingUserPath()).replace(/'/g, "''");
       const windowsUserHomePath = toWindowsPath(windowsUserDir).replace(/'/g, "''");
       const setupScript = resolvePlaceholders(await readText`software/scripts/windows/_full-setup.ps1.bash`, {
         IS_WORK_PROFILE: Number(is_work_profile),
       });
       const shortcutScript = resolvePlaceholders(await readText`software/scripts/windows/_shortcut.ps1.bash`, {
-        BRAVE_EXECUTABLE_PATH: braveExecutablePath,
-        BRAVE_WORKING_DIRECTORY: braveWorkingDirectory,
+        BROWSER_LAUNCH_OPTIONS: browserLaunchOptions,
         WINDOWS_APPDATA_ROAMING_PATH: windowsAppDataRoamingPath,
         WINDOWS_USER_HOME_PATH: windowsUserHomePath,
       });

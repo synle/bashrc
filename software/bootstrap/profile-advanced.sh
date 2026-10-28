@@ -2803,6 +2803,7 @@ _prompt_command_add "_bashrc_update_check_show"
 # BEGIN/END | Editor Launchers - VS Code
 # BEGIN/END | Editor Launchers - Zed
 # BEGIN/END | Text Server
+# BEGIN/END | Browser Launch Options
 # SOURCE | software/scripts/advanced/browser-launchers-common.profile.bash
 # BEGIN/END | Browser Launchers - Brave
 # BEGIN/END | Browser Launchers - Chrome

@@ -248,7 +248,9 @@ describe("interval watcher subprocess", () => {
   it("runs quoted shell expressions without corrupting quotes or Unicode", () => {
     const result = runWatcher(["probe; printf '%s\\n' \"space 'quote' \\ slash \u2603\" | command cat"], { cycles: 1 });
     expect(result.status, result.stderr).toBe(73);
-    expect(result.stdout).toContain("space 'quote' \\ slash \u2603\n");
+    expect(result.stdout, JSON.stringify({ stderr: result.stderr, events: result.events, observations: result.observations })).toContain(
+      "space 'quote' \\ slash \u2603\n",
+    );
   });
 
   it("replaces stale cached bytes with genuinely empty output", () => {
