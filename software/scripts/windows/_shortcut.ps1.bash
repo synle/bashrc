@@ -17,7 +17,8 @@ $windowsUserHomePath = '<<WINDOWS_USER_HOME_PATH>>'
 $braveFlags = @(
     "--source-shortcut-location=desktop"
     "--windows-native-window"
-    "--disable-features=IPH_GMCSaveVideoFrame"
+    "--disable-features=IPH_GMCSaveVideoFrame,GlobalMediaControls"
+    "--disable-smooth-scrolling"
 )
 $braveTaskbarShortcutFolder = "$windowsAppDataRoamingPath\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
 $braveShortcutPaths = @(
