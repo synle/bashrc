@@ -7,24 +7,33 @@ const _MAC_BROWSER_LAUNCHER_APPS = [
     command: "brave",
     displayName: "Brave",
     bundlePattern: /^Brave.*Browser\.app$/i,
-    appName: "Brave With Flags",
-    bundleIdentifier: "local.synle.brave-with-flags",
+    appName: "Browser Brave",
+    bundleIdentifier: "local.synle.browser-brave",
+    legacyAppName: "Brave With Flags",
+    legacyBundleIdentifier: "local.synle.brave-with-flags",
   },
   {
     command: "chrome",
     displayName: "Chrome",
     bundlePattern: /^Google.*Chrome\.app$/i,
-    appName: "Chrome With Flags",
-    bundleIdentifier: "local.synle.chrome-with-flags",
+    appName: "Browser Chrome",
+    bundleIdentifier: "local.synle.browser-chrome",
+    legacyAppName: "Chrome With Flags",
+    legacyBundleIdentifier: "local.synle.chrome-with-flags",
   },
   {
     command: "edge",
     displayName: "Edge",
     bundlePattern: /^Microsoft.*Edge\.app$/i,
-    appName: "Edge With Flags",
-    bundleIdentifier: "local.synle.edge-with-flags",
+    appName: "Browser Edge",
+    bundleIdentifier: "local.synle.browser-edge",
+    legacyAppName: "Edge With Flags",
+    legacyBundleIdentifier: "local.synle.edge-with-flags",
   },
 ];
+
+/** Marker used to verify signed launcher creation and managed legacy-bundle removal. */
+const _MAC_BROWSER_APP_ACTION_MARKER = "BROWSER_FLAGS_APP_ACTION_OK";
 
 /**
  * Reads one supported string property from an XML or binary app property list.
@@ -134,7 +143,7 @@ exec ${_quoteMacShellArgument(executablePath)} "\${browser_flags[@]}" "$@"`;
 async function _installMacBrowserLauncher(browser) {
   const installedBrowser = await _resolveMacBrowserBundle(browser);
   if (!installedBrowser) {
-    log(`>>> ${browser.displayName} With Flags skipped: browser app or executable not found.`);
+    log(`>>> ${browser.appName} skipped: browser app or executable not found.`);
     return null;
   }
 
@@ -167,18 +176,51 @@ async function _installMacBrowserLauncher(browser) {
     copyFile(installedBrowser.iconPath, iconDestination);
   }
 
-  const signingMarker = "BROWSER_FLAGS_APP_SIGNED";
   const signingCommand = [
     `chmod +x ${_quoteMacShellArgument(launcherPath)}`,
     `codesign --force --sign - ${_quoteMacShellArgument(appPath)}`,
     `codesign --verify --deep --strict ${_quoteMacShellArgument(appPath)}`,
-    `printf '%s' ${_quoteMacShellArgument(signingMarker)}`,
+    `printf '%s' ${_quoteMacShellArgument(_MAC_BROWSER_APP_ACTION_MARKER)}`,
   ].join(" && ");
   const signingOutput = await execBash(signingCommand);
-  if (signingOutput.trim() !== signingMarker) throw new Error(`Could not sign ${browser.appName}.app.`);
+  if (signingOutput.trim() !== _MAC_BROWSER_APP_ACTION_MARKER) throw new Error(`Could not sign ${browser.appName}.app.`);
 
   log(`>>> Signed ${browser.appName}.app with shared browser launch options.`);
   return installedBrowser.executablePath;
+}
+
+/**
+ * Removes a previous flags app only when its bundle identifier and launcher prove repo ownership.
+ * @param {{legacyAppName: string, legacyBundleIdentifier: string, displayName: string}} browser - Legacy bundle identity.
+ * @returns {Promise<void>} Resolves when no managed legacy bundle exists or removal succeeds.
+ * @throws {Error} If verified removal does not complete.
+ */
+async function _removeLegacyMacBrowserLauncher(browser) {
+  const legacyAppPath = path.join("/Applications", `${browser.legacyAppName}.app`);
+  if (!pathExists(legacyAppPath)) return;
+
+  const infoPlist = await readText`${path.join(legacyAppPath, "Contents/Info.plist")}`;
+  const launcherScript = await readText`${path.join(legacyAppPath, "Contents/MacOS/launcher")}`;
+  const hasManagedBundleIdentifier = infoPlist.includes(`<string>${browser.legacyBundleIdentifier}</string>`);
+  const hasManagedLauncher = launcherScript.includes("# Managed flags-only launcher; regular browser app remains unchanged.");
+  if (!hasManagedBundleIdentifier || !hasManagedLauncher) {
+    log(`>>> Left ${legacyAppPath} untouched: it is not a recognized managed launcher.`);
+    return;
+  }
+
+  // TODO: DECOMMISION THIS REMOVE THIS when fully migrated to Browser *.App.
+  // deleteFolder rejects shallow /Applications paths; the exact bundle identity above narrows this removal.
+  const removalCommand = [
+    `command rm -rf ${_quoteMacShellArgument(legacyAppPath)}`,
+    `test ! -e ${_quoteMacShellArgument(legacyAppPath)}`,
+    `printf '%s' ${_quoteMacShellArgument(_MAC_BROWSER_APP_ACTION_MARKER)}`,
+  ].join(" && ");
+  const removalOutput = await execBash(removalCommand);
+  if (removalOutput.trim() !== _MAC_BROWSER_APP_ACTION_MARKER) {
+    throw new Error(`Could not remove managed ${browser.legacyAppName}.app.`);
+  }
+
+  log(`>>> Removed prior managed launcher app: ${legacyAppPath}`);
 }
 
 /**
@@ -196,7 +238,7 @@ function _getMacBrowserLauncherFunctions(executablePaths) {
     "    return 1",
     "  fi",
     '  if [ ! -x "$launcher_app/Contents/MacOS/launcher" ]; then',
-    '    echo "Error: $display_name With Flags launcher not installed; rerun setup." >&2',
+    '    echo "Error: Browser $display_name app not installed; rerun setup." >&2',
     "    return 1",
     "  fi",
     '  open "$launcher_app" --args "$@"',
@@ -217,6 +259,10 @@ async function doWork() {
   const browserExecutablePaths = {};
   for (const browser of _MAC_BROWSER_LAUNCHER_APPS) {
     browserExecutablePaths[browser.command] = await _installMacBrowserLauncher(browser);
+  }
+
+  for (const browser of _MAC_BROWSER_LAUNCHER_APPS) {
+    if (browserExecutablePaths[browser.command]) await _removeLegacyMacBrowserLauncher(browser);
   }
 
   const macBrowserLauncherFunctions = _getMacBrowserLauncherFunctions(browserExecutablePaths);
