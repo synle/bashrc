@@ -136,7 +136,7 @@ exec ${_quoteMacShellArgument(executablePath)} "\${browser_flags[@]}" "$@"`;
 
 /**
  * Creates or refreshes one signed launcher app when its browser is installed.
- * @param {{command: string, displayName: string, appName: string, bundleIdentifier: string, bundlePattern: RegExp}} browser - Launcher definition.
+ * @param {{command: string, displayName: string, appName: string, bundleIdentifier: string, bundlePattern: RegExp, legacyAppName: string, legacyBundleIdentifier: string}} browser - Launcher and migration definition.
  * @returns {Promise<string|null>} Resolved browser executable path, or null when skipped.
  * @throws {Error} If launcher files cannot be written and signed successfully.
  */
@@ -190,8 +190,8 @@ async function _installMacBrowserLauncher(browser) {
 }
 
 /**
- * Removes a previous flags app only when its bundle identifier and launcher prove repo ownership.
- * @param {{legacyAppName: string, legacyBundleIdentifier: string, displayName: string}} browser - Legacy bundle identity.
+ * Removes a previous flags app after replacement succeeds and exact bundle markers prove repo ownership.
+ * @param {{legacyAppName: string, legacyBundleIdentifier: string}} browser - Legacy bundle identity.
  * @returns {Promise<void>} Resolves when no managed legacy bundle exists or removal succeeds.
  * @throws {Error} If verified removal does not complete.
  */
