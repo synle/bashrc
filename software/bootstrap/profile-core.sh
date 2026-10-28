@@ -613,10 +613,15 @@ function print_action_summary() {
   [ "$resolved_dir" != "$dir" ] && printf '%s%s%s\n' "$c_text" "cd \"$resolved_dir\"" "$c_reset"
   if [ -n "$binary" ]; then
     local prefix="$binary"
-    [ ${#extra_args[@]} -gt 0 ] && prefix="$binary ${extra_args[*]}"
+    case "$binary" in
+    *" "*) prefix="\"$binary\"" ;;
+    esac
+    local a
+    for a in "${extra_args[@]}"; do
+      prefix+=" \"$a\""
+    done
     printf '%s%s%s\n' "$c_text" "$prefix \"$target_abs\"" "$c_reset"
     [ "$resolved_target" != "$target_abs" ] && printf '%s%s%s\n' "$c_text" "$prefix \"$resolved_target\"" "$c_reset"
-    # Symlink: also show the same command against the file it points to.
     [ -n "$link_abs" ] && printf '%s%s%s\n' "$c_text" "$prefix \"$link_abs\"" "$c_reset"
   fi
   printf '%s%s%s\n' "$c_rule" "$divider" "$c_reset"
@@ -628,6 +633,14 @@ function print_action_summary() {
   case "$-" in *i*) ;; *) return 0 ;; esac
   local history_cmd="cd \"$dir\""
   if [ -n "$binary" ]; then
+    local prefix="$binary"
+    case "$binary" in
+    *" "*) prefix="\"$binary\"" ;;
+    esac
+    local a
+    for a in "${extra_args[@]}"; do
+      prefix+=" \"$a\""
+    done
     history_cmd="$prefix \"$target_abs\""
     [ -n "$run_folder" ] && history_cmd="cd \"$dir\" && $history_cmd"
   fi
