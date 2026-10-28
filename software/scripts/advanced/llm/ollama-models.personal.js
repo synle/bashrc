@@ -113,6 +113,7 @@ function _buildOllamaBackgroundPullProgram(tags, logPath) {
     `function log(...parts) { fs.appendFileSync(LOG_PATH, new Date().toTimeString().slice(0, 8) + " " + parts.join(" ") + "\\n"); }`,
     `const _URL_FETCH_TIMEOUT_MS = ${OLLAMA_PULL_TIMEOUT_MS};`,
     `const LOCK_PATH = ${JSON.stringify(OLLAMA_PULL_LOCK_PATH)};`,
+    `function _GITHUB_API_URL_PREFIX() { return null; }`,
     `function _readUrlCache() { return null; }`,
     `function _writeUrlCache() {}`,
     `function _getGitHubApiToken() { return ""; }`,
