@@ -73,7 +73,7 @@ describe("Windows browser shortcut setup", () => {
     expect(shortcutScript).toContain("$browserInstallRelativePaths[$BrowserName]");
     expect(shortcutScript).toContain("--source-shortcut-location=desktop");
     expect(shortcutScript).toContain(
-      "--disable-features=Translate,InterestFeedContentSuggestions,OptimizationHints,GlobalMediaControls,IPH_GMCSaveVideoFrame,ChromeWhatsNewUI,MediaRouter,msUndersideButton,msEdgeSidebarV2",
+      "--disable-features=Translate,InterestFeedContentSuggestions,OptimizationHints,GlobalMediaControls,IPH_GMCSaveVideoFrame,ChromeWhatsNewUI,MediaRouter,AIChatCodeExecutionTool,AIChatNEARModelsStudy_Release,BraveAdsObliviousHttpStudy,BraveNTPBrandedWallpaperStudy,WhatsNewStudy,msUndersideButton,msEdgeSidebarV2",
     );
     expect(shortcutScript).toContain("# '--disable-web-security'");
     expect(shortcutScript).not.toMatch(/^\s*'--disable-web-security'/m);
@@ -208,14 +208,14 @@ $update = [scriptblock]::Create($shortcutSource)
       Brave: {
         TargetPath: "C:\\New Browser Location\\Brave\\brave.exe",
         Arguments:
-          "--profile-directory=Default --source-shortcut-location=desktop --disable-smooth-scrolling --disable-breakpad --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist --disk-cache-size=1073741824 --no-pings --no-default-browser-check --no-first-run --disable-search-engine-choice-screen --disable-brave-rewards-extension --windows-native-window --disable-features=OldFeature,Translate,InterestFeedContentSuggestions,OptimizationHints,GlobalMediaControls,IPH_GMCSaveVideoFrame,ChromeWhatsNewUI,MediaRouter",
+          "--profile-directory=Default --source-shortcut-location=desktop --disable-smooth-scrolling --disable-breakpad --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist --disk-cache-size=1073741824 --no-pings --no-default-browser-check --no-first-run --disable-search-engine-choice-screen --disable-brave-rewards-extension --windows-native-window --disable-features=OldFeature,Translate,InterestFeedContentSuggestions,OptimizationHints,GlobalMediaControls,IPH_GMCSaveVideoFrame,ChromeWhatsNewUI,MediaRouter,AIChatCodeExecutionTool,AIChatNEARModelsStudy_Release,BraveAdsObliviousHttpStudy,BraveNTPBrandedWallpaperStudy,WhatsNewStudy",
         WorkingDirectory: "C:\\New Browser Location\\Brave",
         SaveCount: 1,
       },
       Chrome: {
         TargetPath: "D:\\Browser Installs\\Chrome\\chrome.exe",
         Arguments:
-          "--profile-directory=Default --source-shortcut-location=desktop --disable-smooth-scrolling --disable-breakpad --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist --disk-cache-size=1073741824 --no-pings --no-default-browser-check --no-first-run --disable-search-engine-choice-screen --disable-features=OldFeature,Translate,InterestFeedContentSuggestions,OptimizationHints,GlobalMediaControls,IPH_GMCSaveVideoFrame,ChromeWhatsNewUI,MediaRouter",
+          "--profile-directory=Default --source-shortcut-location=desktop --disable-smooth-scrolling --disable-breakpad --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist --disk-cache-size=1073741824 --no-pings --no-default-browser-check --no-first-run --disable-search-engine-choice-screen --disable-features=OldFeature,Translate,InterestFeedContentSuggestions,OptimizationHints,GlobalMediaControls,IPH_GMCSaveVideoFrame,ChromeWhatsNewUI,MediaRouter,AIChatCodeExecutionTool,AIChatNEARModelsStudy_Release,BraveAdsObliviousHttpStudy,BraveNTPBrandedWallpaperStudy,WhatsNewStudy",
         WorkingDirectory: "D:\\Browser Installs\\Chrome",
         SaveCount: 1,
       },
@@ -228,7 +228,7 @@ $update = [scriptblock]::Create($shortcutSource)
       Edge: {
         TargetPath: "E:\\Browser Installs\\Edge\\msedge.exe",
         Arguments:
-          "--profile-directory=Default --source-shortcut-location=desktop --disable-smooth-scrolling --disable-breakpad --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist --disk-cache-size=1073741824 --no-pings --no-default-browser-check --no-first-run --disable-search-engine-choice-screen --disable-features=OldFeature,Translate,InterestFeedContentSuggestions,OptimizationHints,GlobalMediaControls,IPH_GMCSaveVideoFrame,ChromeWhatsNewUI,MediaRouter,msUndersideButton,msEdgeSidebarV2",
+          "--profile-directory=Default --source-shortcut-location=desktop --disable-smooth-scrolling --disable-breakpad --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist --disk-cache-size=1073741824 --no-pings --no-default-browser-check --no-first-run --disable-search-engine-choice-screen --disable-features=OldFeature,Translate,InterestFeedContentSuggestions,OptimizationHints,GlobalMediaControls,IPH_GMCSaveVideoFrame,ChromeWhatsNewUI,MediaRouter,AIChatCodeExecutionTool,AIChatNEARModelsStudy_Release,BraveAdsObliviousHttpStudy,BraveNTPBrandedWallpaperStudy,WhatsNewStudy,msUndersideButton,msEdgeSidebarV2",
         WorkingDirectory: "E:\\Browser Installs\\Edge",
         SaveCount: 1,
       },

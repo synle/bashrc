@@ -16,7 +16,7 @@ const _BROWSER_SHARED_LAUNCH_OPTIONS = [
   { flag: "--disable-search-engine-choice-screen", description: "Skips the search-engine choice screen." },
 ];
 
-/** Existing shared Chromium feature toggles retained alongside the requested additions. */
+/** Existing shared Chromium feature toggles, plus the AI and ad-study features to keep disabled. */
 const _BROWSER_SHARED_DISABLED_FEATURES = [
   "Translate",
   "InterestFeedContentSuggestions",
@@ -25,6 +25,13 @@ const _BROWSER_SHARED_DISABLED_FEATURES = [
   "IPH_GMCSaveVideoFrame",
   "ChromeWhatsNewUI",
   "MediaRouter",
+  // --- AI & Chat ---
+  "AIChatCodeExecutionTool", // Brave AI Chat: in-chat code execution tool study
+  "AIChatNEARModelsStudy_Release", // Brave AI: NEAR (on-device model) study, release channel
+  // --- Ads & Promotion ---
+  "BraveAdsObliviousHttpStudy", // Brave Ads: Oblivious-HTTP encrypted fetch routing for ad/news catalogs
+  "BraveNTPBrandedWallpaperStudy", // New Tab Page: sponsored/branded wallpaper study
+  "WhatsNewStudy", // "What's New" promo prompt study
 ];
 
 /** Edge-only feature toggles; the Copilot toolbar switch is better documented than the sidebar switch. */
@@ -58,6 +65,7 @@ function getBrowserLaunchOptions(browserName, platform = "default") {
     "hides the Chrome What's New page",
     "removes Cast/Media Router and its network probing",
     "stops OptimizationHints fetching",
+    "disables the AI Chat tools and the Brave/Chrome ads, wallpaper, and What's-New study features",
   ];
   if (normalizedBrowserName === "edge") {
     featureDescription.push("disables the Edge Copilot toolbar button; msEdgeSidebarV2 is less documented and hit-or-miss");
