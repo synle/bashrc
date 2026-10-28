@@ -79,7 +79,9 @@ _LLM_PROMPTS_TYPES=(claude copilot gemini opencode)
 # on PATH before it runs, but node activation is slow enough that paying for it
 # on each invocation is wasteful. Guarded by the exported
 # LLM_SETUP_NODE_ACTIVATED flag so the activation happens exactly once per
-# shell session; subsequent calls are a no-op. Returns non-zero when
+# shell session; subsequent calls are a no-op. Runs `activate_node` silently
+# (its stdout is discarded) so the wrapper output stays clean, while the
+# PATH/env side effects still apply to this shell. Returns non-zero when
 # `activate_node` (aliased as `a_node`) is unavailable so callers can bail with
 # their own message. Resolves the underlying function rather than the alias
 # because aliases do not expand inside function bodies.
@@ -92,7 +94,9 @@ function llm_setup_activate() {
     return 1
   fi
 
-  activate_node
+  # Discard activate_node's stdout (the "activate_node: fnm node vN..." line)
+  # so the LLM wrapper stays quiet; the PATH/env changes it makes still apply.
+  activate_node > /dev/null
   export LLM_SETUP_NODE_ACTIVATED=1
 }
 
