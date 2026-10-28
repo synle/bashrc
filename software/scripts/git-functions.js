@@ -13,6 +13,7 @@ const GIT_FUNCTION_PAYLOADS = [
   { source: `software/scripts/git.checkout.cjs`, command: `git_checkout` },
   { source: `software/scripts/git.pr_list.cjs`, command: `list_prs` },
   { source: `software/scripts/git.worktree_clean.cjs`, command: `worktree_clean` },
+  { source: `software/scripts/git.worktree_list.cjs`, command: `worktree_list` },
   { source: `software/scripts/git.pr_merge.cjs`, command: `pr_merge` },
   { source: `software/scripts/git.worktree_create.cjs`, command: `worktree_create` },
 ];

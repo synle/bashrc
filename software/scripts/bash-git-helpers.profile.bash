@@ -311,15 +311,18 @@ function _clean_claude_worktrees() {
   fi
 }
 
-# _clean_background_tail <total_steps> <repo_root> <force_worktrees> <default_branch> - run
-# clean's slow follow-up work as one backgrounded function call so interactive shells report a
-# short job line instead of re-printing the whole inline subshell body when the cleanup finishes.
+# _clean_background_tail <total_steps> <repo_root> <force_worktrees> <default_branch> [include|skip]
+# Run clean's slow follow-up work synchronously or as one backgrounded call, so interactive shells
+# report a short job line instead of re-printing the whole subshell body when cleanup finishes.
 # Keep output live on stdout/stderr so progress lands line by line instead of as a buffered dump.
+# The optional worktree cleanup mode defaults to include; skip overrides force_worktrees.
+# Removes cleanup files, stale branches/tags, and optionally Git worktrees; returns git lastd's status.
 function _clean_background_tail() {
   local total_steps="$1"
   local repo_root="$2"
   local force_worktrees="$3"
   local default_branch="$4"
+  local worktree_cleanup="${5:-include}"
 
   # Sweep the *.rej hunk rejects a failed 'git apply' / 'patch' leaves behind. They are
   # untracked and gitignored, so they survive every reset below and quietly rot next to the
@@ -359,7 +362,9 @@ function _clean_background_tail() {
   _log_progress_step "$total_steps" "🗑️ Deleting merged branches and pruned tags"
   git --no-pager clean-merged-branches-and-tags
 
-  if ((force_worktrees)); then
+  if [ "$worktree_cleanup" = "skip" ]; then
+    echo "  -> Git worktree cleanup skipped (--skip-worktree-clean)"
+  elif ((force_worktrees)); then
     _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
     git --no-pager worktree prune
     worktree_clean --force
@@ -385,10 +390,12 @@ function _clean_background_tail() {
 # After successful rebase, optionally initializes/syncs CodeGraph quietly in the background.
 # With --force / -f, every worktree is removed instead, skipping the dirty/merged checks.
 # With --background / -b, the slow tail returns early and keeps printing progress below the prompt.
+# With --skip-worktree-clean, Git worktree cleanup is skipped even when --force is present.
+# Returns 1 for help/default-branch resolution failure, 0 after background launch, or the tail's status.
 function clean() {
   if is_help_arg "${1:-}"; then
     echo "clean: safely reset current branch to origin's default branch
-  Usage: clean [--force|-f] [--background|-b]
+  Usage: clean [--force|-f] [--background|-b] [--skip-worktree-clean]
   Notes:
     - Stashes ALL changes (staged + unstaged + untracked) first as a safety backup
     - Recover from stash with: git stash list  |  git stash pop
@@ -398,12 +405,14 @@ function clean() {
     - After successful rebase, initializes/syncs CodeGraph quietly in the background when codegraph and codegraph_refresh are installed
     - Also deletes stale local branches (squash-merged PRs), merged branches, stale local tags, and prunes and removes merged/gone worktrees
     - --force / -f: ALSO remove EVERY worktree, skipping the dirty/merged checks (uncommitted work in those worktrees is lost)
-    - --background / -b: return after the branch reset and let steps 12-16 keep printing below the prompt"
+    - --background / -b: return after the branch reset and let remaining cleanup steps keep printing below the prompt
+    - --skip-worktree-clean: skip Git worktree pruning/removal, even with --force; all other cleanup still runs"
     return 1
   fi
 
   local force_worktrees=0
   local background_tail=0
+  local worktree_cleanup="include"
   while [ $# -gt 0 ]; do
     case "$1" in
     --force | -f)
@@ -412,11 +421,17 @@ function clean() {
     --background | -b)
       background_tail=1
       ;;
+    --skip-worktree-clean)
+      worktree_cleanup="skip"
+      ;;
     esac
     shift
   done
 
   local total_steps=17
+  if [ "$worktree_cleanup" = "skip" ]; then
+    total_steps=$((total_steps - 1))
+  fi
   _PROGRESS_STEP=0
 
   # Safe stash first: capture staged + unstaged + untracked so nothing is lost.
@@ -490,11 +505,11 @@ function clean() {
   # so progress stays linear; keep --background as an explicit opt-in for fire-and-forget use.
   if ((background_tail)); then
     echo "  -> background cleanup offloaded; progress continues below"
-    _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch" &
+    _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch" "$worktree_cleanup" &
     return 0
   fi
 
-  _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch"
+  _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch" "$worktree_cleanup"
 }
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment
@@ -676,6 +691,116 @@ function git_create_worktree() {
   print_action_summary "$target"
   cd "$target"
 }
+
+# worktree_cd: change to a worktree matching branch and optional repository keywords.
+# Args: branch keyword, optional org/repo keyword (case-insensitive substrings).
+# Returns 0 after navigation/cancellation; nonzero on invalid input, no match, or failure.
+# Prints an action summary before changing this shell's folder; prompts only through the terminal.
+function worktree_cd() {
+  if is_help_arg "${1:-}"; then
+    echo "worktree_cd: change to a worktree matching branch and optional repository keywords.
+  Usage: worktree_cd <branch_keyword> [repo_keyword]
+  Alias: worktree_navigate
+  Search: worktree_list inventory; omit repo_keyword to search every listed repository.
+  One match navigates directly. Multiple matches show at most 10 choices; enter a number or n to cancel.
+  Ambiguous selection requires terminal input; pipeline stdin is never consumed."
+    return 0
+  fi
+  if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || [ -z "$1" ]; then
+    echo "worktree_cd: expected <branch_keyword> [repo_keyword]" >&2
+    return 1
+  fi
+  if ! type -P worktree_list > /dev/null 2>&1 || ! type -P node > /dev/null 2>&1; then
+    echo "worktree_cd: worktree_list and node must be installed" >&2
+    return 1
+  fi
+
+  local inventory results node_script encoded label choice target
+  local max_choices=10 choice_timeout=60 selected=0 index=0
+  local -a paths=() labels=()
+  inventory=$(command worktree_list --raw) || return $?
+  IFS= read -r -d '' node_script << 'WORKTREE_CD_NODE' || true
+const fs = require('fs');
+const path = require('path');
+const branch = process.argv[1].toLowerCase();
+const repo = process.argv[2].toLowerCase();
+const limit = Number(process.argv[3]);
+let rows;
+try {
+  rows = JSON.parse(fs.readFileSync(0, 'utf8'));
+} catch (error) {
+  if (!(error instanceof SyntaxError)) throw error;
+  process.stderr.write('worktree_cd: invalid JSON from worktree_list\n');
+  process.exit(1);
+}
+if (!Array.isArray(rows) || rows.some((row) =>
+  row === null || typeof row !== 'object' ||
+  (row.branch_name !== null && typeof row.branch_name !== 'string') ||
+  (row.org !== null && typeof row.org !== 'string') || typeof row.repo !== 'string' ||
+  typeof row.worktree_path !== 'string' || !path.isAbsolute(row.worktree_path) || row.worktree_path.includes('\0')
+)) {
+  process.stderr.write('worktree_cd: invalid inventory from worktree_list\n');
+  process.exit(1);
+}
+/** Escape terminal controls in menu labels without changing path bytes. @param {string} value @returns {string} */
+function display(value) {
+  return value.replace(/[\x00-\x1f\x7f-\x9f]/g, (char) => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0'));
+}
+const matches = rows.filter((row) => row.branch_name !== null && row.branch_name.toLowerCase().includes(branch) &&
+  ((row.org === null ? '' : row.org + '/') + row.repo).toLowerCase().includes(repo));
+for (const row of matches.slice(0, limit)) {
+  const name = (row.org === null ? '' : row.org + '/') + row.repo;
+  process.stdout.write(Buffer.from(row.worktree_path).toString('base64') + '\t' +
+    display(row.branch_name + ' ' + name + ' ' + row.worktree_path) + '\n');
+}
+WORKTREE_CD_NODE
+  results=$(printf '%s' "$inventory" | command node -e "$node_script" -- "$1" "${2:-}" "$max_choices") || return $?
+  if [ -z "$results" ]; then
+    echo "worktree_cd: no matching worktrees" >&2
+    return 1
+  fi
+  while IFS=$'\t' read -r encoded label; do
+    paths+=("$encoded")
+    labels+=("$label")
+  done <<< "$results"
+
+  if [ "${#paths[@]}" -gt 1 ]; then
+    echo "Matching worktrees (at most $max_choices shown):" >&2
+    while [ "$index" -lt "${#paths[@]}" ]; do
+      printf '  %s) %s\n' "$((index + 1))" "${labels[$index]}" >&2
+      index=$((index + 1))
+    done
+    if [ ! -t 0 ] || ! { : < /dev/tty; } 2> /dev/null; then
+      echo "worktree_cd: multiple matches require a terminal; refine the keywords" >&2
+      return 1
+    fi
+    while true; do
+      printf 'Choose 1-%s or n to exit: ' "${#paths[@]}" >&2
+      IFS= read -r -t "$choice_timeout" choice < /dev/tty || return 1
+      case "$choice" in
+      n | N) return 0 ;;
+      [1-9] | 10)
+        if [ "$choice" -le "${#paths[@]}" ]; then
+          selected=$((choice - 1))
+          break
+        fi
+        ;;
+      esac
+      echo "worktree_cd: invalid choice" >&2
+    done
+  fi
+
+  # A sentinel preserves trailing newlines that command substitution would otherwise remove.
+  target=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString("utf8") + ".")' -- "${paths[$selected]}") || return $?
+  target=${target%.}
+  if [ ! -d "$target" ]; then
+    echo "worktree_cd: selected folder no longer exists" >&2
+    return 1
+  fi
+  print_action_summary "$target" || return $?
+  builtin cd -- "$target"
+}
+alias worktree_navigate="worktree_cd"
 
 ################################################################################
 # --- Git Patch Transfer ---

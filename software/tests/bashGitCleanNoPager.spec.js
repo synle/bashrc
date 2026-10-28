@@ -1,4 +1,4 @@
-/** Git clean helper pager-safety checks. */
+/** Git clean helper pager safety and optional worktree cleanup checks. */
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "child_process";
 import fs from "fs";
@@ -68,8 +68,8 @@ touch -t 202001010000 .claude/worktree-old
 function echo_and_set_terminal_title() { echo "$*"; }
 function is_help_arg() { return 1; }
 function _get_default_branch() { echo master; }
-function _log_progress_step() { shift; echo "$*"; }
-function worktree_clean() { sleep 0.05; echo TAIL_WORKTREE; }
+function _log_progress_step() { echo "TOTAL:$1"; shift; echo "$*"; }
+function worktree_clean() { sleep 0.05; echo "TAIL_WORKTREE:$*"; }
 function _clean_claude_worktrees() {${claudeCleanupSource}
 }
 function git() {
@@ -114,6 +114,7 @@ function git() {
     return 0
     ;;
   worktree)
+    echo TAIL_PRUNE
     return 0
     ;;
   esac
@@ -167,6 +168,42 @@ describe("clean git commands", () => {
     expect(backgroundTailSource).not.toContain("git --no-pager clean-worktree");
   });
 
+  it.each([{ args: [] }, { args: ["--background"] }])("includes worktree cleanup by default $args", ({ args }) => {
+    const output = runCleanWithStubs(args);
+
+    expect(output).toContain("TAIL_WORKTREE:\n");
+    expect(output).not.toContain("TAIL_PRUNE");
+    expect(output).toContain("TOTAL:17");
+    expect(output).toContain("CLEAN_STATUS:0");
+  });
+
+  it.each([{ args: ["--force"] }, { args: ["-f", "-b"] }])("preserves forced worktree cleanup $args", ({ args }) => {
+    const output = runCleanWithStubs(args);
+
+    expect(output).toContain("TAIL_WORKTREE:--force\n");
+    expect(output).toContain("TAIL_PRUNE");
+    expect(output).toContain("TOTAL:17");
+    expect(output).toContain("CLEAN_STATUS:0");
+  });
+
+  it.each([
+    { args: ["--skip-worktree-clean"] },
+    { args: ["--skip-worktree-clean", "--background"] },
+    { args: ["--force", "--skip-worktree-clean"] },
+    { args: ["--skip-worktree-clean", "-f", "-b"] },
+  ])("skips worktree cleanup but preserves the rest of clean $args", ({ args }) => {
+    const output = runCleanWithStubs(args);
+
+    expect(output).not.toContain("TAIL_WORKTREE");
+    expect(output).not.toContain("TAIL_PRUNE");
+    expect(output).toContain("TOTAL:16");
+    expect(output).not.toContain("TOTAL:17");
+    expect(output).toContain("TAIL_STALE");
+    expect(output).toContain("TAIL_MERGED");
+    expect(output).toContain("TAIL_LASTD");
+    expect(output).toContain("CLEAN_STATUS:0");
+  });
+
   it("cleans empty Claude worktree folders but keeps non-empty folders", () => {
     const output = runCleanWithStubs();
 
@@ -208,8 +245,8 @@ describe("clean git commands", () => {
       const output = runCleanWithStubs(args, { codegraph: true });
 
       expect(output).toContain("CodeGraph refresh started in background");
-      expect(output.indexOf("CodeGraph refresh started in background")).toBeGreaterThan(output.indexOf("🔀 Rebasing onto"));
-      expect(output.indexOf("CodeGraph refresh started in background")).toBeLessThan(output.indexOf("🗑️ Deleting temp/"));
+      expect(output.indexOf("CodeGraph refresh started in background")).toBeGreaterThan(output.indexOf("\ud83d\udd00 Rebasing onto"));
+      expect(output.indexOf("CodeGraph refresh started in background")).toBeLessThan(output.indexOf("\ud83d\uddd1\ufe0f Deleting temp/"));
       expect(output).toContain("REFRESH_ROOT_AFTER_REBASE");
       expect(output).toContain("REFRESH_RELEASED_AFTER_CLEAN");
       expect(output).not.toContain("REFRESH_BLOCKED_CLEAN");

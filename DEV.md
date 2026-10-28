@@ -405,6 +405,29 @@ Regression coverage lives in `software/tests/nativeCd.spec.js` and `software/tes
 These shortcuts are explicit aliases, not generated command variants.
 Long listings use native timestamps and permission columns.
 
+## Worktree listing
+
+`worktree_list` lists primary and linked worktrees without changing Git state or querying remote services.
+It scans the current folder and nested repositories through depth three, excluding hidden/cache folders and symbolic-link recursion.
+Discovered repositories include all registered worktrees, even when linked paths lie outside the scan folder.
+
+```bash
+worktree_list           # pretty output (default)
+worktree_list --pretty  # explicit pretty output
+worktree_list --raw     # JSON array
+```
+
+Pretty output groups worktrees under `📦 <org>/<repo>  <root_path>` headers.
+Each worktree row uses `🌳  <branch_name> <worktree_path>`.
+Raw records contain `branch_name`, `repo`, `org`, `worktree_path`, and `root_path`.
+`root_path` identifies the primary checkout; detached/bare branches and unknown organizations use JSON `null`.
+Repositories without a network origin use the primary folder name.
+Malformed network origin URLs fail with a diagnostic instead of producing an inventory.
+Pretty output labels detached/bare branches and escapes terminal control bytes; raw JSON preserves exact path values.
+An empty scope produces `[]` in raw mode.
+
+Install through `./run --files=git-functions.js` or the broader `./run --preset=terminal`.
+
 ## Terminal links
 
 Terminal link helpers render labels in blue without explanatory hints. Open links with your terminal's link gesture; modifier keys vary by terminal.
