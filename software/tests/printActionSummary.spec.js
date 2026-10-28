@@ -212,7 +212,7 @@ describe("print_action_summary", () => {
     const dir = path.join(sandbox, "home", "proj");
     fs.mkdirSync(dir);
     const out = callSummary({ args: [dir, "subl", "-n", "-w"] });
-    expect(out.split("\n")).toContain(`subl -n -w "${rp(dir)}"`);
+    expect(out.split("\n")).toContain(`subl "-n" "-w" "${rp(dir)}"`);
   });
 
   it("quotes paths with spaces so the rendered command is shell-safe", () => {

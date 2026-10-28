@@ -247,8 +247,8 @@ describe("getOllamaDefaultModel", () => {
 
   it("prefers configured agent models only when the default host actually serves them", () => {
     const sandbox = loadLlmCommon(null);
-    expect(sandbox.getOllamaDefaultModel([{ id: "ollama-local", models: [{ name: "gemma4:26b" }, { name: "glm-4.7-flash" }] }])).toBe(
-      "glm-4.7-flash",
+    expect(sandbox.getOllamaDefaultModel([{ id: "ollama-local", models: [{ name: "gemma4:26b" }, { name: "qwen3.8:latest" }] }])).toBe(
+      "qwen3.8:latest",
     );
   });
 

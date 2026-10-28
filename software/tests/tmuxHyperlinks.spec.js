@@ -133,7 +133,8 @@ describe("git tools OSC 8-wrap human URL output (TTY-gated)", () => {
     expect(source).toMatch(/function linkify\(text, enabled\)/);
     expect(source).toMatch(/if\s*\(!enabled\)\s*return\s+text;/);
     expect(source).toMatch(/https\?:\\\/\\\/\\S\+/); // URL match regex
-    // The branch reason (which may carry a PR URL) is linkified at the print site.
-    expect(source).toMatch(/linkify\(decision\.reason, color\)/);
+    // The complete row includes the branch reason and its optional PR URL.
+    expect(source).toMatch(/reason: decision\.reason/);
+    expect(source).toMatch(/print\(linkify\(row, color\)\)/);
   });
 });

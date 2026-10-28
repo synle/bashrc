@@ -526,6 +526,8 @@ function to_windows_path() {
 # print_action_summary <target_path> [<binary> [<extra_args>...]] - Render a copy-paste-
 # print_action_summary [--run-folder=<folder>] <target_path> [<binary> [<extra_args>...]] -
 # Render a copy-paste-runnable summary block for an "act on a path" operation.
+# Accepts an optional run folder, target, binary, and arguments; returns 0 after rendering.
+# Writes stdout and interactive history; path-resolution failures retain the supplied path.
 function print_action_summary() {
   if is_help_arg "${1:-}"; then
     echo "print_action_summary: show copy-paste-runnable action summary
@@ -554,7 +556,6 @@ function print_action_summary() {
   shift || return 1
   local binary="${1:-}"
   [ $# -gt 0 ] && shift
-  local -a extra_args=("$@")
 
   # Resolve to absolute WITHOUT following a symlinked final component, so the
   # summary names the path the user picked. Tolerate non-existent paths.
@@ -617,7 +618,7 @@ function print_action_summary() {
     *" "*) prefix="\"$binary\"" ;;
     esac
     local a
-    for a in "${extra_args[@]}"; do
+    for a in "$@"; do
       prefix+=" \"$a\""
     done
     printf '%s%s%s\n' "$c_text" "$prefix \"$target_abs\"" "$c_reset"
@@ -638,7 +639,7 @@ function print_action_summary() {
     *" "*) prefix="\"$binary\"" ;;
     esac
     local a
-    for a in "${extra_args[@]}"; do
+    for a in "$@"; do
       prefix+=" \"$a\""
     done
     history_cmd="$prefix \"$target_abs\""

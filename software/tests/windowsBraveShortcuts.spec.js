@@ -143,7 +143,7 @@ $update = [scriptblock]::Create($shortcutSource)
     expect(JSON.parse(result.stdout.trim())).toEqual({
       TargetPath: "C:\\Users\\Test User\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
       Arguments:
-        "--profile-directory=Default --source-shortcut-location=desktop --windows-native-window --disable-features=IPH_GMCSaveVideoFrame",
+        "--profile-directory=Default --source-shortcut-location=desktop --windows-native-window --disable-features=IPH_GMCSaveVideoFrame,GlobalMediaControls --disable-smooth-scrolling",
       WorkingDirectory: "C:\\Users\\Test User\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application",
       SaveCount: 1,
     });

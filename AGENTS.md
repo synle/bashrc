@@ -298,6 +298,7 @@ Profile registration is buffered: `registerProfileBlock` /
   file/folder (cd, view, edit, cat) — prints a copy-paste-runnable `PWD:` / `cd` /
   `<binary>` block (plus the WSL Windows path) before the side effect. Never hand-roll it;
   use the sibling `to_windows_path`, not `wslpath -m`.
+  Extra arguments remain quoted; iterate positional arguments directly so empty input works under Bash 3.2 with `set -u`.
 - **User-facing bash functions need inline `--help` via `is_help_arg`** —
   `if is_help_arg "${1:-}"; then …`, help as one multi-line `echo`, first line
   `"funcname: short description"`, matching `#` comment above the function. Inline help
