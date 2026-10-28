@@ -166,6 +166,69 @@ function _get_default_branch() {
   echo "$default_branch"
 }
 
+# purge_branches_and_tags: delete local branches and tags except the default branch.
+# Accepts only --dry-run or help; returns 1 on resolution, checkout, or deletion failure.
+# Switches to the default branch without forcing; never resets or cleans working files.
+# Unmerged branch tips and local-only tags lose their names; linked worktrees stay intact.
+function purge_branches_and_tags() {
+  if is_help_arg "${1:-}"; then
+    echo "purge_branches_and_tags: delete local branches and tags except the default branch
+  Usage: purge_branches_and_tags [--dry-run]
+  Keeps origin's default branch, falling back to local main, then master.
+  Switches to that branch without forcing checkout; it must exist locally.
+  Deletes unmerged branches and all local tags. Remote refs stay intact.
+  Never resets or cleans working files; normal checkout conflict protection applies.
+  Branches checked out in linked worktrees cannot be deleted; failures return nonzero.
+  Use --dry-run to preview without changing refs or switching branches."
+    return 0
+  fi
+  local dry_run=0
+  if [ "$#" -eq 1 ] && [ "$1" = "--dry-run" ]; then
+    dry_run=1
+  elif [ "$#" -ne 0 ]; then
+    echo "purge_branches_and_tags: expected no arguments or --dry-run" >&2
+    return 1
+  fi
+
+  command git rev-parse --show-toplevel > /dev/null || return 1
+  local default_branch branch tags branches
+  default_branch=$(_get_default_branch 2> /dev/null)
+  if [ -z "$default_branch" ]; then
+    for branch in main master; do
+      if command git show-ref --verify --quiet "refs/heads/$branch"; then
+        default_branch="$branch"
+        break
+      fi
+    done
+  fi
+  if [ -z "$default_branch" ] || ! command git show-ref --verify --quiet "refs/heads/$default_branch"; then
+    echo "purge_branches_and_tags: default branch must exist locally; nothing deleted" >&2
+    return 1
+  fi
+  branches=$(command git for-each-ref --format='%(refname:strip=2)' refs/heads/) || return 1
+  tags=$(command git for-each-ref --format='%(refname:strip=2)' refs/tags/) || return 1
+  echo "-> keeping default branch '$default_branch'"
+  if ((! dry_run)); then
+    command git checkout "$default_branch" || return 1
+  fi
+  while IFS= read -r branch; do
+    [ -n "$branch" ] && [ "$branch" != "$default_branch" ] || continue
+    if ((dry_run)); then
+      echo "-> would delete local branch '$branch'"
+    else
+      command git branch -D -- "$branch" || return 1
+    fi
+  done <<< "$branches"
+  while IFS= read -r branch; do
+    [ -n "$branch" ] || continue
+    if ((dry_run)); then
+      echo "-> would delete local tag '$branch'"
+    else
+      command git tag -d -- "$branch" || return 1
+    fi
+  done <<< "$tags"
+}
+
 # purge [-r] <path> - Remove a file from entire git history, then gc
 function purge() {
   local recursive=""

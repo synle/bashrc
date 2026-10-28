@@ -195,6 +195,22 @@ Implicit fuzzy abbreviations are no longer supported. Replace `--preset=editor` 
 For automation without a terminal, provide exact preset names or unambiguous file paths, or pass `--skip-prompt` to accept every eligible match.
 Both SteamOS setup installer calls pass `--skip-prompt` so matching-name confirmation cannot interrupt those delegations.
 
+## Purging local Git branches and tags
+
+The shell helper `purge_branches_and_tags` operates only on the current repository:
+
+```bash
+purge_branches_and_tags --dry-run
+purge_branches_and_tags
+```
+
+It keeps origin's detected default branch, falling back to local `main`, then `master` when origin cannot identify a default.
+The retained branch must exist locally. The command switches to it without forcing checkout, deletes every other local branch, including unmerged branches, and deletes all local tags.
+Remote branches and tags remain unchanged. The command never resets or cleans working files and never removes linked worktrees.
+Checkout failures stop deletion; branches checked out in other worktrees cause a nonzero result and can leave an incomplete purge.
+Unpushed branch tips and local-only tags lose their names; record any needed commit IDs before purging.
+Remote-backed refs can be fetched again, but local-only refs have no guaranteed recovery.
+
 ## Local work files
 
 Shell startup loads regular files matching `~/.work_*.bash` through `safe_source` in lexical glob order.
