@@ -801,6 +801,9 @@ WORKTREE_CD_NODE
   builtin cd -- "$target"
 }
 alias worktree_navigate="worktree_cd"
+# Explicit opt-ins to destructive cleanup and per-worktree confirmation.
+alias worktree_purge="worktree_clean --mode purge"
+alias worktree_clean_interactive="worktree_clean --mode interactive"
 
 ################################################################################
 # --- Git Patch Transfer ---
