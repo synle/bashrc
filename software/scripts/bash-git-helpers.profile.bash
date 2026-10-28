@@ -381,7 +381,7 @@ function _clean_background_tail() {
 }
 
 # Safely resets the current branch to origin's default branch.
-# Confirms once before removing an index lock and stashing staged, unstaged, and untracked work.
+# Prompts only when an index lock exists, then stashes staged, unstaged, and untracked work.
 # Ignored files are excluded; stash/status failure stops cleanup before aborting operations.
 # Recover with `git stash list` / `git stash pop --index`. Deletes untracked *.rej patch rejects; leaves
 # every other untracked working-tree file alone. Also sweeps nested .DS_Store Finder junk.
@@ -399,7 +399,7 @@ function clean() {
     echo "clean: safely reset current branch to origin's default branch
   Usage: clean [--force|-f] [--background|-b] [--skip-worktree-clean]
   Notes:
-    - Confirms once before cleanup; stop other Git commands before approving index-lock removal
+    - Prompts only when index.lock exists; confirm no other Git command is running before removal
     - Stashes staged + unstaged + untracked files first; ignored files are NOT included
     - Stops if stashing or backup verification fails; never continues without a clean working tree
     - Recover from stash with: git stash list; git stash pop --index
@@ -451,17 +451,11 @@ function clean() {
   fi
   if [ -e "$index_lock" ] || [ -L "$index_lock" ]; then
     echo "-> remove index lock: $index_lock"
-  fi
-  # Only the operator can confirm an abandoned lock; never infer that from its age.
-  if ! prompt_yes_no "Continue with backup and cleanup? Confirm no other Git command is running" N; then
-    echo "-> cleanup cancelled; no changes made"
-    return 1
-  fi
-
-  local stash_msg pending_changes
-  stash_msg="clean backup $(command date +%Y-%m-%d_%H:%M:%S)"
-  _log_progress_step "$total_steps" "💾 Stashing all changes as '$stash_msg'"
-  if [ -e "$index_lock" ] || [ -L "$index_lock" ]; then
+    # Only the operator can confirm an abandoned lock; never infer that from its age.
+    if ! prompt_yes_no "Remove this index lock and continue? Confirm no other Git command is running" N; then
+      echo "-> cleanup cancelled; no changes made"
+      return 1
+    fi
     if ! command rm -f -- "$index_lock"; then
       echo "clean: could not remove index lock; cleanup stopped" >&2
       return 1
@@ -469,6 +463,9 @@ function clean() {
     echo "-> removed index lock: $index_lock"
   fi
 
+  local stash_msg pending_changes
+  stash_msg="clean backup $(command date +%Y-%m-%d_%H:%M:%S)"
+  _log_progress_step "$total_steps" "💾 Stashing all changes as '$stash_msg'"
   pending_changes=$(git --no-pager status --porcelain --untracked-files=all) || {
     echo "clean: could not inspect local changes; cleanup stopped" >&2
     return 1

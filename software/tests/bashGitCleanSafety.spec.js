@@ -131,28 +131,30 @@ exit "$status"
 }
 
 describe("clean safety backup", () => {
-  it.each([{ LOCK: "none" }, { LOCK: "file" }, { LOCK: "file", LINKED: "yes" }])(
-    "subprocess: restores staged, unstaged, and untracked work from a nested folder %j",
-    (options) => {
-      const result = runCleanScenario(options);
+  it.each([
+    { options: { LOCK: "none", CONFIRM_STATUS: "1" }, confirmations: 0 },
+    { options: { LOCK: "none", LINKED: "yes", CONFIRM_STATUS: "1" }, confirmations: 0 },
+    { options: { LOCK: "file" }, confirmations: 1 },
+    { options: { LOCK: "file", LINKED: "yes" }, confirmations: 1 },
+  ])("subprocess: restores work with confirmation only for the current index lock %j", ({ options, confirmations }) => {
+    const result = runCleanScenario(options);
 
-      expect(result.status).toBe(0);
-      expect(result.stderr).toBe("");
-      expect(result.stdout.match(/^CONFIRM:/gm)).toHaveLength(1);
-      expect(result.stdout).toContain("DEFAULT:N");
-      expect(result.stdout).toContain("CLEANUP_DONE");
-      expect(result.stdout).toContain("INDEX:staged\nFILE:staged\nunstaged\nNEW:untracked\n");
-      expect(result.stdout).toContain("IGNORED:ignored\n");
-      expect(result.stdout).toMatch(/clean backup \d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}/);
-      expect(result.stdout).not.toMatch(/^\s+->/m);
-    },
-  );
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout.match(/^CONFIRM:/gm) ?? []).toHaveLength(confirmations);
+    expect(result.stdout).toContain("CLEANUP_DONE");
+    expect(result.stdout).toContain("INDEX:staged\nFILE:staged\nunstaged\nNEW:untracked\n");
+    expect(result.stdout).toContain("IGNORED:ignored\n");
+    expect(result.stdout).toMatch(/clean backup \d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}/);
+    expect(result.stdout).not.toMatch(/^\s+->/m);
+  });
 
   it("subprocess: leaves the primary index lock alone in a linked worktree", () => {
     const result = runCleanScenario({ LOCK: "file", LINKED: "yes" });
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("PRIMARY_LOCK_PRESENT");
+    expect(result.stdout).toContain("DEFAULT:N");
     expect(result.stdout).toContain("NEW:untracked");
   });
 
