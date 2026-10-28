@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * worktree_clean — remove clean worktrees whose branches are merged.
+ * worktree_clean — preserve uncertain worktrees, confirm pending deletions, or purge linked worktrees.
  *
- * Scope is always the current working folder and nested repositories. The
- * primary worktree, dirty worktrees, detached worktrees, and ambiguous states
- * stay untouched.
+ * Scope is the current working folder and nested repositories. Primary and bare
+ * repositories always stay. Preserve is the default; interactive and purge can
+ * permanently delete uncommitted and untracked work.
  */
 
 const { spawnSync } = require("child_process");
@@ -83,19 +83,31 @@ function linkify(text, enabled) {
 }
 
 /**
- * Parse command-line options.
- * @param {string[]} argv
- * @returns {{dryRun: boolean, noColor: boolean, force: boolean, help: boolean}}
+ * Parse cleanup modes before any repository mutation; --force remains a purge alias.
+ * @param {string[]} argv Command-line arguments.
+ * @returns {{dryRun: boolean, noColor: boolean, force: boolean, help: boolean, mode: string}} Validated options.
+ * @sideEffects Invalid arguments terminate the CLI with status 1 before any repository changes.
  */
 function parseArgs(argv) {
-  const options = { dryRun: false, noColor: false, force: false, help: false };
+  const options = { dryRun: false, noColor: false, force: false, help: false, mode: `preserve` };
+  let selectedMode = null;
 
-  for (const arg of argv) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    let mode = null;
     if (arg === `--dry-run`) options.dryRun = true;
-    else if (arg === `--force` || arg === `-f`) options.force = true;
+    else if (arg === `--force` || arg === `-f`) mode = `purge`;
+    else if (arg === `--mode`) mode = argv[++index] ?? ``;
+    else if (arg.startsWith(`--mode=`)) mode = arg.slice(`--mode=`.length);
     else if (arg === `--no-color`) options.noColor = true;
     else if (arg === `--help` || arg === `-h`) options.help = true;
     else die(`unknown option '${arg}'`);
+    if (mode === null) continue;
+    if (![`preserve`, `interactive`, `purge`].includes(mode)) die(`--mode must be preserve, interactive, or purge`);
+    if (selectedMode !== null && selectedMode !== mode) die(`conflicting cleanup modes`);
+    selectedMode = mode;
+    options.mode = mode;
+    options.force = mode === `purge`;
   }
 
   return options;
@@ -136,7 +148,7 @@ function realPath(folder) {
 }
 
 /**
- * Resolve the top-level checkout containing a folder.
+ * Resolve the owning primary checkout or bare repository from a checkout folder.
  * @param {string} folder
  * @returns {string|null}
  */
@@ -146,9 +158,9 @@ function repoRootFrom(folder) {
   const root = result.stdout.trim();
   if (!root) return null;
 
-  const worktrees = runCommand(`git`, [`worktree`, `list`, `--porcelain`], root);
+  const worktrees = runCommand(`git`, [`worktree`, `list`, `--porcelain`, `-z`], root);
   if (worktrees.status === 0) {
-    const primary = parseWorktrees(worktrees.stdout).find((worktree) => !worktree.bare);
+    const primary = parseWorktrees(worktrees.stdout)[0];
     if (primary) return realPath(primary.path);
   }
 
@@ -230,7 +242,7 @@ function defaultBranchRef(repoRoot) {
 }
 
 /**
- * Parse `git worktree list --porcelain`.
+ * Parse NUL-delimited `git worktree list --porcelain -z`, preserving unusual path bytes.
  * @param {string} raw
  * @returns {Array<{path: string, branch: string|null, detached: boolean, bare: boolean, locked: boolean, prunable: boolean}>}
  */
@@ -242,7 +254,7 @@ function parseWorktrees(raw) {
     if (current) worktrees.push(current);
   };
 
-  for (const line of raw.split(/\r?\n/)) {
+  for (const line of raw.split(`\0`)) {
     if (line.startsWith(`worktree `)) {
       finish();
       current = {
@@ -273,12 +285,12 @@ function parseWorktrees(raw) {
 }
 
 /**
- * Read all worktrees owned by one repository.
+ * Read registered worktrees using unquoted, NUL-delimited paths.
  * @param {string} repoRoot
  * @returns {Array<{path: string, branch: string|null, detached: boolean, bare: boolean, locked: boolean, prunable: boolean}>|null}
  */
 function listWorktrees(repoRoot) {
-  const result = runCommand(`git`, [`worktree`, `list`, `--porcelain`], repoRoot);
+  const result = runCommand(`git`, [`worktree`, `list`, `--porcelain`, `-z`], repoRoot);
   if (result.status !== 0) return null;
   return parseWorktrees(result.stdout);
 }
@@ -382,13 +394,22 @@ function cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailabl
 }
 
 /**
- * Remove one worktree.
- * @param {string} repoRoot
- * @param {string} worktreePath
- * @param {boolean} [force] Pass `--force` so dirty or locked worktrees still go.
- * @returns {{removed: boolean, reason: string}}
+ * Revalidate registration and branch identity, then remove one non-primary worktree.
+ * @param {string} repoRoot Repository that owns the registration.
+ * @param {string} worktreePath Absolute registered target.
+ * @param {boolean} [force] Force removal even when dirty or locked.
+ * @param {string|null} [expectedBranch] Previously observed branch, including detached null.
+ * @returns {{removed: boolean, reason: string}} Outcome; failures never count as removals.
+ * @sideEffects Permanently deletes the selected worktree and its registration on success.
  */
-function removeWorktree(repoRoot, worktreePath, force = false) {
+function removeWorktree(repoRoot, worktreePath, force = false, expectedBranch = undefined) {
+  const live = listWorktrees(repoRoot);
+  const entry = live?.find((worktree) => worktree.path === worktreePath);
+  if (!entry || entry.bare || entry.path === live[0].path || !path.isAbsolute(worktreePath)) {
+    return { removed: false, reason: `target is no longer a registered non-primary worktree` };
+  }
+  if (expectedBranch !== undefined && entry.branch !== expectedBranch)
+    return { removed: false, reason: `worktree branch changed; keeping it` };
   const args = force ? [`worktree`, `remove`, `--force`, `--force`, worktreePath] : [`worktree`, `remove`, worktreePath];
   const result = runCommand(`git`, args, repoRoot);
   if (result.status === 0) return { removed: true, reason: force ? `removed (forced)` : `removed` };
@@ -401,15 +422,100 @@ function removeWorktree(repoRoot, worktreePath, force = false) {
  * @returns {void}
  */
 function printHelp() {
-  print(`worktree_clean: remove clean worktrees whose branches are merged`);
+  print(`worktree_clean: remove local worktrees with preserve, interactive, or purge mode`);
   print(`  Scope: current working folder and nested repositories (depth ${MAX_DEPTH})`);
-  print(`  Usage: worktree_clean [--dry-run] [--force|-f] [--no-color]`);
-  print(`  --force: remove EVERY non-primary worktree, skipping the dirty/merged checks`);
+  print(`  Usage: worktree_clean [--mode preserve|interactive|purge] [--dry-run] [--no-color]`);
+  print(`  --mode=preserve: remove only safely merged clean worktrees (default)`);
+  print(`  --mode=interactive: safe cleanup, then confirm each pending worktree with all/y/N`);
+  print(`  --mode=purge: permanently delete EVERY non-primary worktree without prompting`);
+  print(`  --force, -f: compatibility aliases for --mode purge`);
+  print(`  Primary and bare repositories always stay. Dirty, untracked, detached, and locked worktrees can be deleted.`);
+  print(`  --dry-run: never delete or prompt; interactive pending entries remain pending.`);
 }
 
 /**
- * Run the CLI.
- * @returns {void}
+ * Ask for each pending deletion through a controlling terminal, after safe cleanup finishes.
+ * @param {Array<{repoRoot: string, label: string, worktree: object}>} pending Kept linked worktrees.
+ * @returns {{removed: number, removedPaths: Set<string>, failed: Set<string>}} Successful deletions and failed target paths.
+ * @sideEffects Prompts on the terminal and force-removes only explicitly approved worktrees.
+ */
+function confirmPending(pending) {
+  const result = { removed: 0, removedPaths: new Set(), failed: new Set() };
+  if (pending.length === 0) return result;
+  let terminal;
+  try {
+    terminal = fs.openSync(`/dev/tty`, `r+`);
+  } catch (error) {
+    info(`cannot open controlling terminal (${error.code}); pending worktrees kept`);
+    process.exitCode = 1;
+    return result;
+  }
+  let all = false;
+  try {
+    info(`Approved deletions permanently remove uncommitted and untracked work. Primary and bare repositories stay.`);
+    for (let index = 0; index < pending.length; index += 1) {
+      const { repoRoot, label, worktree } = pending[index];
+      let answer = `all`;
+      if (!all) {
+        answer = pendingChoice(
+          terminal,
+          `Delete pending worktree ${index + 1} of ${pending.length} · ${label} · ${worktree.path}? [all/y/N]: `,
+        );
+      }
+      if (answer === null) {
+        info(`terminal input closed; remaining pending worktrees kept`);
+        process.exitCode = 1;
+        break;
+      }
+      if (answer === `n`) continue;
+      if (answer === `all`) all = true;
+      const deletion = removeWorktree(repoRoot, worktree.path, true, worktree.branch);
+      if (deletion.removed) {
+        result.removed += 1;
+        result.removedPaths.add(worktree.path);
+        print(`🧹 REMOVED ${worktree.path} · confirmed deletion`);
+      } else {
+        result.failed.add(worktree.path);
+        info(`kept ${worktree.path}: ${deletion.reason}`);
+      }
+    }
+  } finally {
+    fs.closeSync(terminal);
+  }
+  return result;
+}
+
+/**
+ * Read one bounded all/y/N answer; empty input means No, invalid answers re-prompt, and EOF cancels the remainder.
+ * @param {number} terminal Open terminal descriptor.
+ * @param {string} question Human-facing prompt.
+ * @returns {string|null} all, y, n, or null at EOF.
+ * @throws {Error} Terminal I/O fails; the CLI boundary reports the failure.
+ */
+function pendingChoice(terminal, question) {
+  const byte = Buffer.alloc(1);
+  const maxAnswerBytes = 32;
+  const safeQuestion = question.replace(/[\x00-\x1f\x7f-\x9f]/g, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, `0`)}`);
+  while (true) {
+    fs.writeSync(terminal, safeQuestion);
+    let answer = ``;
+    let oversized = false;
+    while (true) {
+      if (fs.readSync(terminal, byte, 0, 1, null) === 0) return null;
+      if (byte[0] === 10) break;
+      if (byte[0] === 13) continue;
+      if (answer.length < maxAnswerBytes) answer += String.fromCharCode(byte[0]);
+      else oversized = true;
+    }
+    answer = answer.trim().toLowerCase();
+    if (!oversized && [`all`, `y`, `n`, ``].includes(answer)) return answer || `n`;
+    fs.writeSync(terminal, `Enter all, y, or N.\n`);
+  }
+}
+
+/**
+ * Perform scoped cleanup, then optional pending confirmations, and report actual removal counts.
+ * @returns {void} Sets a nonzero exit status for failed removals or unavailable interactive input.
  */
 function main() {
   const options = parseArgs(process.argv.slice(2));
@@ -421,7 +527,9 @@ function main() {
   const scanRoot = realPath(process.cwd());
   const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && !options.noColor;
   const repos = findGitRepos(scanRoot);
-  const ghAvailable = runCommand(`gh`, [`--version`], scanRoot).status === 0;
+  const ghAvailable = !options.force && runCommand(`gh`, [`--version`], scanRoot).status === 0;
+  const pending = [];
+  const failed = new Set();
   let removed = 0;
   let wouldRemove = 0;
   let kept = 0;
@@ -429,7 +537,8 @@ function main() {
   print(`${paint(`🧭 PWD`, ANSI.bold + ANSI.yellow, color)} ${scanRoot}`);
   print(`${paint(`🔎 SCOPE`, ANSI.dim, color)} current folder + nested repositories`);
   if (options.force) {
-    print(`${paint(`💥 FORCE`, ANSI.bold + ANSI.red, color)} removing every non-primary worktree, dirty/merged checks skipped`);
+    print(`${paint(`💥 FORCE`, ANSI.bold + ANSI.red, color)} purge: removing every non-primary worktree, dirty/merged checks skipped`);
+    print(`Warning: uncommitted and untracked work will be permanently deleted. Primary and bare repositories stay.`);
   }
 
   if (repos.length === 0) {
@@ -448,10 +557,11 @@ function main() {
 
     if (!worktrees) {
       print(`   ${paint(`⚠️`, ANSI.yellow, color)} could not read worktrees`);
+      process.exitCode = 1;
       continue;
     }
 
-    const primaryPath = worktrees.find((worktree) => !worktree.bare)?.path || ``;
+    const primaryPath = worktrees[0]?.path || ``;
     for (const worktree of worktrees) {
       const decision = cleanupDecision(worktree, primaryPath, repoRoot, defaultRef, ghAvailable, options.force);
       const branch = worktree.branch ? worktree.branch.replace(/^refs\/heads\//, ``) : `detached`;
@@ -466,7 +576,7 @@ function main() {
           actionColor = ANSI.cyan;
           wouldRemove += 1;
         } else {
-          const result = removeWorktree(repoRoot, worktree.path, options.force);
+          const result = removeWorktree(repoRoot, worktree.path, options.force, worktree.branch);
           if (result.removed) {
             icon = `🧹`;
             action = `REMOVED`;
@@ -478,20 +588,41 @@ function main() {
             actionColor = ANSI.red;
             kept += 1;
             decision.reason = result.reason;
+            failed.add(worktree.path);
           }
         }
       } else {
         kept += 1;
       }
 
+      if (options.mode === `interactive` && action === `KEEP` && worktree.path !== primaryPath && !worktree.bare) {
+        pending.push({ repoRoot, label, worktree });
+      }
       print(`   ├─ ${icon} ${paint(action, actionColor, color)} ${worktree.path}`);
       print(`   │  ${paint(`BRANCH`, ANSI.dim, color)} ${branch} · ${linkify(decision.reason, color)}`);
     }
   }
 
+  if (options.mode === `interactive` && pending.length > 0) {
+    print(`\nPENDING ${pending.length} worktree(s)${options.dryRun ? `; confirmation skipped (--dry-run)` : ``}`);
+    if (!options.dryRun) {
+      const confirmed = confirmPending(pending);
+      removed += confirmed.removed;
+      kept -= confirmed.removed;
+      for (const target of confirmed.removedPaths) failed.delete(target);
+      for (const target of confirmed.failed) failed.add(target);
+    }
+  }
+  if (failed.size > 0) process.exitCode = 1;
   const removedCount = options.dryRun ? wouldRemove : removed;
   const verb = options.dryRun ? `would remove` : `removed`;
-  print(`\n${paint(`✅ DONE`, ANSI.bold + ANSI.green, color)} ${repos.length} repo(s) · ${verb} ${removedCount} · kept ${kept}`);
+  const heading = process.exitCode ? `⚠️ INCOMPLETE` : `✅ DONE`;
+  print(`\n${paint(heading, ANSI.bold + ANSI.green, color)} ${repos.length} repo(s) · ${verb} ${removedCount} · kept ${kept}`);
 }
 
-main();
+try {
+  main();
+} catch (error) {
+  info(`cleanup interrupted (${error.code || error.name}); remaining worktrees kept`);
+  process.exitCode = 1;
+}
