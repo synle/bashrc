@@ -278,7 +278,7 @@ function _log_progress_step() {
 
 # _clean_claude_worktrees <repo_root> - remove empty Claude worktree folders.
 # A folder is eligible only when every child is an empty regular file or directory; symlinks
-# and special files keep the folder in place. This keeps non-empty agent state safe.
+# and special files keep the folder in place. Prints unindented status and returns the final echo's status.
 function _clean_claude_worktrees() {
   local repo_root="$1"
   local candidate
@@ -290,7 +290,7 @@ function _clean_claude_worktrees() {
     [ -d "$candidate" ] || continue
 
     if command find "$candidate" -prune -mtime +90 -print 2> /dev/null | command grep -q .; then
-      echo "  -> warning: Claude worktree folder is older than 3 months; keeping $candidate"
+      echo "-> warning: Claude worktree folder is older than 3 months; keeping $candidate"
       continue
     fi
 
@@ -301,20 +301,20 @@ function _clean_claude_worktrees() {
 
     command rm -rf "$candidate"
     removed=$((removed + 1))
-    echo "  -> removed empty Claude worktree folder $candidate"
+    echo "-> removed empty Claude worktree folder $candidate"
   done
 
   if [ "$removed" -eq 0 ]; then
-    echo "  -> no empty Claude worktree folders found"
+    echo "-> no empty Claude worktree folders found"
   else
-    echo "  -> removed $removed empty Claude worktree folder(s)"
+    echo "-> removed $removed empty Claude worktree folder(s)"
   fi
 }
 
 # _clean_background_tail <total_steps> <repo_root> <force_worktrees> <default_branch> [include|skip]
 # Run clean's slow follow-up work synchronously or as one backgrounded call, so interactive shells
 # report a short job line instead of re-printing the whole subshell body when cleanup finishes.
-# Keep output live on stdout/stderr so progress lands line by line instead of as a buffered dump.
+# Keep unindented output live on stdout/stderr so progress lands line by line, not as a buffered dump.
 # The optional worktree cleanup mode defaults to include; skip overrides force_worktrees.
 # Removes cleanup files, stale branches/tags, and optionally Git worktrees; returns git lastd's status.
 function _clean_background_tail() {
@@ -331,13 +331,13 @@ function _clean_background_tail() {
   local rej_files
   rej_files=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '*.rej' -print 2> /dev/null)
   if [ -z "$rej_files" ]; then
-    echo "  -> no *.rej files found"
+    echo "-> no *.rej files found"
   else
     echo "$rej_files" | while IFS= read -r rej_file; do
       command rm -f "$rej_file"
-      echo "  -> removed $rej_file"
+      echo "-> removed $rej_file"
     done
-    echo "  -> removed $(echo "$rej_files" | command grep -c .) *.rej file(s)"
+    echo "-> removed $(echo "$rej_files" | command grep -c .) *.rej file(s)"
   fi
 
   # Sweep macOS Finder junk (.DS_Store) nested anywhere in the repo. Untracked and usually
@@ -347,10 +347,10 @@ function _clean_background_tail() {
   local ds_store_count
   ds_store_count=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -print 2> /dev/null | command grep -c .)
   if [ "${ds_store_count:-0}" -eq 0 ]; then
-    echo "  -> no .DS_Store files found"
+    echo "-> no .DS_Store files found"
   else
     command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -exec rm -f {} + 2> /dev/null
-    echo "  -> removed $ds_store_count .DS_Store file(s)"
+    echo "-> removed $ds_store_count .DS_Store file(s)"
   fi
 
   _log_progress_step "$total_steps" "🗑️ Removing empty Claude worktree folders"
@@ -363,7 +363,7 @@ function _clean_background_tail() {
   git --no-pager clean-merged-branches-and-tags
 
   if [ "$worktree_cleanup" = "skip" ]; then
-    echo "  -> Git worktree cleanup skipped (--skip-worktree-clean)"
+    echo "-> Git worktree cleanup skipped (--skip-worktree-clean)"
   elif ((force_worktrees)); then
     _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
     git --no-pager worktree prune
@@ -381,8 +381,9 @@ function _clean_background_tail() {
 }
 
 # Safely resets the current branch to origin's default branch.
-# Stashes ALL changes (staged + unstaged + untracked) first as a safety backup so nothing is lost
-# (recover with `git stash list` / `git stash pop`). Deletes untracked *.rej patch rejects; leaves
+# Confirms once before removing an index lock and stashing staged, unstaged, and untracked work.
+# Ignored files are excluded; stash/status failure stops cleanup before aborting operations.
+# Recover with `git stash list` / `git stash pop --index`. Deletes untracked *.rej patch rejects; leaves
 # every other untracked working-tree file alone. Also sweeps nested .DS_Store Finder junk.
 # Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity).
 # Also deletes stale local branches (squash-merged PRs), branches fully merged into the default
@@ -391,14 +392,17 @@ function _clean_background_tail() {
 # With --force / -f, every worktree is removed instead, skipping the dirty/merged checks.
 # With --background / -b, the slow tail returns early and keeps printing progress below the prompt.
 # With --skip-worktree-clean, Git worktree cleanup is skipped even when --force is present.
-# Returns 1 for help/default-branch resolution failure, 0 after background launch, or the tail's status.
+# Returns 1 for help, cancellation, backup/preflight/default-branch failure; otherwise 0 for
+# background launch or the tail's status. Lock removal requires confirmation that other Git commands stopped.
 function clean() {
   if is_help_arg "${1:-}"; then
     echo "clean: safely reset current branch to origin's default branch
   Usage: clean [--force|-f] [--background|-b] [--skip-worktree-clean]
   Notes:
-    - Stashes ALL changes (staged + unstaged + untracked) first as a safety backup
-    - Recover from stash with: git stash list  |  git stash pop
+    - Confirms once before cleanup; stop other Git commands before approving index-lock removal
+    - Stashes staged + unstaged + untracked files first; ignored files are NOT included
+    - Stops if stashing or backup verification fails; never continues without a clean working tree
+    - Recover from stash with: git stash list; git stash pop --index
     - Deletes untracked *.rej files (failed 'git apply' hunk rejects); keeps all other untracked files
     - Deletes nested .DS_Store files (macOS Finder junk)
     - Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity)
@@ -434,28 +438,66 @@ function clean() {
   fi
   _PROGRESS_STEP=0
 
-  # Safe stash first: capture staged + unstaged + untracked so nothing is lost.
-  # If working tree is already clean (or an in-progress op blocks stash), this is a no-op.
-  local stash_msg
+  # Git resolves metadata correctly from nested folders and linked worktrees.
+  local repo_root index_lock
+  repo_root=$(git --no-pager rev-parse --show-toplevel) || return 1
+  index_lock=$(git --no-pager rev-parse --git-path index.lock) || return 1
+
+  echo "-> repository: $repo_root"
+  echo "-> back up staged, unstaged, and untracked files; ignored files are not included"
+  echo "-> reset to origin's default branch; remove *.rej, .DS_Store, stale branches/tags, and eligible worktrees"
+  if ((force_worktrees)) && [ "$worktree_cleanup" != "skip" ]; then
+    echo "-> WARNING: --force also deletes dirty worktrees; their uncommitted work is NOT backed up"
+  fi
+  if [ -e "$index_lock" ] || [ -L "$index_lock" ]; then
+    echo "-> remove index lock: $index_lock"
+  fi
+  # Only the operator can confirm an abandoned lock; never infer that from its age.
+  if ! prompt_yes_no "Continue with backup and cleanup? Confirm no other Git command is running" N; then
+    echo "-> cleanup cancelled; no changes made"
+    return 1
+  fi
+
+  local stash_msg pending_changes
   stash_msg="clean backup $(command date +%Y-%m-%d_%H:%M:%S)"
   _log_progress_step "$total_steps" "💾 Stashing all changes as '$stash_msg'"
-  git --no-pager stash push --include-untracked --message "$stash_msg" > /dev/null 2>&1
-  echo "  -> recover with: git stash list  |  git stash pop"
+  if [ -e "$index_lock" ] || [ -L "$index_lock" ]; then
+    if ! command rm -f -- "$index_lock"; then
+      echo "clean: could not remove index lock; cleanup stopped" >&2
+      return 1
+    fi
+    echo "-> removed index lock: $index_lock"
+  fi
 
-  # Soft abort: cancel in-progress merge/rebase/cherry-pick/am WITHOUT 'git clean -fd',
-  # so any untracked working-tree files that did not make it into the stash are preserved.
+  pending_changes=$(git --no-pager status --porcelain --untracked-files=all) || {
+    echo "clean: could not inspect local changes; cleanup stopped" >&2
+    return 1
+  }
+  if [ -n "$pending_changes" ]; then
+    if ! git --no-pager stash push --include-untracked --message "$stash_msg" > /dev/null; then
+      echo "clean: safety stash failed; cleanup stopped" >&2
+      return 1
+    fi
+    echo "-> recover with: git stash list; git stash pop --index"
+  else
+    echo "-> no local changes to stash"
+  fi
+  pending_changes=$(git --no-pager status --porcelain --untracked-files=all) || {
+    echo "clean: could not verify safety backup; cleanup stopped" >&2
+    return 1
+  }
+  if [ -n "$pending_changes" ]; then
+    echo "clean: local changes remain after safety backup; cleanup stopped" >&2
+    return 1
+  fi
+
+  # Abort operations only after verifying the safety backup; never discard an unstashable index.
   _log_progress_step "$total_steps" "🛑 Aborting in-progress merge/rebase/cherry-pick/am"
   command rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD 2> /dev/null
   git --no-pager merge --abort 2> /dev/null
   git --no-pager rebase --abort 2> /dev/null
   git --no-pager cherry-pick --abort 2> /dev/null
   git --no-pager am --abort 2> /dev/null
-
-  # Repo-root anchor for nested cleanup sweeps. The slow file walks happen through the
-  # shared tail helper so they still traverse the full repo tree from the top instead of
-  # only the current folder.
-  local repo_root
-  repo_root=$(git --no-pager rev-parse --show-toplevel 2> /dev/null) || repo_root="$PWD"
 
   # Match the last 50 commit author emails against the emails on file and pin the repo-local
   # user.email to the match, so commits here keep the identity this repo already uses.
@@ -471,11 +513,11 @@ function clean() {
   _log_progress_step "$total_steps" "🔧 Resolving default branch"
   local default_branch
   default_branch=$(_get_default_branch) || return 1
-  echo "  -> default branch: $default_branch"
+  echo "-> default branch: $default_branch"
 
   local current_branch
   current_branch=$(git --no-pager branch --show-current)
-  echo "  -> current branch: $current_branch"
+  echo "-> current branch: $current_branch"
 
   # Back up current branch to a temp branch
   local temp_branch="temp/$(command date +%Y%m%d-%H%M%S)"
@@ -492,7 +534,7 @@ function clean() {
   if git --no-pager rebase "origin/$default_branch" > /dev/null 2>&1; then
     # Reuse the worktree-local init/sync guards without delaying cleanup or leaking indexer output.
     if type -P codegraph > /dev/null 2>&1 && type -P codegraph_refresh > /dev/null 2>&1; then
-      echo "  -> CodeGraph refresh started in background (init/sync; output suppressed)"
+      echo "-> CodeGraph refresh started in background (init/sync; output suppressed)"
       (codegraph_refresh "$repo_root") < /dev/null > /dev/null 2>&1 &
     fi
   fi
@@ -504,7 +546,7 @@ function clean() {
   # clean() to finish before the next command starts. Run the tail in the foreground by default
   # so progress stays linear; keep --background as an explicit opt-in for fire-and-forget use.
   if ((background_tail)); then
-    echo "  -> background cleanup offloaded; progress continues below"
+    echo "-> background cleanup offloaded; progress continues below"
     _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch" "$worktree_cleanup" &
     return 0
   fi

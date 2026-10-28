@@ -17,7 +17,7 @@ const backgroundTailSource = profileSource
 const cleanSource = profileSource.split("function clean() {", 2)[1].split("\n}\n\n# Creates an empty commit", 1)[0];
 
 /**
- * Runs `clean()` in an isolated shell with disposable files and stubbed Git and refresh executables.
+ * Runs `clean()` with disposable files, accepted confirmation, and stubbed Git/refresh executables.
  * A FIFO gates refresh completion on cleanup returning, without timing-based assertions.
  * @param {string[]} args - Arguments passed to `clean`.
  * @param {{codegraph?: boolean, refresh?: boolean, rebaseStatus?: number, refreshStatus?: number}} options - Optional tool and failure scenarios.
@@ -67,6 +67,7 @@ printf 'active\n' > .claude/worktree-kept/state.txt
 touch -t 202001010000 .claude/worktree-old
 function echo_and_set_terminal_title() { echo "$*"; }
 function is_help_arg() { return 1; }
+function prompt_yes_no() { return 0; }
 function _get_default_branch() { echo master; }
 function _log_progress_step() { echo "TOTAL:$1"; shift; echo "$*"; }
 function worktree_clean() { sleep 0.05; echo "TAIL_WORKTREE:$*"; }
@@ -91,6 +92,8 @@ function git() {
   rev-parse)
     if [ "${"$"}2" = "--show-toplevel" ]; then
       echo "$CLEAN_TEST_ROOT"
+    elif [ "${"$"}2" = "--git-path" ]; then
+      echo "$CLEAN_TEST_ROOT/index.lock"
     fi
     return 0
     ;;
@@ -172,6 +175,7 @@ describe("clean git commands", () => {
     const output = runCleanWithStubs(args);
 
     expect(output).toContain("TAIL_WORKTREE:\n");
+    expect(output).not.toMatch(/^\s+->/m);
     expect(output).not.toContain("TAIL_PRUNE");
     expect(output).toContain("TOTAL:17");
     expect(output).toContain("CLEAN_STATUS:0");
@@ -181,6 +185,8 @@ describe("clean git commands", () => {
     const output = runCleanWithStubs(args);
 
     expect(output).toContain("TAIL_WORKTREE:--force\n");
+    expect(output).toContain("--force also deletes dirty worktrees; their uncommitted work is NOT backed up");
+    expect(output).not.toMatch(/^\s+->/m);
     expect(output).toContain("TAIL_PRUNE");
     expect(output).toContain("TOTAL:17");
     expect(output).toContain("CLEAN_STATUS:0");
