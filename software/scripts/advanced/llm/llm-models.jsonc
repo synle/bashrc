@@ -18,7 +18,8 @@
     "minVramMib": 24000,
     "description": "24 GB+ (RTX 3090 / 4090 / 5090)",
     "models": [
-      { "tag": "glm-4.7-flash", "role": "agent" }, // 30B-A3B, default Q4_K_M, ~19 GB | ollama.com/library/glm-4.7-flash
+      // { "tag": "glm-4.7-flash", "role": "agent" }, // 30B-A3B, default Q4_K_M, ~19 GB | ollama.com/library/glm-4.7-flash
+      { "tag": "qwen3.8:latest", "role": "agent" }, // placeholder
       { "tag": "qwen2.5-coder:32b", "role": "agent" }, // 32.8B, default Q4_K_M, ~20 GB | ollama.com/library/qwen2.5-coder:32b
       { "tag": "gemma4:26b", "role": "vision" }, // 25.2B-A3.8B, default Q4_K_M, ~19 GB | ollama.com/library/gemma4:26b
       { "tag": "qwen2.5-coder:3b-base", "role": "autocomplete" }, // 3.09B, default Q4_K_M, ~1.9 GB | ollama.com/library/qwen2.5-coder:3b-base
