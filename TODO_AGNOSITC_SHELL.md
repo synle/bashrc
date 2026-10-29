@@ -1,5 +1,37 @@
 # TODO: shell-agnostic scripts and validation
 
+> **Optional, manual checks:** These targets are not build prerequisites or dependencies of `precommit`, `validate`, `test_all`, or CI.
+> The integration suite can exercise isolated validator fixtures; that does not require repository scripts to pass these portability checks.
+> The commands below run static analyzers only, not a test suite or the selected scripts.
+
+## First pass — collect files, validate, and fix
+
+Run this from the repository root, then use the same shell session for the four checklist commands:
+
+```bash
+# Collect tracked shell sources, excluding generated output and PowerShell templates.
+files="$(
+  git ls-files -z -- '*.sh' '*.bash' '*.zsh' |
+    node -e '
+      const fs = require("fs");
+      const files = fs.readFileSync(0, "utf8").split("\0").filter(file =>
+        file &&
+        !file.endsWith(".ps1.bash") &&
+        !/^(\.build|dist|coverage)\//.test(file)
+      );
+      process.stdout.write(JSON.stringify(files));
+    '
+)"
+```
+
+- [ ] **Printf vs echo — first priority:** run `make validate_shell_agnostic_printf files="$files"`, replace applicable `echo` usage with fixed-format `printf`, and rerun.
+- [ ] **Quoting:** run `make validate_shell_agnostic_quoting files="$files"`, fix applicable findings, and rerun.
+- [ ] **Shell options:** run `make validate_shell_agnostic_options files="$files"`, review option mutations, fix applicable findings, and rerun.
+- [ ] **POSIX syntax:** run `make validate_shell_agnostic_syntax files="$files"`, fix shared-code violations, and rerun.
+
+The selection contains tracked source files only; untracked files are not included.
+Preserve documented interpreter-specific adapters rather than removing required Bash or native zsh behavior merely to obtain a clean POSIX result.
+
 ## TLDR
 
 Track shared-shell portability one code section at a time, starting with the optional validation commands below. Static checks find mistakes; later Bash/zsh behavior tests must establish runtime compatibility.
@@ -13,14 +45,13 @@ Track shared-shell portability one code section at a time, starting with the opt
 
 ## Priority 0 — validate, fix, and revalidate
 
-Start here before broader migration work.
-All commands require explicit `files` scope and are opt-in; none is attached to `precommit`, `validate`, `test_all`, or CI.
-They analyze source without executing the selected scripts.
+Use the four first-pass items above before broader migration work.
+The reference below explains each optional target and how to narrow its explicit `files` scope.
 
 | Make target                       | What it checks                                                                                                           |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `validate_shell_agnostic_quoting` | ShellCheck SC2086, SC2068, and optional SC2248 for quoted expansions and argv.                                           |
 | `validate_shell_agnostic_printf`  | SC2059, SC3037, and AST detection of all literal `echo` commands, including simple `command`/`builtin` wrappers.         |
+| `validate_shell_agnostic_quoting` | ShellCheck SC2086, SC2068, and optional SC2248 for quoted expansions and argv.                                           |
 | `validate_shell_agnostic_options` | AST detection of direct `set`, `shopt`, `setopt`, and `unsetopt` option mutations or dynamic arguments requiring review. |
 | `validate_shell_agnostic_syntax`  | POSIX parsing through shfmt and ShellCheck's non-POSIX diagnostic family.                                                |
 | `validate_shell_agnostic`         | All four checks together.                                                                                                |
@@ -28,8 +59,8 @@ They analyze source without executing the selected scripts.
 Use a real file path after `files=`. This existing export-only partial provides a small smoke-check example:
 
 ```bash
-make validate_shell_agnostic_quoting files=software/scripts/bash-env-telemetry.profile.bash
 make validate_shell_agnostic_printf files=software/scripts/bash-env-telemetry.profile.bash
+make validate_shell_agnostic_quoting files=software/scripts/bash-env-telemetry.profile.bash
 make validate_shell_agnostic_options files=software/scripts/bash-env-telemetry.profile.bash
 make validate_shell_agnostic_syntax files=software/scripts/bash-env-telemetry.profile.bash
 make validate_shell_agnostic files=software/scripts/bash-env-telemetry.profile.bash

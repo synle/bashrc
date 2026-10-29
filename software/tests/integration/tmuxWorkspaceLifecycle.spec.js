@@ -39,11 +39,15 @@ function prompt_yes_no() { return 1; }
     create(config) {
       const configFile = path.join(folder, "workspace.json");
       fs.writeFileSync(configFile, JSON.stringify({ session: "test", ...config }));
-      return spawnSync("/bin/bash", ["--noprofile", "--norc", "-c", '. "$HOME/.bashrc"; workspace_create "$1" --detach', "fixture", configFile], {
-        env,
-        encoding: "utf8",
-        timeout: 10000,
-      });
+      return spawnSync(
+        "/bin/bash",
+        ["--noprofile", "--norc", "-c", '. "$HOME/.bashrc"; workspace_create "$1" --detach', "fixture", configFile],
+        {
+          env,
+          encoding: "utf8",
+          timeout: 10000,
+        },
+      );
     },
   };
 }
@@ -61,13 +65,20 @@ describe("workspace close-on-success (native tmux integration)", () => {
 
   it("closes a successful opted-in window while leaving another window untouched", async () => {
     const f = fixture();
-    const result = f.create({ start_directory: f.folder, windows: [
-      { name: "sync", command: "printf done > sync.done", close_on_success: true },
-      { name: "review", command: "printf ready > review.done" },
-    ] });
+    const result = f.create({
+      start_directory: f.folder,
+      windows: [
+        { name: "sync", command: "printf done > sync.done", close_on_success: true },
+        { name: "review", command: "tmux wait-for review-ready; printf ready > review.done" },
+      ],
+    });
     expect(result.status).toBe(0);
     await expect.poll(() => f.tmux(["list-windows", "-t", "=test", "-F", "#{window_name}"]).stdout.trim()).toBe("review");
     expect(fs.readFileSync(path.join(f.folder, "sync.done"), "utf8")).toBe("done");
+    // Window presence is not command completion; hold the retained job until this assertion proves the distinction.
+    expect(fs.existsSync(path.join(f.folder, "review.done"))).toBe(false);
+    expect(f.tmux(["wait-for", "-S", "review-ready"]).status).toBe(0);
+    await expect.poll(() => fs.existsSync(path.join(f.folder, "review.done"))).toBe(true);
     expect(fs.readFileSync(path.join(f.folder, "review.done"), "utf8")).toBe("ready");
   });
 
@@ -87,18 +98,24 @@ describe("workspace close-on-success (native tmux integration)", () => {
     const f = fixture();
     const result = f.create({ windows: [{ name: "delayed", command: "false", sleep_after: 1, close_on_success: true }] });
     expect(result.status).toBe(0);
-    await expect.poll(() => f.tmux(["show-options", "-pqv", "-t", "=test:", "@workspace_exit_status"]).stdout.trim(), { timeout: 4000 }).toBe("1");
+    await expect
+      .poll(() => f.tmux(["show-options", "-pqv", "-t", "=test:", "@workspace_exit_status"]).stdout.trim(), { timeout: 4000 })
+      .toBe("1");
     expect(f.exists()).toBe(true);
   });
 
   it("builds every fast-closing window before allowing commands to exit", async () => {
     const f = fixture();
-    const result = f.create({ start_directory: f.folder, close_on_success: true, windows: [
-      { name: "one", command: "printf one > one.done" },
-      { name: "two", command: "printf two > two.done" },
-      { name: "three", command: "printf three > three.done" },
-      { name: "four", command: "printf four > four.done" },
-    ] });
+    const result = f.create({
+      start_directory: f.folder,
+      close_on_success: true,
+      windows: [
+        { name: "one", command: "printf one > one.done" },
+        { name: "two", command: "printf two > two.done" },
+        { name: "three", command: "printf three > three.done" },
+        { name: "four", command: "printf four > four.done" },
+      ],
+    });
     expect(result.status).toBe(0);
     await expect.poll(f.exists).toBe(false);
     expect(fs.readFileSync(path.join(f.folder, "one.done"), "utf8")).toBe("one");
@@ -110,10 +127,17 @@ describe("workspace close-on-success (native tmux integration)", () => {
 
   it("honors a pane's explicit false override and preserves quoted command text", async () => {
     const f = fixture();
-    const result = f.create({ close_on_success: true, start_directory: f.folder, windows: [{ name: "split", layout: "even-horizontal", panes: [
-      { command: "printf '%s' \"it's safe\" > quoted.done" },
-      { command: "printf kept > kept.done", close_on_success: false },
-    ] }] });
+    const result = f.create({
+      close_on_success: true,
+      start_directory: f.folder,
+      windows: [
+        {
+          name: "split",
+          layout: "even-horizontal",
+          panes: [{ command: "printf '%s' \"it's safe\" > quoted.done" }, { command: "printf kept > kept.done", close_on_success: false }],
+        },
+      ],
+    });
     expect(result.status).toBe(0);
     await expect.poll(() => f.tmux(["list-panes", "-t", "=test:", "-F", "#{pane_id}"]).stdout.trim().split("\n").length).toBe(1);
     expect(fs.readFileSync(path.join(f.folder, "quoted.done"), "utf8")).toBe("it's safe");
@@ -123,7 +147,11 @@ describe("workspace close-on-success (native tmux integration)", () => {
 
   it.each(["true", 1, null])("rejects non-boolean close_on_success=%s before starting jobs", (value) => {
     const f = fixture();
-    const result = f.create({ close_on_success: value, start_directory: f.folder, windows: [{ name: "invalid", command: "touch should-not-exist" }] });
+    const result = f.create({
+      close_on_success: value,
+      start_directory: f.folder,
+      windows: [{ name: "invalid", command: "touch should-not-exist" }],
+    });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("close_on_success must be a boolean");
     expect(f.exists()).toBe(false);

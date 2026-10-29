@@ -31,7 +31,7 @@ export function commandBrowser() {
 }
 
 /**
- * Observe every direct main-body child, preserving link groups and hidden form-data children.
+ * Observe direct body children, retaining content while normalizing published-profile build dates and hidden-line counts.
  * @param {import("puppeteer").Page} page - The actual application page.
  * @returns {Promise<{blocks: object[], errors: string[], empty: string[]}>} Visible fingerprints and explicit loading/error observations.
  */
@@ -60,9 +60,16 @@ export async function readCommand(page) {
   });
   return {
     ...observed,
-    blocks: observed.blocks.map((block) =>
-      "links" in block ? block : { title: block.title, hash: createHash("md5").update(block.text).digest("hex") },
-    ),
+    blocks: observed.blocks.map((block) => {
+      if ("links" in block) return block;
+      // Published profiles move independently of this checkout; their preview content still stays fingerprinted.
+      const text = /^profile_bashrc_[a-z_]+\.sh$/.test(block.title)
+        ? block.text
+            .replace(/^# AUTO-GENERATED - DO NOT EDIT \[\d{4}-\d{2}-\d{2}\]$/m, "# AUTO-GENERATED - DO NOT EDIT [<build-date>]")
+            .replace(/Show More \(\d+ more lines?\)/g, "Show More (<line-count> more lines)")
+        : block.text;
+      return { title: block.title, hash: createHash("md5").update(text).digest("hex") };
+    }),
   };
 }
 

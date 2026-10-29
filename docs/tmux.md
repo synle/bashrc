@@ -33,10 +33,10 @@ prefix (`ws`, `wst`) is **create**, the primary verb — which is what frees `ws
 The shipped `workspace_create` reads a **tmuxp subset** in JSON and depends only on
 `tmux` + `jq`:
 
-| Level   | Keys                                                                                                                               |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| session | `session` (`session_name`), `start_directory` (`folder`), `active_window`, `windows[]`, `close_on_success`                                             |
-| window  | `name` (`window_name`), `command`, `start_directory`, `layout`, `focus`, `panes[]`, `sleep_before/after`, `close_on_success`                           |
+| Level   | Keys                                                                                                                                                 |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| session | `session` (`session_name`), `start_directory` (`folder`), `active_window`, `windows[]`, `close_on_success`                                           |
+| window  | `name` (`window_name`), `command`, `start_directory`, `layout`, `focus`, `panes[]`, `sleep_before/after`, `close_on_success`                         |
 | pane    | command string, `null` / `"pane"` / `"blank"`, or `{ name, shell_command \| command, start_directory, focus, sleep_before/after, close_on_success }` |
 
 ```json
