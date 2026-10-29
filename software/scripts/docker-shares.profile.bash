@@ -37,11 +37,11 @@ DOCKER_SHARE_FTP_IMAGE="stilliard/pure-ftpd"
 # Verifies the docker CLI is on PATH and the daemon responds. Returns 0/1.
 function _docker_share_check_docker() {
   if ! type -P docker &> /dev/null; then
-    echo "ERROR: docker not found on PATH. Install Docker Desktop (Mac/Windows) or docker.io (Linux) first." >&2
+    printf '%s\n' "ERROR: docker not found on PATH. Install Docker Desktop (Mac/Windows) or docker.io (Linux) first." >&2
     return 1
   fi
   if ! docker info &> /dev/null; then
-    echo "ERROR: docker daemon not responding. Is Docker Desktop running?" >&2
+    printf '%s\n' "ERROR: docker daemon not responding. Is Docker Desktop running?" >&2
     return 1
   fi
   return 0
@@ -57,8 +57,7 @@ function _docker_share_host_ip() {
     ip=$(hostname -I 2> /dev/null | awk '{print $1}')
   fi
   if [ -z "$ip" ]; then ip="<your-host-ip>"; fi
-    printf '%s\n' ' "$ip'
-
+  printf '%s\n' "$ip"
 }
 
 # Stops and removes an existing container if present. Silent no-op when the
@@ -66,8 +65,7 @@ function _docker_share_host_ip() {
 function _docker_share_stop() {
   local name="$1"
   if docker ps -a --format '{{.Names}}' | grep -qx "$name"; then
-    printf '%s\n' ' ">> Stopping existing container: $name'
-
+    printf '%s\n' ">> Stopping existing container: $name"
     docker stop "$name" &> /dev/null || true
     docker rm "$name" &> /dev/null || true
   fi
@@ -81,16 +79,15 @@ function _docker_share_resolve_folders() {
   local folder abs
   for folder in "$@"; do
     if [ ! -d "$folder" ]; then
-      echo "ERROR: not a folder: $folder" >&2
+      printf '%s\n' "ERROR: not a folder: $folder" >&2
       return 1
     fi
     abs=$(cd "$folder" 2> /dev/null && pwd)
     if [ -z "$abs" ]; then
-      echo "ERROR: could not resolve absolute path for: $folder" >&2
+      printf '%s\n' "ERROR: could not resolve absolute path for: $folder" >&2
       return 1
     fi
-    printf '%s\n' ' "$abs'
-
+    printf '%s\n' "$abs"
   done
 }
 
@@ -101,7 +98,7 @@ function _docker_samba_share_impl() {
   local user="$1" pass="$2"
   shift 2
   if [ "$#" -eq 0 ]; then
-    echo "ERROR: at least one folder is required" >&2
+    printf '%s\n' "ERROR: at least one folder is required" >&2
     return 1
   fi
   _docker_share_check_docker || return 1
@@ -138,62 +135,34 @@ function _docker_samba_share_impl() {
 
   args+=("$DOCKER_SHARE_SAMBA_IMAGE")
 
-    printf '%s\n' \
-      ' ">> Starting Samba container: $DOCKER_SH' \
-      'ARE_SAMBA_NAME (image: $DOCKER_SHARE_SAMB' \
-      'A_IMAGE)'
-
+  printf '%s\n' ">> Starting Samba container: $DOCKER_SHARE_SAMBA_NAME (image: $DOCKER_SHARE_SAMBA_IMAGE)"
   docker "${args[@]}" || return 1
 
   local host_ip
   host_ip=$(_docker_share_host_ip)
-    printf '%s\n' ' "'
-
-    printf '%s\n' ' "Connection info:'
-
+  printf '%s\n' ""
+  printf '%s\n' "Connection info:"
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     bname=$(basename "$f")
-    printf '%s\n' ' "  smb://${host_ip}/${bname}    ($f)'
-
+    printf '%s\n' "  smb://${host_ip}/${bname}    ($f)"
   done <<< "$folders"
   if [ -n "$user" ]; then
-    printf '%s\n' ' "  auth: user=${user}'
-
+    printf '%s\n' "  auth: user=${user}"
   else
-    printf '%s\n' ' "  auth: guest (no password)'
-
+    printf '%s\n' "  auth: guest (no password)"
   fi
-    printf '%s\n' \
-      ' "  stop: docker stop ${DOCKER_SHARE_SAMB' \
-      'A_NAME}'
-
+  printf '%s\n' "  stop: docker stop ${DOCKER_SHARE_SAMBA_NAME}"
 }
 
 # samba_share — expose folders over SMB with guest (no-password) access.
 function samba_share() {
   if is_help_arg "${1:-}"; then
-    printf '%s\n' \
-      ' "samba_share: expose one or more host fo' \
-      'lders over SMB (Samba) via a Docker conta' \
-      'iner, guest access.'
-
-    printf '%s\n' \
-      ' "  Usage:   samba_share <folder> [folder' \
-      ' ...]'
-
-    printf '%s\n' \
-      ' "  Example: samba_share \\"\\$HOME/Docum' \
-      'ents\\" \\"\\$HOME/Pictures\\"'
-
-    printf '%s\n' \
-      ' "  Stop:    docker stop ${DOCKER_SHARE_S' \
-      'AMBA_NAME}'
-
-    printf '%s\n' \
-      ' "  See also: samba_share_with_password (' \
-      'authenticated)'
-
+    printf '%s\n' "samba_share: expose one or more host folders over SMB (Samba) via a Docker container, guest access."
+    printf '%s\n' "  Usage:   samba_share <folder> [folder ...]"
+    printf '%s\n' "  Example: samba_share \"\$HOME/Documents\" \"\$HOME/Pictures\""
+    printf '%s\n' "  Stop:    docker stop ${DOCKER_SHARE_SAMBA_NAME}"
+    printf '%s\n' "  See also: samba_share_with_password (authenticated)"
     return 0
   fi
   _docker_samba_share_impl "" "" "$@"
@@ -202,27 +171,14 @@ function samba_share() {
 # samba_share_with_password — expose folders over SMB with user/pass auth.
 function samba_share_with_password() {
   if is_help_arg "${1:-}"; then
-    printf '%s\n' \
-      ' "samba_share_with_password: expose one o' \
-      'r more host folders over SMB with usernam' \
-      'e/password auth.'
-
-    printf '%s\n' \
-      ' "  Usage:   samba_share_with_password <u' \
-      'ser> <pass> <folder> [folder ...]'
-
-    printf '%s\n' \
-      ' "  Example: samba_share_with_password sy' \
-      'le hunter2 \\"\\$HOME/Documents\\"'
-
-    printf '%s\n' \
-      ' "  Stop:    docker stop ${DOCKER_SHARE_S' \
-      'AMBA_NAME}'
-
+    printf '%s\n' "samba_share_with_password: expose one or more host folders over SMB with username/password auth."
+    printf '%s\n' "  Usage:   samba_share_with_password <user> <pass> <folder> [folder ...]"
+    printf '%s\n' "  Example: samba_share_with_password syle hunter2 \"\$HOME/Documents\""
+    printf '%s\n' "  Stop:    docker stop ${DOCKER_SHARE_SAMBA_NAME}"
     return 0
   fi
   if [ "$#" -lt 3 ]; then
-    echo "ERROR: samba_share_with_password requires <user> <pass> <folder> [folder ...]" >&2
+    printf '%s\n' "ERROR: samba_share_with_password requires <user> <pass> <folder> [folder ...]" >&2
     return 1
   fi
   _docker_samba_share_impl "$@"
@@ -235,7 +191,7 @@ function _docker_ftp_share_impl() {
   local user="$1" pass="$2"
   shift 2
   if [ "$#" -eq 0 ]; then
-    echo "ERROR: at least one folder is required" >&2
+    printf '%s\n' "ERROR: at least one folder is required" >&2
     return 1
   fi
   if [ -z "$user" ]; then
@@ -270,63 +226,31 @@ function _docker_ftp_share_impl() {
 
   args+=("$DOCKER_SHARE_FTP_IMAGE")
 
-    printf '%s\n' \
-      ' ">> Starting FTP container: $DOCKER_SHAR' \
-      'E_FTP_NAME (image: $DOCKER_SHARE_FTP_IMAG' \
-      'E)'
-
+  printf '%s\n' ">> Starting FTP container: $DOCKER_SHARE_FTP_NAME (image: $DOCKER_SHARE_FTP_IMAGE)"
   docker "${args[@]}" || return 1
 
-    printf '%s\n' ' "'
-
-    printf '%s\n' ' "Connection info:'
-
-    printf '%s\n' \
-      ' "  ftp://${host_ip}/    (passive ports 3' \
-      '0000-30009)'
-
-    printf '%s\n' ' "  user: ${user}'
-
-    printf '%s\n' ' "  pass: ${pass}'
-
-    printf '%s\n' ' "  shares:'
-
+  printf '%s\n' ""
+  printf '%s\n' "Connection info:"
+  printf '%s\n' "  ftp://${host_ip}/    (passive ports 30000-30009)"
+  printf '%s\n' "  user: ${user}"
+  printf '%s\n' "  pass: ${pass}"
+  printf '%s\n' "  shares:"
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     bname=$(basename "$f")
-    printf '%s\n' ' "    /${bname}    ($f)'
-
+    printf '%s\n' "    /${bname}    ($f)"
   done <<< "$folders"
-    printf '%s\n' \
-      ' "  stop: docker stop ${DOCKER_SHARE_FTP_' \
-      'NAME}'
-
+  printf '%s\n' "  stop: docker stop ${DOCKER_SHARE_FTP_NAME}"
 }
 
 # ftp_share — expose folders over FTP with anonymous access.
 function ftp_share() {
   if is_help_arg "${1:-}"; then
-    printf '%s\n' \
-      ' "ftp_share: expose one or more host fold' \
-      'ers over FTP via a Docker container, anon' \
-      'ymous (user=anonymous, pass=anonymous).'
-
-    printf '%s\n' \
-      ' "  Usage:   ftp_share <folder> [folder .' \
-      '..]'
-
-    printf '%s\n' \
-      ' "  Example: ftp_share \\"\\$HOME/Documen' \
-      'ts\\" \\"\\$HOME/Pictures\\"'
-
-    printf '%s\n' \
-      ' "  Stop:    docker stop ${DOCKER_SHARE_F' \
-      'TP_NAME}'
-
-    printf '%s\n' \
-      ' "  See also: ftp_share_with_password (au' \
-      'thenticated)'
-
+    printf '%s\n' "ftp_share: expose one or more host folders over FTP via a Docker container, anonymous (user=anonymous, pass=anonymous)."
+    printf '%s\n' "  Usage:   ftp_share <folder> [folder ...]"
+    printf '%s\n' "  Example: ftp_share \"\$HOME/Documents\" \"\$HOME/Pictures\""
+    printf '%s\n' "  Stop:    docker stop ${DOCKER_SHARE_FTP_NAME}"
+    printf '%s\n' "  See also: ftp_share_with_password (authenticated)"
     return 0
   fi
   _docker_ftp_share_impl "" "" "$@"
@@ -335,27 +259,14 @@ function ftp_share() {
 # ftp_share_with_password — expose folders over FTP with user/pass auth.
 function ftp_share_with_password() {
   if is_help_arg "${1:-}"; then
-    printf '%s\n' \
-      ' "ftp_share_with_password: expose one or ' \
-      'more host folders over FTP with username/' \
-      'password auth.'
-
-    printf '%s\n' \
-      ' "  Usage:   ftp_share_with_password <use' \
-      'r> <pass> <folder> [folder ...]'
-
-    printf '%s\n' \
-      ' "  Example: ftp_share_with_password syle' \
-      ' hunter2 \\"\\$HOME/Documents\\"'
-
-    printf '%s\n' \
-      ' "  Stop:    docker stop ${DOCKER_SHARE_F' \
-      'TP_NAME}'
-
+    printf '%s\n' "ftp_share_with_password: expose one or more host folders over FTP with username/password auth."
+    printf '%s\n' "  Usage:   ftp_share_with_password <user> <pass> <folder> [folder ...]"
+    printf '%s\n' "  Example: ftp_share_with_password syle hunter2 \"\$HOME/Documents\""
+    printf '%s\n' "  Stop:    docker stop ${DOCKER_SHARE_FTP_NAME}"
     return 0
   fi
   if [ "$#" -lt 3 ]; then
-    echo "ERROR: ftp_share_with_password requires <user> <pass> <folder> [folder ...]" >&2
+    printf '%s\n' "ERROR: ftp_share_with_password requires <user> <pass> <folder> [folder ...]" >&2
     return 1
   fi
   _docker_ftp_share_impl "$@"

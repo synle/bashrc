@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/Core Android.sh?raw=1" | bash
 
-function removeApp(){
-  echo "> Remove:" $@
+function removeApp() {
+  (
+    set -- "> Remove:" $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
-function restoreApp(){
-  echo "> Restore:" $@
+function restoreApp() {
+  (
+    set -- "> Restore:" $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   cmd package install-existing $@
 }
 

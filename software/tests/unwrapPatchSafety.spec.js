@@ -194,7 +194,9 @@ describe("raw clipboard path", () => {
 
   it("wraps one generated commit with the same versioned boundary", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
-    expect(source).toContain('echo "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 \u00b7 $repo_slug \u00b7 patch $index of $count \u00b7 $short_sha');
+    expect(source).toContain(
+      "printf '%s\\n' \"# BEGIN SY_GIT_PATCH_BOUNDARY_v1 \u00b7 $repo_slug \u00b7 patch $index of $count \u00b7 $short_sha",
+    );
     expect(source).toContain("function _git_patch_create_unpushed()");
     expect(source).toContain("git rev-list --count '@{upstream}..HEAD'");
     expect(source).toContain("branch has no upstream; generating only the latest commit");
@@ -235,7 +237,7 @@ describe("saved patch files", () => {
   });
 
   it("should announce every patch file it creates with the >>> marker", () => {
-    const created = source.match(/echo ">>> patch file created \$patch_file"/g) || [];
+    const created = source.match(/printf '%s\\n' ">>> patch file created \$patch_file"/g) || [];
 
     // one for git_patch_create, one for git_patch_apply's clipboard capture
     expect(created.length).toBe(2);
@@ -271,7 +273,7 @@ describe("saved patch files", () => {
     // $HOME on Windows/macOS routinely contains a space, and the mktemp fallback lands
     // under $HOME/tmp, so a bare `$patch_file` in argument position word-splits. Strip
     // command substitutions and then quoted spans; anything still referencing the vars is
-    // genuinely unquoted (uses inside `echo "..."` messages are removed by the strip).
+    // genuinely unquoted (uses inside `printf "..."` messages are removed by the strip).
     const unquoted = source.split("\n").filter((line) => {
       const bare = line
         .replace(/\$\([^()]*\)/g, "")

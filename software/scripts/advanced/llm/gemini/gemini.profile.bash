@@ -27,13 +27,13 @@
 function gemini() {
   # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
   if ! type -P gemini > /dev/null 2>&1; then
-    echo "gemini is not installed" >&2
+    printf '%s\n' "gemini is not installed" >&2
     return 1
   fi
 
   # Activate node once per shell session (no-op on later calls).
   if ! llm_setup_activate; then
-    echo "node activation failed: llm_setup_activate/activate_node is missing" >&2
+    printf '%s\n' "node activation failed: llm_setup_activate/activate_node is missing" >&2
     return 1
   fi
 
@@ -43,11 +43,11 @@ function gemini() {
   # symlink) does not yet; otherwise stays silent.
   if [ -f "CLAUDE.md" ] && [ ! -e "GEMINI.md" ] && [ ! -L "GEMINI.md" ]; then
     command ln -s CLAUDE.md GEMINI.md
-    echo ">> Linked GEMINI.md → CLAUDE.md" >&2
+    printf '%s\n' ">> Linked GEMINI.md → CLAUDE.md" >&2
   fi
   # Echo the resolved invocation to stderr so the user can see all flags being
   # passed through (stderr keeps it out of any `gemini ... | jq` style pipelines).
-  echo "command gemini --yolo $*" >&2
+  printf '%s\n' "command gemini --yolo $*" >&2
   # `command gemini` bypasses this function so the call hits the real binary, not us.
   command gemini --yolo "$@"
 }
@@ -57,7 +57,7 @@ alias gem="gemini"
 # gemini_edit: open the ~/.gemini/ config dir (settings, keybindings, GEMINI.md) in the editor
 function gemini_edit() {
   if is_help_arg "${1:-}"; then
-    echo "gemini_edit: open ~/.gemini/ in the editor via view_file
+    printf '%s\n' "gemini_edit: open ~/.gemini/ in the editor via view_file
   Usage: gemini_edit
 
 Opens the whole ~/.gemini/ config dir so settings.json, keybindings.json, and
@@ -81,7 +81,7 @@ Files inside ~/.gemini/ worth knowing about:
 # gemini_edit_rule_global: open the global gemini rules file (~/.gemini/GEMINI.md) in the editor
 function gemini_edit_rule_global() {
   if is_help_arg "${1:-}"; then
-    echo "gemini_edit_rule_global: open the global gemini rules file in the editor via view_file
+    printf '%s\n' "gemini_edit_rule_global: open the global gemini rules file in the editor via view_file
   Usage: gemini_edit_rule_global
 
 Opens ~/.gemini/GEMINI.md — the user-level instructions loaded into every session.
@@ -97,7 +97,7 @@ gemini_edit_config (settings file)."
 # gemini_edit_config: open the main gemini settings file (~/.gemini/settings.json) in the editor
 function gemini_edit_config() {
   if is_help_arg "${1:-}"; then
-    echo "gemini_edit_config: open the main gemini settings file in the editor via view_file
+    printf '%s\n' "gemini_edit_config: open the main gemini settings file in the editor via view_file
   Usage: gemini_edit_config
 
 Opens ~/.gemini/settings.json. Managed defaults are seeded by gemini/setup.js; edit that
@@ -136,7 +136,7 @@ function _gemini_list_prompts_ts() {
 # gemini_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
 function gemini_list_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "gemini_list_prompts: stream past Gemini CLI user prompts as NUL records
+    printf '%s\n' "gemini_list_prompts: stream past Gemini CLI user prompts as NUL records
   Usage: gemini_list_prompts             # NUL-delimited stream, newest first
 
 Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
@@ -150,7 +150,7 @@ Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PR
 # gemini_search_prompts: fuzzy-pick a past Gemini CLI prompt and copy it to the clipboard
 function gemini_search_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "gemini_search_prompts: fzf picker over past Gemini CLI prompts
+    printf '%s\n' "gemini_search_prompts: fzf picker over past Gemini CLI prompts
   Usage: gemini_search_prompts
 
 Pipes gemini_list_prompts into a shared fzf picker. The preview pane shows

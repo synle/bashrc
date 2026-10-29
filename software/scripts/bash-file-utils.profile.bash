@@ -63,7 +63,7 @@ function download() {
   local dest="${2:-.}"
 
   if [ -z "$url" ] || is_help_arg "$1"; then
-    echo "download: download a file from a URL via curl
+    printf '%s\n' "download: download a file from a URL via curl
   Usage: download <url> [dest_path_or_dir]"
     return 1
   fi
@@ -78,10 +78,7 @@ function download() {
     # dest looks like a file path — download and rename
     command curl -fsSL -o "$dest" "$url"
   else
-    printf '%s\n' \
-      ' "download: destination directory does no' \
-      't exist: $(dirname "$dest")'
-
+    printf '%s\n' "download: destination directory does not exist: $(dirname "$dest")"
     return 1
   fi
 }
@@ -92,7 +89,7 @@ function download() {
 # Writes an archive; existing archives require confirmation. Caller's folder is unchanged.
 function zip() {
   if [ "$#" -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "zip: archive one file or folder, preserving its top-level name
+    printf '%s\n' "zip: archive one file or folder, preserving its top-level name
   Usage: zip <input> [destination]
   Default: ./<input-basename>-YYYYMMDD-HHMMSS.zip (local time)
   destination: archive filename (.zip appended if missing), or an existing folder.
@@ -106,7 +103,7 @@ function zip() {
     return 0
   fi
   if ! type -P zip > /dev/null; then
-    echo "zip: native zip executable not found" >&2
+    printf '%s\n' "zip: native zip executable not found" >&2
     return 1
   fi
   case "$1" in
@@ -116,21 +113,21 @@ function zip() {
     ;;
   esac
   if [ "$#" -gt 2 ] || [ -z "$1" ] || { [ "$#" -eq 2 ] && [ -z "$2" ]; }; then
-    echo "zip: expected one input and an optional nonempty destination; see zip --help" >&2
+    printf '%s\n' "zip: expected one input and an optional nonempty destination; see zip --help" >&2
     return 1
   fi
 
   local input="$1" input_folder input_name destination destination_folder archive_name
   case "$input" in /*) ;; *) input="$PWD/$input" ;; esac
   if [ ! -f "$input" ] && [ ! -d "$input" ]; then
-    echo "zip: input must be an existing file or folder: $1" >&2
+    printf '%s\n' "zip: input must be an existing file or folder: $1" >&2
     return 1
   fi
   if [ -d "$input" ]; then
     input=$(builtin cd -- "$input" && command pwd) || return 1
   fi
   if [ "$input" = / ]; then
-    echo "zip: input must name a file or folder, not the filesystem root" >&2
+    printf '%s\n' "zip: input must name a file or folder, not the filesystem root" >&2
     return 1
   fi
   input_folder=$(builtin cd -- "$(command dirname "$input")" && command pwd) || return 1
@@ -144,11 +141,11 @@ function zip() {
   destination_folder=$(builtin cd -- "$(command dirname "$destination")" && command pwd) || return 1
   destination="$destination_folder/$(command basename "$destination")"
   if [ "$input" = "$destination" ] || [ "$input" -ef "$destination" ]; then
-    echo "zip: destination cannot overwrite the input" >&2
+    printf '%s\n' "zip: destination cannot overwrite the input" >&2
     return 1
   fi
   if [ -L "$destination" ] || { [ -e "$destination" ] && [ ! -f "$destination" ]; }; then
-    echo "zip: destination must be a regular archive file, not a symlink or special file" >&2
+    printf '%s\n' "zip: destination must be a regular archive file, not a symlink or special file" >&2
     return 1
   fi
   if [ -e "$destination" ]; then
@@ -167,7 +164,7 @@ function zip() {
 # Writes extracted files; existing output folders require confirmation before overwriting.
 function unzip() {
   if [ "$#" -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "unzip: extract one ZIP into its filename stem in the current folder
+    printf '%s\n' "unzip: extract one ZIP into its filename stem in the current folder
   Usage: unzip <archive.zip>
   Output: ./<archive-basename-without-.zip>/<archive contents>
   Existing output folders require overwrite confirmation; no terminal means cancel.
@@ -179,7 +176,7 @@ function unzip() {
     return 0
   fi
   if ! type -P unzip > /dev/null; then
-    echo "unzip: native unzip executable not found" >&2
+    printf '%s\n' "unzip: native unzip executable not found" >&2
     return 1
   fi
   if [ "$#" -gt 1 ]; then
@@ -196,20 +193,20 @@ function unzip() {
   local input="$1" archive_name destination overwrite_option="-n"
   case "$input" in /*) ;; *) input="$PWD/$input" ;; esac
   if [ ! -f "$input" ]; then
-    echo "unzip: input must be an existing ZIP file: $1" >&2
+    printf '%s\n' "unzip: input must be an existing ZIP file: $1" >&2
     return 1
   fi
   archive_name=$(command basename "$input")
   case "$archive_name" in
   *.[zZ][iI][pP]) archive_name="${archive_name%.*}" ;;
   *)
-    echo "unzip: input filename must end in .zip; use command unzip for native syntax" >&2
+    printf '%s\n' "unzip: input filename must end in .zip; use command unzip for native syntax" >&2
     return 1
     ;;
   esac
   case "$archive_name" in
   '' | . | ..)
-    echo "unzip: archive basename must name an output folder" >&2
+    printf '%s\n' "unzip: archive basename must name an output folder" >&2
     return 1
     ;;
   esac
@@ -219,7 +216,7 @@ function unzip() {
     overwrite_option="-o"
   fi
   if [ -L "$destination" ] || { [ -e "$destination" ] && [ ! -d "$destination" ]; }; then
-    echo "unzip: destination must be a folder, not a symlink or file" >&2
+    printf '%s\n' "unzip: destination must be a folder, not a symlink or file" >&2
     return 1
   fi
 
@@ -240,16 +237,13 @@ function tree() {
 # cp2: copy a single file with progress bar via pv (supports file->file)
 function cp2() {
   if is_help_arg "${1:-}"; then
-    echo "cp2: copy with progress bar via pv
+    printf '%s\n' "cp2: copy with progress bar via pv
   Usage: cp2 <src> <dest>"
     return
   fi
-    printf '%s\n' ' "==== copy ===='
-
-    printf '%s\n' ' "src: $1'
-
-    printf '%s\n' ' "dest: $2'
-
+  printf '%s\n' "==== copy ===="
+  printf '%s\n' "src: $1"
+  printf '%s\n' "dest: $2"
   pv "$1" > "$2"
 }
 
@@ -261,7 +255,7 @@ function watch() {
   local chsum1="" chsum2=""
 
   if [ -z "$cmd" ] || is_help_arg "$1"; then
-    echo "watch: run a command when files change
+    printf '%s\n' "watch: run a command when files change
   Usage: watch <dir> <filter> <command>
   Example: watch src '*.js' 'npm test'"
     return 1
@@ -274,7 +268,7 @@ function watch() {
   while true; do
     chsum2=$(find -L "$dir" -type f -name "$filter" -exec $md5cmd {} \; 2> /dev/null)
     if [ "$chsum1" != "$chsum2" ]; then
-      [ -n "$chsum1" ] && echo "File change detected, running: $cmd"
+      [ -n "$chsum1" ] && printf '%s\n' "File change detected, running: $cmd"
       eval "$cmd"
       chsum1="$chsum2"
     fi
@@ -302,7 +296,7 @@ function watch_interval() {
     local -a _clear_command=(builtin printf '\033[H\033[2J\033[3J')
 
     if is_help_arg "${1:-}"; then
-      echo "watch_interval: refresh command output periodically, keeping the previous display until ready
+      printf '%s\n' "watch_interval: refresh command output periodically, keeping the previous display until ready
   Usage: watch_interval [--no-cache] [interval_seconds] <command>
   interval_seconds: whole seconds from 1 to 86400 (default: 30).
   Default: stream initial output into cache; buffer later runs and redraw changes only.
@@ -331,11 +325,11 @@ function watch_interval() {
       ;;
     esac
     if [ "$#" -ne 1 ] || [ -z "${1:-}" ]; then
-      echo "watch_interval: expected one command string; see watch_interval --help" >&2
+      printf '%s\n' "watch_interval: expected one command string; see watch_interval --help" >&2
       return 1
     fi
     if [ "${#_interval_seconds}" -gt 5 ] || [ "$_interval_seconds" -lt 1 ] || [ "$_interval_seconds" -gt 86400 ]; then
-      echo "watch_interval: interval_seconds must be a whole number from 1 to 86400" >&2
+      printf '%s\n' "watch_interval: interval_seconds must be a whole number from 1 to 86400" >&2
       return 1
     fi
     _interval_seconds=$((10#$_interval_seconds))
@@ -349,11 +343,11 @@ function watch_interval() {
     trap 'exit 143' TERM
     if [ "$_render_mode" = cached ]; then
       if ! type -P cmp > /dev/null; then
-        echo "watch_interval: cmp executable required for cached rendering" >&2
+        printf '%s\n' "watch_interval: cmp executable required for cached rendering" >&2
         return 1
       fi
       if ! _tee_command=$(type -P tee); then
-        echo "watch_interval: tee executable required to stream the initial cache" >&2
+        printf '%s\n' "watch_interval: tee executable required to stream the initial cache" >&2
         return 1
       fi
       _output_cache=$(command mktemp "${TMPDIR:-/tmp}/watch_interval.XXXXXX") || return $?
@@ -409,7 +403,7 @@ function watch_interval() {
         ;;
       1) ;;
       *)
-        echo "watch_interval: cache comparison failed" >&2
+        printf '%s\n' "watch_interval: cache comparison failed" >&2
         return "$_comparison_status"
         ;;
       esac
@@ -546,7 +540,7 @@ _HELPERS_EOF
 # skip-if-unchanged (by size for binary, size+wordcount+age for text), cross-device safe
 function cpsync() {
   if is_help_arg "${1:-}"; then
-    echo "cpsync: smart file/dir copy with progress, ETA, and skip-if-unchanged
+    printf '%s\n' "cpsync: smart file/dir copy with progress, ETA, and skip-if-unchanged
   Usage: cpsync <src> <dest> [lookback_days=7] [max_size_gb=1]
   Modes:
     cpsync file.txt /backup/       file -> folder (keeps filename)
@@ -566,8 +560,7 @@ function cpsync() {
   local lookback_days="${3:-7}"
   local max_size_gb="${4:-1}"
   if [ "$max_size_gb" -gt 100 ]; then
-    printf '%s\n' ' "cpsync: max_size_gb cannot exceed 100GB'
-
+    printf '%s\n' "cpsync: max_size_gb cannot exceed 100GB"
     return 1
   fi
   {
@@ -698,7 +691,7 @@ CPSYNC_NODE
 # _cp_zip_to_dest: zip files and copy the .zip to dest via cpsync, then clean up all tmp files
 function _cp_zip_to_dest() {
   if is_help_arg "${1:-}"; then
-    echo "_cp_zip_to_dest: zip files and copy .zip to dest via cpsync
+    printf '%s\n' "_cp_zip_to_dest: zip files and copy .zip to dest via cpsync
   Usage: _cp_zip_to_dest <folder_or_file_list> <dest> [zip_name] [max_size_gb=1] [should_add_time_stamp=false]
   Folder mode:    _cp_zip_to_dest ~/Documents /backup
   File list mode: _cp_zip_to_dest /tmp/myfiles.list /backup \"myzip\"
@@ -734,8 +727,7 @@ function _cp_zip_to_dest() {
       done
     done < "$file_list"
   else
-    printf '%s\n' ' "_cp_zip_to_dest: not found: $src'
-
+    printf '%s\n' "_cp_zip_to_dest: not found: $src"
     return 1
   fi
 
@@ -752,10 +744,7 @@ function _cp_zip_to_dest() {
   if [ -n "$file_list" ]; then
     # convert absolute paths to relative (strip zip_root prefix) and zip
     sed "s|^${zip_root}/|./|" "$file_list" | (cd "$zip_root" && zip -q "$tmp_zip" -@) || {
-    printf '%s\n' \
-      ' "_cp_zip_to_dest: failed to create zip f' \
-      'rom file list'
-
+      printf '%s\n' "_cp_zip_to_dest: failed to create zip from file list"
       rm -f "$file_list"
       return 1
     }
@@ -765,17 +754,13 @@ function _cp_zip_to_dest() {
     local _zip_rc=$?
     # zip exit 18 = "some files could not be read" (sockets, broken symlinks, etc.) — treat as success
     if [ "$_zip_rc" -ne 0 ] && [ "$_zip_rc" -ne 18 ]; then
-    printf '%s\n' ' "_cp_zip_to_dest: failed to create zip'
-
+      printf '%s\n' "_cp_zip_to_dest: failed to create zip"
       return 1
     fi
   fi
 
   if [ ! -f "$tmp_zip" ]; then
-    printf '%s\n' \
-      ' "_cp_zip_to_dest: zip not found: $tmp_zi' \
-      'p'
-
+    printf '%s\n' "_cp_zip_to_dest: zip not found: $tmp_zip"
     return 1
   fi
 
@@ -784,10 +769,7 @@ function _cp_zip_to_dest() {
   zip_size=$(stat -f%z "$tmp_zip" 2> /dev/null || stat -c%s "$tmp_zip" 2> /dev/null)
   local max_bytes=$((max_size_gb * 1073741824))
   if [ "$zip_size" -gt "$max_bytes" ]; then
-    printf '%s\n' \
-      ' "_cp_zip_to_dest: zip size exceeds ${max' \
-      '_size_gb}GB limit, aborting'
-
+    printf '%s\n' "_cp_zip_to_dest: zip size exceeds ${max_size_gb}GB limit, aborting"
     rm -f "$tmp_zip"
     return 1
   fi
@@ -803,7 +785,7 @@ function _cp_zip_to_dest() {
 # cpstamp: copy a file with a timestamp suffix (e.g. file.txt.2026_04_13_19_15), delegates to cpsync
 function cpstamp() {
   if is_help_arg "${1:-}"; then
-    echo "cpstamp: copy a file with a timestamp suffix appended
+    printf '%s\n' "cpstamp: copy a file with a timestamp suffix appended
   Usage: cpstamp <src_file> <dest_dir>
   Output: dest_dir/filename.2026_03_24_17_30"
     return
@@ -811,8 +793,7 @@ function cpstamp() {
   local src="${1:?Usage: cpstamp <src_file> <dest_dir>}"
   local dest="${2:?Usage: cpstamp <src_file> <dest_dir>}"
   if [ ! -f "$src" ]; then
-    printf '%s\n' ' "cpstamp: source file not found: $src'
-
+    printf '%s\n' "cpstamp: source file not found: $src"
     return 1
   fi
   local ts
@@ -829,7 +810,7 @@ function cpstamp() {
 # Non-git folders: pass the folder to _cp_zip_to_dest (zips everything recursively).
 function cprepo() {
   if is_help_arg "${1:-}"; then
-    echo "cprepo: zip a git repo (tracked files) or folder and copy .zip to dest
+    printf '%s\n' "cprepo: zip a git repo (tracked files) or folder and copy .zip to dest
   Usage: cprepo <src_dir> <dest_dir> [max_size_gb=1] [should_add_time_stamp=false]
   For git repos: syncs to default branch, zips only tracked files.
   For non-git: zips entire folder recursively.
@@ -840,17 +821,13 @@ function cprepo() {
   local dest="${2:?Usage: cprepo <src> <dest> [max_size_gb=1] [should_add_time_stamp=false]}"
   local max_size_gb="${3:-1}"
   if [ "$max_size_gb" -gt 1 ]; then
-    printf '%s\n' ' "cprepo: max_size_gb cannot exceed 1GB'
-
+    printf '%s\n' "cprepo: max_size_gb cannot exceed 1GB"
     return 1
   fi
   local should_add_time_stamp="${4:-false}"
 
   if [ ! -d "$src" ]; then
-    printf '%s\n' \
-      ' "cprepo: source directory not found: $sr' \
-      'c'
-
+    printf '%s\n' "cprepo: source directory not found: $src"
     return 1
   fi
 
@@ -859,15 +836,11 @@ function cprepo() {
 
   # non-git: list all files, filter out unwanted paths, zip the remainder
   if ! git -C "$abs_src" rev-parse --is-inside-work-tree &> /dev/null; then
-    printf '%s\n' \
-      ' "cprepo: $abs_src -> $dest (not a git re' \
-      'po, zipping entire folder)'
-
+    printf '%s\n' "cprepo: $abs_src -> $dest (not a git repo, zipping entire folder)"
     local file_list="/tmp/_cprepo_files_$$"
     (cd "$abs_src" && find . -type f | filter_unwanted | sed "s|^\./|${abs_src}/|") > "$file_list"
     if [ ! -s "$file_list" ]; then
-    printf '%s\n' ' "cprepo: no files to zip after filtering'
-
+      printf '%s\n' "cprepo: no files to zip after filtering"
       rm -f "$file_list"
       return 1
     fi
@@ -877,15 +850,12 @@ function cprepo() {
 
   # git: sync to default branch, write tracked file list (absolute paths) to temp file,
   # pass it to _cp_zip_to_dest which zips those files and copies to dest
-    printf '%s\n' \
-      ' "cprepo: $abs_src -> $dest (git repo, sy' \
-      'ncing and zipping tracked files only)'
-
+  printf '%s\n' "cprepo: $abs_src -> $dest (git repo, syncing and zipping tracked files only)"
   local default_branch="main"
   default_branch=$(git -C "$abs_src" symbolic-ref refs/remotes/origin/HEAD 2> /dev/null | sed 's|refs/remotes/origin/||') || default_branch="main"
   git -C "$abs_src" stash &> /dev/null
   git -C "$abs_src" checkout "$default_branch" &> /dev/null
-  GIT_TERMINAL_PROMPT=0 git -C "$abs_src" pull &> /dev/null || echo "  WARN: git pull skipped (credentials required or remote unavailable)"
+  GIT_TERMINAL_PROMPT=0 git -C "$abs_src" pull &> /dev/null || printf '%s\n' "  WARN: git pull skipped (credentials required or remote unavailable)"
   git -C "$abs_src" clean -fd &> /dev/null
 
   local file_list="/tmp/_cprepo_files_$$"
@@ -898,7 +868,7 @@ function cprepo() {
 # to a temp file. _cp_zip_to_dest zips those files and copies to dest.
 function cpfiles() {
   if is_help_arg "${1:-}"; then
-    echo "cpfiles: zip files matching a glob pattern and copy .zip to dest
+    printf '%s\n' "cpfiles: zip files matching a glob pattern and copy .zip to dest
   Usage: cpfiles <src_dir> <dest_dir> <pattern> [should_add_time_stamp=false]
   pattern  glob (e.g., \".env*\", \"*.log\", \"*.conf\")
   should_add_time_stamp  if true/1, append timestamp to zip name
@@ -913,10 +883,7 @@ function cpfiles() {
   local should_add_time_stamp="${4:-false}"
 
   if [ ! -d "$src" ]; then
-    printf '%s\n' \
-      ' "cpfiles: source directory not found: $s' \
-      'rc'
-
+    printf '%s\n' "cpfiles: source directory not found: $src"
     return 1
   fi
 
@@ -959,7 +926,7 @@ CPFILES_NODE
 # cpenv: shorthand for cpfiles — zip all .env* files and copy .zip to dest
 function cpenv() {
   if is_help_arg "${1:-}"; then
-    echo "cpenv: zip all .env* files and copy .zip to dest (timestamp on by default)
+    printf '%s\n' "cpenv: zip all .env* files and copy .zip to dest (timestamp on by default)
   Usage: cpenv <src_dir> <dest_dir> [should_add_time_stamp=true]
   Shorthand for: cpfiles <src> <dest> \".env*\" [should_add_time_stamp]"
     return
@@ -970,7 +937,7 @@ function cpenv() {
 # cpdb: shorthand for cpfiles — zip all *.sqlite* files and copy .zip to dest
 function cpdb() {
   if is_help_arg "${1:-}"; then
-    echo "cpdb: zip all *.sqlite* files and copy .zip to dest (timestamp on by default)
+    printf '%s\n' "cpdb: zip all *.sqlite* files and copy .zip to dest (timestamp on by default)
   Usage: cpdb <src_dir> <dest_dir> [should_add_time_stamp=true]
   Shorthand for: cpfiles <src> <dest> \"*.sqlite*\" [should_add_time_stamp]"
     return
@@ -984,30 +951,17 @@ function cpdb() {
 # dedup: scan a folder for duplicates (by MD5 hash + file size), move extras to _recycleBin keeping newest
 function dedup() {
   if is_help_arg "${1:-}"; then
-    printf '%s\n' \
-      ' "dedup: move duplicate files to _recycle' \
-      'Bin, keeping the newest'
-
-    printf '%s\n' \
-      ' "  dedup <path> [recursive=false] [acros' \
-      's_folders=false]'
-
-    printf '%s\n' \
-      ' "  recursive       if true/1, scan subdi' \
-      'rectories recursively'
-
-    printf '%s\n' \
-      ' "  across_folders  if true/1, deduplicat' \
-      'e across all subdirectories globally'
-
+    printf '%s\n' "dedup: move duplicate files to _recycleBin, keeping the newest"
+    printf '%s\n' "  dedup <path> [recursive=false] [across_folders=false]"
+    printf '%s\n' "  recursive       if true/1, scan subdirectories recursively"
+    printf '%s\n' "  across_folders  if true/1, deduplicate across all subdirectories globally"
     return
   fi
   local target="${1:?Usage: dedup <path> [recursive=false] [across_folders=false]}"
   local recursive="${2:-false}"
   local across_folders="${3:-false}"
   if [ ! -d "$target" ]; then
-    printf '%s\n' ' "dedup: directory not found: $target'
-
+    printf '%s\n' "dedup: directory not found: $target"
     return 1
   fi
   local abs_target
@@ -1156,7 +1110,7 @@ function _pack_filename_sanitize() {
 # --zip and --tar wrap the same raw blob in compressed archives.
 function pack_text() {
   if is_help_arg "${1:-}"; then
-    echo "pack_text: bundle a directory (or a single file) into a self-contained pack
+    printf '%s\n' "pack_text: bundle a directory (or a single file) into a self-contained pack
   Usage: pack_text [src=.] [output_file] [--raw|--zip|--tar] [--encode=<algo>] [--encode-level=N]
          src may be a directory (default behavior) OR a single file path
          (including hidden dotfiles) — in single-file mode the file is packed
@@ -1286,7 +1240,7 @@ function pack_text() {
   case "$pack_encoding" in
   gzip | brotli) ;;
   *)
-    echo "pack_text: unknown encoding: $pack_encoding (allowed: gzip, brotli)" >&2
+    printf '%s\n' "pack_text: unknown encoding: $pack_encoding (allowed: gzip, brotli)" >&2
     return 1
     ;;
   esac
@@ -1297,7 +1251,7 @@ function pack_text() {
   # Empty string means "use the per-encoding default" — handled in node.
   if [ -n "$pack_encode_level" ]; then
     if ! [[ "$pack_encode_level" =~ ^[0-9]+$ ]]; then
-      echo "pack_text: --encode-level must be an integer (got: $pack_encode_level)" >&2
+      printf '%s\n' "pack_text: --encode-level must be an integer (got: $pack_encode_level)" >&2
       return 1
     fi
     local _max_level
@@ -1306,7 +1260,7 @@ function pack_text() {
     brotli) _max_level=11 ;;
     esac
     if [ "$pack_encode_level" -gt "$_max_level" ]; then
-      echo "pack_text: --encode-level=$pack_encode_level invalid for $pack_encoding (allowed: 0-$_max_level)" >&2
+      printf '%s\n' "pack_text: --encode-level=$pack_encode_level invalid for $pack_encoding (allowed: 0-$_max_level)" >&2
       return 1
     fi
   fi
@@ -1324,7 +1278,7 @@ function pack_text() {
   if [ -f "$src" ]; then
     single_file=1
   elif [ ! -d "$src" ]; then
-    echo "pack_text: path not found: $src" >&2
+    printf '%s\n' "pack_text: path not found: $src" >&2
     return 1
   fi
 
@@ -1410,16 +1364,16 @@ function pack_text() {
   rm -f "$file_list"
   local is_git=0
   local tracked_count=0 extras_count=0
-  ((pack_verbose)) && echo "pack_text: scanning $abs_src" >&2
+  ((pack_verbose)) && printf '%s\n' "pack_text: scanning $abs_src" >&2
   if ((single_file)); then
     # Single-file mode: skip git scan and find walk entirely. The basename
     # is written verbatim — no filter_unwanted, so explicitly-named files
     # (e.g. hidden dotfiles like .env) always pack regardless of ignore patterns.
     printf '%s\n' "$single_file_basename" > "$file_list"
-    echo "pack_text: single file — $abs_src/$single_file_basename" >&2
+    printf '%s\n' "pack_text: single file — $abs_src/$single_file_basename" >&2
   elif git -C "$abs_src" rev-parse --is-inside-work-tree &> /dev/null; then
     is_git=1
-    ((pack_verbose)) && echo "pack_text: git repo detected — using git ls-files" >&2
+    ((pack_verbose)) && printf '%s\n' "pack_text: git repo detected — using git ls-files" >&2
     local tracked_tmp extras_tmp
     tracked_tmp="${file_list}.tracked"
     extras_tmp="${file_list}.extras"
@@ -1432,19 +1386,19 @@ function pack_text() {
     extras_count=$(command wc -l < "$extras_tmp" | command tr -d ' ')
     command cat "$tracked_tmp" "$extras_tmp" | command sort -u > "$file_list"
     rm -f "$tracked_tmp" "$extras_tmp"
-    echo "pack_text: git repo — $tracked_count tracked + $extras_count extra (.env*/.bash*/.zsh*/.md/.xml/.src/.sh/.sql/.db/.sqlite*/.yml/.json/.toml/.ini/.conf/.cfg)" >&2
+    printf '%s\n' "pack_text: git repo — $tracked_count tracked + $extras_count extra (.env*/.bash*/.zsh*/.md/.xml/.src/.sh/.sql/.db/.sqlite*/.yml/.json/.toml/.ini/.conf/.cfg)" >&2
   else
-    ((pack_verbose)) && echo "pack_text: non-git tree — walking $abs_src via find (node_modules / .git pruned)" >&2
+    ((pack_verbose)) && printf '%s\n' "pack_text: non-git tree — walking $abs_src via find (node_modules / .git pruned)" >&2
     (cd "$abs_src" && command find . \( -name node_modules -o -name .git \) -prune -o -type f -print | command sed 's|^\./||') | filter_unwanted | command sort -u > "$file_list"
   fi
   if ((pack_verbose)); then
     local _candidate_count
     _candidate_count=$(command wc -l < "$file_list" | command tr -d ' ')
-    echo "pack_text: $_candidate_count file(s) selected; encoding with $pack_encoding..." >&2
+    printf '%s\n' "pack_text: $_candidate_count file(s) selected; encoding with $pack_encoding..." >&2
   fi
 
   if [ ! -s "$file_list" ]; then
-    echo "pack_text: no files found in $abs_src" >&2
+    printf '%s\n' "pack_text: no files found in $abs_src" >&2
     rm -f "$file_list"
     return 1
   fi
@@ -1594,10 +1548,7 @@ PACK_TEXT_NODE
   rm -f "$file_list"
 
   if [ ! -f "$tmp_packed" ]; then
-    printf '%s\n' \
-      ' "pack_text: failed to generate packed co' \
-      'ntent'
-
+    printf '%s\n' "pack_text: failed to generate packed content"
     return 1
   fi
 
@@ -1605,20 +1556,17 @@ PACK_TEXT_NODE
   tar)
     tar -czf "$output" -C /tmp "$content_name"
     rm -f "$tmp_packed"
-    printf '%s\n' ' "pack_text: $output'
-
+    printf '%s\n' "pack_text: $output"
     ;;
   zip)
     command zip -qj "$output" "$tmp_packed"
     rm -f "$tmp_packed"
-    printf '%s\n' ' "pack_text: $output'
-
+    printf '%s\n' "pack_text: $output"
     ;;
   raw)
     if [ -n "$output" ]; then
       mv "$tmp_packed" "$output"
-    printf '%s\n' ' "pack_text: $output'
-
+      printf '%s\n' "pack_text: $output"
       # Always stream the saved file's contents to stdout at the end of raw
       # mode so `pack_text | unpack_text /tmp/copy` works without --raw.
       # The "pack_text: <path>" status line above is harmless on the receiving
@@ -1639,7 +1587,7 @@ PACK_TEXT_NODE
 # .tar.gz/.tgz/.tar/.zip archives are auto-extracted to a temp dir first.
 function unpack_text() {
   if is_help_arg "${1:-}"; then
-    echo "unpack_text: parse a bulletproof pack and extract files (or re-emit as text view)
+    printf '%s\n' "unpack_text: parse a bulletproof pack and extract files (or re-emit as text view)
   Usage: unpack_text [input_file|-] [dest_dir=.] [--verbose]
          unpack_text --view [input_file|-]               # re-emit, no disk writes
          <some command> | unpack_text [dest_dir=.]
@@ -1726,25 +1674,25 @@ function unpack_text() {
     dest="${1:-.}"
   else
     if [ -z "${1:-}" ]; then
-      echo "unpack_text: no input file and stdin is not piped" >&2
+      printf '%s\n' "unpack_text: no input file and stdin is not piped" >&2
       return 1
     fi
     input="$1"
     dest="${2:-.}"
     if [ ! -f "$input" ]; then
-      echo "unpack_text: file not found: $input" >&2
+      printf '%s\n' "unpack_text: file not found: $input" >&2
       return 1
     fi
   fi
 
   if [ -n "$stdin_tmp" ] && [ ! -s "$stdin_tmp" ]; then
-    echo "unpack_text: no data on stdin" >&2
+    printf '%s\n' "unpack_text: no data on stdin" >&2
     rm -f "$stdin_tmp"
     return 1
   fi
 
   # Resolve to absolute path.
-  input=$(cd "$(dirname "$input")" && echo "$(command pwd)/$(basename "$input")")
+  input=$(cd "$(dirname "$input")" && printf '%s\n' "$(command pwd)/$(basename "$input")")
 
   # Auto-extract tar/zip archives (file-mode only — stdin is always plain text).
   local tmp_extract=""
@@ -1761,7 +1709,7 @@ function unpack_text() {
       local inner
       inner=$(command grep -rl "===== PACK_BEGIN:" "$tmp_extract" 2> /dev/null | head -1)
       if [ -z "$inner" ]; then
-        echo "unpack_text: no pack file found inside archive" >&2
+        printf '%s\n' "unpack_text: no pack file found inside archive" >&2
         rm -rf "$tmp_extract"
         [ -n "$stdin_tmp" ] && rm -f "$stdin_tmp"
         return 1
@@ -2054,7 +2002,7 @@ if (viewMode) {
   console.error('unpack_text: extracted ' + count + ' files to ' + destDir);
 }
 UNPACK_TEXT_NODE
-  } | UNPACK_INPUT="$input" UNPACK_DEST="$abs_dest" UNPACK_MODE="$( ((view_mode)) && echo view || echo extract)" UNPACK_VERBOSE="$unpack_verbose" node
+  } | UNPACK_INPUT="$input" UNPACK_DEST="$abs_dest" UNPACK_MODE="$( ((view_mode)) && printf '%s\n' view || printf '%s\n' extract)" UNPACK_VERBOSE="$unpack_verbose" node
 
   # Cleanup tmp files.
   if [ -n "$tmp_extract" ]; then
@@ -2071,7 +2019,7 @@ UNPACK_TEXT_NODE
 # bundle without unpacking files to disk.
 function view_pack_text() {
   if is_help_arg "${1:-}"; then
-    echo "view_pack_text: alias for 'unpack_text --view' — re-emit a pack with text decoded inline
+    printf '%s\n' "view_pack_text: alias for 'unpack_text --view' — re-emit a pack with text decoded inline
   Usage: view_pack_text [input_file|-]
          <some command> | view_pack_text
   Examples:

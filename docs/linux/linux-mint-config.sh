@@ -1,39 +1,44 @@
 #!/usr/bin/env bash
 
-
 # Helper function to remove packages with apt
 removePackageWithApt() {
-    printf '%s\n' ' "  >> sudo apt remove -y --purge $@'
-
+  (
+    set -- "  >> sudo apt remove -y --purge $@"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   sudo apt remove -y --purge "$@" &> /dev/null
 }
 
 installPackageWithApt() {
-    printf '%s\n' ' "  >> sudo apt install -y $@'
-
+  (
+    set -- "  >> sudo apt install -y $@"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   sudo apt install -y --fix-missing "$@" &> /dev/null
 }
 
 # Helper function to install packages with Flatpak
 installPackageWithFlatpak() {
-    printf '%s\n' ' "  >> flatpak install -y $@'
-
+  (
+    set -- "  >> flatpak install -y $@"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   flatpak install -y "$@" &> /dev/null
 }
 
-
 # ====== INSTALL APPLICATIONS ==============================================================================
-    printf '%s\n' ' "Installing applications...'
-
+printf '%s\n' "Installing applications..."
 
 # Add repos and install Brave
 sudo add-apt-repository -y ppa:xubuntu-dev/extras
 curl -fsSL https://dl.brave.com/install.sh | bash
 
 # Install APT packages
-    printf '%s\n' ' "Installing APT packages...'
-
-sudo apt update -y && echo "APT update done."
+printf '%s\n' "Installing APT packages..."
+sudo apt update -y && printf '%s\n' "APT update done."
 installPackageWithApt git
 installPackageWithApt vim
 installPackageWithApt bat
@@ -53,12 +58,10 @@ installPackageWithApt imagemagick
 installPackageWithApt vlc
 installPackageWithApt sublime-text
 installPackageWithApt mint-meta-codecs
-    printf '%s\n' ' "APT packages installed.'
-
+printf '%s\n' "APT packages installed."
 
 # ====== FLATPAK APPLICATIONS ==============================================================================
-    printf '%s\n' ' "Installing Flatpak applications...'
-
+printf '%s\n' "Installing Flatpak applications..."
 installPackageWithFlatpak flathub
 installPackageWithFlatpak com.bambulab.BambuStudio
 installPackageWithFlatpak com.discordapp.Discord
@@ -67,12 +70,10 @@ installPackageWithFlatpak org.onlyoffice.desktopeditors
 installPackageWithFlatpak cc.arduino.arduinoide
 installPackageWithFlatpak org.blender.Blender
 installPackageWithFlatpak com.ultimaker.cura
-    printf '%s\n' ' "Flatpak applications installed.'
-
+printf '%s\n' "Flatpak applications installed."
 
 # ====== CLEANUP ==============================================================================
-    printf '%s\n' ' "Removing unused packages...'
-
+printf '%s\n' "Removing unused packages..."
 removePackageWithApt firefox*
 removePackageWithApt thunderbird*
 removePackageWithApt celluloid*
@@ -93,8 +94,7 @@ removePackageWithApt gnome-calendar
 removePackageWithApt webapp-manager
 sudo apt autoremove -y --purge
 sudo apt clean -y
-    printf '%s\n' ' "System cleaned.'
-
+printf '%s\n' "System cleaned."
 
 # ====== WHITESUR THEME INSTALLATION ==============================================================================
 TMPDIR=$(mktemp -d /tmp/whitesur-XXXXXX)
@@ -106,46 +106,38 @@ REPOS=(
   "https://github.com/vinceliuice/WhiteSur-wallpapers.git"
 )
 
-    printf '%s\n' \
-      ' "Setting up WhiteSur macOS theme in $TMP' \
-      'DIR...'
-
-pushd "$TMPDIR" >/dev/null
+printf '%s\n' "Setting up WhiteSur macOS theme in $TMPDIR..."
+pushd "$TMPDIR" > /dev/null
 for repo in "${REPOS[@]}"; do
   name=$(basename "$repo" .git)
   if [ -d "$name" ]; then
-    printf '%s\n' ' "Skipping existing repo: $name'
-
+    printf '%s\n' "Skipping existing repo: $name"
   else
-    printf '%s\n' ' "Cloning: $name'
-
+    printf '%s\n' "Cloning: $name"
     git clone --depth 1 "$repo"
   fi
 done
 popd
 
 # Remove .git folders
-find "$TMPDIR" -maxdepth 2 -type d -name ".git" -exec rm -rf {} + 2>/dev/null
+find "$TMPDIR" -maxdepth 2 -type d -name ".git" -exec rm -rf {} + 2> /dev/null
 
 # Icons
-    printf '%s\n' ' "Installing WhiteSur icons...'
-
-pushd "$TMPDIR/WhiteSur-icon-theme" >/dev/null
+printf '%s\n' "Installing WhiteSur icons..."
+pushd "$TMPDIR/WhiteSur-icon-theme" > /dev/null
 sudo ./install.sh --remove
 sudo ./install.sh
 popd
 
 # Cursors
-    printf '%s\n' ' "Installing WhiteSur cursors...'
-
-pushd "$TMPDIR/WhiteSur-cursors/" >/dev/null
+printf '%s\n' "Installing WhiteSur cursors..."
+pushd "$TMPDIR/WhiteSur-cursors/" > /dev/null
 sudo ./install.sh
 popd
 
 # GTK Theme
-    printf '%s\n' ' "Installing WhiteSur GTK theme...'
-
-pushd "$TMPDIR/WhiteSur-gtk-theme" >/dev/null
+printf '%s\n' "Installing WhiteSur GTK theme..."
+pushd "$TMPDIR/WhiteSur-gtk-theme" > /dev/null
 ./tweaks.sh -g -r
 ./tweaks.sh -f -r
 sudo ./install.sh -d /usr/share/themes -t blue -N stable --opacity normal --scheme standard
@@ -157,22 +149,18 @@ popd
 sudo find /usr/share/icons -maxdepth 1 -type d \( ! -name "default" \) -exec sudo gtk-update-icon-cache -f {} \;
 # update the cache for gtk
 
-
 # Wallpapers
-    printf '%s\n' ' "Copying wallpapers...'
-
+printf '%s\n' "Copying wallpapers..."
 mkdir -p "$PICDIR/WhiteSur-wallpapers"
 cp -R "$TMPDIR/WhiteSur-wallpapers/"* "$PICDIR/WhiteSur-wallpapers/"
 cp /usr/share/icons/WhiteSur/status@2x/32/start-here.svg "$PICDIR/Apple_logo.svg"
 
 # Refresh caches
-    printf '%s\n' ' "Refreshing caches...'
-
+printf '%s\n' "Refreshing caches..."
 sudo gtk-update-icon-cache -f /usr/share/icons/WhiteSur
 sudo update-icon-caches /usr/share/icons
 sudo update-mime-database /usr/share/mime
-    printf '%s\n' ' "WhiteSur theme installation complete.'
-
+printf '%s\n' "WhiteSur theme installation complete."
 
 # ====== XFCE CONFIG BACKUP/RESTORE ==============================================================================
 TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
@@ -180,31 +168,22 @@ BACKUP_DIR="$HOME/xfce-backup-$TIMESTAMP"
 CONFIG_DIR="$HOME/.config/xfce4"
 TEMP_DIR=$(mktemp -d /tmp/xfce-restore-XXXXXX)
 
-    printf '%s\n' ' "Backing up XFCE configuration...'
-
+printf '%s\n' "Backing up XFCE configuration..."
 if [ -d "$CONFIG_DIR" ]; then
   mkdir -p "$BACKUP_DIR"
   cp -r "$CONFIG_DIR" "$BACKUP_DIR/"
-    printf '%s\n' \
-      ' "XFCE config backed up to $BACKUP_DIR/xf' \
-      'ce4'
-
+  printf '%s\n' "XFCE config backed up to $BACKUP_DIR/xfce4"
 else
-    printf '%s\n' \
-      ' "No XFCE configuration found. Skipping b' \
-      'ackup.'
-
+  printf '%s\n' "No XFCE configuration found. Skipping backup."
 fi
 
-    printf '%s\n' ' "Restoring XFCE configuration...'
-
-pushd "$TEMP_DIR" >/dev/null
+printf '%s\n' "Restoring XFCE configuration..."
+pushd "$TEMP_DIR" > /dev/null
 curl -fsSLO https://github.com/synle/bashrc/blob/HEAD/linux/xfce-config.tar.gz?raw=1
 tar -xzf xfce-config.tar.gz -C ~/.config
 popd
 
-    printf '%s\n' ' "Restarting XFCE...'
-
+printf '%s\n' "Restarting XFCE..."
 pkill xfce4-panel
 rm -rf ~/.cache/sessions/*
 sleep 1
@@ -216,27 +195,20 @@ xfconf-query -c xfce4-keyboard-shortcuts -rR
 
 # Cleanup
 # rm -rf "$TEMP_DIR" "$TMPDIR"
-    printf '%s\n' ' "Temporary files removed.'
-
-    printf '%s\n' \
-      ' "Setup complete. Backup stored in: $BACK' \
-      'UP_DIR'
-
-
+printf '%s\n' "Temporary files removed."
+printf '%s\n' "Setup complete. Backup stored in: $BACKUP_DIR"
 
 # ====== Misc ==============================================================================
 # Terminator padding fix
-    printf '%s\n' ' "Applying Terminator padding...'
-
+printf '%s\n' "Applying Terminator padding..."
 GTK_DIR="$HOME/.config/gtk-3.0"
 mkdir -p "$GTK_DIR"
-echo "VteTerminal, vte-terminal {
+printf '%s\n' "VteTerminal, vte-terminal {
   padding: 15px 15px;
 }" > "$GTK_DIR/gtk.css"
 
 # Display fix
-    printf '%s\n' ' "Installing fix-display-home helper...'
-
+printf '%s\n' "Installing fix-display-home helper..."
 sudo bash -c 'cat <<EOF > /usr/bin/fix-display-home
 #!/bin/bash
 xrandr --fb 2160x2720

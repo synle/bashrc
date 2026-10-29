@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/Core Android TV.sh?raw=1" | bash
 
-function removeApp(){
-  echo "> Remove:" $@
+function removeApp() {
+  (
+    set -- "> Remove:" $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
-function restoreApp(){
-  echo "> Restore:" $@
+function restoreApp() {
+  (
+    set -- "> Restore:" $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   cmd package install-existing $@
 }
 
@@ -21,7 +29,6 @@ removeApp com.google.android.apps.youtube.music
 removeApp com.google.android.apps.youtube.unplugged
 removeApp com.google.android.videos
 removeApp com.google.android.youtube
-
 
 # Hisense ULED 4K Premium 75U6G (xiaoyushan)
 removeApp com.hisense.favkey

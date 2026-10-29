@@ -52,8 +52,7 @@ ignored_history=(
 )
 export HISTIGNORE=$(
   IFS=":"
-    printf '%s\n' ' "${ignored_history[*]}'
-
+  printf '%s\n' "${ignored_history[*]}"
 )
 unset ignored_history
 
@@ -146,8 +145,7 @@ function _canonicalize_command() {
   # entry, and on demand for full-history rewrites.
   bash -nc "$cmd" 2> /dev/null || return 0
 
-    printf '%s\n' ' "$cmd'
-
+  printf '%s\n' "$cmd"
 }
 
 # Rewrite the last history entry to a canonical form via _canonicalize_command.
@@ -192,7 +190,7 @@ function _prune_recents() {
   local file="$1" flag="$2" tmp="$1.tmp.$$"
   touch "$file"
   while IFS= read -r entry; do
-    [ "$flag" "$entry" ] && echo "$entry"
+    [ "$flag" "$entry" ] && printf '%s\n' "$entry"
   done < "$file" 2> /dev/null > "$tmp"
   [ -f "$tmp" ] && mv "$tmp" "$file"
 }
@@ -246,16 +244,13 @@ function _track_folder() {
   # Skip if PWD unchanged since last track — eliminates 4 forks on every prompt
   [ "$current" = "${_LAST_TRACKED_PWD:-}" ] && return
   _LAST_TRACKED_PWD="$current"
-    printf '%s\n' \
-      ' "$current" | _prepend_recents "$_RECENT_' \
-      'FOLDERS_FILE" "$_RECENT_FOLDERS_MAX'
-
+  printf '%s\n' "$current" | _prepend_recents "$_RECENT_FOLDERS_FILE" "$_RECENT_FOLDERS_MAX"
 }
 
 # cd to the most recently visited directory
 function last_folder() {
   if is_help_arg "${1:-}"; then
-    echo "last_folder: cd to the last visited folder
+    printf '%s\n' "last_folder: cd to the last visited folder
   Usage: last_folder"
     return 0
   fi
@@ -264,8 +259,7 @@ function last_folder() {
   if [ -n "$dir" ] && [ -d "$dir" ]; then
     cd "$dir"
   else
-    printf '%s\n' ' "last_folder: no valid folder found'
-
+    printf '%s\n' "last_folder: no valid folder found"
   fi
 }
 
@@ -342,15 +336,14 @@ function _track_file() {
   for arg in "$@"; do
     [ -f "$arg" ] || continue
     full=$(realpath "$arg" 2> /dev/null) || continue
-    printf '%s\n' ' "$full'
-
+    printf '%s\n' "$full"
   done | _prepend_recents "$_RECENT_FILES_FILE" "$_RECENT_FILES_MAX"
 }
 
 # open the most recently opened file with view_file
 function last_file() {
   if is_help_arg "${1:-}"; then
-    echo "last_file: open the most recently opened file
+    printf '%s\n' "last_file: open the most recently opened file
   Usage: last_file"
     return 0
   fi
@@ -359,8 +352,7 @@ function last_file() {
   if [ -n "$f" ] && [ -f "$f" ]; then
     view_file "$f"
   else
-    printf '%s\n' ' "last_file: no valid file found'
-
+    printf '%s\n' "last_file: no valid file found"
   fi
 }
 
@@ -398,7 +390,8 @@ unset ignored_commands cmd_string ignored_files file_string _ce _fe
 # find all existing paths from a list of candidates (supports wildcards)
 function find_path_list() {
   if is_help_arg "${1:-}"; then
-    echo "
+    (
+      set -- "
       find_path_list: find all existing paths from a list of candidates
         find_path_list path1 path2 ...                any existing paths (default)
         find_path_list path1 path2 ... --file       all existing files
@@ -412,6 +405,9 @@ function find_path_list() {
           find_path_list '/mnt/z/drop*' --folder      skipped if ambiguous
           find_path_list '/usr/bin/vim*' --exec       all executable matches
     "
+      IFS=' '
+      printf '%s\n' "$*"
+    )
     return 0
   fi
 
@@ -433,15 +429,15 @@ function find_path_list() {
     local matches=($pattern)
     if [[ "$mode" == "exec" ]]; then
       for p in "${matches[@]}"; do
-        [[ -x "$p" ]] && echo "$p" && found=1
+        [[ -x "$p" ]] && printf '%s\n' "$p" && found=1
       done
     else
       [ "${#matches[@]}" -eq 1 ] || continue
       local p="${matches[0]}"
       case "$mode" in
-      file) [ -f "$p" ] && echo "$p" && found=1 ;;
-      folder) [ -d "$p" ] && echo "$p" && found=1 ;;
-      *) [ -e "$p" ] && echo "$p" && found=1 ;;
+      file) [ -f "$p" ] && printf '%s\n' "$p" && found=1 ;;
+      folder) [ -d "$p" ] && printf '%s\n' "$p" && found=1 ;;
+      *) [ -e "$p" ] && printf '%s\n' "$p" && found=1 ;;
       esac
     fi
   done
@@ -452,7 +448,8 @@ function find_path_list() {
 # find first existing path from a list of candidates (delegates to find_path_list)
 function find_path() {
   if is_help_arg "${1:-}"; then
-    echo "
+    (
+      set -- "
       find_path: find first existing path from a list of candidates
         find_path path1 path2 ...                any existing path (default)
         find_path path1 path2 ... --file       first existing file
@@ -466,12 +463,15 @@ function find_path() {
           find_path '/mnt/z/drop*' --folder      skipped if ambiguous
           find_path '/usr/bin/vim*' --exec       first executable match
     "
+      IFS=' '
+      printf '%s\n' "$*"
+    )
     return 0
   fi
 
   local result
   result=$(find_path_list "$@" | head -1)
-  [[ -n "$result" ]] && echo "$result" && return 0
+  [[ -n "$result" ]] && printf '%s\n' "$result" && return 0
   return 1
 }
 
@@ -487,7 +487,7 @@ function find_existing() {
 # keep it lean, so the function is duplicated here.
 function prompt_yes_no() {
   if is_help_arg "${1:-}"; then
-    echo "
+    printf '%s\n' "
       prompt_yes_no: prompt the user with a yes/no question
         Usage: prompt_yes_no <prompt> [default]
         default: 'Y' or 'N' (case-insensitive); defaults to 'N'.
@@ -509,7 +509,7 @@ function prompt_yes_no() {
 
   local reply=""
   read -rp "$prompt $hint " reply < /dev/tty || return 1
-  reply="$(echo "$reply" | tr '[:lower:]' '[:upper:]' | xargs)"
+  reply="$(printf '%s\n' "$reply" | tr '[:lower:]' '[:upper:]' | xargs)"
 
   if [ -z "$reply" ]; then
     case "$default" in [Yy]*) return 0 ;; esac
@@ -1022,7 +1022,7 @@ EOF
   fi
 
   if [ ! -s "$tmpfile" ]; then
-    echo "(empty body; http ${http_code:-?}, curl exit $rc)" >&2
+    printf '%s\n' "(empty body; http ${http_code:-?}, curl exit $rc)" >&2
     return "$rc"
   fi
 
@@ -1145,20 +1145,20 @@ function _ensure_npm_binary() {
 
   # npm is required for bootstrapping.
   if ! type -P npm > /dev/null 2>&1; then
-    echo "$bin wrapper: npm not found on PATH; cannot bootstrap $bin" >&2
+    printf '%s\n' "$bin wrapper: npm not found on PATH; cannot bootstrap $bin" >&2
     return 127
   fi
 
   # Ask before installing.
   if ! prompt_yes_no "$bin not installed. Install via npm?"; then
-    echo "$bin wrapper: install declined by user" >&2
+    printf '%s\n' "$bin wrapper: install declined by user" >&2
     return 1
   fi
 
   command npm install -g --prefix "$HOME/.local" "$pkg" || return 1
 
   if ! type -P "$bin" > /dev/null 2>&1; then
-    echo "$bin wrapper: install completed but '$bin' is still not on PATH" >&2
+    printf '%s\n' "$bin wrapper: install completed but '$bin' is still not on PATH" >&2
     return 1
   fi
 
@@ -1205,7 +1205,7 @@ function cd() {
   fi
 
   if is_help_arg "$_cd_query"; then
-    echo "cd: change folders with native Bash behavior and bounded nearby-folder matching
+    printf '%s\n' "cd: change folders with native Bash behavior and bounded nearby-folder matching
   Usage: cd [folder]
   Exact paths and Bash options keep native behavior.
   Missing paths search from their longest existing folder prefix.
@@ -1379,7 +1379,7 @@ CD_NODE
     _cd_encoded="${_cd_matches[0]}"
   else
     if [ ! -t 0 ] || ! { : < /dev/tty > /dev/tty; } 2> /dev/null; then
-      echo "cd: multiple nearby folders match; terminal stdin and a controlling terminal are required to choose one" >&2
+      printf '%s\n' "cd: multiple nearby folders match; terminal stdin and a controlling terminal are required to choose one" >&2
       return 1
     fi
     printf 'Your keyword matches multiple paths. Choose 1-5 or enter a full path:\n' > /dev/tty
@@ -1390,14 +1390,14 @@ CD_NODE
       printf '%s %s\n' "$((_cd_index + 1))" "$_cd_display" > /dev/tty
     done
     if ! IFS= read -r _cd_choice < /dev/tty; then
-      echo "cd: folder selection cancelled" >&2
+      printf '%s\n' "cd: folder selection cancelled" >&2
       return 1
     fi
     case "$_cd_choice" in
     [1-5])
       _cd_index=$((_cd_choice - 1))
       if [ "$_cd_index" -ge "${#_cd_matches[@]}" ]; then
-        echo "cd: selection is outside the displayed choices" >&2
+        printf '%s\n' "cd: selection is outside the displayed choices" >&2
         return 1
       fi
       _cd_encoded="${_cd_matches[$_cd_index]}"
@@ -1414,7 +1414,7 @@ CD_NODE
         fi
       done
       if [ -z "$_cd_encoded" ]; then
-        echo "cd: selection must be 1-5 or a displayed full path" >&2
+        printf '%s\n' "cd: selection must be 1-5 or a displayed full path" >&2
         return 1
       fi
       ;;
@@ -1501,7 +1501,7 @@ if type -P uvx > /dev/null 2>&1; then
   # Returns uv/uvx status; one-input conversions cache Markdown in /tmp before printing it.
   function markitdown() {
     if is_help_arg "${1:-}"; then
-      echo "markitdown: install or convert documents to Markdown with optional output file
+      printf '%s\n' "markitdown: install or convert documents to Markdown with optional output file
   Usage:
     markitdown INPUT
     markitdown INPUT -o OUTPUT.md
@@ -1647,7 +1647,7 @@ function _truncate_at() {
 # Empty targets pass through unchanged; lines without the target are omitted.
 function truncate_after() {
   if is_help_arg "${1:-}"; then
-    echo "truncate_after: keep each matching input line through its last literal target
+    printf '%s\n' "truncate_after: keep each matching input line through its last literal target
   Usage: command | truncate_after <target>
   Keeps the target itself. Empty targets pass through; unmatched lines are omitted.
   Example:
@@ -1663,7 +1663,7 @@ alias truncate=truncate_after
 # Empty targets pass through unchanged; lines without the target are omitted.
 function truncate_before() {
   if is_help_arg "${1:-}"; then
-    echo "truncate_before: keep each matching input line from its last literal target
+    printf '%s\n' "truncate_before: keep each matching input line from its last literal target
   Usage: command | truncate_before <target>
   Keeps the target itself. Empty targets pass through; unmatched lines are omitted.
   Example:
@@ -1677,7 +1677,7 @@ function truncate_before() {
 # Removes leading and trailing spaces or tabs from every input line.
 function trim() {
   if is_help_arg "${1:-}"; then
-    echo "trim: remove leading and trailing spaces or tabs from each input line
+    printf '%s\n' "trim: remove leading and trailing spaces or tabs from each input line
   Usage: command | trim
   Preserves whitespace inside each line.
   Example:
@@ -1700,7 +1700,7 @@ function _is_valid_column_number() {
 # Prints one 1-based, whitespace-delimited column from every input line.
 function get_column() {
   if is_help_arg "${1:-}"; then
-    echo "get_column: print a whitespace-delimited column from each input line
+    printf '%s\n' "get_column: print a whitespace-delimited column from each input line
   Usage: command | get_column [column]
   Column defaults to 1 and must be a positive integer.
   Consecutive spaces or tabs count as one delimiter.
@@ -1711,7 +1711,7 @@ function get_column() {
 
   local column="${1:-1}"
   if ! _is_valid_column_number "$column"; then
-    echo "get_column: column must be a positive integer" >&2
+    printf '%s\n' "get_column: column must be a positive integer" >&2
     return 2
   fi
 
@@ -1725,7 +1725,7 @@ function get_column() {
 # Prints selected 1-based, whitespace-delimited columns from every input line.
 function get_columns() {
   if is_help_arg "${1:-}"; then
-    echo "get_columns: print selected whitespace-delimited columns from each input line
+    printf '%s\n' "get_columns: print selected whitespace-delimited columns from each input line
   Usage: command | get_columns <column> [column...]
   Each column must be a positive integer. Output columns are separated by one space.
   No columns passes input through unchanged.
@@ -1742,7 +1742,7 @@ function get_columns() {
   local columns=""
   for column in "$@"; do
     if ! _is_valid_column_number "$column"; then
-      echo "get_columns: every column must be a positive integer" >&2
+      printf '%s\n' "get_columns: every column must be a positive integer" >&2
       return 2
     fi
     if [[ -n "$columns" ]]; then
@@ -1769,7 +1769,7 @@ function get_columns() {
 # Prints one 1-based column separated by a literal custom delimiter.
 function get_column_by() {
   if is_help_arg "${1:-}"; then
-    echo "get_column_by: print a custom-delimited column from each input line
+    printf '%s\n' "get_column_by: print a custom-delimited column from each input line
   Usage: command | get_column_by <delimiter> [column]
   Delimiter is literal text; column defaults to 1 and must be a positive integer.
   An empty delimiter passes input through unchanged.
@@ -1785,7 +1785,7 @@ function get_column_by() {
     return 0
   fi
   if ! _is_valid_column_number "$column"; then
-    echo "get_column_by: column must be a positive integer" >&2
+    printf '%s\n' "get_column_by: column must be a positive integer" >&2
     return 2
   fi
 
@@ -1819,7 +1819,7 @@ function get_column_by() {
 
 function pwd2() {
   if is_help_arg "${1:-}"; then
-    echo "pwd2: show current directory action summary
+    printf '%s\n' "pwd2: show current directory action summary
   Usage: pwd2"
     return 0
   fi
@@ -1873,7 +1873,7 @@ function diff() {
   esac
 
   if is_help_arg "${1:-}"; then
-    echo "
+    printf '%s\n' "
       diff: smart diff for files or git commits
         diff file1 file2                 Delta one-column diff (file1 left, file2 right)
         diff -delta2 file1 file2         Delta two-column diff
@@ -1896,17 +1896,17 @@ function diff() {
   fi
   if [ "$mode" != delta1 ] && [ "$mode" != delta2 ]; then
     if [ "$#" -ne 2 ]; then
-      echo "diff: editor mode requires exactly two files" >&2
+      printf '%s\n' "diff: editor mode requires exactly two files" >&2
       return 2
     fi
     file1=$1
     file2=$2
     if [ ! -f "$file1" ]; then
-      echo "File not found: $file1" >&2
+      printf '%s\n' "File not found: $file1" >&2
       return 1
     fi
     if [ ! -f "$file2" ]; then
-      echo "File not found: $file2" >&2
+      printf '%s\n' "File not found: $file2" >&2
       return 1
     fi
 
@@ -1931,7 +1931,7 @@ function diff() {
       ;;
     esac
     if ! is_runnable_command "$editor_binary"; then
-      echo "diff: required command not found: $editor_binary" >&2
+      printf '%s\n' "diff: required command not found: $editor_binary" >&2
       return 127
     fi
     "$editor_binary" "${editor_args[@]}" "$file1" "$file2"
@@ -1978,16 +1978,15 @@ function diff() {
     if [[ "$2" =~ $hash_re ]] && git rev-parse --verify "$2" &> /dev/null; then hash2_valid=true; fi
 
     if $file1_valid && ! $file2_valid; then
-      echo "File not found: $2" >&2
+      printf '%s\n' "File not found: $2" >&2
       return 1
     fi
     if ! $file1_valid && $file2_valid; then
-      echo "File not found: $1" >&2
+      printf '%s\n' "File not found: $1" >&2
       return 1
     fi
     if $hash1_valid && $hash2_valid; then
-    printf '%s\n' ' "git diff $1 $2'
-
+      printf '%s\n' "git diff $1 $2"
       git diff "$1" "$2"
       local diff_status=$?
 
@@ -1998,14 +1997,13 @@ function diff() {
         repo_url="${repo_url%.git}"
         repo_url="${repo_url#*github.com/}"
         local compare_url="https://github.com/${repo_url}/compare/${1}...${2}"
-    printf '%s\n' ' "$compare_url'
-
+        printf '%s\n' "$compare_url"
         open "$compare_url"
       fi
       return "$diff_status"
     fi
-    if ! $hash1_valid && ! $file1_valid; then echo "File or hash not found: $1" >&2; fi
-    if ! $hash2_valid && ! $file2_valid; then echo "File or hash not found: $2" >&2; fi
+    if ! $hash1_valid && ! $file1_valid; then printf '%s\n' "File or hash not found: $1" >&2; fi
+    if ! $hash2_valid && ! $file2_valid; then printf '%s\n' "File or hash not found: $2" >&2; fi
     return 1
   fi
 
@@ -2016,7 +2014,7 @@ function diff() {
 
   if [ "$#" -eq 1 ]; then
     if [ ! -f "$1" ]; then
-      echo "File not found: $1" >&2
+      printf '%s\n' "File not found: $1" >&2
       return 1
     fi
     if git rev-parse --is-inside-work-tree &> /dev/null; then
@@ -2054,7 +2052,7 @@ function pdiff() {
   local diff_args=() option_ended=0
   while [ "$#" -gt 0 ]; do
     if ((! option_ended)) && is_help_arg "$1"; then
-      echo "pdiff: compare clipboard contents with a file
+      printf '%s\n' "pdiff: compare clipboard contents with a file
   Usage: pdiff [diff options] file
   Clipboard is left; file is right. Leading options/selectors match diff.
   Examples: pdiff file; pdiff -delta2 file; pdiff -code file; pdiff -u file
@@ -2069,11 +2067,11 @@ function pdiff() {
   done
 
   if [ "$#" -ne 1 ]; then
-    echo "pdiff: requires a file; usage: pdiff [diff options] file" >&2
+    printf '%s\n' "pdiff: requires a file; usage: pdiff [diff options] file" >&2
     return 2
   fi
   if [ ! -f "$1" ]; then
-    echo "File not found: $1" >&2
+    printf '%s\n' "File not found: $1" >&2
     return 1
   fi
 
@@ -2123,7 +2121,7 @@ fi
 # flags: -F fixed string, -w whole word, -i case-insensitive, -n line numbers
 function search() {
   if is_help_arg "${1:-}"; then
-    echo "search: search content in files (rg > git grep > grep)
+    printf '%s\n' "search: search content in files (rg > git grep > grep)
   Usage: search <pattern>"
     return 0
   fi
@@ -2144,7 +2142,7 @@ _RAINBOW_COLORS=(91 93 92 96 94 95)
 
 function rainbow_print() {
   if is_help_arg "${1:-}"; then
-    echo "rainbow_print: print text in rainbow colors
+    printf '%s\n' "rainbow_print: print text in rainbow colors
   Usage: rainbow_print [colors] <text>"
     return 0
   fi
@@ -2164,13 +2162,13 @@ function rainbow_print() {
     local color=${colors[$color_idx]}
     printf "\e[%sm%s\e[0m" "$color" "${input:$i:1}"
   done
-  echo
+  printf '\n'
 }
 
 # br [clear|no-clear] [normal|reverse] [count]
 function br() {
   if is_help_arg "${1:-}"; then
-    echo "br: print rainbow separator lines
+    printf '%s\n' "br: print rainbow separator lines
   Usage: br [clear|no-clear] [normal|reverse] [count]
   Screen is cleared unless 'no-clear' is passed; colors normal unless 'reverse'; count defaults to 5.
   See also: hr (= br no-clear)"
@@ -2197,8 +2195,7 @@ function br() {
     line+="$_RAINBOW_BLOCK"
   done
 
-    printf '%s\n' ' "$line" | rainbow_print "${colors[*]}'
-
+  printf '%s\n' "$line" | rainbow_print "${colors[*]}"
 }
 
 # hr - rainbow separator without clearing the screen (br no-clear).
@@ -2213,7 +2210,7 @@ function hr() {
 # spinner &; SPIN_PID=$!; sleep 3; kill $SPIN_PID
 function spinner() {
   if is_help_arg "${1:-}"; then
-    echo "spinner: show an animated spinner (run in background)
+    printf '%s\n' "spinner: show an animated spinner (run in background)
   Usage: spinner &; SPIN_PID=\$!; sleep 3; kill \$SPIN_PID"
     return 0
   fi
@@ -2227,7 +2224,7 @@ function spinner() {
   while true; do
     for ((i = 0; i < ${#chars}; i++)); do
       local color="${colors[$c_idx]}"
-      echo -ne $'\e[1;'"${color}m${chars:$i:1}"$'\e[m'"\r"
+      printf '%b' $'\e[1;'"${color}m${chars:$i:1}"$'\e[m'"\r"
       sleep 0.1
       c_idx=$(((c_idx + 1) % ${#colors[@]}))
     done
@@ -2239,7 +2236,7 @@ function spinner() {
 ################################################################################
 function chmod() {
   if [ $# -eq 0 ]; then
-    echo "
+    printf '%s\n' "
       chmod cheat sheet:
         chmod +x file        # add execute for everyone
         chmod u+x file       # add execute for owner
@@ -2298,13 +2295,13 @@ function get_time_prompt() {
 # no args: show UTC, PST, LOCAL; with args: passthrough to date
 function date() {
   if [ $# -eq 0 ]; then
-    echo $'\e[1;31m>> UTC\e[m'
+    printf '%s\n' $'\e[1;31m>> UTC\e[m'
     command date -u +'%a, %b %d, %Y  %r'
 
-    echo $'\e[1;96m>> PST (California)\e[m'
+    printf '%s\n' $'\e[1;96m>> PST (California)\e[m'
     TZ="America/Los_Angeles" command date +'%a, %b %d, %Y  %r'
 
-    echo $'\e[1;92m>> LOCAL\e[m'
+    printf '%s\n' $'\e[1;92m>> LOCAL\e[m'
     command date +'%a, %b %d, %Y  %r'
   else
     command date "$@"
@@ -2346,12 +2343,15 @@ alias apt='sudo apt'
 ################################################################################
 function dexec_bash() {
   if is_help_arg "${1:-}"; then
-    echo "dexec_bash: docker exec -it into container with bash
+    printf '%s\n' "dexec_bash: docker exec -it into container with bash
   Usage: dexec_bash <container>"
     return 0
   fi
-    printf '%s\n' ' "docker exec -it $@ /bin/bash'
-
+  (
+    set -- "docker exec -it $@ /bin/bash"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   docker exec -it $@ /bin/bash
 }
 
@@ -2361,7 +2361,7 @@ function dexec_bash() {
 # open: render local Markdown to HTML, then open the target in the system app.
 function open() {
   if is_help_arg "${1:-}"; then
-    echo "open: open a file or folder in the default system app (local .md files render to HTML)
+    printf '%s\n' "open: open a file or folder in the default system app (local .md files render to HTML)
   Usage: open [file|folder|URL]"
     return 0
   fi
@@ -2386,8 +2386,7 @@ function open() {
   elif type -P xdg-open &> /dev/null; then
     xdg-open "$target" 1>&- 2>&- &
   else
-    printf '%s\n' ' "No file manager found'
-
+    printf '%s\n' "No file manager found"
   fi
 
   # When the target is a folder, the OS file manager is the predictable receiver
@@ -2440,7 +2439,7 @@ function open() {
 ################################################################################
 function unwrap() {
   if is_help_arg "${1:-}"; then
-    echo "
+    printf '%s\n' "
       unwrap: rejoin terminal-wrapped paragraphs from stdin
         echo \$'foo\\nbar' | unwrap     rejoin a single paragraph
         pbpaste | unwrap | pbcopy      fix the clipboard in place
@@ -2542,11 +2541,7 @@ function tldr() {
     if declare -f "$1" | grep -q is_help_arg; then
       "$1" --help
     else
-    printf '%s\n' \
-      ' "tldr: \'$1\' is a shell function (use \' \
-      ''type $1\' or \'declare -f $1\' for detai' \
-      'ls)'
-
+      printf '%s\n' "tldr: '$1' is a shell function (use 'type $1' or 'declare -f $1' for details)"
       type "$1"
     fi
   else
@@ -2563,7 +2558,7 @@ function retry() {
   shift
 
   if [ -z "$count" ] || [ -z "$1" ] || is_help_arg "$count"; then
-    echo "
+    printf '%s\n' "
       retry: retry a command up to N times
         Usage: retry <count> <command...>
     "
@@ -2572,8 +2567,7 @@ function retry() {
 
   local attempt=1
   while [ "$attempt" -le "$count" ]; do
-    printf '%s\n' ' ">> Attempt $attempt/$count: $*'
-
+    printf '%s\n' ">> Attempt $attempt/$count: $*"
     if "$@"; then
       return 0
     fi
@@ -2581,8 +2575,7 @@ function retry() {
     [ "$attempt" -le "$count" ] && sleep "$attempt"
   done
 
-    printf '%s\n' ' ">> Failed after $count attempts: $*'
-
+  printf '%s\n' ">> Failed after $count attempts: $*"
   return 1
 }
 
@@ -2591,7 +2584,7 @@ function retry() {
 ################################################################################
 function benchmark() {
   if [ -z "$1" ] || is_help_arg "$1"; then
-    echo "
+    printf '%s\n' "
       benchmark: measure how long a command takes
         Usage: benchmark <command...>
     "
@@ -2608,17 +2601,11 @@ function benchmark() {
   if [ ${#start_time} -gt 10 ] && [ "${start_time//[0-9]/}" = "" ] && [ "${end_time//[0-9]/}" = "" ]; then
     # nanosecond precision available
     elapsed=$(((end_time - start_time) / 1000000))
-    printf '%s\n' \
-      ' ">> Completed in ${elapsed}ms (exit $exi' \
-      't_code)'
-
+    printf '%s\n' ">> Completed in ${elapsed}ms (exit $exit_code)"
   else
     # seconds only (macOS date without coreutils)
     elapsed=$((end_time - start_time))
-    printf '%s\n' \
-      ' ">> Completed in ${elapsed}s (exit $exit' \
-      '_code)'
-
+    printf '%s\n' ">> Completed in ${elapsed}s (exit $exit_code)"
   fi
   return $exit_code
 }
@@ -2634,7 +2621,7 @@ function benchmark() {
 ################################################################################
 # find the local screenshots source folder
 function _screenshot_local_folder() {
-  [ -n "${BASHRC_SCREENSHOT_DIR:-}" ] && [ -d "$BASHRC_SCREENSHOT_DIR" ] && echo "$BASHRC_SCREENSHOT_DIR" && return 0
+  [ -n "${BASHRC_SCREENSHOT_DIR:-}" ] && [ -d "$BASHRC_SCREENSHOT_DIR" ] && printf '%s\n' "$BASHRC_SCREENSHOT_DIR" && return 0
   local candidates=(
     /mnt/d/Desktop/_screenshots
     "/mnt/c/Users/[Ss][Yy]*/Desktop/_screenshots"
@@ -2648,7 +2635,7 @@ function _screenshot_local_folder() {
 # screenshot_backup: copy local screenshots to the shared network folder via cpsync
 function screenshot_backup() {
   if is_help_arg "${1:-}"; then
-    echo "screenshot_backup: copy local screenshots to the shared network folder
+    printf '%s\n' "screenshot_backup: copy local screenshots to the shared network folder
   Uses cpsync to skip unchanged files.
   Usage: screenshot_backup"
     return 0
@@ -2656,8 +2643,7 @@ function screenshot_backup() {
 
   local shared_folder
   shared_folder=$(_shared_folder) || {
-    printf '%s\n' ' "No shared network folder found'
-
+    printf '%s\n' "No shared network folder found"
     return 1
   }
   local dest_folder="${shared_folder}/share/_screenshots"
@@ -2665,8 +2651,7 @@ function screenshot_backup() {
 
   local src_folder
   src_folder=$(_screenshot_local_folder) || {
-    printf '%s\n' ' "No local screenshots folder found'
-
+    printf '%s\n' "No local screenshots folder found"
     return 1
   }
 
@@ -2676,40 +2661,35 @@ function screenshot_backup() {
 # screenshot_open_local: open the local screenshots folder
 function screenshot_open_local() {
   if is_help_arg "${1:-}"; then
-    echo "screenshot_open_local: open local screenshots folder
+    printf '%s\n' "screenshot_open_local: open local screenshots folder
   Usage: screenshot_open_local"
     return 0
   fi
   local src_folder
   src_folder=$(_screenshot_local_folder) || {
-    printf '%s\n' ' "No local screenshots folder found'
-
+    printf '%s\n' "No local screenshots folder found"
     return 1
   }
-  open "$src_folder" &> /dev/null || echo "$src_folder"
+  open "$src_folder" &> /dev/null || printf '%s\n' "$src_folder"
 }
 
 # screenshot_open_shared: open the shared network screenshots folder
 function screenshot_open_shared() {
   if is_help_arg "${1:-}"; then
-    echo "screenshot_open_shared: open shared network screenshots folder
+    printf '%s\n' "screenshot_open_shared: open shared network screenshots folder
   Usage: screenshot_open_shared"
     return 0
   fi
   local shared_folder
   shared_folder=$(_shared_folder) || {
-    printf '%s\n' ' "No shared network folder found'
-
+    printf '%s\n' "No shared network folder found"
     return 1
   }
   local dest_folder="${shared_folder}/share/_screenshots"
   if [ -d "$dest_folder" ]; then
-    open "$dest_folder" &> /dev/null || echo "$dest_folder"
+    open "$dest_folder" &> /dev/null || printf '%s\n' "$dest_folder"
   else
-    printf '%s\n' \
-      ' "No shared screenshots folder found: $de' \
-      'st_folder'
-
+    printf '%s\n' "No shared screenshots folder found: $dest_folder"
     return 1
   fi
 }
@@ -2723,7 +2703,7 @@ alias screenshot_open='screenshot_open_local'
 # housekeeping: run backup, screenshot backup, and patch cleanup
 function housekeeping() {
   if is_help_arg "${1:-}"; then
-    echo "housekeeping: run backup, screenshot backup, and patch cleanup
+    printf '%s\n' "housekeeping: run backup, screenshot backup, and patch cleanup
   Usage: housekeeping"
     return 0
   fi
@@ -2735,57 +2715,34 @@ function housekeeping() {
   command mkdir -p "$_logdir" 2> /dev/null || true
 
   local hk_start=$SECONDS
-    printf '%s\n' ' "housekeeping started at $(date)'
-
+  printf '%s\n' "housekeeping started at $(date)"
 
   (
     local log="$_logdir/log_${ts}_patch_cleanup.txt"
     local start=$SECONDS
-    printf '%s\n' \
-      ' "  > patch_cleanup started at $(date)" |' \
-      ' tee -a "$log'
-
+    printf '%s\n' "  > patch_cleanup started at $(date)" | tee -a "$log"
     patch_cleanup &> "$log"
-    printf '%s\n' \
-      ' "  > patch_cleanup done at $(date) ($((S' \
-      'ECONDS - start))s)" | tee -a "$log'
-
+    printf '%s\n' "  > patch_cleanup done at $(date) ($((SECONDS - start))s)" | tee -a "$log"
   ) &
   (
     local log="$_logdir/log_${ts}_screenshot_backup.txt"
     local start=$SECONDS
-    printf '%s\n' \
-      ' "  > screenshot_backup started at $(date' \
-      ')" | tee -a "$log'
-
+    printf '%s\n' "  > screenshot_backup started at $(date)" | tee -a "$log"
     screenshot_backup &> "$log"
-    printf '%s\n' \
-      ' "  > screenshot_backup done at $(date) (' \
-      '$((SECONDS - start))s)" | tee -a "$log'
-
+    printf '%s\n' "  > screenshot_backup done at $(date) ($((SECONDS - start))s)" | tee -a "$log"
   ) &
   if type backup &> /dev/null; then
     (
       local log="$_logdir/log_${ts}_backup.txt"
       local start=$SECONDS
-    printf '%s\n' \
-      ' "  > backup started at $(date)" | tee -a' \
-      ' "$log'
-
+      printf '%s\n' "  > backup started at $(date)" | tee -a "$log"
       backup &> "$log"
-    printf '%s\n' \
-      ' "  > backup done at $(date) ($((SECONDS ' \
-      '- start))s)" | tee -a "$log'
-
+      printf '%s\n' "  > backup done at $(date) ($((SECONDS - start))s)" | tee -a "$log"
     ) &
   fi
 
   wait
-    printf '%s\n' \
-      ' "housekeeping done at $(date) ($((SECOND' \
-      'S - hk_start))s). Logs: $_logdir/log_${ts' \
-      '}_*.txt'
-
+  printf '%s\n' "housekeeping done at $(date) ($((SECONDS - hk_start))s). Logs: $_logdir/log_${ts}_*.txt"
 }
 
 ################################################################################

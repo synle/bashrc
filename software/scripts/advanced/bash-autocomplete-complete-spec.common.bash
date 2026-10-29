@@ -23,7 +23,7 @@ function __spec_complete() {
       local line
       line=$(command grep -m1 "^$prefix|" <<< "$spec_data")
       if [ -n "$line" ]; then
-        opts="$(echo "$line" | cut -d'|' -f2- | tr ',' ' ')"
+        opts="$(printf '%s\n' "$line" | cut -d'|' -f2- | tr ',' ' ')"
         matched=1
         break
       fi
@@ -35,7 +35,7 @@ function __spec_complete() {
       local base_line
       base_line=$(command grep -m1 "^|" <<< "$spec_data")
       if [ -n "$base_line" ]; then
-        opts="$opts $(echo "$base_line" | cut -d'|' -f2- | tr ',' ' ')"
+        opts="$opts $(printf '%s\n' "$base_line" | cut -d'|' -f2- | tr ',' ' ')"
       fi
     fi
   fi

@@ -7,13 +7,13 @@
 # SOURCE | software/bootstrap/common-functions.bash
 function pi() {
   if ! type -P pi > /dev/null 2>&1; then
-    echo "pi is not installed" >&2
+    printf '%s\n' "pi is not installed" >&2
     return 1
   fi
 
   # Activate node once per shell session (no-op on later calls).
   if ! llm_setup_activate; then
-    echo "node activation failed: llm_setup_activate/activate_node is missing" >&2
+    printf '%s\n' "node activation failed: llm_setup_activate/activate_node is missing" >&2
     return 1
   fi
 
@@ -29,7 +29,7 @@ function pi() {
 # pi_edit: open the ~/.pi/agent/ config dir (settings.json, models.json, AGENTS.md, APPEND_SYSTEM.md) in the editor
 function pi_edit() {
   if is_help_arg "${1:-}"; then
-    echo "pi_edit: open ~/.pi/agent/ in the editor via view_file
+    printf '%s\n' "pi_edit: open ~/.pi/agent/ in the editor via view_file
   Usage: pi_edit
 
 Opens the whole ~/.pi/agent/ config dir so settings.json, models.json,
@@ -65,7 +65,7 @@ scans by default and exposes as /skill:<name> commands."
 # pi_edit_rule_global: open the global pi rules file (~/.pi/agent/AGENTS.md) in the editor
 function pi_edit_rule_global() {
   if is_help_arg "${1:-}"; then
-    echo "pi_edit_rule_global: open the global pi rules file in the editor via view_file
+    printf '%s\n' "pi_edit_rule_global: open the global pi rules file in the editor via view_file
   Usage: pi_edit_rule_global
 
 Opens ~/.pi/agent/AGENTS.md — the user-level instructions loaded into every session.
@@ -81,7 +81,7 @@ pi_edit_config (settings file)."
 # pi_edit_config: open the main pi settings file (~/.pi/agent/settings.json) in the editor
 function pi_edit_config() {
   if is_help_arg "${1:-}"; then
-    echo "pi_edit_config: open the main pi settings file in the editor via view_file
+    printf '%s\n' "pi_edit_config: open the main pi settings file in the editor via view_file
   Usage: pi_edit_config
 
 Opens ~/.pi/agent/settings.json. Managed defaults are seeded by pi/setup.js; edit that

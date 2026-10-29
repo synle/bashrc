@@ -66,11 +66,11 @@ path_candidates=(
 # then dedupe and prune non-existent directories — all in one pipeline
 export PATH="$(
   {
-    for p in "${path_candidates[@]}"; do echo "${p/#\~/$HOME}"; done
-    echo "$PATH" | tr ':' '\n'
+    for p in "${path_candidates[@]}"; do printf '%s\n' "${p/#\~/$HOME}"; done
+    printf '%s\n' "$PATH" | tr ':' '\n'
   } \
     | awk '!seen[$0]++' \
-    | while IFS= read -r d; do [ -d "$d" ] && echo "$d"; done \
+    | while IFS= read -r d; do [ -d "$d" ] && printf '%s\n' "$d"; done \
     | tr '\n' ':' | sed 's/:$//'
 )"
 

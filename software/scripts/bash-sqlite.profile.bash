@@ -20,13 +20,11 @@
 # _sqlite_bin: echo the sqlite CLI binary name, or fail when none is installed
 function _sqlite_bin() {
   if type -P sqlite3 &> /dev/null; then
-    printf '%s\n' ' "sqlite3'
-
+    printf '%s\n' "sqlite3"
   elif type -P sqlite &> /dev/null; then
-    printf '%s\n' ' "sqlite'
-
+    printf '%s\n' "sqlite"
   else
-    echo "sqlite: not installed (install sqlite3)" >&2
+    printf '%s\n' "sqlite: not installed (install sqlite3)" >&2
     return 1
   fi
 }
@@ -34,18 +32,18 @@ function _sqlite_bin() {
 # _sqlite_auto_vacuum_label <code>: map a PRAGMA auto_vacuum code to its name
 function _sqlite_auto_vacuum_label() {
   case "${1:-}" in
-  0) echo "NONE (0)" ;;
-  1) echo "FULL (1)" ;;
-  2) echo "INCREMENTAL (2)" ;;
-  "") echo "unknown" ;;
-  *) echo "$1" ;;
+  0) printf '%s\n' "NONE (0)" ;;
+  1) printf '%s\n' "FULL (1)" ;;
+  2) printf '%s\n' "INCREMENTAL (2)" ;;
+  "") printf '%s\n' "unknown" ;;
+  *) printf '%s\n' "$1" ;;
   esac
 }
 
 # sqlite_raw: run raw SQL against a SQLite database
 function sqlite_raw() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "sqlite_raw: run raw SQL against a SQLite database
+    printf '%s\n' "sqlite_raw: run raw SQL against a SQLite database
   Usage: sqlite_raw <path.db> '<raw sql>'
          <raw sql> | sqlite_raw <path.db>
   The database must already exist — a typo'd path is an error, not a new db.
@@ -63,7 +61,7 @@ function sqlite_raw() {
   shift
 
   if [ ! -f "$db" ]; then
-    echo "sqlite_raw: no such database file: $db" >&2
+    printf '%s\n' "sqlite_raw: no such database file: $db" >&2
     return 1
   fi
 
@@ -73,7 +71,7 @@ function sqlite_raw() {
   fi
 
   if [ -z "$(printf '%s' "$sql" | tr -d '[:space:]')" ]; then
-    echo "sqlite_raw: no SQL given — pass it as the second argument or pipe it on stdin" >&2
+    printf '%s\n' "sqlite_raw: no SQL given — pass it as the second argument or pipe it on stdin" >&2
     return 1
   fi
 
@@ -85,7 +83,7 @@ function sqlite_raw() {
 # sqlite_vaccum: VACUUM a SQLite database
 function sqlite_vaccum() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "sqlite_vaccum: VACUUM a SQLite database (rebuild the file, reclaim free pages)
+    printf '%s\n' "sqlite_vaccum: VACUUM a SQLite database (rebuild the file, reclaim free pages)
   Usage: sqlite_vaccum <path.db>
   Rewrites the whole file, so it needs free disk space of roughly the db size.
   Also aliased as sqlite_vacuum."
@@ -97,7 +95,7 @@ function sqlite_vaccum() {
 
   local db="$1"
   if [ ! -f "$db" ]; then
-    echo "sqlite_vaccum: no such database file: $db" >&2
+    printf '%s\n' "sqlite_vaccum: no such database file: $db" >&2
     return 1
   fi
 
@@ -107,17 +105,14 @@ function sqlite_vaccum() {
   before="$(wc -c < "$db" | tr -d '[:space:]')"
   command "$bin" "$db" "VACUUM;" || return 1
   after="$(wc -c < "$db" | tr -d '[:space:]')"
-    printf '%s\n' \
-      ' "  > VACUUM > $db > $before -> $after by' \
-      'tes'
-
+  printf '%s\n' "  > VACUUM > $db > $before -> $after bytes"
 }
 alias sqlite_vacuum=sqlite_vaccum
 
 # sqlite_vaccum_auto: turn auto_vacuum FULL on for a SQLite database
 function sqlite_vaccum_auto() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "sqlite_vaccum_auto: turn auto_vacuum FULL on for a SQLite database
+    printf '%s\n' "sqlite_vaccum_auto: turn auto_vacuum FULL on for a SQLite database
   Usage: sqlite_vaccum_auto <path.db>
   Sets PRAGMA auto_vacuum = FULL then runs VACUUM — on an existing database the
   rebuild is what makes the new mode stick. Pages freed afterwards are returned
@@ -131,7 +126,7 @@ function sqlite_vaccum_auto() {
 
   local db="$1"
   if [ ! -f "$db" ]; then
-    echo "sqlite_vaccum_auto: no such database file: $db" >&2
+    printf '%s\n' "sqlite_vaccum_auto: no such database file: $db" >&2
     return 1
   fi
 
@@ -142,14 +137,10 @@ function sqlite_vaccum_auto() {
   command "$bin" "$db" "PRAGMA auto_vacuum = FULL; VACUUM;" || return 1
   after="$(command "$bin" "$db" "PRAGMA auto_vacuum;" 2> /dev/null | tr -d '[:space:]')"
 
-    printf '%s\n' \
-      ' "  > Auto-vacuum > $db > $(_sqlite_auto_' \
-      'vacuum_label "$before") -> $(_sqlite_auto' \
-      '_vacuum_label "$after")'
-
+  printf '%s\n' "  > Auto-vacuum > $db > $(_sqlite_auto_vacuum_label "$before") -> $(_sqlite_auto_vacuum_label "$after")"
 
   if [ "$after" != "1" ]; then
-    echo ">> Warning: auto_vacuum did not stick (still $(_sqlite_auto_vacuum_label "$after")) — the VACUUM may not have completed." >&2
+    printf '%s\n' ">> Warning: auto_vacuum did not stick (still $(_sqlite_auto_vacuum_label "$after")) — the VACUUM may not have completed." >&2
     return 1
   fi
 }

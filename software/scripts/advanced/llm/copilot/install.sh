@@ -9,8 +9,7 @@
 # A curl|bash install would only land on the current OS, forcing a separate winget
 # step for the Windows side. Trade-off: lose the native installer's winget routing;
 # refresh comes from `./run --force-refresh --files=copilot` instead.
-    printf '%s\n' ' \'> Installing GitHub Copilot CLI'
-
+printf '%s\n' '> Installing GitHub Copilot CLI'
 npm_install_global @github/copilot@latest copilot
 
 # Self-update on top of the npm install. `npm_install_global` no-ops when the binary
@@ -35,10 +34,9 @@ npm_install_global @github/copilot@latest copilot
 _copilot_node_major="$(node -v 2> /dev/null | tr -d 'v' | cut -d. -f1)"
 if ! ((IS_CI)) && has_persistent_binary copilot > /dev/null \
   && [ -n "$_copilot_node_major" ] && [ "$_copilot_node_major" -ge 22 ]; then
-  echo -n '>> copilot >> Updating to latest stable >> '
+  printf '%s' '>> copilot >> Updating to latest stable >> '
   if yes | copilot update stable >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' \'Success'
-
+    printf '%s\n' 'Success'
   else
     # Most common failure is a broken install ("GitHub Copilot CLI: no platform package
     # found") — npm skipped the platform-specific optional dependency, so the launcher has
@@ -53,15 +51,10 @@ if ! ((IS_CI)) && has_persistent_binary copilot > /dev/null \
     #      broken CLI as a transient blip, and every later run repeated the same message.
     #   3. Call the private _npm_install_global with always_latest=false. Rejected: it hits
     #      the same freshness gate, so it would no-op without the delete anyway.
-    printf '%s\n' ' \'Error — reinstalling from npm'
-
+    printf '%s\n' 'Error — reinstalling from npm'
     rm -rf "$HOME/.local/bin/copilot" "$HOME/.local/share/copilot"
     npm_install_global @github/copilot copilot
   fi
 elif ! ((IS_CI)) && has_persistent_binary copilot > /dev/null; then
-    printf '%s\n' \
-      ' ">> copilot >> Updating to latest stable' \
-      ' >> Skipped (node ${_copilot_node_major:-' \
-      'unknown} < 22)'
-
+  printf '%s\n' ">> copilot >> Updating to latest stable >> Skipped (node ${_copilot_node_major:-unknown} < 22)"
 fi

@@ -202,8 +202,7 @@ function _sy_native_kind() {
   local _sy_interactive_args _sy_run_args _sy_interactive_kind
   local _sy_interactive_native_args _sy_run_kind _sy_run_native_args
   _sy_load_spec "$1" || return 1
-    printf '%s\n' ' "$_sy_interactive_kind'
-
+  printf '%s\n' "$_sy_interactive_kind"
 }
 
 # _sy_resolve_llm: stdout the CLI name to dispatch with, given an explicit
@@ -215,17 +214,14 @@ function _sy_native_kind() {
 function _sy_resolve_llm() {
   local override="${1:-}"
   if [ -n "$override" ] && _sy_is_supported_llm "$override"; then
-    printf '%s\n' ' "$override'
-
+    printf '%s\n' "$override"
     return 0
   fi
   if [ -n "${LLM:-}" ] && _sy_is_supported_llm "$LLM"; then
-    printf '%s\n' ' "$LLM'
-
+    printf '%s\n' "$LLM"
     return 0
   fi
-    printf '%s\n' ' "$_SY_DEFAULT_LLM'
-
+  printf '%s\n' "$_SY_DEFAULT_LLM"
 }
 
 # _sy_resolve_boolean: normalize $1 through is_truthy, defaulting unset to $2.
@@ -246,25 +242,25 @@ function _sy_announce_launch() {
   if type -t hr > /dev/null 2>&1; then
     hr >&2
   else
-    echo "$LINE_BREAK_EQUAL" >&2
+    printf '%s\n' "$LINE_BREAK_EQUAL" >&2
   fi
   if type -t h1 > /dev/null 2>&1; then
     h1 "LLM skill launch" >&2
     h2 "Command: $route" >&2
   else
-    echo "LLM skill launch" >&2
-    echo "Command: $route" >&2
+    printf '%s\n' "LLM skill launch" >&2
+    printf '%s\n' "Command: $route" >&2
   fi
-  echo "SY_SKILL_INLINE=$inline (0=native skill, 1=inline SKILL.md)" >&2
-  echo "SY_LLM_NON_INTERACTIVE=$non_interactive (0=interactive, 1=print and exit)" >&2
+  printf '%s\n' "SY_SKILL_INLINE=$inline (0=native skill, 1=inline SKILL.md)" >&2
+  printf '%s\n' "SY_LLM_NON_INTERACTIVE=$non_interactive (0=interactive, 1=print and exit)" >&2
   if [ -t 2 ]; then
-    echo "Starting in 3 seconds..." >&2
+    printf '%s\n' "Starting in 3 seconds..." >&2
     sleep 3
   fi
   if type -t hr > /dev/null 2>&1; then
     hr >&2
   else
-    echo "$LINE_BREAK_EQUAL" >&2
+    printf '%s\n' "$LINE_BREAK_EQUAL" >&2
   fi
 }
 
@@ -276,7 +272,7 @@ function _sy_assert_skill() {
   local name="$1"
   local body_file="$_SY_SKILLS_DIR/sy-$name/SKILL.md"
   if [ ! -f "$body_file" ]; then
-    echo "sy-$name: prompt body missing at $body_file (run \`./run --preset=llm\` first)" >&2
+    printf '%s\n' "sy-$name: prompt body missing at $body_file (run \`./run --preset=llm\` first)" >&2
     return 1
   fi
   return 0
@@ -367,14 +363,14 @@ function _sy_help_inline() {
   local surface="interactive"
   [ "$non_interactive" = "1" ] && surface="non-interactive"
   if [ -n "$pinned" ]; then
-    echo "$fn: send a raw prompt to $pinned ($surface)
+    printf '%s\n' "$fn: send a raw prompt to $pinned ($surface)
   Usage: $fn <prompt...>
 
 prompt...  Joined with spaces and passed as the CLI's initial prompt. No SKILL.md is read.
 
   CLI is pinned to '$pinned' — use sy-$_SY_INLINE_NAME to pick one at call time."
   else
-    echo "$fn: send a raw prompt to the chosen LLM CLI ($surface)
+    printf '%s\n' "$fn: send a raw prompt to the chosen LLM CLI ($surface)
   Usage: $fn [<llm>] <prompt...>
          LLM=<llm> $fn <prompt...>
 
@@ -403,7 +399,7 @@ function _sy_dispatch_inline() {
     return 0
   fi
   if [ $# -eq 0 ]; then
-    echo "${llm}_skill_${_SY_INLINE_NAME}: no prompt given (see --help)" >&2
+    printf '%s\n' "${llm}_skill_${_SY_INLINE_NAME}: no prompt given (see --help)" >&2
     return 1
   fi
   local _sy_interactive_args _sy_run_args _sy_interactive_kind
@@ -437,7 +433,7 @@ function _sy_dispatch_inline_any() {
   local llm
   llm=$(_sy_resolve_llm "$override")
   if [ $# -eq 0 ]; then
-    echo "sy-$_SY_INLINE_NAME: no prompt given (see --help)" >&2
+    printf '%s\n' "sy-$_SY_INLINE_NAME: no prompt given (see --help)" >&2
     return 1
   fi
   if [ "$non_interactive" != "1" ] && _sy_resolve_boolean "${SY_LLM_NON_INTERACTIVE:-}" 0; then
@@ -467,7 +463,7 @@ function _sy_run() {
   local _sy_interactive_args _sy_run_args _sy_interactive_kind
   local _sy_interactive_native_args _sy_run_kind _sy_run_native_args
   if ! _sy_load_spec "$llm"; then
-    echo "sy-$name: '$llm' is not in _SY_LLM_SPECS" >&2
+    printf '%s\n' "sy-$name: '$llm' is not in _SY_LLM_SPECS" >&2
     return 1
   fi
   local non_interactive=0
@@ -524,7 +520,7 @@ function _sy_help() {
   local name="$2"
   local pinned="${3:-}"
   if [ -n "$pinned" ]; then
-    echo "$fn: run the sy-$name workflow through $pinned
+    printf '%s\n' "$fn: run the sy-$name workflow through $pinned
   Usage: $fn [args...]
 
   args...    Forwarded to the prompt; substituted into \$ARGUMENTS where the body
@@ -532,7 +528,7 @@ function _sy_help() {
 
   CLI is pinned to '$pinned' — use sy-$name to pick one at call time instead."
   else
-    echo "$fn: dispatch the sy-$name workflow via the chosen LLM CLI
+    printf '%s\n' "$fn: dispatch the sy-$name workflow via the chosen LLM CLI
   Usage: $fn [<llm>] [args...]
          LLM=<llm> $fn [args...]
 
@@ -542,7 +538,7 @@ function _sy_help() {
 
   Pinned per-CLI variants exist too: ${_SY_SUPPORTED_LLMS[0]}_skill_${name//-/_} (etc)."
   fi
-  echo "
+  printf '%s\n' "
   SY_SKILL_INLINE          0 (default) uses native skill loading; 1 sends the
                            full SKILL.md. Unsupported native surfaces fall back.
   SY_LLM_NON_INTERACTIVE   0 (default) opens the interactive CLI; 1 prints output
@@ -625,7 +621,7 @@ function _sy_register_dispatchers() {
     # that name redefine `<cli>_skill_inline` would point it back at _sy_run,
     # which execs through `<cli>_skill_inline` — infinite recursion.
     if [ "$name" = "$_SY_INLINE_NAME" ]; then
-      echo "sy-commands: skipping reserved skill name 'sy-$_SY_INLINE_NAME' ($skill_file)" >&2
+      printf '%s\n' "sy-commands: skipping reserved skill name 'sy-$_SY_INLINE_NAME' ($skill_file)" >&2
       continue
     fi
     # Hyphens can't follow the `<cli>_skill_` prefix without reading as a typo,

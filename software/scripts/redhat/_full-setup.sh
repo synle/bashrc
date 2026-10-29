@@ -12,8 +12,8 @@
 
 # Speed up dnf downloads — enable parallel downloads and fastest mirror selection
 if type -P dnf > /dev/null 2>&1 && [ -f /etc/dnf/dnf.conf ]; then
-  grep -q '^max_parallel_downloads' /etc/dnf/dnf.conf || echo 'max_parallel_downloads=10' | sudo tee -a /etc/dnf/dnf.conf > /dev/null
-  grep -q '^fastestmirror' /etc/dnf/dnf.conf || echo 'fastestmirror=True' | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+  grep -q '^max_parallel_downloads' /etc/dnf/dnf.conf || printf '%s\n' 'max_parallel_downloads=10' | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+  grep -q '^fastestmirror' /etc/dnf/dnf.conf || printf '%s\n' 'fastestmirror=True' | sudo tee -a /etc/dnf/dnf.conf > /dev/null
 fi
 
 # Cache all installed packages once upfront — avoids spawning rpm -q per package
@@ -26,36 +26,34 @@ _SNAP_INSTALLED=$(timeout 10 snap list 2> /dev/null | tail -n +2 | awk '{print $
 
 # install a package via dnf/yum (skip if already installed, skip optional weak deps to reduce download size)
 function installDnfPackage() {
-  echo -n ">> $@ >> Installing with dnf/yum >> "
-  if echo "$_RPM_INSTALLED" | grep -qxF "$1"; then
-    printf '%s\n' ' "Skipped'
-
+  (
+    set -- ">> $@ >> Installing with dnf/yum >> "
+    IFS=' '
+    printf '%s' "$*"
+  )
+  if printf '%s\n' "$_RPM_INSTALLED" | grep -qxF "$1"; then
+    printf '%s\n' "Skipped"
   else
     local _t0=$SECONDS
     if sudo dnf install -y --setopt=install_weak_deps=False $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || sudo yum install -y $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
-
+      printf '%s\n' "Success ($((SECONDS - _t0))s)"
     else
-    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
-
+      printf '%s\n' "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }
 
 # install a package via snap (skip if already installed)
 function installSnapPackage() {
-  echo -n ">> $1 >> Installing with Snap >> "
-  if echo "$_SNAP_INSTALLED" | grep -qxF "$1"; then
-    printf '%s\n' ' "Skipped'
-
+  printf '%s' ">> $1 >> Installing with Snap >> "
+  if printf '%s\n' "$_SNAP_INSTALLED" | grep -qxF "$1"; then
+    printf '%s\n' "Skipped"
   else
     local _t0=$SECONDS
     if sudo snap install $@ &> /dev/null; then
-    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
-
+      printf '%s\n' "Success ($((SECONDS - _t0))s)"
     else
-    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
-
+      printf '%s\n' "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }
@@ -88,12 +86,11 @@ function installSnapPackageInBackground() {
 function _installBackgroundPackages() {
   _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
-    printf '%s\n' \
-      ' ">> Installing ${#_BACKGROUND_PKG_NAMES[' \
-      '@]} background packages (log: $_BACKGROUN' \
-      'D_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES' \
-      '[*]}'
-
+  (
+    set -- ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
@@ -106,22 +103,17 @@ function _installBackgroundPackages() {
 
 # refresh the dnf/yum metadata cache so installs resolve the latest versions
 function updatePackageIndex() {
-  echo -n ">> Updating package index >> "
+  printf '%s' ">> Updating package index >> "
   if sudo dnf makecache < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || sudo yum makecache < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' "Done'
-
+    printf '%s\n' "Done"
   else
-    printf '%s\n' ' "Error'
-
+    printf '%s\n' "Error"
   fi
 }
 
 # upgrade all installed packages, remove unused deps, and clean cache (fire and forget)
 function upgradeAndCleanPackages() {
-    printf '%s\n' \
-      ' ">> Upgrading and cleaning packages (bac' \
-      'kground) >>'
-
+  printf '%s\n' ">> Upgrading and cleaning packages (background) >>"
   (
     sudo dnf upgrade -y < /dev/null || sudo yum upgrade -y < /dev/null
     sudo dnf autoremove -y < /dev/null || sudo yum autoremove -y < /dev/null
@@ -132,15 +124,11 @@ function upgradeAndCleanPackages() {
 ################################################################################
 # --- Install Packages ---
 ################################################################################
-    printf '%s\n' \
-      ' ">> Begin setting up dependencies/redhat' \
-      '/deps.sh'
-
+printf '%s\n' ">> Begin setting up dependencies/redhat/deps.sh"
 _waitForDnfLock
-if is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
+if is_bash_syle_stale; then updatePackageIndex; else printf '%s\n' ">> Updating package index >> Skipped (not stale)"; fi
 
-    printf '%s\n' ' \'>> Installing packages with dnf/yum'
-
+printf '%s\n' '>> Installing packages with dnf/yum'
 
 # --- Core tools ---
 installDnfPackage curl
@@ -230,8 +218,7 @@ _installFnmAndNode
 
 # --- GUI apps (only if a display server is available) ---
 if ((is_gui)); then
-    printf '%s\n' ' \'>> Installing GUI apps'
-
+  printf '%s\n' '>> Installing GUI apps'
 
   # ---- Clipboard (install only for the active display server) ----
   if ((is_gui_x11)); then installDnfPackageInBackground xclip; fi
@@ -267,4 +254,4 @@ _configureDisableSystemdPowerAndTurboBoost
 _installBackgroundPackages
 _waitForBackgroundPackages
 _configureDisplayDjPermissions
-if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi
+if is_bash_syle_stale; then upgradeAndCleanPackages; else printf '%s\n' ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi

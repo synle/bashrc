@@ -23,7 +23,7 @@ function runFavorite(shell, setup, selection = "favorite_alias") {
       LINE_BREAK_HASH="################################################################################"
       shopt -s expand_aliases
       function h1() { printf 'H1:%s\\n' "$@"; }
-      function hr() { echo HR; }
+      function hr() { printf '%s\\n' HR; }
       function fzf_run() { printf '%s\\n' ${JSON.stringify(selection)}; }
       ${setup}
       fuzzy_favorite_command
@@ -212,7 +212,7 @@ describe.each(["/bin/bash", "bash"])("bookmark alias chains (%s subprocess)", (s
   });
 
   it("does not resolve or execute anything when the picker is cancelled", () => {
-    const lines = runFavorite(shell, "function favorite_alias() { echo UNEXPECTED; }", "");
+    const lines = runFavorite(shell, "function favorite_alias() { printf '%s\\n' UNEXPECTED; }", "");
     expect(lines).toEqual([""]);
   });
 });

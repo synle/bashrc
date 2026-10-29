@@ -44,13 +44,13 @@ export COPILOT_TASK_WAIT_TIMEOUT_SECONDS="${COPILOT_TASK_WAIT_TIMEOUT_SECONDS:-3
 function copilot() {
   # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
   if ! type -P copilot > /dev/null 2>&1; then
-    echo "copilot is not installed" >&2
+    printf '%s\n' "copilot is not installed" >&2
     return 1
   fi
 
   # Activate node once per shell session (no-op on later calls).
   if ! llm_setup_activate; then
-    echo "node activation failed: llm_setup_activate/activate_node is missing" >&2
+    printf '%s\n' "node activation failed: llm_setup_activate/activate_node is missing" >&2
     return 1
   fi
 
@@ -61,7 +61,7 @@ function copilot() {
   # symlink) yet; otherwise stays silent.
   if [ -d ".github" ] && [ ! -e ".github/copilot-instructions.md" ] && [ ! -L ".github/copilot-instructions.md" ] && [ -f "CLAUDE.md" ]; then
     command ln -s ../CLAUDE.md .github/copilot-instructions.md
-    echo ">> Linked .github/copilot-instructions.md → ../CLAUDE.md" >&2
+    printf '%s\n' ">> Linked .github/copilot-instructions.md → ../CLAUDE.md" >&2
   fi
   # Also auto-link AGENTS.md → CLAUDE.md at the repo root. AGENTS.md is the
   # cross-tool convention (Copilot CLI, OpenCode, OpenAI Codex, others) for
@@ -70,11 +70,11 @@ function copilot() {
   # CLAUDE.md exists and AGENTS.md (file or symlink) does not yet.
   if [ -f "CLAUDE.md" ] && [ ! -e "AGENTS.md" ] && [ ! -L "AGENTS.md" ]; then
     command ln -s CLAUDE.md AGENTS.md
-    echo ">> Linked AGENTS.md → CLAUDE.md" >&2
+    printf '%s\n' ">> Linked AGENTS.md → CLAUDE.md" >&2
   fi
   # Echo the resolved invocation to stderr so the user can see all flags being
   # passed through (stderr keeps it out of any `copilot ... | jq` style pipelines).
-  echo "command copilot --autopilot --allow-all $*" >&2
+  printf '%s\n' "command copilot --autopilot --allow-all $*" >&2
   # `command copilot` bypasses this function so the call hits the real binary, not us.
   command copilot --autopilot --allow-all "$@"
 }
@@ -83,7 +83,7 @@ alias co='copilot'
 # copilot_edit: open the ~/.copilot/ config dir (settings, copilot-instructions.md, mcp-config) in the editor
 function copilot_edit() {
   if is_help_arg "${1:-}"; then
-    echo "copilot_edit: open ~/.copilot/ in the editor via view_file
+    printf '%s\n' "copilot_edit: open ~/.copilot/ in the editor via view_file
   Usage: copilot_edit
 
 Opens the whole ~/.copilot/ config dir so settings.json, copilot-instructions.md, and
@@ -115,7 +115,7 @@ in the binary. Wrapper-layer parity lives here in copilot.profile.bash."
 # copilot_edit_rule_global: open the global copilot rules file (~/.copilot/copilot-instructions.md) in the editor
 function copilot_edit_rule_global() {
   if is_help_arg "${1:-}"; then
-    echo "copilot_edit_rule_global: open the global copilot rules file in the editor via view_file
+    printf '%s\n' "copilot_edit_rule_global: open the global copilot rules file in the editor via view_file
   Usage: copilot_edit_rule_global
 
 Opens ~/.copilot/copilot-instructions.md — the user-level instructions loaded into every session.
@@ -131,7 +131,7 @@ copilot_edit_config (settings file)."
 # copilot_edit_config: open the main copilot settings file (~/.copilot/settings.json) in the editor
 function copilot_edit_config() {
   if is_help_arg "${1:-}"; then
-    echo "copilot_edit_config: open the main copilot settings file in the editor via view_file
+    printf '%s\n' "copilot_edit_config: open the main copilot settings file in the editor via view_file
   Usage: copilot_edit_config
 
 Opens ~/.copilot/settings.json. Managed defaults are seeded by copilot/setup.js; edit that
@@ -173,7 +173,7 @@ function _copilot_list_prompts_ts() {
 # copilot_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
 function copilot_list_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "copilot_list_prompts: stream past Copilot CLI user prompts as NUL records
+    printf '%s\n' "copilot_list_prompts: stream past Copilot CLI user prompts as NUL records
   Usage: copilot_list_prompts            # NUL-delimited stream, newest first
 
 Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
@@ -190,7 +190,7 @@ case the cache stays empty too."
 # copilot_search_prompts: fuzzy-pick a past Copilot CLI prompt and copy it to the clipboard
 function copilot_search_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "copilot_search_prompts: fzf picker over past Copilot CLI prompts
+    printf '%s\n' "copilot_search_prompts: fzf picker over past Copilot CLI prompts
   Usage: copilot_search_prompts
 
 Pipes copilot_list_prompts into a shared fzf picker. The preview pane shows

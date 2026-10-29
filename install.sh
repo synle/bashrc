@@ -5,10 +5,7 @@
 # in GitHub settings. GitHub clones this repo and runs install.sh for every codespace
 # (even repos without their own .devcontainer).
 # Installs system packages, fnm/Node, dotfiles, and shell profiles from the local clone.
-    printf '%s\n' \
-      ' ">>> install.sh ($(date \'+%H:%M:%S\')) ' \
-      '— dotfiles setup'
-
+printf '%s\n' ">>> install.sh ($(date '+%H:%M:%S')) — dotfiles setup"
 
 # Absolute path to the dotfiles repo clone (e.g. /workspaces/.codespaces/.persistedshare/dotfiles).
 # "$0" is the script path, dirname strips the filename, cd + pwd resolves to an absolute path.
@@ -63,7 +60,4 @@ if type -P code > /dev/null 2>&1 && [ -f "$CODESPACE_DOTFILES_DIR/.devcontainer/
   ) &
 fi
 
-    printf '%s\n' \
-      ' ">>> install.sh ($(date \'+%H:%M:%S\')) ' \
-      '— done'
-
+printf '%s\n' ">>> install.sh ($(date '+%H:%M:%S')) — done"

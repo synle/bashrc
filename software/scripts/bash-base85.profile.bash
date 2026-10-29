@@ -11,11 +11,11 @@ function _ensure_base85_module() {
   [ -f "$module_path/package.json" ] && return 0
 
   if ! type -P npm > /dev/null 2>&1; then
-    echo "base85: npm not found on PATH; cannot install the Base85 module" >&2
+    printf '%s\n' "base85: npm not found on PATH; cannot install the Base85 module" >&2
     return 127
   fi
   if ! prompt_yes_no "base85 is not installed. Install it via npm?"; then
-    echo "base85: installation declined" >&2
+    printf '%s\n' "base85: installation declined" >&2
     return 1
   fi
 
@@ -27,7 +27,7 @@ function _ensure_base85_module() {
     return "$status"
   fi
   if [ ! -f "$module_path/package.json" ]; then
-    echo "base85: npm install completed but the module is missing from '$module_path'" >&2
+    printf '%s\n' "base85: npm install completed but the module is missing from '$module_path'" >&2
     return 1
   fi
 }
@@ -36,7 +36,7 @@ function _ensure_base85_module() {
 # Returns the Node process status; file-read or encoding failures return 1.
 function base85() {
   if is_help_arg "${1:-}"; then
-    echo "base85: encode files or stdin as Base85
+    printf '%s\n' "base85: encode files or stdin as Base85
   Usage: base85 [FILE ...]
   With no files, reads stdin. Use '-' to read stdin in a file list.
   Multiple files are concatenated in order. Output uses the unframed a85 alphabet.

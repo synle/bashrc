@@ -21,17 +21,15 @@ _adb_shell() {
 _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-    printf '%s\n' ' ">>> setting put $*'
-
-  _adb_shell settings put "$@" >/dev/null 2>&1
+  printf '%s\n' ">>> setting put $*"
+  _adb_shell settings put "$@" > /dev/null 2>&1
 }
 
 _restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-    printf '%s\n' ' ">>> setting restore $*'
-
-  _adb_shell settings delete "$@" >/dev/null 2>&1
+  printf '%s\n' ">>> setting restore $*"
+  _adb_shell settings delete "$@" > /dev/null 2>&1
 }
 
 restore_all_settings() {
@@ -39,56 +37,49 @@ restore_all_settings() {
     [ -z "$setting_namespace" ] && continue
     _restore_setting "$setting_namespace" "$setting_key"
   done
-    printf '%s\n' ' ">>> all settings restored to defaults'
-
+  printf '%s\n' ">>> all settings restored to defaults"
 }
 
 # App disable
 _disable_app() {
   ok=0
-  _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm disable-user --user 0 "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm disable-user -k --user 0 "$@" > /dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    printf '%s\n' ' ">>> $* > Disabled > Success'
-
+    printf '%s\n' ">>> $* > Disabled > Success"
   else
-    printf '%s\n' ' ">>> $* > Disabled > Error'
-
+    printf '%s\n' ">>> $* > Disabled > Error"
   fi
 }
 
 _remove_app() {
   ok=0
-  _disable_app "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
+  _disable_app "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall -k --user 0 "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall -k --user 10 "$@" > /dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    printf '%s\n' ' ">>> $* > Removed > Success'
-
+    printf '%s\n' ">>> $* > Removed > Success"
   else
-    printf '%s\n' ' ">>> $* > Removed > Error'
-
+    printf '%s\n' ">>> $* > Removed > Error"
   fi
 }
 
 _restore_app() {
   ok=0
-  _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell cmd package install-existing "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm enable "$@" > /dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    printf '%s\n' ' ">>> $* > Restored > Success'
-
+    printf '%s\n' ">>> $* > Restored > Success"
   else
-    printf '%s\n' ' ">>> $* > Restored > Error'
-
+    printf '%s\n' ">>> $* > Restored > Error"
   fi
 }
 
 # Collection functions - take a newline-delimited string of package names
 # Supports inline comments (# ...) and section headers (lines starting with #)
 _parse_app_name() {
-  echo "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
+  printf '%s\n' "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
 }
 
 remove_app_collection() {
@@ -139,55 +130,54 @@ restore_app_collection() {
   done
 }
 
-
 ################################################################################
 # --- Setting tweaks ---
 ################################################################################
 
 debloat_settings() {
   # ---- Animation Speed ----
-  _put_setting global window_animation_scale 0.05       # faster window open/close animations. No side effects.
-  _put_setting global transition_animation_scale 0.05   # faster screen transitions. No side effects.
-  _put_setting global animator_duration_scale 0.3      # faster in-app animations. Rare apps may mistime logic tied to animator duration.
+  _put_setting global window_animation_scale 0.05     # faster window open/close animations. No side effects.
+  _put_setting global transition_animation_scale 0.05 # faster screen transitions. No side effects.
+  _put_setting global animator_duration_scale 0.3     # faster in-app animations. Rare apps may mistime logic tied to animator duration.
 
   # ---- Performance & Hardware ----
-  _put_setting global ram_expand_size_list 0         # Disable RAM Plus (Virtual RAM). Apps killed sooner when RAM is full, but 12GB devices don't need swap.
-  _put_setting global force_gpu_rendering 1          # Force GPU for 2D drawing. Largely no-op on modern One UI. Can cause glitches in some banking/legacy apps.
-  _put_setting global disable_window_blurs 1         # Disable gaussian blur behind notifications/dialogs. Big performance win, slightly less polished look.
+  _put_setting global ram_expand_size_list 0            # Disable RAM Plus (Virtual RAM). Apps killed sooner when RAM is full, but 12GB devices don't need swap.
+  _put_setting global force_gpu_rendering 1             # Force GPU for 2D drawing. Largely no-op on modern One UI. Can cause glitches in some banking/legacy apps.
+  _put_setting global disable_window_blurs 1            # Disable gaussian blur behind notifications/dialogs. Big performance win, slightly less polished look.
   _put_setting global sem_enhanced_cpu_responsiveness 0 # Disable Samsung CPU boost on touch. Slightly less snappy, better battery life. No harm.
 
   # ---- Connectivity & Scanning ----
-  _put_setting global wifi_scan_always_enabled 0     # Disable Wi-Fi scanning when Wi-Fi is off. Degrades indoor/urban location accuracy (GPS still works).
-  _put_setting global ble_scan_always_enabled 0      # Disable Bluetooth scanning when BT is off. Breaks Find My Device, SmartTag tracking when BT is toggled off.
-  _put_setting global wifi_watchdog_on 0             # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
-  _put_setting global private_dns_mode hostname       # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
+  _put_setting global wifi_scan_always_enabled 0            # Disable Wi-Fi scanning when Wi-Fi is off. Degrades indoor/urban location accuracy (GPS still works).
+  _put_setting global ble_scan_always_enabled 0             # Disable Bluetooth scanning when BT is off. Breaks Find My Device, SmartTag tracking when BT is toggled off.
+  _put_setting global wifi_watchdog_on 0                    # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
+  _put_setting global private_dns_mode hostname             # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
   _put_setting global private_dns_specifier dns.adguard.com # AdGuard DNS. Blocks ads/trackers at DNS level. Some ad-supported apps/sites may break.
 
   # ---- Privacy & Logging ----
-  _put_setting global analytics_enabled 0            # Disable system analytics. No side effects.
-  _put_setting global usage_reporting_enabled 0      # Disable usage reporting. No side effects.
+  _put_setting global analytics_enabled 0       # Disable system analytics. No side effects.
+  _put_setting global usage_reporting_enabled 0 # Disable usage reporting. No side effects.
 
   # ---- Touch Responsiveness ----
   # Default: long_press_timeout=400, multi_press_timeout=300
   # 250 is too aggressive — causes accidental long presses when scrolling
   # and missed double taps. 325 is a good middle ground: noticeably snappier
   # than stock without the mis-trigger issues.
-  _put_setting secure long_press_timeout 300         # Faster long press (default 400). Below 300 causes accidental triggers when tap-and-scrolling.
-  _put_setting secure multi_press_timeout 275        # Tighter double/triple press window (default 300). Below 250 makes slow double-taps fail to register.
+  _put_setting secure long_press_timeout 300  # Faster long press (default 400). Below 300 causes accidental triggers when tap-and-scrolling.
+  _put_setting secure multi_press_timeout 275 # Tighter double/triple press window (default 300). Below 250 makes slow double-taps fail to register.
 
   # ---- Accessibility ----
   _put_setting secure accessibility_reduce_transparency 1 # Remove translucent backgrounds. Better readability and performance, slightly less polished look.
   _put_setting secure accessibility_reduce_motion 1       # Reduce parallax/zoom/motion effects. Some app entrance animations become simple fades.
 
   # ---- Battery & Power ----
-  _put_setting global mobile_data_always_on 0        # Turn off mobile radio when on Wi-Fi. Saves battery. Wi-Fi-to-mobile handoff takes 1-2s longer.
-  _put_setting secure screensaver_enabled 0           # Disable Daydream screensaver. Prevents OLED burn-in while charging/docked.
-  _put_setting secure wake_gesture_enabled 0          # Disable lift-to-wake gesture. Prevents pocket wake-ups, saves battery.
+  _put_setting global mobile_data_always_on 0 # Turn off mobile radio when on Wi-Fi. Saves battery. Wi-Fi-to-mobile handoff takes 1-2s longer.
+  _put_setting secure screensaver_enabled 0   # Disable Daydream screensaver. Prevents OLED burn-in while charging/docked.
+  _put_setting secure wake_gesture_enabled 0  # Disable lift-to-wake gesture. Prevents pocket wake-ups, saves battery.
 
   # ---- Notifications & UX ----
   _put_setting global wifi_networks_available_notification_on 0 # Disable "Wi-Fi networks available" notification. No side effects.
-  _put_setting system sound_effects_enabled 0         # Disable touch/tap sound effects. No side effects.
-  _put_setting system haptic_feedback_enabled 1       # Enable haptic feedback on taps. Default Samsung behavior. No side effects.
+  _put_setting system sound_effects_enabled 0                   # Disable touch/tap sound effects. No side effects.
+  _put_setting system haptic_feedback_enabled 1                 # Enable haptic feedback on taps. Default Samsung behavior. No side effects.
 
   # ---- Privacy: Lock Screen ----
   _put_setting secure lock_screen_allow_private_notifications 0 # Hide notification content on lock screen. Must unlock to read messages. No side effects.
@@ -196,29 +186,29 @@ debloat_settings() {
   _put_setting global network_recommendations_enabled 0 # Disable Google Wi-Fi network rating/suggestions. Wi-Fi works the same. No side effects.
 
   # ---- Safety ----
-  _put_setting global data_roaming 1                   # Enable cellular data roaming. Keeps data working when traveling abroad. May incur roaming charges.
-  _put_setting global package_verifier_enable 1       # Ensure Play Protect app scanning stays on. No side effects.
+  _put_setting global data_roaming 1            # Enable cellular data roaming. Keeps data working when traveling abroad. May incur roaming charges.
+  _put_setting global package_verifier_enable 1 # Ensure Play Protect app scanning stays on. No side effects.
 
   # ---- Privacy & Telemetry: Google & Android ----
-  _put_setting global logcat_for_apps_enabled 0       # Block apps from reading system logs. Breaks debugging apps (Logcat Reader), normal apps unaffected.
-  _put_setting global usage_stats_enabled 0           # Disable app usage tracking. Digital Wellbeing shows no data, Adaptive Battery slightly less smart.
-  _put_setting global send_action_app_error 0         # Disable crash reports to Google. No side effects.
-  _put_setting global ad_id_opt_out 1                 # Opt out of personalized ad tracking. Still see ads, just not personalized. No side effects.
+  _put_setting global logcat_for_apps_enabled 0 # Block apps from reading system logs. Breaks debugging apps (Logcat Reader), normal apps unaffected.
+  _put_setting global usage_stats_enabled 0     # Disable app usage tracking. Digital Wellbeing shows no data, Adaptive Battery slightly less smart.
+  _put_setting global send_action_app_error 0   # Disable crash reports to Google. No side effects.
+  _put_setting global ad_id_opt_out 1           # Opt out of personalized ad tracking. Still see ads, just not personalized. No side effects.
 
   # ---- Privacy & Telemetry: Samsung ----
-  _put_setting global multi_cb 0                      # Disable Samsung Customization Service data collection. Lose Samsung "personalized" suggestions.
+  _put_setting global multi_cb 0                        # Disable Samsung Customization Service data collection. Lose Samsung "personalized" suggestions.
   _put_setting global rhythmic_logging_button_enabled 0 # Disable Samsung background behavior logging. No side effects.
-  _put_setting secure send_security_reports 0         # Stop sending security logs to Samsung. Device Care scans still work locally. No side effects.
+  _put_setting secure send_security_reports 0           # Stop sending security logs to Samsung. Device Care scans still work locally. No side effects.
 
   # ---- Privacy & Telemetry: Scanning ----
   _put_setting global nearby_scanning_enabled 0       # Disable Nearby Device beaconing. Lose auto "device found" prompts (Galaxy Buds, SmartTags). Manual pairing still works.
   _put_setting global adaptive_connectivity_enabled 0 # Stop Google from tracking Wi-Fi quality/location. Wi-Fi works the same. No side effects.
 
   # ---- Privacy & Telemetry: Additional ----
-  _put_setting global device_provisioned_time 0         # Hide device setup timestamp from telemetry. No side effects.
-  _put_setting global network_scoring_provisioned 1     # Suppress Wi-Fi scoring prompt. Wi-Fi works the same. No side effects.
+  _put_setting global device_provisioned_time 0          # Hide device setup timestamp from telemetry. No side effects.
+  _put_setting global network_scoring_provisioned 1      # Suppress Wi-Fi scoring prompt. Wi-Fi works the same. No side effects.
   _put_setting secure unknown_sources_default_reversed 1 # Disable Samsung marketing data tied to sideloaded apps. Does not affect APK installs. No side effects.
-  _restore_setting global euicc_provisioned               # Restore eSIM provisioning to default. Keeps eSIM functional for adding/switching profiles.
+  _restore_setting global euicc_provisioned              # Restore eSIM provisioning to default. Keeps eSIM functional for adding/switching profiles.
 
   # TO BE REVIEWED:
   # ---- Performance ----
@@ -235,7 +225,6 @@ debloat_settings() {
   # _put_setting secure location_mode 3                   # GPS-only location (no Wi-Fi/cell assist). Most private but slower initial GPS fix.
   # _put_setting global safe_boot_disallowed 1            # Disable safe boot access. Prevents bypassing your setup but harder to troubleshoot.
 }
-
 
 ################################################################################
 # --- App Lists ---
@@ -381,10 +370,9 @@ $DEBLOAT_SAFE")
 
 # Check host ADB and optionally connect to a user-provided Android device.
 _greet_and_connect_adb() {
-    printf '%s\n' ' ">>> Android ADB setup'
-
-  if ! command -v adb >/dev/null 2>&1; then
-    echo ">>> adb not found on host; install Android platform tools first" >&2
+  printf '%s\n' ">>> Android ADB setup"
+  if ! command -v adb > /dev/null 2>&1; then
+    printf '%s\n' ">>> adb not found on host; install Android platform tools first" >&2
     return 1
   fi
 
@@ -395,17 +383,15 @@ _greet_and_connect_adb() {
   fi
 
   if [ -n "$adb_target" ]; then
-    printf '%s\n' ' ">>> Reconnecting ADB to $adb_target'
-
-    adb disconnect >/dev/null 2>&1 || true
-    adb kill-server >/dev/null 2>&1 || true
+    printf '%s\n' ">>> Reconnecting ADB to $adb_target"
+    adb disconnect > /dev/null 2>&1 || true
+    adb kill-server > /dev/null 2>&1 || true
     adb start-server || return 1
     adb connect "$adb_target" || return 1
   else
-    printf '%s\n' ' ">>> Using current ADB connection'
-
-    if ! adb get-state >/dev/null 2>&1; then
-      echo ">>> No connected ADB device" >&2
+    printf '%s\n' ">>> Using current ADB connection"
+    if ! adb get-state > /dev/null 2>&1; then
+      printf '%s\n' ">>> No connected ADB device" >&2
       return 1
     fi
   fi

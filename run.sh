@@ -52,7 +52,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | c5c26f2744fa733ea97cbdf592cc26c4 | 13.1 KB
+# software/bootstrap/common-env.sh | cdda3fd52cdb641bc0bf098c30f5e8ef | 13.1 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_OWNER="synle" # GitHub owner of this repo and of personal repos
@@ -280,7 +280,7 @@ function h7() { printf '\033[90m%s\033[0m\n' "$@"; }
 # checks if a value is truthy (1, true, y, yes — case-insensitive)
 function is_truthy() {
   if is_help_arg "${1:-}"; then
-    echo "
+    printf '%s\n' "
       is_truthy: check if a value is truthy (1, true, y, yes — case-insensitive)
         is_truthy 1           returns 0 (success)
         is_truthy yes         returns 0 (success)
@@ -325,10 +325,7 @@ if [ -z "${BASHRC_NATIVE_ARCH_REEXEC:-}" ] && [ "$(uname -s)" = "Darwin" ] \
   && [ "$(sysctl -n hw.optional.arm64 2> /dev/null)" = "1" ] \
   && [ -f "$0" ] && arch -arm64 /usr/bin/true > /dev/null 2>&1; then
   export BASHRC_NATIVE_ARCH_REEXEC=1
-    printf '%s\n' \
-      ' ">> Rosetta 2 detected on Apple Silicon ' \
-      '>> re-running natively as arm64'
-
+  printf '%s\n' ">> Rosetta 2 detected on Apple Silicon >> re-running natively as arm64"
   exec arch -arm64 /bin/bash "$0" "$@"
 fi
 
@@ -408,8 +405,7 @@ function get_ollama_default_server_ip() {
         END { print tagged others " 127.0.0.1" }
     '); do
     if curl -fsS --max-time 2 "http://$ip:11434/api/tags" 2> /dev/null | grep -q '"name"'; then
-    printf '%s\n' ' "$ip'
-
+      printf '%s\n' "$ip"
       return 0
     fi
   done
@@ -449,8 +445,7 @@ function get_code_server_hosts() {
 # Extracted as a function so osDetection-style test harnesses can replay it.
 function _resolve_temp_root() {
   if [ -d /tmp ] && [ -w /tmp ]; then
-    printf '%s\n' ' "/tmp'
-
+    printf '%s\n' "/tmp"
     return
   fi
   local _probe
@@ -458,12 +453,10 @@ function _resolve_temp_root() {
   if [ -n "$_probe" ] && [ -d "$_probe" ]; then
     local _parent="${_probe%/*}"
     rmdir "$_probe" 2> /dev/null || true
-    printf '%s\n' ' "$_parent'
-
+    printf '%s\n' "$_parent"
     return
   fi
-    printf '%s\n' ' "$HOME/tmp'
-
+  printf '%s\n' "$HOME/tmp"
 }
 
 export BASHRC_TEMP_ROOT_DIR="$(_resolve_temp_root)/$REPO_PATH_IDENTIFIER"
@@ -515,7 +508,7 @@ function _detect_os() {
   if [ -n "$names" ]; then
     local pattern=""
     for keyword in $names; do
-      keyword=$(echo "$keyword" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      keyword=$(printf '%s\n' "$keyword" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
       if [ -n "$keyword" ]; then
         pattern="${pattern:+$pattern|}ID(_LIKE)?=.*$keyword"
         [[ "$OSTYPE" == *"$keyword"* ]] && return 0
@@ -527,19 +520,19 @@ function _detect_os() {
 
   # check paths (file or folder)
   for p in $paths; do
-    p=$(echo "$p" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    p=$(printf '%s\n' "$p" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     [ -n "$p" ] && [ -e "$p" ] && return 0
   done
 
   # check binaries
   for b in $bins; do
-    b=$(echo "$b" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    b=$(printf '%s\n' "$b" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     [ -n "$b" ] && type -P "$b" &> /dev/null && return 0
   done
 
   # check env vars
   for e in $envs; do
-    e=$(echo "$e" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    e=$(printf '%s\n' "$e" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     [ -n "$e" ] && [ -n "${!e:-}" ] && return 0
   done
 
@@ -604,13 +597,17 @@ if ((IS_CI)); then
   function echo() {
     case "$*" in
     ">"* | "<"*)
-      command echo "::endgroup::"
+      command printf '%s\n' "::endgroup::"
       local icons="" remainder="$*"
       while case "$remainder" in ">"*) icons="${icons}🚀" remainder="${remainder#?}" ;; *) false ;; esac do :; done
       while case "$remainder" in "<"*) icons="${icons}⭐" remainder="${remainder#?}" ;; *) false ;; esac do :; done
-      command echo "::group::${icons}${remainder}"
+      command printf '%s\n' "::group::${icons}${remainder}"
       ;;
-    *) command echo "$@" ;;
+    *) (
+      set -- "$@"
+      IFS=' '
+      command printf '%s\n' "$*"
+    ) ;;
     esac
   }
 fi
@@ -658,38 +655,23 @@ function install_bootstrap_node() {
 
   # Use existing node if already available
   if type -P node > /dev/null 2>&1; then
-    printf '%s\n' \
-      ' ">> Using node from PATH ($(node -v 2> /' \
-      'dev/null))'
-
+    printf '%s\n' ">> Using node from PATH ($(node -v 2> /dev/null))"
     return
   fi
 
   # Termux: install via pkg instead of standalone download
   if ((is_os_android_termux)); then
-    printf '%s\n' \
-      ' ">> Installing nodejs-lts via pkg (Termu' \
-      'x)'
-
+    printf '%s\n' ">> Installing nodejs-lts via pkg (Termux)"
     pkg install -y nodejs-lts
     if type -P node > /dev/null 2>&1; then
-    printf '%s\n' \
-      ' ">> Using node from pkg ($(node -v 2> /d' \
-      'ev/null))'
-
+      printf '%s\n' ">> Using node from pkg ($(node -v 2> /dev/null))"
       return
     fi
-    printf '%s\n' \
-      ' ">> pkg install failed, falling through ' \
-      'to standalone download'
-
+    printf '%s\n' ">> pkg install failed, falling through to standalone download"
   fi
 
   # Fallback: download standalone node to /tmp
-    printf '%s\n' \
-      ' ">> Downloading standalone Node $NODE_JS' \
-      '_VERSION'
-
+  printf '%s\n' ">> Downloading standalone Node $NODE_JS_VERSION"
   rm -rf "$node_tmp"
   mkdir -p "$node_tmp"
 
@@ -719,10 +701,7 @@ function install_bootstrap_node() {
     | head -1 | grep -o 'node-v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*' | head -1 | sed 's/node-//')
 
   if [ -z "$full_version" ]; then
-    printf '%s\n' \
-      ' "[Error] Failed to resolve Node $NODE_JS' \
-      '_VERSION version. Exiting.'
-
+    printf '%s\n' "[Error] Failed to resolve Node $NODE_JS_VERSION version. Exiting."
     exit 1
   fi
 
@@ -730,17 +709,11 @@ function install_bootstrap_node() {
     | tar -xJ --strip-components=1 -C "$node_tmp"
 
   if [ ! -x "$node_tmp/bin/node" ]; then
-    printf '%s\n' \
-      ' "[Error] Failed to download standalone N' \
-      'ode binary. Exiting.'
-
+    printf '%s\n' "[Error] Failed to download standalone Node binary. Exiting."
     exit 1
   fi
 
-    printf '%s\n' \
-      ' ">> Using standalone node $(node -v 2> /' \
-      'dev/null) from $node_tmp'
-
+  printf '%s\n' ">> Using standalone node $(node -v 2> /dev/null) from $node_tmp"
 
   # Make node/npm/npx available to sudo (secure_path ignores user PATH)
   if [ -d "$node_tmp/bin" ] && [ -d /usr/local/bin ]; then
@@ -789,15 +762,14 @@ function run_files() {
 ################################################################################
 # Populates BASH_SYLE_COMMON_PATH with function definitions + env vars for login shells.
 
-echo '' > "$BASH_SYLE_COMMON_PATH"
+printf '%s\n' '' > "$BASH_SYLE_COMMON_PATH"
 
-    printf '%s\n' ' ""'
-
+printf '%s\n' "
 $LINE_BREAK_HASH
 # Auto-generated by common-env.sh (https://github.com/$REPO_PATH_IDENTIFIER/blob/$REPO_BRANCH_NAME/software/bootstrap/common-env.sh)
 # Do not edit by hand as it will be overridden
 $LINE_BREAK_HASH
-""" >> "$BASH_SYLE_COMMON_PATH"
+" >> "$BASH_SYLE_COMMON_PATH"
 
 declare -f mktemp >> "$BASH_SYLE_COMMON_PATH"
 declare -f get_home_ip_address >> "$BASH_SYLE_COMMON_PATH"
@@ -812,8 +784,7 @@ if ((! is_work_profile)); then
   code_server_remote_hosts=$(get_code_server_hosts)
 fi
 
-    printf '%s\n' ' ""'
-
+printf '%s\n' "
 $os_flags
 
 # GUI/display flags are recomputed on every shell start rather than baked in:
@@ -826,7 +797,7 @@ _detect_gui_flags
 # .local sets 1. Set _IS_WORK_PROFILE_OVERRIDE before run.sh to override this dynamic value.
 export is_work_profile='$is_work_profile'
 
-# Single-quoted, not double: this whole block sits inside echo \"\"\"...\"\"\", so an
+# Single-quoted, not double: this whole block is one double-quoted printf argument, so an
 # inner double quote closes the outer string and the value is written unquoted —
 # a space-separated value then becomes 'export X=a b' (\"b: not a valid identifier\").
 export OLLAMA_DEFAULT_SERVER_IP='$ollama_default_server_ip'
@@ -856,7 +827,7 @@ export LINE_BREAK_HASH='$LINE_BREAK_HASH'
 export PRINT_WIDTH_BREAK_COUNT='$PRINT_WIDTH_BREAK_COUNT'
 
 alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
-""" >> "$BASH_SYLE_COMMON_PATH"
+" >> "$BASH_SYLE_COMMON_PATH"
 
 . "$BASH_SYLE_COMMON_PATH"
 export BASH_ENV="$BASH_SYLE_COMMON_PATH"
@@ -915,7 +886,7 @@ _detect_gui_flags
 if [ -f "software/metadata/presets.jsonc" ]; then
   PRESETS_JSON=$(cat software/metadata/presets.jsonc)
 else
-  PRESETS_JSON=$(curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/metadata/presets.jsonc?raw=1" 2> /dev/null || echo "{}")
+  PRESETS_JSON=$(curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/metadata/presets.jsonc?raw=1" 2> /dev/null || printf '%s\n' "{}")
 fi
 export PRESETS_JSON
 
@@ -944,10 +915,7 @@ export BASHRC_RAW_ARGS
 # --- Backup ~/.bash_syle for rollback ---
 if [ -f "$BASH_SYLE_PATH" ] && [ -s "$BASH_SYLE_PATH" ]; then
   cp "$BASH_SYLE_PATH" "${BASH_SYLE_PATH}.bak"
-    printf '%s\n' \
-      ' ">> Backed up ~/.bash_syle to ~/.bash_sy' \
-      'le.bak'
-
+  printf '%s\n' ">> Backed up ~/.bash_syle to ~/.bash_syle.bak"
 fi
 
 _run_start_epoch=$(date +%s)
@@ -955,10 +923,7 @@ _run_start_time=$(date '+%Y-%m-%d %H:%M:%S')
 
 #benchmark
 mkdir -p "$BASHRC_TEMP_DIR"
-    printf '%s\n' \
-      ' "{\\"start\\":\\"$_run_start_time\\"}" >' \
-      ' "$BASHRC_TEMP_DIR/run_timing.json'
-
+printf '%s\n' "{\"start\":\"$_run_start_time\"}" > "$BASHRC_TEMP_DIR/run_timing.json"
 
 install_bootstrap_node
 
@@ -967,8 +932,7 @@ install_bootstrap_node
 # EINTEGRITY, and _logs/ grows unbounded across runs. Guarded on npm existing because
 # the standalone-node fallback and Termux paths can leave node without npm.
 if type -P npm > /dev/null 2>&1; then
-    printf '%s\n' ' ">> Cleaning npm cache and logs'
-
+  printf '%s\n' ">> Cleaning npm cache and logs"
   npm cache clean --force > /dev/null 2>&1 || true
   _npm_cache_folder=$(npm config get cache 2> /dev/null)
   # Guard: an empty/undefined cache path would make this `rm -rf /_logs`.
@@ -982,10 +946,7 @@ _run_status=0
 if type -P node > /dev/null 2>&1; then
   run_files || _run_status=$?
 else
-    printf '%s\n' \
-      ' "[Skip] Node is not installed — skipping' \
-      ' main script.'
-
+  printf '%s\n' "[Skip] Node is not installed — skipping main script."
 fi
 
 _run_end_epoch=$(date +%s)
@@ -996,15 +957,10 @@ _run_duration=$((_run_end_epoch - _run_start_epoch))
 if type -P node &> /dev/null; then
   node -e "var f=require('fs'),p='$BASHRC_TEMP_DIR/run_timing.json',d={};try{d=JSON.parse(f.readFileSync(p,'utf8'))}catch(e){}d.start='$_run_start_time';d.end='$_run_end_time';d.duration_seconds=$_run_duration;f.writeFileSync(p,JSON.stringify(d))"
 else
-    printf '%s\n' \
-      ' "{\\"start\\":\\"$_run_start_time\\",\\"' \
-      'end\\":\\"$_run_end_time\\",\\"duration_s' \
-      'econds\\":$_run_duration}" > "$BASHRC_TEM' \
-      'P_DIR/run_timing.json'
-
+  printf '%s\n' "{\"start\":\"$_run_start_time\",\"end\":\"$_run_end_time\",\"duration_seconds\":$_run_duration}" > "$BASHRC_TEMP_DIR/run_timing.json"
 fi
 
-echo "
+printf '%s\n' "
 $LINE_BREAK_HASH
 >> run.sh started at $_run_start_time
 >> run.sh done at $_run_end_time (${_run_duration}s)

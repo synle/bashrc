@@ -6,8 +6,7 @@
 # Force refresh: remove existing binary and venv if stale
 if is_force_refresh_stale "$HOME/.local/bin/uv"; then
   if has_persistent_binary uv &> /dev/null; then
-    printf '%s\n' ' ">> Force refresh: removing uv'
-
+    printf '%s\n' ">> Force refresh: removing uv"
     rm -rf "$HOME/.local/bin/uv" "$HOME/.local/bin/uvx"
   fi
 fi
@@ -15,15 +14,10 @@ fi
 # Install uv if not already installed
 _bin=$(has_persistent_binary uv)
 if [ -n "$_bin" ]; then
-    printf '%s\n' \
-      ' ">> Skipped uv: already installed at $_b' \
-      'in'
-
+  printf '%s\n' ">> Skipped uv: already installed at $_bin"
 else
-    printf '%s\n' ' \'>> Installing uv'
-
-    printf '%s\n' ' \'>>> Installing with official installer'
-
+  printf '%s\n' '>> Installing uv'
+  printf '%s\n' '>>> Installing with official installer'
   curl_bash_install https://astral.sh/uv/install.sh
   # Source uv env so it's available immediately
   if [ -f "$HOME/.local/bin/env" ]; then

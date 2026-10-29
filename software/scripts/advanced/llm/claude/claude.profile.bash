@@ -73,8 +73,7 @@ function _claude_local_context_tokens() {
     _CLAUDE_LOCAL_CTX_TOKENS="$(_ollama_model_context_length "$ANTHROPIC_BASE_URL" "$model" 2> /dev/null)"
   fi
   [ -n "${_CLAUDE_LOCAL_CTX_TOKENS:-}" ] || return 0
-    printf '%s\n' ' "$_CLAUDE_LOCAL_CTX_TOKENS'
-
+  printf '%s\n' "$_CLAUDE_LOCAL_CTX_TOKENS"
 }
 
 # _claude_is_third_party_endpoint: true when ANTHROPIC_BASE_URL points somewhere that is not Anthropic
@@ -132,7 +131,7 @@ function _claude_scrub_anthropic_credentials() {
 # Supports an `ls` subcommand that lists a host's Ollama models via list_ollama_models.
 function claude_with_ip_address() {
   if is_help_arg "${1:-}"; then
-    echo "claude_with_ip_address: run \`claude\` against a self-hosted Anthropic-compatible endpoint
+    printf '%s\n' "claude_with_ip_address: run \`claude\` against a self-hosted Anthropic-compatible endpoint
   Usage: claude_with_ip_address [host[:port]] [model]
          claude_with_ip_address ls [host[:port]]
 
@@ -183,18 +182,18 @@ Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
   local model="${2:-$default_model}"
 
   if [ "${SY_CLAUDE_LOCAL_FORCE:-0}" != "1" ] && ! _claude_endpoint_speaks_anthropic "$host"; then
-    echo "claude_with_ip_address: $host does not serve the Anthropic Messages API (POST /v1/messages)." >&2
+    printf '%s\n' "claude_with_ip_address: $host does not serve the Anthropic Messages API (POST /v1/messages)." >&2
     if command curl -fsS --max-time 5 "$host/api/tags" > /dev/null 2>&1; then
-      echo "  That host is a plain Ollama daemon. Claude Code cannot talk to it directly." >&2
-      echo "  Options:" >&2
-      echo "    1. opencode  — already configured against this host: run 'op'" >&2
-      echo "    2. gateway   — run an Anthropic-format gateway in front of Ollama, then" >&2
-      echo "                   claude_with_ip_address <gateway-host>:<port> <model>" >&2
-      echo "  See docs/claude_local_readme.md for the gateway setup." >&2
+      printf '%s\n' "  That host is a plain Ollama daemon. Claude Code cannot talk to it directly." >&2
+      printf '%s\n' "  Options:" >&2
+      printf '%s\n' "    1. opencode  — already configured against this host: run 'op'" >&2
+      printf '%s\n' "    2. gateway   — run an Anthropic-format gateway in front of Ollama, then" >&2
+      printf '%s\n' "                   claude_with_ip_address <gateway-host>:<port> <model>" >&2
+      printf '%s\n' "  See docs/claude_local_readme.md for the gateway setup." >&2
     else
-      echo "  Host did not answer. Check it with: ollama_doctor $host" >&2
+      printf '%s\n' "  Host did not answer. Check it with: ollama_doctor $host" >&2
     fi
-    echo "  Set SY_CLAUDE_LOCAL_FORCE=1 to bypass this check." >&2
+    printf '%s\n' "  Set SY_CLAUDE_LOCAL_FORCE=1 to bypass this check." >&2
     return 1
   fi
 
@@ -206,7 +205,7 @@ Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
   # generation, and the client giving up first is indistinguishable from a hang.
   # CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC keeps background calls off a single-slot
   # local daemon so they can't queue ahead of the turn you are waiting on.
-  echo -e ANTHROPIC_BASE_URL="$host" claude --model "$model\n\n"
+  printf '%b %b %b %b\n' ANTHROPIC_BASE_URL="$host" claude --model "$model\n\n"
   ANTHROPIC_BASE_URL="$host" \
     ANTHROPIC_SMALL_FAST_MODEL="${ANTHROPIC_SMALL_FAST_MODEL:-$model}" \
     ANTHROPIC_DEFAULT_HAIKU_MODEL="${ANTHROPIC_DEFAULT_HAIKU_MODEL:-$model}" \
@@ -234,13 +233,13 @@ Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
 # claude: wrapper around the `claude` binary; echoes resolved invocation to stderr before running
 function claude() {
   if ! type -P claude > /dev/null 2>&1; then
-    echo "claude is not installed" >&2
+    printf '%s\n' "claude is not installed" >&2
     return 1
   fi
 
   # Activate node once per shell session (no-op on later calls).
   if ! llm_setup_activate; then
-    echo "node activation failed: llm_setup_activate/activate_node is missing" >&2
+    printf '%s\n' "node activation failed: llm_setup_activate/activate_node is missing" >&2
     return 1
   fi
 
@@ -287,9 +286,13 @@ function claude() {
   # Echo the resolved invocation to stderr so the user can see all flags being
   # passed through (stderr keeps it out of `claude --print ... | jq` pipelines).
   if ((_cl_local)); then
-    echo "[self-hosted endpoint ${ANTHROPIC_BASE_URL}] cleared ANTHROPIC_API_KEY + ANTHROPIC_AUTH_TOKEN${_cl_ctx:+, context=$_cl_ctx}" >&2
+    printf '%s\n' "[self-hosted endpoint ${ANTHROPIC_BASE_URL}] cleared ANTHROPIC_API_KEY + ANTHROPIC_AUTH_TOKEN${_cl_ctx:+, context=$_cl_ctx}" >&2
   fi
-  echo "${_cl_cmd[@]}" "$@" >&2
+  (
+    set -- "${_cl_cmd[@]}" "$@"
+    IFS=' '
+    printf '%s\n' "$*"
+  ) >&2
 
   # Self-hosted endpoint: run in a subshell so the credential scrub and the context
   # override apply to this invocation only and never linger in the caller's shell —
@@ -317,7 +320,7 @@ alias cl='claude_with_ip_address'
 # claude_edit: open ~/.claude.json AND the ~/.claude/ config dir in the editor
 function claude_edit() {
   if is_help_arg "${1:-}"; then
-    echo "claude_edit: open ~/.claude.json + ~/.claude/ in the editor via view_file
+    printf '%s\n' "claude_edit: open ~/.claude.json + ~/.claude/ in the editor via view_file
   Usage: claude_edit
 
 ~/.claude.json is Claude Code's top-level state file (recent project paths,
@@ -344,7 +347,7 @@ Files inside ~/.claude/ worth knowing about:
 # claude_edit_rule_global: open the global claude rules file (~/.claude/CLAUDE.md) in the editor
 function claude_edit_rule_global() {
   if is_help_arg "${1:-}"; then
-    echo "claude_edit_rule_global: open the global claude rules file in the editor via view_file
+    printf '%s\n' "claude_edit_rule_global: open the global claude rules file in the editor via view_file
   Usage: claude_edit_rule_global
 
 Opens ~/.claude/CLAUDE.md — the user-level instructions loaded into every session.
@@ -360,7 +363,7 @@ claude_edit_config (settings file)."
 # claude_edit_config: open the main claude settings file (~/.claude/settings.json) in the editor
 function claude_edit_config() {
   if is_help_arg "${1:-}"; then
-    echo "claude_edit_config: open the main claude settings file in the editor via view_file
+    printf '%s\n' "claude_edit_config: open the main claude settings file in the editor via view_file
   Usage: claude_edit_config
 
 Opens ~/.claude/settings.json. Managed defaults are seeded by claude/setup.js; edit that
@@ -413,7 +416,7 @@ function _claude_list_prompts_ts() {
 # claude_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
 function claude_list_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "claude_list_prompts: stream past Claude Code user prompts as NUL records
+    printf '%s\n' "claude_list_prompts: stream past Claude Code user prompts as NUL records
   Usage: claude_list_prompts             # NUL-delimited stream, newest first
 
 Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
@@ -427,7 +430,7 @@ Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PR
 # claude_search_prompts: fuzzy-pick a past Claude Code prompt and copy it to the clipboard
 function claude_search_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "claude_search_prompts: fzf picker over past Claude Code prompts
+    printf '%s\n' "claude_search_prompts: fzf picker over past Claude Code prompts
   Usage: claude_search_prompts
 
 Pipes claude_list_prompts into a shared fzf picker. The preview pane shows

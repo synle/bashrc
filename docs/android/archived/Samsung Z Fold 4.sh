@@ -2,13 +2,21 @@
 # https://www.getdroidtips.com/uninstall-bloatware-samsung-z-flip-4-z-fold-4/#Samsung-Galaxy-Z-Flip-4-Galaxy-Z-Fold-4-Device-Overview
 curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/Core Android.sh?raw=1" | bash
 
-function removeApp(){
-  echo "> Remove:" $@
+function removeApp() {
+  (
+    set -- "> Remove:" $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
-function restoreApp(){
-  echo "> Restore:" $@
+function restoreApp() {
+  (
+    set -- "> Restore:" $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   cmd package install-existing $@
 }
 
@@ -23,22 +31,22 @@ removeApp com.samsung.android.cmfa.framework
 removeApp com.samsung.android.forest # samsung digital wellbeing
 # removeApp com.samsung.android.honeyboard # samsung keyboard (main)
 removeApp com.samsung.android.peripheral.framework
-removeApp com.samsung.android.samsungpass # samsung password and autofill
+removeApp com.samsung.android.samsungpass         # samsung password and autofill
 removeApp com.samsung.android.samsungpassautofill # samsung password and autofill
-removeApp com.samsung.android.six.webtrans # Translator for Samsung Internet
-removeApp com.samsung.android.spay # samsung pay
-removeApp com.samsung.android.spayfw # samsung pay
+removeApp com.samsung.android.six.webtrans        # Translator for Samsung Internet
+removeApp com.samsung.android.spay                # samsung pay
+removeApp com.samsung.android.spayfw              # samsung pay
 # removeApp com.samsung.android.svoiceime # samsung voice input
-removeApp com.samsung.android.voc # samsung member
+removeApp com.samsung.android.voc                  # samsung member
 removeApp com.sec.android.app.chromecustomizations # Chrome browser customization
-removeApp com.sec.android.app.sbrowser # Samsung Galaxy Browser
+removeApp com.sec.android.app.sbrowser             # Samsung Galaxy Browser
 removeApp com.sec.android.emergencylauncher
 # removeApp com.sec.android.inputmethod # samsung keyboard
 
 # facebook / meta junks
-removeApp com.facebook.system # facebook junk
+removeApp com.facebook.system     # facebook junk
 removeApp com.facebook.appmanager # meta app manager
-removeApp com.facebook.installer # meta app installer
+removeApp com.facebook.installer  # meta app installer
 
 # microsoft
 removeApp com.skype.raider
@@ -47,9 +55,9 @@ removeApp com.microsoft.office.word
 removeApp com.microsoft.office.powerpoint
 
 # Samsung SmartSwitch
-removeApp com.samsung.android.smartswitchassistant # Samsung SmartSwitch
-removeApp com.sec.android.easyMover # Related Smart Switch
-removeApp com.sec.android.easyMover.Agent # Smart Switch Agent
+removeApp com.samsung.android.smartswitchassistant  # Samsung SmartSwitch
+removeApp com.sec.android.easyMover                 # Related Smart Switch
+removeApp com.sec.android.easyMover.Agent           # Smart Switch Agent
 removeApp com.samsung.android.shortcutbackupservice # ShortcutBNR, linked to SmartSwitch Samsung Cloud features
 
 # gear vr
@@ -72,7 +80,7 @@ removeApp com.samsung.android.game.gametools
 removeApp com.samsung.android.game.gos # Samsung Game Optimizing Service
 
 # misc
-removeApp com.samsung.android.app.news # samsung news today, Galaxy Essentials Widget
+removeApp com.samsung.android.app.news     # samsung news today, Galaxy Essentials Widget
 removeApp com.samsung.android.app.reminder # samsung reminder https://galaxystore.samsung.com/prepost/000005309349?appId=com.samsung.android.app.reminder
 removeApp com.samsung.android.widgetapp.yahooedge.finance
 removeApp com.samsung.android.widgetapp.yahooedge.sport
@@ -80,8 +88,8 @@ removeApp flipboard.boxer.app
 
 # Widgets
 removeApp com.sec.android.widgetapp.easymodecontactswidget # Favorite Contacts, probably the favorite contacts when enabling the simple use senior mode
-removeApp com.sec.android.widgetapp.samsungapps # Galaxy Essentials Widget
-removeApp com.sec.android.widgetapp.webmanual # User manual
+removeApp com.sec.android.widgetapp.samsungapps            # Galaxy Essentials Widget
+removeApp com.sec.android.widgetapp.webmanual              # User manual
 
 # bixby remap
 removeApp com.samsung.android.app.routines

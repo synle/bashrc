@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
-function removeApp(){
-  echo 'pm uninstall -k --user 0' $@
+function removeApp() {
+  (
+    set -- 'pm uninstall -k --user 0' $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   pm uninstall -k --user 0 $@
 }
 
-function changeSetting(){
-  echo 'settings put' $@
+function changeSetting() {
+  (
+    set -- 'settings put' $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   settings put $@
 }
 

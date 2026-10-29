@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-function removeApp(){
-  echo 'pm uninstall -k --user 0' $@
+function removeApp() {
+  (
+    set -- 'pm uninstall -k --user 0' $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   pm hide $@
   pm disable-user $@
   pm uninstall -k --user 0 $@

@@ -11,15 +11,14 @@ function _expand_port_args() {
       local start="${BASH_REMATCH[1]}"
       local end="${BASH_REMATCH[2]}"
       if [ "$start" -gt "$end" ]; then
-        echo ">> Invalid range: $arg (start > end)" >&2
+        printf '%s\n' ">> Invalid range: $arg (start > end)" >&2
         return 1
       fi
       seq "$start" "$end"
     elif [[ "$arg" =~ ^[0-9]+$ ]]; then
-    printf '%s\n' ' "$arg'
-
+      printf '%s\n' "$arg"
     else
-      echo ">> Invalid port: $arg (must be a number or range like 3000-4000)" >&2
+      printf '%s\n' ">> Invalid port: $arg (must be a number or range like 3000-4000)" >&2
       return 1
     fi
   done
@@ -28,7 +27,7 @@ function _expand_port_args() {
 # list_ports: list processes listening on the given ports
 function list_ports() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "list_ports: list processes listening on the given TCP ports
+    printf '%s\n' "list_ports: list processes listening on the given TCP ports
   Usage: list_ports <port|range> [port|range ...]
   Examples:
     list_ports 3000
@@ -46,26 +45,19 @@ function list_ports() {
     local pids
     pids=$(_find_pid_by_port "$port")
     if [ -n "$pids" ]; then
-    printf '%s\n' \
-      ' "Port $port is in use (PID(s): $(echo "$' \
-      'pids" | tr \'\\n\' \' \')):'
-
+      printf '%s\n' "Port $port is in use (PID(s): $(printf '%s\n' "$pids" | tr '\n' ' ')):"
       if type -P lsof &> /dev/null; then
         lsof -i tcp:"$port" -sTCP:LISTEN 2> /dev/null
       else
-        ps -p "$(echo "$pids" | tr '\n' ',')" -o pid,comm 2> /dev/null
+        ps -p "$(printf '%s\n' "$pids" | tr '\n' ',')" -o pid,comm 2> /dev/null
       fi
-    printf '%s\n' ' "'
-
+      printf '%s\n' ""
       found=1
     fi
   done <<< "$ports"
 
   if ! ((found)); then
-    printf '%s\n' \
-      ' ">> No processes found on the given port' \
-      's.'
-
+    printf '%s\n' ">> No processes found on the given ports."
   fi
 }
 
@@ -84,7 +76,7 @@ function _find_pid_by_port() {
 
 function kill_port() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "kill_port: kill the process listening on a single TCP port
+    printf '%s\n' "kill_port: kill the process listening on a single TCP port
   Usage: kill_port <port>"
     return 0
   fi
@@ -93,10 +85,7 @@ function kill_port() {
   local pids
   pids="$(_find_pid_by_port "$port")"
   if [ -z "$pids" ]; then
-    printf '%s\n' \
-      ' "  > Kill > Port $port > Skipped (nothin' \
-      'g running on port)'
-
+    printf '%s\n' "  > Kill > Port $port > Skipped (nothing running on port)"
     return 0
   fi
   # Send TERM first, then KILL after 1s if still alive — avoids orphaning sockets.
@@ -110,19 +99,12 @@ function kill_port() {
     for pid in $pids; do
       kill -0 $pid 2> /dev/null && kill -9 $pid 2> /dev/null
     done
-    printf '%s\n' ' "  > Kill > Port $port > Success'
-
+    printf '%s\n' "  > Kill > Port $port > Success"
   else
     if [ "$port" -lt 1024 ]; then
-    printf '%s\n' \
-      ' "  > Kill > Port $port > Error (privileg' \
-      'ed port, sudo may be required)'
-
+      printf '%s\n' "  > Kill > Port $port > Error (privileged port, sudo may be required)"
     else
-    printf '%s\n' \
-      ' "  > Kill > Port $port > Error (failed t' \
-      'o kill process)'
-
+      printf '%s\n' "  > Kill > Port $port > Error (failed to kill process)"
     fi
     return 1
   fi
@@ -131,7 +113,7 @@ function kill_port() {
 # kill_ports: kill processes listening on the given TCP ports
 function kill_ports() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "kill_ports: kill processes listening on the given TCP ports
+    printf '%s\n' "kill_ports: kill processes listening on the given TCP ports
   Usage: kill_ports <port|range> [port|range ...]
   Examples:
     kill_ports 3000
@@ -158,27 +140,20 @@ function kill_ports() {
     fi
   done <<< "$ports"
 
-    printf '%s\n' ' "The following ports will be targeted:'
-
-  echo -e "$port_list"
+  printf '%s\n' "The following ports will be targeted:"
+  printf '%b\n' "$port_list"
 
   if ((needs_sudo)); then
-    printf '%s\n' \
-      ' ">> Warning: some ports are below 1024 a' \
-      'nd may require admin/sudo to kill.'
-
-    printf '%s\n' ' "'
-
+    printf '%s\n' ">> Warning: some ports are below 1024 and may require admin/sudo to kill."
+    printf '%s\n' ""
   fi
 
   if ! prompt_yes_no "Proceed with killing processes on these ports?"; then
-    printf '%s\n' ' ">> Aborted.'
-
+    printf '%s\n' ">> Aborted."
     return 1
   fi
 
-    printf '%s\n' ' "'
-
+  printf '%s\n' ""
   while IFS= read -r port; do
     kill_port "$port"
   done <<< "$ports"
@@ -188,28 +163,26 @@ function kill_ports() {
 function portcheck() {
   local port="$1"
   if [ -z "$port" ] || is_help_arg "$1"; then
-    echo "portcheck: check if a TCP port is in use
+    printf '%s\n' "portcheck: check if a TCP port is in use
   Usage: portcheck <port>"
     return 1
   fi
   if _find_pid_by_port "$port" &> /dev/null; then
-    printf '%s\n' ' "Port $port is in use:'
-
+    printf '%s\n' "Port $port is in use:"
     if type -P lsof &> /dev/null; then
       lsof -i tcp:"$port" -sTCP:LISTEN
     else
       ps -p "$(_find_pid_by_port "$port" | tr '\n' ',')" -o pid,comm 2> /dev/null
     fi
   else
-    printf '%s\n' ' "Port $port is free'
-
+    printf '%s\n' "Port $port is free"
   fi
 }
 
 # tunnel: expose a local server via Cloudflare Tunnel (cloudflared)
 function tunnel() {
   if [ $# -eq 0 ] || is_help_arg "$1"; then
-    echo "tunnel: expose a local server via Cloudflare Tunnel
+    printf '%s\n' "tunnel: expose a local server via Cloudflare Tunnel
   Usage: tunnel [port|url]
     tunnel 3000              → tunnel http://localhost:3000
     tunnel 8080              → tunnel http://localhost:8080
@@ -218,7 +191,7 @@ function tunnel() {
     return 0
   fi
   if ! type -P cloudflared &> /dev/null; then
-    echo "tunnel: cloudflared not found on PATH" >&2
+    printf '%s\n' "tunnel: cloudflared not found on PATH" >&2
     return 1
   fi
   local target="$1"
@@ -226,7 +199,6 @@ function tunnel() {
   http://* | https://*) ;;
   *) target="http://localhost:$target" ;;
   esac
-    printf '%s\n' ' ">> Tunneling $target via cloudflared'
-
+  printf '%s\n' ">> Tunneling $target via cloudflared"
   command cloudflared tunnel --url "$target"
 }

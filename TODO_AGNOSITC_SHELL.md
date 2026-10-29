@@ -1,30 +1,48 @@
 # TODO: shell-agnostic scripts and validation
 
-> **Optional, manual checks:** These targets are not build prerequisites or dependencies of `precommit`, `validate`, `test_all`, or CI.
-> The integration suite can exercise isolated validator fixtures; that does not require repository scripts to pass these portability checks.
-> The commands below run static analyzers only, not a test suite or the selected scripts.
+> **Optional, non-gating checks:** `make validate` runs these checks by default after required validation. Set `VALIDATE_SHELL_AGNOSTIC=0` to skip them.
+> Failures print diagnostics and do not stop the rest of `make validate`.
+> The checks are not part of `precommit`, `test_all`, or CI, and they never execute selected scripts.
 
 ## First pass — collect files, validate, and fix
 
 Run this from the repository root:
 
 ```bash
-make collect_shell_agnostic_files
-# Direct equivalent: node software/tools/collect-shell-agnostic-files.js
+make validate_shell_prep
+# Direct collector: node software/tools/collect-shell-agnostic-files.js
 ```
 
 The collector saves a JSON filename array in `shell-agnostic-files.txt` under the system temporary folder and prints its full path.
-For `/tmp`, run `TMPDIR=/tmp make collect_shell_agnostic_files` and use the same `TMPDIR` for validation.
+For `/tmp`, run `TMPDIR=/tmp make validate_shell_prep` and use the same `TMPDIR` for validation.
 The selection includes tracked `.sh`, `.bash`, and `.zsh` files, excluding `.build/`, `dist/`, `coverage/`, and `.ps1.bash` templates.
+It excludes `assets/fonts/install.sh` because that display file mixes Bash and PowerShell.
+It also excludes `software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash` because the generator substitutes its placeholders before execution.
 Untracked files are not included.
 
-- [ ] **Printf vs echo — first priority:** run `make validate_shell_agnostic_printf`, replace applicable `echo` usage with fixed-format `printf`, and rerun.
+- [x] **Printf vs echo — first priority:** run `make validate_shell_prep`, replace applicable `echo` usage with fixed-format `printf`, then run `make validate_shell_agnostic_printf`.
+
+  Command: `make validate_shell_prep && make validate_shell_agnostic_printf`
+
+  Result:
+
+  ```json
+  {
+    "ok": true,
+    "rule": "printf",
+    "checkedFiles": 127,
+    "findings": []
+  }
+  ```
+
 - [ ] **Quoting:** run `make validate_shell_agnostic_quoting`, fix applicable findings, and rerun.
 - [ ] **Shell options:** run `make validate_shell_agnostic_options`, review option mutations, fix applicable findings, and rerun.
 - [ ] **POSIX syntax:** run `make validate_shell_agnostic_syntax`, fix shared-code violations, and rerun.
 
-All four targets and `make validate_shell_agnostic` read the saved list when `files` is omitted or empty.
-No shell variable or shared shell session is required; collection and validation must use the same temporary-folder configuration.
+All four rule targets, `make validate_shell_agnostic`, and `make validate_shell_agnostic_best_effort` read the saved list when `files` is omitted or empty.
+The best-effort target runs printf, quoting, options, and syntax checks in order; it prints each failure and continues.
+No shell variable or shared shell session is required; prep and validation use the same temporary-folder configuration.
+The best-effort wrapper runs printf, quoting, options, and syntax rules in order, and prints each failure without stopping later checks.
 The saved paths are relative to the repository root; run validators there and recollect after changing checkouts or tracked files.
 The most recent collection replaces the shared temporary list.
 A missing list reports the collection command; malformed or empty lists fail validation.

@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
-function removeApp(){
-  echo 'pm uninstall -k --user 0' $@
+function removeApp() {
+  (
+    set -- 'pm uninstall -k --user 0' $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   pm uninstall -k --user 0 $@
 }
 
-function changeSetting(){
-  echo 'settings put' $@
+function changeSetting() {
+  (
+    set -- 'settings put' $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   settings put $@
 }
 
@@ -90,13 +98,13 @@ removeApp com.sec.android.app.sbrowser
 removeApp flipboard.boxer.app
 removeApp com.swiftkey.swiftkeyconfigurator
 removeApp com.touchtype.swiftkey
-removeApp com.skype.raider # Skype
-removeApp com.microsoft.office.excel # Microsoft Excel
+removeApp com.skype.raider                # Skype
+removeApp com.microsoft.office.excel      # Microsoft Excel
 removeApp com.microsoft.office.powerpoint # Microsoft PowerPoint
-removeApp com.microsoft.office.word # Microsoft Word
-removeApp com.microsoft.skydrive # Microsoft SkyDrive
-removeApp de.axelspringer.yana.zeropage # upday
-removeApp flipboard.boxer.app # Flipboard
+removeApp com.microsoft.office.word       # Microsoft Word
+removeApp com.microsoft.skydrive          # Microsoft SkyDrive
+removeApp de.axelspringer.yana.zeropage   # upday
+removeApp flipboard.boxer.app             # Flipboard
 removeApp com.google.android.youtube
 removeApp com.microsoft.skydrive
 removeApp com.google.android.apps.tachyon
@@ -106,5 +114,4 @@ removeApp com.microsoft.skydrive
 ######################################################################################
 ###### Done
 ######################################################################################
-    printf '%s\n' ' \'=== Done Prep work for android shell'
-
+printf '%s\n' '=== Done Prep work for android shell'

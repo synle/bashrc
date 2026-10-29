@@ -16,7 +16,7 @@
 #                          tahoe, tmm.tutorial, tv.csapp, tv.forcedotaupdater.v2, tv.fw.metrics,
 #                          tv.legal.notices, tv.livetv, tv.nimh, tv.releasenotes, tv.support, webview
 #   Alexa & Voice: bueller.notification, device.software.ota, device.software.ota.override,
-  #                   imbd.tv.android.app, parentalcontrols, kindle.freetime
+#                   imbd.tv.android.app, parentalcontrols, kindle.freetime
 #   Non-Amazon: ivona.orchestrator, ivona.tts.oem, svox.pico, documentsui, wallpaperbackup
 #   Disabled (not removed): device.software.ota, pai, zico.app, ism.recommendations,
 #                            kindle.unifiedreader
@@ -38,17 +38,15 @@ function _adb_shell() {
 function _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-    printf '%s\n' ' ">>> setting put $*'
-
-  _adb_shell settings put "$@" >/dev/null 2>&1
+  printf '%s\n' ">>> setting put $*"
+  _adb_shell settings put "$@" > /dev/null 2>&1
 }
 
 function _restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-    printf '%s\n' ' ">>> setting restore $*'
-
-  _adb_shell settings delete "$@" >/dev/null 2>&1
+  printf '%s\n' ">>> setting restore $*"
+  _adb_shell settings delete "$@" > /dev/null 2>&1
 }
 
 function restore_all_settings() {
@@ -56,53 +54,46 @@ function restore_all_settings() {
     [ -z "$setting_namespace" ] && continue
     _restore_setting "$setting_namespace" "$setting_key"
   done
-    printf '%s\n' ' ">>> all settings restored to defaults'
-
+  printf '%s\n' ">>> all settings restored to defaults"
 }
 
 function _disable_app() {
   ok=0
-  _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell pm disable-user --user 0 "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm disable-user -k --user 0 "$@" > /dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    printf '%s\n' ' ">>> $* > Disabled > Success'
-
+    printf '%s\n' ">>> $* > Disabled > Success"
   else
-    printf '%s\n' ' ">>> $* > Disabled > Error'
-
+    printf '%s\n' ">>> $* > Disabled > Error"
   fi
 }
 
 function _remove_app() {
   ok=0
-  _disable_app "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
+  _disable_app "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall -k --user 0 "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm uninstall -k --user 10 "$@" > /dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    printf '%s\n' ' ">>> $* > Removed > Success'
-
+    printf '%s\n' ">>> $* > Removed > Success"
   else
-    printf '%s\n' ' ">>> $* > Removed > Error'
-
+    printf '%s\n' ">>> $* > Removed > Error"
   fi
 }
 
 function _restore_app() {
   ok=0
-  _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
-  _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
+  _adb_shell cmd package install-existing "$@" > /dev/null 2>&1 && ok=1
+  _adb_shell pm enable "$@" > /dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    printf '%s\n' ' ">>> $* > Restored > Success'
-
+    printf '%s\n' ">>> $* > Restored > Success"
   else
-    printf '%s\n' ' ">>> $* > Restored > Error'
-
+    printf '%s\n' ">>> $* > Restored > Error"
   fi
 }
 
 function _parse_app_name() {
-  echo "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
+  printf '%s\n' "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
 }
 
 function remove_app_collection() {
@@ -125,31 +116,30 @@ function _restore_app_collection() {
   done
 }
 
-
 ################################################################################
 # --- Settings ---
 ################################################################################
 
 debloat_settings() {
   # ---- Animations Off ----
-  _put_setting global window_animation_scale 0.0       # window open/close off. instant UI.
-  _put_setting global transition_animation_scale 0.0   # screen transitions off. instant UI.
-  _put_setting global animator_duration_scale 0.0      # in-app animations off. instant UI.
+  _put_setting global window_animation_scale 0.0     # window open/close off. instant UI.
+  _put_setting global transition_animation_scale 0.0 # screen transitions off. instant UI.
+  _put_setting global animator_duration_scale 0.0    # in-app animations off. instant UI.
 
   # ---- Telemetry Off ----
-  _put_setting secure collection_info_enabled 0        # disable system info collection. no side effects.
+  _put_setting secure collection_info_enabled 0            # disable system info collection. no side effects.
   _put_setting secure privacy_metrics_collection_enabled 0 # disable privacy metrics. no side effects.
-  _put_setting global analytics_enabled 0              # disable system analytics. no side effects.
-  _put_setting global usage_reporting_enabled 0        # disable usage reporting. no side effects.
+  _put_setting global analytics_enabled 0                  # disable system analytics. no side effects.
+  _put_setting global usage_reporting_enabled 0            # disable usage reporting. no side effects.
 
   # ---- Connectivity ----
-  _put_setting global wifi_scan_always_enabled 0       # stop Wi-Fi scan when Wi-Fi is off. no side effects.
-  _put_setting global ble_scan_always_enabled 0        # stop Bluetooth scan when BT is off. no side effects.
+  _put_setting global wifi_scan_always_enabled 0 # stop Wi-Fi scan when Wi-Fi is off. no side effects.
+  _put_setting global ble_scan_always_enabled 0  # stop Bluetooth scan when BT is off. no side effects.
 
   # ---- Privacy ----
-  _put_setting global device_provisioned 1             # mark device as provisioned. skip setup wizard.
-  _put_setting global send_action_app_error 0          # disable crash reports to Google. no side effects.
-  _put_setting global ad_id_opt_out 1                  # opt out of personalized ad tracking. no side effects.
+  _put_setting global device_provisioned 1    # mark device as provisioned. skip setup wizard.
+  _put_setting global send_action_app_error 0 # disable crash reports to Google. no side effects.
+  _put_setting global ad_id_opt_out 1         # opt out of personalized ad tracking. no side effects.
 
   # ---- Other Settings ----
   # Make sure voice control is enabled
@@ -169,7 +159,6 @@ debloat_settings() {
   _put_setting global com.amazon.tv.settings.featured_item_video_enabled 0
   _put_setting global com.amazon.tv.settings.featured_item_video_volume 0.0
 }
-
 
 ################################################################################
 # --- App Lists ---
@@ -298,7 +287,6 @@ com.android.printspooler
 com.android.traceur
 "
 
-
 ################################################################################
 # --- Restore ---
 ################################################################################
@@ -306,10 +294,7 @@ com.android.traceur
 function restore_all_apps() {
   _restore_app_collection "$FIRE_TV_DEBLOAT_SAFE"
   restore_all_settings
-    printf '%s\n' \
-      ' ">>> All Fire TV apps and settings resto' \
-      'red'
-
+  printf '%s\n' ">>> All Fire TV apps and settings restored"
 }
 
 ################################################################################
@@ -323,35 +308,32 @@ function _install_latest_github_apk() {
   app_name="$3"
   release_api="https://api.github.com/repos/$repo/releases/latest"
   apk_url="$(
-    curl -fsSL "$release_api" |
-      sed -n 's/.*"browser_download_url": "\([^\"]*\.apk\)".*/\1/p' |
-      command grep -m 1 -F "$asset_pattern"
+    curl -fsSL "$release_api" \
+      | sed -n 's/.*"browser_download_url": "\([^\"]*\.apk\)".*/\1/p' \
+      | command grep -m 1 -F "$asset_pattern"
   )"
 
   if [ -z "$apk_url" ]; then
-    echo ">>> $app_name > APK not found in latest $repo release" >&2
+    printf '%s\n' ">>> $app_name > APK not found in latest $repo release" >&2
     return 1
   fi
 
   temp_folder="$(mktemp -d "${TMPDIR:-/tmp}/firetv-apk.XXXXXX")" || return 1
   apk_file="$temp_folder/$app_name.apk"
-    printf '%s\n' ' ">>> $app_name > Downloading $apk_url'
-
+  printf '%s\n' ">>> $app_name > Downloading $apk_url"
   if ! curl -fsSL "$apk_url" -o "$apk_file"; then
     rm -rf "$temp_folder"
     return 1
   fi
 
-    printf '%s\n' ' ">>> $app_name > Installing'
-
+  printf '%s\n' ">>> $app_name > Installing"
   adb install -r "$apk_file"
   install_status=$?
   rm -rf "$temp_folder"
   if [ "$install_status" = "0" ]; then
-    printf '%s\n' ' ">>> $app_name > Installed > Success'
-
+    printf '%s\n' ">>> $app_name > Installed > Success"
   else
-    echo ">>> $app_name > Installed > Error" >&2
+    printf '%s\n' ">>> $app_name > Installed > Error" >&2
   fi
   return "$install_status"
 }
@@ -367,52 +349,40 @@ function _configure_personal_dnsfilter() {
   extra_hosts_file="$temp_folder/additionalHosts.txt"
   config_file="$temp_folder/dnsfilter.conf"
 
-    printf '%s\n' \
-      ' ">>> personalDNSfilter > Downloading Ama' \
-      'zon blocklist'
-
-  if ! curl -fsSL "$blocklist_url" -o "$blocklist_file" ||
-    ! curl -fsSL "$extra_hosts_url" -o "$extra_hosts_file" ||
-    ! curl -fsSL "$config_url" |
-      command sed \
-        -e 's#^filterHostsFile = .*#filterHostsFile = FILTERHOSTS.TXT#' \
-        -e 's#^filterAutoUpdateURL = .*#filterAutoUpdateURL = https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/wildcard/native.amazon-onlydomains.txt#' \
-        -e 's#^filterAutoUpdateURL_IDs = .*#filterAutoUpdateURL_IDs = HaGeZi Amazon#' \
-        -e 's#^filterAutoUpdateURL_categories = .*#filterAutoUpdateURL_categories = Amazon#' \
-        -e 's#^filterAutoUpdateURL_switchs = .*#filterAutoUpdateURL_switchs = true#' \
+  printf '%s\n' ">>> personalDNSfilter > Downloading Amazon blocklist"
+  if ! curl -fsSL "$blocklist_url" -o "$blocklist_file" \
+    || ! curl -fsSL "$extra_hosts_url" -o "$extra_hosts_file" \
+    || ! curl -fsSL "$config_url" \
+    | command sed \
+      -e 's#^filterHostsFile = .*#filterHostsFile = FILTERHOSTS.TXT#' \
+      -e 's#^filterAutoUpdateURL = .*#filterAutoUpdateURL = https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/wildcard/native.amazon-onlydomains.txt#' \
+      -e 's#^filterAutoUpdateURL_IDs = .*#filterAutoUpdateURL_IDs = HaGeZi Amazon#' \
+      -e 's#^filterAutoUpdateURL_categories = .*#filterAutoUpdateURL_categories = Amazon#' \
+      -e 's#^filterAutoUpdateURL_switchs = .*#filterAutoUpdateURL_switchs = true#' \
       > "$config_file"; then
     rm -rf "$temp_folder"
     return 1
   fi
 
-    printf '%s\n' \
-      ' ">>> personalDNSfilter > Pushing configu' \
-      'ration'
-
-  if ! _adb_shell mkdir -p "$remote_folder" ||
-    ! adb push "$blocklist_file" "$remote_folder/FILTERHOSTS.TXT" ||
-    ! adb push "$extra_hosts_file" "$remote_folder/additionalHosts.txt" ||
-    ! adb push "$config_file" "$remote_folder/dnsfilter.conf"; then
+  printf '%s\n' ">>> personalDNSfilter > Pushing configuration"
+  if ! _adb_shell mkdir -p "$remote_folder" \
+    || ! adb push "$blocklist_file" "$remote_folder/FILTERHOSTS.TXT" \
+    || ! adb push "$extra_hosts_file" "$remote_folder/additionalHosts.txt" \
+    || ! adb push "$config_file" "$remote_folder/dnsfilter.conf"; then
     rm -rf "$temp_folder"
     return 1
   fi
   rm -rf "$temp_folder"
 
-    printf '%s\n' \
-      ' ">>> personalDNSfilter > Starting VPN ac' \
-      'tivity'
-
+  printf '%s\n' ">>> personalDNSfilter > Starting VPN activity"
   _adb_shell am force-stop dnsfilter.android
   _adb_shell am start -n dnsfilter.android/.DNSProxyActivity
-    printf '%s\n' \
-      ' ">>> personalDNSfilter > Approve VPN acc' \
-      'ess on Fire TV if prompted'
-
+  printf '%s\n' ">>> personalDNSfilter > Approve VPN access on Fire TV if prompted"
 }
 
 function install_apps() {
-  if ! adb get-state >/dev/null 2>&1; then
-    echo ">>> No connected ADB device" >&2
+  if ! adb get-state > /dev/null 2>&1; then
+    printf '%s\n' ">>> No connected ADB device" >&2
     return 1
   fi
 
@@ -433,10 +403,9 @@ function install_apps() {
 
 # Check host ADB and optionally connect to a user-provided Fire TV device.
 function _greet_and_connect_adb() {
-    printf '%s\n' ' ">>> Fire TV ADB setup'
-
-  if ! command -v adb >/dev/null 2>&1; then
-    echo ">>> adb not found on host; install Android platform tools first" >&2
+  printf '%s\n' ">>> Fire TV ADB setup"
+  if ! command -v adb > /dev/null 2>&1; then
+    printf '%s\n' ">>> adb not found on host; install Android platform tools first" >&2
     return 1
   fi
 
@@ -447,17 +416,15 @@ function _greet_and_connect_adb() {
   fi
 
   if [ -n "$adb_target" ]; then
-    printf '%s\n' ' ">>> Reconnecting ADB to $adb_target'
-
-    adb disconnect >/dev/null 2>&1 || true
-    adb kill-server >/dev/null 2>&1 || true
+    printf '%s\n' ">>> Reconnecting ADB to $adb_target"
+    adb disconnect > /dev/null 2>&1 || true
+    adb kill-server > /dev/null 2>&1 || true
     adb start-server || return 1
     adb connect "$adb_target" || return 1
   else
-    printf '%s\n' ' ">>> Using current ADB connection'
-
-    if ! adb get-state >/dev/null 2>&1; then
-      echo ">>> No connected ADB device" >&2
+    printf '%s\n' ">>> Using current ADB connection"
+    if ! adb get-state > /dev/null 2>&1; then
+      printf '%s\n' ">>> No connected ADB device" >&2
       return 1
     fi
   fi

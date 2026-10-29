@@ -10,8 +10,7 @@
 # --- Install Homebrew ---
 ################################################################################
 if ! type -P brew > /dev/null 2>&1; then
-    printf '%s\n' ' ">> Installing Homebrew'
-
+  printf '%s\n' ">> Installing Homebrew"
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://github.com/Homebrew/install/blob/HEAD/install.sh?raw=1)" > /dev/null 2>&1
   if [ -f /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -43,8 +42,7 @@ safe_touch "$BASH_SYLE_PATH"
 ################################################################################
 # --- Headless Chrome Fixes ---
 ################################################################################
-    printf '%s\n' ' \'>> Headless Chrome Fixes for MacOSX'
-
+printf '%s\n' '>> Headless Chrome Fixes for MacOSX'
 safe_mkdir "$HOME/Library/LaunchAgents"
 cat << EOF > "$HOME/Library/LaunchAgents/com.user.chrome.headless.plist"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -78,7 +76,7 @@ _chrome_headless_plist="$HOME/Library/LaunchAgents/com.user.chrome.headless.plis
 if ! launchctl print "gui/$(id -u)/com.user.chrome.headless" &> /dev/null; then
   launchctl bootstrap "gui/$(id -u)" "$_chrome_headless_plist" &> /dev/null \
     || launchctl load "$_chrome_headless_plist" &> /dev/null \
-    || echo '>> Headless Chrome LaunchAgent >> Skipped (could not register)'
+    || printf '%s\n' '>> Headless Chrome LaunchAgent >> Skipped (could not register)'
 fi
 
 ################################################################################
@@ -121,14 +119,14 @@ function _appArchMismatch() {
 # round-trip (1-3s each) just to be told they are already installed.
 function _brewPackageInstalled() {
   local list="$1" pkg="$2"
-  echo "$list" | grep -qxF "$pkg" && return 0
-  echo "$list" | grep -q "^${pkg}@" && return 0
+  printf '%s\n' "$list" | grep -qxF "$pkg" && return 0
+  printf '%s\n' "$list" | grep -q "^${pkg}@" && return 0
   local _alias=""
   case "$pkg" in
   java) _alias="openjdk" ;;
   google-cloud-sdk) _alias="gcloud-cli" ;;
   esac
-  [ -n "$_alias" ] && echo "$list" | grep -qxF "$_alias" && return 0
+  [ -n "$_alias" ] && printf '%s\n' "$list" | grep -qxF "$_alias" && return 0
   return 1
 }
 
@@ -152,7 +150,7 @@ function installBrewPackage() {
     *) install_flags="$install_flags $arg" ;;
     esac
   done
-  echo -n ">> $pkg_name >> Installing with Brew >> "
+  printf '%s' ">> $pkg_name >> Installing with Brew >> "
   # fast path: check /Applications directly, no brew call needed. An app that is
   # installed but has no slice for the native CPU arch is reinstalled instead of
   # skipped — brew resolves x86_64 artifacts whenever it runs translated under
@@ -161,10 +159,9 @@ function installBrewPackage() {
   if [ -n "$app_name" ] && [ -d "/Applications/$app_name" ]; then
     if _appArchMismatch "$app_name"; then
       _arch_reinstall=1
-      echo -n "Reinstalling (not built for $(get_native_arch)) >> "
+      printf '%s' "Reinstalling (not built for $(get_native_arch)) >> "
     else
-    printf '%s\n' ' "Skipped'
-
+      printf '%s\n' "Skipped"
       return
     fi
   fi
@@ -172,27 +169,21 @@ function installBrewPackage() {
   if ! ((_arch_reinstall)); then
     if [ -n "$is_cask" ]; then
       if _brewPackageInstalled "$_BREW_INSTALLED_CASKS" "$pkg_name"; then
-    printf '%s\n' ' "Skipped'
-
+        printf '%s\n' "Skipped"
         return
       fi
     else
       if _brewPackageInstalled "$_BREW_INSTALLED_FORMULAE" "$pkg_name"; then
-    printf '%s\n' ' "Skipped'
-
+        printf '%s\n' "Skipped"
         return
       fi
     fi
   fi
   local _t0=$SECONDS
   if run_native brew install $install_flags "$pkg_name" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
-
+    printf '%s\n' "Success ($((SECONDS - _t0))s)"
   else
-    printf '%s\n' \
-      ' "Error ($((SECONDS - _t0))s) (see $BASHR' \
-      'C_TEMP_DIR/fullsetup.log)'
-
+    printf '%s\n' "Error ($((SECONDS - _t0))s) (see $BASHRC_TEMP_DIR/fullsetup.log)"
   fi
 }
 
@@ -218,8 +209,7 @@ unset _i
 
 function installBrewPackageInBackground() {
   if ((IS_CI)); then
-    printf '%s\n' ' ">> ${@: -1} >> Skipped (CI)'
-
+    printf '%s\n' ">> ${@: -1} >> Skipped (CI)"
     return
   fi
   _BACKGROUND_PKG_NAMES+=("${@: -1}")
@@ -251,33 +241,26 @@ function _installBackgroundPackages() {
     _BACKGROUND_INSTALL_PIDS+=($!)
     _BACKGROUND_INSTALL_LOGS+=("$_log")
   done
-    printf '%s\n' \
-      ' ">> Installing ${#_BACKGROUND_PKG_NAMES[' \
-      '@]} background packages across ${#_BACKGR' \
-      'OUND_INSTALL_PIDS[@]} parallel buckets (l' \
-      'ogs: ${_BACKGROUND_INSTALL_LOG_PREFIX}_*.' \
-      'log) >> ${_BACKGROUND_PKG_NAMES[*]}'
-
+  (
+    set -- ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages across ${#_BACKGROUND_INSTALL_PIDS[@]} parallel buckets (logs: ${_BACKGROUND_INSTALL_LOG_PREFIX}_*.log) >> ${_BACKGROUND_PKG_NAMES[*]}"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
 }
 
 # refresh the brew formula/cask index so installs resolve the latest versions
 function updatePackageIndex() {
-  echo -n ">> Updating package index >> "
+  printf '%s' ">> Updating package index >> "
   if brew update < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' "Done'
-
+    printf '%s\n' "Done"
   else
-    printf '%s\n' ' "Error'
-
+    printf '%s\n' "Error"
   fi
 }
 
 # wait for background jobs, then upgrade and clean packages in the background (fire and forget)
 function upgradeAndCleanPackages() {
-    printf '%s\n' \
-      ' ">> Upgrading and cleaning packages (bac' \
-      'kground) >>'
-
+  printf '%s\n' ">> Upgrading and cleaning packages (background) >>"
   (
     brew upgrade < /dev/null
     brew cleanup < /dev/null
@@ -287,14 +270,10 @@ function upgradeAndCleanPackages() {
 ################################################################################
 # --- Install Packages ---
 ################################################################################
-    printf '%s\n' \
-      ' ">> Begin setting up dependencies/mac/de' \
-      'ps.sh'
+printf '%s\n' ">> Begin setting up dependencies/mac/deps.sh"
+if is_bash_syle_stale; then updatePackageIndex; else printf '%s\n' ">> Updating package index >> Skipped (not stale)"; fi
 
-if is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
-
-    printf '%s\n' ' \'>> Installing packages with Homebrew'
-
+printf '%s\n' '>> Installing packages with Homebrew'
 
 # --- Core tools ---
 installBrewPackage git
@@ -304,10 +283,7 @@ installBrewPackage python
 installBrewPackage make # GNU Make (gmake) 4.x+ — supports .ONESHELL (macOS ships Make 3.81 which does not)
 # symlink gmake → make so `command make` and scripts use GNU Make without needing the alias
 if [ -x /opt/homebrew/bin/gmake ] && [ ! -L /opt/homebrew/bin/make ]; then
-    printf '%s\n' \
-      ' ">> Symlinking /opt/homebrew/bin/gmake →' \
-      ' /opt/homebrew/bin/make'
-
+  printf '%s\n' ">> Symlinking /opt/homebrew/bin/gmake → /opt/homebrew/bin/make"
   ln -sf /opt/homebrew/bin/gmake /opt/homebrew/bin/make
 fi
 installBrewPackage bash
@@ -407,10 +383,7 @@ installBrewPackage ansible
 # alone costs ~0.5s of brew startup, paid on every run for a grant that is already on disk.
 if ! _brewPackageInstalled "$_BREW_INSTALLED_FORMULAE" terraform; then
   if ! brew tap 2> /dev/null | grep -qx hashicorp/tap; then
-    printf '%s\n' \
-      ' \'>> Tapping hashicorp/tap (terraform so' \
-      'urce)'
-
+    printf '%s\n' '>> Tapping hashicorp/tap (terraform source)'
     brew tap hashicorp/tap < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
   fi
   brew trust hashicorp/tap < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
@@ -468,10 +441,7 @@ installBrewPackageInBackground java
 # Symptom when missing: "Unable to locate a Java Runtime" on every `java -version` /
 # `jdtls` invocation despite the keg being installed at /opt/homebrew/Cellar/openjdk.
 if [ -d /opt/homebrew/opt/openjdk/libexec/openjdk.jdk ] && [ ! -L /Library/Java/JavaVirtualMachines/openjdk.jdk ]; then
-    printf '%s\n' \
-      ' \'>> Registering brew openjdk with macOS' \
-      ' java_home (requires sudo)'
-
+  printf '%s\n' '>> Registering brew openjdk with macOS java_home (requires sudo)'
   sudo ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
 fi
 installBrewPackageInBackground duti
@@ -535,24 +505,15 @@ installBrewPackageInBackground --cask --app="OrbStack.app" orbstack
 # Homebrew bash is required for bind -x (fzf-tab-completion) and other bash 4+ features.
 # Also upgrades from macOS system bash (/bin/bash 3.2) to Homebrew bash.
 if [ -x /opt/homebrew/bin/bash ] && [ "$SHELL" != /opt/homebrew/bin/bash ]; then
-    printf '%s\n' \
-      ' ">> Set default shell as Homebrew Bash: ' \
-      'chsh -s /opt/homebrew/bin/bash'
-
+  printf '%s\n' ">> Set default shell as Homebrew Bash: chsh -s /opt/homebrew/bin/bash"
   if ! grep -q /opt/homebrew/bin/bash /etc/shells 2> /dev/null; then
-    echo /opt/homebrew/bin/bash | sudo tee -a /etc/shells > /dev/null
+    printf '%s\n' /opt/homebrew/bin/bash | sudo tee -a /etc/shells > /dev/null
   fi
   chsh -s /opt/homebrew/bin/bash "$USER"
 elif [[ "$SHELL" == */bash ]]; then
-    printf '%s\n' \
-      ' ">> Default shell already set to bash: $' \
-      'SHELL'
-
+  printf '%s\n' ">> Default shell already set to bash: $SHELL"
 else
-    printf '%s\n' \
-      ' ">> Set default shell as BASH (fallback)' \
-      ': chsh -s /bin/bash'
-
+  printf '%s\n' ">> Set default shell as BASH (fallback): chsh -s /bin/bash"
   chsh -s /bin/bash "$USER"
 fi
 
@@ -586,23 +547,16 @@ function queue_pmset() {
     # POSIX `[^[:space:]]` (not `\S`) — BSD sed on macOS treats `\S` as literal
     # `S`, which never matches any pmset line and leaves the range open to EOF
     # (so a -b extract leaks into the AC section, breaking value matches).
-    check_output=$(echo "$_pmset_current" | sed -n "/$section/,/^[^[:space:]]/p")
+    check_output=$(printf '%s\n' "$_pmset_current" | sed -n "/$section/,/^[^[:space:]]/p")
   fi
-  if ! echo "$check_output" | grep -q " $key[[:space:]]"; then
-    printf '%s\n' \
-      ' ">> Power: $desc >> Skipped (key not sup' \
-      'ported)'
-
-  elif echo "$check_output" | grep -q " $key[[:space:]]*$val[[:space:]]*$"; then
+  if ! printf '%s\n' "$check_output" | grep -q " $key[[:space:]]"; then
+    printf '%s\n' ">> Power: $desc >> Skipped (key not supported)"
+  elif printf '%s\n' "$check_output" | grep -q " $key[[:space:]]*$val[[:space:]]*$"; then
     # End-anchored ([[:space:]]*$) so ` displaysleep[[:space:]]*0` does NOT
     # spuriously match the trailing `0` of " displaysleep         180".
-    printf '%s\n' \
-      ' ">> Power: $desc >> Skipped (already $va' \
-      'l)'
-
+    printf '%s\n' ">> Power: $desc >> Skipped (already $val)"
   else
-    printf '%s\n' ' ">> Power: $desc >> Queued'
-
+    printf '%s\n' ">> Power: $desc >> Queued"
     if [ "$flag" = "-a" ]; then _pmset_all+=" $key $val"; fi
     if [ "$flag" = "-b" ]; then _pmset_battery+=" $key $val"; fi
     if [ "$flag" = "-c" ]; then _pmset_ac+=" $key $val"; fi
@@ -640,16 +594,9 @@ function apply_pmset() {
   [ -n "$settings" ] || return 0
   # $settings is intentionally unquoted: it is a space-separated "key value key value" list.
   if sudo -n pmset "$flag" $settings 2> /dev/null; then
-    printf '%s\n' \
-      ' ">> Power: Applied $label changes:$setti' \
-      'ngs'
-
+    printf '%s\n' ">> Power: Applied $label changes:$settings"
   else
-    printf '%s\n' \
-      ' ">> Power: $label changes need sudo (not' \
-      ' prompting); run: sudo pmset $flag$settin' \
-      'gs'
-
+    printf '%s\n' ">> Power: $label changes need sudo (not prompting); run: sudo pmset $flag$settings"
   fi
 }
 
@@ -664,17 +611,13 @@ unset _pmset_current
 # --- Cleanup ---
 ################################################################################
 if is_force_refresh_stale && [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
-    printf '%s\n' ' \'>> Kill all dock icons'
-
+  printf '%s\n' '>> Kill all dock icons'
   defaults write com.apple.dock persistent-apps -array
   killall Dock
 
   # disable spotlight indexing (background), skip if already disabled
   if mdutil -s / 2> /dev/null | grep -q 'Indexing enabled'; then
-    printf '%s\n' \
-      ' \'>> Disable spotlight indexing (backgro' \
-      'und) >>'
-
+    printf '%s\n' '>> Disable spotlight indexing (background) >>'
     (sudo mdutil -i off) > /dev/null 2>&1 &
   fi
 fi
@@ -695,11 +638,8 @@ _waitForBackgroundPackages
 # legacy dotnet-sdk cask. Without this, every powershell install (dotnet is a dependency)
 # exits non-zero on the failed link step. No-op once the link already points at the keg.
 if [ -L /opt/homebrew/bin/dotnet ] && [[ "$(readlink /opt/homebrew/bin/dotnet)" != *"/Cellar/dotnet/"* ]]; then
-    printf '%s\n' \
-      ' \'>> dotnet >> Relinking over stale dotn' \
-      'et-sdk cask symlink'
-
+  printf '%s\n' '>> dotnet >> Relinking over stale dotnet-sdk cask symlink'
   brew link --overwrite dotnet < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
 fi
 
-if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi
+if is_bash_syle_stale; then upgradeAndCleanPackages; else printf '%s\n' ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi
