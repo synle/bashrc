@@ -374,7 +374,10 @@ const LLM_UPSTREAM_SKILL_SOURCES = [
       "awesome-root-cause",
       "awesome-performance-audit",
       "awesome-code-standards",
-      "awesome-claims-audit"
+      "awesome-claims-audit",
+      "awesome-document-style",
+      "awesome-humanize-en",
+      "awesome-grammar-check"
     ],
     "files": [
       {
@@ -570,6 +573,156 @@ const LLM_UPSTREAM_SKILL_SOURCES = [
         "executable": false
       },
       {
+        "path": "skills/awesome-document-style/evals/eval_queries.json",
+        "sha256": "5aafc854c216405460a34e29c17adea32cb7015624b0c8d442c2f3d6840b3592",
+        "bytes": 3318,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-document-style/SKILL.md",
+        "sha256": "e3d6989fca240db672df9f9e86921a64eabc8a4426c85e584ed2fd9d1fb5db62",
+        "bytes": 14360,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-grammar-check/evals/eval_queries.json",
+        "sha256": "4993c9ce122b2637ee5f194bcbab126934c237a58044cf9ef27bc57bd03f99e4",
+        "bytes": 3072,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-grammar-check/SKILL.md",
+        "sha256": "955c8858d588d7e2976b818fd6402f1b31865bef1013c6df77ef4dfda9280ff4",
+        "bytes": 6858,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/evals/eval_queries.json",
+        "sha256": "d8143a389c1c443c95ff9368aaae2500993f3033cfc9b8adef2fbb4b49d85657",
+        "bytes": 3087,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/chatbot-artifacts.md",
+        "sha256": "75e77bf3a2d43e7e986144e176250af4e9a59139f70ad8d18f8b7df30a453835",
+        "bytes": 16644,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/communication-patterns.md",
+        "sha256": "0cc5b933e82e24da64d37222ea5e4b76367271fe806006a4b9c56eab2c1b2265",
+        "bytes": 9498,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/content-patterns.md",
+        "sha256": "eec028be84aa9cfa3cca229d35002dc70a806fcb5e2f868bbed11f72e6af1ceb",
+        "bytes": 11738,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/domain-dev-replies.md",
+        "sha256": "dcce65460840849d34bcd5e0929a76ab1d785eb64d59ba0a196ed26a5b515fca",
+        "bytes": 2857,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/domain-postmortems.md",
+        "sha256": "41ae1c5215df8b2173a92e71720e0f14035d9c39c36fdf0bc550b701400cf7db",
+        "bytes": 2709,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/domain-release-notes.md",
+        "sha256": "2e0d08c1c2db0d157de8d3d2f927713068a95027c7fd07e1d50d8d16948b5534",
+        "bytes": 2110,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/domain-tech-articles.md",
+        "sha256": "f0061b085fec0a078f26393fbbc6c18ff09c6663f1d98b5f2660e64866278bd6",
+        "bytes": 3268,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/domain-tickets.md",
+        "sha256": "e7e0fd380f547599370caef1293ba1ecdab8ce998594032d483f80d9458374e4",
+        "bytes": 1811,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/edit-trace.md",
+        "sha256": "e8e564433f8adbcac744dfcb63b2f5110a7f4c45c880c9500d378322d37239de",
+        "bytes": 4129,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/false-positives.md",
+        "sha256": "62c14125917266d2d06d66d62a8fd85355d8505db55680ab6b244414288b0718",
+        "bytes": 20563,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/language-patterns.md",
+        "sha256": "a8dd7d5409c1fe8c004c8c6874fcd81c83732e1fcb01c83c5502c9f86053fb1b",
+        "bytes": 11928,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/language-ru.md",
+        "sha256": "015790dd05a9628649e0a39ed960df58cc7e8bf1256a4f89809710e0d26f71ed",
+        "bytes": 8200,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/lexicon.md",
+        "sha256": "cd744d1dceadc62d732ba84ceb469477ee016592d653c95d7a7663e3c278f184",
+        "bytes": 11584,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/llm-fingerprints.md",
+        "sha256": "6d80047aadc29711b361c57f8cf1f18a9855975f48731103bebfd317d89506a0",
+        "bytes": 29511,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/source-fabrication.md",
+        "sha256": "b52b026293a7f2b6aa302ea3e22ee1df3c04d0b543e2edef2b260c62a1327223",
+        "bytes": 7464,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/sources.md",
+        "sha256": "ff5751d2f3cbf56d0b97b25405e38feaf23d8f140331ab7f210d16a8f3f3da31",
+        "bytes": 11457,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/spelling-variants.md",
+        "sha256": "25172def485d9f60cd5d13c6372be7862600a1654e50d49959a4766bb5dce0f0",
+        "bytes": 4530,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/structural-style-patterns.md",
+        "sha256": "0283f5bd1320eb5790816bbb3e8613fc8b269b49eb718284f33de14cd41b584a",
+        "bytes": 9937,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/references/structure-pass.md",
+        "sha256": "6b8b4d84514e7595211391740c858c852407c498c307bb0495d308fb7caf53f5",
+        "bytes": 8852,
+        "executable": false
+      },
+      {
+        "path": "skills/awesome-humanize-en/SKILL.md",
+        "sha256": "e0f7c2860ae5b0e57cf15c54151e6e6fd2c06de5e17ac4dda09ff2f05866ae18",
+        "bytes": 32256,
+        "executable": false
+      },
+      {
         "path": "skills/awesome-performance-audit/evals/eval_queries.json",
         "sha256": "cf7eae56f739d34e0fd0d133145fae52f04bbcea764068d95b0a6e6baadc563d",
         "bytes": 3155,
@@ -709,6 +862,121 @@ const LLM_UPSTREAM_SKILL_SOURCES = [
         "path": "skills/interview-me/SKILL.md",
         "sha256": "ace4b675999bb504593d572e0f73f3d7e803ad6fddf318445598c82c11939db2",
         "bytes": 15080,
+        "executable": false
+      }
+    ]
+  },
+  {
+    "id": "steve",
+    "repository": "SteveVitali/agent-skills",
+    "revision": "e981ec57d487a2c41d416672483b5a4df15b1233",
+    "skills": [
+      "address-pr-comments",
+      "self-review"
+    ],
+    "files": [
+      {
+        "path": "LICENSE",
+        "sha256": "75ad88f48e3f55b4909cdcd144b28c44f15a39dad44642195476272836844bc5",
+        "bytes": 1069,
+        "executable": false
+      },
+      {
+        "path": "skills/address-pr-comments/scripts/fetch-unresolved-threads.sh",
+        "sha256": "58e475fd640324cb62384446a7399de93be5b81e571dd520508b07139925cb6f",
+        "bytes": 2700,
+        "executable": true
+      },
+      {
+        "path": "skills/address-pr-comments/SKILL.md",
+        "sha256": "6d3262f16e380d9d27e033af8e64541ce4ac06baac8b5ed6988f1a0b09d5d6fd",
+        "bytes": 8760,
+        "executable": false
+      },
+      {
+        "path": "skills/self-review/checklists/general.md",
+        "sha256": "83be5de3390ee5e4709e8083edfa8b1f2f6593f04c6a0ac2133015710bae0c64",
+        "bytes": 2045,
+        "executable": false
+      },
+      {
+        "path": "skills/self-review/scripts/verify.sh",
+        "sha256": "21c1ea5cbd71d14bdd11b7558a52a8539658f0d27035220e8a54625b41bbed0c",
+        "bytes": 6489,
+        "executable": true
+      },
+      {
+        "path": "skills/self-review/SKILL.md",
+        "sha256": "be0cc797217f8fa78b25031bc1c84f4c31a60e6eb669f8961fc9ce1a16eb4a1e",
+        "bytes": 13643,
+        "executable": false
+      }
+    ]
+  },
+  {
+    "id": "arjun",
+    "repository": "arjunprabhulal/agent-skills",
+    "revision": "42dd24080fce6d731d00e2a1134f398c3da4171b",
+    "skills": [
+      "devops/ci-pipelines"
+    ],
+    "files": [
+      {
+        "path": "LICENSE",
+        "sha256": "3a9cf254e155282014880e9569b9039bc17ce6a43919df23741cf14d24481244",
+        "bytes": 1072,
+        "executable": false
+      },
+      {
+        "path": "skills/devops/ci-pipelines/SKILL.md",
+        "sha256": "00858f9eb52bded4a4c7e047437f5a6425ea95cdeb2baa6449e991e92b53dbba",
+        "bytes": 5091,
+        "executable": false
+      }
+    ]
+  },
+  {
+    "id": "anthropic",
+    "repository": "anthropics/skills",
+    "revision": "ca45fc496a3436251f191354091d557da31c15b5",
+    "skills": [
+      "internal-comms"
+    ],
+    "files": [
+      {
+        "path": "skills/internal-comms/examples/3p-updates.md",
+        "sha256": "087e4363c0f3513728a7e695eeb9ead5c3ecd12a4681b59340691180e65b68fc",
+        "bytes": 3274,
+        "executable": false
+      },
+      {
+        "path": "skills/internal-comms/examples/company-newsletter.md",
+        "sha256": "30f81cfbdb03858a006169c72169024089c7c5d3d32611d337782da4f38c86b5",
+        "bytes": 3295,
+        "executable": false
+      },
+      {
+        "path": "skills/internal-comms/examples/faq-answers.md",
+        "sha256": "5ecd3356cd6666937f2ebefa753253edfdbdca15e368d07baf398bfcced72484",
+        "bytes": 2366,
+        "executable": false
+      },
+      {
+        "path": "skills/internal-comms/examples/general-comms.md",
+        "sha256": "4d3a4bb198a77626bcf018e96b2b45a2dbabed172d4ade0fcd70d23ae8a47a47",
+        "bytes": 602,
+        "executable": false
+      },
+      {
+        "path": "skills/internal-comms/LICENSE.txt",
+        "sha256": "bc6b3af2f331cbc7fb0da1344efb2cbe5877a31498b4d70dbc7000f3405a1362",
+        "bytes": 11345,
+        "executable": false
+      },
+      {
+        "path": "skills/internal-comms/SKILL.md",
+        "sha256": "067b7587a344a928fc6534ef66b1bcd591fc7c26d207ea7ca3334aeb678d6475",
+        "bytes": 1511,
         "executable": false
       }
     ]

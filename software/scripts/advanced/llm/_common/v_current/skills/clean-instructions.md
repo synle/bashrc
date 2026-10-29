@@ -2,6 +2,13 @@
 
 Argument: $ARGUMENTS (optional paths or glob; if empty or unexpanded, use the scope in the request, otherwise the repo's complete source guidance corpus).
 
+## Upstream editorial component
+
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md` and `<<UPSTREAM_KHASKY>>/skills/awesome-document-style/SKILL.md` completely.
+Reuse upstream editorial passes only; the Sy checklist below owns corpus inventory, semantic preservation, deduplication, source ownership, budgets, regeneration, and deployment.
+Do not delete an unverified policy, rename a referenced heading, or rewrite technical payloads because an editorial pass calls them unsupported or generic.
+Flag the evidence gap and preserve meaning until the owner resolves it. Shared writing and sentence-limit rules remain authoritative.
+
 ## When to use
 
 Reduce context load after additions, resolve duplicate or stale guidance, and move conditional reference behind pointers when compression cannot meet the budget.
@@ -39,6 +46,9 @@ Reduce context load after additions, resolve duplicate or stale guidance, and mo
 Inventory repo rules, shared/on-demand instructions, local/deployed skill sources, agent definitions, and deployment seams in scope. Count characters against declared budgets. Mark each file read fully, partially, or not read; a header scan is not a semantic audit.
 
 ### 2. Hunt no-ops, sentence by sentence
+
+Apply the upstream clarity, artifact, specificity, and language passes within the files selected by the inventory, subject to every named Sy rule below.
+Do not adopt optional style or lexicon rules that conflict with repository house style or technical meaning.
 
 Apply the **no-op test**: does this sentence add behavior beyond another authoritative rule? Cut repeated rationale and examples that teach no additional boundary. Model defaults or upstream silence alone do not prove a local rule obsolete; verify local evidence before removing it.
 

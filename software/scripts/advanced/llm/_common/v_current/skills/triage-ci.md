@@ -2,6 +2,15 @@
 
 Argument: $ARGUMENTS (optional — a run URL, a run ID, a workflow name, or a branch. If empty, take the most recent failing run on the default branch.)
 
+## Upstream diagnostic components
+
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md`, `<<UPSTREAM_ARJUN>>/skills/devops/ci-pipelines/SKILL.md`, and `<<UPSTREAM_SUPERPOWERS>>/skills/systematic-debugging/SKILL.md` completely.
+Apply upstream CI reproducibility, failure evidence, pinning, and secret-boundary guidance to the resolved failing run.
+Use systematic debugging for reproduction, localization, and a single root-cause hypothesis after collecting the first failure.
+The controller below retains run lookup, last-green comparison, cause classes, rollback decisions, and latest-run proof.
+Do not redesign an otherwise healthy pipeline, quarantine tests, provision environments, or publish because a component skill suggests it.
+Shared repository rules and Execution routing govern workspace selection when the generic reproduction example below differs.
+
 ## When to use
 
 - The default branch is red and there is no PR to babysit.
@@ -78,7 +87,7 @@ git -C "$WT" switch --detach <first-red-sha>  # only after confirming the worktr
 
 A specific SHA is the one case `worktree_create` does not cover — it takes a branch, not a commit — so create the branch worktree first, then reset inside that worktree. The layout stays identical either way.
 
-Run the same command the failing CI step ran, matching its environment as closely as the local machine allows (same runtime version, same env vars, `CI=true` — many suites change behavior under it).
+Apply the upstream systematic-debugging investigation to the same command the failing CI step ran, matching its environment as closely as the local machine allows (same runtime version, same env vars, `CI=true` — many suites change behavior under it).
 
 If it will not reproduce locally, the difference _is_ the bug: OS, runtime version, an env var, a missing secret, clean-checkout state, cache, parallelism, or test ordering. Chase that difference rather than concluding "works on my machine".
 

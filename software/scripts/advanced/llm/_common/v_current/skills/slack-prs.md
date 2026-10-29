@@ -2,6 +2,13 @@
 
 Argument: $ARGUMENTS (optional — the PR author to filter by: a GitHub username, a full name, or empty.)
 
+## Upstream writing component
+
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md`, `<<UPSTREAM_ANTHROPIC>>/skills/internal-comms/SKILL.md`, and its `examples/general-comms.md` before drafting.
+Reuse upstream clarity and audience-aware writing only after the verified PR collection below.
+Audience is the team, purpose is requesting review, and tone is concise; the exact Slack template and attribution rules below supply the format.
+Do not repeat intake questions already answered by those defaults, change PR grouping, or send/post the draft.
+
 ## Resolving the author
 
 1. If `$ARGUMENTS` is empty, whitespace, or one of `me`/`mine`/`self`, filter by the current user (`--author=@me`) — this is the default.
@@ -29,7 +36,7 @@ Argument: $ARGUMENTS (optional — the PR author to filter by: a GitHub username
    b. Dependency order — if PR A must merge before PR B (e.g. B's branch is based on A's branch, or B's description references A), put A first.
    c. `createdAt` ascending — oldest PR first, newest last.
 
-4. **Compose a short Slack message** (plain text, copy-pasteable — no tables, no markdown headers):
+4. **Render through the upstream writing component using the exact local contract. Compose a short Slack message** (plain text, copy-pasteable — no tables, no markdown headers):
 
    ```
    Hi team, can I have a review on these PRs? 🙏

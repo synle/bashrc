@@ -2034,16 +2034,20 @@ function linkSharedLLMSkills() {
  * `<shared-skills-folder>/<name>/SKILL.md`, prunes retired ones, then symlinks the
  * result into every CLI skills folder.
  *
- * Called by all four setup scripts. Writing the same bytes from each is
- * intentional and safe — the content is byte-identical, so whichever CLI runs
- * first does the work and the rest are no-ops. That keeps every CLI independently
- * able to repair the shared folder without one of them being a prerequisite.
+ * Configured client setup scripts share this entry point. Before publishing
+ * adapters, it installs or verifies immutable upstream resources and the shared
+ * adapter contract. Initial installation downloads public pinned files; later
+ * runs verify existing bytes and reuse them without network access.
  *
  * Frontmatter (`name` + `description`) is generated here rather than stored in
- * the repo source: adding it upstream would break the first-line `[Sy] ` marker
- * that orphan detection relies on.
+ * the repo source so the first-line `[Sy] ` ownership marker remains intact.
+ * No upstream script executes during deployment. Private client artifacts stay
+ * protected by the existing link and retirement ownership checks.
  *
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Resolves after dependency checks, body writes, and linking.
+ * @throws {Error} On invalid dependency metadata, unsafe/corrupt resource state,
+ * download failure, or required filesystem operations; adapters are not published
+ * when dependency verification fails.
  */
 async function deploySharedLLMSkills() {
   warnAboutLegacyLLMFolders();

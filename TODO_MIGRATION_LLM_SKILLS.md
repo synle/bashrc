@@ -6,7 +6,7 @@ Replace generic custom Sy workflow bodies with reviewed upstream skills, while p
 
 ## Status and scope
 
-**Status: seven primary source adapters implemented; six component integrations and live deployment pending.** This document records the replacement audit and implementation checklist; it is not new standing agent guidance.
+**Status: all thirteen requested source integrations implemented; live deployment and agent compliance remain pending.** This document records the replacement audit and implementation checklist; it is not new standing agent guidance.
 
 No skill migration, installation, retirement, deployment, commit, push, merge, or release is authorized by this checklist alone.
 
@@ -46,7 +46,7 @@ The requested delivery has two commits. Source implementation and isolated check
 - [x] Primary adapters: debugging, dependency bumps, RFCs, test gaps, calibrated interviews, repository onboarding, and plan execution.
 - [x] Shared dependency installer: pinned revisions, complete selected resource inventories, exact SHA-256/size checks, immutable folders, and offline reuse.
 - [x] Isolated proof: exact resource bytes, script modes without execution, malformed metadata, corruption, symbolic links, dry-run, repeatability, and all eight primary dependency bindings.
-- [ ] Component integrations: instruction cleanup, PR reconciliation, CI triage, cross-agent migration, PR Slack drafts, and standup summaries.
+- [x] Component integrations: instruction cleanup, PR reconciliation, CI triage, cross-agent migration, PR Slack drafts, and standup summaries.
 - [ ] Live deployment and client reload after credential approval; repeat deployment and actual agent behavior remain unverified.
 
 The first focused adapter suite passed 29 tests. The dependency inventory contains 109 resources across the three primary providers.
@@ -54,6 +54,11 @@ The first `make precommit` run passed 4,755 tests and failed only the unchanged 
 That known failure remains unresolved and is not reported as a successful gate. Live deployment and executable-resource approval remain pending.
 Retained local differences include dependency batching/pins without new cooldowns, existing-plan pressure calibration, missing-only documentation, and the original publication/state controller.
 The requested second group excludes `sy-review-pr`; its independent audit item stays pending.
+
+Primary implementation commit: `3db94b7f71fa9df471ced3192d1938f78214951c`. The second source change integrates the six requested components and extends the manifest to six providers and 148 resources.
+Focused registry, adapter, deployment, writing-rule, rollback, and budget checks passed 109 tests. Nested provider roots and per-skill licenses are supported without changing command discovery.
+The earlier full gate remains red only for the known curl formatter failure; no later source or isolated test result is presented as a green full gate.
+Rollback restores the component change before the primary infrastructure change, followed by approved redeployment. Immutable upstream folders are retained rather than deleted automatically.
 
 ## Completed source retirements
 
@@ -119,9 +124,18 @@ The mapping below defines the proposed upstream owner and the behavior still req
 - [x] Migrate `sy-onboard-repo` after resolving its listed adaptation and gap.
 - [x] Migrate `sy-execute-plan` after resolving its listed adaptation and gap.
 
-### Partial matches and operational remainder
+### Requested component integrations
 
-- [ ] Integrate the 7 partial matches only for their verified components; preserve or explicitly retire the rest of each operation.
+- [x] `sy-clean-instructions`: upstream editorial passes; local semantic checklist, ownership, budgets, generation, and deployment retained.
+- [x] `sy-pr-reconciliation-pass`: upstream thread reasoning; caller scope, CI classification, single batch, sync, publication, and replies retained.
+- [x] `sy-triage-ci`: upstream CI/debugging principles; failed-run resolution, first-error evidence, last-green comparison, rollback, and latest-run proof retained.
+- [x] `sy-migrate-cross-agent-skills-and-context`: upstream context Merge mode; scoped skill moves, consumer audit, symlinks, discovery, and local commit retained.
+- [x] `sy-slack-prs`: upstream communication rendering; PR collection, readiness, ordering, attribution, and fixed Slack format retained.
+- [x] `sy-standup`: upstream communication rendering; repository/author/date evidence, outcome grouping, release distinction, and output modes retained.
+- [ ] Evaluate `sy-review-pr` separately; it was not included in the requested second commit.
+
+### Operational remainder
+
 - [ ] Record a keep, adapt, or retire decision for each of the 12 remaining skills without a verified equivalent.
 - [ ] Keep deterministic operational behavior in small guarded tools where appropriate rather than reproducing lengthy command procedures in each skill.
 - [ ] Audit every consumer before removing or renaming a skill body, alias, registry entry, or compatibility path.
@@ -139,7 +153,7 @@ The mapping below defines the proposed upstream owner and the behavior still req
 - [ ] Verify caller-selected feedback scope never widens silently.
 - [ ] Verify concurrent PR work does not collide through fixed temporary filenames.
 - [ ] Verify durable state remains recoverable under the chosen retention contract.
-- [ ] Verify unavailable snapshots fail visibly rather than silently reverting to an old custom body.
+- [x] Verify invalid, missing, corrupt, or linked resource state fails visibly in isolated deployment fixtures rather than silently restoring old workflow text.
 - [ ] Run scoped formatting and affected registry, budget, loader, and behavior checks under repository validation rules.
 - [ ] Obtain any required Secret Handling approval before deployment; deploy twice and verify stable counts with no stale-removal churn.
 - [ ] Record per-alias rollback and actual verification evidence before retiring original bodies.

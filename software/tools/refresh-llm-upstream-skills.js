@@ -56,6 +56,9 @@ const SOURCES = [
       "awesome-performance-audit",
       "awesome-code-standards",
       "awesome-claims-audit",
+      "awesome-document-style",
+      "awesome-humanize-en",
+      "awesome-grammar-check",
     ],
   },
   {
@@ -63,6 +66,24 @@ const SOURCES = [
     repository: "addyosmani/agent-skills",
     revision: "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
     skills: ["interview-me"],
+  },
+  {
+    id: "steve",
+    repository: "SteveVitali/agent-skills",
+    revision: "e981ec57d487a2c41d416672483b5a4df15b1233",
+    skills: ["address-pr-comments", "self-review"],
+  },
+  {
+    id: "arjun",
+    repository: "arjunprabhulal/agent-skills",
+    revision: "42dd24080fce6d731d00e2a1134f398c3da4171b",
+    skills: ["devops/ci-pipelines"],
+  },
+  {
+    id: "anthropic",
+    repository: "anthropics/skills",
+    revision: "ca45fc496a3436251f191354091d557da31c15b5",
+    skills: ["internal-comms"],
   },
 ];
 
@@ -122,7 +143,12 @@ async function inventorySource(source) {
       throw new Error(`Missing upstream skill: ${source.id}/${skill}`);
   }
   const license = allFiles.find((entry) => /^(LICENSE|LICENSE\.md|LICENSE\.txt)$/.test(entry.path));
-  if (!license) throw new Error(`Missing repository license: ${source.repository}`);
+  if (
+    !license &&
+    !source.skills.every((skill) => allFiles.some((entry) => new RegExp(`^skills/${skill}/LICENSE(?:\\.md|\\.txt)?$`).test(entry.path)))
+  ) {
+    throw new Error(`Missing repository or per-skill license: ${source.repository}`);
+  }
   const selected = allFiles.filter(
     (entry) => entry === license || source.skills.some((skill) => entry.path.startsWith(`skills/${skill}/`)),
   );

@@ -2,6 +2,13 @@
 
 Argument: $ARGUMENTS (optional — a period like `today`, `yesterday`, `week`, `2w`, `month`, `since 2026-05-01`, or a date range. Add `all` to include every author, `slack` for a paste-ready message, or a repo name to scope to one. Default: `week`, your work only, terminal format.)
 
+## Upstream writing component
+
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md` and `<<UPSTREAM_ANTHROPIC>>/skills/internal-comms/SKILL.md` completely.
+Use its appropriate update-format reference only after the Git/GitHub evidence collection below; use `examples/general-comms.md` when no specialized format applies.
+The selected period, author, terminal/Slack mode, outcome groups, and local length rules remain authoritative.
+Do not replace evidence gathering with a writing interview, invent impact, merge session-history claims into shipped work, or publish the summary.
+
 ## When to use
 
 - Standup, weekly sync, or a status update.
@@ -79,6 +86,9 @@ Within each group, order by impact, not by timestamp. A one-line fix that unbloc
 Collapse mechanical noise: fifteen dependency bumps are one line ("15 dependency bumps"), not fifteen.
 
 ### 4. Write it
+
+Render the collected evidence through the upstream communication guidance, preserving the local outcome groups and requested mode.
+Audience, purpose, and tone already established by the request or the defaults above do not require another intake round.
 
 One line per item: what changed and why it mattered, in plain language, followed by the full link. Not the PR title verbatim — a title is written for reviewers who have the diff open, and a standup reader does not.
 
