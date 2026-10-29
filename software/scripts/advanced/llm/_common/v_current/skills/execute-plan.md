@@ -2,7 +2,15 @@
 
 ## Purpose
 
-Proxy plan implementation to the existing task loop, then complete the shared PR publication milestones. Do not introduce another task engine or PR scheduler.
+Keep the existing task-loop and publication controller, but delegate each implementation piece to the installed upstream execution procedure. Do not introduce another task engine or PR scheduler.
+
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md` and `<<UPSTREAM_SUPERPOWERS>>/skills/executing-plans/SKILL.md` completely before acting.
+Use upstream task execution, test-first discipline, and verification within each authorized Sy loop item.
+The local controller below owns state location, iteration/stall bounds, publication ordering, feedback, and final completion.
+
+Do not run upstream workspace/ledger helpers that assume `.superpowers` paths, delete durable state at finish, or automatically delegate a reviewer.
+Keep task briefs and progress in the selected Sy plan. Apply shared Execution routing and user permissions rather than upstream placement or autonomous-ruling defaults.
+Never enter the upstream finish/merge/discard flow; the publication controller and explicit user authority govern those operations.
 
 Argument: $ARGUMENTS — the plan file path, optionally followed by `max=<n>`. If absent or unexpanded, use the explicitly selected plan from the request; otherwise ask for its path and stop.
 
@@ -29,7 +37,8 @@ Skill selection alone does not grant publication authority. Honor local-only req
 
 ### 2. Implementation — execute, sync, and push reviewable pieces
 
-- Apply loop Phase 1 with publication inserted before its verification substep: reread durable state, implement exactly one piece, and publish as soon as it is reviewable.
+- Apply loop Phase 1 with publication inserted before its verification substep: reread durable state, execute exactly one piece through the upstream procedure, and publish as soon as it is reviewable.
+  Preserve authorized implementation-before-validation checkpoints when upstream ordering differs; repository-required gates and safety still win.
   Then verify the piece and save progress before the next iteration; verification must not delay the implementation push.
 - At each reviewable implementation checkpoint, commit only task hunks, delegate sync through the shared sync-PR-branch workflow, and push immediately for early feedback.
   Follow the shared **Implementation checkpoint**: defer formatting, lint, syntax checks, tests, coverage, and ordinary failure repairs until after this push.

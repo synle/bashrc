@@ -748,11 +748,17 @@ One `SKILL.md` is shared across CLIs — write to the open Agent Skills lowest c
 
 ### 13.1 The global `/sy-*` corpus — one registry, never a per-CLI list
 
-Repo-local skills are separate from the machine-wide `/sy-*` corpus. Exactly two files
-to touch: `_common/v_current/skills/<name>.md` (behavior) and `LLM_COMMAND_DEPLOY_MAP` /
+Repo-local skills are separate from the machine-wide `/sy-*` corpus. Command behavior and inventory live in
+`_common/v_current/skills/<name>.md` (behavior) and `LLM_COMMAND_DEPLOY_MAP` /
 `LLM_COMMAND_RETIRED_NAMES` in `llm-common.js` (add/rename/retire). Every CLI's
 `setup.js` reads that map via `// SOURCE software/scripts/advanced/llm/llm-common.js`;
 keys are extension-less so one map serves file- and folder-based CLIs.
+
+Upstream-backed bodies retain only local differences and name immutable provider resources through generated path tokens.
+`software/tools/refresh-llm-upstream-skills.js` owns provider selections and pins; regenerate `software/metadata/llm-upstream-skills.common.js`, never edit it manually.
+The shared `llm-upstream.common.js` deployer verifies exact bytes before publishing adapters and never executes downloaded code.
+Provider revisions live outside discovery roots under the shared LLM home's `upstream/`; preserve their complete selected folders, licenses, and relative resources.
+Read the shared adapter contract before applying upstream procedure. A dependency reference never grants wider execution or publication authority.
 
 PR scheduling lives in the restored single/batch babysit and review workflows.
 Each dispatcher owns its clock and invokes single-pass workers; there is no shared scheduler skill.

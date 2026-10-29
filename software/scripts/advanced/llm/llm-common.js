@@ -845,6 +845,8 @@ function resolveOpencodeAgentConfig(providersArray = []) {
  */
 const LLM_SHARED_ROOT_FOLDER = process.env.LLM_ROOT_FOLDER;
 
+// SOURCE software/scripts/advanced/llm/llm-upstream.common.js
+
 // --- Deployed-doc path placeholders ---
 
 /**
@@ -874,6 +876,7 @@ const LLM_SHARED_ROOT_FOLDER = process.env.LLM_ROOT_FOLDER;
  */
 const LLM_DOC_PATH_PLACEHOLDERS = {
   "<<LLM_ROOT_FOLDER>>": LLM_SHARED_ROOT_FOLDER,
+  ...getLLMUpstreamSkillPlaceholders(),
 };
 
 /**
@@ -2044,6 +2047,7 @@ function linkSharedLLMSkills() {
  */
 async function deploySharedLLMSkills() {
   warnAboutLegacyLLMFolders();
+  await deploySharedLLMUpstreamSkills();
 
   fs.mkdirSync(LLM_SHARED_SKILLS_FOLDER, { recursive: true });
 

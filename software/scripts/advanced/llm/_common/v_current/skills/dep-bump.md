@@ -1,142 +1,54 @@
 [Sy] Upgrade dependencies safely with changelog review, exact production pins, and recorded deprecations. Use the shared fast-track path for eligible early PR publication; complete required verification afterward.
 
-Argument: $ARGUMENTS (optional — a package name, a list, `outdated` to survey everything, `security` for advisories only, or `patch` / `minor` / `major` to scope by bump size. If empty, survey and propose. Add `loop` to work the list to empty through `/sy-loop` — see **Loop mode**.)
+Argument: $ARGUMENTS (package names, `outdated`, `security`, or `patch` / `minor` / `major`). If empty, survey and propose.
+An explicit `loop` token, optionally with `max=<n>`, selects the bounded task loop after the initial survey.
 
-## When to use
+## Purpose
 
-- A security advisory names a dependency you ship.
-- Routine maintenance to stop the version gap from compounding.
-- A dependency is blocking a feature or a runtime upgrade.
-- Dependabot / Renovate opened a bump you need to actually verify rather than rubber-stamp.
-
-## Hard rules
-
-Apply Risky Changes for runtime major/minor changelogs, local verification, and exact production pins. Patch/dev-only changelogs may be skipped; the class table below specifies checks. Record every new deprecation in the PR body. Lockfile-only refreshes skip the bump-specific review, not repo-required validation.
-
-- **Read the changelog and link it in the PR body** — Step 3 applies Risky Changes to every intervening version.
-- **Run the required local verification.** Use the class table and Step 6. Shared **Fast-track PRs** in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` permits eligible publication before these checks; repository-required gates still apply.
-- **Pin exact versions on production dependencies.** Apply Risky Changes; a lockfile is not an exception to its pinning requirement.
-- **Note every new deprecation warning in the PR body.** Capture warnings in Step 6.
-
-- **One dependency per commit** whenever a bump is major, or minor on a runtime dep. Batching six upgrades into one commit means the revert is all-or-nothing and the bisect is useless. Batch only patch-level and dev-only bumps.
-- **Never upgrade to fix a bug you have not diagnosed.** "Maybe the new version fixes it" is a guess wearing a version number, and it swaps one unknown for a much larger one. Diagnose first (see the Debugging Discipline rules), then upgrade if the changelog says so.
-
-## Loop mode
-
-An explicit `loop` token (optionally with `max=<n>`) runs Steps 1–2 once, then works the proposed bump order through `/sy-loop` instead of upgrading in one sweep. Strip the token before surveying.
-
-- **Remaining list** — the Step 1 order (advisories, then majors one at a time, then batched patches), one commit-sized unit per line: one package for a major or a production minor, one batch for patch / dev-only. Bumps you recommended **not** doing stay out of the list and go under out-of-scope.
-- **Check command** — the full local test suite, plus the ecosystem's outdated / audit count for the in-scope packages. The starting number is that count.
-- **One iteration = one unit:** changelog read and linked, bump pinned, full suite green, deprecations recorded, then commit. A red suite is fixed or the bump reverted inside that iteration — never carried to the next.
-- **Stop, don't retry,** when a major needs a migration the changelog does not cover, or when a bump needs a runtime / language version change; both are separate work.
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md` and `<<UPSTREAM_KHASKY>>/skills/awesome-dependency-upgrade/SKILL.md` completely.
+Use its inventory, changelog-driven migration, lockfile review, verification, and rollback procedure with these Sy policy differences.
 
 ## Steps
 
-### 1. Survey
+- Resolve repository identity, discover the existing package manager, and survey resolved versions, advisory status, production/development class, target versions, and declarations.
+- Report the inventory and proposed order before editing: advisories first, then isolated majors and production minors, then eligible patch/development batches.
+- Use the upstream upgrade procedure. Do not adopt release-age cooldowns unless the repository or user requires them; preserve existing priority by advisory impact and migration readiness.
+- Pin production dependencies exactly. A lockfile does not replace the declaration pin.
+- Every major gets its own commit and PR when publication is authorized. Every production minor gets its own commit; batch only patch-level or development-only changes.
+- Read and link every intervening major or production-minor changelog and migration guide. Patch/development changelogs may be skipped; lockfile-only refreshes skip bump-specific review, not repository checks.
+- Find actual affected consumers for removals, renames, changed defaults, and behavioral changes. Apply migration steps with the bump, never as an unspecified follow-up.
+- Record new deprecations and peer warnings verbatim, with applicable fixes or explicit deferred risk.
 
-Resolve `owner/repo` first (see the Repo Identification rules). Then, whichever applies:
+### Verification and publication differences
 
-```bash
-npm outdated || yarn outdated || pnpm outdated
-pip list --outdated
-go list -u -m all
-cargo outdated
-bundle outdated
-```
+Use `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` for Execution routing, Fast-track PRs, and publication permissions.
+Eligible early publication may precede optional setup and local verification, but never required repository gates or safety checks.
 
-And the advisory view, which changes priority:
+Verification covers a locked clean install in an isolated environment, build, type-check, full suite, and an application smoke path using the dependency.
+Reuse caches; do not erase existing environments or global caches. Capture warnings and distinguish baseline failures from bump failures.
 
-```bash
-npm audit --json | head -50
-pip-audit
-govulncheck ./...
-cargo audit
-gh api repos/<owner>/<repo>/dependabot/alerts --jq '.[] | {package: .dependency.package.name, severity: .security_advisory.severity, summary: .security_advisory.summary}'
-```
+Local-only work never publishes. Authorized PRs include versions/class, reason, changelog links, applicable breakage and consumer evidence, migration, warnings, actual checks, and rollback limits.
+Use `BREAKING:` only for changes observable by this repository's consumers.
+Automerge is opt-in, offered once for dependency-only work, never for a major; upstream bot-PR defaults grant no permission.
 
-Report a table before touching anything: package, current, latest, bump size, prod-or-dev, advisory-or-not. Then propose an order — advisories first, then majors one at a time, then batched patches — and say which ones you recommend **not** doing yet and why.
+### Loop mode
 
-### 2. Classify each bump
+Read `<<LLM_ROOT_FOLDER>>/skills/sy-loop/SKILL.md` and hand it the proposed commit-sized units, with advisories first.
+One unit is one major, one production minor, or one eligible batch. Excluded bumps stay out of scope.
+Use the full suite and the in-scope outdated/advisory enumeration as proof. Changelog, pin, warnings, and verification requirements remain unchanged per unit.
 
-| Class                      | Treatment                                                                  |
-| -------------------------- | -------------------------------------------------------------------------- |
-| Patch, dev-only            | Batch. Lockfile refresh, run the suite once for the batch.                 |
-| Patch, production          | Batch. Changelog optional; full suite required.                            |
-| Minor, dev-only            | Batch cautiously — a formatter or linter minor can churn every file.       |
-| Minor, production          | Own commit. Changelog required. Full suite required.                       |
-| Major, anything            | Own commit, own PR. Changelog + migration guide required. Assume breakage. |
-| Advisory fix               | Highest priority. Take the smallest bump that clears the advisory.         |
-| Runtime / language version | Its own change entirely — not a dependency bump. Expect CI matrix edits.   |
+## Safety
 
-### 3. Read the changelog — actually read it
+Never:
 
-Find the real one: `CHANGELOG.md` in the repo, GitHub Releases, or the migration guide a major usually ships.
+- Upgrade as a speculative bug fix, force peer resolution, hand-merge lockfiles, or silently change runtime/language versions.
+- Execute lifecycle scripts, codemods, release/publish workflows, or irreversible data changes without the applicable source review and authority.
+- Force-push, enable automerge, or publish because an upstream skill suggests it.
 
-```bash
-gh release view --repo <dep-owner>/<dep-repo> <version>
-gh release list --repo <dep-owner>/<dep-repo> --limit 20
-```
+Stop for a runtime/language change or an undocumented migration requiring judgment.
+Fix or safely reverse a failed unit; report a blocker instead of carrying an unexplained red upgrade forward.
 
-Crossing several versions at once means reading **every** intervening entry, not just the newest — the breaking change is usually in the middle. Extract, and carry into the PR body: breaking changes, new deprecations, changed defaults (the quietest source of production surprises), dropped runtime versions, and any required migration step.
+## Verification
 
-If no changelog exists at all, that is itself a finding: say so, and diff the tags to see what moved.
-
-### 4. Check your own usage
-
-A breaking change only matters if you touch the part that broke. For each breaking item, grep the actual call sites:
-
-```bash
-git grep -n "<removed-api>"
-git grep -n "from ['\"]<package>" | head -30
-```
-
-Report which breaking changes apply to this repo and which do not. This is the step that turns "major bump, scary" into "major bump, we use three functions, none changed".
-
-### 5. Apply one change at a time
-
-```bash
-npm install --save-exact <pkg>@<version>
-pip install '<pkg>==<version>'   # then update the manifest
-go get <pkg>@<version> && go mod tidy
-cargo update -p <pkg> --precise <version>
-```
-
-Commit the lockfile with the manifest, always, in the same commit. Apply the migration steps the changelog listed — do not defer them to "a follow-up"; a half-migrated dependency is a worse state than either version alone.
-
-### 6. Verify locally, in this order
-
-For eligible fast-track work, create the PR through Step 7 before optional environment setup and these checks.
-Then return here, complete applicable verification, and update the PR with actual results and warnings.
-Do not report unrun checks as passed; eligibility does not waive verification, changelog review, exact pins, or migration safety.
-
-1. Verify a clean install in an isolated environment using the repo's lockfile and shared cache. Do not delete global caches or an existing environment to manufacture a clean run; follow Worktree dependencies and Destructive Commands.
-2. Build.
-3. Type-check.
-4. **Full test suite**, not the targeted one.
-5. Start the app / run the binary and exercise the path that uses this dependency. A green suite with an unbootable app is a coverage gap, not a pass.
-6. Capture new warnings — deprecations, peer-dependency complaints, resolution warnings. These go in the PR body verbatim.
-
-If anything fails, do not paper over it. Either fix the usage per the migration guide, or report that this bump needs work and stop — an upgrade abandoned with an honest reason is a good outcome.
-
-### 7. PR
-
-Follow the standard PR rules. The body must carry:
-
-- **What moved** — `<pkg> <old> → <new>`, prod or dev.
-- **Why now** — advisory, blocker, or maintenance.
-- **Changelog link**, plus the breaking-changes list and, for each, whether this repo is affected (with the grep evidence from Step 4).
-- **Migration applied** — what you changed, or "none required".
-- **New warnings** — verbatim, or "none".
-- **Verification** — the exact commands run and their results, including the clean install and the app-boot check.
-- **Rollback** — the revert commit, and any data or config change that would _not_ be undone by it.
-
-Prefix the title `BREAKING:` when the upgrade changes behavior this repo's own consumers can observe. A dependency major that is invisible to consumers is not a breaking change for you.
-
-Automerge is opt-in and may be offered once for a dependency-only diff — but never for a major bump, and never without an explicit yes.
-
-### 8. Report
-
-- Table of what was bumped, what was skipped, and why.
-- Breaking changes that applied versus that did not.
-- Deprecations recorded for next time.
-- Anything left undone: bumps you recommend deferring, migrations that need a human decision, tests that were already failing before you started (say so explicitly — never let a pre-existing failure be mistaken for one your bump caused, or vice versa).
+Report upgraded, pinned, deferred, and rejected candidates; applicable breaking changes; recorded deprecations; exact checks and results; smoke-path evidence; rollback limits; and remaining risks.
+Honor execution limits and never present skipped verification as passed.

@@ -35,6 +35,30 @@ them, so a placeholder there would never expand. The `llmInstructionsSplit.budge
 build on a hardcoded path in a deployed source, on a placeholder that survives resolution,
 and on a deployed doc read with bare `readText`.
 
+### Upstream-backed adapters
+
+Selected Sy skills read upstream procedure from immutable local provider folders and retain only their local contracts.
+The generated provider manifest contains no Sy command list; `LLM_COMMAND_DEPLOY_MAP` remains the one command registry.
+
+`llm-upstream.common.js` installs each selected provider revision under the shared LLM home's `upstream/<provider>/<revision>/` before publishing adapters.
+It verifies every resource's size and SHA-256, preserves exact bytes and script modes, and never executes downloaded resources.
+Verified existing revisions work offline. Corrupt, missing, or linked existing resources fail visibly rather than being overwritten or silently replaced.
+Provider folders are not exposed as native skills, so existing Sy aliases remain the discovery surface.
+
+Adapter source uses generated `UPSTREAM_...` path tokens through `readLLMDocSource` and reads the shared `upstream/ADAPTERS.md` contract.
+Relative scripts and references resolve from the upstream folder. Sibling skill names require actual local reads, not assumed slash-command inheritance.
+User scope, repository rules, shared safety, and explicit local differences remain authoritative; upstream references grant no permissions.
+
+To update dependencies, review provider revisions and selected sibling folders in `software/tools/refresh-llm-upstream-skills.js`, then regenerate:
+
+```bash
+node software/tools/refresh-llm-upstream-skills.js
+```
+
+Review generated pin/hash changes and affected workflow semantics before deployment. Existing revisions are retained; cleanup of old snapshots is a separate decision.
+Run focused loader/adapter tests and required repository checks. Live client setup still requires applicable credential approval and a second deployment for idempotency evidence.
+The isolated filesystem suite does not prove live agent compliance.
+
 Run the broad LLM preset with:
 
 ```bash

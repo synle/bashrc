@@ -6,7 +6,7 @@ Replace generic custom Sy workflow bodies with reviewed upstream skills, while p
 
 ## Status and scope
 
-**Status: upstream migration planning only; four source retirements completed.** This document records the replacement audit and implementation checklist; it is not new standing agent guidance.
+**Status: seven primary source adapters implemented; six component integrations and live deployment pending.** This document records the replacement audit and implementation checklist; it is not new standing agent guidance.
 
 No skill migration, installation, retirement, deployment, commit, push, merge, or release is authorized by this checklist alone.
 
@@ -38,6 +38,22 @@ The existing 30 source bodies totaled 546,118 bytes at the audit snapshot. The 5
 The 7 first-wave candidates accounted for only 51,176 bytes, or 9.4%. Replacing generic skills alone therefore leaves most custom orchestration text.
 
 These figures describe the audit baseline, not achievable savings or current runtime behavior.
+
+## Adapter implementation progress
+
+The requested delivery has two commits. Source implementation and isolated checks do not imply live client deployment or agent compliance.
+
+- [x] Primary adapters: debugging, dependency bumps, RFCs, test gaps, calibrated interviews, repository onboarding, and plan execution.
+- [x] Shared dependency installer: pinned revisions, complete selected resource inventories, exact SHA-256/size checks, immutable folders, and offline reuse.
+- [x] Isolated proof: exact resource bytes, script modes without execution, malformed metadata, corruption, symbolic links, dry-run, repeatability, and all eight primary dependency bindings.
+- [ ] Component integrations: instruction cleanup, PR reconciliation, CI triage, cross-agent migration, PR Slack drafts, and standup summaries.
+- [ ] Live deployment and client reload after credential approval; repeat deployment and actual agent behavior remain unverified.
+
+The first focused adapter suite passed 29 tests. The dependency inventory contains 109 resources across the three primary providers.
+The first `make precommit` run passed 4,755 tests and failed only the unchanged curl Markdown-formatting test at `software/tests/curlWrapperFormat.dispatch-and-fallback.spec.js:264`.
+That known failure remains unresolved and is not reported as a successful gate. Live deployment and executable-resource approval remain pending.
+Retained local differences include dependency batching/pins without new cooldowns, existing-plan pressure calibration, missing-only documentation, and the original publication/state controller.
+The requested second group excludes `sy-review-pr`; its independent audit item stays pending.
 
 ## Completed source retirements
 
@@ -82,26 +98,26 @@ Complete an item only when its implementation and acceptance evidence exist. Rec
 
 ### Shared adapter and ownership seam
 
-- [ ] Extend the existing single command registry to select local workflows or reviewed upstream skills; do not introduce a per-client skill list.
-- [ ] Define immutable local upstream snapshots and record source revision, skill folder, license, and required sibling resources.
-- [ ] Generate thin Sy adapters with matching folder/frontmatter names and explicit upstream loading.
-- [ ] Preserve upstream folder identity and relative dependencies instead of renaming an upstream folder and assuming discovery still works.
-- [ ] Keep universal safety and authorization in the existing shared instructions; retain only operation-specific differences in adapters.
+- [x] Keep the single Sy command registry and resolve adapter dependencies through one generated provider manifest; no per-client skill list was added.
+- [x] Define immutable local upstream snapshots and record source revision, skill folder, license, and required sibling resources.
+- [x] Generate thin Sy adapters with matching folder/frontmatter names and explicit upstream loading.
+- [x] Preserve upstream folder identity and relative dependencies instead of renaming an upstream folder and assuming discovery still works.
+- [x] Keep universal safety and authorization in the existing shared instructions; retain only operation-specific differences in adapters.
 - [ ] Review executable dependency permissions, network behavior, and lifecycle effects before use.
-- [ ] Reuse the current shared deployment/linking boundary and preserve foreign files, folders, skills, and links.
-- [ ] Define a reviewed upstream-update process; do not fetch mutable remote workflow content during ordinary skill invocation.
+- [x] Reuse the current shared deployment/linking boundary and preserve foreign files, folders, skills, and links.
+- [x] Define a reviewed upstream-update process; do not fetch mutable remote workflow content during ordinary skill invocation.
 
 ### First-wave workflow cores
 
 The mapping below defines the proposed upstream owner and the behavior still requiring adaptation.
 
-- [ ] Migrate `sy-debug` after resolving its listed adaptation and gap.
-- [ ] Migrate `sy-dep-bump` after resolving its listed adaptation and gap.
-- [ ] Migrate `sy-test-gap` after resolving its listed adaptation and gap.
-- [ ] Migrate `sy-rfc` after resolving its listed adaptation and gap.
-- [ ] Migrate `sy-plan-grill-me` after resolving its listed adaptation and gap.
-- [ ] Migrate `sy-onboard-repo` after resolving its listed adaptation and gap.
-- [ ] Migrate `sy-execute-plan` after resolving its listed adaptation and gap.
+- [x] Migrate `sy-debug` after resolving its listed adaptation and gap.
+- [x] Migrate `sy-dep-bump` after resolving its listed adaptation and gap.
+- [x] Migrate `sy-test-gap` after resolving its listed adaptation and gap.
+- [x] Migrate `sy-rfc` after resolving its listed adaptation and gap.
+- [x] Migrate `sy-plan-grill-me` after resolving its listed adaptation and gap.
+- [x] Migrate `sy-onboard-repo` after resolving its listed adaptation and gap.
+- [x] Migrate `sy-execute-plan` after resolving its listed adaptation and gap.
 
 ### Partial matches and operational remainder
 
