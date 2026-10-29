@@ -137,13 +137,10 @@ describe.each(["dark", "light"])("active %s templates", (mode) => {
     expect(contrast(colors[role], colors.selectedBg)).toBeGreaterThanOrEqual(4.5);
   });
 
-  // Decorative markers use the user-approved subtle shades; normal-text contrast requirements remain separate.
-  it.each([
-    ["SpecialKey", "#b8b8b8"],
-    ["NonText", "#8f9e92"],
-  ])("distinguishes Vim %s markers from ordinary text without bold or underline", (group, color) => {
+  // All decorative whitespace markers reuse one existing neutral per appearance, separate from normal-text contrast requirements.
+  it.each(["SpecialKey", "NonText"])("uses shared neutral grey for Vim %s without bold or underline", (group) => {
     const { highlights } = read(`theme/sy/vim_${mode}.jsonc`);
-    expect(highlights[group].foreground).toBe(color);
+    expect(highlights[group].foreground).toBe({ dark: "#cccccc", light: "#cacaca" }[mode]);
     expect(highlights[group].background).toBe("NONE");
     expect(highlights[group].style).toBe("NONE");
     expect(contrast(highlights[group].foreground, highlights.Normal.background)).toBeLessThan(

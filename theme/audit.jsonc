@@ -125,7 +125,7 @@ Original measurements remain explicitly historical, not current failures.
       "priority": "P2",
       "status": "resolved_in_code",
       "title": "Data-driven Vim groups, terminal colors, and Lightline",
-      "resolution": "Native renderer input owns spelling/menu/conceal/quickfix and other audited mappings, ANSI colors, and Lightline data; MatchParen uses a readable foreground. SpecialKey uses the approved #b8b8b8 grey for whitespace and literal carriage returns; NonText uses #8f9e92 muted sage for line endings. Native Vim 9.1 highlight readback verifies both appearances.",
+      "resolution": "Native renderer input owns spelling/menu/conceal/quickfix and other audited mappings, ANSI colors, and Lightline data; MatchParen uses a readable foreground. SpecialKey and NonText share existing light-grey palette roles for all whitespace and line endings: light.gray (#cacaca) and dark.white (#cccccc). No separate marker palette remains. Native Vim 9.1 highlight readback verifies both appearances.",
       "evidence": [
         "theme/sy/_palette_dark.jsonc",
         "theme/sy/_palette_light.jsonc",

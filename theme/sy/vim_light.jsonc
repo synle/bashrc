@@ -151,12 +151,12 @@ Edit marker roles, then run make format_build_include; do not edit generated lit
       "style": "NONE",
     },
     "NonText": {
-      "foreground": "#8f9e92", // {{light.lineEndingMarker}}
+      "foreground": "#cacaca", // {{light.gray}}
       "background": "NONE",
       "style": "NONE",
     },
     "SpecialKey": {
-      "foreground": "#b8b8b8", // {{light.whitespaceMarker}}
+      "foreground": "#cacaca", // {{light.gray}}
       "background": "NONE",
       "style": "NONE",
     },

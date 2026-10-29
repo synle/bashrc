@@ -46,8 +46,6 @@ Variants and template literals are rendered by software/tools/build-include.js.
     "over": "brightBlack",
     "alpha": 0.25,
   },
-  "whitespaceMarker": "#b8b8b8",
-  "lineEndingMarker": "#8f9e92",
   "terminalBlack": {
     "ref": "brightGray",
   },
