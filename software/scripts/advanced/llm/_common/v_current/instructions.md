@@ -112,7 +112,7 @@ Governs every other section.
 - Before multi-file, multi-step, or long work, state goal, changes, observable done condition, assumptions, and deliberate omissions. Skip only single-file, single-concern, unambiguous edits.
 - Keep working after stating assumptions; a visible assumption is vetoable. Stop only when two readings change files, blast radius, public contract, or irreversible steps.
 - Checkpoint at phase boundaries, not every step. End with skipped work and its reason: blocked, out of scope, not reproducible, or deferred.
-- **Milestone updates.** Main agents and subagents follow `<<LLM_ROOT_FOLDER>>/instructions/progress-updates.md` for concise, explicit status reports at task start and phase boundaries.
+- **Milestone updates.** Main agents and subagents follow `<<LLM_ROOT_FOLDER>>/instructions/progress-updates.md` for concise status at start and phase boundaries.
 
 ## Terminal Title Status
 

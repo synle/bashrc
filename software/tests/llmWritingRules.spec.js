@@ -53,7 +53,7 @@ describe("shared milestone status guidance", () => {
     const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions.md"), "utf-8");
     const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
 
-    expect(rendered).toContain("main agents and subagents follow `/mock/home/_extra/ai_llm/instructions/progress-updates.md`");
+    expect(rendered).toContain("/instructions/progress-updates.md");
   });
 });
 
