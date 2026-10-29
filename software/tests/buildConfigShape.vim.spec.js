@@ -41,8 +41,8 @@ describe(".build/vim-theme-dark", () => {
       highlight Pmenu guifg=#e8e8e8 guibg=#161616 gui=NONE cterm=NONE
       highlight PmenuSel guifg=#e8e8e8 guibg=#1b3c5e gui=NONE cterm=NONE
       highlight Folded guifg=#8f8f8f guibg=#161616 gui=NONE cterm=NONE
-      highlight NonText guifg=#6e6e6e guibg=NONE gui=NONE cterm=NONE
-      highlight SpecialKey guifg=#6e6e6e guibg=NONE gui=NONE cterm=NONE
+      highlight NonText guifg=#3d3d3d guibg=NONE gui=NONE cterm=NONE
+      highlight SpecialKey guifg=#3d3d3d guibg=NONE gui=NONE cterm=NONE
       highlight StatusLine guifg=#e8e8e8 guibg=#161616 gui=NONE cterm=NONE
       highlight StatusLineNC guifg=#8f8f8f guibg=#161616 gui=NONE cterm=NONE
       highlight TabLine guifg=#e8e8e8 guibg=#161616 gui=NONE cterm=NONE
@@ -120,8 +120,8 @@ describe(".build/vim-theme-light", () => {
       highlight Pmenu guifg=#1e1e1e guibg=#ececec gui=NONE cterm=NONE
       highlight PmenuSel guifg=#1e1e1e guibg=#96c6fa gui=NONE cterm=NONE
       highlight Folded guifg=#5a5a5a guibg=#ececec gui=NONE cterm=NONE
-      highlight NonText guifg=#262626 guibg=NONE gui=NONE cterm=NONE
-      highlight SpecialKey guifg=#262626 guibg=NONE gui=NONE cterm=NONE
+      highlight NonText guifg=#cacaca guibg=NONE gui=NONE cterm=NONE
+      highlight SpecialKey guifg=#cacaca guibg=NONE gui=NONE cterm=NONE
       highlight StatusLine guifg=#1e1e1e guibg=#ececec gui=NONE cterm=NONE
       highlight StatusLineNC guifg=#5a5a5a guibg=#ececec gui=NONE cterm=NONE
       highlight TabLine guifg=#1e1e1e guibg=#ececec gui=NONE cterm=NONE
