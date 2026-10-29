@@ -219,6 +219,14 @@ The restored review and babysit workflows do not expose the removed readiness-go
 Read the active single-PR skill for current repair, posting, approval, and automerge rules.
 A quiet probe does not replace keepalive or final verification.
 
+### Execution routing and publication
+
+Before implementation, review, or babysitting, read `_common/v_current/instructions-pr-workflow.md` → Execution routing and Fast-track PRs.
+Before review setup, also read Review setup is evidence-driven there.
+These sections own placement defaults, safe existing-checkout reuse, minimal provisioning, and authorized early publication.
+Do not restore unconditional background workers, worktrees, or environment setup in individual skills.
+Local-only requests remain local; publication and watch-loop authority are separate.
+
 ### Retired named workers
 
 No named PR worker personas are deployed. Run the review or babysit skill directly; fan-out workflows select available workers by behavior.
@@ -457,32 +465,48 @@ block (`software/tests/syCommandsDispatcher.spec.js`).
 
 ### Memory promotion bridge (Claude → other CLIs)
 
-Claude Code auto-loads `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` and every record it links on every turn. The other three CLIs have no equivalent layer — every session starts cold. To bridge, snapshot Claude's per-project memory into a single managed "Persistent Context" appendix and upsert into the other three CLIs' user-level instructions files:
+`memory-bridge.standalone.js` reads each available `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` and its linked Markdown records.
+It renders one managed "Persistent Context" appendix across those projects.
+Missing project-memory folders or an empty inventory produce a no-op, not reconstructed session history.
 
 ```bash
 ./run --files=memory-bridge.standalone.js
 ```
 
-Standalone — runs on demand, NOT on every `./run --preset=llm` (a
-snapshot freezes whatever Claude's memory looked like at run time). Writes to
-`~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`
-between BEGIN/END markers keyed by the source script path. Idempotent. Skips
-Claude itself (already loads memory natively) and skips any target whose
-instructions file isn't on disk yet (run the CLI's `setup.js` first).
+The standalone bridge runs only on demand, not through `./run --preset=llm`.
+Its snapshot freezes source memory at run time; it does not synchronize live conversations.
+`_getTargets()` currently lists only these destinations:
 
-### Per-repo `AGENTS.md` → `CLAUDE.md` symlink
+- `~/.copilot/copilot-instructions.md`
+- `~/.gemini/GEMINI.md`
+- `~/.config/opencode/AGENTS.md`
 
-Claude Code reads per-repo `CLAUDE.md`. The other three look for `AGENTS.md` at
-the repo root (OpenCode falls through to the global `~/.claude/CLAUDE.md` only,
-not per-repo). To get Copilot, Gemini, and per-repo OpenCode the same rules
-without maintaining two copies, drop an `AGENTS.md` symlink next to every
-`CLAUDE.md`:
+Pi is not a bridge target; do not assume its instructions contain this appendix.
+Claude is also excluded to avoid duplicating its source memory.
+Missing destination files are skipped; client setup can create them before a later bridge run.
+Existing destinations receive backups and an idempotent BEGIN/END block keyed by the source script path.
+
+Review scope and sensitive content before copying cross-project memory into global instructions.
+For a documentation audit, follow `DEV.md` → Reconciling local memory and guidance instead of running this deployment.
+
+### Repository context compatibility links
+
+Use `AGENTS.md` as canonical shared repository context when creating or consolidating guidance.
+Preserve distinct existing rules before consolidation.
+In this repository, `CLAUDE.md -> AGENTS.md` and `GEMINI.md -> CLAUDE.md` retain one policy body.
+
+The legacy compatibility helper below serves repositories that still keep their source in `CLAUDE.md`:
 
 ```bash
 ./run --files=repo-agents-symlink.standalone.js
 ```
 
-Standalone — runs on demand, NOT on every `./run --preset=llm`. Walks `$HOME/git/*/` by default; override / extend with comma-separated paths via `BASHRC_AGENTS_REPO_ROOTS=~/git,~/work`. Idempotent. Never clobbers an existing regular file or a foreign symlink — those are reported and skipped.
+It creates a relative `AGENTS.md -> CLAUDE.md` link only when `AGENTS.md` is absent and `CLAUDE.md` exists.
+It is not a canonical-context migration and does not reverse this repository's link direction.
+Existing regular files and foreign symlinks are reported and preserved; an already-correct link is an idempotent no-op.
+The standalone helper runs on demand, not through `./run --preset=llm`.
+It scans immediate repository children under `$HOME/git/` by default.
+Set `BASHRC_AGENTS_REPO_ROOTS=~/git,~/work` to supply a comma-separated root list.
 
 ---
 

@@ -1080,7 +1080,7 @@
         "mode": "dark",
         "scheme": "sy-dark",
         "lightlineScheme": "sy",
-        "sourceSha256": "c157da1d772bd5736490f2183af49e719480d37cc069e456fb9bb34a01677af6",
+        "sourceSha256": "36ac91caad285784b4b6a7619a235bac87dfc2eed5bfe25a8a2764c7571fa8dc",
         "groups": {
           "SignifySignChange": {
             "foreground": "#5ca0d7",
@@ -1206,7 +1206,7 @@
         "mode": "dark",
         "scheme": "sy-dark",
         "lightlineScheme": "sy",
-        "sourceSha256": "c157da1d772bd5736490f2183af49e719480d37cc069e456fb9bb34a01677af6",
+        "sourceSha256": "36ac91caad285784b4b6a7619a235bac87dfc2eed5bfe25a8a2764c7571fa8dc",
         "groups": {
           "SignifySignChange": {
             "foreground": "#5ca0d7",

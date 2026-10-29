@@ -7,7 +7,7 @@ The Vite + React webapp lives under `webapp/`; tests run on Vitest.
 ## Quick Start
 
 ```bash
-npm ci || npm install --no-fund --prefer-offline   # deps
+npm ci --ignore-scripts     # locked deps; review lifecycle scripts before running separately
 npm run dev                # webapp dev server
 make setup_local_full      # full profile setup
 npm test                   # unit tests
@@ -195,6 +195,28 @@ Implicit fuzzy abbreviations are no longer supported. Replace `--preset=editor` 
 For automation without a terminal, provide exact preset names or unambiguous file paths, or pass `--skip-prompt` to accept every eligible match.
 Both SteamOS setup installer calls pass `--skip-prompt` so matching-name confirmation cannot interrupt those delegations.
 
+## Chromium browser launchers
+
+`software/scripts/advanced/browser-launch-options.common.js` owns shared Brave, Chrome, and Edge flags and their Bash/PowerShell rendering.
+Keep feature toggles in one `--disable-features` argument; retain browser-specific options and Linux-only VA-API selection.
+`--disable-web-security` remains commented out for local debugging, never enabled for normal browsing.
+
+Consumers are `software/scripts/advanced/browser-launchers.js`, `software/scripts/mac/_only.js`, and the Windows shortcut template rendered by `windows/_init.js`.
+macOS creates signed `Browser Brave.app`, `Browser Chrome.app`, and `Browser Edge.app` launchers without replacing the original browser apps.
+Existing unmanaged launcher paths are skipped.
+Legacy `* With Flags.app` removal requires a successfully signed replacement plus matching legacy bundle and launcher markers.
+Windows updates existing Brave, Chrome, and Edge shortcuts; it does not create or pin shortcuts.
+
+Focused fixture checks:
+
+```bash
+npx vitest run --config vitest.config.js software/tests/scripts/advanced/browser-launchers.spec.js software/tests/macBrowserLaunchers.spec.js software/tests/windowsBraveShortcuts.spec.js
+```
+
+Read Installer fixture isolation before changing these tests.
+Fixtures verify generated output, not live Finder launching, signing, Windows COM behavior, or installed-browser feature support.
+The separate SteamOS manual setup retains its own launch path; see SteamOS manual setup above.
+
 ## Purging local Git branches and tags
 
 The shell helper `purge_branches_and_tags` operates only on the current repository:
@@ -226,6 +248,30 @@ Instruction imports reject credential-shaped and `.secret.` paths, including res
 Sources must remain inside home and contain nonempty regular-file content.
 Invalid markers retain existing content and emit diagnostics.
 The shared instruction budget covers the common block; custom documents increase the final client file size.
+
+## Reconciling local memory and guidance
+
+Use this workflow when auditing repository instructions against prior local work:
+
+1. Verify the remote, current HEAD, working tree, and index before interpreting historical records.
+2. Read `AGENTS.md`, `ARCHITECTURE.md`, `DEV.md`, and applicable nested rules.
+   Read the cleanup checklist at `software/scripts/advanced/llm/_common/v_current/skills/clean-instructions.md` before editing guidance.
+3. Inspect relevant `~/_extra/ai_llm/plans/<repo>-<feature>.md` records and available project memory, including `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` when present.
+   Follow only task-relevant linked records; apply secret-path and approval rules before reading sensitive material.
+   Report missing memory without treating it as proof that no previous work exists.
+4. Treat plans, wrap-ups, and memory as leads, not current execution evidence.
+   Verify each proposed correction against current source, configuration, or command output.
+   Historical failures and timeouts are not fresh baselines; historical passes do not prove current checks pass.
+5. Give each fact one home.
+   Keep repository rules in `AGENTS.md` and implementation maps in `ARCHITECTURE.md`.
+   Keep development procedures here and LLM operational reference in `software/scripts/advanced/llm/llm.md`.
+   Personal work overlays and generated user-level instructions remain separate from repository guidance.
+6. Preserve compatibility links and edit canonical sources.
+   Check source paths, section references, named rules, before/after sizes, and the complete diff.
+   Use the Markdown-only validation path in `AGENTS.md` unless shared instruction sources or executable behavior also change.
+
+The on-demand memory bridge snapshots multiple projects into user-level context; it is not required for a repository documentation audit.
+Read `software/scripts/advanced/llm/llm.md` → Memory promotion bridge before considering that separate deployment.
 
 ## Testing
 
@@ -311,6 +357,20 @@ One config per suite:
 `getIndexFunction(name)` / `getIndexConstant(name)`; `fileSystem` and `fetchResponses`
 give in-memory mocks, auto-reset in `beforeEach`.
 
+### Installer fixture isolation
+
+The VM setup is not a complete filesystem sandbox.
+`software/tests/setup.js` starts `mockFs` from the real `fs` module, then overrides selected operations.
+Its `copyFileSync` override keeps `/Applications/` fixture copies in `fileSystem`; other paths fall through to real filesystem copying.
+Keep mocked source bytes and existence records inside the fixture; a missing mocked application source must fail rather than read installed host resources.
+Audit every filesystem and process seam used by a new installer fixture instead of assuming all operations are intercepted.
+
+Use isolated temporary roots for real native-process fixtures.
+Do not write into host installation or user-configuration folders to make a unit test pass.
+`software/tests/macBrowserLaunchers.spec.js` demonstrates in-memory browser bundles, icons, and ownership checks.
+
+### Test organization and execution
+
 When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touch
 `software/index.js` or `software/tools/build-include.js`, add or update unit tests.
 Keep every test spec at **300 lines or fewer**. If a spec grows beyond 300 lines,
@@ -319,7 +379,7 @@ split it by behavior into independently named `*.spec.js` files; never use numer
 Integration covers native Git/Delta, Vim, tmux, fuzzy-navigation, autocomplete VCS, browser behavior, and live URL reachability.
 Keep short configuration checks together, and split expensive behavior into independently scheduled files.
 The Git-default specs copy a private prepared repository per case; copies do not share mutable Git state.
-The convention-linter specs (one rule each) are listed in AGENTS.md §11.
+Before changing convention-specific behavior, read Enforced conventions below for the invariant and owning spec.
 
 The unit runner uses bounded Vitest fork workers and file parallelism. Keep tests independent:
 own fixtures and temp folders, no shared mutable state, no order assumptions. Use
@@ -345,6 +405,46 @@ partials, PowerShell templates, `.common.*`, or other SOURCE files.
 
 **VS Code debugging:** `.vscode/launch.json` has configs for the current script (via
 `software/.debug-runner.js`) and for Vitest.
+
+### Enforced conventions
+
+These convention-specific requirements supplement `AGENTS.md`; read the relevant entry before editing its source or test.
+Spec stems and families are relative to `software/tests/`, with `integration/` shown where applicable.
+
+- **`sectionMarkerStyle`** — No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`.
+- **`pathArrayValidation`** — `_X_PATHS` constants in `advanced/*.common.js` must be nonempty string arrays.
+  Each entry starts with `/`, `~`, or a drive letter.
+  Reject extglob prefixes, NUL, CR, LF, and TAB; rendered arrays must pass `bash -n`.
+- **`mirroredFunctionParity`** — `is_help_arg`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both.
+- **`guiDetection`** — `_detect_gui_flags` replayed against fake env: flags always `0`/`1`, ssh forces `is_gui=0`, mac/windows always GUI, no other flag leaks. Add a case whenever you touch display detection.
+- **`requiredBinariesNotInBackground`** — No `required` binary may use `install*PackageInBackground`; see `AGENTS.md` §8.
+- **`fzfTerminalSafety`** — `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm.
+- **`curlWrapperFormat`** — `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`.
+- **`editorKeybindings`** — No duplicate keybinding within a context across VS Code / Sublime / Zed sources.
+- **`editorThemes`** — Bind color markers to `COLOR_MAP`; resolve every `var()`; preserve contrast floors, monotonic ANSI ramps, and structurally identical dark/light shapes.
+  Re-measure the installed VS Code base theme because `tokenColorCustomizations` merges rather than replaces base tokens.
+  No unclaimed scope may fall below 7:1.
+- **`terminalThemes`** — Bind terminal palettes to `COLOR_MAP`, never app-local literals.
+  Ghostty (`theme/sy/ghostty_{dark,light}.jsonc`) and Termux (`theme/sy/termux_{dark,light}.jsonc`) markers must stay bound.
+  Include all 16 ANSI slots with legible, monotonic ramps; `termux-config.sh` must not resume writing `colors.properties`.
+- **`autocompleteSpecValidation`** — Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`.
+- **`generateCiBinaryList`** — `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`).
+- **`gitWorktreePath`** — Exercise `worktree-path` and `create-worktree` against a temporary repository, fake origin, and fake `$HOME`.
+  Layout is `$HOME/.worktrees/<owner>/<repo>/<sanitized-branch>`; derive owner/repo from the remote, never the folder name.
+  The branch slug replaces everything outside `[A-Za-z0-9._-]`.
+  Stdout contains only the path; never return the primary checkout or `-B`-reset a branch with unpushed commits.
+- **`gitAliasResolution`** — Every `git.gitconfig` alias (incl. generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` placeholder.
+- **`presets`** — `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles.
+- **`profileSyntax`** — Generated profiles must pass `bash -n` under PATH Bash and the oldest local Bash (`/bin/bash`, 3.2 on macOS).
+  Preserve size floors, unique BEGIN/END keys, standalone block parsing, clean sourcing including `CLAUDECODE=1`, and deduplicated PATH with `/usr/bin` and `/bin` intact.
+  Lint all shell files for nested command-substitution heredocs and `&>>`; see `AGENTS.md` §8.
+- **`profileShellSyntax`** — Recursively check `*.profile.bash` and `*.bash` under `software/scripts/` and `software/bootstrap/`, excluding `.ps1.bash`.
+  Files must pass `bash -n` under PATH Bash and the oldest local Bash.
+  Keep these checks in the fast default suite without requiring `.build/`.
+  Catch partial-edit failures such as deleting `function foo() {` while leaving its body and orphaned `}`.
+- **`filterFilesByOsGuard`** — Explicit `--files=` entries in an inactive OS folder are dropped, not run.
+- **`osDetection`** — Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.
+- **`integration/rawUrls`** — Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.
 
 ### Coverage
 

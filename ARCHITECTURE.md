@@ -24,6 +24,7 @@ CI regenerates build artifacts under `.build/`.
 | `tests/`                                        | Webapp utility tests outside the `software/tests/**/*.spec.js` default unit glob; do not count them as covered by `npm test`.                                                                                                                                 |
 | `.build/`                                       | Generated artifacts committed back by CI (editor configs, host files). Per-OS `profile_bashrc_<os>.sh` not tracked in git — mirrored to the `binary-cache` release, copied into `dist/` by publish for same-origin Pages fetch.                               |
 | `docs/`                                         | Topical knowledge bases (bash, git, CICD, Docker, K8s, OS notes).                                                                                                                                                                                             |
+| `.agents/skills/`                               | Canonical repository-local skills; `.claude/skills` is the compatibility link.                                                                                                                                                                                |
 | `assets/`                                       | Binary blobs + fonts used by installers.                                                                                                                                                                                                                      |
 
 ## Important Files
@@ -43,6 +44,29 @@ CI regenerates build artifacts under `.build/`.
 - **`install.sh`** — Public installer wrapper (`curl | bash`).
 - **`vitest*.config.js`** — Suite discovery and coverage ownership; `vitest.config.js` is the default unit configuration.
 - **`AGENTS.md` / `DEV.md` / `README.md`** — Rules / dev quick-start / user overview.
+
+## Source ownership
+
+Use these sources instead of maintaining another inventory or registry:
+
+- `software/metadata/presets.jsonc` owns named bundles; `run.sh` exports it as `PRESETS_JSON`.
+- `software/metadata/ci-binaries.json` owns required/warn binary checks; `software/tools/generate-ci-binary-list.js` renders the action's `ci-binary-checks` block.
+- `software/metadata/autocomplete.common.js` owns `DYNAMIC_TOKENS` and `expandSpecMacros`.
+- `software/metadata/script-list.config` is the canonical sorted script list.
+- `software/bootstrap/common-env.sh` owns `LIMITED_SUPPORT_OSES` and `ALL_OS_FLAGS`; build-time includes propagate them into `run.sh`.
+- `software/tools/build-include.js` owns BEGIN/END expansion and `{{map.key}}` theme bindings.
+- `software/scripts/advanced/browser-launch-options.common.js` owns shared Brave, Chrome, and Edge launch options.
+- `theme/sy/_palette_{dark,light}.jsonc` owns foundations and recipes; paired app templates own native-shaped bindings.
+- `vitest.config.js` owns default-suite discovery and coverage thresholds.
+- `$BASHRC_TEMP_DIR/run_timing.json` records per-script status and timing consumed by CI.
+
+## Browser launch-option flow
+
+The shared browser registry renders Bash launch arrays and PowerShell option maps.
+Shell launchers consume the arrays; macOS `_only.js` creates signed flags-only app bundles; Windows `_init.js` renders the existing-shortcut updater.
+The macOS browser registry owns launcher names and legacy identities; Windows preserves unrelated shortcuts and only updates supported browser entries.
+Read `DEV.md` → Chromium browser launchers for maintenance boundaries and focused checks.
+SteamOS manual setup remains a separate entry point rather than another consumer of this registry.
 
 ## Theme data flow
 

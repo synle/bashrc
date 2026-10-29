@@ -63,11 +63,10 @@ If any changes were lost (reverted by a hook, overwritten by a merge, or dropped
    ```
 
 3. Reapply only missing hunks from verified content. Preserve all legitimate later changes; never restore a whole file over them.
-4. Confirm the restore:
-
-   ```bash
-   make validate
-   ```
+4. Confirm the restore with the checks required by `AGENTS.md` → Validation cadence for the restored scope.
+   Run focused syntax and behavior checks for restored code; use Markdown formatting and reference checks for documentation-only restores.
+   Run `make precommit` when the scope requires the runtime gate.
+   Run `make validate` only when explicitly requested; routine heavier validation remains CI-owned.
 
 ### 5. Report results
 
@@ -93,6 +92,6 @@ If it is unclear whether a change is missing or was intentionally reverted by th
 Before declaring success, confirm and report:
 
 - every file from the session, each labelled intact / restored / conflict-resolved
-- `make validate` run after any restore, with its result quoted, not paraphrased
+- required scope-specific checks after any restore, with command output quoted and skipped checks explained
 - any change that could not be recovered, named explicitly rather than omitted
 - anything left in a conflicted or partial state
