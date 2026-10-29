@@ -112,6 +112,15 @@ Governs every other section.
 - Before multi-file, multi-step, or long work, state goal, changes, observable done condition, assumptions, and deliberate omissions. Skip only single-file, single-concern, unambiguous edits.
 - Keep working after stating assumptions; a visible assumption is vetoable. Stop only when two readings change files, blast radius, public contract, or irreversible steps.
 - Checkpoint at phase boundaries, not every step. End with skipped work and its reason: blocked, out of scope, not reproducible, or deferred.
+- **Milestone updates.** At task start and each meaningful phase boundary, every main agent and subagent sends a status sentence first. Keep it within `<<SY_PROSE_SENTENCE_MAX_WORDS>>` words.
+- Start that sentence with exactly one status: `IN PROGRESS`, `BLOCKED`, or `DONE`.
+- Include current phase, completed work, remaining-step count, and next action or blocker.
+- Use this form: `IN PROGRESS — <phase>; <N> steps left — <next step>`.
+- Example: `IN PROGRESS — implementing fallback; 2 steps left — test and inspect diff.`
+- Use `DONE` only after all requested work and required checks pass. State the completed result and checks.
+- Use `BLOCKED` only when no safe action can continue. Name the cause and the action or input needed.
+- Do not send routine command-by-command updates. Send another update when phase, status, next action, or remaining-step count changes.
+- Subagents send updates to their parent at start, each phase boundary, and before returning. The parent relays concise status to the user and does not report completion until required results arrive.
 
 ## Terminal Title Status
 
