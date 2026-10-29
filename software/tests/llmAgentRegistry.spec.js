@@ -1,4 +1,4 @@
-/** Filesystem regressions for retiring managed PR skills and workers without deleting private artifacts. */
+/** Filesystem regressions for retiring managed skills and PR workers without deleting private artifacts. */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { expandSourceMarkers, getIndexFunction } from "./setup.js";
 import fs from "fs";
@@ -19,6 +19,8 @@ const RETIRED_WORKERS = [
   "sy-agent-pr-babysitter",
   "sy-agent-pr-reviewer",
 ];
+/** @type {string[]} Unused skill names that must disappear from managed deployment. */
+const RETIRED_UNUSED_SKILLS = ["sy-maintenance-day", "sy-squash-unpushed", "sy-sync-and-clean-repo", "sy-sync-and-clean-repos"];
 
 /**
  * Loads production deployment functions into a test-owned filesystem home.
@@ -204,6 +206,50 @@ describe("retired PR guidance deployment", () => {
 
     expect(fs.readFileSync(path.join(privateFolder, "SKILL.md"), "utf-8")).toBe("Private workflow\n");
     expect(fs.readlinkSync(privateLink)).toBe(privateSource);
+    expect(fs.readFileSync(path.join(privateSource, "SKILL.md"), "utf-8")).toBe("Private linked workflow\n");
+  });
+
+  it.each(RETIRED_UNUSED_SKILLS)("retires unused %s and its owned links on repeat deployment", async (name) => {
+    /** @type {string} Legacy canonical skill folder, deliberately without a managed marker. */
+    const source = path.join(common.LLM_SHARED_SKILLS_FOLDER, name);
+    fs.mkdirSync(source, { recursive: true });
+    fs.writeFileSync(path.join(source, "SKILL.md"), "Legacy workflow without a marker\n");
+    for (const folder of common.LLM_SKILL_LINK_FOLDERS) {
+      fs.mkdirSync(folder, { recursive: true });
+      fs.symlinkSync(source, path.join(folder, name));
+    }
+
+    await common.deploySharedLLMSkills();
+    await common.deploySharedLLMSkills();
+
+    expect(fs.existsSync(source)).toBe(false);
+    expect(common.LLM_COMMAND_DEPLOY_MAP[name]).toBeUndefined();
+    expect(common.LLM_COMMAND_RETIRED_NAMES).toContain(name);
+    for (const folder of common.LLM_SKILL_LINK_FOLDERS) expect(fs.readdirSync(folder)).not.toContain(name);
+  });
+
+  it.each(RETIRED_UNUSED_SKILLS)("preserves private folders and foreign links named %s", async (name) => {
+    /** @type {string} Unmanaged real client folder sharing a retired name. */
+    const privateFolder = path.join(common.LLM_SKILL_LINK_FOLDERS[0], name);
+    /** @type {string} Foreign skill source outside the managed shared skills folder. */
+    const privateSource = path.join(home, "private-skill");
+    /** @type {string} Another client's foreign link sharing that retired name. */
+    const privateLink = path.join(common.LLM_SKILL_LINK_FOLDERS[1], name);
+    fs.mkdirSync(privateFolder, { recursive: true });
+    fs.mkdirSync(privateSource, { recursive: true });
+    fs.mkdirSync(path.dirname(privateLink), { recursive: true });
+    fs.writeFileSync(path.join(privateFolder, "SKILL.md"), "Private workflow\n");
+    fs.writeFileSync(path.join(privateSource, "SKILL.md"), "Private linked workflow\n");
+    fs.symlinkSync(privateSource, privateLink);
+    /** @type {number} Link identity proving repeated deployment leaves the foreign link intact. */
+    const firstLinkInode = fs.lstatSync(privateLink).ino;
+
+    await common.deploySharedLLMSkills();
+    await common.deploySharedLLMSkills();
+
+    expect(fs.readFileSync(path.join(privateFolder, "SKILL.md"), "utf-8")).toBe("Private workflow\n");
+    expect(fs.readlinkSync(privateLink)).toBe(privateSource);
+    expect(fs.lstatSync(privateLink).ino).toBe(firstLinkInode);
     expect(fs.readFileSync(path.join(privateSource, "SKILL.md"), "utf-8")).toBe("Private linked workflow\n");
   });
 

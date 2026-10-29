@@ -1683,7 +1683,6 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
   "sy-loop": "loop",
-  "sy-maintenance-day": "maintenance-day",
   "sy-merge": "merge",
   "sy-migrate-cross-agent-skills-and-context": "migrate-cross-agent-skills-and-context",
   "sy-onboard-repo": "onboard-repo",
@@ -1698,10 +1697,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-review-prs": "review-prs",
   "sy-rfc": "rfc",
   "sy-slack-prs": "slack-prs",
-  "sy-squash-unpushed": "squash-unpushed",
   "sy-standup": "standup",
-  "sy-sync-and-clean-repo": "sync-and-clean-repo",
-  "sy-sync-and-clean-repos": "sync-and-clean-repos",
   "sy-sync-pr-branch": "sync-pr-branch",
   "sy-test-gap": "test-gap",
   "sy-triage-ci": "triage-ci",
@@ -1751,6 +1747,11 @@ const LLM_SKILL_MARKERS = [LLM_SKILL_MARKER, "Sy Skill - "];
  * @type {string[]} deployed command names, no extension
  */
 const LLM_COMMAND_RETIRED_NAMES = [
+  // 2026-10-29: unused maintenance, local squash, and repository-cleanup skills retired.
+  "sy-maintenance-day",
+  "sy-squash-unpushed",
+  "sy-sync-and-clean-repo",
+  "sy-sync-and-clean-repos",
   // 2026-10-25: scheduler removed when restoring the pre-scheduler guidance.
   "sy-pr-loop",
   // Keep until the 2026-08-26 rename has cleared the three-month and rollout window.
