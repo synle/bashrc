@@ -20,7 +20,15 @@ const RETIRED_WORKERS = [
   "sy-agent-pr-reviewer",
 ];
 /** @type {string[]} Unused skill names that must disappear from managed deployment. */
-const RETIRED_UNUSED_SKILLS = ["sy-maintenance-day", "sy-squash-unpushed", "sy-sync-and-clean-repo", "sy-sync-and-clean-repos"];
+const RETIRED_UNUSED_SKILLS = [
+  "sy-maintenance-day",
+  "sy-squash-unpushed",
+  "sy-sync-and-clean-repo",
+  "sy-sync-and-clean-repos",
+  "sy-merge",
+  "sy-release",
+  "sy-close-stale-prs",
+];
 
 /**
  * Loads production deployment functions into a test-owned filesystem home.

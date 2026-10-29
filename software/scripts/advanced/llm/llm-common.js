@@ -1677,7 +1677,6 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-babysit-pr": "babysit-pr",
   "sy-babysit-prs": "babysit-prs",
   "sy-clean-instructions": "clean-instructions",
-  "sy-close-stale-prs": "close-stale-prs",
   "sy-create-pr": "create-pr",
   "sy-debug": "debug",
   "sy-dep-bump": "dep-bump",
@@ -1686,16 +1685,10 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
   "sy-loop": "loop",
-  "sy-merge": "merge",
   "sy-migrate-cross-agent-skills-and-context": "migrate-cross-agent-skills-and-context",
   "sy-onboard-repo": "onboard-repo",
   "sy-plan-grill-me": "plan-grill-me",
   "sy-pr-reconciliation-pass": "pr-reconciliation-pass",
-  // Single release entry-point. The command body checks $ARGUMENTS to decide
-  // official vs beta — no per-channel alias files anymore (the old
-  // /sy-release-{main,master,stable,official,beta} aliases were retired
-  // 2026-05-13; see LLM_COMMAND_RETIRED_NAMES below).
-  "sy-release": "release",
   "sy-review-pr": "review-pr",
   "sy-review-prs": "review-prs",
   "sy-rfc": "rfc",
@@ -1750,6 +1743,10 @@ const LLM_SKILL_MARKERS = [LLM_SKILL_MARKER, "Sy Skill - "];
  * @type {string[]} deployed command names, no extension
  */
 const LLM_COMMAND_RETIRED_NAMES = [
+  // 2026-10-29: unused merge, release, and stale-PR utility skills retired.
+  "sy-close-stale-prs",
+  "sy-merge",
+  "sy-release",
   // 2026-10-29: unused maintenance, local squash, and repository-cleanup skills retired.
   "sy-maintenance-day",
   "sy-squash-unpushed",
