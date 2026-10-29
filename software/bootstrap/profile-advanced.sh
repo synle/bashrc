@@ -1837,45 +1837,105 @@ function pwd2() {
 # so repeated profile loads leave the smart dispatcher callable.
 unalias diff 2> /dev/null || true
 
-# smart diff for files or git commits
+# Compare one tracked file at two commits through the existing file dispatcher.
+# Args: renderer mode, reverse flag (0/1), target file, sha1, optional sha2 (default HEAD).
+# Returns backend status; validation labels retain the original revision argument order.
+# Uses private snapshots; cleans terminal/failure snapshots and retains successful GUI inputs.
+# A subshell confines cleanup traps and umask changes to this invocation.
+function _diff_file_revisions() (
+  local mode="$1" reverse="$2" target_file="$3" sha1="$4" sha2="${5-HEAD}"
+  local tracked_file commit1 commit2 invalid=0
+  if ! type -P git > /dev/null; then
+    printf '%s\n' "diff: required command not found: git" >&2
+    return 127
+  fi
+  if [ "$(command git rev-parse --is-inside-work-tree 2> /dev/null)" != true ]; then
+    printf '%s\n' "diff: revision mode requires a Git-tracked file; current folder is not in a Git working tree." >&2
+    return 1
+  fi
+  # A literal pathspec still matches folder descendants, even when that folder is deleted.
+  if [ -z "$target_file" ] || [ -d "$target_file" ] \
+    || command git --literal-pathspecs ls-files --error-unmatch -- "$target_file/" &> /dev/null \
+    || ! IFS= read -r -d '' tracked_file < <(command git --literal-pathspecs ls-files --error-unmatch --full-name -z -- "$target_file" 2> /dev/null); then
+    printf 'diff: revision mode requires a Git-tracked file in the current repository: %s\n' "$target_file" >&2
+    return 1
+  fi
+
+  if ! commit1=$(command git rev-parse --verify --end-of-options "${sha1}^{commit}" 2> /dev/null); then
+    printf 'diff: sha1=%s is not a valid Git commit.\n' "$sha1" >&2
+    invalid=1
+  fi
+  if ! commit2=$(command git rev-parse --verify --end-of-options "${sha2}^{commit}" 2> /dev/null); then
+    printf 'diff: sha2=%s is not a valid Git commit.\n' "$sha2" >&2
+    invalid=1
+  fi
+  ((invalid)) && return 1
+
+  local snapshot_folder file1 file2 diff_status
+  umask 077
+  if ! snapshot_folder=$(mktemp -d "${TMPDIR:-/tmp}/diff-revisions.XXXXXX" 2> /dev/null); then
+    printf '%s\n' "diff: could not create revision snapshots." >&2
+    return 1
+  fi
+  file1="$snapshot_folder/sha1"
+  file2="$snapshot_folder/sha2"
+  trap 'command rm -f -- "$file1" "$file2"; command rmdir -- "$snapshot_folder"' EXIT
+  if ! command git cat-file blob "${commit1}:${tracked_file}" > "$file1" 2> /dev/null; then
+    printf 'diff: target_file=%s is not a file at sha1=%s.\n' "$target_file" "$sha1" >&2
+    return 1
+  fi
+  if ! command git cat-file blob "${commit2}:${tracked_file}" > "$file2" 2> /dev/null; then
+    printf 'diff: target_file=%s is not a file at sha2=%s.\n' "$target_file" "$sha2" >&2
+    return 1
+  fi
+
+  local renderer_args=("-$mode")
+  ((reverse)) && renderer_args+=(--reverse)
+  diff "${renderer_args[@]}" -- "$file1" "$file2"
+  diff_status=$?
+  if [ "$diff_status" -eq 0 ] && [ "$mode" != delta1 ] && [ "$mode" != delta2 ]; then
+    trap - EXIT
+    printf 'diff: revision snapshots retained: %s\n' "$snapshot_folder" >&2
+  fi
+  return "$diff_status"
+)
+
+# diff: smart diff for files or git commits
+# Args: leading renderer/reverse selectors, then files, file/revisions, hashes, or native/Git flags.
+# Leading -r/--reverse swaps comparison sides; -- ends wrapper option parsing.
+# Returns backend status (0 equal, 1 different for file diffs); errors are nonzero.
+# Revision modes read Git objects without modifying the index or working tree.
 function diff() {
-  local mode=delta1 mode_selected=false
-  case "${1:-}" in
-  -delta1)
-    mode_selected=true
+  local mode=delta1 mode_selected=false reverse=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+    -r | --reverse) reverse=1 ;;
+    -delta1 | -delta2 | -code | -winmerge)
+      mode="${1#-}"
+      mode_selected=true
+      ;;
+    -zed | -z)
+      mode=zed
+      mode_selected=true
+      ;;
+    -smerge | -sublime_merge)
+      mode=smerge
+      mode_selected=true
+      ;;
+    *) break ;;
+    esac
     shift
-    ;;
-  -delta2)
-    mode=delta2
-    mode_selected=true
-    shift
-    ;;
-  -code)
-    mode=code
-    mode_selected=true
-    shift
-    ;;
-  -zed | -z)
-    mode=zed
-    mode_selected=true
-    shift
-    ;;
-  -winmerge)
-    mode=winmerge
-    mode_selected=true
-    shift
-    ;;
-  -smerge | -sublime_merge)
-    mode=smerge
-    mode_selected=true
-    shift
-    ;;
-  esac
+  done
+  local git_reverse_args=()
+  ((reverse)) && git_reverse_args=(-R)
 
   if is_help_arg "${1:-}"; then
     printf '%s\n' "
       diff: smart diff for files or git commits
         diff file1 file2                 Delta one-column diff (file1 left, file2 right)
+        diff target_file sha1            file at sha1 (left) versus committed HEAD (right)
+        diff target_file sha1 sha2       file at sha1 (left) versus file at sha2 (right)
+        diff -r|--reverse [mode] ...     swap left and right before comparison
         diff -delta2 file1 file2         Delta two-column diff
         diff -code file1 file2           open in VS Code
         diff -zed|-z file1 file2         open in Zed
@@ -1885,6 +1945,15 @@ function diff() {
         diff [Delta mode] [Git args]     show tracked changes or Git diff options
         diff <diff flags> <files>        forward explicit flags to native diff
         diff help                        show this help
+
+        Revision modes require a Git-tracked file in the current repository.
+        Two operands use revision mode only when the second path does not exist.
+        Revisions must resolve to commits; both must contain the target file.
+        Renderer selectors also support revision modes. Use -- for leading-dash files.
+        Reverse flags and renderer selectors may appear in either order before operands.
+        With native flags, reverse requires two existing file operands at the end.
+        Terminal snapshots are removed; successful GUI snapshots remain under
+        \${TMPDIR:-/tmp}/diff-revisions.* for asynchronous readers; remove when done.
     "
     return 0
   fi
@@ -1894,22 +1963,93 @@ function diff() {
     option_ended=true
     shift
   fi
-  if [ "$mode" != delta1 ] && [ "$mode" != delta2 ]; then
-    if [ "$#" -ne 2 ]; then
-      printf '%s\n' "diff: editor mode requires exactly two files" >&2
-      return 2
+  # Unselected flags retain native diff behavior; selected Delta modes accept Git flags.
+  if [ "$mode" = delta1 ] || [ "$mode" = delta2 ]; then
+    if [ "$mode_selected" = false ] && [ "$option_ended" = false ]; then
+      case "${1:-}" in
+      -*)
+        local native_args=("$@") left_index right_index
+        if ((reverse)); then
+          left_index=$(($# - 2))
+          right_index=$(($# - 1))
+          if [ "$#" -lt 3 ] || [ ! -f "${native_args[left_index]}" ] || [ ! -f "${native_args[right_index]}" ]; then
+            printf '%s\n' "diff: --reverse with native flags requires two existing files at the end." >&2
+            return 2
+          fi
+          local native_left="${native_args[left_index]}"
+          native_args[left_index]="${native_args[right_index]}"
+          native_args[right_index]="$native_left"
+        fi
+        command diff "${native_args[@]}"
+        return $?
+        ;;
+      esac
+    elif [ "$mode_selected" = true ] && [ "$option_ended" = false ] && [ "$#" -gt 0 ]; then
+      case "$1" in
+      -*)
+        if [ "$mode" = delta2 ]; then
+          git -c delta.side-by-side=true diff "${git_reverse_args[@]}" "$@"
+        else
+          git -c delta.side-by-side=false diff "${git_reverse_args[@]}" "$@"
+        fi
+        return $?
+        ;;
+      esac
     fi
+  fi
+
+  # Keep whole-repository hash comparisons, but never override existing paths.
+  local hash_re='^[a-fA-F0-9]{4,64}$'
+  if [ "$#" -eq 2 ] && { [ "$mode" = delta1 ] || [ "$mode" = delta2 ]; } \
+    && [ ! -e "$1" ] && [ ! -L "$1" ] && [ ! -e "$2" ] && [ ! -L "$2" ] \
+    && [[ "$1" =~ $hash_re && "$2" =~ $hash_re ]] \
+    && git rev-parse --verify --end-of-options "$1^{commit}" &> /dev/null \
+    && git rev-parse --verify --end-of-options "$2^{commit}" &> /dev/null; then
+    ((reverse)) && set -- "$2" "$1"
+    printf '%s\n' "git diff $1 $2"
+    git diff "$1" "$2"
+    local diff_status=$?
+
+    local repo_url
+    repo_url=$(git config --get remote.origin.url 2> /dev/null)
+    if [ -n "$repo_url" ] && is_runnable_command open; then
+      repo_url="${repo_url#*:}"
+      repo_url="${repo_url%.git}"
+      repo_url="${repo_url#*github.com/}"
+      local compare_url="https://github.com/${repo_url}/compare/${1}...${2}"
+      printf '%s\n' "$compare_url"
+      open "$compare_url"
+    fi
+    return "$diff_status"
+  fi
+
+  if [ "$#" -eq 3 ] || { [ "$#" -eq 2 ] && [ ! -e "$2" ] && [ ! -L "$2" ]; }; then
+    _diff_file_revisions "$mode" "$reverse" "$@"
+    return $?
+  fi
+
+  if [ "$#" -gt 2 ] || { [ "$mode" != delta1 ] && [ "$mode" != delta2 ] && [ "$#" -ne 2 ]; }; then
+    printf '%s\n' "diff: expected file1 file2, target_file sha1 [sha2], or terminal Git arguments; see diff --help." >&2
+    return 2
+  fi
+  if [ "$#" -eq 2 ]; then
     file1=$1
     file2=$2
     if [ ! -f "$file1" ]; then
-      printf '%s\n' "File not found: $file1" >&2
+      printf 'diff: file1=%s is not an existing regular file.\n' "$file1" >&2
       return 1
     fi
     if [ ! -f "$file2" ]; then
-      printf '%s\n' "File not found: $file2" >&2
+      printf 'diff: file2=%s is not an existing regular file.\n' "$file2" >&2
       return 1
     fi
+    if ((reverse)); then
+      file1=$2
+      file2=$1
+    fi
+  fi
 
+  if [ "$mode" != delta1 ] && [ "$mode" != delta2 ]; then
     local editor_binary editor_args=()
     case "$mode" in
     code)
@@ -1938,109 +2078,48 @@ function diff() {
     return $?
   fi
 
-  # Unselected native flags retain diff behavior; selected Delta modes accept Git flags.
-  if [ "$mode_selected" = false ] && [ "$option_ended" = false ]; then
-    case "${1:-}" in
-    -*)
-      command diff "$@"
-      return $?
-      ;;
-    esac
-  elif [ "$mode_selected" = true ] && [ "$#" -gt 0 ]; then
-    case "$1" in
-    -*)
-      if [ "$mode" = delta2 ]; then
-        git -c delta.side-by-side=true diff "$@"
-      else
-        git -c delta.side-by-side=false diff "$@"
-      fi
-      return $?
-      ;;
-    esac
-  fi
-
-  if [ "$#" -eq 2 ] && [ -f "$1" ] && [ -f "$2" ]; then
-    if [ "$mode" = delta2 ]; then
-      git -c delta.side-by-side=true diff --no-index -- "$1" "$2"
-    else
-      git -c delta.side-by-side=false diff --no-index -- "$1" "$2"
-    fi
-    return $?
-  fi
-
   if [ "$#" -eq 2 ]; then
-    local file1_valid=false file2_valid=false
-    local hash_re='^[a-f0-9]{4,40}$'
-    local hash1_valid=false hash2_valid=false
-    [ -f "$1" ] && file1_valid=true
-    [ -f "$2" ] && file2_valid=true
-    if [[ "$1" =~ $hash_re ]] && git rev-parse --verify "$1" &> /dev/null; then hash1_valid=true; fi
-    if [[ "$2" =~ $hash_re ]] && git rev-parse --verify "$2" &> /dev/null; then hash2_valid=true; fi
-
-    if $file1_valid && ! $file2_valid; then
-      printf '%s\n' "File not found: $2" >&2
-      return 1
+    if [ "$mode" = delta2 ]; then
+      git -c delta.side-by-side=true diff --no-index -- "$file1" "$file2"
+    else
+      git -c delta.side-by-side=false diff --no-index -- "$file1" "$file2"
     fi
-    if ! $file1_valid && $file2_valid; then
-      printf '%s\n' "File not found: $1" >&2
-      return 1
-    fi
-    if $hash1_valid && $hash2_valid; then
-      printf '%s\n' "git diff $1 $2"
-      git diff "$1" "$2"
-      local diff_status=$?
-
-      local repo_url
-      repo_url=$(git config --get remote.origin.url 2> /dev/null)
-      if [ -n "$repo_url" ] && is_runnable_command open; then
-        repo_url="${repo_url#*:}"
-        repo_url="${repo_url%.git}"
-        repo_url="${repo_url#*github.com/}"
-        local compare_url="https://github.com/${repo_url}/compare/${1}...${2}"
-        printf '%s\n' "$compare_url"
-        open "$compare_url"
-      fi
-      return "$diff_status"
-    fi
-    if ! $hash1_valid && ! $file1_valid; then printf '%s\n' "File or hash not found: $1" >&2; fi
-    if ! $hash2_valid && ! $file2_valid; then printf '%s\n' "File or hash not found: $2" >&2; fi
-    return 1
-  fi
-
-  if [ "$#" -gt 2 ]; then
-    command diff "$@"
     return $?
   fi
 
   if [ "$#" -eq 1 ]; then
     if [ ! -f "$1" ]; then
-      printf '%s\n' "File not found: $1" >&2
+      printf 'diff: target_file=%s is not an existing regular file.\n' "$1" >&2
       return 1
     fi
     if git rev-parse --is-inside-work-tree &> /dev/null; then
       if git ls-files --error-unmatch -- "$1" &> /dev/null; then
         if [ "$mode" = delta2 ]; then
-          git -c delta.side-by-side=true diff -- "$1"
+          git -c delta.side-by-side=true diff "${git_reverse_args[@]}" -- "$1"
         else
-          git -c delta.side-by-side=false diff -- "$1"
+          git -c delta.side-by-side=false diff "${git_reverse_args[@]}" -- "$1"
         fi
         return $?
       fi
       if [ "$mode" = delta2 ]; then
-        git -c delta.side-by-side=true diff --no-index -- /dev/null "$1"
+        git -c delta.side-by-side=true diff "${git_reverse_args[@]}" --no-index -- /dev/null "$1"
       else
-        git -c delta.side-by-side=false diff --no-index -- /dev/null "$1"
+        git -c delta.side-by-side=false diff "${git_reverse_args[@]}" --no-index -- /dev/null "$1"
       fi
       return $?
     fi
-    command diff "$1"
+    if ((reverse)); then
+      command diff - "$1"
+    else
+      command diff "$1"
+    fi
     return $?
   fi
 
   if [ "$mode" = delta2 ]; then
-    git -c delta.side-by-side=true diff "$@"
+    git -c delta.side-by-side=true diff "${git_reverse_args[@]}" "$@"
   else
-    git -c delta.side-by-side=false diff "$@"
+    git -c delta.side-by-side=false diff "${git_reverse_args[@]}" "$@"
   fi
   return $?
 }

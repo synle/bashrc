@@ -138,20 +138,20 @@ describe("smart diff subprocess", () => {
     expect(result.stdout).toBe("");
   });
 
-  it.each([[[]], [["left file.txt"]], [["left file.txt", "right file.txt", "extra"]]])(
+  it.each([[[]], [["left file.txt"]], [["left file.txt", "right file.txt", "extra", "too-many"]]])(
     "rejects editor arity %j before invocation",
     (args) => {
       const result = runDiff(["-code", ...args], { binaries: ["code"] });
       expect(result.status).toBe(2);
-      expect(result.stderr).toContain("requires exactly two files");
+      expect(result.stderr).toContain("expected file1 file2, target_file sha1 [sha2]");
       expect(result.stdout).toBe("");
     },
   );
 
-  it.each(["-code", "-delta1"])("rejects a missing file in %s", (flag) => {
+  it.each(["-code", "-delta1"])("tries revision mode for a nonexistent second path in %s", (flag) => {
     const result = runDiff([flag, "left file.txt", "missing"], { binaries: ["code", "git"] });
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("File not found: missing");
+    expect(result.stderr).toBe("diff: revision mode requires a Git-tracked file; current folder is not in a Git working tree.\n");
     expect(result.stdout).toBe("");
   });
 
@@ -183,7 +183,7 @@ describe("smart diff subprocess", () => {
     },
   );
 
-  it.each([[["help"]], [["--help"]], [["-delta2", "help"]], [["-code", "--help"]]])(
+  it.each([[["help"]], [["--help"]], [["-delta2", "help"]], [["-code", "--help"]], [["-r", "--help"]], [["--reverse", "-code", "--help"]]])(
     "shows help for %j without launching commands",
     (args) => {
       const result = runDiff(args, { binaries: [] });
@@ -193,6 +193,77 @@ describe("smart diff subprocess", () => {
       expect(result.stderr).toBe("");
     },
   );
+
+  it.each([[["-r"]], [["--reverse"]], [["-r", "--reverse"]], [["-delta2", "-r"]], [["--reverse", "-delta2"]]])(
+    "reverses file operands exactly once with %j",
+    (flags) => {
+      const result = runDiff([...flags, "left file.txt", "right file.txt"]);
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout.split("\0").slice(-3)).toEqual(["right file.txt", "left file.txt", ""]);
+    },
+  );
+
+  it.each([[["-code", "-r"]], [["--reverse", "-code"]]])("reverses editor inputs with %j", (flags) => {
+    const result = runDiff([...flags, "left file.txt", "right file.txt"], { binaries: ["code"] });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout.split("\0")).toEqual(["code", "--diff", "right file.txt", "left file.txt", ""]);
+    expect(result.stderr).toBe("");
+  });
+
+  it("reverses native file inputs while preserving flags", () => {
+    const result = runDiff(["--reverse", "-u", "left file.txt", "right file.txt"]);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout.split("\0")).toEqual(["diff", "-u", "right file.txt", "left file.txt", ""]);
+    expect(result.stderr).toBe("");
+  });
+
+  it("reverses a single tracked working diff through Git", () => {
+    const result = runDiff(["--reverse", "left file.txt"], { backend: "git" });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("-changed line\n+old line");
+    expect(result.stderr).toBe("");
+  });
+
+  it("reverses whole-repository commit hash comparisons", () => {
+    const result = runDiff([], { backend: "git", hashes: true, invocation: `eval 'diff --reverse "$@"'` });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("-changed line\n+old line");
+    expect(result.stderr).toBe("");
+  });
+
+  it.each([[["-u"]], [["-u", "left file.txt"]], [["-u", "left file.txt", "missing"]]])(
+    "rejects reverse with native flags and insufficient file operands %j",
+    (args) => {
+      const result = runDiff(["--reverse", ...args]);
+      expect(result.status).toBe(2);
+      expect(result.stderr).toBe("diff: --reverse with native flags requires two existing files at the end.\n");
+      expect(result.stdout).toBe("");
+    },
+  );
+
+  it("reports missing Git before attempting revision snapshots", () => {
+    const result = runDiff(["-code", "left file.txt", "HEAD"], { binaries: ["code"] });
+    expect(result.status).toBe(127);
+    expect(result.stderr).toBe("diff: required command not found: git\n");
+    expect(result.stdout).toBe("");
+  });
+
+  it("identifies a missing first file when the second path exists", () => {
+    const result = runDiff(["missing", "right file.txt"]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toBe("diff: file1=missing is not an existing regular file.\n");
+    expect(result.stdout).toBe("");
+  });
+
+  it.each([
+    [[], ["git", "-c", "delta.side-by-side=true", "diff", "-R", ""]],
+    [["left file.txt"], ["git", "-c", "delta.side-by-side=true", "diff", "-R", "--", "left file.txt", ""]],
+  ])("forwards reverse for working changes with %j", (args, expected) => {
+    const result = runDiff(["-delta2", "--reverse", ...args]);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout.split("\0")).toEqual(expected);
+  });
 
   it("forwards native flags without injecting options", () => {
     const result = runDiff(["-u", "left file.txt", "right file.txt"]);
