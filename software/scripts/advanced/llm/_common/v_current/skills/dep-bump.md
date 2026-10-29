@@ -1,4 +1,4 @@
-[Sy] Upgrade dependencies safely — changelog first, local suite before push, exact pins on production deps, deprecations recorded. Runs the Risky Changes upgrade rule as a workflow.
+[Sy] Upgrade dependencies safely with changelog review, exact production pins, and recorded deprecations. Use the shared fast-track path for eligible early PR publication; complete required verification afterward.
 
 Argument: $ARGUMENTS (optional — a package name, a list, `outdated` to survey everything, `security` for advisories only, or `patch` / `minor` / `major` to scope by bump size. If empty, survey and propose. Add `loop` to work the list to empty through `/sy-loop` — see **Loop mode**.)
 
@@ -14,7 +14,7 @@ Argument: $ARGUMENTS (optional — a package name, a list, `outdated` to survey 
 Apply Risky Changes for runtime major/minor changelogs, local verification, and exact production pins. Patch/dev-only changelogs may be skipped; the class table below specifies checks. Record every new deprecation in the PR body. Lockfile-only refreshes skip the bump-specific review, not repo-required validation.
 
 - **Read the changelog and link it in the PR body** — Step 3 applies Risky Changes to every intervening version.
-- **Run the full local test suite before pushing.** Use the class table and Step 6; repo-required gates still apply.
+- **Run the required local verification.** Use the class table and Step 6. Shared **Fast-track PRs** in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` permits eligible publication before these checks; repository-required gates still apply.
 - **Pin exact versions on production dependencies.** Apply Risky Changes; a lockfile is not an exception to its pinning requirement.
 - **Note every new deprecation warning in the PR body.** Capture warnings in Step 6.
 
@@ -104,6 +104,10 @@ cargo update -p <pkg> --precise <version>
 Commit the lockfile with the manifest, always, in the same commit. Apply the migration steps the changelog listed — do not defer them to "a follow-up"; a half-migrated dependency is a worse state than either version alone.
 
 ### 6. Verify locally, in this order
+
+For eligible fast-track work, create the PR through Step 7 before optional environment setup and these checks.
+Then return here, complete applicable verification, and update the PR with actual results and warnings.
+Do not report unrun checks as passed; eligibility does not waive verification, changelog review, exact pins, or migration safety.
 
 1. Verify a clean install in an isolated environment using the repo's lockfile and shared cache. Do not delete global caches or an existing environment to manufacture a clean run; follow Worktree dependencies and Destructive Commands.
 2. Build.

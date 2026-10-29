@@ -101,6 +101,7 @@ Governs every other section.
 
 ## Task Execution
 
+- **Execution routing.** Default to foreground. Before PR work or delegation, read **Execution routing** and **Fast-track PRs** in `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` for multi-repo routing and optional worktree/setup bypass.
 - **Do obvious prerequisites without asking.** Run implied, reversible steps: inspect status/diff before commits, stage only changed paths, activate an existing `.venv`, check target folders, and test before committing. "Then commit and push" authorizes those prerequisites too.
 - **Pick a sensible default over a prompt.** Supply unspecified non-critical details yourself. Ask only when the choice changes the result, public contract, or enters Destructive Commands / Secret Handling.
 - **Define done before non-trivial work.** Use observable proof: bug → reproducer passes; refactor → behavior matches before/after; feature → named user-visible result plus its check. "Works" is not a completion test.
@@ -304,7 +305,7 @@ Branch, commit, pull-request, worktree, link, merge, and review rules live in `<
 - **A green test suite is not that audit.** Tests cover only the callers someone wrote a test for, in the repos they run in; a cross-service or runtime consumer is invisible. Hunt silent degradation, not crashes — a missing field throws nothing while a UI drops to read-only or a permission check reads `undefined` and denies.
 - **Uncertain means deprecate, never delete** — keep the old shape, add the new alongside, remove once the old path is provably dead (expand → migrate → contract). Ship the audit in the PR body: each consumer with a verdict (`updated in <link>` / `unaffected because <reason>` / `unreachable — deprecated instead`) and how absent-value behavior was verified.
 - **Every schema / data migration ships with its reversal** — up plus matching down in one PR; irreversible ops (`DROP`, destructive backfill, narrowing) need a `## Recovery` section. Keep one migration head descending from default; re-parent, never a second head.
-- **Breaking changes need a `BREAKING:` (or `feat!:` / `fix!:`) title flag and a `## Migration` note** with the minimum diff a consumer applies — removed/renamed exports and flags, changed defaults, schema deletions, env/config-key renames, not internal refactors. Runtime dependency major/minor bumps verify locally first: read and link the changelog, run the full suite before push, pin the exact version (no `^`/`~`/`>=`; CI actions by commit SHA, images by digest); patch and dev-only bumps skip that.
+- **Breaking changes need a `BREAKING:` (or `feat!:` / `fix!:`) title flag and a `## Migration` note** with the minimum diff a consumer applies — removed/renamed exports and flags, changed defaults, schema deletions, env/config-key renames, not internal refactors. Runtime dependency major/minor bumps: read and link the changelog, run the full suite before push except under **Fast-track PRs**, and pin exact versions (no `^`/`~`/`>=`; CI actions by commit SHA, images by digest). Patch and dev-only bumps skip that.
 - **Rollback PRs are emergency fast-track** — skip babysit, ship now: title `Revert "<original>"`, body links the original PR and the failure, CI green but no comment loop, squash-merge when green (ASK before `--auto`), never auto-release.
 
 ## Scope Discipline

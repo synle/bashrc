@@ -71,7 +71,7 @@ describe("full Vim startup evidence", () => {
             "lightlineScheme": "sy",
             "mode": "dark",
             "scheme": "sy-dark",
-            "sourceSha256": "c07805fc92a509af0b7edb48afc3a38445af9da84744341cd6b40a9c6180a1fa",
+            "sourceSha256": "bca49645afa5ad92ce8077b45ecae17a542e414d22ab9a10afdbf3e52f3a9ff9",
           },
           {
             "groups": {
@@ -134,7 +134,7 @@ describe("full Vim startup evidence", () => {
             "lightlineScheme": "sy",
             "mode": "light",
             "scheme": "sy-light",
-            "sourceSha256": "f1dbe3cab8687e90a32137b8ff1b045ed5ae4bb8dda171f52157e4943f1e0959",
+            "sourceSha256": "2bbb446759f0a69b14994d537feec896536c117ded29255505b053f91e70a538",
           },
           {
             "groups": {
@@ -197,7 +197,7 @@ describe("full Vim startup evidence", () => {
             "lightlineScheme": "sy",
             "mode": "dark",
             "scheme": "sy-dark",
-            "sourceSha256": "c07805fc92a509af0b7edb48afc3a38445af9da84744341cd6b40a9c6180a1fa",
+            "sourceSha256": "bca49645afa5ad92ce8077b45ecae17a542e414d22ab9a10afdbf3e52f3a9ff9",
           },
         ],
         "cursorLineConceal": "reference_only_no_consumer_found_in_installed_plugins_or_vim_runtime",

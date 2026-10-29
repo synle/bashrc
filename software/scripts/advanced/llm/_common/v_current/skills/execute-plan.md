@@ -9,6 +9,8 @@ Argument: $ARGUMENTS — the plan file path, optionally followed by `max=<n>`. I
 Read the selected plan, `<<LLM_ROOT_FOLDER>>/skills/sy-loop/SKILL.md`, and `<<LLM_ROOT_FOLDER>>/instructions/pr-workflow.md` in full before acting.
 Apply the loop inline; this adapter changes only publication/verification ordering and final completion, not its iteration cap, stall detection, scope, or safety rules.
 Use **PR publication milestones** as the authority for synchronization, title transitions, checks, reconciliation timing, and completion.
+Apply shared **Execution routing** before assigning repositories to workers. For eligible **Fast-track PRs**, publish the reviewable change before optional setup or local checks.
+That fast path overrides baseline, placeholder, and title sequencing below; resume applicable verification and wrap-up after sharing the PR URL.
 
 An explicit request to execute a plan with checkpoint publication authorizes its milestone pushes without repeated prompts.
 Skill selection alone does not grant publication authority. Honor local-only requests: implement and validate locally, skip PR creation, pushes, and remote reconciliation, and report those omissions.

@@ -21,14 +21,14 @@ For address-comments + drive-CI-green work, use `/sy-babysit-pr`. This command s
 
 **Options** (any order, `key=value`, all optional — defaults are what a human invoking this directly wants):
 
-| Option                      | Default   | Meaning                                                                                                                                             |
-| --------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `workspace=<path>`          | _unset_   | Run in this already-resolved worktree. Skips workspace resolution **and cleanup** — the caller owns its lifecycle. Unset → resolve and own one here |
-| `push=now\|defer`           | `now`     | `defer` leaves the merge commits local for the caller to push after its own work                                                                    |
-| `server-side=auto\|never`   | `auto`    | `auto` may use `gh pr update-branch` on the fast path. Callers that need local commits pass `never`                                                 |
-| `migrations=check\|skip`    | `check`   | Run the migration-head check after the chain merges                                                                                                 |
-| `on-conflict=resolve\|stop` | `resolve` | `stop` reports the conflicted files and exits without resolving                                                                                     |
-| `report=prose\|structured`  | `prose`   | `structured` emits only the machine-readable result block (Step 8)                                                                                  |
+| Option                      | Default   | Meaning                                                                                                                                                                    |
+| --------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workspace=<path>`          | _unset_   | Run in the selected checkout, including safe primary-checkout reuse under shared **Fast-track PRs**. Skip workspace resolution and cleanup; the caller owns its lifecycle. |
+| `push=now\|defer`           | `now`     | `defer` leaves the merge commits local for the caller to push after its own work                                                                                           |
+| `server-side=auto\|never`   | `auto`    | `auto` may use `gh pr update-branch` on the fast path. Callers that need local commits pass `never`                                                                        |
+| `migrations=check\|skip`    | `check`   | Run the migration-head check after the chain merges                                                                                                                        |
+| `on-conflict=resolve\|stop` | `resolve` | `stop` reports the conflicted files and exits without resolving                                                                                                            |
+| `report=prose\|structured`  | `prose`   | `structured` emits only the machine-readable result block (Step 8)                                                                                                         |
 
 **Delegated invocation** — how another command calls this, e.g. from `/sy-babysit-pr` Step 5:
 `/sy-sync-pr-branch <PR-URL> workspace=$HOME/.worktrees/<owner>/<repo>/<sanitized-branch> server-side=never report=structured`
@@ -118,7 +118,7 @@ A delegated run never creates or removes a worktree, never touches the caller's 
 - **The floor is whatever the walk stops on — not always the default branch.** A long-lived non-default line (release / integration branch) with no open PR is itself the floor, and the default branch is **not** merged into it. A deleted base means the parent landed and GitHub retargeted; a parent PR closed without merging is an orphaned base — flag it, skip it as a source, keep going.
 - **Merges flow downhill only.** Never push an ancestor branch, never merge a branch into its parent, never merge or retarget an ancestor's PR to unblock a child, never edit an ancestor's migration. Cross-stack ordering is the caller's polling loop, not a wait — never block on, message, or poll a sibling job.
 - **Never touch comment threads, CI, or the merge button.** This command syncs and exits, whatever CI says. Addressing comments and driving CI green is `/sy-babysit-pr`; landing the PR is the human's.
-- **All work happens in a worktree at `$HOME/.worktrees/<owner>/<repo>/<sanitized-branch>`, created by `worktree_create` — never the user's primary checkout** (see One rigid worktree path). A caller-supplied `workspace=` is used as-is and never cleaned up; only a workspace this run created is removed on exit.
+- **Use shared Worktrees and Fast-track PRs for workspace selection.** A caller-supplied `workspace=` may be a safe existing task checkout; use it as-is and never clean it up. Otherwise use `worktree_create` at the canonical path and remove only a workspace this run created.
 - **Resume an interrupted run, never discard it (Step 5).** Finish a left-over merge, commit work found at the canonical path, carry unpushed commits through the gate. `git worktree add -B` onto a branch with unpushed commits and `stash` / `reset` / `checkout --` to force a clean tree are both banned — `worktree_create` already makes the first one impossible.
 - **Migration head stays single (Step 7)** — one head descending from the floor, re-parented rather than merge-revisioned, and never re-parenting an ancestor PR's migration.
 - **One target per invocation.** For every open PR at once, use `/sy-babysit-prs`, which fans out one `/sy-babysit-pr` per PR and reaches this command through it.

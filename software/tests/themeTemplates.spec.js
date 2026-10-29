@@ -137,6 +137,20 @@ describe.each(["dark", "light"])("active %s templates", (mode) => {
     expect(contrast(colors[role], colors.selectedBg)).toBeGreaterThanOrEqual(4.5);
   });
 
+  // Decorative markers use the user-approved subtle shades; normal-text contrast requirements remain separate.
+  it.each([
+    ["SpecialKey", "#b8b8b8"],
+    ["NonText", "#8f9e92"],
+  ])("distinguishes Vim %s markers from ordinary text without bold or underline", (group, color) => {
+    const { highlights } = read(`theme/sy/vim_${mode}.jsonc`);
+    expect(highlights[group].foreground).toBe(color);
+    expect(highlights[group].background).toBe("NONE");
+    expect(highlights[group].style).toBe("NONE");
+    expect(contrast(highlights[group].foreground, highlights.Normal.background)).toBeLessThan(
+      contrast(highlights.Normal.foreground, highlights.Normal.background),
+    );
+  });
+
   it("stores Vim groups, terminal colors, and status-line modes in its template", () => {
     const vim = read(`theme/sy/vim_${mode}.jsonc`);
     expect(vim.highlights.MatchParen.foreground).toBe(buildInclude.COLOR_MAP[mode].foreground);
