@@ -42,6 +42,16 @@ const SPLIT_EXPECTATIONS = {
       "A bare `#<number>` is a rendering bug",
     ],
   },
+  "progress-updates.md": {
+    heading: "# Agent Progress Updates",
+    sections: ["## Status sentence", "## Parent and subagent updates"],
+    leads: [
+      "At task start and every meaningful phase boundary",
+      "Start the sentence with exactly one status",
+      "Use `DONE` only after assigned work and required checks pass",
+      "Subagents send the same status sentence to their parent",
+    ],
+  },
   "debugging.md": {
     heading: "# Debugging Discipline",
     sections: ["## Reproduce before you theorize", "## Fix the cause, then prove it"],
