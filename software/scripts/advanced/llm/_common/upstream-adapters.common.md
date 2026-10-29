@@ -12,6 +12,8 @@ Do not adopt an upstream bootstrap, plugin, hook, persona, model selection, or g
 
 ## Resource loading
 
+Apply shared **Skill invocation** when composing workflows; installed sibling files are instruction resources, not terminal-launcher dependencies.
+
 Use the installed local revision named by the adapter. Resolve relative references and scripts from that upstream skill's folder, not the Sy adapter folder.
 
 Resolve named sibling skills from the same provider's installed `skills/` tree. Use an actual file read rather than assuming a slash command invokes another skill.
