@@ -46,7 +46,7 @@ Apply these defaults to implementation, review, and babysitting, including batch
 - **One code repository plus docs/context companions** — Keep the main code task in the foreground and background each separate docs/context repository's work. Skip companion environment setup unless a concrete writing or generation step needs it.
 - **Multiple code repositories** — When two or more repositories require non-docs/context changes, background each repository's work in parallel, including companion docs/context work. Group same-repository PRs under one owner; preserve dependency ordering and avoid concurrent writers.
 - **Urgent work stays foreground** — Reverts, emergency fixes, and hotfixes default to foreground even across repositories; parallelize only when explicitly requested.
-- **Placement is not another workflow** — Invoke shared skills inline for foreground work, including sync; invoking a skill does not require another agent. Apply **Parallel fan-out** only to the background subset. Without delegation support, run inline and report reduced parallelism.
+- **Placement is not another workflow** — Invoke shared skills inline for foreground work, including sync; invoking a skill does not require another agent. Apply **Parallel fan-out** only to the background subset. If delegation is unavailable or explicitly denied, move those assignments to the main agent and run them inline; preserve scope, ownership, state, and cadence, and report reduced parallelism.
 
 ## Fast-track PRs
 

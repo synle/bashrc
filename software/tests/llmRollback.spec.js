@@ -26,6 +26,8 @@ describe("fan-out launch safety guidance", () => {
   it.each(["babysit-prs", "review-prs"])("keeps accepted %s workers alive after a partial launch", (name) => {
     const body = fs.readFileSync(path.join(SOURCE_FOLDER, "skills", `${name}.md`), "utf-8");
     expect(body).toContain("never cancel healthy workers merely because peer launches failed");
+    expect(body).toContain("A task/tool permission denial is a placement failure, not a PR failure");
+    expect(body).toContain("run that slot's assigned PRs inline in the main agent");
     expect(body).toContain("Accepted count alone does not prove the concurrency cap");
     expect(body).toContain("k == 0");
     expect(body).not.toContain("cancel and relaunch");
