@@ -623,6 +623,42 @@ The [Delta hyperlink manual](https://dandavison.github.io/delta/hyperlinks.html)
 
 Both layouts use Git's no-index comparison, including inside repositories. For Delta styling, configure Delta as Git's pager; Git controls terminal rendering.
 
+Add leading `-r` or `--reverse` to swap left and right before comparison.
+The reverse flag and renderer selector may appear in either order before the operands:
+
+```bash
+diff -r file1 file2
+diff --reverse target_file sha1
+diff -delta2 -r target_file sha1 sha2
+diff --reverse -code target_file sha1 sha2
+```
+
+Repeated reverse flags still reverse only once. Use `--` before filenames that resemble wrapper flags.
+Working-tree Git comparisons also reverse through Git's `-R` option.
+With native flags, such as `diff --reverse -u file1 file2`, the final two operands must be existing files.
+For native recursive folder comparison, bypass the wrapper with `command diff -r folder1 folder2`.
+
+Tracked-file history supports two additional forms:
+
+```bash
+diff target_file sha1       # file at sha1 on the left, committed HEAD on the right
+diff target_file sha1 sha2  # file at sha1 on the left, file at sha2 on the right
+```
+
+With two operands, an existing second path always takes precedence, even if its name resembles a commit.
+Only a nonexistent second path triggers file/revision fallback; directories and broken symlinks receive file errors instead.
+Three positional operands always select tracked-file revision mode.
+Both historical forms require a Git-tracked file in the current repository, with file contents present at both commits.
+Commit revisions such as abbreviated hashes, `HEAD`, and `HEAD~1` are accepted; blobs, trees, and invalid revisions are rejected.
+Errors identify each invalid revision as `sha1=<value>` or `sha2=<value>` and return nonzero without launching a comparison.
+The implicit second revision is committed `HEAD`, never staged or unstaged file content.
+Historical comparisons do not change the index or working tree.
+
+All renderer selectors below also accept these historical forms, such as `diff -delta2 target_file sha1 sha2` and `diff -code target_file sha1`.
+Historical bytes are written without newline trimming into private snapshots under `${TMPDIR:-/tmp}/diff-revisions.*`.
+Terminal comparisons and failed launches remove their snapshots.
+Successful GUI launches retain snapshots for asynchronous readers and print their folder to stderr; remove that folder after use.
+
 Use `diff -code file1 file2` for VS Code. Use `diff -zed` or `diff -z` for Zed, and `diff -winmerge` for WinMerge. Use `diff -smerge` or `diff -sublime_merge` for Sublime Merge.
 
 Sublime Merge uses `smerge` first, then falls back to `smerge.exe`. Other editor modes require their named command or launcher. Missing commands produce an error instead of silently changing tools.
