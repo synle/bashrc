@@ -140,7 +140,7 @@ describe.each(["dark", "light"])("active %s templates", (mode) => {
   // All decorative whitespace markers reuse one existing neutral per appearance, separate from normal-text contrast requirements.
   it.each(["SpecialKey", "NonText"])("uses shared neutral grey for Vim %s without bold or underline", (group) => {
     const { highlights } = read(`theme/sy/vim_${mode}.jsonc`);
-    expect(highlights[group].foreground).toBe({ dark: "#2b2b2b", light: "#cacaca" }[mode]);
+    expect(highlights[group].foreground).toBe({ dark: "#3d3d3d", light: "#cacaca" }[mode]);
     expect(highlights[group].background).toBe("NONE");
     expect(highlights[group].style).toBe("NONE");
     expect(contrast(highlights[group].foreground, highlights.Normal.background)).toBeLessThan(

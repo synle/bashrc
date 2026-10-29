@@ -240,7 +240,9 @@ function _workspace_finish_window() {
   [ -z "$target" ] || tmux select-pane -t "$target" > /dev/null 2>&1
 }
 
-# build a tmux session from a JSON config, or attach when it already exists
+# Build or attach a JSON workspace; arguments are a config and optional --force/--detach.
+# Returns 1 on validation/build/attach errors, otherwise 0; creates tmux windows and temporary files.
+# close_on_success (boolean, session/window/pane) closes successful commands and retains failed shells.
 function workspace_create() {
   if is_help_arg "${1:-}"; then
     echo "workspace_create: build or attach a tmux session described by a JSON file
@@ -274,14 +276,17 @@ function workspace_create() {
 
   Config keys (a tmuxp subset, JSON only):
     session level: session (alias session_name), start_directory (alias folder),
-      active_window (1-based), windows[]
+      active_window (1-based), windows[], close_on_success (boolean, default false)
     window level: name (alias window_name), command, start_directory, layout,
-      focus, panes[], sleep_before / sleep_after (used when there are no panes)
+      focus, panes[], close_on_success, sleep_before / sleep_after (used when there are no panes)
     pane entries: a command string; null / \"pane\" / \"blank\" for an empty
       shell; or an object with shell_command (string or list) or command,
       name (shown as the pane-title badge), start_directory, focus,
-      sleep_before / sleep_after
+      sleep_before / sleep_after, close_on_success
   Rules:
+    close_on_success: inherits session -> window -> pane; explicit false keeps the shell.
+      True closes successful commands; failures retain output and @workspace_exit_status.
+      Commands wait until construction finishes, preventing fast jobs from closing a partial session.
     start_directory: relative values join onto the parent's, ~ is \$HOME, empty
       inherits; the session falls back to \$PWD
     layout: even-horizontal even-vertical main-horizontal main-vertical tiled
@@ -342,6 +347,15 @@ function workspace_create() {
     return 1
   fi
 
+  if ! jq -e '
+    [ ., .windows[]?, (.windows[]? | .panes[]? | select(type == "object")) ]
+    | all(.[]; if has("close_on_success") then (.close_on_success | type == "boolean") else true end)
+  ' "$config_file" > /dev/null 2>&1; then
+    echo "workspace_create: close_on_success must be a boolean at session, window, or pane level" >&2
+    [ -z "$tmp_config" ] || command rm -f "$tmp_config"
+    return 1
+  fi
+
   local session
   session=$(jq -r '.session // .session_name // empty' "$config_file")
   if [ -z "$session" ]; then
@@ -368,9 +382,18 @@ function workspace_create() {
   root=$(jq -r '.folder // .start_directory // empty' "$config_file")
   root=$(_workspace_join_folder "$PWD" "$root")
 
+  # Keep fast-closing commands behind a private barrier until every window exists.
+  local build_gate="" gate_quoted
+  if jq -e '[ ., .windows[]?, (.windows[]? | .panes[]? | select(type == "object")) ] | any(.[]; .close_on_success == true)' "$config_file" > /dev/null; then
+    build_gate=$(mktemp "${TMPDIR:-/tmp}/workspace_build.XXXXXX") || {
+      [ -z "$tmp_config" ] || command rm -f "$tmp_config"
+      return 1
+    }
+  fi
+
   ## one jq pass flattens the config into tagged rows, in build order:
   ##   W <name> <folder> <layout> <focus pane, 1-based, 0 = none>
-  ##   P <command> <folder> <sleep_before> <sleep_after> <pane name>   (one per pane)
+  ##   P <command> <folder> <sleep_before> <sleep_after> <pane name> <close on success>
   ## a window with no "panes" becomes a single P row from its own
   ## command / sleep_* keys. Pane entries follow tmuxp: a string is the command,
   ## null / "pane" / "blank" is an empty shell, an object carries
@@ -395,7 +418,9 @@ function workspace_create() {
       (if type == "string" then (tonumber? // null) else . end)
       | if type == "number" and . >= 0 then ([., 3600] | min | floor | tostring) else "" end;
     def row: map(tostring | gsub("\u001f"; " ") | gsub("\n"; "; ")) | join("\u001f");
-    .windows[]? | . as $w
+    def closing($parent): if has("close_on_success") then .close_on_success else $parent end;
+    closing(false) as $session_close
+    | .windows[]? | . as $w | closing($session_close) as $window_close
     | (if (($w.panes | type) == "array") and (($w.panes | length) > 0)
        then $w.panes
        else [ { command: ($w.command // ""), sleep_before: $w.sleep_before, sleep_after: $w.sleep_after } ]
@@ -411,13 +436,14 @@ function workspace_create() {
                   (pobj | .start_directory // .folder // ""),
                   (pobj | .sleep_before | secs),
                   (pobj | .sleep_after | secs),
-                  (pobj | .name // "" | tostring)
+                  (pobj | .name // "" | tostring),
+                  (pobj | closing($window_close))
                 ] | row) )'
 
-  local index=0 failed=false tag f1 f2 f3 f4 f5
+  local index=0 failed=false tag f1 f2 f3 f4 f5 f6
   local win_name="" win_folder="" win_layout="" win_focus=0 win_id="" pane_no=0
   local pane_folder body quoted new_id
-  while IFS=$'\x1f' read -r tag f1 f2 f3 f4 f5; do
+  while IFS=$'\x1f' read -r tag f1 f2 f3 f4 f5 f6; do
     if [ "$tag" = "W" ]; then
       _workspace_finish_window "$win_id" "$win_layout" "$win_focus"
       index=$((index + 1))
@@ -436,7 +462,16 @@ function workspace_create() {
     ## printf %q keeps quotes/apostrophes in the command intact - tmux hands the
     ## string to sh, so an unescaped "it's" would end the quoting early
     if [ -n "$body" ]; then
-      quoted=$(printf '%q' "$body; exec bash")
+      if [ "$f6" = "true" ]; then
+        body="( $body ); "'_workspace_status=$?; if [ "$_workspace_status" -eq 0 ]; then exit 0; fi; tmux set-option -p -t "$TMUX_PANE" @workspace_exit_status "$_workspace_status"; printf "workspace: command failed with exit status %s; keeping shell open\\n" "$_workspace_status"; exec bash'
+      else
+        body="$body; exec bash"
+      fi
+      if [ -n "$build_gate" ]; then
+        gate_quoted=$(printf '%q' "$build_gate")
+        body="while [ -e $gate_quoted ]; do sleep 0.1; done; $body"
+      fi
+      quoted=$(printf '%q' "$body")
       quoted="bash -ic $quoted"
     else
       quoted=""
@@ -470,6 +505,7 @@ function workspace_create() {
     ## one (split-window without -d focuses it; a new window has only it), so
     ## the window id is enough of a target.
     [ -z "$f5" ] || tmux set -p -t "$win_id" @pane_name "$f5"
+    [ "$f6" != "true" ] || tmux set -p -t "$win_id" remain-on-exit off
     pane_no=$((pane_no + 1))
   done < <(jq -r "$jq_rows" "$config_file")
   is_truthy "$failed" || _workspace_finish_window "$win_id" "$win_layout" "$win_focus"
@@ -482,6 +518,7 @@ function workspace_create() {
     else
       echo "workspace_create: no windows defined in $config_file" >&2
     fi
+    [ -z "$build_gate" ] || command rm -f "$build_gate"
     [ -z "$tmp_config" ] || command rm -f "$tmp_config"
     return 1
   fi
@@ -524,6 +561,11 @@ function workspace_create() {
     fi
   fi
 
+  [ -z "$build_gate" ] || command rm -f "$build_gate"
+  # An entirely successful short workspace may finish before an attach starts.
+  if ! tmux has-session -t "=$session" 2> /dev/null && [ -n "$build_gate" ]; then
+    return 0
+  fi
   _workspace_attach_unless_detached "$detach" "$session"
 }
 

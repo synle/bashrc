@@ -468,6 +468,8 @@ make build_installer       # .build/install-bashrc.sh self-extracting installer
 make test_unit             # vitest, vitest.config.js
 make precommit             # lint + complete default unit suite, dot reporter and failing-test console logs
 make lint                  # oxlint correctness pass (.oxlintrc.json)
+make validate_shell_agnostic files=<file> # optional static portability checks; no script execution
+make validate_shell_agnostic_quoting files=<file> # quoting / printf / options / syntax select one rule
 make test_coverage         # + istanbul; thresholds live in vitest.config.js
 make test_profile          # bash -n / profile invariants
 make test_buildconfig      # inline-snapshot shape (…_update to refresh)
@@ -482,6 +484,10 @@ make bench_profile         # time `bash -i -c exit`; fails if median > budget
                            #   budget and defaults: software/tools/bench-profile.js; override with BENCH_ARGS
 make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, node_modules …
 ```
+
+The optional shell-agnostic targets accept one literal filename or a JSON array through `files`.
+They require ShellCheck and/or shfmt, fail on findings or unavailable analysis, and are not dependencies of existing gates.
+See [the prioritized shell-validation checklist](TODO_AGNOSITC_SHELL.md) for all rule targets, examples, limits, and the fix/recheck workflow.
 
 The formatter is **oxfmt** (`npm run format`), not prettier, despite the
 `format_prettier` target name. Shell formatting is `shfmt -w -i 2 -bn -sr`.

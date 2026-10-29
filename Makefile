@@ -266,6 +266,21 @@ precommit: lint
 validate: format lint test_unit test_buildconfig build_webapp test_integration_local test_dryrun ci_test_shellcheck
 	make test_profile 2>&1 || { echo "FAIL: test_profile failed — check profile blocks above for syntax errors"; exit 1; }
 
+# Optional static checks only; files is one literal path or a JSON array.
+# Intentionally not prerequisites of precommit, validate, test_all, or CI.
+.PHONY: validate_shell_agnostic _shell_agnostic_force
+_shell_agnostic_force:
+
+validate_shell_agnostic: export SHELL_AGNOSTIC_FILES = $(files)
+validate_shell_agnostic:
+	node software/tools/validate-shell-agnostic.js all
+
+# Rule names are validated by the tool; env transport avoids shell interpolation.
+validate_shell_agnostic_%: export SHELL_AGNOSTIC_FILES = $(files)
+validate_shell_agnostic_%: export SHELL_AGNOSTIC_RULE = $*
+validate_shell_agnostic_%: _shell_agnostic_force
+	node software/tools/validate-shell-agnostic.js
+
 # Format + build webapp (used by CI workflow)
 prep: format build_webapp
 
