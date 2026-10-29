@@ -19,17 +19,19 @@ OUT_FILE="$REPO_ROOT/.build/tar-xcfe-config.tar.gz"
 XFCE_CONFIG_DIR="$HOME/.config/xfce4"
 
 function skip() {
-	echo "backup-xfce: not supported - $1 (this tool only applies to Ubuntu-family OSes running an XFCE session)" >&2
+  printf '%s\n' "backup-xfce: not supported - $1 (this tool only applies to Ubuntu-family OSes running an XFCE session)" >&2
+  exit 0
+}
 
 # Guard: Ubuntu-family OS only (Ubuntu, Linux Mint, and other debian/ubuntu
 # derivatives), mirroring the repo's is_os_ubuntu catch-all.
 _os_id=""
 _os_id_like=""
 if [ -r /etc/os-release ]; then
-	# shellcheck disable=SC1091
-	. /etc/os-release
-	_os_id="${ID:-}"
-	_os_id_like="${ID_LIKE:-}"
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  _os_id="${ID:-}"
+  _os_id_like="${ID_LIKE:-}"
 fi
 case "$_os_id $_os_id_like" in
 *ubuntu* | *debian*) ;;
@@ -39,13 +41,13 @@ esac
 # Guard: an actual XFCE session is the current display. XDG_CURRENT_DESKTOP is
 # authoritative when set; fall back to a live xfce4-session process (covers
 # shells that don't inherit the desktop env var).
-if [ "${XDG_CURRENT_DESKTOP:-}" != "XFCE" ] && ! pgrep -x xfce4-session >/dev/null 2>&1; then
-	skip "no running XFCE session detected (XDG_CURRENT_DESKTOP='${XDG_CURRENT_DESKTOP:-}')"
+if [ "${XDG_CURRENT_DESKTOP:-}" != "XFCE" ] && ! pgrep -x xfce4-session > /dev/null 2>&1; then
+  skip "no running XFCE session detected (XDG_CURRENT_DESKTOP='${XDG_CURRENT_DESKTOP:-}')"
 fi
 
 # Guard: config dir and xfconf tooling must exist.
 [ -d "$XFCE_CONFIG_DIR" ] || skip "no XFCE config at $XFCE_CONFIG_DIR"
-command -v xfconf-query >/dev/null 2>&1 || skip "xfconf-query not installed"
+command -v xfconf-query > /dev/null 2>&1 || skip "xfconf-query not installed"
 
 STAGING="$(mktemp -d /tmp/xfce-backup-XXXXXX)"
 trap 'rm -rf "$STAGING"' EXIT
@@ -54,15 +56,10 @@ mkdir -p "$STAGING/xfce4"
 cp -r "$XFCE_CONFIG_DIR/." "$STAGING/xfce4/"
 
 for channel in xfce4-keyboard-shortcuts xfwm4 xsettings xfce4-panel xfce4-desktop; do
-	# Flat key/value dump per channel; channel may be missing on some setups.
-	xfconf-query -c "$channel" -lv >"$STAGING/xfce4/xfconf-$channel.txt" 2>/dev/null || rm -f "$STAGING/xfce4/xfconf-$channel.txt"
+  # Flat key/value dump per channel; channel may be missing on some setups.
+  xfconf-query -c "$channel" -lv > "$STAGING/xfce4/xfconf-$channel.txt" 2> /dev/null || rm -f "$STAGING/xfce4/xfconf-$channel.txt"
 done
 
 mkdir -p "$(dirname "$OUT_FILE")"
 tar -czf "$OUT_FILE" -C "$STAGING" xfce4
-    printf '%s\n' \
-      '      'echo "backup-xfce: wrote $OUT_FILE '\
-'\
-
-      '      '($(du -h "$OUT_FILE" | cut -f1))'\
-'\n
+printf '%s\n' "backup-xfce: wrote $OUT_FILE ($(du -h "$OUT_FILE" | cut -f1))"

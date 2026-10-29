@@ -34,7 +34,7 @@ OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chr
 ## 2. Golden rules
 
 1. **stdout is sacred.** Only `emitBash()` writes to stdout; everything else uses `log()`
-   / `echo()` (stderr). A stray `console.log` corrupts the generated bash program.
+   / JavaScript `echo()` (stderr). A stray `console.log` corrupts the generated bash program.
 2. **Idempotent or it's broken.** Every script must be safe to run N times — use the
    block/marker helpers and the `writeText` family, never blind appends.
 3. **Reuse the helper API.** Before hand-rolling file IO, path lookup, download, or
@@ -224,6 +224,18 @@ Profile registration is buffered: `registerProfileBlock` /
 - **Bash functions use the `function` keyword** — `function foo() {`, never `foo() {`;
   bash 3.2 can fail to parse the bare form inside `if … then … fi`. Applies to scripts,
   partials, and bash emitted from JS `` code`…` ``.
+- **Fixed-format printf — no shell echo.** Use a literal `printf` format for all shell output, including Makefile recipes and generated shell. Pass variable data as arguments. Never build a format string from data. Do not call shell `echo` in executable product code, even for literal-only output or `-n` / `-e` options. Echo option and backslash behavior varies across shells. Use `%b` only when escape processing is intentional. Test fixtures may contain `echo` only to verify this rule.
+
+  For a prefix and a variable argument list, preserve each argument and join with spaces:
+
+  ```bash
+  (
+    set -- "> Restore:" "$@"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
+  ```
+
 - **`"$HOME/"`, never `~/`** — `~` is not quote-safe.
 - **`safe_touch` / `safe_mkdir`** for paths inside `$HOME` (fixes root ownership left by
   earlier `sudo`); `safe_mkdir` implies `-p`. Plain `touch`/`mkdir` fine elsewhere.
@@ -269,9 +281,9 @@ Profile registration is buffered: `registerProfileBlock` /
   use the sibling `to_windows_path`, not `wslpath -m`.
   Extra arguments remain quoted; iterate positional arguments directly so empty input works under Bash 3.2 with `set -u`.
 - **User-facing bash functions need inline `--help` via `is_help_arg`** —
-  `if is_help_arg "${1:-}"; then …`, help as one multi-line `echo`, first line
-  `"funcname: short description"`, matching `#` comment above the function. Inline help
-  is the source of truth.
+  `if is_help_arg "${1:-}"; then …`, help as one multi-line fixed-format `printf`, first
+  line `"funcname: short description"`, matching `#` comment above the function. Inline
+  help is the source of truth.
 - **`_full-setup.sh` package-manager calls end with
   `< /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1`.** `< /dev/null` stops the
   subprocess eating the heredoc's stdin; `>> … 2>&1` captures both streams for the CI
@@ -292,9 +304,9 @@ Profile registration is buffered: `registerProfileBlock` /
   `profile-core.sh`, and the `index.js` default must agree; never a literal
   `"======…"` of ad-hoc length. Printed banners use the one shape: divider in cyan
   (`\033[0;36m`), title/body lines in blue (`\033[0;34m`), divider again. Exception:
-  **Makefile recipes and `software/tools/*.sh` stay plain** — `echo "$(DIVIDER)"` /
-  `echo "==============="` (15 `=`) + `echo "title"`, no colors, no wrapper macros,
-  never profile functions (`hr`, `br`, `h1`..`h7`); they never source the profile.
+  **Makefile recipes and `software/tools/*.sh` stay plain** — use
+  `printf '%s\n' "$(DIVIDER)"` and `printf '%s\n' "title"` (15 `=`), with no colors,
+  wrapper macros, or profile functions (`hr`, `br`, `h1`..`h7`); they never source the profile.
   PowerShell uses `("=" * 80)`. Output meant to be copied, piped, or parsed
   (`print_action_summary`) colors only when `[ -t 1 ]`.
 - **"folder", not "dir"/"directory"/"path", in function and variable names.**

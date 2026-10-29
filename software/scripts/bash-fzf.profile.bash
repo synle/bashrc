@@ -80,7 +80,7 @@ export FZF_DEFAULT_OPTS="
 # env override beat any case flag a picker hardcodes.
 function fzf_run() {
   if is_help_arg "${1:-}"; then
-    echo "fzf_run: run fzf with the case mode from \$FZF_CASE_MODE
+    printf '%s\n' "fzf_run: run fzf with the case mode from \$FZF_CASE_MODE
   Usage: fzf_run [<fzf args>...]                 # smart-case (default)
          FZF_CASE_MODE=insensitive fzf_run ...   # force -i
          FZF_CASE_MODE=sensitive   fzf_run ...   # force +i
@@ -117,7 +117,7 @@ Every picker here routes through this, so the doubled-prefix variants
 # `command_variants` lists what came out. Existing names are never clobbered.
 function fzf_register_case_variants() {
   if is_help_arg "${1:-}"; then
-    echo "fzf_register_case_variants: (re)generate the i-prefixed case-insensitive pickers
+    printf '%s\n' "fzf_register_case_variants: (re)generate the i-prefixed case-insensitive pickers
   Usage: fzf_register_case_variants
   Covers fuzzy_* functions and aliases expanding to them. Idempotent.
   Run \`command_variants i\` to see what exists."
@@ -238,8 +238,7 @@ function filter_unwanted() {
   local joined
   joined=$(
     IFS='|'
-    printf '%s\n' ' "${patterns[*]}'
-
+    printf '%s\n' "${patterns[*]}"
   )
   command grep -v -E "$joined"
 }
@@ -457,10 +456,7 @@ function _fzf_info_line() {
   *"history>"*) label="commands" ;;
   "> "*) label="completions" ;;
   esac
-    printf '%s\n' \
-      ' "$FZF_MATCH_COUNT of $FZF_TOTAL_COUNT $l' \
-      'abel'
-
+  printf '%s\n' "$FZF_MATCH_COUNT of $FZF_TOTAL_COUNT $label"
 }
 export -f _fzf_info_line
 
@@ -483,8 +479,7 @@ function _fzf_resolve_path() {
   local target="$selection"
   [[ "$target" == \~* ]] && target="$HOME${target#\~}"
   [[ "$target" != /* ]] && target="${base%/}/${target#./}"
-    printf '%s\n' ' "$target'
-
+  printf '%s\n' "$target"
 }
 export -f _fzf_resolve_path
 
@@ -510,7 +505,7 @@ function _fzf_preview_path() {
     mtime=$(stat -f %m "$target" 2> /dev/null || stat -c %Y "$target" 2> /dev/null)
     if [ -n "$mtime" ]; then
       when=$(date -r "$mtime" +'%Y-%m-%d %H:%M:%S %Z' 2> /dev/null || date -d "@$mtime" +'%Y-%m-%d %H:%M:%S %Z' 2> /dev/null)
-      [ -n "$when" ] && echo "# modified on $when"
+      [ -n "$when" ] && printf '%s\n' "# modified on $when"
     fi
     bat --paging=never --style=plain --color=always "$target"
   fi
@@ -520,7 +515,7 @@ export -f _fzf_preview_path
 # fzf picker for recently opened files — opens selected file with view_file or optional editor arg
 function fuzzy_recent_files() {
   local VIEW_COMMAND="${1:-}"
-  local OUT=$(echo "$(_recent_files)" | fzf_run +m --prompt="recent files> " \
+  local OUT=$(printf '%s\n' "$(_recent_files)" | fzf_run +m --prompt="recent files> " \
     --header="(Ctrl+Y) - recently opened files" \
     --preview="bat --paging=never --style=plain --color=always {}" \
     --preview-window=down:50%:wrap)
@@ -560,7 +555,7 @@ function view_file() {
     fi
   done
   if [ -z "$editorCmd" ]; then
-    echo "view_file: no editor found (tried: ${_VIEW_FILE_EDITORS[*]})" >&2
+    printf '%s\n' "view_file: no editor found (tried: ${_VIEW_FILE_EDITORS[*]})" >&2
     return 1
   fi
   print_action_summary "$1" "$editorCmd"
@@ -594,8 +589,7 @@ function add_bookmark() {
     printf '%s\n' "$@"
     command cat "$BOOKMARK_SYLE_PATH" 2> /dev/null
   } | sort -u)
-    printf '%s\n' ' "$content" > "$BOOKMARK_SYLE_PATH'
-
+  printf '%s\n' "$content" > "$BOOKMARK_SYLE_PATH"
 }
 
 function add_bookmark_dir() {
@@ -619,13 +613,13 @@ function fuzzy_favorite_command() {
   local _cmd_seen_aliases=$'\n'
   cmd=$(command cat "$BOOKMARK_SYLE_PATH" 2> /dev/null | sort -u | fzf_run --prompt="bookmark> " \
     --header="(Ctrl+B) - bookmarked commands" \
-    --preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"; } | bat --paging=never --style=plain --color=always --language=bash' \
+    --preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(printf "%s\\n" "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; printf "%s\\n" ""; printf "%s\\n" "---"; printf "%s\\n" "$cmd"; } | bat --paging=never --style=plain --color=always --language=bash' \
     --preview-window=down:50%:wrap \
     --bind 'f5:reload(command cat "$BOOKMARK_SYLE_PATH" 2>/dev/null | sort -u)')
 
   if [ -n "$cmd" ]; then
     # Frame the selected command's capped resolution in blue before running it.
-    _cmd_word=$(echo "$cmd" | awk '{print $1}')
+    _cmd_word=$(command printf '%s\n' "$cmd" | awk '{print $1}')
     _cmd_type_output=$(LC_ALL=C type "$_cmd_word" 2>&1 || true)
     if [[ "$_cmd_type_output" == "$_cmd_word is aliased to "* ]]; then
       _cmd_expansion="$_cmd_word"
@@ -678,7 +672,7 @@ export -f _fuzzy_cd_list
 function fuzzy_cd() {
   local dir="${1:-.}"
   local abs_dir
-  abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
+  abs_dir=$(cd "$dir" 2> /dev/null && command pwd || printf '%s\n' "$dir")
   # base folder is interpolated into the fzf option strings because --preview and
   # --bind run in their own `$SHELL -c` subshells that never see these locals
   local base_q
@@ -700,8 +694,7 @@ function fuzzy_cd() {
       print_action_summary "$FULL_PATH"
       cd "$FULL_PATH"
     else
-    printf '%s\n' ' "Path no longer exists: $FULL_PATH'
-
+      printf '%s\n' "Path no longer exists: $FULL_PATH"
     fi
   fi
 }
@@ -721,7 +714,7 @@ function fuzzy_edit() {
   local VIEW_COMMAND="$1"
   local dir="${2:-.}"
   local abs_dir
-  abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
+  abs_dir=$(cd "$dir" 2> /dev/null && command pwd || printf '%s\n' "$dir")
   # base folder is interpolated into the fzf option strings because --preview and
   # --bind run in their own `$SHELL -c` subshells that never see these locals
   local base_q

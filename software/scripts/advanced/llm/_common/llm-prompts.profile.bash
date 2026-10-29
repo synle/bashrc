@@ -231,7 +231,7 @@ function _llm_cache_init() {
 # _llm_cache_count: distinct-prompt count for a given type (empty = aggregate, cross-type-deduped)
 function _llm_cache_count() {
   _llm_cache_init 2> /dev/null || {
-    echo 0
+    printf '%s\n' 0
     return
   }
   local type="${1:-}"
@@ -241,7 +241,7 @@ function _llm_cache_count() {
   else
     sql="SELECT COUNT(DISTINCT prompt) FROM prompts;"
   fi
-  sqlite3 "$_LLM_PROMPTS_CACHE_DB" "$sql" 2> /dev/null || echo 0
+  sqlite3 "$_LLM_PROMPTS_CACHE_DB" "$sql" 2> /dev/null || printf '%s\n' 0
 }
 
 # _llm_cache_read: stream cached prompts as NUL-delimited records (content only), newest first
@@ -336,7 +336,7 @@ function _llm_list_prompts_cached() {
 # llm_cache_clear: drop the prompt cache. Useful for forcing a clean re-crawl.
 function llm_cache_clear() {
   if is_help_arg "${1:-}"; then
-    echo "llm_cache_clear: drop the LLM prompt cache (\$_LLM_PROMPTS_CACHE_DB)
+    printf '%s\n' "llm_cache_clear: drop the LLM prompt cache (\$_LLM_PROMPTS_CACHE_DB)
   Usage: llm_cache_clear              # delete the DB file
          llm_cache_clear <type>       # delete only rows for one type"
     return 0
@@ -345,14 +345,10 @@ function llm_cache_clear() {
   if [ -n "$type" ]; then
     _llm_cache_init 2> /dev/null || return 1
     sqlite3 "$_LLM_PROMPTS_CACHE_DB" "DELETE FROM prompts WHERE type='$type';" 2> /dev/null
-    printf '%s\n' ' ">> Cleared cache rows for type=$type'
-
+    printf '%s\n' ">> Cleared cache rows for type=$type"
   else
     command rm -f "$_LLM_PROMPTS_CACHE_DB" 2> /dev/null
-    printf '%s\n' \
-      ' ">> Removed cache DB at $_LLM_PROMPTS_CA' \
-      'CHE_DB'
-
+    printf '%s\n' ">> Removed cache DB at $_LLM_PROMPTS_CACHE_DB"
   fi
 }
 
@@ -385,7 +381,7 @@ function _llm_search_prompts() {
   local name="$1"
 
   if ! type -P fzf > /dev/null 2>&1; then
-    echo "fzf is not installed" >&2
+    printf '%s\n' "fzf is not installed" >&2
     return 1
   fi
 
@@ -406,7 +402,7 @@ function _llm_search_prompts() {
     fi
   else
     # Cold cache: block on refresh so the picker has something to show.
-    echo ">> Warming ${name} prompt cache (count=${cnt})..." >&2
+    printf '%s\n' ">> Warming ${name} prompt cache (count=${cnt})..." >&2
     if [ "$name" = "llm" ]; then
       _llm_cache_refresh_all > /dev/null 2>&1
     else
@@ -499,7 +495,7 @@ function _llm_search_prompts() {
   ")
 
   if [ -z "$fzf_input" ]; then
-    echo "No ${name} prompts found" >&2
+    printf '%s\n' "No ${name} prompts found" >&2
     return 0
   fi
 
@@ -518,7 +514,7 @@ function _llm_search_prompts() {
     content=$(printf '%s' "$sel_b64" | base64 -d 2> /dev/null)
     local bytes=${#content}
     printf '%s' "$content" | copy
-    echo ">> Copied ${name} prompt #${sel_idx} (${bytes} bytes) to clipboard" >&2
+    printf '%s\n' ">> Copied ${name} prompt #${sel_idx} (${bytes} bytes) to clipboard" >&2
   fi
 }
 
@@ -529,7 +525,7 @@ function _llm_search_prompts() {
 # llm_list_prompts: aggregate user prompts from ALL four LLM CLIs (cache-backed)
 function llm_list_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "llm_list_prompts: stream merged user prompts from claude+copilot+gemini+opencode
+    printf '%s\n' "llm_list_prompts: stream merged user prompts from claude+copilot+gemini+opencode
   Usage: llm_list_prompts                # NUL-delimited stream, newest first across ALL CLIs
 
 Reads from the shared cache (\$_LLM_PROMPTS_CACHE_DB). On a cold cache the
@@ -546,7 +542,7 @@ Cross-type duplicates are collapsed; capped at \$_LLM_PROMPTS_LIMIT
 # llm_search_prompts: fuzzy-pick across past prompts from ALL four LLM CLIs
 function llm_search_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "llm_search_prompts: fzf picker over past prompts from claude+copilot+gemini+opencode
+    printf '%s\n' "llm_search_prompts: fzf picker over past prompts from claude+copilot+gemini+opencode
   Usage: llm_search_prompts
 
 Hot cache (>=${_LLM_PROMPTS_CACHE_MIN_SIZE} rows): shows fzf immediately and
@@ -578,7 +574,7 @@ header, is never part of what Enter copies. Single-CLI pickers such as
 # Returns 0 for an empty list, 1 for missing origin/configuration/folder, or 2 for invalid usage.
 function plan_list() {
   if is_help_arg "${1:-}"; then
-    echo "plan_list: list shared plan artifacts for the current repository
+    printf '%s\n' "plan_list: list shared plan artifacts for the current repository
   Usage: plan_list
 
 Lists files named <repo>-* in \$LLM_ROOT_FOLDER/plans, including sidecars.
@@ -587,30 +583,30 @@ Prints absolute paths, one per line; an empty list succeeds."
     return 0
   fi
   if [ "$#" -ne 0 ]; then
-    echo "plan_list: takes no arguments; usage: plan_list" >&2
+    printf '%s\n' "plan_list: takes no arguments; usage: plan_list" >&2
     return 2
   fi
   if [ -z "${LLM_ROOT_FOLDER+x}" ] || [ -z "$LLM_ROOT_FOLDER" ]; then
-    echo "plan_list: LLM_ROOT_FOLDER is not configured" >&2
+    printf '%s\n' "plan_list: LLM_ROOT_FOLDER is not configured" >&2
     return 1
   fi
 
   local plans_folder="${LLM_ROOT_FOLDER}/plans"
   if [ ! -d "$plans_folder" ]; then
-    echo "plan_list: no plans folder at $plans_folder" >&2
+    printf '%s\n' "plan_list: no plans folder at $plans_folder" >&2
     return 1
   fi
 
   local remote_url repo_name
   if ! remote_url=$(command git remote get-url origin 2> /dev/null); then
-    echo "plan_list: cannot resolve origin for the current repository" >&2
+    printf '%s\n' "plan_list: cannot resolve origin for the current repository" >&2
     return 1
   fi
   remote_url="${remote_url%/}"
   remote_url="${remote_url%.git}"
   repo_name="${remote_url##*[/:]}"
   if [ -z "$repo_name" ]; then
-    echo "plan_list: origin has no repository name" >&2
+    printf '%s\n' "plan_list: origin has no repository name" >&2
     return 1
   fi
 
@@ -628,7 +624,7 @@ Prints absolute paths, one per line; an empty list succeeds."
 # Returns 0 for no matches or help, 2 for invalid usage; leaves caller shell options unchanged.
 function plan_search() {
   if is_help_arg "${1:-}"; then
-    echo "plan_search: filter current-repository plan filenames by a partial keyword
+    printf '%s\n' "plan_search: filter current-repository plan filenames by a partial keyword
   Usage: plan_search <keyword>
 
 Filters plan_list by a case-insensitive literal substring of each filename.
@@ -637,7 +633,7 @@ An empty result succeeds."
     return 0
   fi
   if [ "$#" -ne 1 ] || [ -z "$1" ]; then
-    echo "plan_search: requires one nonempty keyword; usage: plan_search <keyword>" >&2
+    printf '%s\n' "plan_search: requires one nonempty keyword; usage: plan_search <keyword>" >&2
     return 2
   fi
 
@@ -664,13 +660,13 @@ An empty result succeeds."
 # is exported by common-env.sh, so it is read directly with no fallback literal.
 function llm_search_plans() {
   if is_help_arg "${1:-}"; then
-    echo "llm_search_plans: fzf-pick a plan file from \$LLM_ROOT_FOLDER/plans and open it in vim
+    printf '%s\n' "llm_search_plans: fzf-pick a plan file from \$LLM_ROOT_FOLDER/plans and open it in vim
   Usage: llm_search_plans"
     return 0
   fi
   local plans_dir="${LLM_ROOT_FOLDER}/plans"
   if [ ! -d "$plans_dir" ]; then
-    echo "llm_search_plans: no plans folder at $plans_dir" >&2
+    printf '%s\n' "llm_search_plans: no plans folder at $plans_dir" >&2
     return 1
   fi
   fuzzy_edit vim "$plans_dir"

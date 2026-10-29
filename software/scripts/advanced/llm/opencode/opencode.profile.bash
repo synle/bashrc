@@ -7,13 +7,13 @@
 # SOURCE | software/bootstrap/common-functions.bash
 function opencode() {
   if ! type -P opencode > /dev/null 2>&1; then
-    echo "opencode is not installed" >&2
+    printf '%s\n' "opencode is not installed" >&2
     return 1
   fi
 
   # Activate node once per shell session (no-op on later calls).
   if ! llm_setup_activate; then
-    echo "node activation failed: llm_setup_activate/activate_node is missing" >&2
+    printf '%s\n' "node activation failed: llm_setup_activate/activate_node is missing" >&2
     return 1
   fi
 
@@ -36,7 +36,7 @@ alias op='opencode'
 # opencode_edit: open the ~/.config/opencode/ config dir (opencode.json, tui.json, AGENTS.md, commands/) in the editor
 function opencode_edit() {
   if is_help_arg "${1:-}"; then
-    echo "opencode_edit: open ~/.config/opencode/ in the editor via view_file
+    printf '%s\n' "opencode_edit: open ~/.config/opencode/ in the editor via view_file
   Usage: opencode_edit
 
 Opens the whole ~/.config/opencode/ config dir so opencode.json, tui.json,
@@ -72,7 +72,7 @@ Related files NOT inside the dir:
 # opencode_edit_rule_global: open the global opencode rules file (~/.config/opencode/AGENTS.md) in the editor
 function opencode_edit_rule_global() {
   if is_help_arg "${1:-}"; then
-    echo "opencode_edit_rule_global: open the global opencode rules file in the editor via view_file
+    printf '%s\n' "opencode_edit_rule_global: open the global opencode rules file in the editor via view_file
   Usage: opencode_edit_rule_global
 
 Opens ~/.config/opencode/AGENTS.md — the user-level instructions loaded into every session.
@@ -88,7 +88,7 @@ opencode_edit_config (settings file)."
 # opencode_edit_config: open the main opencode settings file (~/.config/opencode/opencode.json) in the editor
 function opencode_edit_config() {
   if is_help_arg "${1:-}"; then
-    echo "opencode_edit_config: open the main opencode settings file in the editor via view_file
+    printf '%s\n' "opencode_edit_config: open the main opencode settings file in the editor via view_file
   Usage: opencode_edit_config
 
 Opens ~/.config/opencode/opencode.json. Managed defaults are seeded by opencode/setup.js; edit that
@@ -128,7 +128,7 @@ function _opencode_list_prompts_ts() {
 # opencode_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
 function opencode_list_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "opencode_list_prompts: stream past user prompts from opencode's SQLite store
+    printf '%s\n' "opencode_list_prompts: stream past user prompts from opencode's SQLite store
   Usage: opencode_list_prompts            # NUL-delimited stream, newest first
 
 Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
@@ -142,7 +142,7 @@ Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PR
 # opencode_search_prompts: fuzzy-pick a past opencode prompt and copy it to the clipboard
 function opencode_search_prompts() {
   if is_help_arg "${1:-}"; then
-    echo "opencode_search_prompts: fzf picker over past opencode prompts
+    printf '%s\n' "opencode_search_prompts: fzf picker over past opencode prompts
   Usage: opencode_search_prompts
 
 Pipes opencode_list_prompts into a shared fzf picker. The preview pane shows

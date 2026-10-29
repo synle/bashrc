@@ -24,36 +24,34 @@ _SNAP_INSTALLED=$(timeout 10 snap list 2> /dev/null | tail -n +2 | awk '{print $
 
 # install a package via apt-get (skip if already installed)
 function installAptPackage() {
-  echo -n ">> $@ >> Installing with Apt >> "
-  if echo "$_APT_INSTALLED" | grep -qxF "$1"; then
-    printf '%s\n' ' "Skipped'
-
+  (
+    set -- ">> $@ >> Installing with Apt >> "
+    IFS=' '
+    printf '%s' "$*"
+  )
+  if printf '%s\n' "$_APT_INSTALLED" | grep -qxF "$1"; then
+    printf '%s\n' "Skipped"
   else
     local _t0=$SECONDS
     if sudo apt-get install -y --fix-missing -o Dpkg::Options::="--force-confold" $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
-
+      printf '%s\n' "Success ($((SECONDS - _t0))s)"
     else
-    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
-
+      printf '%s\n' "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }
 
 # install a package via snap (skip if already installed)
 function installSnapPackage() {
-  echo -n ">> $1 >> Installing with Snap >> "
-  if echo "$_SNAP_INSTALLED" | grep -qxF "$1"; then
-    printf '%s\n' ' "Skipped'
-
+  printf '%s' ">> $1 >> Installing with Snap >> "
+  if printf '%s\n' "$_SNAP_INSTALLED" | grep -qxF "$1"; then
+    printf '%s\n' "Skipped"
   else
     local _t0=$SECONDS
     if sudo snap install $@ &> /dev/null; then
-    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
-
+      printf '%s\n' "Success ($((SECONDS - _t0))s)"
     else
-    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
-
+      printf '%s\n' "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }
@@ -86,12 +84,11 @@ function installSnapPackageInBackground() {
 function _installBackgroundPackages() {
   _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
-    printf '%s\n' \
-      ' ">> Installing ${#_BACKGROUND_PKG_NAMES[' \
-      '@]} background packages (log: $_BACKGROUN' \
-      'D_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES' \
-      '[*]}'
-
+  (
+    set -- ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
@@ -104,22 +101,17 @@ function _installBackgroundPackages() {
 
 # refresh the apt package index so installs resolve the latest versions
 function updatePackageIndex() {
-  echo -n ">> Updating package index >> "
+  printf '%s' ">> Updating package index >> "
   if sudo apt-get update < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' "Done'
-
+    printf '%s\n' "Done"
   else
-    printf '%s\n' ' "Error'
-
+    printf '%s\n' "Error"
   fi
 }
 
 # upgrade all installed packages and remove unused dependencies (fire and forget)
 function upgradeAndCleanPackages() {
-    printf '%s\n' \
-      ' ">> Upgrading and cleaning packages (bac' \
-      'kground) >>'
-
+  printf '%s\n' ">> Upgrading and cleaning packages (background) >>"
   (
     sudo apt-get upgrade -y -o Dpkg::Options::="--force-confold" < /dev/null
     sudo apt-get autoremove -y < /dev/null
@@ -130,15 +122,11 @@ function upgradeAndCleanPackages() {
 ################################################################################
 # --- Install Packages ---
 ################################################################################
-    printf '%s\n' \
-      ' ">> Begin setting up dependencies/ubuntu' \
-      '/deps.sh'
-
+printf '%s\n' ">> Begin setting up dependencies/ubuntu/deps.sh"
 _waitForAptLock
-if ((IS_CI)) || is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
+if ((IS_CI)) || is_bash_syle_stale; then updatePackageIndex; else printf '%s\n' ">> Updating package index >> Skipped (not stale)"; fi
 
-    printf '%s\n' ' \'>> Installing packages with apt-get'
-
+printf '%s\n' '>> Installing packages with apt-get'
 
 # --- Core tools ---
 installAptPackage curl
@@ -227,8 +215,7 @@ _installFnmAndNode
 
 # --- GUI apps (only if a display server is available) ---
 if ((is_gui)); then
-    printf '%s\n' ' \'>> Installing GUI apps'
-
+  printf '%s\n' '>> Installing GUI apps'
 
   # ---- Clipboard (install only for the active display server) ----
   if ((is_gui_x11)); then installAptPackageInBackground xclip; fi
@@ -256,8 +243,7 @@ _configureDisableSystemdPowerAndTurboBoost
 ################################################################################
 # --- User Permissions ---
 ################################################################################
-    printf '%s\n' ' \'>> Setting up user permissions'
-
+printf '%s\n' '>> Setting up user permissions'
 sudo usermod -aG input ${USER}
 sudo usermod -aG video ${USER}
 
@@ -276,4 +262,4 @@ ensure_binary_alias bat
 ensure_binary_alias fd
 
 _configureDisplayDjPermissions
-if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi
+if is_bash_syle_stale; then upgradeAndCleanPackages; else printf '%s\n' ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi

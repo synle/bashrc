@@ -91,18 +91,9 @@
 # su: root shell preserving PATH and env
 function su() {
   if is_help_arg "${1:-}"; then
-    printf '%s\n' \
-      ' "su: root shell preserving \\$PATH (sudo' \
-      ' -E bash)'
-
-    printf '%s\n' \
-      ' "  su          open root shell with your' \
-      ' env/PATH preserved'
-
-    printf '%s\n' \
-      ' "  su <args>   fall back to regular su w' \
-      'ith args'
-
+    printf '%s\n' "su: root shell preserving \$PATH (sudo -E bash)"
+    printf '%s\n' "  su          open root shell with your env/PATH preserved"
+    printf '%s\n' "  su <args>   fall back to regular su with args"
     return
   fi
   if [ $# -eq 0 ]; then
@@ -220,8 +211,7 @@ function pip() {
   elif type -P pip &> /dev/null; then
     _snip_run pip "$@"
   else
-    printf '%s\n' ' "pip: not installed'
-
+    printf '%s\n' "pip: not installed"
   fi
 }
 alias pip3='pip'
@@ -240,24 +230,16 @@ function activate_node() {
     local default_version
     default_version=$(fnm ls 2> /dev/null | grep -i "default" | grep -o "v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
     if [ -n "$default_version" ]; then
-    printf '%s\n' \
-      ' "activate_node: fnm node $default_versio' \
-      'n ($(fnm exec --using="$default_version" ' \
-      'type -P node 2> /dev/null))'
-
+      printf '%s\n' "activate_node: fnm node $default_version ($(fnm exec --using="$default_version" type -P node 2> /dev/null))"
       fnm use "$default_version" &> /dev/null
     fi
   else
     local node_path
     node_path=$(type -P node 2> /dev/null)
     if [ -n "$node_path" ]; then
-    printf '%s\n' ' "activate_node: node found at $node_path'
-
+      printf '%s\n' "activate_node: node found at $node_path"
       if [ -L "$node_path" ]; then
-    printf '%s\n' \
-      ' "activate_node: symlink target $(readlin' \
-      'k -f "$node_path")'
-
+        printf '%s\n' "activate_node: symlink target $(readlink -f "$node_path")"
       fi
     fi
   fi
@@ -333,80 +315,69 @@ function renpm() {
 # update_lang: upgrade globally-installed packages from each language pkg manager
 function update_lang() {
   if is_help_arg "${1:-}"; then
-    echo "update_lang: upgrade globally-installed language packages
+    printf '%s\n' "update_lang: upgrade globally-installed language packages
   Skips any tool not on PATH. Companion to the OS-level \`update\` alias.
   Covers: rustup, cargo-update, npm, pnpm, yarn (v1), bun, uv, pip (--user)."
     return 0
   fi
 
-    printf '%s\n' ' ">>> Upgrading global language packages'
-
+  printf '%s\n' ">>> Upgrading global language packages"
 
   # rust toolchain (rustc/cargo themselves)
   if type -P rustup &> /dev/null; then
-    printf '%s\n' ' ">> rustup update'
-
+    printf '%s\n' ">> rustup update"
     rustup update
   fi
 
   # cargo install-update (requires `cargo install cargo-update` first; skipped if absent)
   if type -P cargo &> /dev/null && cargo install --list 2> /dev/null | grep -q '^cargo-update '; then
-    printf '%s\n' ' ">> cargo install-update -a'
-
+    printf '%s\n' ">> cargo install-update -a"
     cargo install-update -a
   fi
 
   # npm globals
   if type -P npm &> /dev/null; then
-    printf '%s\n' ' ">> npm update -g'
-
+    printf '%s\n' ">> npm update -g"
     npm update -g
   fi
 
   # pnpm globals
   if type -P pnpm &> /dev/null; then
-    printf '%s\n' ' ">> pnpm update -g'
-
+    printf '%s\n' ">> pnpm update -g"
     pnpm update -g
   fi
 
   # yarn v1 globals (yarn berry/v2+ has no `global upgrade`)
   if type -P yarn &> /dev/null && yarn --version 2> /dev/null | grep -q '^1\.'; then
-    printf '%s\n' ' ">> yarn global upgrade'
-
+    printf '%s\n' ">> yarn global upgrade"
     yarn global upgrade
   fi
 
   # bun runtime + globals
   if type -P bun &> /dev/null; then
-    printf '%s\n' ' ">> bun upgrade'
-
+    printf '%s\n' ">> bun upgrade"
     bun upgrade
   fi
 
   # uv tool installs
   if type -P uv &> /dev/null; then
-    printf '%s\n' ' ">> uv tool upgrade --all'
-
+    printf '%s\n' ">> uv tool upgrade --all"
     uv tool upgrade --all
   fi
 
   # pip --user packages (skip system site-packages)
   if type -P pip &> /dev/null; then
-    printf '%s\n' ' ">> pip user packages'
-
+    printf '%s\n' ">> pip user packages"
     local outdated
     outdated=$(pip list --outdated --user 2> /dev/null | awk 'NR>2 {print $1}')
     if [ -n "$outdated" ]; then
-      echo "$outdated" | xargs pip install --user --upgrade
+      printf '%s\n' "$outdated" | xargs pip install --user --upgrade
     else
-    printf '%s\n' ' "   (nothing to upgrade)'
-
+      printf '%s\n' "   (nothing to upgrade)"
     fi
   fi
 
-    printf '%s\n' ' ">>> update_lang done'
-
+  printf '%s\n' ">>> update_lang done"
 }
 
 ################################################################################
@@ -415,7 +386,7 @@ function update_lang() {
 # blame: git blame alternative — print per-line "<line>  <cmt> <date> <sha> <author>: <summary>"; <cmt> is "//" for C-family extensions and "#" otherwise so the row is paste-safe as a comment in the host language
 function blame() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "blame: git blame alternative — per-line history for each input file
+    printf '%s\n' "blame: git blame alternative — per-line history for each input file
   Usage: blame <file> [<file> ...]
   Output: prints a '<cmt> file: <abs-path>' comment-style header (absolute path of the input), then one row per line as
           <line content>  <cmt> <YYYY-MM-DD> <short sha> <author>: <commit summary>
@@ -425,19 +396,19 @@ function blame() {
   fi
 
   if ! type -P git &> /dev/null; then
-    echo "blame: git is not installed" >&2
+    printf '%s\n' "blame: git is not installed" >&2
     return 1
   fi
 
   local file dir base ext cmt abs
   for file in "$@"; do
     if [ ! -f "$file" ]; then
-      echo "blame: not a file: $file" >&2
+      printf '%s\n' "blame: not a file: $file" >&2
       continue
     fi
     dir=$(dirname -- "$file")
     if ! git -C "$dir" rev-parse --git-dir &> /dev/null; then
-      echo "blame: $file is not in a git repo" >&2
+      printf '%s\n' "blame: $file is not in a git repo" >&2
       continue
     fi
     # resolve to an absolute path so the header always shows where the file lives,
@@ -449,7 +420,7 @@ function blame() {
     ext=${base##*.}
     [ "$ext" = "$base" ] && ext=""
     # lowercase via tr (bash 3.2 has no ${var,,})
-    ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+    ext=$(printf '%s\n' "$ext" | tr '[:upper:]' '[:lower:]')
     case "$ext" in
     js | jsx | mjs | cjs | ts | tsx | c | cc | cpp | cxx | h | hpp | hh | hxx | java | cs | go | rs | swift | kt | kts | scala | m | mm | dart | php | proto | gradle | groovy | sass | scss | less)
       cmt="//"
@@ -458,8 +429,7 @@ function blame() {
       cmt="#"
       ;;
     esac
-    printf '%s\n' ' "$cmt file: $abs'
-
+    printf '%s\n' "$cmt file: $abs"
     git blame --line-porcelain -- "$file" 2> /dev/null | command awk -v cmt="$cmt" '
       # SHA header line: "<40+ hex sha> <orig-line> <final-line> [num-lines]" — only first token of a per-line block
       /^[0-9a-f]{40,} / && header == 0 {
@@ -504,7 +474,7 @@ function blame() {
 # blame_view: run blame on each file, write the output to /tmp/<timestamp>-<basename> (extension preserved so the editor picks the right syntax from the filename), then open with view_file (the default editor)
 function blame_view() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "blame_view: run blame and open it in the editor
+    printf '%s\n' "blame_view: run blame and open it in the editor
   Usage: blame_view <file> [<file> ...]
   Behavior: for each input file, runs 'blame <file>' and writes the output to
             /tmp/<YYYYMMDD-HHMMSS>-<flattened-abs-path>, where the flattened
@@ -522,7 +492,7 @@ function blame_view() {
   outs=()
   for file in "$@"; do
     if [ ! -f "$file" ]; then
-      echo "blame_view: not a file: $file" >&2
+      printf '%s\n' "blame_view: not a file: $file" >&2
       continue
     fi
     # resolve to an absolute path, then flatten so the temp filename encodes the
@@ -536,8 +506,7 @@ function blame_view() {
     flat=${flat//\\/_}
     out="/tmp/${ts}-${flat}"
     blame "$file" > "$out"
-    printf '%s\n' ' "blame_view: wrote $out'
-
+    printf '%s\n' "blame_view: wrote $out"
     outs+=("$out")
   done
   if [ "${#outs[@]}" -gt 0 ]; then
@@ -567,7 +536,7 @@ function blame_view() {
 #     and avoids clobbering older renders in /tmp.
 function marked() {
   if is_help_arg "${1:-}"; then
-    echo "marked: render markdown to HTML using \`npx -y marked@latest\`
+    printf '%s\n' "marked: render markdown to HTML using \`npx -y marked@latest\`
   Usage:
     marked                        render piped stdin or clipboard → /tmp/marked-<YYYY-MM-DD>-<rand>-clipboard.html
     cat foo.md | marked           render piped stdin → /tmp/marked-<YYYY-MM-DD>-<rand>-clipboard.html
@@ -600,7 +569,7 @@ function marked() {
       command cat - > "$input"
     fi
     if [ ! -s "$input" ]; then
-      echo "marked: no input (clipboard/stdin was empty)" >&2
+      printf '%s\n' "marked: no input (clipboard/stdin was empty)" >&2
       rm -f "$input"
       return 1
     fi
@@ -608,7 +577,7 @@ function marked() {
   elif [ $# -eq 1 ]; then
     input="$1"
     if [ ! -f "$input" ]; then
-      echo "marked: not a file: $input" >&2
+      printf '%s\n' "marked: not a file: $input" >&2
       return 1
     fi
     output="/tmp/marked-${rand}-$(basename -- "$input").html"
@@ -616,7 +585,7 @@ function marked() {
     input="$1"
     output="$2"
     if [ ! -f "$input" ]; then
-      echo "marked: not a file: $input" >&2
+      printf '%s\n' "marked: not a file: $input" >&2
       return 1
     fi
   fi
@@ -625,7 +594,7 @@ function marked() {
   local rc=$?
   ((input_is_temp)) && rm -f "$input"
   if [ "$rc" -ne 0 ]; then
-    echo "marked: npx exited with $rc" >&2
+    printf '%s\n' "marked: npx exited with $rc" >&2
     return "$rc"
   fi
   printf '%s\n' "$output"
@@ -648,7 +617,7 @@ alias md=marked
 # output as inline tags.
 function html() {
   if is_help_arg "${1:-}"; then
-    echo "html: convert HTML to Markdown using \`pandoc -f html -t gfm-raw_html\`
+    printf '%s\n' "html: convert HTML to Markdown using \`pandoc -f html -t gfm-raw_html\`
   Usage:
     html                          render piped stdin or clipboard → /tmp/html-<YYYY-MM-DD>-<rand>-clipboard.md
     cat foo.html | html           render piped stdin → /tmp/html-<YYYY-MM-DD>-<rand>-clipboard.md
@@ -662,7 +631,7 @@ function html() {
   fi
 
   if ! type -P pandoc &> /dev/null; then
-    echo "html: pandoc is required (brew install pandoc / apt install pandoc / dnf install pandoc)" >&2
+    printf '%s\n' "html: pandoc is required (brew install pandoc / apt install pandoc / dnf install pandoc)" >&2
     return 1
   fi
 
@@ -683,7 +652,7 @@ function html() {
       command cat - > "$input"
     fi
     if [ ! -s "$input" ]; then
-      echo "html: no input (clipboard/stdin was empty)" >&2
+      printf '%s\n' "html: no input (clipboard/stdin was empty)" >&2
       rm -f "$input"
       return 1
     fi
@@ -691,7 +660,7 @@ function html() {
   elif [ $# -eq 1 ]; then
     input="$1"
     if [ ! -f "$input" ]; then
-      echo "html: not a file: $input" >&2
+      printf '%s\n' "html: not a file: $input" >&2
       return 1
     fi
     output="/tmp/html-${rand}-$(basename -- "$input").md"
@@ -699,7 +668,7 @@ function html() {
     input="$1"
     output="$2"
     if [ ! -f "$input" ]; then
-      echo "html: not a file: $input" >&2
+      printf '%s\n' "html: not a file: $input" >&2
       return 1
     fi
   fi
@@ -708,9 +677,8 @@ function html() {
   local rc=$?
   ((input_is_temp)) && rm -f "$input"
   if [ "$rc" -ne 0 ]; then
-    echo "html: pandoc exited with $rc" >&2
+    printf '%s\n' "html: pandoc exited with $rc" >&2
     return "$rc"
   fi
-    printf '%s\n' ' "html: wrote $output'
-
+  printf '%s\n' "html: wrote $output"
 }

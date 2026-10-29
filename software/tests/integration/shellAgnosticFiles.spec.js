@@ -66,7 +66,7 @@ function fixture(name, content = "#!/bin/sh\nprintf '%s\\n' \"$@\"\n") {
   return file;
 }
 
-it("collects tracked shell sources with literal filenames and excludes generated and PowerShell files", () => {
+it("collects tracked shell sources and excludes non-executable templates", () => {
   expect(run("git", ["init", "-q"]).status).toBe(0);
   fixture("shared.sh");
   fixture("space ; quote'\".bash");
@@ -76,6 +76,8 @@ it("collects tracked shell sources with literal filenames and excludes generated
   fixture("dist/generated.bash");
   fixture("coverage/generated.zsh");
   fixture("windows.ps1.bash");
+  fixture("assets/fonts/install.sh", "#!/bin/bash\ncd ([Environment]::GetFolderPath('Desktop'))\n");
+  fixture("software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash", "{{COMMAND}}\n");
   fixture("notes.txt", "not shell");
   expect(run("git", ["add", "--", "."]).status).toBe(0);
   fixture("untracked.sh");
@@ -128,7 +130,17 @@ it("provides a Make collection target using the same saved-list location", () =>
   expect(result.stdout.trim()).toBe(path.join(folder, "shell-agnostic-files.txt"));
   const files = JSON.parse(fs.readFileSync(result.stdout.trim(), "utf8"));
   expect(files).toContain("run.sh");
-  expect(files.filter((file) => file.endsWith(".ps1.bash") || /^(\.build|dist|coverage)\//.test(file))).toEqual([]);
+  expect(files).not.toContain("assets/fonts/install.sh");
+  expect(files).not.toContain("software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash");
+  expect(
+    files.filter(
+      (file) =>
+        file.endsWith(".ps1.bash") ||
+        file === "assets/fonts/install.sh" ||
+        file === "software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash" ||
+        /^(\.build|dist|coverage)\//.test(file),
+    ),
+  ).toEqual([]);
 });
 
 it("reports the collection command when the saved list is missing", () => {
@@ -148,6 +160,18 @@ it.each(["not JSON", "[]", '"shared.sh"', '[""]', "[false]"])("rejects invalid s
 });
 
 describe.skipIf(!analyzersAvailable)("saved-list validation", () => {
+  it("runs every optional check and continues after printf findings", () => {
+    const source = fixture("echo.sh", ["#!/bin/sh", "echo message", ""].join("\n"));
+    const result = run("make", ["-s", "validate_shell_agnostic_best_effort", `files=${source}`], root);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('"rule": "printf"');
+    expect(result.stdout).toContain('"rule": "quoting"');
+    expect(result.stdout).toContain('"rule": "options"');
+    expect(result.stdout).toContain('"rule": "syntax"');
+    expect(result.stdout).toContain("AGNOSTIC_PRINTF");
+    expect(result.stdout).toContain("Diagnostics remain above.");
+  });
+
   it.each(["printf", "quoting", "options", "syntax", "all"])("defaults Make's %s check to the saved list", (rule) => {
     const source = fixture("literal ; name.sh");
     fixture("shell-agnostic-files.txt", JSON.stringify([source, source]));

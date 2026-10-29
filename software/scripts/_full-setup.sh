@@ -6,8 +6,7 @@
 # NOTE: Centralize all common mkdir, touch, chmod, and chown operations here.
 # Do not scatter directory creation, file touches, or permission setup across individual scripts.
 
-    printf '%s\n' ' ">> Begin installing dependencies...'
-
+printf '%s\n' ">> Begin installing dependencies..."
 
 if ! ((IS_CI)); then
 
@@ -16,18 +15,14 @@ if ! ((IS_CI)); then
   ################################################################################
   git_email="$(git config --global user.email 2> /dev/null || true)"
   if [ -z "$git_email" ]; then
-    printf '%s\n' ' ">> Git email not configured'
-
-    printf '%s\n' ' ">> Enter your git email:'
-
+    printf '%s\n' ">> Git email not configured"
+    printf '%s\n' ">> Enter your git email:"
     read -r git_email < /dev/tty
     if [ -n "$git_email" ]; then
       git config --global user.email "$git_email"
-    printf '%s\n' ' ">> Set git user.email to $git_email'
-
+      printf '%s\n' ">> Set git user.email to $git_email"
     else
-    printf '%s\n' ' ">> Skipped: no git email provided'
-
+      printf '%s\n' ">> Skipped: no git email provided"
     fi
   fi
 
@@ -36,24 +31,14 @@ if ! ((IS_CI)); then
   ################################################################################
   if [ ! -f "$HOME/.ssh/id_rsa" ] || [ ! -s "$HOME/.ssh/id_rsa" ]; then
     rm -f "$HOME/.ssh/id_rsa" "$HOME/.ssh/id_rsa.pub"
-    printf '%s\n' ' ">> SSH key not found (~/.ssh/id_rsa)'
-
-    printf '%s\n' \
-      ' ">> Please add your SSH private key to ~' \
-      '/.ssh/id_rsa and public key to ~/.ssh/id_' \
-      'rsa.pub'
-
-    printf '%s\n' ' ">> Have you added your SSH keys? (y/n)'
-
+    printf '%s\n' ">> SSH key not found (~/.ssh/id_rsa)"
+    printf '%s\n' ">> Please add your SSH private key to ~/.ssh/id_rsa and public key to ~/.ssh/id_rsa.pub"
+    printf '%s\n' ">> Have you added your SSH keys? (y/n)"
     read -r ssh_confirm < /dev/tty
     if [ "$ssh_confirm" = "y" ] || [ "$ssh_confirm" = "Y" ]; then
-    printf '%s\n' ' ">> SSH keys added'
-
+      printf '%s\n' ">> SSH keys added"
     else
-    printf '%s\n' \
-      ' ">> Skipped: add your SSH keys manually ' \
-      'later'
-
+      printf '%s\n' ">> Skipped: add your SSH keys manually later"
     fi
   fi
 
@@ -69,8 +54,7 @@ if ! ((IS_CI)); then
   ################################################################################
   # ---- Common Directories ----
   ################################################################################
-    printf '%s\n' ' ">> Creating common directories'
-
+  printf '%s\n' ">> Creating common directories"
   safe_mkdir "$HOME/.local/bin"
   safe_mkdir "$HOME/.ssh/sockets"
   safe_mkdir "$HOME/.vim/autoload"
@@ -80,8 +64,7 @@ if ! ((IS_CI)); then
   # Fix ownership on home directories that curl|bash installers or sudo may
   # have created as root. safe_chown skips paths that do not exist.
   ################################################################################
-    printf '%s\n' ' ">> Setting permissions'
-
+  printf '%s\n' ">> Setting permissions"
   safe_chown "$HOME/.bash_profile"
   safe_chown "$HOME/.bashrc"
   safe_chown -R "$HOME/.bun"

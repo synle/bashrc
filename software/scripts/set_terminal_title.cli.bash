@@ -26,7 +26,7 @@
 set -u
 
 if [ "$#" -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
-  echo "set_terminal_title: set the terminal tab/window title
+  printf '%s\n' "set_terminal_title: set the terminal tab/window title
   Usage: set_terminal_title <title...>
   All arguments join into the title. Works from an interactive shell, from
   inside tmux, and from an agent tool shell with no controlling terminal (it

@@ -8,19 +8,13 @@
 
 # Skip on platforms whose package manager already provides gcloud.
 if ((is_os_mac)) || ((is_os_arch_linux)) || ((is_os_steamos)) || ((is_os_android_termux)); then
-    printf '%s\n' \
-      ' ">>> Skipped gcloud-cli: package manager' \
-      ' already provides google-cloud-cli'
-
+  printf '%s\n' ">>> Skipped gcloud-cli: package manager already provides google-cloud-cli"
   exit 0
 fi
 
 # Only run on Linux flavors that match the official tarball fallback.
 if ! ((is_os_ubuntu)) && ! ((is_os_redhat)) && ! ((is_os_chromeos)) && ! ((is_os_windows)); then
-    printf '%s\n' \
-      ' ">>> Skipped gcloud-cli: unsupported pla' \
-      'tform'
-
+  printf '%s\n' ">>> Skipped gcloud-cli: unsupported platform"
   exit 0
 fi
 
@@ -29,10 +23,7 @@ case "$_arch" in
 x86_64 | amd64) _gcloud_arch="x86_64" ;;
 aarch64 | arm64) _gcloud_arch="arm" ;;
 *)
-    printf '%s\n' \
-      ' ">>> Skipped gcloud-cli: unsupported arc' \
-      'h $_arch'
-
+  printf '%s\n' ">>> Skipped gcloud-cli: unsupported arch $_arch"
   exit 0
   ;;
 esac
@@ -41,24 +32,17 @@ _gcloud_dir="$HOME/google-cloud-sdk"
 
 # Force refresh: remove existing user-scoped install if stale.
 if is_force_refresh_stale "$HOME/.local/bin/gcloud"; then
-    printf '%s\n' \
-      ' ">> Force refresh: removing google-cloud' \
-      '-sdk'
-
+  printf '%s\n' ">> Force refresh: removing google-cloud-sdk"
   rm -rf "$_gcloud_dir" "$HOME/.local/bin/gcloud" "$HOME/.local/bin/gsutil" "$HOME/.local/bin/bq"
 fi
 
 # Skip if gcloud is already installed.
 if has_persistent_binary gcloud &> /dev/null; then
-    printf '%s\n' \
-      ' ">> Skipped gcloud-cli: already installe' \
-      'd at $(has_persistent_binary gcloud)'
-
+  printf '%s\n' ">> Skipped gcloud-cli: already installed at $(has_persistent_binary gcloud)"
   exit 0
 fi
 
-    printf '%s\n' ' \'>> Installing google-cloud-sdk'
-
+printf '%s\n' '>> Installing google-cloud-sdk'
 # Official archive install (https://cloud.google.com/sdk/docs/install#linux). Userspace —
 # extracts to $HOME/google-cloud-sdk, then symlinks gcloud/gsutil/bq into ~/.local/bin so
 # they resolve on PATH without modifying the shell profile.
@@ -69,11 +53,7 @@ if curl -fsSL "$_gcloud_url" | tar -xz -C "$HOME" \
   ln -sf "$_gcloud_dir/bin/gcloud" "$HOME/.local/bin/gcloud"
   ln -sf "$_gcloud_dir/bin/gsutil" "$HOME/.local/bin/gsutil"
   ln -sf "$_gcloud_dir/bin/bq" "$HOME/.local/bin/bq"
-    printf '%s\n' \
-      ' ">> google-cloud-sdk installed to $_gclo' \
-      'ud_dir (symlinks in $HOME/.local/bin)'
-
+  printf '%s\n' ">> google-cloud-sdk installed to $_gcloud_dir (symlinks in $HOME/.local/bin)"
 else
-    printf '%s\n' ' ">> google-cloud-sdk install failed'
-
+  printf '%s\n' ">> google-cloud-sdk install failed"
 fi

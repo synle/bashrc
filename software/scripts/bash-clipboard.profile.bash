@@ -113,7 +113,7 @@ function copy() {
       _clipboard_save
     fi
   elif is_help_arg "$1"; then
-    echo "
+    printf '%s\n' "
       copy: stdin or files/strings into clipboard + history
         copy                   rewrap the existing clipboard in place (no pipe, no args)
         echo foo | copy        pipe stdin into clipboard
@@ -136,8 +136,7 @@ function copy() {
         if [ -f "$raw_arg" ]; then
           command cat "$raw_arg"
         else
-    printf '%s\n' ' "$raw_arg'
-
+          printf '%s\n' "$raw_arg"
         fi
       done | _clipboard_save --raw
     fi
@@ -147,8 +146,7 @@ function copy() {
       if [ -f "$arg" ]; then
         command cat "$arg"
       else
-    printf '%s\n' ' "$arg'
-
+        printf '%s\n' "$arg"
       fi
     done | _clipboard_save
   fi
@@ -169,7 +167,7 @@ function paste() {
   elif [ "$1" = "--unwrap" ]; then
     paste | unwrap
   elif is_help_arg "$1"; then
-    echo "
+    printf '%s\n' "
       paste: print clipboard, recall from history, or forward to paste(1)
         paste                  print clipboard contents (raw) to stdout
         paste --unwrap         print clipboard rejoined via unwrap

@@ -23,9 +23,9 @@ TAB_SIZE := 2
 # Banner divider line — a short, plain 15 `=` chars for recipe banners.
 DIVIDER := ===============
 
-# RULE: recipes stay plain. Banners are `echo "$(DIVIDER)"` + `echo "title"` —
-# no ANSI colors, no wrapper macros, and never profile functions (hr, br, h1..h7,
-# etc.): recipes run in a bare bash that never sources ~/.bash_syle.
+# RULE: recipes stay plain. Banners use fixed-format printf with DIVIDER and title text.
+# No ANSI colors, wrapper macros, or profile functions (hr, br, h1..h7, etc.):
+# recipes run in a bare bash that never sources ~/.bash_syle.
 
 # Shared preamble that sources common environment variables (use: $(_BUILD_ENV) && cmd)
 _BUILD_ENV = source software/bootstrap/common-env.sh
@@ -73,7 +73,7 @@ format: format_build_include format_ci_binaries format_script_indexes format_jsd
 # Format shell files with shfmt
 format_shell:
 	if ! type -P shfmt > /dev/null 2>&1; then
-	  echo 'shfmt not found. Skipping shell formatting.'
+	  printf '%s\n' 'shfmt not found. Skipping shell formatting.'
 	  exit 0
 	fi
 	shfmt -w -i $(TAB_SIZE) -bn -sr \
@@ -243,11 +243,11 @@ test_dryrun:
 	dryrun_start_ms=$$(node -e 'process.stdout.write(String(Date.now()))')
 	./run --dryrun --setup 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tee "$$dryrun_log"
 	run_status=$${PIPESTATUS[0]}
-	if [ "$$run_status" -ne 0 ]; then echo "FAIL: ./run --dryrun exited $$run_status (log: $$dryrun_log)"; exit 1; fi
-	echo ">> Checking dry run results for errors..."
+	if [ "$$run_status" -ne 0 ]; then printf '%s\n' "FAIL: ./run --dryrun exited $$run_status (log: $$dryrun_log)"; exit 1; fi
+	printf '%s\n' ">> Checking dry run results for errors..."
 	probe_folder=$$(mktemp -d); rmdir "$$probe_folder"
 	node software/tools/check-dryrun-results.js "$$dryrun_start_ms" /tmp/synle/bashrc "$$(dirname "$$probe_folder")/synle/bashrc" "$$HOME/tmp/synle/bashrc" || exit 1
-	echo ">> Dry run test passed"
+	printf '%s\n' ">> Dry run test passed"
 
 # Run all test suites (unit, profile, integration, buildconfig, dryrun, shellcheck)
 test_all: test_unit test_profile test_integration test_buildconfig test_dryrun ci_test_shellcheck
@@ -262,16 +262,36 @@ test: test_all
 precommit: lint
 	npm test -- --reporter=dot --silent=passed-only 2> >(command grep -v '^>>> Decky ' >&2)
 
+# Optional shell portability checks run after required validation and never gate this target.
+# Set VALIDATE_SHELL_AGNOSTIC=0 to skip this step.
+VALIDATE_SHELL_AGNOSTIC ?= 1
+
 # Verbose full local/CI gate; do not inherit precommit's quiet reporter overrides.
 validate: format lint test_unit test_buildconfig build_webapp test_integration_local test_dryrun ci_test_shellcheck
-	make test_profile 2>&1 || { echo "FAIL: test_profile failed — check profile blocks above for syntax errors"; exit 1; }
+	case "$(VALIDATE_SHELL_AGNOSTIC)" in
+	  1) $(MAKE) --no-print-directory validate_shell_agnostic_best_effort || printf '%s\n' '>> Optional shell portability step failed; continuing validation.' ;;
+	  0) printf '%s\n' '>> Optional shell portability step skipped.' ;;
+	  *) printf '%s\n' 'ERROR: VALIDATE_SHELL_AGNOSTIC must be 0 or 1.' >&2; exit 2 ;;
+	esac
+	make test_profile 2>&1 || { printf '%s\n' "FAIL: test_profile failed — check profile blocks above for syntax errors"; exit 1; }
 
 # Optional static checks; omitted files uses the saved collector list.
-# Explicit files is one literal path or a JSON array.
-# Intentionally not prerequisites of precommit, validate, test_all, or CI.
-.PHONY: collect_shell_agnostic_files validate_shell_agnostic _shell_agnostic_force
+# Explicit files is one literal path or a JSON array. The validate wrapper keeps each failure visible and continues.
+# These checks are not part of precommit, test_all, or CI.
+.PHONY: collect_shell_agnostic_files validate_shell_prep validate_shell_agnostic_best_effort validate_shell_agnostic _shell_agnostic_force
 collect_shell_agnostic_files:
 	node software/tools/collect-shell-agnostic-files.js
+
+validate_shell_prep: collect_shell_agnostic_files
+
+validate_shell_agnostic_best_effort:
+	@$(MAKE) --no-print-directory validate_shell_prep || { printf '%s\n' '>> Shell source preparation failed; skipping checks and continuing.'; exit 0; }
+	for rule in printf quoting options syntax; do
+	  printf '>> Optional shell portability check: %s\n' "$$rule"
+	  if ! $(MAKE) --no-print-directory "validate_shell_agnostic_$$rule"; then
+	    printf '%s\n' ">> Shell portability $$rule check failed; continuing. Diagnostics remain above."
+	  fi
+	done
 
 _shell_agnostic_force:
 
@@ -366,9 +386,9 @@ ci_test_shellcheck:
 	if type -P shellcheck > /dev/null 2>&1; then \
 	  shellcheck -s bash -e SC1090,SC1091,SC2154,SC2086,SC2016 \
 	    $$(find software/bootstrap software/scripts \( -name '*.sh' -o -name '*.bash' \) ! -name '*.ps1.bash') \
-	    ./*.sh || echo ">> shellcheck reported findings (advisory, not gating)"; \
+	    ./*.sh || printf '%s\n' ">> shellcheck reported findings (advisory, not gating)"; \
 	else \
-	  echo 'shellcheck not found. Skipping shellcheck.'; \
+	  printf '%s\n' 'shellcheck not found. Skipping shellcheck.'; \
 	fi
 	violations=""; \
 	for f in $$(find software/bootstrap/ software/scripts/ \( -name '*.sh' -o -name '*.bash' \)); do \
@@ -377,11 +397,11 @@ ci_test_shellcheck:
 	  fi; \
 	done; \
 	if [ -n "$$violations" ]; then \
-	  echo "ERROR: bash-3.2 runtime-incompatible feature found in:"; \
+	  printf '%s\n' "ERROR: bash-3.2 runtime-incompatible feature found in:"; \
 	  printf '%b' "$$violations"; \
 	  exit 1; \
 	fi; \
-	echo "bash-3.2 runtime lint: PASS"
+	printf '%s\n' "bash-3.2 runtime lint: PASS"
 
 # Run all CI test suites
 ci_test_all: ci_test_unit ci_test_profile ci_test_integration ci_test_buildconfig ci_test_shellcheck
@@ -407,7 +427,7 @@ clean_autogen_notes:
 	  while head -1 "$$file" | grep -qx "$$prefix[[:space:]]*"; do
 	    tail -n +2 "$$file" > "$$file.tmp" && mv "$$file.tmp" "$$file"
 	  done
-	  echo "  >> Cleaned autogen note from $$file"
+	  printf '%s\n' "  >> Cleaned autogen note from $$file"
 	done
 
 # Clean BEGIN/END block inclusions from source files
@@ -445,7 +465,7 @@ nuke:
 	  ~/.vimrc.bak_* \
 	  ~/.deno \
 	  ~/.fzf-tab-completion \
-	  && echo 'Done cleaning up folders'
+	  && printf '%s\n' 'Done cleaning up folders'
 	# ~/.bash_syle_* above also sweeps the legacy pre-_extra locations
 	# ~/.bash_syle_paths.* and ~/.bash_syle_recent_files.* left by the one-time
 	# migration to $SY_ROOT_FOLDER. The live copies live under ~/_extra and are spared.
@@ -461,8 +481,8 @@ nuke:
 	for _ollama in ollama ollama.exe; do
 	  type -P "$$_ollama" > /dev/null || continue
 	  "$$_ollama" list 2> /dev/null | tr -d '\r' | awk 'NR > 1 { print $$1 }' | while IFS= read -r _model; do
-	    echo ">> Removing Ollama model: $$_model"
-	    "$$_ollama" rm "$$_model" > /dev/null || echo ">> Failed to remove Ollama model: $$_model"
+	    printf '%s\n' ">> Removing Ollama model: $$_model"
+	    "$$_ollama" rm "$$_model" > /dev/null || printf '%s\n' ">> Failed to remove Ollama model: $$_model"
 	  done
 	done
 	$(MAKE) clean
@@ -487,22 +507,22 @@ HISTORY_CLEANUP_PATHS := \
 # Show what would be removed from git history. Non-destructive.
 clean_git_history_dryrun:
 	if ! command -v git-filter-repo > /dev/null 2>&1; then
-	  echo "ERROR: git-filter-repo is not installed."
-	  echo "Install with:  brew install git-filter-repo   (macOS)"
-	  echo "          or:  pip install git-filter-repo    (cross-platform)"
+	  printf '%s\n' "ERROR: git-filter-repo is not installed."
+	  printf '%s\n' "Install with:  brew install git-filter-repo   (macOS)"
+	  printf '%s\n' "          or:  pip install git-filter-repo    (cross-platform)"
 	  exit 1
 	fi
-	echo "$(DIVIDER)"
-	echo "git filter-repo DRY RUN — no changes will be made"
-	echo "$(DIVIDER)"
-	echo ">> Current .git size:  $$(du -sh .git | cut -f1)"
-	echo ""
-	echo ">> Paths targeted for removal:"
+	printf '%s\n' "$(DIVIDER)"
+	printf '%s\n' "git filter-repo DRY RUN — no changes will be made"
+	printf '%s\n' "$(DIVIDER)"
+	printf '%s\n' ">> Current .git size:  $$(du -sh .git | cut -f1)"
+	printf '%s\n' ""
+	printf '%s\n' ">> Paths targeted for removal:"
 	for p in $(HISTORY_CLEANUP_PATHS); do
-	  echo "     - $$p"
+	  printf '%s\n' "     - $$p"
 	done
-	echo ""
-	echo ">> Per-path totals across ALL history (files + bytes):"
+	printf '%s\n' ""
+	printf '%s\n' ">> Per-path totals across ALL history (files + bytes):"
 	blobs=$$(mktemp)
 	git rev-list --objects --all \
 	  | git cat-file --batch-check='%(objectname) %(objecttype) %(objectsize) %(rest)' \
@@ -511,75 +531,75 @@ clean_git_history_dryrun:
 	  awk -v prefix="$$p" '$$2 ~ "^" prefix {sum+=$$1; cnt++} END {printf "     %-28s %5d files   %8.1f MB\n", prefix, cnt, sum/1048576}' "$$blobs"
 	done
 	rm -f "$$blobs"
-	echo ""
-	echo ">> GitHub releases that will be deleted:"
+	printf '%s\n' ""
+	printf '%s\n' ">> GitHub releases that will be deleted:"
 	if command -v gh > /dev/null 2>&1; then
 	  gh release list --limit 1000 | awk '{print "     - " $$1}'
 	else
-	  echo "     (gh CLI not found — skipping release cleanup)"
+	  printf '%s\n' "     (gh CLI not found — skipping release cleanup)"
 	fi
-	echo ""
-	echo ">> To perform the rewrite:  make clean_git_history"
+	printf '%s\n' ""
+	printf '%s\n' ">> To perform the rewrite:  make clean_git_history"
 
 # Rewrite git history to remove HISTORY_CLEANUP_PATHS. DESTRUCTIVE.
 # Backs up to a git bundle under /tmp/ first, then prompts for explicit confirmation.
 # After the rewrite you must manually:  git remote add origin <url>  +  git push --force-with-lease --all --tags
 clean_git_history:
 	if ! command -v git-filter-repo > /dev/null 2>&1; then
-	  echo "ERROR: git-filter-repo is not installed."
-	  echo "Install with:  brew install git-filter-repo   (macOS)"
-	  echo "          or:  pip install git-filter-repo    (cross-platform)"
+	  printf '%s\n' "ERROR: git-filter-repo is not installed."
+	  printf '%s\n' "Install with:  brew install git-filter-repo   (macOS)"
+	  printf '%s\n' "          or:  pip install git-filter-repo    (cross-platform)"
 	  exit 1
 	fi
 	if ! git diff --quiet || ! git diff --cached --quiet; then
-	  echo "ERROR: working tree has uncommitted changes. Commit or stash first."
+	  printf '%s\n' "ERROR: working tree has uncommitted changes. Commit or stash first."
 	  exit 1
 	fi
 	remote_url=$$(git remote get-url origin 2> /dev/null || true)
 	backup="/tmp/bashrc-history-backup-$$(date +%Y%m%d-%H%M%S).bundle"
-	echo "$(DIVIDER)"
-	echo "DESTRUCTIVE: about to rewrite git history"
-	echo "$(DIVIDER)"
-	echo ">> Backup bundle:        $$backup"
-	echo ">> Current .git size:    $$(du -sh .git | cut -f1)"
-	echo ">> Origin URL (saved):   $$remote_url"
-	echo ">> Paths to strip:"
+	printf '%s\n' "$(DIVIDER)"
+	printf '%s\n' "DESTRUCTIVE: about to rewrite git history"
+	printf '%s\n' "$(DIVIDER)"
+	printf '%s\n' ">> Backup bundle:        $$backup"
+	printf '%s\n' ">> Current .git size:    $$(du -sh .git | cut -f1)"
+	printf '%s\n' ">> Origin URL (saved):   $$remote_url"
+	printf '%s\n' ">> Paths to strip:"
 	for p in $(HISTORY_CLEANUP_PATHS); do
-	  echo "     - $$p"
+	  printf '%s\n' "     - $$p"
 	done
-	echo ""
+	printf '%s\n' ""
 	printf "Type 'rewrite' to confirm: "
 	read ans
-	[ "$$ans" = "rewrite" ] || { echo "Aborted."; exit 1; }
-	echo ">> Creating backup bundle..."
+	[ "$$ans" = "rewrite" ] || { printf '%s\n' "Aborted."; exit 1; }
+	printf '%s\n' ">> Creating backup bundle..."
 	git bundle create "$$backup" --all
-	echo ">> Running git-filter-repo..."
+	printf '%s\n' ">> Running git-filter-repo..."
 	git filter-repo --force --invert-paths $(foreach p,$(HISTORY_CLEANUP_PATHS),--path $(p))
-	echo ">> Aggressive gc..."
+	printf '%s\n' ">> Aggressive gc..."
 	git reflog expire --expire=now --all
 	git gc --prune=now --aggressive
-	echo ""
-	echo ">> Deleting remote releases and tags..."
+	printf '%s\n' ""
+	printf '%s\n' ">> Deleting remote releases and tags..."
 	if command -v gh > /dev/null 2>&1; then
 	  for tag in $$(gh release list --limit 1000 | awk '{print $$1}'); do
-	    echo "   Deleting release and tag: $$tag"
+	    printf '%s\n' "   Deleting release and tag: $$tag"
 	    gh release delete "$$tag" --cleanup-tag --yes
 	  done
 	else
-	  echo "   gh CLI not found — skipping release cleanup"
+	  printf '%s\n' "   gh CLI not found — skipping release cleanup"
 	fi
-	echo ""
-	echo ">> Done. New .git size:  $$(du -sh .git | cut -f1)"
-	echo ""
-	echo ">> NEXT STEPS (filter-repo removed the remote as a safety measure):"
+	printf '%s\n' ""
+	printf '%s\n' ">> Done. New .git size:  $$(du -sh .git | cut -f1)"
+	printf '%s\n' ""
+	printf '%s\n' ">> NEXT STEPS (filter-repo removed the remote as a safety measure):"
 	if [ -n "$$remote_url" ]; then
-	  echo "   1. Re-add origin:      git remote add origin $$remote_url"
+	  printf '%s\n' "   1. Re-add origin:      git remote add origin $$remote_url"
 	else
-	  echo "   1. Re-add origin:      git remote add origin <url>"
+	  printf '%s\n' "   1. Re-add origin:      git remote add origin <url>"
 	fi
-	echo "   2. Force-push main:    git push --force-with-lease --all"
-	echo "   3. Force-push tags:    git push --force-with-lease --tags"
-	echo "   4. Backup bundle:      $$backup  (restore with 'git clone <bundle> restored')"
+	printf '%s\n' "   2. Force-push main:    git push --force-with-lease --all"
+	printf '%s\n' "   3. Force-push tags:    git push --force-with-lease --tags"
+	printf '%s\n' "   4. Backup bundle:      $$backup  (restore with 'git clone <bundle> restored')"
 
 # Show which CI bot commits would be squashed into the prior human commit. Non-destructive.
 clean_squash_git_dryrun:
@@ -612,9 +632,9 @@ new-script:
 # Restore ~/.bash_syle from backup
 rollback:
 	if [ ! -f ~/.bash_syle.bak ]; then
-	  echo "No backup found at ~/.bash_syle.bak"
+	  printf '%s\n' "No backup found at ~/.bash_syle.bak"
 	  exit 1
 	fi
 	cp ~/.bash_syle.bak ~/.bash_syle
-	echo "Restored ~/.bash_syle from backup. Run 'source ~/.bash_syle' to reload."
+	printf '%s\n' "Restored ~/.bash_syle from backup. Run 'source ~/.bash_syle' to reload."
 

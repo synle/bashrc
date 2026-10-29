@@ -28,18 +28,12 @@
 
 # Skip on non-Windows hosts. winget.exe only exists on Windows / WSL.
 if ! ((is_os_windows)); then
-    printf '%s\n' \
-      ' ">>> Skipped winget-install: not a Windo' \
-      'ws / WSL host'
-
+  printf '%s\n' ">>> Skipped winget-install: not a Windows / WSL host"
   exit 0
 fi
 
 if ! has_persistent_binary winget.exe > /dev/null 2>&1 && ! type -P winget.exe > /dev/null 2>&1; then
-    printf '%s\n' \
-      ' ">>> Skipped winget-install: winget.exe ' \
-      'not on PATH (run windows-bootstrap first)'
-
+  printf '%s\n' ">>> Skipped winget-install: winget.exe not on PATH (run windows-bootstrap first)"
   exit 0
 fi
 
@@ -313,10 +307,7 @@ winget_required_packages=(
 WINGET_INSTALL_STAMP_PATH="$BASH_SYLE_PATH.winget-install"
 
 if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
-    printf '%s\n' \
-      ' ">>> Installing winget packages (foregro' \
-      'und, sequential)'
-
+  printf '%s\n' ">>> Installing winget packages (foreground, sequential)"
 
   # Refresh winget source index so installs resolve latest versions.
   # `< /dev/null` is mandatory: this script is bundled into a `bash <<'EOF'`
@@ -334,11 +325,7 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
   # every package, including Docker Desktop and Steam.
   _winget_list_file="$BASHRC_TEMP_DIR/winget-list.txt"
   if ! winget.exe list < /dev/null > "$_winget_list_file" 2> /dev/null; then
-    printf '%s\n' \
-      ' ">>> FAILED: could not list installed wi' \
-      'nget packages; refusing to reinstall the ' \
-      'full package set'
-
+    printf '%s\n' ">>> FAILED: could not list installed winget packages; refusing to reinstall the full package set"
     exit 1
   fi
   _installed_packages=$(tr -d '\000\r' < "$_winget_list_file")
@@ -350,28 +337,12 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
   _elevated=0
   _is_windows_elevated || _elevated=$?
   if ((_elevated == 1)); then
-    printf '%s\n' \
-      ' ">>> WARNING: this WSL session is NOT el' \
-      'evated — machine-scope packages may fail ' \
-      'to install'
-
-    printf '%s\n' \
-      ' "    Relaunch Windows Terminal as admini' \
-      'strator, then re-run:'
-
-    printf '%s\n' \
-      ' "      ./run --refresh=_winget-install.s' \
-      'h'
-
+    printf '%s\n' ">>> WARNING: this WSL session is NOT elevated — machine-scope packages may fail to install"
+    printf '%s\n' "    Relaunch Windows Terminal as administrator, then re-run:"
+    printf '%s\n' "      ./run --refresh=_winget-install.sh"
   elif ((_elevated == 2)); then
-    printf '%s\n' \
-      ' ">>> WARNING: could not determine Window' \
-      's elevation (powershell.exe unavailable?)'
-
-    printf '%s\n' \
-      ' "    Machine-scope packages may fail if ' \
-      'this session is not elevated'
-
+    printf '%s\n' ">>> WARNING: could not determine Windows elevation (powershell.exe unavailable?)"
+    printf '%s\n' "    Machine-scope packages may fail if this session is not elevated"
   fi
 
   # Install loop. See FORCE_INSTALL config above.
@@ -400,13 +371,11 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
     local kind="$2"
 
     if [ "$kind" != "required" ] && ! ((FORCE_INSTALL)) && _winget_package_is_installed "$pkg"; then
-    printf '%s\n' ' "  Skipped: $pkg (already installed)'
-
+      printf '%s\n' "  Skipped: $pkg (already installed)"
       return 0
     fi
 
-    printf '%s\n' ' "  Installing: $pkg'
-
+    printf '%s\n' "  Installing: $pkg"
     # Output is captured rather than discarded so a failure can be explained;
     # success stays quiet because it is only the progress bar we already hid.
     # `< /dev/null` is mandatory for the same heredoc reason as the
@@ -421,16 +390,9 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
     _failed_packages+=("$pkg")
     if ! winget.exe search --id "$pkg" -e --source winget --accept-source-agreements --disable-interactivity < /dev/null > /dev/null 2>&1; then
       _lookup_failed_packages+=("$pkg")
-    printf '%s\n' \
-      ' "  FAILED: $pkg — exact winget source lo' \
-      'okup failed. ${_install_reason:-no instal' \
-      'l output from winget}'
-
+      printf '%s\n' "  FAILED: $pkg — exact winget source lookup failed. ${_install_reason:-no install output from winget}"
     else
-    printf '%s\n' \
-      ' "  FAILED: $pkg — ${_install_reason:-no ' \
-      'output from winget}'
-
+      printf '%s\n' "  FAILED: $pkg — ${_install_reason:-no output from winget}"
     fi
   }
 
@@ -446,45 +408,30 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
   done
 
   if ((${#_failed_packages[@]} > 0)); then
-    printf '%s\n' ' "'
-
-    printf '%s\n' \
-      ' ">>> ${#_failed_packages[@]} package(s) ' \
-      'failed to install:'
-
+    printf '%s\n' ""
+    (
+      set -- ">>> ${#_failed_packages[@]} package(s) failed to install:"
+      IFS=' '
+      printf '%s\n' "$*"
+    )
     for pkg in "${_failed_packages[@]}"; do
-    printf '%s\n' ' "    - $pkg'
-
+      printf '%s\n' "    - $pkg"
     done
     if ((${#_lookup_failed_packages[@]} > 0)); then
-    printf '%s\n' \
-      ' "    ${#_lookup_failed_packages[@]} pack' \
-      'age id(s) were not found by an exact wing' \
-      'et source lookup:'
-
+      (
+        set -- "    ${#_lookup_failed_packages[@]} package id(s) were not found by an exact winget source lookup:"
+        IFS=' '
+        printf '%s\n' "$*"
+      )
       for pkg in "${_lookup_failed_packages[@]}"; do
-    printf '%s\n' ' "      - $pkg'
-
+        printf '%s\n' "      - $pkg"
       done
-    printf '%s\n' \
-      ' "    Refresh the winget source or correc' \
-      't/remove these ids before retrying.'
-
+      printf '%s\n' "    Refresh the winget source or correct/remove these ids before retrying."
     fi
     if ((_elevated == 1)); then
-    printf '%s\n' \
-      ' "    This WSL session is not elevated; m' \
-      'achine-scope installers may require eleva' \
-      'tion.'
-
-    printf '%s\n' \
-      ' "    Relaunch Windows Terminal as admini' \
-      'strator, then re-run:'
-
-    printf '%s\n' \
-      ' "      ./run --refresh=_winget-install.s' \
-      'h'
-
+      printf '%s\n' "    This WSL session is not elevated; machine-scope installers may require elevation."
+      printf '%s\n' "    Relaunch Windows Terminal as administrator, then re-run:"
+      printf '%s\n' "      ./run --refresh=_winget-install.sh"
     fi
     exit 1
   fi
@@ -496,17 +443,9 @@ if ((IS_SETUP)) || is_path_stale "$WINGET_INSTALL_STAMP_PATH"; then
   safe_touch "$WINGET_INSTALL_STAMP_PATH"
   date +%s > "$WINGET_INSTALL_STAMP_PATH"
 else
-    printf '%s\n' \
-      ' ">>> Listing available winget upgrades (' \
-      'winget install is recent; informational o' \
-      'nly)'
-
-    printf '%s\n' \
-      ' "    To force a full install pass: ./run' \
-      ' --refresh=_winget-install.sh'
-
+  printf '%s\n' ">>> Listing available winget upgrades (winget install is recent; informational only)"
+  printf '%s\n' "    To force a full install pass: ./run --refresh=_winget-install.sh"
   winget.exe upgrade --include-unknown --source winget --accept-source-agreements --disable-interactivity < /dev/null || true
 fi
 
-    printf '%s\n' ' ">>> winget-install complete'
-
+printf '%s\n' ">>> winget-install complete"

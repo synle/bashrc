@@ -6,13 +6,18 @@ const { execFileSync } = require("child_process");
 
 /** Shared saved-list location; respect the platform's temporary-folder configuration. */
 const SHELL_AGNOSTIC_FILES_PATH = path.join(os.tmpdir(), "shell-agnostic-files.txt");
+/** Display files and placeholder templates that are not executable shell sources. */
+const NON_EXECUTABLE_SHELL_ARTIFACTS = new Set([
+  "assets/fonts/install.sh",
+  "software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash",
+]);
 /** Bound Git collection independently of analyzer execution. */
 const GIT_TIMEOUT_MS = 5000;
 /** Bound the tracked filename inventory without imposing a shell argument limit. */
 const MAX_GIT_OUTPUT_BYTES = 16 * 1024 * 1024;
 
 /**
- * Collect tracked shell paths from the current repository and atomically save JSON.
+ * Collect eligible tracked shell sources and atomically save their paths as JSON.
  * @returns {void} Prints the saved-list filename; sets status 2 on collection/write failure.
  * @sideEffects Runs Git without a shell and replaces the saved list; never reads source content.
  */
@@ -24,7 +29,12 @@ function main() {
       timeout: GIT_TIMEOUT_MS,
       maxBuffer: MAX_GIT_OUTPUT_BYTES,
     });
-    const files = tracked.split("\0").filter((file) => file && !file.endsWith(".ps1.bash") && !/^(\.build|dist|coverage)\//.test(file));
+    const files = tracked
+      .split("\0")
+      .filter(
+        (file) =>
+          file && !NON_EXECUTABLE_SHELL_ARTIFACTS.has(file) && !file.endsWith(".ps1.bash") && !/^(\.build|dist|coverage)\//.test(file),
+      );
     // Publish a complete list so concurrent readers never see partial JSON.
     const stagingFolder = fs.mkdtempSync(path.join(os.tmpdir(), "shell-agnostic-files-"));
     try {

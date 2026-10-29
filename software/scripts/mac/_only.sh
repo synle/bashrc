@@ -2,8 +2,7 @@
 # SOURCE software/bootstrap/common-functions.bash
 
 # macOS system tweaks. Source: https://macos-defaults.com
-    printf '%s\n' ' \'>> Setting macOS Defaults'
-
+printf '%s\n' '>> Setting macOS Defaults'
 
 ################################################################################
 # --- Screenshots ---
@@ -17,24 +16,19 @@ defaults write com.apple.screencapture include-date -bool true    # Keeps the da
 # --- VS Code Symlink ---
 ################################################################################
 # Linked into $HOME/.local/bin (user-owned, on PATH) — /usr/local/bin may not exist on Apple Silicon.
-    printf '%s\n' ' \'>> Setting up VS Code symlink for mac'
-
+printf '%s\n' '>> Setting up VS Code symlink for mac'
 _vscode_cli="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
 if [ -x "$_vscode_cli" ]; then
   safe_mkdir "$HOME/.local/bin"
   ln -sfn "$_vscode_cli" "$HOME/.local/bin/code"
 else
-    printf '%s\n' \
-      ' ">> Skipped VS Code symlink: $_vscode_cl' \
-      'i not found'
-
+  printf '%s\n' ">> Skipped VS Code symlink: $_vscode_cli not found"
 fi
 
 ################################################################################
 # --- Window Animations ---
 ################################################################################
-    printf '%s\n' ' \'>> Applying window animation tweaks'
-
+printf '%s\n' '>> Applying window animation tweaks'
 defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false   # Removes the open/close animation on all Cocoa windows (instant appear/disappear)
 defaults write -g QLPanelAnimationDuration -float 0                            # Makes Quick Look previews (spacebar in Finder) appear instantly with no fade
 defaults write NSGlobalDomain NSWindowResizeTime -float 0.001                  # Near-instant window resize for Cocoa apps (default is 0.2s ease-in-out)
@@ -44,8 +38,7 @@ defaults write NSGlobalDomain NSWindowSupportsAutomaticInlineTitle -bool false #
 ################################################################################
 # --- Finder ---
 ################################################################################
-    printf '%s\n' ' \'>> Applying Finder tweaks'
-
+printf '%s\n' '>> Applying Finder tweaks'
 defaults write com.apple.finder DisableAllAnimations -bool true # Stops Finder from animating Get Info, column resizing, and folder transitions
 defaults write com.apple.finder AnimateWindowZoom -bool false   # Disables the zoom animation when opening folders in new Finder windows
 # WARNING: spring-loaded delay 0 means folders open instantly on drag-hover. Easy to accidentally open wrong folders.
@@ -65,10 +58,7 @@ defaults write com.apple.finder FXRemoveOldTrashItems -bool true           # Aut
 ################################################################################
 # --- Dock & Mission Control ---
 ################################################################################
-    printf '%s\n' \
-      ' \'>> Applying Dock & Mission Control twe' \
-      'aks'
-
+printf '%s\n' '>> Applying Dock & Mission Control tweaks'
 defaults write com.apple.dock launchanim -bool false                     # Removes the bouncing icon animation when opening an app from the Dock
 defaults write com.apple.dock expose-animation-duration -float 0.1       # Speeds up the Mission Control fly-in/fly-out transition (default 0.5s)
 defaults write com.apple.dock autohide-delay -float 0                    # Dock appears immediately on hover instead of waiting (default 0.5s delay)
@@ -86,10 +76,7 @@ defaults write com.apple.dock wvous-bl-corner -int 0                     # Disab
 ################################################################################
 # --- Desktop & Stage Manager ---
 ################################################################################
-    printf '%s\n' \
-      ' \'>> Applying Desktop & Stage Manager tw' \
-      'eaks'
-
+printf '%s\n' '>> Applying Desktop & Stage Manager tweaks'
 defaults write com.apple.WindowManager GloballyEnabled -bool false                  # Disables Stage Manager
 defaults write com.apple.WindowManager EnableStandardClickToShowDesktop -bool false # Click wallpaper shows desktop only in Stage Manager (not always)
 defaults write com.apple.WindowManager StandardHideWidgets -bool true               # Disables iPhone widgets (reduces cross-device rendering overhead)
@@ -98,10 +85,7 @@ defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false     
 ################################################################################
 # --- Accessibility > Display (WindowServer CPU reduction) ---
 ################################################################################
-    printf '%s\n' \
-      ' \'>> Applying accessibility display twea' \
-      'ks'
-
+printf '%s\n' '>> Applying accessibility display tweaks'
 # com.apple.universalaccess and Safari's sandboxed container are TCC-protected: `defaults
 # write` fails with "Could not write domain ...; exiting" unless the running terminal has
 # Full Disk Access. The keys still apply once FDA is granted, so this is a per-host
@@ -117,11 +101,7 @@ defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false     
 #      not the user's — the setting would not take effect at all.
 function _defaults_write_protected() {
   if ! defaults write "$@" 2> /dev/null; then
-    printf '%s\n' \
-      ' ">> defaults write $1 $2 >> Skipped (nee' \
-      'ds Full Disk Access: System Settings > Pr' \
-      'ivacy & Security > Full Disk Access)'
-
+    printf '%s\n' ">> defaults write $1 $2 >> Skipped (needs Full Disk Access: System Settings > Privacy & Security > Full Disk Access)"
   fi
 }
 _defaults_write_protected com.apple.universalaccess reduceTransparency -bool true # Disables window/menu bar transparency effects, reducing GPU compositing overhead
@@ -136,14 +116,13 @@ _defaults_write_protected com.apple.Safari ShowFullURLInSmartSearchField -bool t
 ################################################################################
 # --- System & Finder Behaviors ---
 ################################################################################
-    printf '%s\n' ' \'>> Applying system behavior tweaks'
-
-defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true # Prevents macOS from creating .DS_Store files on network drives (NAS, SMB shares)
-defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true     # Prevents macOS from creating .DS_Store files on USB/external drives
+printf '%s\n' '>> Applying system behavior tweaks'
+defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true  # Prevents macOS from creating .DS_Store files on network drives (NAS, SMB shares)
+defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true      # Prevents macOS from creating .DS_Store files on USB/external drives
 defaults write com.apple.desktopservices DSDontWriteExternalStores -bool true # Prevents macOS from creating .DS_Store files on other external media (optical drives etc.)
-defaults write -g NSScrollAnimationEnabled -bool false                       # Disables momentum/smooth scrolling system-wide so scroll jumps instantly to position
-defaults write -g NSAutoFillHeuristicControllerEnabled -bool false           # Turns off predictive text/autofill heuristics that consume CPU in the background
-defaults write -g NSAutoHeuristicEnabled -bool false                         # Disables automatic heuristic-based suggestions (complements the above setting)
+defaults write -g NSScrollAnimationEnabled -bool false                        # Disables momentum/smooth scrolling system-wide so scroll jumps instantly to position
+defaults write -g NSAutoFillHeuristicControllerEnabled -bool false            # Turns off predictive text/autofill heuristics that consume CPU in the background
+defaults write -g NSAutoHeuristicEnabled -bool false                          # Disables automatic heuristic-based suggestions (complements the above setting)
 # WARNING: Disabling quarantine removes Gatekeeper's warning on downloaded apps. Malware won't trigger a prompt.
 #   To revert: defaults write com.apple.LaunchServices LSQuarantine -bool true
 defaults write com.apple.LaunchServices LSQuarantine -bool false # Removes the "this app was downloaded from the internet" quarantine warning dialog
@@ -151,8 +130,7 @@ defaults write com.apple.LaunchServices LSQuarantine -bool false # Removes the "
 ################################################################################
 # --- Electron / Chromium Performance ---
 ################################################################################
-    printf '%s\n' ' \'>> Applying Electron / Chromium tweaks'
-
+printf '%s\n' '>> Applying Electron / Chromium tweaks'
 # WARNING: Disabling App Nap keeps ALL background apps active. Higher battery drain and more CPU/memory usage.
 #   To revert: defaults write NSGlobalDomain NSAppSleepDisabled -bool false
 defaults write NSGlobalDomain NSAppSleepDisabled -bool true                      # Disables App Nap which throttles CPU/network for background apps (keeps Electron apps like VS Code, Slack responsive)
@@ -177,8 +155,7 @@ defaults write NSGlobalDomain InitialKeyRepeat -int 15             # Delay befor
 ################################################################################
 # --- Misc Performance ---
 ################################################################################
-    printf '%s\n' ' \'>> Applying misc performance tweaks'
-
+printf '%s\n' '>> Applying misc performance tweaks'
 # WARNING: Keeping idle apps alive consumes more RAM. On low-memory machines this can cause more swap usage and slowdowns.
 #   To revert: defaults write NSGlobalDomain NSDisableAutomaticTermination -bool false
 defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true          # Prevents macOS from silently killing idle apps to free memory (keeps apps warm in RAM)
@@ -211,10 +188,7 @@ defaults write com.apple.ImageCapture disableHotPlug -bool true              # S
 # launchd agent that wakes periodically to check Office updates — kills battery
 # life, spawns dialogs, and shows red Dock badges. These keep Office installed
 # and updateable on demand (open MAU manually) but stop all background activity.
-    printf '%s\n' \
-      ' \'>> Disabling Microsoft AutoUpdate back' \
-      'ground activity'
-
+printf '%s\n' '>> Disabling Microsoft AutoUpdate background activity'
 launchctl bootout "gui/$(id -u)/com.microsoft.update.agent" 2> /dev/null || true # Stops the currently-running MAU launch agent (no-op if not loaded)
 launchctl disable "gui/$(id -u)/com.microsoft.update.agent" 2> /dev/null || true # Prevents the MAU agent from auto-loading on next login
 defaults write com.microsoft.autoupdate2 HowToCheck -string "Manual"             # Switches MAU from Automatic to Manual — no scheduled checks, only manual "Check for Updates"
@@ -227,10 +201,8 @@ defaults write com.microsoft.autoupdate2 SendAllTelemetryEnabled -bool false    
 ################################################################################
 # Only restart shell UI processes. Never Terminal/Mail/Safari: killing Terminal kills
 # the session running this script, and the others drop the user's open work.
-    printf '%s\n' ' \'>> Restarting affected services'
-
+printf '%s\n' '>> Restarting affected services'
 for app in "Dock" "Finder" "SystemUIServer"; do
   killall "$app" > /dev/null 2>&1
 done
-    printf '%s\n' ' \'>> macOS tweaks applied'
-
+printf '%s\n' '>> macOS tweaks applied'

@@ -149,9 +149,11 @@ function validateShellSource(source, rule) {
     for (const item of diagnostics) {
       if (!item || !Number.isInteger(item.code) || typeof item.message !== "string")
         throw new AnalyzerError("shellcheck: malformed diagnostic.");
-      const selected = item.code < 2000 || rules.some((name) => (DIAGNOSTICS[name] || []).includes(item.code));
+      const selected = rules.some((name) => (DIAGNOSTICS[name] || []).includes(item.code));
+      const shellcheckError = item.level === "error" && (rules.includes("quoting") || rules.includes("syntax"));
       const nonPosix = rules.includes("syntax") && item.code >= 3000 && item.code < 4000;
-      if (selected || nonPosix) findings.push({ code: `SC${item.code}`, line: item.line, column: item.column, message: item.message });
+      if (selected || shellcheckError || nonPosix)
+        findings.push({ code: `SC${item.code}`, line: item.line, column: item.column, message: item.message });
     }
   }
   return findings;

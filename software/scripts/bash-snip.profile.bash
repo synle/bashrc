@@ -63,8 +63,7 @@ function _snip_run() {
 # _snip_tee_folder: echo the folder snip tees full command output into
 function _snip_tee_folder() {
   if [ -n "${SNIP_TEE_DIR:-}" ]; then
-    printf '%s\n' ' "$SNIP_TEE_DIR'
-
+    printf '%s\n' "$SNIP_TEE_DIR"
     return 0
   fi
 
@@ -76,13 +75,9 @@ function _snip_tee_folder() {
   fi
 
   if [ -n "$db" ]; then
-    printf '%s\n' ' "$(dirname "$db")/tee'
-
+    printf '%s\n' "$(dirname "$db")/tee"
   else
-    printf '%s\n' \
-      ' "${XDG_DATA_HOME:-$HOME/.local/share}/sn' \
-      'ip/tee'
-
+    printf '%s\n' "${XDG_DATA_HOME:-$HOME/.local/share}/snip/tee"
   fi
 }
 
@@ -116,7 +111,7 @@ function _snip_history_shapes() {
 # sn: run a command through snip's output filter when one covers it
 function sn() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "sn: run a command through snip's output filter when one covers it
+    printf '%s\n' "sn: run a command through snip's output filter when one covers it
   Usage: sn [-f] <command> [args...]
   Examples:
     sn ls -la                 # alias 'ls' is resolved first, then filtered
@@ -144,7 +139,7 @@ function sn() {
   fi
 
   if [ $# -eq 0 ]; then
-    echo "sn: -f needs a command to run" >&2
+    printf '%s\n' "sn: -f needs a command to run" >&2
     return 1
   fi
 
@@ -209,7 +204,7 @@ function sn() {
 # snip_coverage: report how much of your own shell history snip can filter
 function snip_coverage() {
   if is_help_arg "${1:-}"; then
-    echo "snip_coverage: report how much of your own shell history snip can filter
+    printf '%s\n' "snip_coverage: report how much of your own shell history snip can filter
   Usage: snip_coverage [<top-n>]
   Reads \$HISTFILE (default \$HOME/.bash_history), buckets commands by their
   first two tokens — the same '<binary> <subcommand>' shape snip keys filters
@@ -222,21 +217,21 @@ function snip_coverage() {
   fi
 
   if ! _snip_ready; then
-    echo "snip_coverage: snip is not installed" >&2
+    printf '%s\n' "snip_coverage: snip is not installed" >&2
     return 1
   fi
 
   local top="${1:-25}"
   case "$top" in
   '' | *[!0-9]*)
-    echo "snip_coverage: <top-n> must be a positive integer, got: $top" >&2
+    printf '%s\n' "snip_coverage: <top-n> must be a positive integer, got: $top" >&2
     return 1
     ;;
   esac
 
   local histfile="${HISTFILE:-$HOME/.bash_history}"
   if [ ! -f "$histfile" ]; then
-    echo "snip_coverage: no history file at $histfile" >&2
+    printf '%s\n' "snip_coverage: no history file at $histfile" >&2
     return 1
   fi
 
@@ -271,22 +266,17 @@ function snip_coverage() {
   done < <(_snip_history_shapes "$histfile" "$top")
 
   if [ "$shapes" -eq 0 ]; then
-    printf '%s\n' ' "  > No commands found in $histfile'
-
+    printf '%s\n' "  > No commands found in $histfile"
     return 0
   fi
 
-    printf '%s\n' \
-      ' "  > Coverage > $filtered/$shapes comman' \
-      'd shapes > $filtered_runs/$runs runs ($((' \
-      'filtered_runs * 100 / runs))%)'
-
+  printf '%s\n' "  > Coverage > $filtered/$shapes command shapes > $filtered_runs/$runs runs ($((filtered_runs * 100 / runs))%)"
 }
 
 # snip_logs: list, or print, the full output snip saved when a filtered command failed
 function snip_logs() {
   if is_help_arg "${1:-}"; then
-    echo "snip_logs: list, or print, the full output snip saved when a filtered command failed
+    printf '%s\n' "snip_logs: list, or print, the full output snip saved when a filtered command failed
   Usage: snip_logs              list every saved log, newest first
          snip_logs <n>          print the nth newest log (1 = newest)
          snip_logs <name>       print the log with that file name
@@ -301,7 +291,7 @@ function snip_logs() {
   folder="$(_snip_tee_folder)"
 
   if [ ! -d "$folder" ]; then
-    echo "snip_logs: no saved logs — $folder does not exist" >&2
+    printf '%s\n' "snip_logs: no saved logs — $folder does not exist" >&2
     return 1
   fi
 
@@ -324,7 +314,7 @@ function snip_logs() {
   esac
 
   if [ ! -f "$file" ]; then
-    echo "snip_logs: no such log: $target (run 'snip_logs' to list them)" >&2
+    printf '%s\n' "snip_logs: no such log: $target (run 'snip_logs' to list them)" >&2
     return 1
   fi
 

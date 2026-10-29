@@ -1,16 +1,28 @@
 #!/usr/bin/env bash
-function removeApp(){
-  echo "> Remove:" $@
+function removeApp() {
+  (
+    set -- "> Remove:" $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
-function restoreApp(){
-  echo "> Restore:" $@
+function restoreApp() {
+  (
+    set -- "> Restore:" $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   cmd package install-existing $@
 }
 
-function changeSetting(){
-  echo 'settings put' $@
+function changeSetting() {
+  (
+    set -- 'settings put' $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   settings put $@
 }
 
@@ -26,7 +38,6 @@ changeSetting global private_dns_specifier security.cloudflare-dns.com # changeS
 # enable auto time and timezone
 changeSetting global auto_time 1
 changeSetting global auto_time_zone 1
-
 
 ######################################################################################
 ###### clean up bloats
@@ -47,7 +58,7 @@ removeApp com.google.android.apps.tv.dreamx
 removeApp com.google.android.feedback
 removeApp com.google.android.inputmethod.japanese
 removeApp com.google.android.katniss
-removeApp com.google.android.leanbacklauncher # be careful with this (TV Launcher) - do this after button mapper and launcher
+removeApp com.google.android.leanbacklauncher                 # be careful with this (TV Launcher) - do this after button mapper and launcher
 removeApp com.google.android.leanbacklauncher.recommendations # be careful with this (TV Launcher) - do this after button mapper and launcher
 removeApp com.google.android.marvin.talkback
 removeApp com.google.android.music

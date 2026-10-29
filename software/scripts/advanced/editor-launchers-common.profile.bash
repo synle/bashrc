@@ -18,7 +18,7 @@ function _register_editor() {
 # which editors are actually available on the current system.
 function list_editors() {
   if is_help_arg "${1:-}"; then
-    echo "
+    printf '%s\n' "
       list_editors: print every editor wrapper and the binary it would launch (or '(not found)')
         list_editors          show resolved path for subl, smerge, code, zed, vim, ...
     "
@@ -29,17 +29,13 @@ function list_editors() {
   for ((i = 0; i < ${#_REGISTERED_EDITORS[@]}; i++)); do
     name="${_REGISTERED_EDITORS[$i]}"
     paths_var="${_REGISTERED_EDITORS_PATHS_VARS[$i]}[@]"
-    printf '%s\n' ' "# $name'
-
+    printf '%s\n' "# $name"
     if resolved=$(find_path "${!paths_var}" --exec 2> /dev/null) && [ -n "$resolved" ]; then
-    printf '%s\n' ' "\\"$resolved\\"'
-
+      printf '%s\n' "\"$resolved\""
     else
-    printf '%s\n' ' "(not found)'
-
+      printf '%s\n' "(not found)"
     fi
-    printf '%s\n' ' "'
-
+    printf '%s\n' ""
   done
 }
 
@@ -48,8 +44,8 @@ function find_editor() {
   local editor_name="$1"
   shift
   local result
-  result=$(find_path "$@" --exec) && echo "$result" && return 0
-  echo "Error: $editor_name not found in search paths." >&2
+  result=$(find_path "$@" --exec) && printf '%s\n' "$result" && return 0
+  printf '%s\n' "Error: $editor_name not found in search paths." >&2
   return 1
 }
 

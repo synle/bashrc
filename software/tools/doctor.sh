@@ -13,24 +13,25 @@
   _fail=0
 
   function _check_pass() {
-    printf '%s\n' ' "  [PASS] $1'
+    printf '%s\n' "  [PASS] $1"
+    _pass=$((_pass + 1))
+  }
+  function _check_warn() {
+    printf '%s\n' "  [WARN] $1"
+    _warn=$((_warn + 1))
+  }
+  function _check_fail() {
+    printf '%s\n' "  [FAIL] $1"
+    _fail=$((_fail + 1))
+  }
 
-
-    printf '%s\n' \
-      '      'echo "Running diagnostics..."
-echo '\
-'\
-
-      '      '"'\
-'\n
+  printf '%s\n' "Running diagnostics..."
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Dependencies ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Dependencies =='\
-'\
-
+  printf '%s\n' "== Dependencies =="
 
   # node
   if type -P node > /dev/null 2>&1; then
@@ -74,18 +75,12 @@ echo '\
     _check_warn "shfmt not found - shell formatting will be skipped in 'make format'"
   fi
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Node modules ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Node Modules =='\
-'\
-
+  printf '%s\n' "== Node Modules =="
 
   if [ -d "node_modules" ]; then
     _check_pass "node_modules/ exists"
@@ -102,18 +97,12 @@ echo '\
     fi
   fi
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Build Artifacts ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Build Artifacts =='\
-'\
-
+  printf '%s\n' "== Build Artifacts =="
 
   if [ -d ".build" ]; then
     _build_file_count=$(find .build -type f 2> /dev/null | wc -l | tr -d ' ')
@@ -134,18 +123,12 @@ echo '\
     _check_warn ".build/ directory missing - run 'make build'"
   fi
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Shell Syntax ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Shell Syntax =='\
-'\
-
+  printf '%s\n' "== Shell Syntax =="
 
   _syntax_errors=0
   for sh_file in software/bootstrap/*.sh; do
@@ -168,18 +151,12 @@ echo '\
     fi
   done
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Profile & Marker Checks ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Profile & Markers =='\
-'\
-
+  printf '%s\n' "== Profile & Markers =="
 
   BASH_SYLE_PATH="${HOME}/.bash_syle"
 
@@ -190,8 +167,8 @@ echo '\
     _begin_keys=$(grep -o '# BEGIN [^-].*' "$BASH_SYLE_PATH" 2> /dev/null | sed 's/# BEGIN //' | sort)
     _end_keys=$(grep -o '# END [^-].*' "$BASH_SYLE_PATH" 2> /dev/null | sed 's/# END //' | sort)
 
-    _begin_only=$(comm -23 <(echo "$_begin_keys") <(echo "$_end_keys") 2> /dev/null)
-    _end_only=$(comm -13 <(echo "$_begin_keys") <(echo "$_end_keys") 2> /dev/null)
+    _begin_only=$(comm -23 <(printf '%s\n' "$_begin_keys") <(printf '%s\n' "$_end_keys") 2> /dev/null)
+    _end_only=$(comm -13 <(printf '%s\n' "$_begin_keys") <(printf '%s\n' "$_end_keys") 2> /dev/null)
 
     if [ -n "$_begin_only" ]; then
       while IFS= read -r key; do
@@ -208,7 +185,7 @@ echo '\
     fi
 
     if [ -z "$_begin_only" ] && [ -z "$_end_only" ]; then
-      _marker_count=$(echo "$_begin_keys" | grep -c . 2> /dev/null || echo 0)
+      _marker_count=$(printf '%s\n' "$_begin_keys" | grep -c . 2> /dev/null || printf '%s\n' 0)
       _check_pass "All BEGIN/END markers are paired ($_marker_count pairs)"
     fi
   else
@@ -218,31 +195,23 @@ echo '\
   # check source template markers
   for tpl_file in software/bootstrap/profile-core.sh software/bootstrap/profile-advanced.sh; do
     if [ -f "$tpl_file" ]; then
-      _short_markers=$(grep -c '# BEGIN/END' "$tpl_file" 2> /dev/null || echo 0)
+      _short_markers=$(grep -c '# BEGIN/END' "$tpl_file" 2> /dev/null || printf '%s\n' 0)
       _check_pass "$tpl_file has $_short_markers pre-placed markers"
     fi
   done
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- build-include Markers ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Build-Include Markers '\
-'\
-
-      '      '=='\
-'\n
+  printf '%s\n' "== Build-Include Markers =="
 
   for target_file in run.sh; do
     if [ -f "$target_file" ]; then
-      _has_begin=$(grep -c '# BEGIN software/' "$target_file" 2> /dev/null || echo 0)
+      _has_begin=$(grep -c '# BEGIN software/' "$target_file" 2> /dev/null || printf '%s\n' 0)
 
-# END software/' "$target_file" 2> /dev/null || echo 0)
+      # END software/' "$target_file" 2> /dev/null || echo 0)
       if [ "$_has_begin" -gt 0 ] && [ "$_has_begin" = "$_has_end" ]; then
         _check_pass "$target_file has $_has_begin build-include marker pair(s)"
       elif [ "$_has_begin" != "$_has_end" ]; then
@@ -251,20 +220,12 @@ echo '\
     fi
   done
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Common Directories & Files ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Common Directories & Files '\
-'\
-
-      '      '=='\
-'\n
+  printf '%s\n' "== Common Directories & Files =="
 
   for _dir in "$HOME/.local/bin" "$HOME/.ssh" "$HOME/.ssh/sockets" "$HOME/.vim/pack/jetpack/opt"; do
     if [ -d "$_dir" ]; then
@@ -282,18 +243,12 @@ echo '\
     fi
   done
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Permissions ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Permissions =='\
-'\
-
+  printf '%s\n' "== Permissions =="
 
   if [ -d "$HOME/.ssh" ]; then
     _ssh_perm=$(stat -f '%Lp' "$HOME/.ssh" 2> /dev/null || stat -c '%a' "$HOME/.ssh" 2> /dev/null)
@@ -324,18 +279,12 @@ echo '\
     fi
   fi
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Git Config ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Git Config =='\
-'\
-
+  printf '%s\n' "== Git Config =="
 
   _git_email=$(git config --global user.email 2> /dev/null || true)
   if [ -n "$_git_email" ]; then
@@ -351,18 +300,12 @@ echo '\
     _check_warn "git user.name not configured"
   fi
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Rollback ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Rollback =='\
-'\
-
+  printf '%s\n' "== Rollback =="
 
   if [ -f "${HOME}/.bash_syle.bak" ]; then
     _bak_size=$(wc -c < "${HOME}/.bash_syle.bak" | tr -d ' ')
@@ -372,51 +315,45 @@ echo '\
     _check_warn "No rollback backup found (~/.bash_syle.bak) - created on next './run'"
   fi
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Shell Startup ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "== Shell Startup =='\
-'\
-
+  printf '%s\n' "== Shell Startup =="
 
   _bench_file="${BASHRC_TEMP_ROOT_DIR:-${TMPDIR:-/tmp}/synle/bashrc}/bench_profile.json"
   if [ -f "$_bench_file" ]; then
     _bench_line=$(node -e 'const r=require(process.argv[1]);console.log(`${r.withinBudget?"ok":"over"} median ${r.medianMs}ms (budget ${r.budgetMs}ms, ${r.date})`)' "$_bench_file" 2> /dev/null)
     case "$_bench_line" in
-      ok*) _check_pass "startup ${_bench_line#ok }" ;;
-      over*) _check_warn "startup ${_bench_line#over } - over budget" ;;
-      *) _check_warn "unreadable $_bench_file" ;;
+    ok*) _check_pass "startup ${_bench_line#ok }" ;;
+    over*) _check_warn "startup ${_bench_line#over } - over budget" ;;
+    *) _check_warn "unreadable $_bench_file" ;;
     esac
   else
     _check_warn "no startup benchmark yet - run 'make bench_profile'"
   fi
 
-    printf '%s\n' \
-      '      'echo "'\
-'\
-
+  printf '%s\n' ""
 
   ################################################################################
   # ---- Summary ----
   ################################################################################
-    printf '%s\n' \
-      '      'echo "==============="
-echo "  '\
-'\
-
-      '      'PASS: $_pass  WARN: $_warn  FAIL: '\
-'\
-
-      '      '$_fail"
-echo "==============='\
-'\n
+  printf '%s\n' "==============="
+  printf '%s\n' "  PASS: $_pass  WARN: $_warn  FAIL: $_fail"
+  printf '%s\n' "==============="
 
   if [ "$_fail" -gt 0 ]; then
-    printf '%s\n' ' "'
-
+    printf '%s\n' ""
+    printf '%s\n' "Some checks failed. See above for details."
+    exit 1
+  elif [ "$_warn" -gt 0 ]; then
+    printf '%s\n' ""
+    printf '%s\n' "All checks passed with warnings."
+    exit 0
+  else
+    printf '%s\n' ""
+    printf '%s\n' "All checks passed."
+    exit 0
+  fi
+}

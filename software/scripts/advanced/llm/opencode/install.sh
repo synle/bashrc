@@ -8,26 +8,21 @@
 # Windows host — `npm_install_global` auto-mirrors via `cmd.exe /c npm install -g`.
 # A curl|bash install would only land on the current OS, forcing a separate winget
 # step for the Windows side. See CLAUDE.md "LLM CLIs" exception for the policy.
-    printf '%s\n' ' \'> Installing opencode'
+printf '%s\n' '> Installing opencode'
 
-
-echo -n '>> opencode >> Installing latest as canonical command >> '
+printf '%s' '>> opencode >> Installing latest as canonical command >> '
 if npm_install_global opencode-ai@latest opencode; then
-    printf '%s\n' ' \'Success'
-
+  printf '%s\n' 'Success'
 else
-    printf '%s\n' ' \'Error (non-fatal)'
-
+  printf '%s\n' 'Error (non-fatal)'
 fi
 
 # Refresh the model catalog only when explicitly requested.
 if ((IS_REFRESH_MODE)) && has_persistent_binary opencode > /dev/null; then
-  echo -n '>> opencode >> Refreshing model catalog >> '
+  printf '%s' '>> opencode >> Refreshing model catalog >> '
   if opencode models --refresh < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' \'Success'
-
+    printf '%s\n' 'Success'
   else
-    printf '%s\n' ' \'Error (non-fatal)'
-
+    printf '%s\n' 'Error (non-fatal)'
   fi
 fi

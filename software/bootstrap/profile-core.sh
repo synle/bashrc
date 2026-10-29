@@ -15,21 +15,14 @@ if [ -f "$_BASHRC_DEBUG_DIR/debug" ]; then
       local exit_code=$?
       local log="$_BASHRC_DEBUG_DIR/debug.log"
       {
-    printf '%s\n' \
-      ' "--- ${1:-ERROR} at $(date \'+%Y-%m-%d %' \
-      'H:%M:%S\') (exit code: $exit_code) ---'
-
+        printf '%s\n' "--- ${1:-ERROR} at $(date '+%Y-%m-%d %H:%M:%S') (exit code: $exit_code) ---"
         local i
         for ((i = 0; i < ${#FUNCNAME[@]}; i++)); do
-    printf '%s\n' \
-      ' "  [$i] ${FUNCNAME[$i]}() at ${BASH_SOUR' \
-      'CE[$i]:-profile}:${BASH_LINENO[$i]}'
-
+          printf '%s\n' "  [$i] ${FUNCNAME[$i]}() at ${BASH_SOURCE[$i]:-profile}:${BASH_LINENO[$i]}"
         done
-    printf '%s\n' ' "'
-
+        printf '%s\n' ""
       } >> "$log"
-      echo "[debug] $1: exit=$exit_code at ${BASH_SOURCE[1]:-profile}:${BASH_LINENO[0]} in ${FUNCNAME[1]:-main} (see $log)" >&2
+      printf '%s\n' "[debug] $1: exit=$exit_code at ${BASH_SOURCE[1]:-profile}:${BASH_LINENO[0]} in ${FUNCNAME[1]:-main} (see $log)" >&2
     }
     trap '_debug_stacktrace ERR' ERR
     trap '_debug_stacktrace EXIT' EXIT
@@ -41,7 +34,7 @@ fi
 # bashrc_debug <on|off|status> - Control debug tracing
 function bashrc_debug() {
   if is_help_arg "${1:-}"; then
-    echo "bashrc_debug: control debug tracing
+    printf '%s\n' "bashrc_debug: control debug tracing
   Usage: bashrc_debug on     enable debug tracing
          bashrc_debug off    disable debug tracing
          bashrc_debug status show current debug state"
@@ -50,28 +43,24 @@ function bashrc_debug() {
   local _debug_file="$_BASHRC_DEBUG_DIR/debug"
   case "${1:-}" in
   on)
-    echo 1 > "$_debug_file"
+    printf '%s\n' 1 > "$_debug_file"
     set -x
-    printf '%s\n' ' ">> Debug tracing enabled'
-
+    printf '%s\n' ">> Debug tracing enabled"
     ;;
   off)
     rm -f "$_debug_file"
     set +x
-    printf '%s\n' ' ">> Debug tracing disabled'
-
+    printf '%s\n' ">> Debug tracing disabled"
     ;;
   status)
     if [ -f "$_debug_file" ]; then
-    printf '%s\n' ' ">> Debug tracing is ON'
-
+      printf '%s\n' ">> Debug tracing is ON"
     else
-    printf '%s\n' ' ">> Debug tracing is OFF'
-
+      printf '%s\n' ">> Debug tracing is OFF"
     fi
     ;;
   *)
-    echo "bashrc_debug: unknown command '${1:-}' (expected: on, off, status)" >&2
+    printf '%s\n' "bashrc_debug: unknown command '${1:-}' (expected: on, off, status)" >&2
     return 1
     ;;
   esac
@@ -127,7 +116,7 @@ export LINE_BREAK_EQUAL
 # Mirror the function body in profile-core.sh; standalone Git tools deploy independently.
 function format_hyperlink() {
   if is_help_arg "${1:-}"; then
-    echo "format_hyperlink: print a blue HTTP(S)/file URL on terminal stdout
+    printf '%s\n' "format_hyperlink: print a blue HTTP(S)/file URL on terminal stdout
   Usage: format_hyperlink <url> [label]
   Call directly, not inside command substitution. Pipes retain plain text.
   Returns 2 without output for unsafe URLs or control bytes."
@@ -194,8 +183,7 @@ function cache_lastrun_path() {
       base="${BASHRC_TEMP_ROOT_DIR:-$HOME/tmp}"
     fi
   fi
-    printf '%s\n' ' "$base/cache-lastrun-$1.timestamp'
-
+  printf '%s\n' "$base/cache-lastrun-$1.timestamp"
 }
 
 # cache_lastrun_due <name> <max_age_seconds> - return 0 (true) when <name> has
@@ -231,8 +219,7 @@ function cache_lastrun_mark() {
 # Mirror of the same function in common-functions.bash — keep the body byte-identical.
 function get_native_arch() {
   if [ "$(uname -s)" = "Darwin" ] && [ "$(sysctl -n hw.optional.arm64 2> /dev/null)" = "1" ]; then
-    printf '%s\n' ' "arm64'
-
+    printf '%s\n' "arm64"
     return 0
   fi
   uname -m
@@ -278,7 +265,7 @@ function run_native() {
 # and then die with "command not found".
 function is_runnable_command() {
   if is_help_arg "${1:-}"; then
-    echo "is_runnable_command: check whether a name can be invoked as \"\$name\" args
+    printf '%s\n' "is_runnable_command: check whether a name can be invoked as \"\$name\" args
   Usage: is_runnable_command <name>
   True for PATH binaries, shell functions, and builtins. False for alias-only names."
     return 0
@@ -394,8 +381,7 @@ function _register_command_variant() {
 
   local body="${envs:+$envs }${invocation} \"\$@\"${extra_args:+ $extra_args}"
   if [ "$dry" = "1" ]; then
-    printf '%s\n' ' "${new} -> ${body}'
-
+    printf '%s\n' "${new} -> ${body}"
     return 0
   fi
 
@@ -425,7 +411,7 @@ function _register_command_variant() {
 # Idempotent: re-running skips names that already exist.
 function register_command_variants() {
   if is_help_arg "${1:-}"; then
-    echo "register_command_variants: generate decorated twins for a family of commands
+    printf '%s\n' "register_command_variants: generate decorated twins for a family of commands
   Usage: register_command_variants --prefix=i --select-fn='^fuzzy_' --env='FZF_CASE_MODE=insensitive'
          register_command_variants --suffix=_v --select-alias-name='^ls_' --args='--long'
   Selectors: --select-fn=RE --select-alias=RE (alias target) --select-alias-name=RE
@@ -448,7 +434,7 @@ function register_command_variants() {
     --args=*) extra_args="${1#*=}" ;;
     --dry-run) dry=1 ;;
     *)
-      echo "register_command_variants: unknown option: $1" >&2
+      printf '%s\n' "register_command_variants: unknown option: $1" >&2
       return 1
       ;;
     esac
@@ -456,11 +442,11 @@ function register_command_variants() {
   done
 
   if [ -z "$prefix" ] && [ -z "$suffix" ]; then
-    echo "register_command_variants: --prefix or --suffix is required" >&2
+    printf '%s\n' "register_command_variants: --prefix or --suffix is required" >&2
     return 1
   fi
   if [ -z "$sel_fn" ] && [ -z "$sel_alias" ] && [ -z "$sel_alias_name" ]; then
-    echo "register_command_variants: a --select-* option is required" >&2
+    printf '%s\n' "register_command_variants: a --select-* option is required" >&2
     return 1
   fi
 
@@ -508,7 +494,7 @@ function register_command_variants() {
 # `command_variants | grep ifcd` answers "what does this run?".
 function command_variants() {
   if is_help_arg "${1:-}"; then
-    echo "command_variants: list generated command variants as '<name>\t<expansion>'
+    printf '%s\n' "command_variants: list generated command variants as '<name>\t<expansion>'
   Usage: command_variants [filter-regex]"
     return 0
   fi
@@ -525,16 +511,15 @@ function command_variants() {
 # to_windows_path <unix_path> - Convert a unix path to a Windows-style mixed-slash path
 function to_windows_path() {
   if is_help_arg "${1:-}"; then
-    echo "to_windows_path: convert unix path to Windows mixed-slash path
+    printf '%s\n' "to_windows_path: convert unix path to Windows mixed-slash path
   Usage: to_windows_path <unix_path>
   No-op on non-WSL (echoes input unchanged)."
     return 0
   fi
   if type -P wslpath &> /dev/null; then
-    wslpath -m "$1" 2> /dev/null || echo "$1"
+    wslpath -m "$1" 2> /dev/null || printf '%s\n' "$1"
   else
-    printf '%s\n' ' "$1'
-
+    printf '%s\n' "$1"
   fi
 }
 
@@ -545,7 +530,7 @@ function to_windows_path() {
 # Writes stdout and interactive history; path-resolution failures retain the supplied path.
 function print_action_summary() {
   if is_help_arg "${1:-}"; then
-    echo "print_action_summary: show copy-paste-runnable action summary
+    printf '%s\n' "print_action_summary: show copy-paste-runnable action summary
   Usage: print_action_summary [--run-folder=<folder>] <target_path> [<binary> [<extra_args>...]]
   Prints PWD, cd command, and optional binary invocation.
   --run-folder overrides the cd target for commands that must run somewhere
@@ -673,7 +658,7 @@ alias free='free -h'
 
 function less() {
   if is_help_arg "${1:-}"; then
-    echo "less: open file in vim read-only mode (supports piping)
+    printf '%s\n' "less: open file in vim read-only mode (supports piping)
   Usage: less [file|-]
   Falls back to command less when vim is unavailable."
     return 0
@@ -687,7 +672,7 @@ function less() {
 
 function lsd() {
   if is_help_arg "${1:-}"; then
-    echo "lsd: list directories only, sorted
+    printf '%s\n' "lsd: list directories only, sorted
   Usage: lsd [dir]"
     return 0
   fi
@@ -696,7 +681,7 @@ function lsd() {
 
 function lsda() {
   if is_help_arg "${1:-}"; then
-    echo "lsda: list directories (absolute paths), sorted
+    printf '%s\n' "lsda: list directories (absolute paths), sorted
   Usage: lsda [dir]"
     return 0
   fi
@@ -705,7 +690,7 @@ function lsda() {
 
 function lsf() {
   if is_help_arg "${1:-}"; then
-    echo "lsf: list files only, sorted
+    printf '%s\n' "lsf: list files only, sorted
   Usage: lsf [dir]"
     return 0
   fi
@@ -714,7 +699,7 @@ function lsf() {
 
 function lsfa() {
   if is_help_arg "${1:-}"; then
-    echo "lsfa: list files (absolute paths), sorted
+    printf '%s\n' "lsfa: list files (absolute paths), sorted
   Usage: lsfa [dir]"
     return 0
   fi
@@ -725,7 +710,7 @@ function lsfa() {
 # Arguments and status pass through unchanged; pipes and old binaries keep native output.
 function rg_link() {
   if is_help_arg "${1:-}"; then
-    echo "rg_link: search with native path hyperlinks where supported
+    printf '%s\n' "rg_link: search with native path hyperlinks where supported
   Usage: rg_link [ripgrep options] <pattern> [paths...]
   Pipes and older binaries stay plain."
     return 0
@@ -741,7 +726,7 @@ function rg_link() {
 # Arguments and status pass through unchanged; pipes and old binaries keep native output.
 function fd_link() {
   if is_help_arg "${1:-}"; then
-    echo "fd_link: find with native path hyperlinks where supported
+    printf '%s\n' "fd_link: find with native path hyperlinks where supported
   Usage: fd_link [fd options] [pattern] [path...]
   Pipes and older binaries stay plain."
     return 0

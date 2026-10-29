@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-function removeApp(){
-  echo "> Remove: " $@
+function removeApp() {
+  (
+    set -- "> Remove: " $@
+    IFS=' '
+    printf '%s\n' "$*"
+  )
   pm uninstall $@ || pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 

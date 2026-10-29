@@ -279,6 +279,20 @@ describe("invalid inputs and analyzer boundaries", () => {
     expect(() => validator.validateShellSource("", "options")).toThrow(/File syntax tree/);
   });
 
+  it("ignores unrelated ShellCheck diagnostics in the printf rule", () => {
+    analyzerFixture("shfmt", JSON.stringify({ Type: "File" }));
+    analyzerFixture(
+      "shellcheck",
+      JSON.stringify([
+        { code: 1091, level: "info", message: "source file not found" },
+        { code: 1012, level: "warning", message: "unrelated warning" },
+      ]),
+      1,
+    );
+    const shellSource = ["printf '%s\\n' value", ""].join("\n");
+    expect(validator.validateShellSource(shellSource, "printf")).toEqual([]);
+  });
+
   it("reports an analyzer failure without treating missing output as a pass", () => {
     analyzerFixture("shellcheck", "", 2);
     expect(() => validator.validateShellSource("", "quoting")).toThrow(/analyzer failed/);

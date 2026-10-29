@@ -99,8 +99,7 @@ function _ollama_url() {
     host="http://$host"
   fi
 
-    printf '%s\n' ' "$host'
-
+  printf '%s\n' "$host"
 }
 
 # _ollama_local_url: same normalization as _ollama_url but defaulting to loopback
@@ -146,11 +145,10 @@ function _ollama_model_context_length() {
   body="$(command curl -fsS --max-time 5 "$host/api/ps" 2> /dev/null)"
   if [ -n "$body" ] && ((has_jq)); then
     local resident
-    resident="$(echo "$body" | jq -r --arg m "$model" '
+    resident="$(printf '%s\n' "$body" | jq -r --arg m "$model" '
       [ .models[]? | select(.name == $m or .model == $m) | .context_length // empty ] | first // empty' 2> /dev/null)"
     if [ -n "$resident" ] && [ "$resident" != "null" ]; then
-    printf '%s\n' ' "$resident'
-
+      printf '%s\n' "$resident"
       return 0
     fi
   fi
@@ -163,20 +161,19 @@ function _ollama_model_context_length() {
 
   local native=""
   if ((has_jq)); then
-    native="$(echo "$body" | jq -r '
+    native="$(printf '%s\n' "$body" | jq -r '
       [ (.model_info // {} | to_entries[] | select(.key | endswith(".context_length")) | .value),
         (.details.context_length // empty) ]
       | map(select(type == "number")) | first // empty' 2> /dev/null)"
   else
     # Basic-regex only: the profile aliases grep to rg, and -E / + are not portable
     # across both. `[0-9][0-9]*` is the POSIX spelling of `[0-9]+`.
-    native="$(echo "$body" | grep -o '"[^"]*context_length": *[0-9][0-9]*' \
+    native="$(printf '%s\n' "$body" | grep -o '"[^"]*context_length": *[0-9][0-9]*' \
       | grep -o '[0-9][0-9]*$' | command head -n 1)"
   fi
 
   if [ -n "$native" ] && [ "$native" != "null" ]; then
-    printf '%s\n' ' "$native'
-
+    printf '%s\n' "$native"
     return 0
   fi
   return 1
@@ -189,7 +186,7 @@ function _ollama_model_context_length() {
 # without a scheme and/or port and normalizes them into a full URL.
 function list_ollama_models() {
   if is_help_arg "${1:-}"; then
-    echo "list_ollama_models: list models exposed by an Ollama endpoint
+    printf '%s\n' "list_ollama_models: list models exposed by an Ollama endpoint
   Usage: list_ollama_models [host[:port]]
 
 Host defaults to \$OLLAMA_DEFAULT_SERVER_IP:\$OLLAMA_DEFAULT_SERVER_PORT, falling back to
@@ -205,7 +202,7 @@ or a full URL. Prints one model name per line on stdout."
   host="$(_ollama_url "${1:-}")"
 
   # Progress goes to stderr so the model list on stdout stays pipe-clean.
-  echo "Fetching models from $host..." >&2
+  printf '%s\n' "Fetching models from $host..." >&2
   # `command curl` bypasses the profile's formatting/HAR curl wrapper so the body
   # reaches grep unmodified and no HAR entry is written for a polling call.
   command curl -fsS --max-time 5 "$host/api/tags" 2> /dev/null | grep -o '"name": *"[^"]*"' | cut -d'"' -f4
@@ -214,7 +211,7 @@ or a full URL. Prints one model name per line on stdout."
 # ollama_ps: show which models are resident, how much of each sits in VRAM, and when they expire
 function ollama_ps() {
   if is_help_arg "${1:-}"; then
-    echo "ollama_ps: list models currently loaded in an Ollama daemon
+    printf '%s\n' "ollama_ps: list models currently loaded in an Ollama daemon
   Usage: ollama_ps [host[:port]]
 
 Host defaults to 127.0.0.1:11434. Reads GET /api/ps and prints one row per
@@ -232,12 +229,12 @@ hang. Fix by picking a smaller model or quant, or by lowering
   local body
   body="$(command curl -fsS --max-time 5 "$host/api/ps" 2> /dev/null)"
   if [ -z "$body" ]; then
-    echo "ollama_ps: no response from $host/api/ps" >&2
+    printf '%s\n' "ollama_ps: no response from $host/api/ps" >&2
     return 1
   fi
 
   if type -P jq > /dev/null 2>&1; then
-    echo "$body" | jq -r '
+    printf '%s\n' "$body" | jq -r '
       if (.models | length) == 0 then "no models loaded"
       else .models[]
         | "\(.name)\tsize=\(((.size // 0) / 1073741824 * 10 | round) / 10)GB"
@@ -245,15 +242,14 @@ hang. Fix by picking a smaller model or quant, or by lowering
           + "\tctx=\(.context_length // "?")\texpires=\(.expires_at // "?")"
       end'
   else
-    printf '%s\n' ' "$body'
-
+    printf '%s\n' "$body"
   fi
 }
 
 # ollama_unload: evict a model from memory so a wedged or oversized load can be retried clean
 function ollama_unload() {
   if is_help_arg "${1:-}"; then
-    echo "ollama_unload: evict loaded models from an Ollama daemon
+    printf '%s\n' "ollama_unload: evict loaded models from an Ollama daemon
   Usage: ollama_unload [model] [host[:port]]
 
 With no model, every model reported by /api/ps is evicted. Sends a chat request
@@ -274,8 +270,7 @@ unloading does not clear the stall."
     local loaded
     loaded="$(command curl -fsS --max-time 5 "$host/api/ps" 2> /dev/null | grep -o '"name": *"[^"]*"' | cut -d'"' -f4)"
     if [ -z "$loaded" ]; then
-    printf '%s\n' ' "ollama_unload: nothing loaded on $host'
-
+      printf '%s\n' "ollama_unload: nothing loaded on $host"
       return 0
     fi
     local one
@@ -285,8 +280,7 @@ unloading does not clear the stall."
     return 0
   fi
 
-    printf '%s\n' ' ">> unloading $model from $host'
-
+  printf '%s\n' ">> unloading $model from $host"
   command curl -fsS --max-time 10 "$host/api/chat" \
     -H 'content-type: application/json' \
     -d "{\"model\":\"$model\",\"messages\":[],\"keep_alive\":0}" > /dev/null 2>&1
@@ -295,7 +289,7 @@ unloading does not clear the stall."
 # ollama_warmup: preload a model so the first real prompt is not charged the load time
 function ollama_warmup() {
   if is_help_arg "${1:-}"; then
-    echo "ollama_warmup: preload a model into an Ollama daemon
+    printf '%s\n' "ollama_warmup: preload a model into an Ollama daemon
   Usage: ollama_warmup [model] [host[:port]]
 
 Model defaults to \$OLLAMA_DEFAULT_MODEL, host to 127.0.0.1:11434.
@@ -311,17 +305,13 @@ first turn is not sitting on a multi-GB load."
   local host
   host="$(_ollama_local_url "${2:-}")"
 
-    printf '%s\n' \
-      ' ">> warming up $model on $host (loads th' \
-      'e weights; can take a minute)'
-
+  printf '%s\n' ">> warming up $model on $host (loads the weights; can take a minute)"
   if command curl -fsS --max-time 600 "$host/api/chat" \
     -H 'content-type: application/json' \
     -d "{\"model\":\"$model\",\"messages\":[]}" > /dev/null 2>&1; then
-    printf '%s\n' ' ">> $model is resident'
-
+    printf '%s\n' ">> $model is resident"
   else
-    echo "ollama_warmup: load failed — check 'ollama_doctor $host'" >&2
+    printf '%s\n' "ollama_warmup: load failed — check 'ollama_doctor $host'" >&2
     return 1
   fi
 }
@@ -331,7 +321,7 @@ first turn is not sitting on a multi-GB load."
 # ollama_restart: restart the local Ollama daemon through whichever service manager owns it
 function ollama_restart() {
   if is_help_arg "${1:-}"; then
-    echo "ollama_restart: restart the local Ollama daemon
+    printf '%s\n' "ollama_restart: restart the local Ollama daemon
   Usage: ollama_restart
 
 Picks the right mechanism for the platform:
@@ -347,45 +337,42 @@ ollama_apply_daemon_env so the new environment takes effect."
   fi
 
   if ((is_os_windows)); then
-    echo "ollama_restart: this is WSL — the Ollama daemon runs on the Windows host." >&2
-    echo "  Run in an elevated PowerShell:  Restart-Service -Name Ollama" >&2
+    printf '%s\n' "ollama_restart: this is WSL — the Ollama daemon runs on the Windows host." >&2
+    printf '%s\n' "  Run in an elevated PowerShell:  Restart-Service -Name Ollama" >&2
     return 1
   fi
 
   if ((is_os_mac)); then
     if type -P brew > /dev/null 2>&1 && brew services list 2> /dev/null | grep -q '^ollama'; then
-    printf '%s\n' ' ">> brew services restart ollama'
-
+      printf '%s\n' ">> brew services restart ollama"
       brew services restart ollama
       return
     fi
     if [ -d "/Applications/Ollama.app" ]; then
-    printf '%s\n' ' ">> restarting Ollama.app'
-
+      printf '%s\n' ">> restarting Ollama.app"
       osascript -e 'quit app "Ollama"' > /dev/null 2>&1
       sleep 2
       open -a Ollama
       return
     fi
-    echo "ollama_restart: no brew service and no /Applications/Ollama.app — start it manually with 'ollama serve'" >&2
+    printf '%s\n' "ollama_restart: no brew service and no /Applications/Ollama.app — start it manually with 'ollama serve'" >&2
     return 1
   fi
 
   if type -P systemctl > /dev/null 2>&1; then
-    printf '%s\n' ' ">> sudo systemctl restart ollama'
-
+    printf '%s\n' ">> sudo systemctl restart ollama"
     sudo systemctl restart ollama
     return
   fi
 
-  echo "ollama_restart: no supported service manager found — start it manually with 'ollama serve'" >&2
+  printf '%s\n' "ollama_restart: no supported service manager found — start it manually with 'ollama serve'" >&2
   return 1
 }
 
 # ollama_apply_daemon_env: persist this profile's OLLAMA_* tuning into the service manager
 function ollama_apply_daemon_env() {
   if is_help_arg "${1:-}"; then
-    echo "ollama_apply_daemon_env: persist this profile's OLLAMA_* tuning into the daemon
+    printf '%s\n' "ollama_apply_daemon_env: persist this profile's OLLAMA_* tuning into the daemon
   Usage: ollama_apply_daemon_env [--lan]
 
 The exports at the top of this file only reach an 'ollama serve' you start by
@@ -421,21 +408,18 @@ either way with ollama_doctor."
     if ((want_lan)); then
       launchctl setenv OLLAMA_HOST "0.0.0.0:${OLLAMA_DEFAULT_SERVER_PORT:-11434}"
     fi
-    printf '%s\n' \
-      ' ">> launchd session env updated. Run \'o' \
-      'llama_restart\' for it to take effect.'
-
+    printf '%s\n' ">> launchd session env updated. Run 'ollama_restart' for it to take effect."
     return 0
   fi
 
   if ((is_os_windows)); then
-    echo "ollama_apply_daemon_env: this is WSL — set the variables on the Windows host instead." >&2
-    echo "  Example (PowerShell): [Environment]::SetEnvironmentVariable('OLLAMA_CONTEXT_LENGTH','${OLLAMA_CONTEXT_LENGTH:-16384}','User')" >&2
+    printf '%s\n' "ollama_apply_daemon_env: this is WSL — set the variables on the Windows host instead." >&2
+    printf '%s\n' "  Example (PowerShell): [Environment]::SetEnvironmentVariable('OLLAMA_CONTEXT_LENGTH','${OLLAMA_CONTEXT_LENGTH:-16384}','User')" >&2
     return 1
   fi
 
   if ! type -P systemctl > /dev/null 2>&1; then
-    echo "ollama_apply_daemon_env: no systemd here — export the vars in whatever starts 'ollama serve'" >&2
+    printf '%s\n' "ollama_apply_daemon_env: no systemd here — export the vars in whatever starts 'ollama serve'" >&2
     return 1
   fi
 
@@ -454,21 +438,16 @@ Environment=\"OLLAMA_HOST=0.0.0.0:${OLLAMA_DEFAULT_SERVER_PORT:-11434}\""
   fi
 
   if [ -f "$target" ] && [ "$(command cat "$target" 2> /dev/null)" = "$desired" ]; then
-    printf '%s\n' ' ">> Skipped: $target already up to date'
-
+    printf '%s\n' ">> Skipped: $target already up to date"
     return 0
   fi
 
-    printf '%s\n' ' ">> writing $target'
-
+  printf '%s\n' ">> writing $target"
   sudo mkdir -p "$folder"
-  echo "$desired" | sudo tee "$target" > /dev/null
+  printf '%s\n' "$desired" | sudo tee "$target" > /dev/null
   sudo systemctl daemon-reload
   sudo systemctl restart ollama
-    printf '%s\n' \
-      ' ">> ollama restarted with the managed en' \
-      'vironment'
-
+  printf '%s\n' ">> ollama restarted with the managed environment"
 }
 
 # --- Diagnostics ---
@@ -476,7 +455,7 @@ Environment=\"OLLAMA_HOST=0.0.0.0:${OLLAMA_DEFAULT_SERVER_PORT:-11434}\""
 # ollama_doctor: one-shot diagnosis for an Ollama endpoint that stalls or stops mid-answer
 function ollama_doctor() {
   if is_help_arg "${1:-}"; then
-    echo "ollama_doctor: diagnose an Ollama endpoint that hangs or truncates
+    printf '%s\n' "ollama_doctor: diagnose an Ollama endpoint that hangs or truncates
   Usage: ollama_doctor [host[:port]]
 
 Host defaults to 127.0.0.1:11434. Checks, in order:
@@ -498,82 +477,50 @@ Common causes of a mid-answer stall, in the order worth checking:
 
   local host
   host="$(_ollama_local_url "${1:-}")"
-    printf '%s\n' ' "== ollama_doctor: $host =='
-
+  printf '%s\n' "== ollama_doctor: $host =="
 
   local version
   version="$(command curl -fsS --max-time 5 "$host/api/version" 2> /dev/null)"
   if [ -z "$version" ]; then
-    printf '%s\n' \
-      ' "[FAIL] unreachable — daemon down, wrong' \
-      ' port, or firewalled'
-
+    printf '%s\n' "[FAIL] unreachable — daemon down, wrong port, or firewalled"
     if ((is_os_windows)); then
-    printf '%s\n' \
-      ' "       WSL talks to the Windows host da' \
-      'emon; confirm it is running there.'
-
+      printf '%s\n' "       WSL talks to the Windows host daemon; confirm it is running there."
     else
-    printf '%s\n' ' "       Try: ollama_restart'
-
+      printf '%s\n' "       Try: ollama_restart"
     fi
     return 1
   fi
-    printf '%s\n' ' "[ok]   reachable — $version'
-
+  printf '%s\n' "[ok]   reachable — $version"
 
   local model_count
   model_count="$(list_ollama_models "$host" 2> /dev/null | grep -c .)"
-    printf '%s\n' \
-      ' "[ok]   ${model_count:-0} model(s) insta' \
-      'lled'
+  printf '%s\n' "[ok]   ${model_count:-0} model(s) installed"
 
+  printf '%s\n' "-- resident models --"
+  ollama_ps "$host" 2> /dev/null || printf '%s\n' "(none)"
 
-    printf '%s\n' ' "-- resident models --'
-
-  ollama_ps "$host" 2> /dev/null || echo "(none)"
-
-    printf '%s\n' \
-      ' "-- this shell\'s tuning (the daemon may' \
-      ' differ — see ollama_apply_daemon_env) --'
-
+  printf '%s\n' "-- this shell's tuning (the daemon may differ — see ollama_apply_daemon_env) --"
   local var value
   for var in $SY_OLLAMA_MANAGED_ENV_VARS; do
     eval "value=\${$var:-<unset>}"
-    printf '%s\n' ' "   $var=$value'
-
+    printf '%s\n' "   $var=$value"
   done
 
   local probe_model
   probe_model="$(list_ollama_models "$host" 2> /dev/null | command head -n 1)"
   if [ -z "$probe_model" ]; then
-    printf '%s\n' \
-      ' "[warn] no models installed — pull one, ' \
-      'e.g. \'ollama pull qwen2.5-coder:7b\' (ti' \
-      'ers: software/scripts/advanced/llm/llm-mo' \
-      'dels.jsonc)'
-
+    printf '%s\n' "[warn] no models installed — pull one, e.g. 'ollama pull qwen2.5-coder:7b' (tiers: software/scripts/advanced/llm/llm-models.jsonc)"
     return 0
   fi
 
-    printf '%s\n' \
-      ' "-- live generation probe ($probe_model)' \
-      ' --'
-
+  printf '%s\n' "-- live generation probe ($probe_model) --"
   if command curl -fsS --max-time 120 "$host/api/generate" \
     -H 'content-type: application/json' \
     -d "{\"model\":\"$probe_model\",\"prompt\":\"say ok\",\"stream\":false,\"options\":{\"num_predict\":1}}" \
     > /dev/null 2>&1; then
-    printf '%s\n' \
-      ' "[ok]   generation succeeded — the daemo' \
-      'n is healthy'
-
+    printf '%s\n' "[ok]   generation succeeded — the daemon is healthy"
   else
-    printf '%s\n' ' "[FAIL] generation timed out or errored'
-
-    printf '%s\n' \
-      ' "       Try, in order: ollama_unload / o' \
-      'llama_restart / a smaller model'
-
+    printf '%s\n' "[FAIL] generation timed out or errored"
+    printf '%s\n' "       Try, in order: ollama_unload / ollama_restart / a smaller model"
   fi
 }

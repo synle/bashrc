@@ -5,21 +5,16 @@
 
 # Force refresh: remove existing binary if stale
 if is_force_refresh_stale "$HOME/.local/bin/kubectl"; then
-    printf '%s\n' ' ">> Force refresh: removing kubectl'
-
+  printf '%s\n' ">> Force refresh: removing kubectl"
   rm -f "$HOME/.local/bin/kubectl"
 fi
 
 # Install kubectl if not already installed
 _bin=$(has_persistent_binary kubectl)
 if [ -n "$_bin" ]; then
-    printf '%s\n' \
-      ' ">> Skipped kubectl: already installed a' \
-      't $_bin'
-
+  printf '%s\n' ">> Skipped kubectl: already installed at $_bin"
 else
-    printf '%s\n' ' \'>> Installing kubectl'
-
+  printf '%s\n' '>> Installing kubectl'
   KUBECTL_VERSION=$(curl -fsSL https://dl.k8s.io/release/stable.txt)
   KUBECTL_OS="linux"
   KUBECTL_ARCH="amd64"
@@ -34,8 +29,5 @@ else
 
   curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/${KUBECTL_OS}/${KUBECTL_ARCH}/kubectl" -o "$HOME/.local/bin/kubectl"
   chmod +x "$HOME/.local/bin/kubectl"
-    printf '%s\n' \
-      ' ">> kubectl ${KUBECTL_VERSION} installed' \
-      ' to $HOME/.local/bin/kubectl'
-
+  printf '%s\n' ">> kubectl ${KUBECTL_VERSION} installed to $HOME/.local/bin/kubectl"
 fi

@@ -27,8 +27,7 @@ function _parse_git_branch_fetch() {
     [ "$ahead" -gt 0 ] 2> /dev/null && info+=" +${ahead}"
     [ "$behind" -gt 0 ] 2> /dev/null && info+=" -${behind}"
   fi
-    printf '%s\n' ' "[${branch}${info}]'
-
+  printf '%s\n' "[${branch}${info}]"
 }
 function parse_git_branch() {
   type -P git &> /dev/null || return
@@ -47,8 +46,7 @@ function parse_git_branch() {
     _git_branch_time=$now
     _git_branch_count=0
   fi
-    printf '%s\n' ' "$_git_branch_cache'
-
+  printf '%s\n' "$_git_branch_cache"
 }
 
 # shows local IP addresses (cached, refreshes after max_age seconds or max_calls calls)
@@ -63,8 +61,7 @@ function _ifconfig2_fetch() {
   if [ -z "$out" ]; then
     out=$(command ifconfig 2> /dev/null | grep 'inet ' | awk '{print $2}' | grep -v '^127\.' | sort -u | paste -sd',' -)
   fi
-    printf '%s\n' ' "$out'
-
+  printf '%s\n' "$out"
 }
 # running ifconfig manually invalidates the IP cache and shows full output
 function ifconfig() {
@@ -73,7 +70,7 @@ function ifconfig() {
 }
 function ifconfig2() {
   if is_help_arg "${1:-}"; then
-    echo "ifconfig2: show local IP addresses (cached)
+    printf '%s\n' "ifconfig2: show local IP addresses (cached)
   Usage: ifconfig2"
     return 0
   fi
@@ -84,8 +81,7 @@ function ifconfig2() {
     _ifconfig2_time=$now
     _ifconfig2_count=0
   fi
-    printf '%s\n' ' "$_ifconfig2_cache'
-
+  printf '%s\n' "$_ifconfig2_cache"
 }
 
 # truncates deep paths, keeping last 3 parts full
@@ -104,8 +100,7 @@ function shorter_pwd_path() {
     fi
   done
 
-    printf '%s\n' ' "${result%/}'
-
+  printf '%s\n' "${result%/}"
 }
 
 ################################################################################

@@ -227,7 +227,7 @@ function h7() { printf '\033[90m%s\033[0m\n' "$@"; }
 # checks if a value is truthy (1, true, y, yes — case-insensitive)
 function is_truthy() {
   if is_help_arg "${1:-}"; then
-    echo "
+    printf '%s\n' "
       is_truthy: check if a value is truthy (1, true, y, yes — case-insensitive)
         is_truthy 1           returns 0 (success)
         is_truthy yes         returns 0 (success)

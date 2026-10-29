@@ -12,13 +12,11 @@
 
 # Skip in CI
 ((IS_CI)) && {
-    printf '%s\n' ' ">>> Skipped : CI'
-
+  printf '%s\n' ">>> Skipped : CI"
   exit 0
 }
 
-    printf '%s\n' ' \'> Installing language servers'
-
+printf '%s\n' '> Installing language servers'
 
 # --- Section 1: npm-based servers ---
 # Each call goes through npm_install_global which handles skip-if-installed,
@@ -29,8 +27,7 @@
 # freshness gate has a real binary to check instead of falling back to the
 # node_modules marker. vscode-markdown-languageserver ships no bin at all —
 # editors load it as a module — so only the node_modules marker gates it.
-    printf '%s\n' ' \'>> npm-based servers'
-
+printf '%s\n' '>> npm-based servers'
 npm_install_global typescript tsc
 npm_install_global typescript-language-server
 npm_install_global vscode-langservers-extracted vscode-html-language-server
@@ -54,18 +51,11 @@ safe_mkdir "$HOME/.local/share"
 
 # --- rust-analyzer ---
 # Single-binary gunzip; targets per OS+arch. Skip on WSL native side (devs use rustup on Windows).
-    printf '%s\n' ' \'>> rust-analyzer'
-
+printf '%s\n' '>> rust-analyzer'
 if ((is_os_windows)); then
-    printf '%s\n' \
-      ' \'>> rust-analyzer >> Skipped (use rustu' \
-      'p on Windows host)'
-
+  printf '%s\n' '>> rust-analyzer >> Skipped (use rustup on Windows host)'
 elif has_persistent_binary rust-analyzer && ! is_force_refresh_stale "$(has_persistent_binary rust-analyzer)"; then
-    printf '%s\n' \
-      ' \'>> rust-analyzer >> Skipped (already i' \
-      'nstalled)'
-
+  printf '%s\n' '>> rust-analyzer >> Skipped (already installed)'
 else
   _ra_target=""
   case "$_lsp_uname_s" in
@@ -83,36 +73,26 @@ else
     ;;
   esac
   if [ -z "$_ra_target" ]; then
-    printf '%s\n' \
-      ' ">> rust-analyzer >> Skipped (unsupporte' \
-      'd OS/arch: $_lsp_uname_s/$_lsp_uname_m)'
-
+    printf '%s\n' ">> rust-analyzer >> Skipped (unsupported OS/arch: $_lsp_uname_s/$_lsp_uname_m)"
   else
     _ra_url="https://github.com/rust-lang/rust-analyzer/releases/latest/download/rust-analyzer-${_ra_target}.gz"
-    echo -n ">> rust-analyzer >> Installing from $_ra_url >> "
+    printf '%s' ">> rust-analyzer >> Installing from $_ra_url >> "
     if curl -fsSL "$_ra_url" | gunzip > "$HOME/.local/bin/rust-analyzer"; then
       safe_chmod +x "$HOME/.local/bin/rust-analyzer"
-    printf '%s\n' ' \'Success'
-
+      printf '%s\n' 'Success'
     else
-    printf '%s\n' ' \'Error'
-
+      printf '%s\n' 'Error'
     fi
   fi
 fi
 
 # --- taplo (TOML LS) ---
 # Same gunzip flow as rust-analyzer, different target naming convention.
-    printf '%s\n' ' \'>> taplo'
-
+printf '%s\n' '>> taplo'
 if ((is_os_windows)); then
-    printf '%s\n' ' \'>> taplo >> Skipped (Windows host)'
-
+  printf '%s\n' '>> taplo >> Skipped (Windows host)'
 elif has_persistent_binary taplo && ! is_force_refresh_stale "$(has_persistent_binary taplo)"; then
-    printf '%s\n' \
-      ' \'>> taplo >> Skipped (already installed' \
-      ')'
-
+  printf '%s\n' '>> taplo >> Skipped (already installed)'
 else
   _taplo_target=""
   case "$_lsp_uname_s" in
@@ -130,20 +110,15 @@ else
     ;;
   esac
   if [ -z "$_taplo_target" ]; then
-    printf '%s\n' \
-      ' ">> taplo >> Skipped (unsupported OS/arc' \
-      'h: $_lsp_uname_s/$_lsp_uname_m)'
-
+    printf '%s\n' ">> taplo >> Skipped (unsupported OS/arch: $_lsp_uname_s/$_lsp_uname_m)"
   else
     _taplo_url="https://github.com/tamasfe/taplo/releases/latest/download/taplo-full-${_taplo_target}.gz"
-    echo -n ">> taplo >> Installing from $_taplo_url >> "
+    printf '%s' ">> taplo >> Installing from $_taplo_url >> "
     if curl -fsSL "$_taplo_url" | gunzip > "$HOME/.local/bin/taplo"; then
       safe_chmod +x "$HOME/.local/bin/taplo"
-    printf '%s\n' ' \'Success'
-
+      printf '%s\n' 'Success'
     else
-    printf '%s\n' ' \'Error'
-
+      printf '%s\n' 'Error'
     fi
   fi
 fi
@@ -151,17 +126,13 @@ fi
 # --- jdtls (Eclipse Java LS) ---
 # Tarball, not single binary. Extracted to ~/.local/share/jdtls; thin bash wrapper at
 # ~/.local/bin/jdtls invokes java with the right launcher jar + config dir + workspace.
-    printf '%s\n' ' \'>> jdtls'
-
+printf '%s\n' '>> jdtls'
 _jdtls_root="$HOME/.local/share/jdtls"
 if [ -d "$_jdtls_root/plugins" ] && ! is_force_refresh_stale "$_jdtls_root/plugins"; then
-    printf '%s\n' \
-      ' \'>> jdtls >> Skipped (already installed' \
-      ')'
-
+  printf '%s\n' '>> jdtls >> Skipped (already installed)'
 else
   _jdtls_url="https://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
-  echo -n ">> jdtls >> Installing from $_jdtls_url >> "
+  printf '%s' ">> jdtls >> Installing from $_jdtls_url >> "
   # Clean any prior install so stale plugins don't shadow new ones.
   if [ -d "$_jdtls_root" ]; then
     rm -rf "$_jdtls_root"
@@ -182,37 +153,26 @@ else
 exec python3 "$HOME/.local/share/jdtls/bin/jdtls.py" "$@"
 EOF
     safe_chmod +x "$HOME/.local/bin/jdtls"
-    printf '%s\n' ' \'Success'
-
+    printf '%s\n' 'Success'
   else
-    printf '%s\n' ' \'Error'
-
+    printf '%s\n' 'Error'
   fi
 fi
 
 # --- Section 3: go install fallback for gopls ---
 # gopls has no standalone release binary; it ships exclusively via `go install`.
-    printf '%s\n' ' \'>> gopls (requires Go toolchain)'
-
+printf '%s\n' '>> gopls (requires Go toolchain)'
 if type -P go &> /dev/null; then
   if has_persistent_binary gopls && ! is_force_refresh_stale "$(has_persistent_binary gopls)"; then
-    printf '%s\n' \
-      ' \'>> gopls >> Skipped (already installed' \
-      ')'
-
+    printf '%s\n' '>> gopls >> Skipped (already installed)'
   else
-    echo -n '>> gopls >> Installing via go install >> '
+    printf '%s' '>> gopls >> Installing via go install >> '
     if GOBIN="$HOME/.local/bin" go install golang.org/x/tools/gopls@latest >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    printf '%s\n' ' \'Success'
-
+      printf '%s\n' 'Success'
     else
-    printf '%s\n' ' \'Error'
-
+      printf '%s\n' 'Error'
     fi
   fi
 else
-    printf '%s\n' \
-      ' \'>> gopls >> Skipped (no Go toolchain o' \
-      'n PATH)'
-
+  printf '%s\n' '>> gopls >> Skipped (no Go toolchain on PATH)'
 fi

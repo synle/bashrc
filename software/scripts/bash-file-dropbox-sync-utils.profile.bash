@@ -32,7 +32,7 @@
 # patch_cleanup: archive loose .patch files, keep only the N newest in archived_patch
 function patch_cleanup() {
   if is_help_arg "${1:-}"; then
-    echo "patch_cleanup: move loose .patch files into archived_patch and keep only the newest N
+    printf '%s\n' "patch_cleanup: move loose .patch files into archived_patch and keep only the newest N
   Usage: patch_cleanup [keep=3]
   Examples:
     patch_cleanup       keep 3 newest patches (default)
@@ -43,8 +43,7 @@ function patch_cleanup() {
   local keep="${1:-3}"
   local dropbox_folder
   dropbox_folder=$(_dropbox_folder) || {
-    printf '%s\n' ' "No dropbox folder found'
-
+    printf '%s\n' "No dropbox folder found"
     return 1
   }
   local archive_folder="${dropbox_folder}/archived_patch"
@@ -58,10 +57,7 @@ function patch_cleanup() {
     mv "$f" "$archive_folder/"
     moved=$((moved + 1))
   done
-    printf '%s\n' \
-      ' "Moved $moved .patch file(s) to $archive' \
-      '_folder'
-
+  printf '%s\n' "Moved $moved .patch file(s) to $archive_folder"
 
   # sort by modification time (newest first), remove all but the newest N
   local removed=0
@@ -69,17 +65,13 @@ function patch_cleanup() {
   while IFS= read -r f; do
     count=$((count + 1))
     if [ "$count" -gt "$keep" ]; then
-    printf '%s\n' ' "  Removing: $(basename "$f")'
-
+      printf '%s\n' "  Removing: $(basename "$f")"
       rm "$f"
       removed=$((removed + 1))
     fi
   done < <(ls -t "$archive_folder"/*.patch 2> /dev/null)
 
-    printf '%s\n' \
-      ' "Kept $keep newest, removed $removed old' \
-      ' .patch file(s)'
-
+  printf '%s\n' "Kept $keep newest, removed $removed old .patch file(s)"
 }
 
 ################################################################################
@@ -90,7 +82,7 @@ function patch_cleanup() {
 # open notes file
 function note() {
   if is_help_arg "${1:-}"; then
-    echo "
+    printf '%s\n' "
       note: open a shared notes file from Dropbox
         note               open _note.txt
         note 1             create and open a timestamped _note_<timestamp>.txt
@@ -101,16 +93,12 @@ function note() {
 
   local dropbox_folder
   dropbox_folder=$(_dropbox_folder) || {
-    printf '%s\n' ' "No dropbox folder found'
-
+    printf '%s\n' "No dropbox folder found"
     return 1
   }
   local notes_folder="${dropbox_folder}/notes"
   if [ ! -d "$notes_folder" ]; then
-    printf '%s\n' \
-      ' "No dropbox notes folder found: $notes_f' \
-      'older'
-
+    printf '%s\n' "No dropbox notes folder found: $notes_folder"
     return 1
   fi
   local file
@@ -139,7 +127,7 @@ function note() {
 # sync_to_dropbox: sync a file or folder into the dropbox folder
 function sync_to_dropbox() {
   if is_help_arg "${1:-}"; then
-    echo "sync_to_dropbox: sync a file or folder into the shared dropbox folder
+    printf '%s\n' "sync_to_dropbox: sync a file or folder into the shared dropbox folder
   Usage: sync_to_dropbox <src> [dest=<dropbox folder>] [lookback_days=0] [max_size_gb=5]
   Examples:
     sync_to_dropbox ~/Downloads                  sync every file in ~/Downloads into the dropbox folder
@@ -155,15 +143,11 @@ function sync_to_dropbox() {
 
   local src="${1:-}"
   if [ -z "$src" ]; then
-    printf '%s\n' \
-      ' "sync_to_dropbox: missing <src>. See: sy' \
-      'nc_to_dropbox --help'
-
+    printf '%s\n' "sync_to_dropbox: missing <src>. See: sync_to_dropbox --help"
     return 1
   fi
   if [ ! -e "$src" ]; then
-    printf '%s\n' ' "sync_to_dropbox: source not found: $src'
-
+    printf '%s\n' "sync_to_dropbox: source not found: $src"
     return 1
   fi
 
@@ -171,17 +155,13 @@ function sync_to_dropbox() {
   if [ -z "$sync_folder" ]; then
     local dropbox_folder
     dropbox_folder=$(_dropbox_folder) || {
-    printf '%s\n' ' "No dropbox folder found'
-
+      printf '%s\n' "No dropbox folder found"
       return 1
     }
     sync_folder="${dropbox_folder}"
   fi
   if [ ! -d "$sync_folder" ]; then
-    printf '%s\n' \
-      ' "sync_to_dropbox: destination folder not' \
-      ' found: $sync_folder'
-
+    printf '%s\n' "sync_to_dropbox: destination folder not found: $sync_folder"
     return 1
   fi
 

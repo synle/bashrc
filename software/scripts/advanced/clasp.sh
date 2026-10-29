@@ -3,6 +3,5 @@
 
 # install clasp - Google Apps Script CLI tool (https://github.com/google/clasp)
 
-    printf '%s\n' ' \'> Installing clasp'
-
+printf '%s\n' '> Installing clasp'
 npm_install_global @google/clasp clasp

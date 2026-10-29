@@ -30,10 +30,21 @@
   done
 
   if [ -z "$_name" ]; then
-    printf '%s\n' \
-      ' "Usage: make new-script name=<script-nam' \
-      'e> [os=<os-name>] [type=<js|sh>]'
-
+    printf '%s\n' "Usage: make new-script name=<script-name> [os=<os-name>] [type=<js|sh>]"
+    printf '%s\n' ""
+    printf '%s\n' "Examples:"
+    printf '%s\n' "  make new-script name=my-tool"
+    printf '%s\n' "  make new-script name=my-tool type=sh"
+    printf '%s\n' "  make new-script name=my-tool os=mac"
+    printf '%s\n' "  make new-script name=my-tool os=advanced type=sh"
+    printf '%s\n' ""
+    printf '%s\n' "Valid os values:"
+    printf '%s\n' "  advanced, android_termux, arch_linux, chromeos, mac,"
+    printf '%s\n' "  mingw64, redhat, steamos, ubuntu, windows, wsl"
+    printf '%s\n' ""
+    printf '%s\n' "Valid type values: js (default), sh"
+    exit 1
+  fi
 
   # ---- Default type to js ----
   if [ -z "$_type" ]; then
@@ -42,8 +53,10 @@
 
   # ---- Validate type ----
   if [ "$_type" != "js" ] && [ "$_type" != "sh" ]; then
-    printf '%s\n' ' "Error: Invalid type \'$_type\''
-
+    printf '%s\n' "Error: Invalid type '$_type'"
+    printf '%s\n' "Valid values: js, sh"
+    exit 1
+  fi
 
   # ---- Validate OS ----
   _valid_os="advanced android_termux arch_linux chromeos mac mingw64 redhat steamos ubuntu windows wsl"
@@ -56,8 +69,11 @@
       fi
     done
     if [ "$_os_valid" = "false" ]; then
-    printf '%s\n' ' "Error: Invalid os \'$_os\''
-
+      printf '%s\n' "Error: Invalid os '$_os'"
+      printf '%s\n' "Valid values: $_valid_os"
+      exit 1
+    fi
+  fi
 
   # ---- Determine output path ----
   if [ -n "$_os" ]; then
@@ -69,14 +85,15 @@
 
   # ---- Check if file already exists ----
   if [ -f "$_file" ]; then
-    printf '%s\n' ' "Error: $_file already exists'
-
+    printf '%s\n' "Error: $_file already exists"
+    exit 1
+  fi
 
   # ---- Ensure directory exists ----
   mkdir -p "$_dir"
 
   # ---- Generate readable description from name ----
-  _description=$(echo "$_name" | sed 's/-/ /g' | sed 's/_/ /g')
+  _description=$(printf '%s\n' "$_name" | sed 's/-/ /g' | sed 's/_/ /g')
 
   # ---- Write the scaffold ----
   if [ "$_type" = "sh" ]; then
@@ -138,8 +155,18 @@ OUTER
     fi
   fi
 
-    printf '%s\n' ' "Created: $_file'
-
+  printf '%s\n' "Created: $_file"
+  printf '%s\n' ""
+  printf '%s\n' "Next steps:"
+  if [ "$_type" = "sh" ]; then
+    printf '%s\n' "  1. Edit $_file to implement the script"
+    printf '%s\n' "  2. Test: ./run --files=\"$_name.$_type\""
+    printf '%s\n' "  3. Run: make format"
+  else
+    printf '%s\n' "  1. Edit $_file to implement doWork() and undoWork()"
+    printf '%s\n' "  2. Test: ./run --files=\"$_name.$_type\""
+    printf '%s\n' "  3. Run: make format"
+  fi
 
   exit
 }

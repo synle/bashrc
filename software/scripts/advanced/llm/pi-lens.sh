@@ -7,7 +7,7 @@
 set -e
 
 node -e 'const [major, minor] = process.versions.node.split(".").map(Number); process.exit(major > 22 || (major === 22 && minor >= 19) ? 0 : 1)' || {
-  echo '>> pi-lens MCP requires Node >=22.19.0' >&2
+  printf '%s\n' '>> pi-lens MCP requires Node >=22.19.0' >&2
   exit 1
 }
 
@@ -30,24 +30,20 @@ for pi_lens_package in "$PI_LENS_TUI_PACKAGE" "$PI_LENS_TYPEBOX_PACKAGE" "$PI_LE
   WSLENV="${WSLENV:+$WSLENV:}npm_config_ignore_scripts/w" IS_REFRESH_MODE="$pi_lens_refresh" npm_config_ignore_scripts=true \
     npm_install_global "$pi_lens_package" "$pi_lens_binary" < /dev/null || {
     pi_lens_status=$?
-    echo '>> pi-lens MCP install failed: npm helper returned nonzero' >&2
+    printf '%s\n' '>> pi-lens MCP install failed: npm helper returned nonzero' >&2
     exit "$pi_lens_status"
   }
 
   # npm_install_global can report install errors without failing; verify the payload.
   node -e 'process.exit(require(process.argv[1]).version === process.argv[2] ? 0 : 1)' \
     "$pi_lens_manifest" "${pi_lens_package##*@}" || {
-    echo '>> pi-lens MCP install failed: package does not match pinned release' >&2
+    printf '%s\n' '>> pi-lens MCP install failed: package does not match pinned release' >&2
     exit 1
   }
 done
 
 has_persistent_binary pi-lens-mcp > /dev/null || {
-  echo '>> pi-lens MCP install failed: executable missing' >&2
+  printf '%s\n' '>> pi-lens MCP install failed: executable missing' >&2
   exit 1
 }
-    printf '%s\n' \
-      ' ">> TODO: EXPERIMENTAL pi-lens MCP — $PI' \
-      '_LENS_PACKAGE installed; verify client wo' \
-      'rkspace and language-server readiness'
-
+printf '%s\n' ">> TODO: EXPERIMENTAL pi-lens MCP — $PI_LENS_PACKAGE installed; verify client workspace and language-server readiness"

@@ -14,52 +14,30 @@ REMOVE_MAC_AI_MARKER="$HOME/.config/removemacai/applied"
 macos_major_version=$(sw_vers -productVersion 2> /dev/null | cut -d. -f1)
 
 if [ "$macos_major_version" != "$REMOVE_MAC_AI_TARGET_MAJOR" ]; then
-    printf '%s\n' \
-      ' ">> Skipped RemoveMacAI: macOS $macos_ma' \
-      'jor_version is not macOS $REMOVE_MAC_AI_T' \
-      'ARGET_MAJOR (Golden Gate)'
-
+  printf '%s\n' ">> Skipped RemoveMacAI: macOS $macos_major_version is not macOS $REMOVE_MAC_AI_TARGET_MAJOR (Golden Gate)"
   exit 0
 fi
 
 if [ "$(get_native_arch)" != "arm64" ]; then
-    printf '%s\n' \
-      ' ">> Skipped RemoveMacAI: Apple Intellige' \
-      'nce only runs on Apple silicon'
-
+  printf '%s\n' ">> Skipped RemoveMacAI: Apple Intelligence only runs on Apple silicon"
   exit 0
 fi
 
 if ((IS_CI)); then
-    printf '%s\n' \
-      ' ">> Skipped RemoveMacAI: requires intera' \
-      'ctive profile approval, not available in ' \
-      'CI'
-
+  printf '%s\n' ">> Skipped RemoveMacAI: requires interactive profile approval, not available in CI"
   exit 0
 fi
 
 if [ -f "$REMOVE_MAC_AI_MARKER" ] && ! is_force_refresh_stale "$REMOVE_MAC_AI_MARKER"; then
-    printf '%s\n' \
-      ' ">> Skipped RemoveMacAI: already applied' \
-      ' ($REMOVE_MAC_AI_MARKER)'
-
+  printf '%s\n' ">> Skipped RemoveMacAI: already applied ($REMOVE_MAC_AI_MARKER)"
   exit 0
 fi
 
-    printf '%s\n' \
-      ' ">> Disabling Apple Intelligence on macO' \
-      'S $REMOVE_MAC_AI_TARGET_MAJOR via RemoveM' \
-      'acAI'
-
+printf '%s\n' ">> Disabling Apple Intelligence on macOS $REMOVE_MAC_AI_TARGET_MAJOR via RemoveMacAI"
 if curl -fsSL "$REMOVE_MAC_AI_URL" | bash; then
   safe_mkdir "$(dirname "$REMOVE_MAC_AI_MARKER")"
   safe_touch "$REMOVE_MAC_AI_MARKER"
-    printf '%s\n' ' ">> RemoveMacAI applied'
-
+  printf '%s\n' ">> RemoveMacAI applied"
 else
-    printf '%s\n' \
-      ' ">> Warning: RemoveMacAI did not complet' \
-      'e; re-run to retry'
-
+  printf '%s\n' ">> Warning: RemoveMacAI did not complete; re-run to retry"
 fi

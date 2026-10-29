@@ -23,10 +23,10 @@
 # Echoes "x64" or "arm64"; returns 1 on an unsupported arch.
 function _gh_runner_arch_slug() {
   case "$(get_native_arch)" in
-  arm64 | aarch64) echo "arm64" ;;
-  x86_64 | amd64) echo "x64" ;;
+  arm64 | aarch64) printf '%s\n' "arm64" ;;
+  x86_64 | amd64) printf '%s\n' "x64" ;;
   *)
-    echo ">> Unsupported arch: $(get_native_arch)" >&2
+    printf '%s\n' ">> Unsupported arch: $(get_native_arch)" >&2
     return 1
     ;;
   esac
@@ -35,7 +35,7 @@ function _gh_runner_arch_slug() {
 # gh_runner_setup: register this machine as a self-hosted GitHub Actions runner
 function gh_runner_setup() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "gh_runner_setup: register THIS machine as a self-hosted GitHub Actions runner
+    printf '%s\n' "gh_runner_setup: register THIS machine as a self-hosted GitHub Actions runner
   Usage: gh_runner_setup <owner/repo>     register a repo-level runner
          gh_runner_setup --org <org>      register an org-level runner
   Env overrides:
@@ -52,11 +52,11 @@ function gh_runner_setup() {
   fi
 
   if ! type -P gh > /dev/null 2>&1; then
-    echo ">> gh (GitHub CLI) not found. Install it, then run 'gh auth login'." >&2
+    printf '%s\n' ">> gh (GitHub CLI) not found. Install it, then run 'gh auth login'." >&2
     return 1
   fi
   if ! gh auth status > /dev/null 2>&1; then
-    echo ">> gh is not authenticated. Run 'gh auth login' first." >&2
+    printf '%s\n' ">> gh is not authenticated. Run 'gh auth login' first." >&2
     return 1
   fi
 
@@ -65,7 +65,7 @@ function gh_runner_setup() {
   if [ "$1" = "--org" ]; then
     local org="${2:-}"
     if [ -z "$org" ]; then
-      echo ">> --org requires an organization name. See: gh_runner_setup --help" >&2
+      printf '%s\n' ">> --org requires an organization name. See: gh_runner_setup --help" >&2
       return 1
     fi
     scope_url="https://github.com/${org}"
@@ -75,7 +75,7 @@ function gh_runner_setup() {
     case "$repo" in
     */*) : ;; # owner/repo
     *)
-      echo ">> Expected <owner/repo> or --org <org>, got: $repo" >&2
+      printf '%s\n' ">> Expected <owner/repo> or --org <org>, got: $repo" >&2
       return 1
       ;;
     esac
@@ -86,7 +86,7 @@ function gh_runner_setup() {
   local reg_token
   reg_token="$(gh api --method POST "$token_api" --jq .token 2> /dev/null)"
   if [ -z "$reg_token" ]; then
-    echo ">> Could not get a registration token from '$token_api'. Need admin on the target." >&2
+    printf '%s\n' ">> Could not get a registration token from '$token_api'. Need admin on the target." >&2
     return 1
   fi
 
@@ -96,7 +96,7 @@ function gh_runner_setup() {
   Darwin) os_slug="osx" ;;
   Linux) os_slug="linux" ;;
   *)
-    echo ">> Self-hosted runner setup here supports macOS and Linux only." >&2
+    printf '%s\n' ">> Self-hosted runner setup here supports macOS and Linux only." >&2
     return 1
     ;;
   esac
@@ -105,7 +105,7 @@ function gh_runner_setup() {
   local version
   version="$(gh api repos/actions/runner/releases/latest --jq .tag_name 2> /dev/null | command sed 's/^v//')"
   if [ -z "$version" ]; then
-    echo ">> Could not resolve the latest actions/runner release." >&2
+    printf '%s\n' ">> Could not resolve the latest actions/runner release." >&2
     return 1
   fi
 
@@ -114,10 +114,9 @@ function gh_runner_setup() {
   local url="https://github.com/actions/runner/releases/download/v${version}/${tarball}"
 
   mkdir -p "$runner_dir" || return 1
-    printf '%s\n' ' ">> Downloading $tarball ...'
-
+  printf '%s\n' ">> Downloading $tarball ..."
   if ! curl -fsSL -o "${runner_dir}/${tarball}" "$url"; then
-    echo ">> Download failed: $url" >&2
+    printf '%s\n' ">> Download failed: $url" >&2
     return 1
   fi
   (cd "$runner_dir" && tar xzf "$tarball") || return 1
@@ -127,10 +126,7 @@ function gh_runner_setup() {
   local labels="self-hosted"
   [ -n "${RUNNER_LABELS:-}" ] && labels="${labels},${RUNNER_LABELS}"
 
-    printf '%s\n' \
-      ' ">> Configuring runner \'$runner_name\' ' \
-      'for $scope_url (labels: $labels) ...'
-
+  printf '%s\n' ">> Configuring runner '$runner_name' for $scope_url (labels: $labels) ..."
   (
     cd "$runner_dir" \
       && ./config.sh --unattended --replace \
@@ -139,7 +135,7 @@ function gh_runner_setup() {
         --name "$runner_name" \
         --labels "$labels"
   ) || {
-    echo ">> config.sh failed." >&2
+    printf '%s\n' ">> config.sh failed." >&2
     return 1
   }
 
@@ -151,12 +147,8 @@ function gh_runner_setup() {
       (cd "$runner_dir" && sudo ./svc.sh install && sudo ./svc.sh start)
     fi
   else
-    printf '%s\n' \
-      ' ">> Not installed as a service. Start it' \
-      ' in the foreground with:'
-
-    printf '%s\n' ' "     cd \\"$runner_dir\\" && ./run.sh'
-
+    printf '%s\n' ">> Not installed as a service. Start it in the foreground with:"
+    printf '%s\n' "     cd \"$runner_dir\" && ./run.sh"
   fi
 }
 
@@ -169,7 +161,7 @@ function gh_runner_setup() {
 # gh_run_script: fetch a source and run a command against it locally
 function gh_run_script() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "gh_run_script: fetch a repo / gist / raw URL / local file and run it HERE (no GitHub Actions)
+    printf '%s\n' "gh_run_script: fetch a repo / gist / raw URL / local file and run it HERE (no GitHub Actions)
   Usage: gh_run_script <source> [command ...]
     <source> is one of:
       owner/repo                     shallow-cloned from GitHub
@@ -211,12 +203,12 @@ function gh_run_script() {
   case "$source" in
   *gist.github.com*)
     if ! type -P gh > /dev/null 2>&1; then
-      echo ">> Fetching a gist needs gh (GitHub CLI)." >&2
+      printf '%s\n' ">> Fetching a gist needs gh (GitHub CLI)." >&2
       return 1
     fi
     local gist_id="${source##*/}"
     gh gist clone "$gist_id" "$workspace/gist" > /dev/null 2>&1 || {
-      echo ">> gist clone failed: $source" >&2
+      printf '%s\n' ">> gist clone failed: $source" >&2
       return 1
     }
     workspace="$workspace/gist"
@@ -225,7 +217,7 @@ function gh_run_script() {
     # A single raw file URL.
     single_file="$workspace/$(basename "${source%%\?*}")"
     if ! curl -fsSL -o "$single_file" "$source"; then
-      echo ">> Download failed: $source" >&2
+      printf '%s\n' ">> Download failed: $source" >&2
       return 1
     fi
     ;;
@@ -236,13 +228,13 @@ function gh_run_script() {
     *) clone_url="https://github.com/${source}" ;;
     esac
     if ! git clone --depth 1 "$clone_url" "$workspace/repo" > /dev/null 2>&1; then
-      echo ">> git clone failed: $clone_url" >&2
+      printf '%s\n' ">> git clone failed: $clone_url" >&2
       return 1
     fi
     workspace="$workspace/repo"
     ;;
   *)
-    echo ">> Unrecognized source: $source (see: gh_run_script --help)" >&2
+    printf '%s\n' ">> Unrecognized source: $source (see: gh_run_script --help)" >&2
     return 1
     ;;
   esac
@@ -257,7 +249,7 @@ function gh_run_script() {
   elif [ -f "$workspace/run.sh" ]; then
     (cd "$workspace" && bash ./run.sh)
   else
-    echo ">> Nothing to run. Pass a command, e.g.: gh_run_script $source ./setup.sh" >&2
+    printf '%s\n' ">> Nothing to run. Pass a command, e.g.: gh_run_script $source ./setup.sh" >&2
     return 1
   fi
 }
@@ -271,7 +263,7 @@ function gh_run_script() {
 # gdrive_vault_push: upload a file to the Google Drive vault, print a download link
 function gdrive_vault_push() {
   if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
-    echo "gdrive_vault_push: copy a file into a Google Drive vault (rclone) and print a download link
+    printf '%s\n' "gdrive_vault_push: copy a file into a Google Drive vault (rclone) and print a download link
   Usage: gdrive_vault_push <file> [subfolder]
   Env overrides:
     GDRIVE_VAULT_REMOTE=<name>   rclone remote name (default: gdrive)
@@ -286,18 +278,18 @@ function gdrive_vault_push() {
 
   local file="$1"
   if [ ! -f "$file" ]; then
-    echo ">> File not found: $file" >&2
+    printf '%s\n' ">> File not found: $file" >&2
     return 1
   fi
   if ! type -P rclone > /dev/null 2>&1; then
-    echo ">> rclone not found. Install it and run 'rclone config'." >&2
+    printf '%s\n' ">> rclone not found. Install it and run 'rclone config'." >&2
     return 1
   fi
 
   local remote="${GDRIVE_VAULT_REMOTE:-gdrive}"
   local base_folder="${GDRIVE_VAULT_FOLDER:-vault}"
   if ! rclone listremotes 2> /dev/null | command grep -q "^${remote}:"; then
-    echo ">> rclone remote '${remote}:' not configured. Run 'rclone config'." >&2
+    printf '%s\n' ">> rclone remote '${remote}:' not configured. Run 'rclone config'." >&2
     return 1
   fi
 
@@ -305,18 +297,17 @@ function gdrive_vault_push() {
   local dest_folder="${remote}:${base_folder}"
   [ -n "$subfolder" ] && dest_folder="${dest_folder}/${subfolder}"
 
-  echo ">> Uploading $(basename "$file") to ${dest_folder} ..." >&2
+  printf '%s\n' ">> Uploading $(basename "$file") to ${dest_folder} ..." >&2
   if ! rclone copy "$file" "$dest_folder" > /dev/null 2>&1; then
-    echo ">> Upload failed." >&2
+    printf '%s\n' ">> Upload failed." >&2
     return 1
   fi
 
   local link
   link="$(rclone link "${dest_folder}/$(basename "$file")" 2> /dev/null)"
   if [ -z "$link" ]; then
-    echo ">> Uploaded, but could not create a share link. Check the remote's permissions." >&2
+    printf '%s\n' ">> Uploaded, but could not create a share link. Check the remote's permissions." >&2
     return 1
   fi
-    printf '%s\n' ' "$link'
-
+  printf '%s\n' "$link"
 }

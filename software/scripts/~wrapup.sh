@@ -3,7 +3,7 @@
 
 # Final wrapup - profile sourcing
 
-echo '
+printf '%s\n' '
 # Source .bash_syle
 [ -f ~/.bash_syle ] && . ~/.bash_syle
 '
@@ -26,9 +26,6 @@ done
 
 # dump fullsetup log in CI for debugging package install errors
 if ((IS_CI)) && [ -f "$BASHRC_TEMP_DIR/fullsetup.log" ]; then
-    printf '%s\n' \
-      ' ">> fullsetup.log ($BASHRC_TEMP_DIR/full' \
-      'setup.log)'
-
+  printf '%s\n' ">> fullsetup.log ($BASHRC_TEMP_DIR/fullsetup.log)"
   cat "$BASHRC_TEMP_DIR/fullsetup.log"
 fi

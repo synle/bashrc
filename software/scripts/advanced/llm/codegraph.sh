@@ -11,19 +11,13 @@ CODEGRAPH_PINNED_VERSION='1.6.2'
 export CODEGRAPH_TELEMETRY=0
 
 if ((is_os_android_termux)); then
-    printf '%s\n' \
-      ' \'>> CodeGraph skipped: no supported Ter' \
-      'mux build'
-
+  printf '%s\n' '>> CodeGraph skipped: no supported Termux build'
   exit 0
 fi
 
 codegraph_binary=$(has_persistent_binary codegraph) || codegraph_binary=''
 if [ -n "$codegraph_binary" ] && [ "$("$codegraph_binary" --version)" = "$CODEGRAPH_PINNED_VERSION" ]; then
-    printf '%s\n' \
-      ' ">> CodeGraph $CODEGRAPH_PINNED_VERSION ' \
-      'already installed'
-
+  printf '%s\n' ">> CodeGraph $CODEGRAPH_PINNED_VERSION already installed"
   exit 0
 fi
 
@@ -36,10 +30,10 @@ else
 fi
 
 codegraph_binary=$(has_persistent_binary codegraph) || {
-  echo '>> CodeGraph install failed: executable missing' >&2
+  printf '%s\n' '>> CodeGraph install failed: executable missing' >&2
   exit 1
 }
 if [ "$("$codegraph_binary" --version)" != "$CODEGRAPH_PINNED_VERSION" ]; then
-  echo '>> CodeGraph install failed: PATH executable does not match pinned release' >&2
+  printf '%s\n' '>> CodeGraph install failed: PATH executable does not match pinned release' >&2
   exit 1
 fi

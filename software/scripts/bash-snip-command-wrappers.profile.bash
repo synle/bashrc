@@ -77,7 +77,7 @@ _SNIP_WRAP_COMMANDS=(
 # confusing snip passthrough error or a bare "command not found".
 function _snip_require_binary() {
   if ! type -P "$1" > /dev/null 2>&1; then
-    echo "$1: command not found — '$1' is not installed or not on your PATH" >&2
+    printf '%s\n' "$1: command not found — '$1' is not installed or not on your PATH" >&2
     return 127
   fi
 }
@@ -113,7 +113,7 @@ function _register_snip_wrappers() {
 # snip_wrap_status: show which snip command wrappers are active vs skipped
 function snip_wrap_status() {
   if is_help_arg "${1:-}"; then
-    echo "snip_wrap_status: list the snip command wrappers and their state
+    printf '%s\n' "snip_wrap_status: list the snip command wrappers and their state
   Usage: snip_wrap_status
   For each command in \$_SNIP_WRAP_COMMANDS prints one of:
     snip     bare <cmd> filters through snip at a TTY; bypass a single call with

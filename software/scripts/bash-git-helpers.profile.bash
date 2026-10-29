@@ -9,7 +9,7 @@ alias refresh_codegraph="codegraph_refresh"
 # list source repo names for a GitHub user (default: synle)
 function repos() {
   if is_help_arg "${1:-}"; then
-    echo "repos: list source repo names for a GitHub user
+    printf '%s\n' "repos: list source repo names for a GitHub user
   Usage: repos [owner]
   Examples:
     repos
@@ -25,7 +25,7 @@ function repos() {
 # Opens the GitHub repo page for the current git remote in the browser
 function repo() {
   if is_help_arg "${1:-}"; then
-    echo "repo: open the GitHub repo page for the current git remote
+    printf '%s\n' "repo: open the GitHub repo page for the current git remote
   Usage: repo
   Examples:
     repo"
@@ -35,14 +35,12 @@ function repo() {
   local remote_url
   remote_url=$(git remote get-url origin 2> /dev/null)
   if [ -z "$remote_url" ]; then
-    printf '%s\n' ' "Error: no git remote found'
-
+    printf '%s\n' "Error: no git remote found"
     return 1
   fi
   # Normalize to https URL (handles git@, ssh://, and https:// remotes)
-  remote_url=$(echo "$remote_url" | sed 's|ssh://[^@]*@github.com/|https://github.com/|' | sed 's|git@github.com:|https://github.com/|' | sed 's|\.git$||')
-    printf '%s\n' ' "$remote_url'
-
+  remote_url=$(printf '%s\n' "$remote_url" | sed 's|ssh://[^@]*@github.com/|https://github.com/|' | sed 's|git@github.com:|https://github.com/|' | sed 's|\.git$||')
+  printf '%s\n' "$remote_url"
   open "$remote_url"
 }
 
@@ -83,24 +81,24 @@ function _normalize_pr_url() {
     printf '%s\n' "$result"
     return 0
   else
-    echo "pr: invalid reference '$input'" >&2
+    printf '%s\n' "pr: invalid reference '$input'" >&2
     return 1
   fi
 
   remote_url=$(git -C "$repo_folder" remote get-url origin 2> /dev/null) || return 1
-  repo_slug=$(echo "$remote_url" | sed 's|ssh://[^@]*@github.com/||;s|git@github.com:|https://github.com/|;s|https://github.com/||;s|\.git$||')
-  repo_slug=$(echo "$repo_slug" | sed 's|.*/\([^/]*\)/\([^/]*\)$|\1/\2|')
+  repo_slug=$(printf '%s\n' "$remote_url" | sed 's|ssh://[^@]*@github.com/||;s|git@github.com:|https://github.com/|;s|https://github.com/||;s|\.git$||')
+  repo_slug=$(printf '%s\n' "$repo_slug" | sed 's|.*/\([^/]*\)/\([^/]*\)$|\1/\2|')
   case "$repo_slug" in
   */*) ;;
   *)
-    echo "pr: could not resolve GitHub owner/repo from '$remote_url'" >&2
+    printf '%s\n' "pr: could not resolve GitHub owner/repo from '$remote_url'" >&2
     return 1
     ;;
   esac
 
   [ -n "$pr_ref" ] || pr_ref=$(git -C "$repo_folder" branch --show-current 2> /dev/null)
   [ -n "$pr_ref" ] || {
-    echo "pr: repository has no current branch" >&2
+    printf '%s\n' "pr: repository has no current branch" >&2
     return 1
   }
   gh pr view "$pr_ref" --repo "$repo_slug" --json url --jq .url 2> /dev/null
@@ -109,7 +107,7 @@ function _normalize_pr_url() {
 # Open the current branch PR, or normalize an explicit PR reference.
 function pr() {
   if is_help_arg "${1:-}"; then
-    echo "pr: open or normalize a pull request reference
+    printf '%s\n' "pr: open or normalize a pull request reference
   Usage: pr [url|owner/repo/pull/N|owner/repo#N|repo#N|repo-folder [N]]
   Examples:
     pr
@@ -122,7 +120,7 @@ function pr() {
 
   if [ -n "${1:-}" ]; then
     _normalize_pr_url "$@" || {
-      echo "pr: could not resolve '$1' to a pull request" >&2
+      printf '%s\n' "pr: could not resolve '$1' to a pull request" >&2
       return 1
     }
     return 0
@@ -136,16 +134,14 @@ function pr() {
   local remote_url
   remote_url=$(git remote get-url origin 2> /dev/null)
   if [ -z "$remote_url" ]; then
-    printf '%s\n' ' "Error: no git remote found'
-
+    printf '%s\n' "Error: no git remote found"
     return 1
   fi
-  remote_url=$(echo "$remote_url" | sed 's|ssh://[^@]*@github.com/|https://github.com/|' | sed 's|git@github.com:|https://github.com/|' | sed 's|\.git$||')
+  remote_url=$(printf '%s\n' "$remote_url" | sed 's|ssh://[^@]*@github.com/|https://github.com/|' | sed 's|git@github.com:|https://github.com/|' | sed 's|\.git$||')
   local branch
   branch=$(git branch --show-current)
   local pr_url="$remote_url/compare/$branch?expand=1"
-    printf '%s\n' ' "$pr_url'
-
+  printf '%s\n' "$pr_url"
   open "$pr_url"
 }
 
@@ -163,12 +159,11 @@ function _get_default_branch() {
   fi
 
   if [ -z "$default_branch" ]; then
-    echo "Error: could not determine default branch from origin" >&2
+    printf '%s\n' "Error: could not determine default branch from origin" >&2
     return 1
   fi
 
-    printf '%s\n' ' "$default_branch'
-
+  printf '%s\n' "$default_branch"
 }
 
 # purge_branches_and_tags: delete local branches and tags except the default branch.
@@ -177,7 +172,7 @@ function _get_default_branch() {
 # Unmerged branch tips and local-only tags lose their names; linked worktrees stay intact.
 function purge_branches_and_tags() {
   if is_help_arg "${1:-}"; then
-    echo "purge_branches_and_tags: delete local branches and tags except the default branch
+    printf '%s\n' "purge_branches_and_tags: delete local branches and tags except the default branch
   Usage: purge_branches_and_tags [--dry-run]
   Keeps origin's default branch, falling back to local main, then master.
   Switches to that branch without forcing checkout; it must exist locally.
@@ -191,7 +186,7 @@ function purge_branches_and_tags() {
   if [ "$#" -eq 1 ] && [ "$1" = "--dry-run" ]; then
     dry_run=1
   elif [ "$#" -ne 0 ]; then
-    echo "purge_branches_and_tags: expected no arguments or --dry-run" >&2
+    printf '%s\n' "purge_branches_and_tags: expected no arguments or --dry-run" >&2
     return 1
   fi
 
@@ -207,25 +202,19 @@ function purge_branches_and_tags() {
     done
   fi
   if [ -z "$default_branch" ] || ! command git show-ref --verify --quiet "refs/heads/$default_branch"; then
-    echo "purge_branches_and_tags: default branch must exist locally; nothing deleted" >&2
+    printf '%s\n' "purge_branches_and_tags: default branch must exist locally; nothing deleted" >&2
     return 1
   fi
   branches=$(command git for-each-ref --format='%(refname:strip=2)' refs/heads/) || return 1
   tags=$(command git for-each-ref --format='%(refname:strip=2)' refs/tags/) || return 1
-    printf '%s\n' \
-      ' "-> keeping default branch \'$default_br' \
-      'anch\''
-
+  printf '%s\n' "-> keeping default branch '$default_branch'"
   if ((! dry_run)); then
     command git checkout "$default_branch" || return 1
   fi
   while IFS= read -r branch; do
     [ -n "$branch" ] && [ "$branch" != "$default_branch" ] || continue
     if ((dry_run)); then
-    printf '%s\n' \
-      ' "-> would delete local branch \'$branch\' \
-      '''
-
+      printf '%s\n' "-> would delete local branch '$branch'"
     else
       command git branch -D -- "$branch" || return 1
     fi
@@ -233,8 +222,7 @@ function purge_branches_and_tags() {
   while IFS= read -r branch; do
     [ -n "$branch" ] || continue
     if ((dry_run)); then
-    printf '%s\n' ' "-> would delete local tag \'$branch\''
-
+      printf '%s\n' "-> would delete local tag '$branch'"
     else
       command git tag -d -- "$branch" || return 1
     fi
@@ -251,7 +239,7 @@ function purge() {
 
   local file_path="$1"
   if [ -z "$file_path" ] || is_help_arg "$file_path"; then
-    echo "purge: remove a file or directory from entire git history
+    printf '%s\n' "purge: remove a file or directory from entire git history
   Usage: purge [-r] <path-to-file-or-dir>
   Rewrites commits via git filter-branch (or filter-repo if available), then gc.
   Does NOT push — after purge, verify history then force-push manually."
@@ -259,15 +247,11 @@ function purge() {
   fi
 
   if ! prompt_yes_no "Purge '$file_path' from entire git history?"; then
-    printf '%s\n' ' ">> Aborted.'
-
+    printf '%s\n' ">> Aborted."
     return 1
   fi
 
-    printf '%s\n' \
-      ' ">> Purging \'$file_path\' from git hist' \
-      'ory...'
-
+  printf '%s\n' ">> Purging '$file_path' from git history..."
 
   if type -P git-filter-repo &> /dev/null; then
     git filter-repo --path "$file_path" --invert-paths
@@ -281,17 +265,13 @@ function purge() {
 
   git reflog expire --expire=now --all
   git gc --prune=now --aggressive
-    printf '%s\n' \
-      ' ">> Purge complete. Verify with \'git lo' \
-      'g --oneline\' then force-push if satisfie' \
-      'd.'
-
+  printf '%s\n' ">> Purge complete. Verify with 'git log --oneline' then force-push if satisfied."
 }
 
 # Merges origin/main (or origin/master) into the current branch
 function merge_origin_main_branch() {
   if is_help_arg "${1:-}"; then
-    echo "merge_origin_main_branch: merge origin/<default-branch> into the current branch
+    printf '%s\n' "merge_origin_main_branch: merge origin/<default-branch> into the current branch
   Usage: merge_origin_main_branch
   Aborts any in-progress merge/rebase, fetches, then merges. Default branch is auto-detected."
     return 0
@@ -304,17 +284,14 @@ function merge_origin_main_branch() {
 
   git merge "origin/$default_branch"
 
-    printf '%s\n' \
-      ' "# ---- Merged origin/$default_branch in' \
-      'to $(git branch --show-current) ----'
-
+  printf '%s\n' "# ---- Merged origin/$default_branch into $(git branch --show-current) ----"
   git lastd
 }
 
 # Rebases current branch onto origin/main (or origin/master)
 function rebase_origin_main_branch() {
   if is_help_arg "${1:-}"; then
-    echo "rebase_origin_main_branch: rebase the current branch onto origin/<default-branch>
+    printf '%s\n' "rebase_origin_main_branch: rebase the current branch onto origin/<default-branch>
   Usage: rebase_origin_main_branch
   Aborts any in-progress merge/rebase, fetches, then rebases. Default branch is auto-detected."
     return 0
@@ -327,10 +304,7 @@ function rebase_origin_main_branch() {
 
   git rebase "origin/$default_branch"
 
-    printf '%s\n' \
-      ' "# ---- Rebasing $(git branch --show-cur' \
-      'rent) onto origin/$default_branch ----'
-
+  printf '%s\n' "# ---- Rebasing $(git branch --show-current) onto origin/$default_branch ----"
   git lastd
 }
 
@@ -341,15 +315,14 @@ function rebase_origin_main_branch() {
 # leg silently when it is not installed - the echo still lands.
 function echo_and_set_terminal_title() {
   if is_help_arg "${1:-}"; then
-    echo "echo_and_set_terminal_title: echo a message and set the terminal title to it
+    printf '%s\n' "echo_and_set_terminal_title: echo a message and set the terminal title to it
   Usage: echo_and_set_terminal_title <message...>
   Prints the message inline and mirrors it into the terminal tab/window title.
   The title leg is skipped when set_terminal_title is not on PATH."
     return 1
   fi
 
-    printf '%s\n' ' "$*'
-
+  printf '%s\n' "$*"
   if type -P set_terminal_title > /dev/null 2>&1; then
     set_terminal_title "$*"
   fi
@@ -380,10 +353,7 @@ function _clean_claude_worktrees() {
     [ -d "$candidate" ] || continue
 
     if command find "$candidate" -prune -mtime +90 -print 2> /dev/null | command grep -q .; then
-    printf '%s\n' \
-      ' "-> warning: Claude worktree folder is o' \
-      'lder than 3 months; keeping $candidate'
-
+      printf '%s\n' "-> warning: Claude worktree folder is older than 3 months; keeping $candidate"
       continue
     fi
 
@@ -394,22 +364,13 @@ function _clean_claude_worktrees() {
 
     command rm -rf "$candidate"
     removed=$((removed + 1))
-    printf '%s\n' \
-      ' "-> removed empty Claude worktree folder' \
-      ' $candidate'
-
+    printf '%s\n' "-> removed empty Claude worktree folder $candidate"
   done
 
   if [ "$removed" -eq 0 ]; then
-    printf '%s\n' \
-      ' "-> no empty Claude worktree folders fou' \
-      'nd'
-
+    printf '%s\n' "-> no empty Claude worktree folders found"
   else
-    printf '%s\n' \
-      ' "-> removed $removed empty Claude worktr' \
-      'ee folder(s)'
-
+    printf '%s\n' "-> removed $removed empty Claude worktree folder(s)"
   fi
 }
 
@@ -433,18 +394,13 @@ function _clean_background_tail() {
   local rej_files
   rej_files=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '*.rej' -print 2> /dev/null)
   if [ -z "$rej_files" ]; then
-    printf '%s\n' ' "-> no *.rej files found'
-
+    printf '%s\n' "-> no *.rej files found"
   else
-    echo "$rej_files" | while IFS= read -r rej_file; do
+    printf '%s\n' "$rej_files" | while IFS= read -r rej_file; do
       command rm -f "$rej_file"
-    printf '%s\n' ' "-> removed $rej_file'
-
+      printf '%s\n' "-> removed $rej_file"
     done
-    printf '%s\n' \
-      ' "-> removed $(echo "$rej_files" | comman' \
-      'd grep -c .) *.rej file(s)'
-
+    printf '%s\n' "-> removed $(printf '%s\n' "$rej_files" | command grep -c .) *.rej file(s)"
   fi
 
   # Sweep macOS Finder junk (.DS_Store) nested anywhere in the repo. Untracked and usually
@@ -454,14 +410,10 @@ function _clean_background_tail() {
   local ds_store_count
   ds_store_count=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -print 2> /dev/null | command grep -c .)
   if [ "${ds_store_count:-0}" -eq 0 ]; then
-    printf '%s\n' ' "-> no .DS_Store files found'
-
+    printf '%s\n' "-> no .DS_Store files found"
   else
     command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '.DS_Store' -exec rm -f {} + 2> /dev/null
-    printf '%s\n' \
-      ' "-> removed $ds_store_count .DS_Store fi' \
-      'le(s)'
-
+    printf '%s\n' "-> removed $ds_store_count .DS_Store file(s)"
   fi
 
   _log_progress_step "$total_steps" "🗑️ Removing empty Claude worktree folders"
@@ -474,10 +426,7 @@ function _clean_background_tail() {
   git --no-pager clean-merged-branches-and-tags
 
   if [ "$worktree_cleanup" = "skip" ]; then
-    printf '%s\n' \
-      ' "-> Git worktree cleanup skipped (--skip' \
-      '-worktree-clean)'
-
+    printf '%s\n' "-> Git worktree cleanup skipped (--skip-worktree-clean)"
   elif ((force_worktrees)); then
     _log_progress_step "$total_steps" "🗑️ Removing ALL worktrees (--force)"
     git --no-pager worktree prune
@@ -490,10 +439,7 @@ function _clean_background_tail() {
     worktree_clean
   fi
 
-    printf '%s\n' \
-      ' "# ---- ✅ Reset to origin/$default_branc' \
-      'h (100% done) ----'
-
+  printf '%s\n' "# ---- ✅ Reset to origin/$default_branch (100% done) ----"
   git --no-pager lastd
 }
 
@@ -513,7 +459,7 @@ function _clean_background_tail() {
 # background launch or the tail's status. Lock removal requires confirmation that other Git commands stopped.
 function clean() {
   if is_help_arg "${1:-}"; then
-    echo "clean: safely reset current branch to origin's default branch
+    printf '%s\n' "clean: safely reset current branch to origin's default branch
   Usage: clean [--force|-f] [--background|-b] [--skip-worktree-clean]
   Notes:
     - Prompts only when index.lock exists; confirm no other Git command is running before removal
@@ -560,67 +506,48 @@ function clean() {
   repo_root=$(git --no-pager rev-parse --show-toplevel) || return 1
   index_lock=$(git --no-pager rev-parse --git-path index.lock) || return 1
 
-    printf '%s\n' ' "-> repository: $repo_root'
-
-    printf '%s\n' \
-      ' "-> back up staged, unstaged, and untrac' \
-      'ked files; ignored files are not included'
-
-    printf '%s\n' \
-      ' "-> reset to origin\'s default branch; r' \
-      'emove *.rej, .DS_Store, stale branches/ta' \
-      'gs, and eligible worktrees'
-
+  printf '%s\n' "-> repository: $repo_root"
+  printf '%s\n' "-> back up staged, unstaged, and untracked files; ignored files are not included"
+  printf '%s\n' "-> reset to origin's default branch; remove *.rej, .DS_Store, stale branches/tags, and eligible worktrees"
   if ((force_worktrees)) && [ "$worktree_cleanup" != "skip" ]; then
-    printf '%s\n' \
-      ' "-> WARNING: --force also deletes dirty ' \
-      'worktrees; their uncommitted work is NOT ' \
-      'backed up'
-
+    printf '%s\n' "-> WARNING: --force also deletes dirty worktrees; their uncommitted work is NOT backed up"
   fi
   if [ -e "$index_lock" ] || [ -L "$index_lock" ]; then
-    printf '%s\n' ' "-> remove index lock: $index_lock'
-
+    printf '%s\n' "-> remove index lock: $index_lock"
     # Only the operator can confirm an abandoned lock; never infer that from its age.
     if ! prompt_yes_no "Remove this index lock and continue? Confirm no other Git command is running" N; then
-    printf '%s\n' ' "-> cleanup cancelled; no changes made'
-
+      printf '%s\n' "-> cleanup cancelled; no changes made"
       return 1
     fi
     if ! command rm -f -- "$index_lock"; then
-      echo "clean: could not remove index lock; cleanup stopped" >&2
+      printf '%s\n' "clean: could not remove index lock; cleanup stopped" >&2
       return 1
     fi
-    printf '%s\n' ' "-> removed index lock: $index_lock'
-
+    printf '%s\n' "-> removed index lock: $index_lock"
   fi
 
   local stash_msg pending_changes
   stash_msg="clean backup $(command date +%Y-%m-%d_%H:%M:%S)"
   _log_progress_step "$total_steps" "💾 Stashing all changes as '$stash_msg'"
   pending_changes=$(git --no-pager status --porcelain --untracked-files=all) || {
-    echo "clean: could not inspect local changes; cleanup stopped" >&2
+    printf '%s\n' "clean: could not inspect local changes; cleanup stopped" >&2
     return 1
   }
   if [ -n "$pending_changes" ]; then
     if ! git --no-pager stash push --include-untracked --message "$stash_msg" > /dev/null; then
-      echo "clean: safety stash failed; cleanup stopped" >&2
+      printf '%s\n' "clean: safety stash failed; cleanup stopped" >&2
       return 1
     fi
-    printf '%s\n' \
-      ' "-> recover with: git stash list; git st' \
-      'ash pop --index'
-
+    printf '%s\n' "-> recover with: git stash list; git stash pop --index"
   else
-    printf '%s\n' ' "-> no local changes to stash'
-
+    printf '%s\n' "-> no local changes to stash"
   fi
   pending_changes=$(git --no-pager status --porcelain --untracked-files=all) || {
-    echo "clean: could not verify safety backup; cleanup stopped" >&2
+    printf '%s\n' "clean: could not verify safety backup; cleanup stopped" >&2
     return 1
   }
   if [ -n "$pending_changes" ]; then
-    echo "clean: local changes remain after safety backup; cleanup stopped" >&2
+    printf '%s\n' "clean: local changes remain after safety backup; cleanup stopped" >&2
     return 1
   fi
 
@@ -646,13 +573,11 @@ function clean() {
   _log_progress_step "$total_steps" "🔧 Resolving default branch"
   local default_branch
   default_branch=$(_get_default_branch) || return 1
-    printf '%s\n' ' "-> default branch: $default_branch'
-
+  printf '%s\n' "-> default branch: $default_branch"
 
   local current_branch
   current_branch=$(git --no-pager branch --show-current)
-    printf '%s\n' ' "-> current branch: $current_branch'
-
+  printf '%s\n' "-> current branch: $current_branch"
 
   # Back up current branch to a temp branch
   local temp_branch="temp/$(command date +%Y%m%d-%H%M%S)"
@@ -669,10 +594,7 @@ function clean() {
   if git --no-pager rebase "origin/$default_branch" > /dev/null 2>&1; then
     # Reuse the worktree-local init/sync guards without delaying cleanup or leaking indexer output.
     if type -P codegraph > /dev/null 2>&1 && type -P codegraph_refresh > /dev/null 2>&1; then
-    printf '%s\n' \
-      ' "-> CodeGraph refresh started in backgro' \
-      'und (init/sync; output suppressed)'
-
+      printf '%s\n' "-> CodeGraph refresh started in background (init/sync; output suppressed)"
       (codegraph_refresh "$repo_root") < /dev/null > /dev/null 2>&1 &
     fi
   fi
@@ -684,10 +606,7 @@ function clean() {
   # clean() to finish before the next command starts. Run the tail in the foreground by default
   # so progress stays linear; keep --background as an explicit opt-in for fire-and-forget use.
   if ((background_tail)); then
-    printf '%s\n' \
-      ' "-> background cleanup offloaded; progre' \
-      'ss continues below'
-
+    printf '%s\n' "-> background cleanup offloaded; progress continues below"
     _clean_background_tail "$total_steps" "$repo_root" "$force_worktrees" "$default_branch" "$worktree_cleanup" &
     return 0
   fi
@@ -698,7 +617,7 @@ function clean() {
 # Creates an empty commit on a new branch and pushes it to trigger a deployment
 function commit_empty_trigger_deploy() {
   if is_help_arg "${1:-}"; then
-    echo "commit_empty_trigger_deploy: push an empty commit on a throwaway branch to trigger a deploy
+    printf '%s\n' "commit_empty_trigger_deploy: push an empty commit on a throwaway branch to trigger a deploy
   Usage: commit_empty_trigger_deploy
   Creates branch 'empty-commit-<epoch>', commits --allow-empty, and pushes it to origin."
     return 0
@@ -712,7 +631,7 @@ function commit_empty_trigger_deploy() {
 # cd to git home directory ($MY_GIT_HOME or ~/git)
 function gogit() {
   if is_help_arg "${1:-}"; then
-    echo "gogit: cd to git home directory (MY_GIT_HOME or ~/git)
+    printf '%s\n' "gogit: cd to git home directory (MY_GIT_HOME or ~/git)
   Usage: gogit [subfolder]"
     return 0
   fi
@@ -727,7 +646,7 @@ function gogit() {
 # clone a repo by URL or owner/repo shorthand, tries SSH then falls back to HTTPS
 function clone() {
   if [ -z "${1:-}" ] || is_help_arg "${1:-}"; then
-    echo "clone: clone a repo by URL or owner/repo shorthand
+    printf '%s\n' "clone: clone a repo by URL or owner/repo shorthand
   Usage: clone <url-or-owner/repo> [destination_folder]
   Examples:
     clone git@github.com:synle/bashrc.git
@@ -744,8 +663,7 @@ function clone() {
     # Full SSH or HTTPS URL — use as-is
     clone_url="$input"
     if ! git ls-remote "$clone_url" &> /dev/null; then
-    printf '%s\n' ' "clone: cannot access \'$clone_url\''
-
+      printf '%s\n' "clone: cannot access '$clone_url'"
       return 1
     fi
   elif [[ "$input" =~ ^[^/]+/[^/]+$ ]]; then
@@ -756,30 +674,18 @@ function clone() {
       clone_url="$ssh_url"
     elif git ls-remote "$https_url" &> /dev/null; then
       clone_url="$https_url"
-    printf '%s\n' \
-      ' "clone: SSH access failed, falling back ' \
-      'to HTTPS'
-
+      printf '%s\n' "clone: SSH access failed, falling back to HTTPS"
     else
-    printf '%s\n' \
-      ' "clone: cannot access \'$input\' via SSH' \
-      ' or HTTPS'
-
+      printf '%s\n' "clone: cannot access '$input' via SSH or HTTPS"
       return 1
     fi
   else
-    printf '%s\n' \
-      ' "clone: invalid input \'$input\' — expec' \
-      'ted a URL or owner/repo'
-
+    printf '%s\n' "clone: invalid input '$input' — expected a URL or owner/repo"
     return 1
   fi
 
   if [ "$#" -gt 2 ]; then
-    printf '%s\n' \
-      ' "clone: expected <url-or-owner/repo> [de' \
-      'stination_folder]'
-
+    printf '%s\n' "clone: expected <url-or-owner/repo> [destination_folder]"
     return 1
   fi
 
@@ -790,17 +696,11 @@ function clone() {
 
   local destination_folder="${2%/}"
   if [ -z "$destination_folder" ] || [ "$destination_folder" = "." ] || [ "$destination_folder" = ".." ]; then
-    printf '%s\n' \
-      ' "clone: destination_folder must name a n' \
-      'ew folder'
-
+    printf '%s\n' "clone: destination_folder must name a new folder"
     return 1
   fi
   if [ -e "$destination_folder" ] || [ -L "$destination_folder" ]; then
-    printf '%s\n' \
-      ' "clone: destination already exists: $des' \
-      'tination_folder'
-
+    printf '%s\n' "clone: destination already exists: $destination_folder"
     return 1
   fi
 
@@ -808,28 +708,23 @@ function clone() {
   local destination_name="${destination_folder##*/}"
   [ "$destination_parent" = "$destination_folder" ] && destination_parent="."
   if [ ! -d "$destination_parent" ]; then
-    printf '%s\n' \
-      ' "clone: destination parent does not exis' \
-      't: $destination_parent'
-
+    printf '%s\n' "clone: destination parent does not exist: $destination_parent"
     return 1
   fi
 
   local destination_path
   destination_path="$(cd "$destination_parent" && pwd)/$destination_name"
   if ! git clone1 "$clone_url" "$destination_folder"; then
-    printf '%s\n' ' "clone: clone failed: $clone_url'
-
+    printf '%s\n' "clone: clone failed: $clone_url"
     return 1
   fi
-    printf '%s\n' ' "Cloned repository: $destination_path'
-
+  printf '%s\n' "Cloned repository: $destination_path"
 }
 
 # cd to Downloads directory (tries multiple paths in order)
 function godownload() {
   if is_help_arg "${1:-}"; then
-    echo "godownload: cd to the Downloads folder
+    printf '%s\n' "godownload: cd to the Downloads folder
   Usage: godownload [subfolder]
   Tries \$HOME/Downloads, /mnt/d/Downloads, and on WSL the Windows user Downloads folder."
     return 0
@@ -848,8 +743,7 @@ function godownload() {
   fi
   local target
   target=$(find_path "${candidates[@]}" --folder) || {
-    printf '%s\n' ' "godownload: no Downloads folder found'
-
+    printf '%s\n' "godownload: no Downloads folder found"
     return 1
   }
   cd "$target"
@@ -869,7 +763,7 @@ function godownload() {
 # git_create_worktree <branch> - Create or reuse the canonical worktree, then cd into it
 function git_create_worktree() {
   if is_help_arg "${1:-}"; then
-    echo "git_create_worktree: create or reuse the canonical worktree for a branch, then cd into it
+    printf '%s\n' "git_create_worktree: create or reuse the canonical worktree for a branch, then cd into it
   Usage: git_create_worktree <branch>
   Layout:
     \$HOME/.worktrees/<owner>/<repo>/<sanitized-branch>
@@ -884,15 +778,12 @@ function git_create_worktree() {
   fi
 
   if [ -z "${1:-}" ]; then
-    printf '%s\n' \
-      ' "git_create_worktree: a branch name is r' \
-      'equired (see: git_create_worktree --help)'
-
+    printf '%s\n' "git_create_worktree: a branch name is required (see: git_create_worktree --help)"
     return 1
   fi
 
   if ! type -P worktree_create > /dev/null 2>&1; then
-    echo "git_create_worktree: worktree_create is not installed — run: ./run --files=git-functions.js" >&2
+    printf '%s\n' "git_create_worktree: worktree_create is not installed — run: ./run --files=git-functions.js" >&2
     return 1
   fi
 
@@ -909,7 +800,7 @@ function git_create_worktree() {
 # Prints an action summary before changing this shell's folder; prompts only through the terminal.
 function worktree_cd() {
   if is_help_arg "${1:-}"; then
-    echo "worktree_cd: change to a worktree matching branch and optional repository keywords.
+    printf '%s\n' "worktree_cd: change to a worktree matching branch and optional repository keywords.
   Usage: worktree_cd <branch_keyword> [repo_keyword]
   Alias: worktree_navigate
   Search: worktree_list inventory; omit repo_keyword to search every listed repository.
@@ -918,11 +809,11 @@ function worktree_cd() {
     return 0
   fi
   if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || [ -z "$1" ]; then
-    echo "worktree_cd: expected <branch_keyword> [repo_keyword]" >&2
+    printf '%s\n' "worktree_cd: expected <branch_keyword> [repo_keyword]" >&2
     return 1
   fi
   if ! type -P worktree_list > /dev/null 2>&1 || ! type -P node > /dev/null 2>&1; then
-    echo "worktree_cd: worktree_list and node must be installed" >&2
+    printf '%s\n' "worktree_cd: worktree_list and node must be installed" >&2
     return 1
   fi
 
@@ -967,7 +858,7 @@ for (const row of matches.slice(0, limit)) {
 WORKTREE_CD_NODE
   results=$(printf '%s' "$inventory" | command node -e "$node_script" -- "$1" "${2:-}" "$max_choices") || return $?
   if [ -z "$results" ]; then
-    echo "worktree_cd: no matching worktrees" >&2
+    printf '%s\n' "worktree_cd: no matching worktrees" >&2
     return 1
   fi
   while IFS=$'\t' read -r encoded label; do
@@ -976,13 +867,13 @@ WORKTREE_CD_NODE
   done <<< "$results"
 
   if [ "${#paths[@]}" -gt 1 ]; then
-    echo "Matching worktrees (at most $max_choices shown):" >&2
+    printf '%s\n' "Matching worktrees (at most $max_choices shown):" >&2
     while [ "$index" -lt "${#paths[@]}" ]; do
       printf '  %s) %s\n' "$((index + 1))" "${labels[$index]}" >&2
       index=$((index + 1))
     done
     if [ ! -t 0 ] || ! { : < /dev/tty; } 2> /dev/null; then
-      echo "worktree_cd: multiple matches require a terminal; refine the keywords" >&2
+      printf '%s\n' "worktree_cd: multiple matches require a terminal; refine the keywords" >&2
       return 1
     fi
     while true; do
@@ -997,7 +888,7 @@ WORKTREE_CD_NODE
         fi
         ;;
       esac
-      echo "worktree_cd: invalid choice" >&2
+      printf '%s\n' "worktree_cd: invalid choice" >&2
     done
   fi
 
@@ -1005,7 +896,7 @@ WORKTREE_CD_NODE
   target=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString("utf8") + ".")' -- "${paths[$selected]}") || return $?
   target=${target%.}
   if [ ! -d "$target" ]; then
-    echo "worktree_cd: selected folder no longer exists" >&2
+    printf '%s\n' "worktree_cd: selected folder no longer exists" >&2
     return 1
   fi
   print_action_summary "$target" || return $?
@@ -1049,8 +940,7 @@ function _git_patch_temp_file() {
   # where /tmp is not writable (Termux) via the mktemp polyfill.
   local patch_folder
   patch_folder=$(mktemp -d "/tmp/patch-XXXXXX" 2> /dev/null || mktemp -d) || return 1
-    printf '%s\n' ' "$patch_folder/${1:-patch.patch}'
-
+  printf '%s\n' "$patch_folder/${1:-patch.patch}"
 }
 
 # _git_patch_repo_slug: normalize a remote URL to owner/repo.
@@ -1080,7 +970,7 @@ function _git_patch_write() {
   [ -n "$shas" ] || return 1
   remote_url=$(git remote get-url origin 2> /dev/null) || remote_url=""
   if ! repo_slug=$(_git_patch_repo_slug "$remote_url"); then
-    echo ">>> could not resolve origin owner/repo for patch boundaries" >&2
+    printf '%s\n' ">>> could not resolve origin owner/repo for patch boundaries" >&2
     return 1
   fi
   : > "$patch_file"
@@ -1091,23 +981,13 @@ function _git_patch_write() {
     commit_subject=$(git log -1 --format=%s "$sha") || return 1
     commit_subject=$(printf '%s' "$commit_subject" | command tr '\001-\037\177' ' ')
     {
-    printf '%s\n' \
-      ' "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $rep' \
-      'o_slug · patch $index of $count · $short_' \
-      'sha'
-
-    printf '%s\n' ' "# Commit: $commit_subject'
-
+      printf '%s\n' "# BEGIN SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha"
+      printf '%s\n' "# Commit: $commit_subject"
       printf '%s\n' "$_GIT_PATCH_DIVIDER"
       git --no-pager format-patch -1 "$sha" --stdout | git patch-clean
       printf '%s\n' "$_GIT_PATCH_DIVIDER"
-    printf '%s\n' \
-      ' "# END SY_GIT_PATCH_BOUNDARY_v1 · $repo_' \
-      'slug · patch $index of $count · $short_sh' \
-      'a'
-
-    printf '%s\n' ' "'
-
+      printf '%s\n' "# END SY_GIT_PATCH_BOUNDARY_v1 · $repo_slug · patch $index of $count · $short_sha"
+      printf '%s\n' ""
     } >> "$patch_file" 2> /dev/null || return 1
   done <<< "$shas"
   [ -s "$patch_file" ]
@@ -1131,7 +1011,7 @@ function _git_patch_looks_like_patch() {
 # text. Decoding writes only after validating every wrapper and payload.
 function _git_patch_64_codec() {
   if ! type -P node > /dev/null 2>&1; then
-    echo "patch_64: node is required for the Base64 envelope" >&2
+    printf '%s\n' "patch_64: node is required for the Base64 envelope" >&2
     return 1
   fi
   local codec_js
@@ -1365,7 +1245,7 @@ function _git_patch_read_file() {
   local format="$1" patch_file="$2" command_name
   _GIT_PATCH_INPUT_FILE=""
   if [ ! -f "$patch_file" ]; then
-    echo "patch: patch file '$patch_file' not found." >&2
+    printf '%s\n' "patch: patch file '$patch_file' not found." >&2
     return 1
   fi
   if [ "$format" = base64 ] || [ "$format" = base85 ]; then
@@ -1376,7 +1256,7 @@ function _git_patch_read_file() {
     status=$?
     [ "$status" -eq 0 ] || return "$status"
     if ! _git_patch_looks_like_patch "$decoded_file"; then
-      echo "$command_name: $format envelope contains no patch" >&2
+      printf '%s\n' "$command_name: $format envelope contains no patch" >&2
       command rm -f "$decoded_file"
       return 1
     fi
@@ -1392,7 +1272,7 @@ function _git_patch_clipboard_file() {
   _GIT_PATCH_CLIPBOARD_FILE=""
   local format="${1:-plain}" patch_file status
   if ! patch_file=$(_git_patch_temp_file "clipboard.patch"); then
-    echo ">>> could not create a temp folder for the clipboard patch" >&2
+    printf '%s\n' ">>> could not create a temp folder for the clipboard patch" >&2
     return 1
   fi
 
@@ -1409,7 +1289,7 @@ function _git_patch_clipboard_file() {
   elif _git_patch_looks_like_patch "$patch_file"; then
     local command_name
     command_name=$(_git_patch_format_name "$format") || command_name=patch
-    echo "$command_name: plain diff rejected; use patch_plain_str for plain patches" >&2
+    printf '%s\n' "$command_name: plain diff rejected; use patch_plain_str for plain patches" >&2
     return 1
   fi
   _git_patch_read_file "$format" "$patch_file"
@@ -1418,8 +1298,7 @@ function _git_patch_clipboard_file() {
     command rm -f "$patch_file"
     return "$status"
   fi
-    printf '%s\n' ' ">>> patch file created $patch_file'
-
+  printf '%s\n' ">>> patch file created $patch_file"
   _GIT_PATCH_CLIPBOARD_FILE="$_GIT_PATCH_INPUT_FILE"
 }
 
@@ -1430,8 +1309,7 @@ function _git_patch_clipboard_file() {
 function _git_patch_apply_clipboard() {
   _git_patch_clipboard_file || return $?
 
-    printf '%s\n' ' ">>> applying patch from clipboard'
-
+  printf '%s\n' ">>> applying patch from clipboard"
   _git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
 }
 
@@ -1471,7 +1349,7 @@ function _git_patch_boundary_commit() {
 function _git_patch_prompt_choice() {
   local prompt="$1" reply
   if ! (: < /dev/tty) 2> /dev/null; then
-    echo "patch: no terminal available for the per-patch decision; stopping" >&2
+    printf '%s\n' "patch: no terminal available for the per-patch decision; stopping" >&2
     return 2
   fi
   while :; do
@@ -1546,7 +1424,7 @@ function _git_patch_apply_file() {
           if (inside || !valid || patch_number == 0) exit 1
         }
       ' "$patch_file" || {
-        echo ">>> patch boundary metadata is malformed" >&2
+        printf '%s\n' ">>> patch boundary metadata is malformed" >&2
         command rm -rf "$patch_folder"
         return 1
       }
@@ -1558,7 +1436,7 @@ function _git_patch_apply_file() {
         patch_part="$patch_folder/patch-$patch_index.patch"
         patch_metadata="$patch_folder/patch-$patch_index.meta"
         if [ ! -s "$patch_part" ]; then
-          echo ">>> patch $patch_index/$patch_count is empty or malformed" >&2
+          printf '%s\n' ">>> patch $patch_index/$patch_count is empty or malformed" >&2
           command rm -rf "$patch_folder"
           return 1
         fi
@@ -1576,10 +1454,7 @@ function _git_patch_apply_file() {
           mismatch_prompt=$(printf '\033[41;37m[Need Attention]\033[0m %s' "$mismatch_prompt")
         fi
         if [ -n "$mismatch_prompt" ] && ! prompt_yes_no "$mismatch_prompt" N; then
-    printf '%s\n' \
-      ' ">>> skipped patch $patch_index/$patch_c' \
-      'ount after repository mismatch'
-
+          printf '%s\n' ">>> skipped patch $patch_index/$patch_count after repository mismatch"
           continue
         fi
 
@@ -1596,16 +1471,13 @@ function _git_patch_apply_file() {
         case "$choice_status" in
         0) ;;
         1)
-    printf '%s\n' \
-      ' ">>> skipped patch $patch_index/$patch_c' \
-      'ount'
-
+          printf '%s\n' ">>> skipped patch $patch_index/$patch_count"
           continue
           ;;
         *)
-          echo ">>> patch application quit before patch $patch_index/$patch_count" >&2
+          printf '%s\n' ">>> patch application quit before patch $patch_index/$patch_count" >&2
           if [ "${_GIT_PATCH_APPLIED_PATCH_COUNT:-0}" -gt 0 ]; then
-            echo ">>> earlier patches remain in the working tree and are not committed" >&2
+            printf '%s\n' ">>> earlier patches remain in the working tree and are not committed" >&2
           fi
           command rm -rf "$patch_folder"
           return 1
@@ -1626,21 +1498,19 @@ function _git_patch_apply_file() {
   if git apply --check "$patch_file" 2> /dev/null; then
     git apply --whitespace=fix "$patch_file" || return 1
     _git_patch_record_applied "$patch_file"
-    printf '%s\n' ' ">>> patch applied cleanly $patch_file'
-
+    printf '%s\n' ">>> patch applied cleanly $patch_file"
     return 0
   fi
 
-  echo ">>> $patch_file does not apply cleanly — retrying with --reject" >&2
+  printf '%s\n' ">>> $patch_file does not apply cleanly — retrying with --reject" >&2
   git apply --reject --whitespace=fix "$patch_file" && {
     _git_patch_record_applied "$patch_file"
-    printf '%s\n' ' ">>> patch applied $patch_file'
-
+    printf '%s\n' ">>> patch applied $patch_file"
     return 0
   }
 
   # --reject may leave applied hunks plus .rej files; report the partial state explicitly.
-  echo ">>> patch partially applied — resolve the .rej files, nothing was committed" >&2
+  printf '%s\n' ">>> patch partially applied — resolve the .rej files, nothing was committed" >&2
   return 1
 }
 
@@ -1652,10 +1522,7 @@ function _git_patch_upload() {
 
   local dropbox_folder
   if ! dropbox_folder=$(_dropbox_folder 2> /dev/null); then
-    printf '%s\n' \
-      ' ">>> shared dropbox folder not reachable' \
-      ' — skipped upload'
-
+    printf '%s\n' ">>> shared dropbox folder not reachable — skipped upload"
     return 0
   fi
 
@@ -1666,13 +1533,12 @@ function _git_patch_upload() {
   [[ "$patch_file" = *.b85 ]] && suffix=".patch.b85"
   target="${dropbox_folder}/${repo_name}-$(command date +%Y_%m_%d_%H_%M)-$(git rev-parse --short HEAD 2> /dev/null)${suffix}"
   if command cp "$patch_file" "$target" 2> /dev/null; then
-    printf '%s\n' ' ">>> patch uploaded $target'
-
+    printf '%s\n' ">>> patch uploaded $target"
     # macOS writes ._ sidecars onto network shares; the reader skips them, but
     # they still clutter the folder for whoever opens it next.
     (type -P dot_clean &> /dev/null && dot_clean "$dropbox_folder" &> /dev/null) &
   else
-    echo ">>> could not write $target — skipped upload" >&2
+    printf '%s\n' ">>> could not write $target — skipped upload" >&2
   fi
 }
 
@@ -1698,8 +1564,7 @@ function _git_patch_subject() {
     | git mailinfo /dev/null /dev/null 2> /dev/null \
     | command grep "^Subject: " | sed 's/^Subject: //')
   if [ -n "$subject" ]; then
-    printf '%s\n' ' "$subject'
-
+    printf '%s\n' "$subject"
     return 0
   fi
 
@@ -1758,13 +1623,12 @@ function _git_patch_copy_message() {
     message=$(_git_patch_message "$patch_file")
   fi
   if [ -z "$message" ]; then
-    echo ">>> patch carries no fenced commit message — clipboard left alone" >&2
+    printf '%s\n' ">>> patch carries no fenced commit message — clipboard left alone" >&2
     return 1
   fi
 
   printf '%s\n' "$message" | copy --raw || return 1
-    printf '%s\n' ' ">>> commit message copied to clipboard:'
-
+  printf '%s\n' ">>> commit message copied to clipboard:"
   printf '%s\n' "$message"
 }
 
@@ -1774,11 +1638,7 @@ function _git_patch_commit_applied() {
   local patch_file="$1"
 
   _git_patch_copy_message "$patch_file" "${_GIT_PATCH_FIRST_APPLIED_MESSAGE:-}" || return 1
-    printf '%s\n' \
-      ' ">>> staging all non-ignored changes wit' \
-      'h git aac — paste the message in the edit' \
-      'or'
-
+  printf '%s\n' ">>> staging all non-ignored changes with git aac — paste the message in the editor"
   git aac
 }
 
@@ -1786,7 +1646,7 @@ function _git_patch_commit_applied() {
 function _git_patch_apply_from_dropbox() {
   local dropbox_folder
   if ! dropbox_folder=$(_dropbox_folder 2> /dev/null); then
-    echo "git_patch_apply: shared dropbox folder not reachable — nothing to apply." >&2
+    printf '%s\n' "git_patch_apply: shared dropbox folder not reachable — nothing to apply." >&2
     return 1
   fi
   local archive_folder="${dropbox_folder}/archived_patch"
@@ -1812,7 +1672,7 @@ _PATCH_FIND_EOF_
   latest_patch=$(_PATCH_ARG="$dropbox_folder" node -e "$find_patch_js")
 
   if [ -z "$latest_patch" ]; then
-    echo "git_patch_apply: no .patch files found in $dropbox_folder" >&2
+    printf '%s\n' "git_patch_apply: no .patch files found in $dropbox_folder" >&2
     return 1
   fi
 
@@ -1823,26 +1683,21 @@ _PATCH_FIND_EOF_
   commit_msg=$(_git_patch_subject "$latest_patch")
   commit_msg="${commit_msg:-applied patch}"
 
-    printf '%s\n' ' ">>> applying shared patch $latest_patch'
-
-    printf '%s\n' ' ">>> commit message: $commit_msg'
-
+  printf '%s\n' ">>> applying shared patch $latest_patch"
+  printf '%s\n' ">>> commit message: $commit_msg"
 
   _git_patch_apply_file "$latest_patch" || return 1
 
   if ! (git add -A && git commit --allow-empty --no-verify -m "$commit_msg"); then
-    echo "git_patch_apply: commit failed — patch was NOT archived." >&2
+    printf '%s\n' "git_patch_apply: commit failed — patch was NOT archived." >&2
     return 1
   fi
   # --reset-author so the commit carries this machine's identity rather than the
   # sending machine's; --no-edit keeps it from stalling on an editor.
   git commit --amend --reset-author --no-edit --no-verify > /dev/null \
-    || echo ">>> could not reset the commit author — commit kept as authored" >&2
+    || printf '%s\n' ">>> could not reset the commit author — commit kept as authored" >&2
   mv "$latest_patch" "$archive_folder"
-    printf '%s\n' \
-      ' ">>> committed and archived to $archive_' \
-      'folder'
-
+  printf '%s\n' ">>> committed and archived to $archive_folder"
 }
 
 # _git_patch_send_to_copy_servers: fire-and-forget copy-to-server for a new patch
@@ -1861,24 +1716,15 @@ _PATCH_FIND_EOF_
 function _git_patch_send_to_copy_servers() {
   local patch_file="$1" repo_name="$2"
   if ((is_work_profile)); then
-    printf '%s\n' \
-      ' ">>> copy-servers: skipped (work profile' \
-      ')'
-
+    printf '%s\n' ">>> copy-servers: skipped (work profile)"
     return 0
   fi
   if ! type copy-to-server &> /dev/null; then
-    printf '%s\n' \
-      ' ">>> copy-servers: skipped (copy-to-serv' \
-      'er not loaded)'
-
+    printf '%s\n' ">>> copy-servers: skipped (copy-to-server not loaded)"
     return 0
   fi
   if [ -z "${CODE_SERVER_REMOTE_HOSTS:-}" ]; then
-    printf '%s\n' \
-      ' ">>> copy-servers: skipped (no CODE_SERV' \
-      'ER_REMOTE hosts; re-run run.sh)'
-
+    printf '%s\n' ">>> copy-servers: skipped (no CODE_SERVER_REMOTE hosts; re-run run.sh)"
     return 0
   fi
   local suffix=".patch"
@@ -1888,11 +1734,7 @@ function _git_patch_send_to_copy_servers() {
   remote_name="${repo_name}-$(date +%Y-%m-%d_%H-%M-%S)${suffix}"
   local log_file="${patch_file}.copy-to-server.log"
   (copy-to-server --no-copy-url --name "$remote_name" "$patch_file" < /dev/null > "$log_file" 2>&1 &)
-    printf '%s\n' \
-      ' ">>> copy-servers: sending $remote_name ' \
-      'in the background to $CODE_SERVER_REMOTE_' \
-      'HOSTS (log: $log_file)'
-
+  printf '%s\n' ">>> copy-servers: sending $remote_name in the background to $CODE_SERVER_REMOTE_HOSTS (log: $log_file)"
   return 0
 }
 
@@ -1909,7 +1751,7 @@ function _git_patch_create() {
   local format="$1"
   shift
   if is_help_arg "${1:-}"; then
-    echo "git_patch_create: export the last commit as a patch and hand it to every transport
+    printf '%s\n' "git_patch_create: export the last commit as a patch and hand it to every transport
   Usage: git_patch_create [count=1]
   Does all five, in order:
     1. prints the patch
@@ -1927,7 +1769,7 @@ function _git_patch_create() {
 
   local repo_root
   if ! repo_root=$(git rev-parse --show-toplevel 2> /dev/null); then
-    echo "git_patch_create: not a git repository." >&2
+    printf '%s\n' "git_patch_create: not a git repository." >&2
     return 1
   fi
 
@@ -1936,12 +1778,12 @@ function _git_patch_create() {
 
   local patch_file
   if ! patch_file=$(_git_patch_temp_file "${repo_name}.patch"); then
-    echo "git_patch_create: could not create a temp folder." >&2
+    printf '%s\n' "git_patch_create: could not create a temp folder." >&2
     return 1
   fi
 
   if ! _git_patch_write "$patch_file" "${1:-1}"; then
-    echo "git_patch_create: could not generate a patch." >&2
+    printf '%s\n' "git_patch_create: could not generate a patch." >&2
     command rm -f "$patch_file"
     return 1
   fi
@@ -1958,10 +1800,8 @@ function _git_patch_create() {
 
   command cat "$patch_file"
 
-    printf '%s\n' ' ">>> patch copied to clipboard'
-
-    printf '%s\n' ' ">>> patch file created $patch_file'
-
+  printf '%s\n' ">>> patch copied to clipboard"
+  printf '%s\n' ">>> patch file created $patch_file"
   _git_patch_upload "$patch_file" "$repo_name"
   _git_patch_send_to_copy_servers "$patch_file" "$repo_name"
   # cd to the REPO, not to the patch. `git_patch_apply` runs `git apply`, whose
@@ -1980,7 +1820,7 @@ function _git_patch_create() {
 # git_patch_apply: apply a patch from a file, the clipboard, or the shared folder
 function git_patch_apply() {
   if is_help_arg "${1:-}"; then
-    echo "git_patch_apply: apply a patch from a file, the clipboard, or the shared dropbox folder
+    printf '%s\n' "git_patch_apply: apply a patch from a file, the clipboard, or the shared dropbox folder
   Usage: git_patch_apply [patch_file]
   Resolution order:
     1. <patch_file>, when given
@@ -1998,7 +1838,7 @@ function git_patch_apply() {
 
   if [ -n "$patch_file" ]; then
     if [ ! -f "$patch_file" ]; then
-      echo "git_patch_apply: patch file '$patch_file' not found." >&2
+      printf '%s\n' "git_patch_apply: patch file '$patch_file' not found." >&2
       return 1
     fi
     _git_patch_apply_file "$patch_file"
@@ -2012,10 +1852,7 @@ function git_patch_apply() {
     return "$clipboard_status"
   fi
 
-    printf '%s\n' \
-      ' ">>> clipboard holds no patch — falling ' \
-      'back to the shared dropbox folder'
-
+  printf '%s\n' ">>> clipboard holds no patch — falling back to the shared dropbox folder"
   _git_patch_apply_from_dropbox
 }
 
@@ -2052,10 +1889,7 @@ function _git_patch_create_unpushed() {
   local format="${1:-plain}" count
   if count=$(_git_patch_unpushed_count); then
     if [ "$count" -eq 0 ]; then
-    printf '%s\n' \
-      ' ">>> no unpushed commits — nothing to cr' \
-      'eate'
-
+      printf '%s\n' ">>> no unpushed commits — nothing to create"
       return 0
     fi
     _git_patch_create "$format" "$count"
@@ -2096,7 +1930,7 @@ function _git_patch_transfer() {
   name=$(_git_patch_format_name "$format") || return 2
   shift
   if is_help_arg "${1:-}"; then
-    echo "$name: apply a patch when one is at hand, otherwise cut a new one
+    printf '%s\n' "$name: apply a patch when one is at hand, otherwise cut a new one
   Usage: $name [-y] [count | patch_file]
   Format: $format. patch aliases patch_85; use patch_64 for Base64 or patch_plain_str for plain diffs.
   Encoded formats wrap version + SHA-256 + original patch bytes; verification precedes apply.
@@ -2154,7 +1988,7 @@ function _git_patch_transfer() {
     status=$?
     if [ "$status" -ne 0 ]; then
       if [ "$status" -eq 2 ]; then
-        echo "$name: expected a $format patch envelope; use patch_plain_str for plain patches" >&2
+        printf '%s\n' "$name: expected a $format patch envelope; use patch_plain_str for plain patches" >&2
       fi
       return 1
     fi
@@ -2177,27 +2011,17 @@ function _git_patch_transfer() {
         patch_file="$_GIT_PATCH_CLIPBOARD_FILE"
         ((assume_yes)) || confirmation=clipboard-confirmed
       else
-    printf '%s\n' \
-      ' ">>> leaving the clipboard patch alone —' \
-      ' creating patches from unpushed commits i' \
-      'nstead'
-
+        printf '%s\n' ">>> leaving the clipboard patch alone — creating patches from unpushed commits instead"
       fi
     else
-    printf '%s\n' \
-      ' ">>> clipboard holds no patch — creating' \
-      ' patches from unpushed commits instead'
-
+      printf '%s\n' ">>> clipboard holds no patch — creating patches from unpushed commits instead"
     fi
   fi
 
   if [ -n "$patch_file" ]; then
     _git_patch_apply_file "$patch_file" "" "$confirmation" || return 1
     if [ "${_GIT_PATCH_APPLIED_PATCH_COUNT:-0}" -eq 0 ]; then
-    printf '%s\n' \
-      ' ">>> No patches applied; no commit creat' \
-      'ed'
-
+      printf '%s\n' ">>> No patches applied; no commit created"
       return 0
     fi
     _git_patch_commit_applied "$patch_file" || return 1
@@ -2207,15 +2031,9 @@ function _git_patch_transfer() {
 
   if [ "${unpushed_count:-1}" -eq 0 ]; then
     if [ "$status" -eq 2 ]; then
-    printf '%s\n' \
-      ' ">>> no clipboard patch and no unpushed ' \
-      'commits — nothing to do'
-
+      printf '%s\n' ">>> no clipboard patch and no unpushed commits — nothing to do"
     else
-    printf '%s\n' \
-      ' ">>> no unpushed commits — nothing to cr' \
-      'eate'
-
+      printf '%s\n' ">>> no unpushed commits — nothing to create"
     fi
     return 0
   fi
@@ -2265,7 +2083,7 @@ function _pr_list_run() {
   fi
 
   if is_help_arg "${1:-}"; then
-    echo "$name: list $who open PRs, oldest first
+    printf '%s\n' "$name: list $who open PRs, oldest first
   Usage: $name [--cwd] [--verbose] [--links] [--json] [--limit=<n>] [repo ...]
   Lists $completeness.
   $scope_hint
@@ -2278,7 +2096,7 @@ function _pr_list_run() {
   fi
 
   if ! type -P list_prs > /dev/null 2>&1; then
-    echo "$name: list_prs is not installed — run: ./run --files=git-functions.js" >&2
+    printf '%s\n' "$name: list_prs is not installed — run: ./run --files=git-functions.js" >&2
     return 1
   fi
 
@@ -2317,7 +2135,7 @@ alias pr_list='pr_list_my_open'
 # pr_merge: validate pull-request URLs, sort WIP last, then enable/disable auto-merge
 function pr_merge() {
   if is_help_arg "${1:-}"; then
-    echo "pr_merge: validate pull-request URLs, sort WIP last, then enable/disable auto-merge
+    printf '%s\n' "pr_merge: validate pull-request URLs, sort WIP last, then enable/disable auto-merge
   Usage: pr_merge <url1[,url2...]> [url2 ...]
   Separators: comma, space, tab, pipe, newline
   Stdin: command cat mypr_list | pr_merge
@@ -2329,7 +2147,7 @@ github.com/acme/api/pull/124'"
     return 1
   fi
   if ! type -P pr_merge > /dev/null 2>&1; then
-    echo "pr_merge: command is not installed — run: ./run --files=git-functions.js" >&2
+    printf '%s\n' "pr_merge: command is not installed — run: ./run --files=git-functions.js" >&2
     return 1
   fi
   command pr_merge "$@"

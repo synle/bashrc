@@ -21,7 +21,7 @@ function _register_browser() {
 # which browsers are actually available on the current system.
 function list_browsers() {
   if is_help_arg "${1:-}"; then
-    echo "
+    printf '%s\n' "
       list_browsers: print every browser wrapper and the binary it would launch (or '(not found)')
         list_browsers         show resolved path for brave, chrome, edge, chromium, vivaldi, opera, arc
     "
@@ -32,17 +32,13 @@ function list_browsers() {
   for ((i = 0; i < ${#_REGISTERED_BROWSERS[@]}; i++)); do
     name="${_REGISTERED_BROWSERS[$i]}"
     paths_var="${_REGISTERED_BROWSERS_PATHS_VARS[$i]}[@]"
-    printf '%s\n' ' "# $name'
-
+    printf '%s\n' "# $name"
     if resolved=$(find_path "${!paths_var}" --exec 2> /dev/null) && [ -n "$resolved" ]; then
-    printf '%s\n' ' "\\"$resolved\\"'
-
+      printf '%s\n' "\"$resolved\""
     else
-    printf '%s\n' ' "(not found)'
-
+      printf '%s\n' "(not found)"
     fi
-    printf '%s\n' ' "'
-
+    printf '%s\n' ""
   done
 }
 
@@ -51,8 +47,8 @@ function find_browser() {
   local browser_name="$1"
   shift
   local result
-  result=$(find_path "$@" --exec) && echo "$result" && return 0
-  echo "Error: $browser_name browser not installed." >&2
+  result=$(find_path "$@" --exec) && printf '%s\n' "$result" && return 0
+  printf '%s\n' "Error: $browser_name browser not installed." >&2
   return 1
 }
 
