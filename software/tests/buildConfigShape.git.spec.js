@@ -84,6 +84,7 @@ describe(".build/gitignore_global", () => {
       .cache/
       .parcel-cache/
       .prettier-cache
+      .playwright-mcp/
 
       # Worktrees
       .worktrees/

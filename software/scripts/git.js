@@ -175,6 +175,7 @@ function _getGlobalGitIgnore() {
     .cache/
     .parcel-cache/
     .prettier-cache
+    .playwright-mcp/
 
     # Worktrees
     .worktrees/
