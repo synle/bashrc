@@ -73,7 +73,13 @@ make validate_shell_agnostic_quoting files='["software/scripts/bash-env-telemetr
 ```
 
 The validator prints JSON with the selected rule, checked-file count, and located findings.
+Analyzer failures appear in an additional `errors` array with the filename, code, and original diagnostic message.
+The batch retains earlier findings and continues checking later files after an analyzer failure.
+`checkedFiles` counts distinct attempted files, including files whose analysis failed.
+A parser may report only its first syntax error within a rejected file; that file's policy findings remain incomplete.
+Invalid scope, sensitive paths, and filesystem failures still stop validation immediately.
 Its exit statuses are 0 for clean, 1 for findings, and 2 for invalid scope or unavailable analysis; Make reports failures as nonzero.
+Any analyzer failure selects exit status 2, even when other files have findings.
 Missing tools and invalid source never count as a successful validation.
 File-based ShellCheck configuration is ignored for these focused checks; inline suppressions still require review.
 
