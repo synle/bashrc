@@ -53,12 +53,7 @@ describe("shared milestone status guidance", () => {
     const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions.md"), "utf-8");
     const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
 
-    expect(rendered).toContain("every main agent and subagent sends a status sentence first");
-    expect(rendered).toContain("within 30 words");
-    expect(rendered).toContain("`IN PROGRESS`, `BLOCKED`, or `DONE`");
-    expect(rendered).toContain("2 steps left \u2014 test and inspect diff.");
-    expect(rendered).toContain("Subagents send updates to their parent at start, each phase boundary, and before returning.");
-    expect(rendered).toContain("does not report completion until required results arrive");
+    expect(rendered).toContain("main agents and subagents follow `/mock/home/_extra/ai_llm/instructions/progress-updates.md`");
   });
 });
 

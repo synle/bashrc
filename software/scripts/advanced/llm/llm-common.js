@@ -1061,6 +1061,7 @@ const LLM_PERSONA_INSTRUCTION_FILE = "~persona.md";
  */
 const LLM_SHARED_INSTRUCTION_FILES = {
   "pr-workflow.md": "software/scripts/advanced/llm/_common/v_current/instructions-pr-workflow.md",
+  "progress-updates.md": "software/scripts/advanced/llm/_common/v_current/instructions-progress-updates.md",
   "debugging.md": "software/scripts/advanced/llm/_common/v_current/instructions-debugging.md",
   "testing.md": "software/scripts/advanced/llm/_common/v_current/instructions-testing.md",
   "readability.md": "software/scripts/advanced/llm/_common/v_current/instructions-readability.md",
