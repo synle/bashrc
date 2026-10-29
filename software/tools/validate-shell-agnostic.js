@@ -184,13 +184,9 @@ function validateShellFiles(files, rule) {
       errors.push({ file, code: "VALIDATION_UNAVAILABLE", message: error.message });
     }
   }
-  return {
-    ok: findings.length === 0 && errors.length === 0,
-    rule,
-    checkedFiles: new Set(files).size,
-    findings,
-    ...(errors.length > 0 ? { errors } : {}),
-  };
+  const result = { ok: findings.length === 0 && errors.length === 0, rule, checkedFiles: new Set(files).size, findings };
+  if (errors.length > 0) return { ...result, errors };
+  return result;
 }
 
 /**
@@ -205,7 +201,8 @@ function main() {
     const files = paths.length > 0 ? paths : scope.startsWith("[") ? JSON.parse(scope) : scope ? [scope] : [];
     const result = validateShellFiles(files, rule);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    process.exitCode = result.errors ? 2 : result.ok ? 0 : 1;
+    if (result.errors) process.exitCode = 2;
+    else process.exitCode = result.ok ? 0 : 1;
   } catch (error) {
     process.stderr.write(`${JSON.stringify({ ok: false, error: { code: "VALIDATION_UNAVAILABLE", message: error.message } })}\n`);
     process.exitCode = 2;

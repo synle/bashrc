@@ -31,7 +31,7 @@ export function commandBrowser() {
 }
 
 /**
- * Observe direct body children, retaining content while normalizing published-profile build dates and hidden-line counts.
+ * Observe direct body children, retaining content while normalizing generated-artifact build dates and hidden-line counts.
  * @param {import("puppeteer").Page} page - The actual application page.
  * @returns {Promise<{blocks: object[], errors: string[], empty: string[]}>} Visible fingerprints and explicit loading/error observations.
  */
@@ -62,10 +62,10 @@ export async function readCommand(page) {
     ...observed,
     blocks: observed.blocks.map((block) => {
       if ("links" in block) return block;
-      // Published profiles move independently of this checkout; their preview content still stays fingerprinted.
-      const text = /^profile_bashrc_[a-z_]+\.sh$/.test(block.title)
+      // Generated assets change metadata at publish time; keep their actual visible content fingerprinted.
+      const text = /^(?:profile_bashrc_[a-z_]+\.sh$|\.build\/)/.test(block.title)
         ? block.text
-            .replace(/^# AUTO-GENERATED - DO NOT EDIT \[\d{4}-\d{2}-\d{2}\]$/m, "# AUTO-GENERATED - DO NOT EDIT [<build-date>]")
+            .replace(/^((?:#|\/\/) AUTO-GENERATED - DO NOT EDIT) \[\d{4}-\d{2}-\d{2}\]$/m, "$1 [<build-date>]")
             .replace(/Show More \(\d+ more lines?\)/g, "Show More (<line-count> more lines)")
         : block.text;
       return { title: block.title, hash: createHash("md5").update(text).digest("hex") };
