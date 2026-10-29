@@ -55,6 +55,8 @@ function loadDeployment(home) {
   };
   vm.createContext(sandbox);
   vm.runInContext(source, sandbox);
+  // Resource installation has its own real-filesystem contract suite.
+  sandbox.deploySharedLLMUpstreamSkills = async () => [];
   return sandbox;
 }
 

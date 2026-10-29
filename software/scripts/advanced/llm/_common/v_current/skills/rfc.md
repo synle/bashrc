@@ -1,46 +1,27 @@
 [Sy] Draft a concise, evidence-based RFC for a nontrivial feature or implementation before code changes begin. Use when a decision carries meaningful complexity, risk, cost, or cross-team coordination.
 
-Argument: $ARGUMENTS (topic, request, issue, or existing notes. If empty or unexpanded, use current conversation; if that still lacks a concrete decision, ask for the problem and stop.)
+Argument: $ARGUMENTS (topic, issue, request, or notes). Use current context when absent; ask for the engineering decision if none exists.
 
 ## Purpose
 
-Create one decision document that helps reviewers align on a hard-to-reverse change, expose technical and operational risk, and understand implementation direction. An RFC captures why and what at design level; it does not replace product requirements, code review, API schemas, or an implementation plan.
-
-Use an RFC when at least one condition holds:
-
-- Technical complexity spans components or requires non-obvious tradeoffs.
-- Failure, migration, security, privacy, operational, or cost risk is meaningful.
-- A decision will be expensive to reverse.
-- Several stakeholders need alignment before implementation.
-
-Skip an RFC for straightforward, low-risk work with an obvious approach and few collaborators. Say why a shorter issue or implementation plan is enough instead of manufacturing complexity.
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md` and `<<UPSTREAM_KHASKY>>/skills/awesome-design-doc/SKILL.md` completely.
+Use upstream requirements, alternatives, recommendation, risk inversion, and rollout reasoning; preserve the Sy RFC output contract below.
 
 ## Steps
 
-### 1. Frame one decision
+Use an RFC for meaningful complexity, operational/security/privacy/cost risk, an expensive-to-reverse decision, or multi-stakeholder alignment.
+Skip straightforward low-risk work with an obvious approach and explain why an issue or short plan is enough.
 
-- State one engineering problem, affected users or operators, constraints, and decision needed.
-- Separate verified facts from assumptions. Read repo rules, architecture docs, prior decisions, relevant code, and current behavior before making repo-specific claims.
-- Keep product requirements and UI specifications linked or summarized only as constraints. Do not turn them into the engineering problem.
-- Name goals, non-goals, success signals, and unresolved questions. Do not anchor the problem statement to a preferred solution.
-- If the request combines independent decisions, propose separate RFCs and draft only the highest-priority one.
+Frame one solution-neutral engineering problem, affected users/operators, goals, non-goals, constraints, success signals, and open questions.
+For independent decisions, propose separate RFCs and draft the highest-priority one.
+Read actual code, repository rules, prior decisions, and current behavior before repository-specific claims.
+Compare the smallest credible approach, the preferred approach, and materially different alternatives; do not invent straw men.
 
-### 2. Compare viable approaches
+Apply upstream design reasoning only where relevant. Do not invent load, cost, numeric rollback thresholds, owners, or agreement to satisfy a template.
+Preserve explicit unknowns, including TBD metadata, as unknowns rather than failing the artifact merely for not fabricating an answer.
+Keep implementation detail in linked plans, schemas, and code reviews; explain boundaries, ownership, failure behavior, compatibility, rollout, rollback, observability, and validation at decision level.
 
-- Identify the smallest credible approach, the preferred approach, and any materially different alternative.
-- Compare only decision-driving tradeoffs: correctness, complexity, reversibility, compatibility, security, privacy, operability, observability, performance, cost, and delivery risk.
-- Pick one approach and state why evidence favors it. Move detailed comparison and abandoned ideas to the appendix.
-- Mark unknowns honestly. Never fabricate measurements, links, consumers, constraints, owners, or consensus.
-
-### 3. Explain the proposal top-down
-
-- Start with a small Mermaid or ASCII diagram when multiple components interact. Introduce every component name before using it as a subsection.
-- Describe boundaries, data flow, state ownership, failure behavior, compatibility, migration, rollout, rollback, observability, and validation at the level needed to judge the design.
-- Name implementation surface areas, not line-by-line details. Omit full code, schemas, resource manifests, and exhaustive API definitions; those belong in implementation and code review.
-- Add user experience only when callers, operators, API clients, configuration users, CLI users, or UI users observe a change.
-- Use prose to introduce every list, table, and figure. Keep terminology and subsection names consistent.
-
-### 4. Write the artifact
+### Local RFC artifact
 
 Resolve the authoritative repository name from its remote. Write the RFC flat under `<<LLM_ROOT_FOLDER>>/plans/` as `<repo>-<feature>.rfc.md`, where `<feature>` is concise snake_case. If a matching plan already exists, reuse its stem. Never put the RFC in the repo unless repo rules or the user explicitly require that location.
 
@@ -113,7 +94,7 @@ Target decision date: <YYYY-MM-DD or TBD>
 
 Keep the main body under roughly three rendered pages. Cut repetition; move useful depth to the appendix. Add diagrams only when they clarify the decision.
 
-### 5. Self-review and hand off
+### Self-review and handoff
 
 - Check that newcomer can explain problem, chosen approach, major tradeoffs, failure modes, rollout, rollback, and proof of success after one read.
 - Check each section earns its space and each linked claim resolves.

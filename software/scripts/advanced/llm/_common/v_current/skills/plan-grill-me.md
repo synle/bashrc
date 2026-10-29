@@ -1,78 +1,52 @@
 [Sy] Stress-test a plan, design, or decision with calibrated pressure, one question at a time and a recommended answer, until the plan is clear and defensible.
 
-Argument: $ARGUMENTS (optional — topic to grill. If empty, asks what to grill.)
+Argument: $ARGUMENTS (topic to examine). If absent and context has no target, ask what plan, design, or decision to examine.
 
-## Rules
+## Purpose
 
-- Ask one question at a time.
-- Give a recommended answer for every question.
-- If answer lives in files/code/docs/logs, read first instead of asking.
-- Track unresolved decisions, assumptions, risks, dependencies.
-- Let user change intensity anytime: "softer", "harder", "teach more", "skip basics".
-- Stop when: user says stop, plan is clear enough, or missing info needs external research.
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md` and `<<UPSTREAM_ADDY>>/skills/interview-me/SKILL.md` completely.
+Reuse upstream hypothesis-led, one-question interviewing while retaining Sy calibration and critique of an existing plan.
 
-## Phases
+## Steps
 
-### Phase 1 — Frame the Target
+- If context already contains the plan, summarize it in 3–6 bullets and invite correction; do not restart discovery unnecessarily.
+- Read answers available in code, files, documentation, or logs before asking the user.
+- Ask one question at a time and provide a recommended answer with its reason.
+- Keep an explicit hypothesis, unresolved assumptions, risks, dependencies, and decisions. Use them to choose the next question.
+- Calibrate knowledge as New, Working, or Expert, and pressure as Light, Standard, or Hard. Ask once unless context establishes the level.
+- Default to Working knowledge and Standard pressure. Honor “softer,” “harder,” “teach more,” and “skip basics” immediately.
 
-If topic not clear from $ARGUMENTS or context:
+### Existing-plan critique extension
 
-> What plan, design, or decision should I grill?
-> Recommended answer: concrete goal, current approach, constraints, decision needed.
+Move through goal fit, real constraints, credible alternatives, smallest execution path, failure modes, observable validation, and reversibility/rollback.
+Stop early when the decision becomes defensible; do not manufacture another interview after the user clearly confirms it.
 
-If context already contains the plan, summarize in 3-6 bullets and ask for correction.
+For New knowledge, explain the missing concept in 2–4 sentences before the next question.
+For Working knowledge, challenge vague terms and test tradeoffs and the smallest useful version.
+For Expert knowledge, probe counterfactuals, hidden costs, migration, maintenance, and evidence that would change the decision.
 
-### Phase 2 — Calibration
+Light pressure clarifies only. Standard pressure challenges assumptions and tradeoffs. Hard pressure probes weak reasoning, failure modes, and reversibility directly.
 
-Ask once (skip if level obvious from context):
+Use this response shape:
 
-> Before I grill: what's your comfort with this topic, and how hard should pressure be?
-> Recommended answer: "I know basics of [topic], standard pressure. Explain missing concepts briefly, keep pushing."
-
-**Knowledge dial:** New (needs vocab/model) | Working (understands tradeoffs) | Expert (wants sharper critique)
-
-**Pressure dial:** Light (clarify goals/constraints) | Standard (challenge assumptions/tradeoffs) | Hard (probe failure modes, edge cases, reversibility, second-order effects)
-
-Default: Knowledge=Working, Pressure=Standard.
-
-### Phase 3 — Build Decision Map
-
-Track privately: Goal, User/Customer, Constraints, Options, Dependencies, Risks, Validation, Rollback. Use to choose next question. Don't dump unless asked.
-
-### Phase 4 — Question Ladder
-
-Move through these tiers. Stop early when plan firms up.
-
-1. **Goal Fit** — What outcome matters most? What makes this not worth doing? What problem, for whom?
-2. **Constraint Reality** — What hard constraint can't move? What resource bottleneck decides the plan? What assumption kills the plan if false?
-3. **Option Pressure** — Top two alternatives? Why not the boring approach? Optimizing for speed/quality/cost/learning/control?
-4. **Execution Path** — Smallest useful version? What first? What can defer?
-5. **Failure Modes** — How does this fail in production? What edge case embarrasses the plan? Hardest part to observe when broken?
-6. **Validation** — What test/metric/demo/user behavior proves it works? What does "done" mean in observable terms?
-7. **Reversibility** — Hardest decision to undo? Rollback plan? What warrants an ADR?
-
-### Pressure Adaptation
-
-**New knowledge:** define missing concept in 2-4 sentences before asking. Avoid jargon. Focus goals/constraints/first-principles.
-
-**Working knowledge:** normal tradeoff questions. Push for validation + smallest useful version. Challenge vague words ("simple", "scalable", "good", "clean", "fast").
-
-**Expert knowledge:** skip basics. Sharper counterfactuals. Hidden costs, migration paths, long-term maintenance. What evidence changes their mind.
-
-**Light pressure:** clarifying only. Stop after top ambiguities resolved.
-
-**Standard pressure:** challenge assumptions and tradeoffs. Keep moving until implementation path concrete.
-
-**Hard pressure:** direct. Name weak reasoning. Unpleasant edge cases. Demand observable validation.
-
-## Recommended Answer Format
-
-```
+```text
 Question: ...
 Recommended answer: ...
-Why it matters: <one sentence>
+Why it matters: ...
 ```
 
-## Output
+## Safety
 
-End with: decision or best plan, remaining open questions, next concrete action, risks to watch.
+Never:
+
+- Batch questions, invent answers that require source reading, or treat uncertainty as permission to implement.
+- Force repeated exact-word “yes” prompts after an unambiguous user decision or override the user's stop.
+- Run an interactive interview in a non-interactive context; report missing decisions instead.
+
+Stop when the user stops, the plan is clear enough, or missing information requires external research.
+
+## Verification
+
+End with the decision or best plan, unresolved questions, next concrete action, and risks to watch.
+For intent discovery, preserve the upstream outcome/user/success/constraints/non-goals restatement.
+For an existing plan, report the tested decision and remaining weaknesses rather than substituting a new requirements document.
