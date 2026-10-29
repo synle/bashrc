@@ -497,11 +497,14 @@ Edit the directive or included source, never the generated body; verify a second
 ## Native navigation
 
 `cd` tries native Bash navigation first, preserving exact paths, options, `CDPATH`, symlinks, previous-folder behavior, HOME, and failure status.
-Only missing relative folder names use fuzzy matching; files, absolute paths, `..`, and option forms never trigger the search.
-An asynchronous breadth-first search considers at most 3 levels, 20,000 entries, and 2 seconds.
+Missing paths use fuzzy matching from their longest existing folder prefix, including parent-relative paths and absolute paths expanded from `~/`.
+Without an existing prefix, relative queries search from the current folder.
+Files, exact paths, bare `..`, and option forms retain native behavior; unresolved `.` or `..` components never enter fuzzy matching.
+An asynchronous breadth-first search considers at most 3 levels below the anchor, 20,000 entries, and 2 seconds.
 The first matching depth wins. Within that depth, exact components rank above prefixes, prefixes above substrings, then shorter suffixes and lexical paths.
 Search reuses `_IGNORED_FOLDERS_JSON`; excluded cache folders stay hidden unless every matching excluded component appears exactly in the segmented query.
-One match prints `print_action_summary` and changes directory. Multiple matches show at most five paths; choose 1–5 or type the displayed relative path.
+One match prints `print_action_summary` and changes directory. Multiple matches show at most five paths; choose 1–5 or type a displayed path.
+Anchored matches display absolute paths; unanchored matches retain relative paths.
 Selection requires terminal stdin and an accessible `/dev/tty`; piped stdin remains untouched even when a controlling terminal exists.
 Searches with no safe match preserve Bash's native failure status.
 The `..`, `...`, and `....` aliases use `cd`; folder completion keeps the shared registry. Profile refresh does not remove navigation history.

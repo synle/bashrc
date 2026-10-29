@@ -63,14 +63,15 @@ finally:
  * @param {string} query Argument supplied literally to cd.
  * @param {object} [options={}] Terminal reply, optional pipe stdin, setup commands, environment, and caller operation.
  * @returns {{status: number, output: string, elapsed: number}} Actual status, normalized output, and duration in milliseconds.
- * @throws {Error} On fixture or terminal-driver failure; always removes the owned fixture.
+ * @throws {Error} On fixture or terminal-driver failure; always removes the owned fixture, including its self-contained symlink.
  */
 function navigate(folders, query, options = {}) {
-  const folder = mkdtempSync(path.join(os.tmpdir(), "fuzzy-cd-"));
+  // Keep HOME, PWD, and terminal replies on the same spelling when the system temp root is a symlink.
+  const folder = realpathSync(mkdtempSync(path.join(os.tmpdir(), "fuzzy-cd-")));
   try {
     folders.forEach((name) => mkdirSync(path.join(folder, name), { recursive: true }));
     writeFileSync(path.join(folder, "regular-file"), "not a folder\n");
-    symlinkSync(os.tmpdir(), path.join(folder, "outside-link"));
+    symlinkSync(".", path.join(folder, "outside-link"));
     writeFileSync(path.join(folder, "blocked.cjs"), 'require("fs").promises.readdir = () => new Promise(() => {});\n');
     const helpers = ["is_help_arg", "to_windows_path", "print_action_summary"]
       .map((name) => CORE.match(new RegExp(`^function ${name}\\(\\) \\{[\\s\\S]*?^\\}`, "m"))[0])
@@ -126,11 +127,16 @@ ${options.invocation || 'if cd "$1"; then status=0; else status=$?; fi\nprintf "
 }
 
 describe("fuzzy cd subprocess", () => {
-  it("keeps an exact path ahead of every partial match without launching Node", () => {
-    const result = navigate(["hooks", "hooks-long"], "hooks", { before: 'export NODE_OPTIONS="--require=$PWD/missing.cjs"' });
-    expect(result.status).toBe(0);
-    expect(result.output).toBe("RESULT:/hooks\n");
-  });
+  it.each(["", 'set -- "$HOME/hooks"', "builtin cd workspace; set -- ../hooks"])(
+    "keeps exact navigation ahead of partial matches without Node: %j",
+    (setup) => {
+      const result = navigate(["workspace", "hooks", "hooks-long"], "hooks", {
+        before: `${setup}\nexport NODE_OPTIONS="--require=$PWD/missing.cjs"`,
+      });
+      expect(result.status).toBe(0);
+      expect(result.output).toBe("RESULT:/hooks\n");
+    },
+  );
 
   it.each([
     [["git/hooks"], "./git/hook", "/git/hooks"],
@@ -143,8 +149,22 @@ describe("fuzzy cd subprocess", () => {
     [["literal[folder"], "literal[", "/literal[folder"],
     [["line\nbreak-folder"], "break-folder", "/line\nbreak-folder"],
     [["caf\u00e9-folder"], "caf\u00e9", "/caf\u00e9-folder"],
-  ])("enters a unique folder from %j matching %j", (folders, query, expected) => {
-    const result = navigate(folders, query);
+    [["workspace", "skippy-ff"], "../skipp", "/skippy-ff", "builtin cd workspace"],
+    [["workspace/deep", "skippy-ff"], "../../skipp", "/skippy-ff", "builtin cd workspace/deep"],
+    [["workspace", "skippy-ff"], "unused", "/skippy-ff", 'set -- "$HOME/skipp"; builtin cd workspace'],
+    [["workspace", "Downloads/skippy-ff"], "unused", "/Downloads/skippy-ff", "set -- ~/Downloads/skipp; builtin cd workspace"],
+    [["workspace", "projects/repository"], "../proj/repo", "/projects/repository", "builtin cd workspace"],
+    [["anchor/a/b/target-folder"], "anchor/target", "/anchor/a/b/target-folder"],
+    [["anchor/node_modules/target-folder"], "anchor/node_modules/target", "/anchor/node_modules/target-folder"],
+    [["anchor with spaces/target-folder"], "unused", "/anchor with spaces/target-folder", 'set -- "$HOME/anchor with spaces/target"'],
+    [["line\nbreak/target-folder"], "line\nbreak/target", "/line\nbreak/target-folder"],
+    [["line\n/target-folder"], "line\n/target", "/line\n/target-folder"],
+    [["projects/repository"], "linked/repo", "/linked/repository", "ln -s projects linked"],
+    [["projects/deep", "skippy-ff"], "linked/../skipp", "/skippy-ff", "ln -s projects/deep linked"],
+    [["quote'anchor/target-folder"], "quote'anchor/target", "/quote'anchor/target-folder"],
+    [["literal[anchor/target-folder"], "literal[anchor/target", "/literal[anchor/target-folder"],
+  ])("enters a unique folder from %j matching %j using its existing prefix", (folders, query, expected, before = "") => {
+    const result = navigate(folders, query, { before });
     expect(result.status).toBe(0);
     expect(result.output).toContain(`RESULT:${expected}\n`);
     expect(result.output).toContain('cd "<ROOT>');
@@ -160,6 +180,9 @@ describe("fuzzy cd subprocess", () => {
     [["outside-link-folder"], "outside-link/missing"],
     [["projects"], "projects/../miss"],
     [["projects"], "/missing-absolute"],
+    [["anchor/node_modules/cache-target"], "anchor/cache-target"],
+    [["anchor/a/b/c/too-deep"], "anchor/too-deep"],
+    [["anchor/target-folder"], "anchor/missing/../target"],
   ])("rejects %j matching %j without changing folders", (folders, query) => {
     const result = navigate(folders, query);
     expect(result.status).toBe(1);
@@ -243,6 +266,16 @@ describe.skipIf(process.platform === "win32")("fuzzy cd terminal integration", (
     const result = navigate(["target-a", "target-b"], "target", { tty: true, reply });
     expect(result.status).toBe(0);
     expect(result.output).toContain("RESULT:/target-b\n");
+  });
+
+  it.each([
+    ["2\n", 0, "/anchor/target-b"],
+    ["<ROOT>/anchor/target-b\n", 0, "/anchor/target-b"],
+    ["<ROOT>/target-b\n", 1, ""],
+  ])("validates anchored selection %j", (reply, status, expected) => {
+    const result = navigate(["anchor/target-a", "anchor/target-b"], "anchor/target", { tty: true, reply });
+    expect(result.status).toBe(status);
+    expect(result.output).toContain(`RESULT:${expected}\n`);
   });
 
   it("accepts a shell-escaped full path containing spaces", () => {

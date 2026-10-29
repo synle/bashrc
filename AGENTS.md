@@ -368,7 +368,9 @@ Profile registration is buffered: `registerProfileBlock` /
   Keep explicit `pdiff_*` aliases beside their `diff_*` counterparts in `profile-advanced.sh`; reuse the existing dispatcher.
   Retain successful snapshots for asynchronous GUI readers, remove failed captures, and preserve failure status. Regression coverage lives in `software/tests/clipboardDiff.spec.js`.
 - **Fuzzy folder navigation** tries native `cd` first, preserving options, exact paths, `CDPATH`, symlinks, previous-folder behavior, HOME, and failure status.
-  Only missing relative folder names use breadth-first search, capped at 3 levels, 20,000 entries, and 2 seconds; shared ignored-folder patterns exclude caches unless their path components are explicit exact matches.
+  Missing paths search from their longest existing folder prefix, including parent-relative and absolute inputs; unanchored relative queries search from the current folder.
+  Breadth-first search stays capped at 3 levels below the anchor, 20,000 entries, and 2 seconds.
+  Shared ignored-folder patterns exclude caches unless their path components are explicit exact matches.
   Unique results navigate directly; ambiguous results show at most five choices and require `/dev/tty`, never pipeline stdin. Keep parent aliases and native completion covered in `software/tests/nativeCd.spec.js` and fuzzy behavior in `software/tests/integration/fuzzyCd.spec.js`.
 - **Native file listing** leaves `ls` unwrapped. Keep `ll` and sorting shortcuts as
   explicit native aliases; cover listing behavior in `software/tests/nativeLs.spec.js`.

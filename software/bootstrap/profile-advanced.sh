@@ -1166,7 +1166,8 @@ alias ....="cd ../../../"
 alias clear='printf "\033[H\033[2J\033[3J"'
 
 # cd: change folders with native Bash behavior and bounded nearby-folder matching.
-# Args: native cd operands. Returns native status; fuzzy moves print a summary, and ambiguous interactive queries may prompt.
+# Args: native cd operands. Missing paths search from their longest existing folder prefix.
+# Returns native status or 1 on search/selection failure; fuzzy moves print a summary and may prompt.
 function cd() {
   if [ "$#" -eq 0 ]; then
     builtin cd
@@ -1179,7 +1180,7 @@ function cd() {
 
   local _cd_query="$1"
   case "$_cd_query" in
-  "" | - | -* | /*)
+  "" | - | -*)
     builtin cd "$@"
     return $?
     ;;
@@ -1199,7 +1200,8 @@ function cd() {
     echo "cd: change folders with native Bash behavior and bounded nearby-folder matching
   Usage: cd [folder]
   Exact paths and Bash options keep native behavior.
-  Missing relative paths search up to 3 folder levels for 2 seconds.
+  Missing paths search from their longest existing folder prefix.
+  Search covers up to 3 folder levels for 2 seconds.
   Ambiguous matches require terminal stdin and a controlling terminal for selection."
     return 0
   fi
@@ -1210,7 +1212,23 @@ function cd() {
   fi
 
   local _cd_node_script _cd_results _cd_status _cd_encoded _cd_decoded _cd_relative _cd_choice _cd_index _cd_target _cd_display
+  local _cd_search_folder="." _cd_search_absolute="$PWD" _cd_search_query="$_cd_query" _cd_prefix="$_cd_query"
   local -a _cd_matches=()
+
+  # Let Bash resolve existing parents (including .. and symlinks); only missing names need fuzzy matching.
+  while [[ "$_cd_prefix" = */* ]]; do
+    _cd_prefix="${_cd_prefix%/*}"
+    [ -n "$_cd_prefix" ] || _cd_prefix="/"
+    if _cd_decoded=$(builtin cd -- "$_cd_prefix" > /dev/null 2>&1 && printf '%s\001' "$PWD"); then
+      _cd_search_folder="${_cd_decoded%$'\001'}"
+      _cd_search_absolute="$_cd_search_folder"
+      _cd_search_query="${_cd_query#"$_cd_prefix"}"
+      _cd_search_query="${_cd_search_query#/}"
+      break
+    fi
+    [ "$_cd_prefix" != "/" ] || break
+  done
+
   IFS= read -r -d '' _cd_node_script << 'CD_NODE' || true
 const fs = require('fs');
 const path = require('path');
@@ -1337,7 +1355,7 @@ function isIgnored(parts, requested, patterns) {
 })().catch((error) => stop(`failed: ${error.message}`));
 CD_NODE
 
-  _cd_results=$(command node -e "$_cd_node_script" "$_cd_query")
+  _cd_results=$(builtin cd -- "$_cd_search_folder" > /dev/null && command node -e "$_cd_node_script" "$_cd_search_query")
   _cd_status=$?
   [ "$_cd_status" -eq 0 ] || return 1
   while IFS= read -r _cd_encoded; do
@@ -1360,7 +1378,7 @@ CD_NODE
     for _cd_index in "${!_cd_matches[@]}"; do
       _cd_decoded=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString() + String.fromCharCode(1))' "${_cd_matches[$_cd_index]}") || return 1
       _cd_relative="${_cd_decoded%$'\001'}"
-      printf -v _cd_display '%q' "./$_cd_relative"
+      printf -v _cd_display '%q' "${_cd_search_folder%/}/$_cd_relative"
       printf '%s %s\n' "$((_cd_index + 1))" "$_cd_display" > /dev/tty
     done
     if ! IFS= read -r _cd_choice < /dev/tty; then
@@ -1381,8 +1399,8 @@ CD_NODE
       for _cd_index in "${!_cd_matches[@]}"; do
         _cd_decoded=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString() + String.fromCharCode(1))' "${_cd_matches[$_cd_index]}") || return 1
         _cd_relative="${_cd_decoded%$'\001'}"
-        printf -v _cd_display '%q' "./$_cd_relative"
-        if [ "$_cd_choice" = "$_cd_display" ] || [ "$_cd_choice" = "./$_cd_relative" ] || [ "$_cd_choice" = "$PWD/$_cd_relative" ]; then
+        printf -v _cd_display '%q' "${_cd_search_folder%/}/$_cd_relative"
+        if [ "$_cd_choice" = "$_cd_display" ] || [ "$_cd_choice" = "${_cd_search_folder%/}/$_cd_relative" ] || [ "$_cd_choice" = "${_cd_search_absolute%/}/$_cd_relative" ]; then
           _cd_encoded="${_cd_matches[$_cd_index]}"
           break
         fi
@@ -1397,7 +1415,7 @@ CD_NODE
 
   _cd_decoded=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString() + String.fromCharCode(1))' "$_cd_encoded") || return 1
   _cd_relative="${_cd_decoded%$'\001'}"
-  _cd_target="./$_cd_relative"
+  _cd_target="${_cd_search_folder%/}/$_cd_relative"
   print_action_summary "$_cd_target"
   builtin cd -- "$_cd_target"
 }
