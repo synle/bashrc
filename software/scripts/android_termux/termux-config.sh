@@ -4,7 +4,8 @@
 # software/scripts/android_termux/termux-config.sh
 # Termux terminal emulator config - properties, extra-keys row, and color theme
 
-echo '>> Setup termux config'
+    printf '%s\n' ' \'>> Setup termux config'
+
 
 safe_mkdir "$HOME/.termux"
 
@@ -73,7 +74,11 @@ EOF
 # permission dialog, which would hang an unattended run and re-prompt anyone who
 # previously denied it. Print the one-liner instead.
 if [ ! -d "$HOME/storage" ]; then
-  echo ">> Shared storage not linked. Run 'termux-setup-storage' to get ~/storage/{downloads,dcim,shared}"
+    printf '%s\n' \
+      ' ">> Shared storage not linked. Run \'ter' \
+      'mux-setup-storage\' to get ~/storage/{dow' \
+      'nloads,dcim,shared}'
+
 fi
 
 ################################################################################
@@ -84,5 +89,8 @@ fi
 if type -P termux-reload-settings &> /dev/null; then
   termux-reload-settings
 else
-  echo ">> Skipped termux-reload-settings: not available"
+    printf '%s\n' \
+      ' ">> Skipped termux-reload-settings: not ' \
+      'available'
+
 fi

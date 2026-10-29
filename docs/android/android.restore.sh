@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 
 # Samsung restore: reinstall all removed apps and restore settings to defaults.
-echo "> Restoring all settings and apps to defaults..."
+    printf '%s\n' \
+      ' "> Restoring all settings and apps to de' \
+      'faults...'
+
 debloat_settings
 
-echo "> Debloating..."
-echo ">> restore_all_settings..."
+    printf '%s\n' ' "> Debloating...'
+
+    printf '%s\n' ' ">> restore_all_settings...'
+
 restore_all_settings
-echo ">> restore_app_collection > DEBLOAT_SAFE..."
+    printf '%s\n' \
+      ' ">> restore_app_collection > DEBLOAT_SAF' \
+      'E...'
+
 restore_app_collection "$DEBLOAT_SAFE"
-echo ">> restore_app_collection > DEBLOAT_AGGRESSIVE..."
+    printf '%s\n' \
+      ' ">> restore_app_collection > DEBLOAT_AGG' \
+      'RESSIVE...'
+
 restore_app_collection "$DEBLOAT_AGGRESSIVE"

@@ -16,13 +16,16 @@ function installFlatpakPackage() {
   local flatpak_id="$2"
   echo -n ">> $pkg_name >> Installing with Flatpak >> "
   if flatpak list --app | grep -q "$flatpak_id" &> /dev/null; then
-    echo "Skipped"
+    printf '%s\n' ' "Skipped'
+
   else
     local _t0=$SECONDS
     if flatpak install -y flathub "$flatpak_id" &> /dev/null; then
-      echo "Success ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
+
     else
-      echo "Error ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
+
     fi
   fi
 }
@@ -34,13 +37,16 @@ _PACMAN_INSTALLED=$(pacman -Qq 2> /dev/null)
 function installPacmanPackage() {
   echo -n ">> $@ >> Installing with Pacman >> "
   if echo "$_PACMAN_INSTALLED" | grep -qxF "$1"; then
-    echo "Skipped"
+    printf '%s\n' ' "Skipped'
+
   else
     local _t0=$SECONDS
     if sudo pacman -S --noconfirm --needed $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
+
     else
-      echo "Error ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
+
     fi
   fi
 }
@@ -73,7 +79,12 @@ function installFlatpakPackageInBackground() {
 function _installBackgroundPackages() {
   _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
-  echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
+    printf '%s\n' \
+      ' ">> Installing ${#_BACKGROUND_PKG_NAMES[' \
+      '@]} background packages (log: $_BACKGROUN' \
+      'D_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES' \
+      '[*]}'
+
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
@@ -88,15 +99,20 @@ function _installBackgroundPackages() {
 function updatePackageIndex() {
   echo -n ">> Updating package index >> "
   if sudo pacman -Sy --noconfirm < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Done"
+    printf '%s\n' ' "Done'
+
   else
-    echo "Error"
+    printf '%s\n' ' "Error'
+
   fi
 }
 
 # upgrade all installed packages and clean old cached packages (fire and forget)
 function upgradeAndCleanPackages() {
-  echo ">> Upgrading and cleaning packages (background) >>"
+    printf '%s\n' \
+      ' ">> Upgrading and cleaning packages (bac' \
+      'kground) >>'
+
   (
     sudo pacman -Su --noconfirm < /dev/null
     sudo pacman -Sc --noconfirm < /dev/null
@@ -106,11 +122,15 @@ function upgradeAndCleanPackages() {
 ################################################################################
 # --- Install Packages ---
 ################################################################################
-echo ">> Begin setting up dependencies/arch_linux/deps.sh"
+    printf '%s\n' \
+      ' ">> Begin setting up dependencies/arch_l' \
+      'inux/deps.sh'
+
 _waitForPacmanLock
 if is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
 
-echo '>> Installing packages with pacman'
+    printf '%s\n' ' \'>> Installing packages with pacman'
+
 
 # --- Core tools ---
 installPacmanPackage curl
@@ -208,7 +228,8 @@ _installFnmAndNode
 
 # --- GUI apps (only if a display server is available) ---
 if ((is_gui)); then
-  echo '>> Installing GUI apps'
+    printf '%s\n' ' \'>> Installing GUI apps'
+
 
   # ---- Clipboard (install only for the active display server) ----
   if ((is_gui_x11)); then installPacmanPackageInBackground xclip; fi

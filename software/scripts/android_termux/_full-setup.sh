@@ -47,13 +47,16 @@ function _releaseWakeLock() {
 function installPkgPackage() {
   echo -n ">> $@ >> Installing with Pkg >> "
   if echo "$_PKG_INSTALLED" | grep -qxF "$1"; then
-    echo "Skipped"
+    printf '%s\n' ' "Skipped'
+
   else
     local _t0=$SECONDS
     if pkg install -y $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
+
     else
-      echo "Error ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
+
     fi
   fi
 }
@@ -78,7 +81,12 @@ function installPkgPackageInBackground() {
 function _installBackgroundPackages() {
   _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
-  echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
+    printf '%s\n' \
+      ' ">> Installing ${#_BACKGROUND_PKG_NAMES[' \
+      '@]} background packages (log: $_BACKGROUN' \
+      'D_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES' \
+      '[*]}'
+
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
@@ -92,15 +100,20 @@ function _installBackgroundPackages() {
 function updatePackageIndex() {
   echo -n ">> Updating package index >> "
   if pkg update -y < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Done"
+    printf '%s\n' ' "Done'
+
   else
-    echo "Error"
+    printf '%s\n' ' "Error'
+
   fi
 }
 
 # upgrade all installed packages and clean cached archives (fire and forget)
 function upgradeAndCleanPackages() {
-  echo ">> Upgrading and cleaning packages (background) >>"
+    printf '%s\n' \
+      ' ">> Upgrading and cleaning packages (bac' \
+      'kground) >>'
+
   (
     pkg upgrade -y < /dev/null
     pkg autoclean -y < /dev/null
@@ -115,12 +128,16 @@ safe_mkdir "$HOME/.termux"
 ################################################################################
 # --- Install Packages ---
 ################################################################################
-echo ">> Begin setting up dependencies/android_termux/deps.sh"
+    printf '%s\n' \
+      ' ">> Begin setting up dependencies/androi' \
+      'd_termux/deps.sh'
+
 _acquireWakeLock
 _waitForPkgLock
 if is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
 
-echo '>> Installing packages with pkg'
+    printf '%s\n' ' \'>> Installing packages with pkg'
+
 
 # --- Core tools ---
 installPkgPackage curl

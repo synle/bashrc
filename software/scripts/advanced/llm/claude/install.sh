@@ -19,7 +19,8 @@
 # install and reinstalls on its own, so the wipe is both unnecessary and harmful (it would
 # re-download the ~270MB binary on every single run).
 
-echo '> Installing claude'
+    printf '%s\n' ' \'> Installing claude'
+
 npm_install_global @anthropic-ai/claude-code@latest claude
 
 # Self-update when Claude is already installed. npm_install_global can no-op on
@@ -30,8 +31,10 @@ npm_install_global @anthropic-ai/claude-code@latest claude
 if ! ((IS_CI)) && has_persistent_binary claude > /dev/null; then
   echo -n '>> claude >> Updating to latest stable >> '
   if yes | claude update >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo 'Success'
+    printf '%s\n' ' \'Success'
+
   else
-    echo 'Error (non-fatal)'
+    printf '%s\n' ' \'Error (non-fatal)'
+
   fi
 fi

@@ -17,7 +17,8 @@
 # /etc/sudoers, it survives OS updates. Ships as a .template with the auth line commented
 # out; copy it and uncomment. Works in every terminal, Ghostty included.
 if [ -f /etc/pam.d/sudo_local.template ] && ! grep -q '^auth' /etc/pam.d/sudo_local 2> /dev/null; then
-  echo '>> TouchID sudo'
+    printf '%s\n' ' \'>> TouchID sudo'
+
   sudo cp /etc/pam.d/sudo_local.template /etc/pam.d/sudo_local
   sudo sed -i '' 's/^#auth/auth/' /etc/pam.d/sudo_local
 fi
@@ -73,12 +74,17 @@ Defaults badpass_message=\"${_SUDOERS_ESC}[1;38;2;0;0;0;48;2;255;214;10m WRONG P
 if [ "$(sudo cat "$_SUDOERS_DROPIN" 2> /dev/null)" != "$_SUDOERS_CONTENT" ]; then
   echo -n ">> sudo timestamp_timeout=$_SUDOERS_TIMEOUT_MINUTES minutes, shared across ttys >> "
   _sudoers_tmp="$BASHRC_TEMP_DIR/bashrc-sudo.sudoers"
-  echo "$_SUDOERS_CONTENT" > "$_sudoers_tmp"
+    printf '%s\n' ' "$_SUDOERS_CONTENT" > "$_sudoers_tmp'
+
   if sudo visudo -c -f "$_sudoers_tmp" >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 \
     && sudo install -m 0440 -o root -g wheel "$_sudoers_tmp" "$_SUDOERS_DROPIN"; then
-    echo "Done"
+    printf '%s\n' ' "Done'
+
   else
-    echo "Error (see $BASHRC_TEMP_DIR/fullsetup.log)"
+    printf '%s\n' \
+      ' "Error (see $BASHRC_TEMP_DIR/fullsetup.l' \
+      'og)'
+
   fi
   rm -f "$_sudoers_tmp"
 fi

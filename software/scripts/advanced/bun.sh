@@ -5,7 +5,8 @@
 
 # Force refresh: remove existing binary (only if stale)
 if is_force_refresh_stale "$HOME/.bun"; then
-  echo ">> Force refresh: removing bun"
+    printf '%s\n' ' ">> Force refresh: removing bun'
+
   rm -rf "$HOME/.bun"
 fi
 
@@ -17,14 +18,21 @@ _bin=$(has_persistent_binary bun)
 # reinstall natively — curl_bash_install runs the official installer through run_native,
 # so it resolves the darwin-aarch64 download instead of darwin-x64.
 if [ -n "$_bin" ] && binary_arch_mismatch "$_bin"; then
-  echo ">> Reinstalling bun: $_bin is not built for $(get_native_arch)"
+    printf '%s\n' \
+      ' ">> Reinstalling bun: $_bin is not built' \
+      ' for $(get_native_arch)'
+
   rm -rf "$HOME/.bun"
   _bin=""
 fi
 
 if [ -n "$_bin" ]; then
-  echo ">> Skipped bun: already installed at $_bin"
+    printf '%s\n' \
+      ' ">> Skipped bun: already installed at $_' \
+      'bin'
+
 else
-  echo '>> Installing bun'
+    printf '%s\n' ' \'>> Installing bun'
+
   curl_bash_install https://bun.sh/install
 fi

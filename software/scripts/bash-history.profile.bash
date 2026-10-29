@@ -35,9 +35,16 @@ HISTORY_BACKUP_MAX=7
 # Safe to invoke manually at any time. usage: history_cleanup [help]
 function history_cleanup() {
   if is_help_arg "${1:-}"; then
-    echo "history_cleanup: deep-clean \$HISTFILE (canonicalize + bash -nc drop + dedup)"
-    echo "  history_cleanup       run on \$HISTFILE (default ~/.bash_history)"
-    echo "  history_cleanup help  show this help"
+    printf '%s\n' \
+      ' "history_cleanup: deep-clean \\$HISTFILE' \
+      ' (canonicalize + bash -nc drop + dedup)'
+
+    printf '%s\n' \
+      ' "  history_cleanup       run on \\$HISTF' \
+      'ILE (default ~/.bash_history)'
+
+    printf '%s\n' ' "  history_cleanup help  show this help'
+
     return 0
   fi
 
@@ -55,8 +62,10 @@ function history_cleanup() {
     else
       canonical=$(_canonicalize_command "$line")
       if [ -n "$canonical" ]; then
-        echo "${ts:-}"
-        echo "$canonical"
+    printf '%s\n' ' "${ts:-}'
+
+    printf '%s\n' ' "$canonical'
+
       fi
       ts=""
     fi
@@ -146,14 +155,30 @@ _backup_history
 #     immediately. Useful for `fuzzy_history docker` style "find-and-run" calls.
 function fuzzy_history() {
   if is_help_arg "${1:-}"; then
-    echo "fuzzy_history: interactive fzf search over bash history"
-    echo "  fuzzy_history [query]    search with optional initial query"
-    echo "  fuzzy_history help       show this help"
-    echo "  (also bound to Ctrl+R — that variant places selection on prompt instead of running it)"
+    printf '%s\n' \
+      ' "fuzzy_history: interactive fzf search o' \
+      'ver bash history'
+
+    printf '%s\n' \
+      ' "  fuzzy_history [query]    search with ' \
+      'optional initial query'
+
+    printf '%s\n' \
+      ' "  fuzzy_history help       show this he' \
+      'lp'
+
+    printf '%s\n' \
+      ' "  (also bound to Ctrl+R — that variant ' \
+      'places selection on prompt instead of run' \
+      'ning it)'
+
     return
   fi
   if ! type -P fzf &> /dev/null; then
-    echo "fuzzy_history: fzf not installed, use Ctrl+R for built-in search"
+    printf '%s\n' \
+      ' "fuzzy_history: fzf not installed, use C' \
+      'trl+R for built-in search'
+
     return 1
   fi
 
@@ -186,7 +211,8 @@ function fuzzy_history() {
       READLINE_LINE="$selected"
       READLINE_POINT=${#selected}
     else
-      echo "$selected"
+    printf '%s\n' ' "$selected'
+
       history -s "$selected"
       eval "$selected"
     fi
@@ -199,25 +225,37 @@ function fuzzy_history() {
 # `history_restore N` as a shortcut for the date.
 function history_list_backups() {
   if is_help_arg "${1:-}"; then
-    echo "history_list_backups: list all available history backups (with index for history_restore N)"
-    echo "  history_list_backups help  show this help"
+    printf '%s\n' \
+      ' "history_list_backups: list all availabl' \
+      'e history backups (with index for history' \
+      '_restore N)'
+
+    printf '%s\n' \
+      ' "  history_list_backups help  show this ' \
+      'help'
+
     return
   fi
   local backups
   backups=$(ls -1t "$HISTORY_BACKUP_DIR"/bash_history_* 2> /dev/null)
 
   if [ -z "$backups" ]; then
-    echo "history_list_backups: no backups found in $HISTORY_BACKUP_DIR"
+    printf '%s\n' \
+      ' "history_list_backups: no backups found ' \
+      'in $HISTORY_BACKUP_DIR'
+
     return 1
   fi
 
-  echo "Available history backups:"
+    printf '%s\n' ' "Available history backups:'
+
   local idx=1
   while IFS= read -r file; do
     local date_part lines
     date_part=$(basename "$file" | sed 's/bash_history_//')
     lines=$(wc -l < "$file" 2> /dev/null | tr -d ' ')
-    echo "  $idx  $date_part  $lines lines  $file"
+    printf '%s\n' ' "  $idx  $date_part  $lines lines  $file'
+
     idx=$((idx + 1))
   done <<< "$backups"
 }
@@ -227,11 +265,27 @@ function history_list_backups() {
 # (matching the same `ls -1t` newest-first order — `1` = most recent).
 function history_restore() {
   if is_help_arg "${1:-}"; then
-    echo "history_restore: restore ~/.bash_history from a backup"
-    echo "  history_restore              restore latest (only if history is empty)"
-    echo "  history_restore YYYY-MM-DD   restore specific date (overwrites)"
-    echo "  history_restore N            restore by index from history_list_backups (1 = newest)"
-    echo "  history_restore help         show this help"
+    printf '%s\n' \
+      ' "history_restore: restore ~/.bash_histor' \
+      'y from a backup'
+
+    printf '%s\n' \
+      ' "  history_restore              restore ' \
+      'latest (only if history is empty)'
+
+    printf '%s\n' \
+      ' "  history_restore YYYY-MM-DD   restore ' \
+      'specific date (overwrites)'
+
+    printf '%s\n' \
+      ' "  history_restore N            restore ' \
+      'by index from history_list_backups (1 = n' \
+      'ewest)'
+
+    printf '%s\n' \
+      ' "  history_restore help         show thi' \
+      's help'
+
     return
   fi
   local target="$1"
@@ -243,8 +297,14 @@ function history_restore() {
     if [[ "$target" =~ ^[0-9]+$ ]]; then
       specific_file=$(ls -1t "$HISTORY_BACKUP_DIR"/bash_history_* 2> /dev/null | sed -n "${target}p")
       if [ -z "$specific_file" ]; then
-        echo "history_restore: no backup at index $target"
-        echo "Run history_list_backups to see available indexes"
+    printf '%s\n' \
+      ' "history_restore: no backup at index $ta' \
+      'rget'
+
+    printf '%s\n' \
+      ' "Run history_list_backups to see availab' \
+      'le indexes'
+
         return 1
       fi
     else
@@ -253,8 +313,14 @@ function history_restore() {
 
     # restore a specific backup (overwrites current history)
     if [ ! -f "$specific_file" ]; then
-      echo "history_restore: backup not found: $specific_file"
-      echo "Run history_list_backups to see available dates"
+    printf '%s\n' \
+      ' "history_restore: backup not found: $spe' \
+      'cific_file'
+
+    printf '%s\n' \
+      ' "Run history_list_backups to see availab' \
+      'le dates'
+
       return 1
     fi
     cp "$specific_file" "$HOME/.bash_history"
@@ -262,12 +328,21 @@ function history_restore() {
     history -r
     local lines
     lines=$(wc -l < "$HOME/.bash_history" | tr -d ' ')
-    echo "history_restore: restored $lines lines from $specific_file"
+    printf '%s\n' \
+      ' "history_restore: restored $lines lines ' \
+      'from $specific_file'
+
   else
     # restore latest (safe mode: only if history is empty or missing)
     if [ -s "$HOME/.bash_history" ]; then
-      echo "history_restore: ~/.bash_history is not empty, skipping"
-      echo "To force restore a specific date: history_restore YYYY-MM-DD"
+    printf '%s\n' \
+      ' "history_restore: ~/.bash_history is not' \
+      ' empty, skipping'
+
+    printf '%s\n' \
+      ' "To force restore a specific date: histo' \
+      'ry_restore YYYY-MM-DD'
+
       return 0
     fi
     local latest
@@ -278,9 +353,15 @@ function history_restore() {
       history -r
       local lines
       lines=$(wc -l < "$HOME/.bash_history" | tr -d ' ')
-      echo "history_restore: restored $lines lines from $latest"
+    printf '%s\n' \
+      ' "history_restore: restored $lines lines ' \
+      'from $latest'
+
     else
-      echo "history_restore: no backups found in $HISTORY_BACKUP_DIR"
+    printf '%s\n' \
+      ' "history_restore: no backups found in $H' \
+      'ISTORY_BACKUP_DIR'
+
     fi
   fi
 }

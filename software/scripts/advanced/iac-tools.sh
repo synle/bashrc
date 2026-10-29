@@ -7,13 +7,19 @@
 
 # Skip on platforms whose package manager already ships these tools.
 if ((is_os_mac)) || ((is_os_arch_linux)) || ((is_os_steamos)) || ((is_os_android_termux)); then
-  echo ">>> Skipped iac-tools: package manager already provides terraform + tflint"
+    printf '%s\n' \
+      ' ">>> Skipped iac-tools: package manager ' \
+      'already provides terraform + tflint'
+
   exit 0
 fi
 
 # Only run on Linux flavors that match the apt/dnf binary fallback.
 if ! ((is_os_ubuntu)) && ! ((is_os_redhat)) && ! ((is_os_chromeos)) && ! ((is_os_windows)); then
-  echo ">>> Skipped iac-tools: unsupported platform"
+    printf '%s\n' \
+      ' ">>> Skipped iac-tools: unsupported plat' \
+      'form'
+
   exit 0
 fi
 
@@ -22,7 +28,10 @@ case "$_arch" in
 x86_64 | amd64) _gh_arch="amd64" ;;
 aarch64 | arm64) _gh_arch="arm64" ;;
 *)
-  echo ">>> Skipped iac-tools: unsupported arch $_arch"
+    printf '%s\n' \
+      ' ">>> Skipped iac-tools: unsupported arch' \
+      ' $_arch'
+
   exit 0
   ;;
 esac
@@ -31,13 +40,18 @@ esac
 # HashiCorp publishes signed zip archives at releases.hashicorp.com — no apt repo
 # add needed. Resolve the latest stable version via the version-checkpoint API.
 if is_force_refresh_stale "$HOME/.local/bin/terraform"; then
-  echo ">> Force refresh: removing terraform"
+    printf '%s\n' ' ">> Force refresh: removing terraform'
+
   rm -f "$HOME/.local/bin/terraform"
 fi
 if has_persistent_binary terraform &> /dev/null; then
-  echo ">> Skipped terraform: already installed at $(has_persistent_binary terraform)"
+    printf '%s\n' \
+      ' ">> Skipped terraform: already installed' \
+      ' at $(has_persistent_binary terraform)'
+
 else
-  echo '>> Installing terraform'
+    printf '%s\n' ' \'>> Installing terraform'
+
   _tf_version=$(curl -fsSL https://checkpoint-api.hashicorp.com/v1/check/terraform 2> /dev/null \
     | sed -nE 's/.*"current_version":"([^"]+)".*/\1/p')
   if [ -n "$_tf_version" ]; then
@@ -46,25 +60,37 @@ else
     if curl -fsSL "$_tf_url" -o "$_tf_tmp/terraform.zip" \
       && unzip -q -o "$_tf_tmp/terraform.zip" -d "$_tf_tmp" \
       && install -m 755 "$_tf_tmp/terraform" "$HOME/.local/bin/terraform"; then
-      echo ">> terraform ${_tf_version} installed to $HOME/.local/bin/terraform"
+    printf '%s\n' \
+      ' ">> terraform ${_tf_version} installed t' \
+      'o $HOME/.local/bin/terraform'
+
     else
-      echo ">> terraform install failed"
+    printf '%s\n' ' ">> terraform install failed'
+
     fi
     rm -rf "$_tf_tmp"
   else
-    echo ">> terraform install skipped: could not resolve latest version"
+    printf '%s\n' \
+      ' ">> terraform install skipped: could not' \
+      ' resolve latest version'
+
   fi
 fi
 
 # --- tflint (https://github.com/terraform-linters/tflint) ---
 if is_force_refresh_stale "$HOME/.local/bin/tflint"; then
-  echo ">> Force refresh: removing tflint"
+    printf '%s\n' ' ">> Force refresh: removing tflint'
+
   rm -f "$HOME/.local/bin/tflint"
 fi
 if has_persistent_binary tflint &> /dev/null; then
-  echo ">> Skipped tflint: already installed at $(has_persistent_binary tflint)"
+    printf '%s\n' \
+      ' ">> Skipped tflint: already installed at' \
+      ' $(has_persistent_binary tflint)'
+
 else
-  echo '>> Installing tflint'
+    printf '%s\n' ' \'>> Installing tflint'
+
   # Upstream installer drops the binary into $TFLINT_INSTALL_PATH (default /usr/local/bin).
   # Override to ~/.local/bin so the install stays user-scoped (no sudo).
   TFLINT_INSTALL_PATH="$HOME/.local/bin" \

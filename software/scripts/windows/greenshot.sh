@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # SOURCE software/bootstrap/common-functions.bash
 
-echo '> Greenshot (disable auto-update, added hotkeys)'
+    printf '%s\n' \
+      ' \'> Greenshot (disable auto-update, adde' \
+      'd hotkeys)'
+
 
 sed -i -E '
 s/^[[:space:]]*RegionHotkey=.*/RegionHotkey=Alt + Shift + D4/;

@@ -106,4 +106,5 @@ removeApp com.microsoft.skydrive
 ######################################################################################
 ###### Done
 ######################################################################################
-echo '=== Done Prep work for android shell'
+    printf '%s\n' ' \'=== Done Prep work for android shell'
+

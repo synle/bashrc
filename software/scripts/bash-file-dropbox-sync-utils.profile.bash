@@ -43,7 +43,8 @@ function patch_cleanup() {
   local keep="${1:-3}"
   local dropbox_folder
   dropbox_folder=$(_dropbox_folder) || {
-    echo "No dropbox folder found"
+    printf '%s\n' ' "No dropbox folder found'
+
     return 1
   }
   local archive_folder="${dropbox_folder}/archived_patch"
@@ -57,7 +58,10 @@ function patch_cleanup() {
     mv "$f" "$archive_folder/"
     moved=$((moved + 1))
   done
-  echo "Moved $moved .patch file(s) to $archive_folder"
+    printf '%s\n' \
+      ' "Moved $moved .patch file(s) to $archive' \
+      '_folder'
+
 
   # sort by modification time (newest first), remove all but the newest N
   local removed=0
@@ -65,13 +69,17 @@ function patch_cleanup() {
   while IFS= read -r f; do
     count=$((count + 1))
     if [ "$count" -gt "$keep" ]; then
-      echo "  Removing: $(basename "$f")"
+    printf '%s\n' ' "  Removing: $(basename "$f")'
+
       rm "$f"
       removed=$((removed + 1))
     fi
   done < <(ls -t "$archive_folder"/*.patch 2> /dev/null)
 
-  echo "Kept $keep newest, removed $removed old .patch file(s)"
+    printf '%s\n' \
+      ' "Kept $keep newest, removed $removed old' \
+      ' .patch file(s)'
+
 }
 
 ################################################################################
@@ -93,12 +101,16 @@ function note() {
 
   local dropbox_folder
   dropbox_folder=$(_dropbox_folder) || {
-    echo "No dropbox folder found"
+    printf '%s\n' ' "No dropbox folder found'
+
     return 1
   }
   local notes_folder="${dropbox_folder}/notes"
   if [ ! -d "$notes_folder" ]; then
-    echo "No dropbox notes folder found: $notes_folder"
+    printf '%s\n' \
+      ' "No dropbox notes folder found: $notes_f' \
+      'older'
+
     return 1
   fi
   local file
@@ -143,11 +155,15 @@ function sync_to_dropbox() {
 
   local src="${1:-}"
   if [ -z "$src" ]; then
-    echo "sync_to_dropbox: missing <src>. See: sync_to_dropbox --help"
+    printf '%s\n' \
+      ' "sync_to_dropbox: missing <src>. See: sy' \
+      'nc_to_dropbox --help'
+
     return 1
   fi
   if [ ! -e "$src" ]; then
-    echo "sync_to_dropbox: source not found: $src"
+    printf '%s\n' ' "sync_to_dropbox: source not found: $src'
+
     return 1
   fi
 
@@ -155,13 +171,17 @@ function sync_to_dropbox() {
   if [ -z "$sync_folder" ]; then
     local dropbox_folder
     dropbox_folder=$(_dropbox_folder) || {
-      echo "No dropbox folder found"
+    printf '%s\n' ' "No dropbox folder found'
+
       return 1
     }
     sync_folder="${dropbox_folder}"
   fi
   if [ ! -d "$sync_folder" ]; then
-    echo "sync_to_dropbox: destination folder not found: $sync_folder"
+    printf '%s\n' \
+      ' "sync_to_dropbox: destination folder not' \
+      ' found: $sync_folder'
+
     return 1
   fi
 

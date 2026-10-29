@@ -202,7 +202,8 @@ function _sy_native_kind() {
   local _sy_interactive_args _sy_run_args _sy_interactive_kind
   local _sy_interactive_native_args _sy_run_kind _sy_run_native_args
   _sy_load_spec "$1" || return 1
-  echo "$_sy_interactive_kind"
+    printf '%s\n' ' "$_sy_interactive_kind'
+
 }
 
 # _sy_resolve_llm: stdout the CLI name to dispatch with, given an explicit
@@ -214,14 +215,17 @@ function _sy_native_kind() {
 function _sy_resolve_llm() {
   local override="${1:-}"
   if [ -n "$override" ] && _sy_is_supported_llm "$override"; then
-    echo "$override"
+    printf '%s\n' ' "$override'
+
     return 0
   fi
   if [ -n "${LLM:-}" ] && _sy_is_supported_llm "$LLM"; then
-    echo "$LLM"
+    printf '%s\n' ' "$LLM'
+
     return 0
   fi
-  echo "$_SY_DEFAULT_LLM"
+    printf '%s\n' ' "$_SY_DEFAULT_LLM'
+
 }
 
 # _sy_resolve_boolean: normalize $1 through is_truthy, defaulting unset to $2.

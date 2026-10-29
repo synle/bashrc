@@ -114,7 +114,8 @@ function gh_runner_setup() {
   local url="https://github.com/actions/runner/releases/download/v${version}/${tarball}"
 
   mkdir -p "$runner_dir" || return 1
-  echo ">> Downloading $tarball ..."
+    printf '%s\n' ' ">> Downloading $tarball ...'
+
   if ! curl -fsSL -o "${runner_dir}/${tarball}" "$url"; then
     echo ">> Download failed: $url" >&2
     return 1
@@ -126,7 +127,10 @@ function gh_runner_setup() {
   local labels="self-hosted"
   [ -n "${RUNNER_LABELS:-}" ] && labels="${labels},${RUNNER_LABELS}"
 
-  echo ">> Configuring runner '$runner_name' for $scope_url (labels: $labels) ..."
+    printf '%s\n' \
+      ' ">> Configuring runner \'$runner_name\' ' \
+      'for $scope_url (labels: $labels) ...'
+
   (
     cd "$runner_dir" \
       && ./config.sh --unattended --replace \
@@ -147,8 +151,12 @@ function gh_runner_setup() {
       (cd "$runner_dir" && sudo ./svc.sh install && sudo ./svc.sh start)
     fi
   else
-    echo ">> Not installed as a service. Start it in the foreground with:"
-    echo "     cd \"$runner_dir\" && ./run.sh"
+    printf '%s\n' \
+      ' ">> Not installed as a service. Start it' \
+      ' in the foreground with:'
+
+    printf '%s\n' ' "     cd \\"$runner_dir\\" && ./run.sh'
+
   fi
 }
 
@@ -309,5 +317,6 @@ function gdrive_vault_push() {
     echo ">> Uploaded, but could not create a share link. Check the remote's permissions." >&2
     return 1
   fi
-  echo "$link"
+    printf '%s\n' ' "$link'
+
 }

@@ -26,13 +26,16 @@ _SNAP_INSTALLED=$(timeout 10 snap list 2> /dev/null | tail -n +2 | awk '{print $
 function installAptPackage() {
   echo -n ">> $@ >> Installing with Apt >> "
   if echo "$_APT_INSTALLED" | grep -qxF "$1"; then
-    echo "Skipped"
+    printf '%s\n' ' "Skipped'
+
   else
     local _t0=$SECONDS
     if sudo apt-get install -y --fix-missing -o Dpkg::Options::="--force-confold" $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
+
     else
-      echo "Error ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
+
     fi
   fi
 }
@@ -41,13 +44,16 @@ function installAptPackage() {
 function installSnapPackage() {
   echo -n ">> $1 >> Installing with Snap >> "
   if echo "$_SNAP_INSTALLED" | grep -qxF "$1"; then
-    echo "Skipped"
+    printf '%s\n' ' "Skipped'
+
   else
     local _t0=$SECONDS
     if sudo snap install $@ &> /dev/null; then
-      echo "Success ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Success ($((SECONDS - _t0))s)'
+
     else
-      echo "Error ($((SECONDS - _t0))s)"
+    printf '%s\n' ' "Error ($((SECONDS - _t0))s)'
+
     fi
   fi
 }
@@ -80,7 +86,12 @@ function installSnapPackageInBackground() {
 function _installBackgroundPackages() {
   _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
-  echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
+    printf '%s\n' \
+      ' ">> Installing ${#_BACKGROUND_PKG_NAMES[' \
+      '@]} background packages (log: $_BACKGROUN' \
+      'D_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES' \
+      '[*]}'
+
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
@@ -95,15 +106,20 @@ function _installBackgroundPackages() {
 function updatePackageIndex() {
   echo -n ">> Updating package index >> "
   if sudo apt-get update < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Done"
+    printf '%s\n' ' "Done'
+
   else
-    echo "Error"
+    printf '%s\n' ' "Error'
+
   fi
 }
 
 # upgrade all installed packages and remove unused dependencies (fire and forget)
 function upgradeAndCleanPackages() {
-  echo ">> Upgrading and cleaning packages (background) >>"
+    printf '%s\n' \
+      ' ">> Upgrading and cleaning packages (bac' \
+      'kground) >>'
+
   (
     sudo apt-get upgrade -y -o Dpkg::Options::="--force-confold" < /dev/null
     sudo apt-get autoremove -y < /dev/null
@@ -114,11 +130,15 @@ function upgradeAndCleanPackages() {
 ################################################################################
 # --- Install Packages ---
 ################################################################################
-echo ">> Begin setting up dependencies/ubuntu/deps.sh"
+    printf '%s\n' \
+      ' ">> Begin setting up dependencies/ubuntu' \
+      '/deps.sh'
+
 _waitForAptLock
 if ((IS_CI)) || is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
 
-echo '>> Installing packages with apt-get'
+    printf '%s\n' ' \'>> Installing packages with apt-get'
+
 
 # --- Core tools ---
 installAptPackage curl
@@ -207,7 +227,8 @@ _installFnmAndNode
 
 # --- GUI apps (only if a display server is available) ---
 if ((is_gui)); then
-  echo '>> Installing GUI apps'
+    printf '%s\n' ' \'>> Installing GUI apps'
+
 
   # ---- Clipboard (install only for the active display server) ----
   if ((is_gui_x11)); then installAptPackageInBackground xclip; fi
@@ -235,7 +256,8 @@ _configureDisableSystemdPowerAndTurboBoost
 ################################################################################
 # --- User Permissions ---
 ################################################################################
-echo '>> Setting up user permissions'
+    printf '%s\n' ' \'>> Setting up user permissions'
+
 sudo usermod -aG input ${USER}
 sudo usermod -aG video ${USER}
 

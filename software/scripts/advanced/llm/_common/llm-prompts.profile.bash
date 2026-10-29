@@ -345,10 +345,14 @@ function llm_cache_clear() {
   if [ -n "$type" ]; then
     _llm_cache_init 2> /dev/null || return 1
     sqlite3 "$_LLM_PROMPTS_CACHE_DB" "DELETE FROM prompts WHERE type='$type';" 2> /dev/null
-    echo ">> Cleared cache rows for type=$type"
+    printf '%s\n' ' ">> Cleared cache rows for type=$type'
+
   else
     command rm -f "$_LLM_PROMPTS_CACHE_DB" 2> /dev/null
-    echo ">> Removed cache DB at $_LLM_PROMPTS_CACHE_DB"
+    printf '%s\n' \
+      ' ">> Removed cache DB at $_LLM_PROMPTS_CA' \
+      'CHE_DB'
+
   fi
 }
 

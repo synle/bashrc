@@ -29,13 +29,17 @@ function list_editors() {
   for ((i = 0; i < ${#_REGISTERED_EDITORS[@]}; i++)); do
     name="${_REGISTERED_EDITORS[$i]}"
     paths_var="${_REGISTERED_EDITORS_PATHS_VARS[$i]}[@]"
-    echo "# $name"
+    printf '%s\n' ' "# $name'
+
     if resolved=$(find_path "${!paths_var}" --exec 2> /dev/null) && [ -n "$resolved" ]; then
-      echo "\"$resolved\""
+    printf '%s\n' ' "\\"$resolved\\"'
+
     else
-      echo "(not found)"
+    printf '%s\n' ' "(not found)'
+
     fi
-    echo ""
+    printf '%s\n' ' "'
+
   done
 }
 

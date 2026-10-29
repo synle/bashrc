@@ -18,7 +18,8 @@ LM_STUDIO_VERSION="0.3.5-2"
 # Skip in CI — the AppImage is huge (~700 MB) and there's no display in the
 # runner anyway; binary verification doesn't include lm-studio.
 ((IS_CI)) && {
-  echo ">>> Skipped lm-studio: CI"
+    printf '%s\n' ' ">>> Skipped lm-studio: CI'
+
   exit 0
 }
 
@@ -26,22 +27,34 @@ LM_STUDIO_VERSION="0.3.5-2"
 # AppImage is ~700 MB, so downloading it onto a headless box (server, container,
 # ssh session) burns bandwidth and disk on something that can never be launched.
 ((is_gui)) || {
-  echo ">>> Skipped lm-studio: no GUI display available"
+    printf '%s\n' \
+      ' ">>> Skipped lm-studio: no GUI display a' \
+      'vailable'
+
   exit 0
 }
 
 if ((is_os_mac)); then
-  echo ">>> Skipped lm-studio: macOS uses Homebrew cask (mac/_full-setup.sh)"
+    printf '%s\n' \
+      ' ">>> Skipped lm-studio: macOS uses Homeb' \
+      'rew cask (mac/_full-setup.sh)'
+
   exit 0
 fi
 
 if ((is_os_windows)); then
-  echo ">>> Skipped lm-studio: WSL/Windows uses winget (windows/_winget-install.sh)"
+    printf '%s\n' \
+      ' ">>> Skipped lm-studio: WSL/Windows uses' \
+      ' winget (windows/_winget-install.sh)'
+
   exit 0
 fi
 
 if ((is_os_android_termux)); then
-  echo ">>> Skipped lm-studio: not supported on Termux"
+    printf '%s\n' \
+      ' ">>> Skipped lm-studio: not supported on' \
+      ' Termux'
+
   exit 0
 fi
 
@@ -57,12 +70,18 @@ LM_STUDIO_URL="https://installers.lmstudio.ai/linux/x64/${LM_STUDIO_VERSION}/LM-
 
 # Force refresh: purge the cached AppImage so the bg downloader re-pulls.
 if is_force_refresh_stale "$LM_STUDIO_APPIMAGE"; then
-  echo ">> Force refresh: removing lm-studio AppImage"
+    printf '%s\n' \
+      ' ">> Force refresh: removing lm-studio Ap' \
+      'pImage'
+
   rm -f "$LM_STUDIO_APPIMAGE"
 fi
 
 if [ -x "$LM_STUDIO_APPIMAGE" ] && [ -f "$LM_STUDIO_DESKTOP" ]; then
-  echo ">> Skipped lm-studio: already installed at $LM_STUDIO_APPIMAGE"
+    printf '%s\n' \
+      ' ">> Skipped lm-studio: already installed' \
+      ' at $LM_STUDIO_APPIMAGE'
+
   exit 0
 fi
 
@@ -71,7 +90,10 @@ safe_mkdir "$(dirname "$LM_STUDIO_BIN")"
 safe_mkdir "$(dirname "$LM_STUDIO_DESKTOP")"
 safe_mkdir "$LM_STUDIO_ICON_DIR"
 
-echo ">> Installing lm-studio in background (~700 MB download): $LM_STUDIO_URL"
+    printf '%s\n' \
+      ' ">> Installing lm-studio in background (' \
+      '~700 MB download): $LM_STUDIO_URL'
+
 
 # Backgrounded so the rest of the run keeps moving. `< /dev/null` detaches
 # the subshell's stdin from the outer `bash <<'_BASHRC_INLINE_EOF_'` heredoc
@@ -143,7 +165,14 @@ EOF
     update-desktop-database "$HOME/.local/share/applications" &> /dev/null || true
   fi
 
-  echo ">> lm-studio install complete: $LM_STUDIO_APPIMAGE"
+    printf '%s\n' \
+      ' ">> lm-studio install complete: $LM_STUD' \
+      'IO_APPIMAGE'
+
 ) < /dev/null &> "$BASHRC_TEMP_DIR/lm-studio-install.log" &
 
-echo ">> lm-studio install dispatched (PID $!, log: $BASHRC_TEMP_DIR/lm-studio-install.log)"
+    printf '%s\n' \
+      ' ">> lm-studio install dispatched (PID $!' \
+      ', log: $BASHRC_TEMP_DIR/lm-studio-install' \
+      '.log)'
+

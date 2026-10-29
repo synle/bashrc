@@ -26,6 +26,9 @@ done
 
 # dump fullsetup log in CI for debugging package install errors
 if ((IS_CI)) && [ -f "$BASHRC_TEMP_DIR/fullsetup.log" ]; then
-  echo ">> fullsetup.log ($BASHRC_TEMP_DIR/fullsetup.log)"
+    printf '%s\n' \
+      ' ">> fullsetup.log ($BASHRC_TEMP_DIR/full' \
+      'setup.log)'
+
   cat "$BASHRC_TEMP_DIR/fullsetup.log"
 fi

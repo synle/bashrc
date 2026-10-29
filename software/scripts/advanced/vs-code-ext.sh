@@ -3,13 +3,17 @@
 
 # Skip in CI
 ((IS_CI)) && {
-  echo ">>> Skipped : CI"
+    printf '%s\n' ' ">>> Skipped : CI'
+
   exit 0
 }
 
 _VSCODE_EXT_LOG="/tmp/bashrc_bg_vscode_ext_$$.log"
 
-echo "> Setting up VS Code Extensions (background, log: $_VSCODE_EXT_LOG)"
+    printf '%s\n' \
+      ' "> Setting up VS Code Extensions (backgr' \
+      'ound, log: $_VSCODE_EXT_LOG)'
+
 
 # Clean up the extensions manifest before installing so a corrupted / partially
 # written extensions.json from a prior race can't poison the new install batch.
@@ -35,12 +39,15 @@ for _vscode_ext_file in "${_VSCODE_EXT_CLEANUP_PATHS[@]}"; do
 done
 
 if ((is_os_mac)); then
-  echo '>> mac'
+    printf '%s\n' ' \'>> mac'
+
   (curl -fsSL "$(get_github_raw_url .build/vs-code-ext-mac)" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
 elif ((is_os_windows)); then
-  echo '>> windows'
+    printf '%s\n' ' \'>> windows'
+
   (curl -fsSL "$(get_github_raw_url .build/vs-code-ext-windows)" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
 else
-  echo '>> linux'
+    printf '%s\n' ' \'>> linux'
+
   (curl -fsSL "$(get_github_raw_url .build/vs-code-ext-linux)" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
 fi

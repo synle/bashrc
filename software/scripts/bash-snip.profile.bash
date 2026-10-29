@@ -63,7 +63,8 @@ function _snip_run() {
 # _snip_tee_folder: echo the folder snip tees full command output into
 function _snip_tee_folder() {
   if [ -n "${SNIP_TEE_DIR:-}" ]; then
-    echo "$SNIP_TEE_DIR"
+    printf '%s\n' ' "$SNIP_TEE_DIR'
+
     return 0
   fi
 
@@ -75,9 +76,13 @@ function _snip_tee_folder() {
   fi
 
   if [ -n "$db" ]; then
-    echo "$(dirname "$db")/tee"
+    printf '%s\n' ' "$(dirname "$db")/tee'
+
   else
-    echo "${XDG_DATA_HOME:-$HOME/.local/share}/snip/tee"
+    printf '%s\n' \
+      ' "${XDG_DATA_HOME:-$HOME/.local/share}/sn' \
+      'ip/tee'
+
   fi
 }
 
@@ -266,11 +271,16 @@ function snip_coverage() {
   done < <(_snip_history_shapes "$histfile" "$top")
 
   if [ "$shapes" -eq 0 ]; then
-    echo "  > No commands found in $histfile"
+    printf '%s\n' ' "  > No commands found in $histfile'
+
     return 0
   fi
 
-  echo "  > Coverage > $filtered/$shapes command shapes > $filtered_runs/$runs runs ($((filtered_runs * 100 / runs))%)"
+    printf '%s\n' \
+      ' "  > Coverage > $filtered/$shapes comman' \
+      'd shapes > $filtered_runs/$runs runs ($((' \
+      'filtered_runs * 100 / runs))%)'
+
 }
 
 # snip_logs: list, or print, the full output snip saved when a filtered command failed

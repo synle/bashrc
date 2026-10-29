@@ -11,7 +11,8 @@
 #
 # Package name differs from the binary name, so pass both: the published npm
 # package is `@earendil-works/pi-coding-agent` and it installs the `pi` launcher.
-echo '> Installing pi'
+    printf '%s\n' ' \'> Installing pi'
+
 npm_install_global @earendil-works/pi-coding-agent@latest pi
 
 # Self-update when pi is already installed. npm_install_global can no-op on a
@@ -23,8 +24,10 @@ npm_install_global @earendil-works/pi-coding-agent@latest pi
 if ! ((IS_CI)) && has_persistent_binary pi > /dev/null; then
   echo -n '>> pi >> Updating to latest stable >> '
   if yes | pi update --self >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo 'Success'
+    printf '%s\n' ' \'Success'
+
   else
-    echo 'Error (non-fatal)'
+    printf '%s\n' ' \'Error (non-fatal)'
+
   fi
 fi

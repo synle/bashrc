@@ -57,7 +57,8 @@ function _docker_share_host_ip() {
     ip=$(hostname -I 2> /dev/null | awk '{print $1}')
   fi
   if [ -z "$ip" ]; then ip="<your-host-ip>"; fi
-  echo "$ip"
+    printf '%s\n' ' "$ip'
+
 }
 
 # Stops and removes an existing container if present. Silent no-op when the
@@ -65,7 +66,8 @@ function _docker_share_host_ip() {
 function _docker_share_stop() {
   local name="$1"
   if docker ps -a --format '{{.Names}}' | grep -qx "$name"; then
-    echo ">> Stopping existing container: $name"
+    printf '%s\n' ' ">> Stopping existing container: $name'
+
     docker stop "$name" &> /dev/null || true
     docker rm "$name" &> /dev/null || true
   fi
@@ -87,7 +89,8 @@ function _docker_share_resolve_folders() {
       echo "ERROR: could not resolve absolute path for: $folder" >&2
       return 1
     fi
-    echo "$abs"
+    printf '%s\n' ' "$abs'
+
   done
 }
 
@@ -135,34 +138,62 @@ function _docker_samba_share_impl() {
 
   args+=("$DOCKER_SHARE_SAMBA_IMAGE")
 
-  echo ">> Starting Samba container: $DOCKER_SHARE_SAMBA_NAME (image: $DOCKER_SHARE_SAMBA_IMAGE)"
+    printf '%s\n' \
+      ' ">> Starting Samba container: $DOCKER_SH' \
+      'ARE_SAMBA_NAME (image: $DOCKER_SHARE_SAMB' \
+      'A_IMAGE)'
+
   docker "${args[@]}" || return 1
 
   local host_ip
   host_ip=$(_docker_share_host_ip)
-  echo ""
-  echo "Connection info:"
+    printf '%s\n' ' "'
+
+    printf '%s\n' ' "Connection info:'
+
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     bname=$(basename "$f")
-    echo "  smb://${host_ip}/${bname}    ($f)"
+    printf '%s\n' ' "  smb://${host_ip}/${bname}    ($f)'
+
   done <<< "$folders"
   if [ -n "$user" ]; then
-    echo "  auth: user=${user}"
+    printf '%s\n' ' "  auth: user=${user}'
+
   else
-    echo "  auth: guest (no password)"
+    printf '%s\n' ' "  auth: guest (no password)'
+
   fi
-  echo "  stop: docker stop ${DOCKER_SHARE_SAMBA_NAME}"
+    printf '%s\n' \
+      ' "  stop: docker stop ${DOCKER_SHARE_SAMB' \
+      'A_NAME}'
+
 }
 
 # samba_share — expose folders over SMB with guest (no-password) access.
 function samba_share() {
   if is_help_arg "${1:-}"; then
-    echo "samba_share: expose one or more host folders over SMB (Samba) via a Docker container, guest access."
-    echo "  Usage:   samba_share <folder> [folder ...]"
-    echo "  Example: samba_share \"\$HOME/Documents\" \"\$HOME/Pictures\""
-    echo "  Stop:    docker stop ${DOCKER_SHARE_SAMBA_NAME}"
-    echo "  See also: samba_share_with_password (authenticated)"
+    printf '%s\n' \
+      ' "samba_share: expose one or more host fo' \
+      'lders over SMB (Samba) via a Docker conta' \
+      'iner, guest access.'
+
+    printf '%s\n' \
+      ' "  Usage:   samba_share <folder> [folder' \
+      ' ...]'
+
+    printf '%s\n' \
+      ' "  Example: samba_share \\"\\$HOME/Docum' \
+      'ents\\" \\"\\$HOME/Pictures\\"'
+
+    printf '%s\n' \
+      ' "  Stop:    docker stop ${DOCKER_SHARE_S' \
+      'AMBA_NAME}'
+
+    printf '%s\n' \
+      ' "  See also: samba_share_with_password (' \
+      'authenticated)'
+
     return 0
   fi
   _docker_samba_share_impl "" "" "$@"
@@ -171,10 +202,23 @@ function samba_share() {
 # samba_share_with_password — expose folders over SMB with user/pass auth.
 function samba_share_with_password() {
   if is_help_arg "${1:-}"; then
-    echo "samba_share_with_password: expose one or more host folders over SMB with username/password auth."
-    echo "  Usage:   samba_share_with_password <user> <pass> <folder> [folder ...]"
-    echo "  Example: samba_share_with_password syle hunter2 \"\$HOME/Documents\""
-    echo "  Stop:    docker stop ${DOCKER_SHARE_SAMBA_NAME}"
+    printf '%s\n' \
+      ' "samba_share_with_password: expose one o' \
+      'r more host folders over SMB with usernam' \
+      'e/password auth.'
+
+    printf '%s\n' \
+      ' "  Usage:   samba_share_with_password <u' \
+      'ser> <pass> <folder> [folder ...]'
+
+    printf '%s\n' \
+      ' "  Example: samba_share_with_password sy' \
+      'le hunter2 \\"\\$HOME/Documents\\"'
+
+    printf '%s\n' \
+      ' "  Stop:    docker stop ${DOCKER_SHARE_S' \
+      'AMBA_NAME}'
+
     return 0
   fi
   if [ "$#" -lt 3 ]; then
@@ -226,31 +270,63 @@ function _docker_ftp_share_impl() {
 
   args+=("$DOCKER_SHARE_FTP_IMAGE")
 
-  echo ">> Starting FTP container: $DOCKER_SHARE_FTP_NAME (image: $DOCKER_SHARE_FTP_IMAGE)"
+    printf '%s\n' \
+      ' ">> Starting FTP container: $DOCKER_SHAR' \
+      'E_FTP_NAME (image: $DOCKER_SHARE_FTP_IMAG' \
+      'E)'
+
   docker "${args[@]}" || return 1
 
-  echo ""
-  echo "Connection info:"
-  echo "  ftp://${host_ip}/    (passive ports 30000-30009)"
-  echo "  user: ${user}"
-  echo "  pass: ${pass}"
-  echo "  shares:"
+    printf '%s\n' ' "'
+
+    printf '%s\n' ' "Connection info:'
+
+    printf '%s\n' \
+      ' "  ftp://${host_ip}/    (passive ports 3' \
+      '0000-30009)'
+
+    printf '%s\n' ' "  user: ${user}'
+
+    printf '%s\n' ' "  pass: ${pass}'
+
+    printf '%s\n' ' "  shares:'
+
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     bname=$(basename "$f")
-    echo "    /${bname}    ($f)"
+    printf '%s\n' ' "    /${bname}    ($f)'
+
   done <<< "$folders"
-  echo "  stop: docker stop ${DOCKER_SHARE_FTP_NAME}"
+    printf '%s\n' \
+      ' "  stop: docker stop ${DOCKER_SHARE_FTP_' \
+      'NAME}'
+
 }
 
 # ftp_share — expose folders over FTP with anonymous access.
 function ftp_share() {
   if is_help_arg "${1:-}"; then
-    echo "ftp_share: expose one or more host folders over FTP via a Docker container, anonymous (user=anonymous, pass=anonymous)."
-    echo "  Usage:   ftp_share <folder> [folder ...]"
-    echo "  Example: ftp_share \"\$HOME/Documents\" \"\$HOME/Pictures\""
-    echo "  Stop:    docker stop ${DOCKER_SHARE_FTP_NAME}"
-    echo "  See also: ftp_share_with_password (authenticated)"
+    printf '%s\n' \
+      ' "ftp_share: expose one or more host fold' \
+      'ers over FTP via a Docker container, anon' \
+      'ymous (user=anonymous, pass=anonymous).'
+
+    printf '%s\n' \
+      ' "  Usage:   ftp_share <folder> [folder .' \
+      '..]'
+
+    printf '%s\n' \
+      ' "  Example: ftp_share \\"\\$HOME/Documen' \
+      'ts\\" \\"\\$HOME/Pictures\\"'
+
+    printf '%s\n' \
+      ' "  Stop:    docker stop ${DOCKER_SHARE_F' \
+      'TP_NAME}'
+
+    printf '%s\n' \
+      ' "  See also: ftp_share_with_password (au' \
+      'thenticated)'
+
     return 0
   fi
   _docker_ftp_share_impl "" "" "$@"
@@ -259,10 +335,23 @@ function ftp_share() {
 # ftp_share_with_password — expose folders over FTP with user/pass auth.
 function ftp_share_with_password() {
   if is_help_arg "${1:-}"; then
-    echo "ftp_share_with_password: expose one or more host folders over FTP with username/password auth."
-    echo "  Usage:   ftp_share_with_password <user> <pass> <folder> [folder ...]"
-    echo "  Example: ftp_share_with_password syle hunter2 \"\$HOME/Documents\""
-    echo "  Stop:    docker stop ${DOCKER_SHARE_FTP_NAME}"
+    printf '%s\n' \
+      ' "ftp_share_with_password: expose one or ' \
+      'more host folders over FTP with username/' \
+      'password auth.'
+
+    printf '%s\n' \
+      ' "  Usage:   ftp_share_with_password <use' \
+      'r> <pass> <folder> [folder ...]'
+
+    printf '%s\n' \
+      ' "  Example: ftp_share_with_password syle' \
+      ' hunter2 \\"\\$HOME/Documents\\"'
+
+    printf '%s\n' \
+      ' "  Stop:    docker stop ${DOCKER_SHARE_F' \
+      'TP_NAME}'
+
     return 0
   fi
   if [ "$#" -lt 3 ]; then

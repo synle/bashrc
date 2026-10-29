@@ -32,13 +32,17 @@ function list_browsers() {
   for ((i = 0; i < ${#_REGISTERED_BROWSERS[@]}; i++)); do
     name="${_REGISTERED_BROWSERS[$i]}"
     paths_var="${_REGISTERED_BROWSERS_PATHS_VARS[$i]}[@]"
-    echo "# $name"
+    printf '%s\n' ' "# $name'
+
     if resolved=$(find_path "${!paths_var}" --exec 2> /dev/null) && [ -n "$resolved" ]; then
-      echo "\"$resolved\""
+    printf '%s\n' ' "\\"$resolved\\"'
+
     else
-      echo "(not found)"
+    printf '%s\n' ' "(not found)'
+
     fi
-    echo ""
+    printf '%s\n' ' "'
+
   done
 }
 

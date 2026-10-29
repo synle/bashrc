@@ -15,12 +15,19 @@ if [ -f "$_BASHRC_DEBUG_DIR/debug" ]; then
       local exit_code=$?
       local log="$_BASHRC_DEBUG_DIR/debug.log"
       {
-        echo "--- ${1:-ERROR} at $(date '+%Y-%m-%d %H:%M:%S') (exit code: $exit_code) ---"
+    printf '%s\n' \
+      ' "--- ${1:-ERROR} at $(date \'+%Y-%m-%d %' \
+      'H:%M:%S\') (exit code: $exit_code) ---'
+
         local i
         for ((i = 0; i < ${#FUNCNAME[@]}; i++)); do
-          echo "  [$i] ${FUNCNAME[$i]}() at ${BASH_SOURCE[$i]:-profile}:${BASH_LINENO[$i]}"
+    printf '%s\n' \
+      ' "  [$i] ${FUNCNAME[$i]}() at ${BASH_SOUR' \
+      'CE[$i]:-profile}:${BASH_LINENO[$i]}'
+
         done
-        echo ""
+    printf '%s\n' ' "'
+
       } >> "$log"
       echo "[debug] $1: exit=$exit_code at ${BASH_SOURCE[1]:-profile}:${BASH_LINENO[0]} in ${FUNCNAME[1]:-main} (see $log)" >&2
     }
@@ -45,18 +52,22 @@ function bashrc_debug() {
   on)
     echo 1 > "$_debug_file"
     set -x
-    echo ">> Debug tracing enabled"
+    printf '%s\n' ' ">> Debug tracing enabled'
+
     ;;
   off)
     rm -f "$_debug_file"
     set +x
-    echo ">> Debug tracing disabled"
+    printf '%s\n' ' ">> Debug tracing disabled'
+
     ;;
   status)
     if [ -f "$_debug_file" ]; then
-      echo ">> Debug tracing is ON"
+    printf '%s\n' ' ">> Debug tracing is ON'
+
     else
-      echo ">> Debug tracing is OFF"
+    printf '%s\n' ' ">> Debug tracing is OFF'
+
     fi
     ;;
   *)
@@ -183,7 +194,8 @@ function cache_lastrun_path() {
       base="${BASHRC_TEMP_ROOT_DIR:-$HOME/tmp}"
     fi
   fi
-  echo "$base/cache-lastrun-$1.timestamp"
+    printf '%s\n' ' "$base/cache-lastrun-$1.timestamp'
+
 }
 
 # cache_lastrun_due <name> <max_age_seconds> - return 0 (true) when <name> has
@@ -219,7 +231,8 @@ function cache_lastrun_mark() {
 # Mirror of the same function in common-functions.bash — keep the body byte-identical.
 function get_native_arch() {
   if [ "$(uname -s)" = "Darwin" ] && [ "$(sysctl -n hw.optional.arm64 2> /dev/null)" = "1" ]; then
-    echo "arm64"
+    printf '%s\n' ' "arm64'
+
     return 0
   fi
   uname -m
@@ -381,7 +394,8 @@ function _register_command_variant() {
 
   local body="${envs:+$envs }${invocation} \"\$@\"${extra_args:+ $extra_args}"
   if [ "$dry" = "1" ]; then
-    echo "${new} -> ${body}"
+    printf '%s\n' ' "${new} -> ${body}'
+
     return 0
   fi
 
@@ -519,7 +533,8 @@ function to_windows_path() {
   if type -P wslpath &> /dev/null; then
     wslpath -m "$1" 2> /dev/null || echo "$1"
   else
-    echo "$1"
+    printf '%s\n' ' "$1'
+
   fi
 }
 

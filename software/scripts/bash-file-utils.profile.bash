@@ -78,7 +78,10 @@ function download() {
     # dest looks like a file path — download and rename
     command curl -fsSL -o "$dest" "$url"
   else
-    echo "download: destination directory does not exist: $(dirname "$dest")"
+    printf '%s\n' \
+      ' "download: destination directory does no' \
+      't exist: $(dirname "$dest")'
+
     return 1
   fi
 }
@@ -241,9 +244,12 @@ function cp2() {
   Usage: cp2 <src> <dest>"
     return
   fi
-  echo "==== copy ===="
-  echo "src: $1"
-  echo "dest: $2"
+    printf '%s\n' ' "==== copy ===='
+
+    printf '%s\n' ' "src: $1'
+
+    printf '%s\n' ' "dest: $2'
+
   pv "$1" > "$2"
 }
 
@@ -560,7 +566,8 @@ function cpsync() {
   local lookback_days="${3:-7}"
   local max_size_gb="${4:-1}"
   if [ "$max_size_gb" -gt 100 ]; then
-    echo "cpsync: max_size_gb cannot exceed 100GB"
+    printf '%s\n' ' "cpsync: max_size_gb cannot exceed 100GB'
+
     return 1
   fi
   {
@@ -727,7 +734,8 @@ function _cp_zip_to_dest() {
       done
     done < "$file_list"
   else
-    echo "_cp_zip_to_dest: not found: $src"
+    printf '%s\n' ' "_cp_zip_to_dest: not found: $src'
+
     return 1
   fi
 
@@ -744,7 +752,10 @@ function _cp_zip_to_dest() {
   if [ -n "$file_list" ]; then
     # convert absolute paths to relative (strip zip_root prefix) and zip
     sed "s|^${zip_root}/|./|" "$file_list" | (cd "$zip_root" && zip -q "$tmp_zip" -@) || {
-      echo "_cp_zip_to_dest: failed to create zip from file list"
+    printf '%s\n' \
+      ' "_cp_zip_to_dest: failed to create zip f' \
+      'rom file list'
+
       rm -f "$file_list"
       return 1
     }
@@ -754,13 +765,17 @@ function _cp_zip_to_dest() {
     local _zip_rc=$?
     # zip exit 18 = "some files could not be read" (sockets, broken symlinks, etc.) — treat as success
     if [ "$_zip_rc" -ne 0 ] && [ "$_zip_rc" -ne 18 ]; then
-      echo "_cp_zip_to_dest: failed to create zip"
+    printf '%s\n' ' "_cp_zip_to_dest: failed to create zip'
+
       return 1
     fi
   fi
 
   if [ ! -f "$tmp_zip" ]; then
-    echo "_cp_zip_to_dest: zip not found: $tmp_zip"
+    printf '%s\n' \
+      ' "_cp_zip_to_dest: zip not found: $tmp_zi' \
+      'p'
+
     return 1
   fi
 
@@ -769,7 +784,10 @@ function _cp_zip_to_dest() {
   zip_size=$(stat -f%z "$tmp_zip" 2> /dev/null || stat -c%s "$tmp_zip" 2> /dev/null)
   local max_bytes=$((max_size_gb * 1073741824))
   if [ "$zip_size" -gt "$max_bytes" ]; then
-    echo "_cp_zip_to_dest: zip size exceeds ${max_size_gb}GB limit, aborting"
+    printf '%s\n' \
+      ' "_cp_zip_to_dest: zip size exceeds ${max' \
+      '_size_gb}GB limit, aborting'
+
     rm -f "$tmp_zip"
     return 1
   fi
@@ -793,7 +811,8 @@ function cpstamp() {
   local src="${1:?Usage: cpstamp <src_file> <dest_dir>}"
   local dest="${2:?Usage: cpstamp <src_file> <dest_dir>}"
   if [ ! -f "$src" ]; then
-    echo "cpstamp: source file not found: $src"
+    printf '%s\n' ' "cpstamp: source file not found: $src'
+
     return 1
   fi
   local ts
@@ -821,13 +840,17 @@ function cprepo() {
   local dest="${2:?Usage: cprepo <src> <dest> [max_size_gb=1] [should_add_time_stamp=false]}"
   local max_size_gb="${3:-1}"
   if [ "$max_size_gb" -gt 1 ]; then
-    echo "cprepo: max_size_gb cannot exceed 1GB"
+    printf '%s\n' ' "cprepo: max_size_gb cannot exceed 1GB'
+
     return 1
   fi
   local should_add_time_stamp="${4:-false}"
 
   if [ ! -d "$src" ]; then
-    echo "cprepo: source directory not found: $src"
+    printf '%s\n' \
+      ' "cprepo: source directory not found: $sr' \
+      'c'
+
     return 1
   fi
 
@@ -836,11 +859,15 @@ function cprepo() {
 
   # non-git: list all files, filter out unwanted paths, zip the remainder
   if ! git -C "$abs_src" rev-parse --is-inside-work-tree &> /dev/null; then
-    echo "cprepo: $abs_src -> $dest (not a git repo, zipping entire folder)"
+    printf '%s\n' \
+      ' "cprepo: $abs_src -> $dest (not a git re' \
+      'po, zipping entire folder)'
+
     local file_list="/tmp/_cprepo_files_$$"
     (cd "$abs_src" && find . -type f | filter_unwanted | sed "s|^\./|${abs_src}/|") > "$file_list"
     if [ ! -s "$file_list" ]; then
-      echo "cprepo: no files to zip after filtering"
+    printf '%s\n' ' "cprepo: no files to zip after filtering'
+
       rm -f "$file_list"
       return 1
     fi
@@ -850,7 +877,10 @@ function cprepo() {
 
   # git: sync to default branch, write tracked file list (absolute paths) to temp file,
   # pass it to _cp_zip_to_dest which zips those files and copies to dest
-  echo "cprepo: $abs_src -> $dest (git repo, syncing and zipping tracked files only)"
+    printf '%s\n' \
+      ' "cprepo: $abs_src -> $dest (git repo, sy' \
+      'ncing and zipping tracked files only)'
+
   local default_branch="main"
   default_branch=$(git -C "$abs_src" symbolic-ref refs/remotes/origin/HEAD 2> /dev/null | sed 's|refs/remotes/origin/||') || default_branch="main"
   git -C "$abs_src" stash &> /dev/null
@@ -883,7 +913,10 @@ function cpfiles() {
   local should_add_time_stamp="${4:-false}"
 
   if [ ! -d "$src" ]; then
-    echo "cpfiles: source directory not found: $src"
+    printf '%s\n' \
+      ' "cpfiles: source directory not found: $s' \
+      'rc'
+
     return 1
   fi
 
@@ -951,17 +984,30 @@ function cpdb() {
 # dedup: scan a folder for duplicates (by MD5 hash + file size), move extras to _recycleBin keeping newest
 function dedup() {
   if is_help_arg "${1:-}"; then
-    echo "dedup: move duplicate files to _recycleBin, keeping the newest"
-    echo "  dedup <path> [recursive=false] [across_folders=false]"
-    echo "  recursive       if true/1, scan subdirectories recursively"
-    echo "  across_folders  if true/1, deduplicate across all subdirectories globally"
+    printf '%s\n' \
+      ' "dedup: move duplicate files to _recycle' \
+      'Bin, keeping the newest'
+
+    printf '%s\n' \
+      ' "  dedup <path> [recursive=false] [acros' \
+      's_folders=false]'
+
+    printf '%s\n' \
+      ' "  recursive       if true/1, scan subdi' \
+      'rectories recursively'
+
+    printf '%s\n' \
+      ' "  across_folders  if true/1, deduplicat' \
+      'e across all subdirectories globally'
+
     return
   fi
   local target="${1:?Usage: dedup <path> [recursive=false] [across_folders=false]}"
   local recursive="${2:-false}"
   local across_folders="${3:-false}"
   if [ ! -d "$target" ]; then
-    echo "dedup: directory not found: $target"
+    printf '%s\n' ' "dedup: directory not found: $target'
+
     return 1
   fi
   local abs_target
@@ -1548,7 +1594,10 @@ PACK_TEXT_NODE
   rm -f "$file_list"
 
   if [ ! -f "$tmp_packed" ]; then
-    echo "pack_text: failed to generate packed content"
+    printf '%s\n' \
+      ' "pack_text: failed to generate packed co' \
+      'ntent'
+
     return 1
   fi
 
@@ -1556,17 +1605,20 @@ PACK_TEXT_NODE
   tar)
     tar -czf "$output" -C /tmp "$content_name"
     rm -f "$tmp_packed"
-    echo "pack_text: $output"
+    printf '%s\n' ' "pack_text: $output'
+
     ;;
   zip)
     command zip -qj "$output" "$tmp_packed"
     rm -f "$tmp_packed"
-    echo "pack_text: $output"
+    printf '%s\n' ' "pack_text: $output'
+
     ;;
   raw)
     if [ -n "$output" ]; then
       mv "$tmp_packed" "$output"
-      echo "pack_text: $output"
+    printf '%s\n' ' "pack_text: $output'
+
       # Always stream the saved file's contents to stdout at the end of raw
       # mode so `pack_text | unpack_text /tmp/copy` works without --raw.
       # The "pack_text: <path>" status line above is harmless on the receiving

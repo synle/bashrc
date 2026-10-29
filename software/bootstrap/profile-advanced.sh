@@ -52,7 +52,8 @@ ignored_history=(
 )
 export HISTIGNORE=$(
   IFS=":"
-  echo "${ignored_history[*]}"
+    printf '%s\n' ' "${ignored_history[*]}'
+
 )
 unset ignored_history
 
@@ -145,7 +146,8 @@ function _canonicalize_command() {
   # entry, and on demand for full-history rewrites.
   bash -nc "$cmd" 2> /dev/null || return 0
 
-  echo "$cmd"
+    printf '%s\n' ' "$cmd'
+
 }
 
 # Rewrite the last history entry to a canonical form via _canonicalize_command.
@@ -244,7 +246,10 @@ function _track_folder() {
   # Skip if PWD unchanged since last track — eliminates 4 forks on every prompt
   [ "$current" = "${_LAST_TRACKED_PWD:-}" ] && return
   _LAST_TRACKED_PWD="$current"
-  echo "$current" | _prepend_recents "$_RECENT_FOLDERS_FILE" "$_RECENT_FOLDERS_MAX"
+    printf '%s\n' \
+      ' "$current" | _prepend_recents "$_RECENT_' \
+      'FOLDERS_FILE" "$_RECENT_FOLDERS_MAX'
+
 }
 
 # cd to the most recently visited directory
@@ -259,7 +264,8 @@ function last_folder() {
   if [ -n "$dir" ] && [ -d "$dir" ]; then
     cd "$dir"
   else
-    echo "last_folder: no valid folder found"
+    printf '%s\n' ' "last_folder: no valid folder found'
+
   fi
 }
 
@@ -336,7 +342,8 @@ function _track_file() {
   for arg in "$@"; do
     [ -f "$arg" ] || continue
     full=$(realpath "$arg" 2> /dev/null) || continue
-    echo "$full"
+    printf '%s\n' ' "$full'
+
   done | _prepend_recents "$_RECENT_FILES_FILE" "$_RECENT_FILES_MAX"
 }
 
@@ -352,7 +359,8 @@ function last_file() {
   if [ -n "$f" ] && [ -f "$f" ]; then
     view_file "$f"
   else
-    echo "last_file: no valid file found"
+    printf '%s\n' ' "last_file: no valid file found'
+
   fi
 }
 
@@ -1978,7 +1986,8 @@ function diff() {
       return 1
     fi
     if $hash1_valid && $hash2_valid; then
-      echo "git diff $1 $2"
+    printf '%s\n' ' "git diff $1 $2'
+
       git diff "$1" "$2"
       local diff_status=$?
 
@@ -1989,7 +1998,8 @@ function diff() {
         repo_url="${repo_url%.git}"
         repo_url="${repo_url#*github.com/}"
         local compare_url="https://github.com/${repo_url}/compare/${1}...${2}"
-        echo "$compare_url"
+    printf '%s\n' ' "$compare_url'
+
         open "$compare_url"
       fi
       return "$diff_status"
@@ -2187,7 +2197,8 @@ function br() {
     line+="$_RAINBOW_BLOCK"
   done
 
-  echo "$line" | rainbow_print "${colors[*]}"
+    printf '%s\n' ' "$line" | rainbow_print "${colors[*]}'
+
 }
 
 # hr - rainbow separator without clearing the screen (br no-clear).
@@ -2339,7 +2350,8 @@ function dexec_bash() {
   Usage: dexec_bash <container>"
     return 0
   fi
-  echo "docker exec -it $@ /bin/bash"
+    printf '%s\n' ' "docker exec -it $@ /bin/bash'
+
   docker exec -it $@ /bin/bash
 }
 
@@ -2374,7 +2386,8 @@ function open() {
   elif type -P xdg-open &> /dev/null; then
     xdg-open "$target" 1>&- 2>&- &
   else
-    echo "No file manager found"
+    printf '%s\n' ' "No file manager found'
+
   fi
 
   # When the target is a folder, the OS file manager is the predictable receiver
@@ -2529,7 +2542,11 @@ function tldr() {
     if declare -f "$1" | grep -q is_help_arg; then
       "$1" --help
     else
-      echo "tldr: '$1' is a shell function (use 'type $1' or 'declare -f $1' for details)"
+    printf '%s\n' \
+      ' "tldr: \'$1\' is a shell function (use \' \
+      ''type $1\' or \'declare -f $1\' for detai' \
+      'ls)'
+
       type "$1"
     fi
   else
@@ -2555,7 +2572,8 @@ function retry() {
 
   local attempt=1
   while [ "$attempt" -le "$count" ]; do
-    echo ">> Attempt $attempt/$count: $*"
+    printf '%s\n' ' ">> Attempt $attempt/$count: $*'
+
     if "$@"; then
       return 0
     fi
@@ -2563,7 +2581,8 @@ function retry() {
     [ "$attempt" -le "$count" ] && sleep "$attempt"
   done
 
-  echo ">> Failed after $count attempts: $*"
+    printf '%s\n' ' ">> Failed after $count attempts: $*'
+
   return 1
 }
 
@@ -2589,11 +2608,17 @@ function benchmark() {
   if [ ${#start_time} -gt 10 ] && [ "${start_time//[0-9]/}" = "" ] && [ "${end_time//[0-9]/}" = "" ]; then
     # nanosecond precision available
     elapsed=$(((end_time - start_time) / 1000000))
-    echo ">> Completed in ${elapsed}ms (exit $exit_code)"
+    printf '%s\n' \
+      ' ">> Completed in ${elapsed}ms (exit $exi' \
+      't_code)'
+
   else
     # seconds only (macOS date without coreutils)
     elapsed=$((end_time - start_time))
-    echo ">> Completed in ${elapsed}s (exit $exit_code)"
+    printf '%s\n' \
+      ' ">> Completed in ${elapsed}s (exit $exit' \
+      '_code)'
+
   fi
   return $exit_code
 }
@@ -2631,7 +2656,8 @@ function screenshot_backup() {
 
   local shared_folder
   shared_folder=$(_shared_folder) || {
-    echo "No shared network folder found"
+    printf '%s\n' ' "No shared network folder found'
+
     return 1
   }
   local dest_folder="${shared_folder}/share/_screenshots"
@@ -2639,7 +2665,8 @@ function screenshot_backup() {
 
   local src_folder
   src_folder=$(_screenshot_local_folder) || {
-    echo "No local screenshots folder found"
+    printf '%s\n' ' "No local screenshots folder found'
+
     return 1
   }
 
@@ -2655,7 +2682,8 @@ function screenshot_open_local() {
   fi
   local src_folder
   src_folder=$(_screenshot_local_folder) || {
-    echo "No local screenshots folder found"
+    printf '%s\n' ' "No local screenshots folder found'
+
     return 1
   }
   open "$src_folder" &> /dev/null || echo "$src_folder"
@@ -2670,14 +2698,18 @@ function screenshot_open_shared() {
   fi
   local shared_folder
   shared_folder=$(_shared_folder) || {
-    echo "No shared network folder found"
+    printf '%s\n' ' "No shared network folder found'
+
     return 1
   }
   local dest_folder="${shared_folder}/share/_screenshots"
   if [ -d "$dest_folder" ]; then
     open "$dest_folder" &> /dev/null || echo "$dest_folder"
   else
-    echo "No shared screenshots folder found: $dest_folder"
+    printf '%s\n' \
+      ' "No shared screenshots folder found: $de' \
+      'st_folder'
+
     return 1
   fi
 }
@@ -2703,34 +2735,57 @@ function housekeeping() {
   command mkdir -p "$_logdir" 2> /dev/null || true
 
   local hk_start=$SECONDS
-  echo "housekeeping started at $(date)"
+    printf '%s\n' ' "housekeeping started at $(date)'
+
 
   (
     local log="$_logdir/log_${ts}_patch_cleanup.txt"
     local start=$SECONDS
-    echo "  > patch_cleanup started at $(date)" | tee -a "$log"
+    printf '%s\n' \
+      ' "  > patch_cleanup started at $(date)" |' \
+      ' tee -a "$log'
+
     patch_cleanup &> "$log"
-    echo "  > patch_cleanup done at $(date) ($((SECONDS - start))s)" | tee -a "$log"
+    printf '%s\n' \
+      ' "  > patch_cleanup done at $(date) ($((S' \
+      'ECONDS - start))s)" | tee -a "$log'
+
   ) &
   (
     local log="$_logdir/log_${ts}_screenshot_backup.txt"
     local start=$SECONDS
-    echo "  > screenshot_backup started at $(date)" | tee -a "$log"
+    printf '%s\n' \
+      ' "  > screenshot_backup started at $(date' \
+      ')" | tee -a "$log'
+
     screenshot_backup &> "$log"
-    echo "  > screenshot_backup done at $(date) ($((SECONDS - start))s)" | tee -a "$log"
+    printf '%s\n' \
+      ' "  > screenshot_backup done at $(date) (' \
+      '$((SECONDS - start))s)" | tee -a "$log'
+
   ) &
   if type backup &> /dev/null; then
     (
       local log="$_logdir/log_${ts}_backup.txt"
       local start=$SECONDS
-      echo "  > backup started at $(date)" | tee -a "$log"
+    printf '%s\n' \
+      ' "  > backup started at $(date)" | tee -a' \
+      ' "$log'
+
       backup &> "$log"
-      echo "  > backup done at $(date) ($((SECONDS - start))s)" | tee -a "$log"
+    printf '%s\n' \
+      ' "  > backup done at $(date) ($((SECONDS ' \
+      '- start))s)" | tee -a "$log'
+
     ) &
   fi
 
   wait
-  echo "housekeeping done at $(date) ($((SECONDS - hk_start))s). Logs: $_logdir/log_${ts}_*.txt"
+    printf '%s\n' \
+      ' "housekeeping done at $(date) ($((SECOND' \
+      'S - hk_start))s). Logs: $_logdir/log_${ts' \
+      '}_*.txt'
+
 }
 
 ################################################################################

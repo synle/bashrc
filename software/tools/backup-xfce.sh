@@ -20,8 +20,6 @@ XFCE_CONFIG_DIR="$HOME/.config/xfce4"
 
 function skip() {
 	echo "backup-xfce: not supported - $1 (this tool only applies to Ubuntu-family OSes running an XFCE session)" >&2
-	exit 0
-}
 
 # Guard: Ubuntu-family OS only (Ubuntu, Linux Mint, and other debian/ubuntu
 # derivatives), mirroring the repo's is_os_ubuntu catch-all.
@@ -62,4 +60,9 @@ done
 
 mkdir -p "$(dirname "$OUT_FILE")"
 tar -czf "$OUT_FILE" -C "$STAGING" xfce4
-echo "backup-xfce: wrote $OUT_FILE ($(du -h "$OUT_FILE" | cut -f1))"
+    printf '%s\n' \
+      '      'echo "backup-xfce: wrote $OUT_FILE '\
+'\
+
+      '      '($(du -h "$OUT_FILE" | cut -f1))'\
+'\n

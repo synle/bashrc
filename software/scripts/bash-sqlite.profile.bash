@@ -20,9 +20,11 @@
 # _sqlite_bin: echo the sqlite CLI binary name, or fail when none is installed
 function _sqlite_bin() {
   if type -P sqlite3 &> /dev/null; then
-    echo "sqlite3"
+    printf '%s\n' ' "sqlite3'
+
   elif type -P sqlite &> /dev/null; then
-    echo "sqlite"
+    printf '%s\n' ' "sqlite'
+
   else
     echo "sqlite: not installed (install sqlite3)" >&2
     return 1
@@ -105,7 +107,10 @@ function sqlite_vaccum() {
   before="$(wc -c < "$db" | tr -d '[:space:]')"
   command "$bin" "$db" "VACUUM;" || return 1
   after="$(wc -c < "$db" | tr -d '[:space:]')"
-  echo "  > VACUUM > $db > $before -> $after bytes"
+    printf '%s\n' \
+      ' "  > VACUUM > $db > $before -> $after by' \
+      'tes'
+
 }
 alias sqlite_vacuum=sqlite_vaccum
 
@@ -137,7 +142,11 @@ function sqlite_vaccum_auto() {
   command "$bin" "$db" "PRAGMA auto_vacuum = FULL; VACUUM;" || return 1
   after="$(command "$bin" "$db" "PRAGMA auto_vacuum;" 2> /dev/null | tr -d '[:space:]')"
 
-  echo "  > Auto-vacuum > $db > $(_sqlite_auto_vacuum_label "$before") -> $(_sqlite_auto_vacuum_label "$after")"
+    printf '%s\n' \
+      ' "  > Auto-vacuum > $db > $(_sqlite_auto_' \
+      'vacuum_label "$before") -> $(_sqlite_auto' \
+      '_vacuum_label "$after")'
+
 
   if [ "$after" != "1" ]; then
     echo ">> Warning: auto_vacuum did not stick (still $(_sqlite_auto_vacuum_label "$after")) — the VACUUM may not have completed." >&2

@@ -52,7 +52,10 @@ function _start_steamos_setup_log() {
   mkdir -p "$HOME/Desktop" || return 1
   STEAMOS_SETUP_LOG=$(mktemp "$HOME/Desktop/steamos-setup.XXXXXX") || return 1
   exec > >(tee -a "$STEAMOS_SETUP_LOG") 2>&1
-  echo ">>> SteamOS setup log: $STEAMOS_SETUP_LOG"
+    printf '%s\n' \
+      ' ">>> SteamOS setup log: $STEAMOS_SETUP_L' \
+      'OG'
+
   STEAMOS_SETUP_STARTED=$(date -u '+%Y%m%d-%H%M%S') || return 1
   STEAMOS_PACKAGE_LOG=""
   date -u '+>>> SteamOS setup started: %Y-%m-%dT%H:%M:%SZ'
@@ -67,7 +70,8 @@ function _start_steamos_setup_log() {
   if [ -f "${BASH_SOURCE[0]}" ]; then
     cksum "${BASH_SOURCE[0]}"
   else
-    echo 'unavailable (streamed script input)'
+    printf '%s\n' ' \'unavailable (streamed script input)'
+
   fi
   if [ -r /etc/os-release ]; then
     grep '^\(ID\|VERSION_ID\)=' /etc/os-release
@@ -86,7 +90,10 @@ function _run_long_install() {
     started="${STEAMOS_SETUP_STARTED:-$(date -u '+%Y%m%d-%H%M%S')}"
     STEAMOS_PACKAGE_LOG=$(mktemp "$log_root/sy-log-$started-steamos-setup-output.XXXXXX.txt") || return 1
   fi
-  echo ">>> $label; output log: $STEAMOS_PACKAGE_LOG"
+    printf '%s\n' \
+      ' ">>> $label; output log: $STEAMOS_PACKAG' \
+      'E_LOG'
+
   printf '\n>>> %s\n' "$label" >> "$STEAMOS_PACKAGE_LOG" || return 1
   "$@" < /dev/null >> "$STEAMOS_PACKAGE_LOG" 2>&1
   status=$?
@@ -95,7 +102,8 @@ function _run_long_install() {
     echo ">>> $label failed (status $status); review $STEAMOS_PACKAGE_LOG" >&2
     return "$status"
   fi
-  echo ">>> $label complete."
+    printf '%s\n' ' ">>> $label complete.'
+
   return 0
 }
 
@@ -109,14 +117,20 @@ function _register_setup_update_alias() {
   local startup_file lookup_status found=0 status=0
   local update_alias="alias update='curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/software/scripts/steamos/setup.bash | bash -'"
 
-  echo ">>> Shell update alias: checking existing .bashrc and .bash_profile files."
+    printf '%s\n' \
+      ' ">>> Shell update alias: checking existi' \
+      'ng .bashrc and .bash_profile files.'
+
   for startup_file in "$HOME/.bashrc" "$HOME/.bash_profile"; do
     [ -f "$startup_file" ] || continue
     found=1
     grep -q '^[[:space:]]*alias[[:space:]][[:space:]]*update=' "$startup_file"
     lookup_status=$?
     if [ "$lookup_status" -eq 0 ]; then
-      echo ">>> Shell update alias: keeping the existing update alias in $startup_file."
+    printf '%s\n' \
+      ' ">>> Shell update alias: keeping the exi' \
+      'sting update alias in $startup_file.'
+
       continue
     fi
     if [ "$lookup_status" -ne 1 ]; then
@@ -126,7 +140,10 @@ function _register_setup_update_alias() {
     fi
     # The fetched standalone script cannot assume shared backup helpers are installed.
     if [ ! -e "${startup_file}.bak_original" ]; then
-      echo ">>> Shell update alias: saving ${startup_file}.bak_original."
+    printf '%s\n' \
+      ' ">>> Shell update alias: saving ${startu' \
+      'p_file}.bak_original.'
+
       if ! cp -p "$startup_file" "${startup_file}.bak_original"; then
         status=1
         continue
@@ -136,14 +153,21 @@ function _register_setup_update_alias() {
       status=1
       continue
     fi
-    echo ">>> Shell update alias: adding the full SteamOS setup command to $startup_file."
+    printf '%s\n' \
+      ' ">>> Shell update alias: adding the full' \
+      ' SteamOS setup command to $startup_file.'
+
     if ! printf '\n# Re-run the complete interactive SteamOS setup.\n%s\n' "$update_alias" >> "$startup_file"; then
       echo ">>> Shell update alias: could not append to $startup_file." >&2
       status=1
     fi
   done
   if [ "$found" -eq 0 ]; then
-    echo ">>> Shell update alias: no .bashrc or .bash_profile found; no startup file created."
+    printf '%s\n' \
+      ' ">>> Shell update alias: no .bashrc or .' \
+      'bash_profile found; no startup file creat' \
+      'ed.'
+
   fi
   return "$status"
 }
@@ -203,17 +227,27 @@ mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
 # Install or confirm Flatpak Brave before downloads and Steam shortcut setup.
 # No arguments. Returns nonzero if Flatpak is missing or installation fails; installs the user-scoped app.
 function _install_flatpak_brave_prerequisite() {
-  echo ">>> Brave prerequisite: checking for Flatpak."
+    printf '%s\n' \
+      ' ">>> Brave prerequisite: checking for Fl' \
+      'atpak.'
+
   if ! type -P flatpak > /dev/null; then
     echo ">>> Brave prerequisite failed: flatpak command is unavailable." >&2
     return 1
   fi
-  echo ">>> Brave prerequisite: installing or confirming com.brave.Browser from Flathub for the desktop user."
+    printf '%s\n' \
+      ' ">>> Brave prerequisite: installing or c' \
+      'onfirming com.brave.Browser from Flathub ' \
+      'for the desktop user.'
+
   if ! _run_long_install "Flatpak Brave installation" flatpak install --user -y flathub com.brave.Browser; then
     echo ">>> Brave prerequisite failed: could not install com.brave.Browser." >&2
     return 1
   fi
-  echo ">>> Brave prerequisite: ready for browser shortcut registration."
+    printf '%s\n' \
+      ' ">>> Brave prerequisite: ready for brows' \
+      'er shortcut registration.'
+
 }
 
 BRAVE_FLATPAK_READY=0
@@ -224,12 +258,18 @@ else
 fi
 
 # --- EmuDeck ---
-echo ">>> Downloading EmuDeck installer to $DESKTOP_FOLDER/"
+    printf '%s\n' \
+      ' ">>> Downloading EmuDeck installer to $D' \
+      'ESKTOP_FOLDER/'
+
 curl -fsSL "https://www.emudeck.com/EmuDeck.desktop" -o "$DESKTOP_FOLDER/EmuDeck.desktop"
 chmod +x "$DESKTOP_FOLDER/EmuDeck.desktop"
 
 # --- SponsorBlock config (vendor-verified export for the YouTube blocker) ---
-echo ">>> Downloading SponsorBlock config to $DESKTOP_FOLDER/sponsporblock.json"
+    printf '%s\n' \
+      ' ">>> Downloading SponsorBlock config to ' \
+      '$DESKTOP_FOLDER/sponsporblock.json'
+
 curl -fsSL "https://raw.githubusercontent.com/synle/bashrc/HEAD/assets/steamos/sponsporblock.json" \
   -o "$DESKTOP_FOLDER/sponsporblock.json"
 
@@ -240,22 +280,36 @@ function _bootstrap_decky_loader_plugins_themes() {
   local installer_folder status=0
   installer_folder=$(mktemp -d) || return 1
   # Use the shared installer so setup does not maintain a second Decky installation flow.
-  echo ">>> Decky bootstrap: downloading the shared installer into a private temporary folder."
+    printf '%s\n' \
+      ' ">>> Decky bootstrap: downloading the sh' \
+      'ared installer into a private temporary f' \
+      'older.'
+
   if curl -fsSL --connect-timeout 15 --max-time 120 \
     "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" \
     -o "$installer_folder/run" \
     && chmod +x "$installer_folder/run"; then
-    echo ">>> Decky bootstrap: starting the standard Decky Loader, plugin, and theme installer."
+    printf '%s\n' \
+      ' ">>> Decky bootstrap: starting the stand' \
+      'ard Decky Loader, plugin, and theme insta' \
+      'ller.'
+
     "$installer_folder/run" --skip-prompt --files=software/scripts/decky-and-css-loader.standalone.js < /dev/null || status=$?
   else
     status=$?
     echo ">>> Decky bootstrap: installer download or executable preparation failed (status $status)." >&2
   fi
   # Preserve the installer result while removing only this invocation's temporary files.
-  echo ">>> Decky bootstrap: removing the private temporary installer."
+    printf '%s\n' \
+      ' ">>> Decky bootstrap: removing the priva' \
+      'te temporary installer.'
+
   rm -f "$installer_folder/run"
   rmdir "$installer_folder"
-  echo ">>> Decky bootstrap: finished with status $status."
+    printf '%s\n' \
+      ' ">>> Decky bootstrap: finished with stat' \
+      'us $status.'
+
   return "$status"
 }
 # --- Steam shortcuts ---
@@ -300,7 +354,10 @@ function _clear_user_steam_shortcuts() {
     return 1
   fi
   if [ ! -e "$shortcuts" ]; then
-    echo ">>> Steam cleanup: no user-defined non-Steam shortcuts found; nothing removed."
+    printf '%s\n' \
+      ' ">>> Steam cleanup: no user-defined non-' \
+      'Steam shortcuts found; nothing removed.'
+
     return 0
   fi
   mkdir -p "$desktop_folder" || return 1
@@ -454,10 +511,14 @@ decky_setup_failed=0
 if [ "$DO_DECKY_SETUP" -eq 1 ]; then
   if ! _bootstrap_decky_loader_plugins_themes; then
     decky_setup_failed=1
-    echo ">>> Decky setup failed; continuing with independent SteamOS steps."
+    printf '%s\n' \
+      ' ">>> Decky setup failed; continuing with' \
+      ' independent SteamOS steps.'
+
   fi
 else
-  echo ">>> Skipping Decky Loader setup."
+    printf '%s\n' ' ">>> Skipping Decky Loader setup.'
+
 fi
 
 # Check local Steam shortcuts by exact executable or title without modifying them.
@@ -798,42 +859,76 @@ function _add_steam_shortcut() {
   local name="$1" executable="$2" collections="${3:-}" registered_exepath="${4:-$2}" startdir="${5:-}" launchoptions="${6:-}" status
   local -a shortcut_args=()
 
-  echo "[DEBUG] Steam add: $name; executable $executable; registered $registered_exepath; collections ${collections:-none}"
+    printf '%s\n' \
+      ' "[DEBUG] Steam add: $name; executable $e' \
+      'xecutable; registered $registered_exepath' \
+      '; collections ${collections:-none}'
+
   if [[ "$executable" == *.AppImage ]] && [ -f "$executable" ] && [ ! -x "$executable" ]; then
-    echo ">>> Steam: making $name AppImage executable: $executable"
+    printf '%s\n' \
+      ' ">>> Steam: making $name AppImage execut' \
+      'able: $executable'
+
     if ! chmod +x "$executable"; then
-      echo ">>> Steam: skipping $name; could not make AppImage executable."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $name; could not ma' \
+      'ke AppImage executable.'
+
       return 1
     fi
   fi
   if [ ! -x "$executable" ]; then
-    echo ">>> Steam: binary or AppImage path not found or not present: $executable"
+    printf '%s\n' \
+      ' ">>> Steam: binary or AppImage path not ' \
+      'found or not present: $executable'
+
     return 1
   fi
   _steam_shortcut_exists title "$name"
   status=$?
-  echo "[DEBUG] Steam add: $name title lookup status $status"
+    printf '%s\n' \
+      ' "[DEBUG] Steam add: $name title lookup s' \
+      'tatus $status'
+
   if [ "$status" -eq 0 ]; then
     if pgrep -x steam > /dev/null 2>&1; then
-      echo ">>> Steam: skipping $name; exit Steam before updating shortcuts, then re-run setup."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $name; exit Steam b' \
+      'efore updating shortcuts, then re-run set' \
+      'up.'
+
       return 1
     fi
     _steam_shortcut_update_by_name "$name" "$registered_exepath" "$startdir" "$launchoptions"
     return $?
   fi
   if [ "$status" -ne 1 ]; then
-    echo ">>> Steam: skipping $name; cannot safely check existing shortcuts."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $name; cannot safel' \
+      'y check existing shortcuts.'
+
     return 1
   fi
   if ! type -P steamtinkerlaunch > /dev/null; then
-    echo ">>> Steam: skipping $name; install SteamTinkerLaunch via ProtonUp-Qt, then re-run setup."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $name; install Stea' \
+      'mTinkerLaunch via ProtonUp-Qt, then re-ru' \
+      'n setup.'
+
     return 1
   fi
   if pgrep -x steam > /dev/null 2>&1; then
-    echo ">>> Steam: skipping $name; exit Steam before adding shortcuts, then re-run setup."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $name; exit Steam b' \
+      'efore adding shortcuts, then re-run setup' \
+      '.'
+
     return 1
   fi
-  echo "[DEBUG] Steam add: $name prerequisites passed; invoking SteamTinkerLaunch"
+    printf '%s\n' \
+      ' "[DEBUG] Steam add: $name prerequisites ' \
+      'passed; invoking SteamTinkerLaunch'
+
   if [ -n "$startdir" ]; then
     shortcut_args+=("--startdir=$startdir")
   fi
@@ -841,20 +936,36 @@ function _add_steam_shortcut() {
     shortcut_args+=("--launchoptions=$launchoptions")
   fi
   if [ -n "$collections" ]; then
-    echo ">>> Steam: adding $name ($registered_exepath) to collections: $collections"
+    printf '%s\n' \
+      ' ">>> Steam: adding $name ($registered_ex' \
+      'epath) to collections: $collections'
+
     shortcut_args+=("--tags=$collections")
   else
-    echo ">>> Steam: adding $name ($registered_exepath) without collections"
+    printf '%s\n' \
+      ' ">>> Steam: adding $name ($registered_ex' \
+      'epath) without collections'
+
   fi
   if ! _steamtinkerlaunch_add --appname="$name" --exepath="$registered_exepath" "${shortcut_args[@]}"; then
-    echo ">>> Steam: failed to add $name; check SteamTinkerLaunch output."
+    printf '%s\n' \
+      ' ">>> Steam: failed to add $name; check S' \
+      'teamTinkerLaunch output.'
+
     return 1
   fi
   if ! _steam_shortcut_exists path "$registered_exepath"; then
-    echo ">>> Steam: failed to add $name; SteamTinkerLaunch returned success but shortcut is absent."
+    printf '%s\n' \
+      ' ">>> Steam: failed to add $name; SteamTi' \
+      'nkerLaunch returned success but shortcut ' \
+      'is absent.'
+
     return 1
   fi
-  echo ">>> Steam: added $name. Restart Steam to see it in the library."
+    printf '%s\n' \
+      ' ">>> Steam: added $name. Restart Steam t' \
+      'o see it in the library.'
+
 }
 
 # Add or refresh a Brave site as a Steam tile, deduplicating by exact shortcut title.
@@ -864,9 +975,15 @@ function _add_steam_shortcut() {
 function _add_url_steam_shortcut() {
   local title="$1" url="$2" flatpak_executable launchoptions status
 
-  echo "[DEBUG] Steam URL add: $title; checking existing title"
+    printf '%s\n' \
+      ' "[DEBUG] Steam URL add: $title; checking' \
+      ' existing title'
+
   if [ -z "$title" ] || [[ "$url" != http://* && "$url" != https://* ]]; then
-    echo ">>> Steam: skipping URL shortcut; title and HTTP or HTTPS URL required."
+    printf '%s\n' \
+      ' ">>> Steam: skipping URL shortcut; title' \
+      ' and HTTP or HTTPS URL required.'
+
     return 1
   fi
   while [[ "$url" == */ ]]; do
@@ -874,7 +991,10 @@ function _add_url_steam_shortcut() {
   done
   flatpak_executable=$(type -P flatpak)
   if [ -z "$flatpak_executable" ]; then
-    echo ">>> Steam: skipping $title; flatpak executable not found."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; flatpak exe' \
+      'cutable not found.'
+
     return 1
   fi
   # --ozone-platform=x11: request X11/XWayland instead of native Wayland as a compatibility workaround for reported hangs.
@@ -884,39 +1004,73 @@ function _add_url_steam_shortcut() {
   launchoptions="\"run\" \"--command=brave\" \"com.brave.Browser\" \"--ozone-platform=x11\" \"--disable-smooth-scrolling\" \"--kiosk\" \"$url\""
   _steam_shortcut_exists title "$title"
   status=$?
-  echo "[DEBUG] Steam URL add: $title title lookup status $status"
+    printf '%s\n' \
+      ' "[DEBUG] Steam URL add: $title title loo' \
+      'kup status $status'
+
   if [ "$status" -eq 0 ]; then
     if pgrep -x steam > /dev/null 2>&1; then
-      echo ">>> Steam: skipping $title; exit Steam before updating shortcuts, then re-run setup."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; exit Steam ' \
+      'before updating shortcuts, then re-run se' \
+      'tup.'
+
       return 1
     fi
     _steam_shortcut_update_by_name "$title" "/usr/bin/flatpak" "/usr/bin/" "$launchoptions"
     return $?
   fi
   if [ "$status" -ne 1 ]; then
-    echo ">>> Steam: skipping $title; cannot safely check existing shortcuts."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; cannot safe' \
+      'ly check existing shortcuts.'
+
     return 1
   fi
   if ! type -P steamtinkerlaunch > /dev/null; then
-    echo ">>> Steam: skipping $title; install SteamTinkerLaunch via ProtonUp-Qt, then re-run setup."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; install Ste' \
+      'amTinkerLaunch via ProtonUp-Qt, then re-r' \
+      'un setup.'
+
     return 1
   fi
   if pgrep -x steam > /dev/null 2>&1; then
-    echo ">>> Steam: skipping $title; exit Steam before adding shortcuts, then re-run setup."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; exit Steam ' \
+      'before adding shortcuts, then re-run setu' \
+      'p.'
+
     return 1
   fi
-  echo "[DEBUG] Steam URL add: $title prerequisites passed; Flatpak $flatpak_executable"
-  echo ">>> Steam: adding $title in Brave ($url) to collections: Streaming,Apps"
+    printf '%s\n' \
+      ' "[DEBUG] Steam URL add: $title prerequis' \
+      'ites passed; Flatpak $flatpak_executable'
+
+    printf '%s\n' \
+      ' ">>> Steam: adding $title in Brave ($url' \
+      ') to collections: Streaming,Apps'
+
   if ! _steamtinkerlaunch_add --appname="$title" --exepath="/usr/bin/flatpak" --startdir="/usr/bin/" \
     --launchoptions="$launchoptions" --tags="Streaming,Apps"; then
-    echo ">>> Steam: failed to add $title; check SteamTinkerLaunch output."
+    printf '%s\n' \
+      ' ">>> Steam: failed to add $title; check ' \
+      'SteamTinkerLaunch output.'
+
     return 1
   fi
   if ! _steam_shortcut_exists title "$title"; then
-    echo ">>> Steam: failed to add $title; SteamTinkerLaunch returned success but shortcut is absent."
+    printf '%s\n' \
+      ' ">>> Steam: failed to add $title; SteamT' \
+      'inkerLaunch returned success but shortcut' \
+      ' is absent.'
+
     return 1
   fi
-  echo ">>> Steam: added $title. Restart Steam to see it in the library."
+    printf '%s\n' \
+      ' ">>> Steam: added $title. Restart Steam ' \
+      'to see it in the library.'
+
 }
 
 # Replace all shortcuts with an exact title, then add the Brave Flatpak URL shortcut.
@@ -925,42 +1079,75 @@ function _add_url_steam_shortcut() {
 function _upsert_url_steam_shortcut() {
   local title="$1" url="$2" shortcuts backup status
 
-  echo "[DEBUG] Steam URL upsert: $title; preflight"
+    printf '%s\n' \
+      ' "[DEBUG] Steam URL upsert: $title; prefl' \
+      'ight'
+
   if [ -z "$title" ] || [[ "$url" != http://* && "$url" != https://* ]]; then
-    echo ">>> Steam: skipping URL shortcut; title and HTTP or HTTPS URL required."
+    printf '%s\n' \
+      ' ">>> Steam: skipping URL shortcut; title' \
+      ' and HTTP or HTTPS URL required.'
+
     return 1
   fi
   if ! type -P steamtinkerlaunch > /dev/null; then
-    echo ">>> Steam: skipping $title; SteamTinkerLaunch not installed."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; SteamTinker' \
+      'Launch not installed.'
+
     return 1
   fi
   if pgrep -x steam > /dev/null 2>&1; then
-    echo ">>> Steam: skipping $title; exit Steam before replacing shortcuts."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; exit Steam ' \
+      'before replacing shortcuts.'
+
     return 1
   fi
   if ! shortcuts=$(_steam_shortcuts_file) || [ -L "$shortcuts" ] || [ ! -f "$shortcuts" ]; then
-    echo ">>> Steam: skipping $title; regular shortcuts.vdf required."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; regular sho' \
+      'rtcuts.vdf required.'
+
     return 1
   fi
-  echo "[DEBUG] Steam URL upsert: $title; target $shortcuts"
+    printf '%s\n' \
+      ' "[DEBUG] Steam URL upsert: $title; targe' \
+      't $shortcuts'
+
   _steam_shortcut_exists title "$title"
   status=$?
-  echo "[DEBUG] Steam URL upsert: $title title lookup status $status"
+    printf '%s\n' \
+      ' "[DEBUG] Steam URL upsert: $title title ' \
+      'lookup status $status'
+
   if [ "$status" -eq 1 ]; then
     _add_url_steam_shortcut "$title" "$url"
     return $?
   fi
   if [ "$status" -ne 0 ]; then
-    echo ">>> Steam: skipping $title; cannot safely inspect shortcuts."
+    printf '%s\n' \
+      ' ">>> Steam: skipping $title; cannot safe' \
+      'ly inspect shortcuts.'
+
     return 1
   fi
   backup=$(mktemp "${shortcuts}.backup.XXXXXX") || return 1
-  echo "[DEBUG] Steam URL upsert: $title; backup $backup"
+    printf '%s\n' \
+      ' "[DEBUG] Steam URL upsert: $title; backu' \
+      'p $backup'
+
   if ! cp -p "$shortcuts" "$backup"; then
-    echo ">>> Steam: failed to back up $shortcuts; skipping $title."
+    printf '%s\n' \
+      ' ">>> Steam: failed to back up $shortcuts' \
+      '; skipping $title.'
+
     return 1
   fi
-  echo ">>> Steam: backing up shortcuts to $backup; replacing entries titled $title"
+    printf '%s\n' \
+      ' ">>> Steam: backing up shortcuts to $bac' \
+      'kup; replacing entries titled $title'
+
   if ! python3 - "$shortcuts" "$backup" "$title" << 'PY'
 import os
 import stat
@@ -1068,16 +1255,28 @@ except (OSError, UnicodeError, ValueError) as error:
     sys.exit(1)
 PY
   then
-    echo ">>> Steam: $title unchanged; backup at $backup"
+    printf '%s\n' \
+      ' ">>> Steam: $title unchanged; backup at ' \
+      '$backup'
+
     return 1
   fi
   if ! _add_url_steam_shortcut "$title" "$url"; then
-    echo "[DEBUG] Steam URL upsert: $title add failed; restoring backup"
-    echo ">>> Steam: re-add failed; restoring $shortcuts from $backup"
+    printf '%s\n' \
+      ' "[DEBUG] Steam URL upsert: $title add fa' \
+      'iled; restoring backup'
+
+    printf '%s\n' \
+      ' ">>> Steam: re-add failed; restoring $sh' \
+      'ortcuts from $backup'
+
     cp -p "$backup" "$shortcuts" || echo ">>> Steam: restore failed; recover manually from $backup" >&2
     return 1
   fi
-  echo ">>> Steam: replaced $title; previous shortcuts backed up at $backup"
+    printf '%s\n' \
+      ' ">>> Steam: replaced $title; previous sh' \
+      'ortcuts backed up at $backup'
+
 }
 
 # Install SteamTinkerLaunch runtime dependencies before invoking it.
@@ -1090,20 +1289,35 @@ function _install_steamtinkerlaunch_dependencies() {
   done
   if [ "${#missing[@]}" -gt 0 ]; then
     if ! type -P pacman > /dev/null; then
-      echo ">>> SteamTinkerLaunch dependencies missing: ${missing[*]}"
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch dependencies miss' \
+      'ing: ${missing[*]}'
+
       return 1
     fi
-    echo ">>> Installing SteamTinkerLaunch dependencies: xdotool xorg-xwininfo yad"
+    printf '%s\n' \
+      ' ">>> Installing SteamTinkerLaunch depend' \
+      'encies: xdotool xorg-xwininfo yad'
+
     if ! _run_long_install "SteamTinkerLaunch dependencies" sudo pacman -S --needed --noconfirm xdotool xorg-xwininfo yad; then
-      echo ">>> SteamTinkerLaunch dependency installation failed."
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch dependency instal' \
+      'lation failed.'
+
       return 1
     fi
   else
-    echo ">>> SteamTinkerLaunch dependencies already installed"
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch dependencies alre' \
+      'ady installed'
+
   fi
   for binary in xdotool xwininfo yad; do
     if ! type -P "$binary" > /dev/null; then
-      echo ">>> SteamTinkerLaunch dependency still missing after installation: $binary"
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch dependency still ' \
+      'missing after installation: $binary'
+
       return 1
     fi
   done
@@ -1113,7 +1327,10 @@ function _install_steamtinkerlaunch_dependencies() {
   yad_minor=${yad_minor%%.*}
   if [[ "$yad_version" != *.* ]] || [[ ! "$yad_major" =~ ^[0-9]+$ ]] || [[ ! "$yad_minor" =~ ^[0-9]+$ ]] \
     || [ "$yad_major" -lt 7 ] || { [ "$yad_major" -eq 7 ] && [ "$yad_minor" -lt 2 ]; }; then
-    echo ">>> SteamTinkerLaunch requires Yad 7.2 or newer; found ${yad_version:-unknown}."
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch requires Yad 7.2 ' \
+      'or newer; found ${yad_version:-unknown}.'
+
     return 1
   fi
 }
@@ -1124,26 +1341,42 @@ function _install_steamtinkerlaunch() {
   local staging_folder extracted_folders
 
   if type -P steamtinkerlaunch > /dev/null; then
-    echo ">>> SteamTinkerLaunch already installed: $(type -P steamtinkerlaunch)"
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch already installed' \
+      ': $(type -P steamtinkerlaunch)'
+
     return 0
   fi
   if [ ! -x "$install_folder/steamtinkerlaunch" ]; then
     if [ -e "$install_folder" ]; then
-      echo ">>> SteamTinkerLaunch install incomplete at $install_folder; move it aside and re-run setup."
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch install incomplet' \
+      'e at $install_folder; move it aside and r' \
+      'e-run setup.'
+
       return 1
     fi
     staging_folder=$(mktemp -d) || return 1
-    echo ">>> Installing SteamTinkerLaunch to $install_folder"
+    printf '%s\n' \
+      ' ">>> Installing SteamTinkerLaunch to $in' \
+      'stall_folder'
+
     if ! curl -fsSL "https://github.com/sonic2kk/steamtinkerlaunch/archive/refs/heads/master.tar.gz" \
       -o "$staging_folder/steamtinkerlaunch.tar.gz" \
       || ! tar -xzf "$staging_folder/steamtinkerlaunch.tar.gz" -C "$staging_folder"; then
-      echo ">>> SteamTinkerLaunch download or extraction failed."
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch download or extra' \
+      'ction failed.'
+
       rm -rf "$staging_folder"
       return 1
     fi
     extracted_folders=("$staging_folder"/steamtinkerlaunch-*)
     if [ "${#extracted_folders[@]}" -ne 1 ] || [ ! -d "${extracted_folders[0]}" ]; then
-      echo ">>> SteamTinkerLaunch archive had an unexpected layout."
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch archive had an un' \
+      'expected layout.'
+
       rm -rf "$staging_folder"
       return 1
     fi
@@ -1152,47 +1385,76 @@ function _install_steamtinkerlaunch() {
     rm -rf "$staging_folder"
     chmod +x "$install_folder/steamtinkerlaunch"
     if ! (cd "$install_folder" && ./steamtinkerlaunch); then
-      echo ">>> SteamTinkerLaunch initial setup failed."
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch initial setup fai' \
+      'led.'
+
       rm -rf "$install_folder"
       return 1
     fi
     if ! (cd "$install_folder" && ./steamtinkerlaunch compat add); then
-      echo ">>> SteamTinkerLaunch compatibility-tool registration failed."
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch compatibility-too' \
+      'l registration failed.'
+
       rm -rf "$install_folder"
       return 1
     fi
   fi
   mkdir -p "$HOME/.local/bin"
   if [ -e "$launcher" ] && [ "$(readlink "$launcher" 2> /dev/null)" != "$install_folder/steamtinkerlaunch" ]; then
-    echo ">>> SteamTinkerLaunch launcher already exists and is not managed by this setup: $launcher"
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch launcher already ' \
+      'exists and is not managed by this setup: ' \
+      '$launcher'
+
     return 1
   fi
   ln -sfn "$install_folder/steamtinkerlaunch" "$launcher"
   export PATH="$HOME/.local/bin:$PATH"
-  echo ">>> SteamTinkerLaunch installed: $launcher"
+    printf '%s\n' \
+      ' ">>> SteamTinkerLaunch installed: $launc' \
+      'her'
+
 }
 
 if ! _install_steamtinkerlaunch_dependencies || ! _install_steamtinkerlaunch; then
-  echo ">>> Steam shortcuts need SteamTinkerLaunch; fix installation output above and re-run setup."
+    printf '%s\n' \
+      ' ">>> Steam shortcuts need SteamTinkerLau' \
+      'nch; fix installation output above and re' \
+      '-run setup.'
+
 fi
 
 # --- Moonlight (AppImage) ---
 MOONLIGHT_VERSION="6.2.0"
-echo ">>> Downloading Moonlight AppImage to $APPS_FOLDER/Moonlight.AppImage"
+    printf '%s\n' \
+      ' ">>> Downloading Moonlight AppImage to $' \
+      'APPS_FOLDER/Moonlight.AppImage'
+
 if curl -fsSL "https://github.com/moonlight-stream/moonlight-qt/releases/download/v$MOONLIGHT_VERSION/Moonlight-$MOONLIGHT_VERSION-x86_64.AppImage" \
   -o "$APPS_FOLDER/Moonlight.AppImage"; then
   _add_steam_shortcut "Moonlight" "$APPS_FOLDER/Moonlight.AppImage" "Streaming,Apps"
 else
-  echo ">>> Steam: skipping Moonlight; AppImage download failed."
+    printf '%s\n' \
+      ' ">>> Steam: skipping Moonlight; AppImage' \
+      ' download failed.'
+
 fi
 
 # --- ProtonUp-Qt (AppImage) ---
-echo ">>> Downloading ProtonUp-Qt AppImage to $APPS_FOLDER/ProtonUp-Qt.AppImage"
+    printf '%s\n' \
+      ' ">>> Downloading ProtonUp-Qt AppImage to' \
+      ' $APPS_FOLDER/ProtonUp-Qt.AppImage'
+
 if curl -fsSL "https://github.com/DavidoTek/ProtonUp-Qt/releases/download/v2.16.0/ProtonUp-Qt-2.16.0-x86_64.AppImage" \
   -o "$APPS_FOLDER/ProtonUp-Qt.AppImage"; then
   _add_steam_shortcut "ProtonUp-Qt" "$APPS_FOLDER/ProtonUp-Qt.AppImage" "Utilities,Apps"
 else
-  echo ">>> Steam: skipping ProtonUp-Qt; AppImage download failed."
+    printf '%s\n' \
+      ' ">>> Steam: skipping ProtonUp-Qt; AppIma' \
+      'ge download failed.'
+
 fi
 
 # --- ES-DE Emulation Station (installed by EmuDeck) ---
@@ -1200,17 +1462,25 @@ _add_steam_shortcut "ES-DE Emulation Station" "/home/deck/Applications/ES-DE.App
 
 # --- Brave dependencies ---
 if type -P pacman > /dev/null; then
-  echo ">>> Installing vim, tmux and fuse2"
+    printf '%s\n' ' ">>> Installing vim, tmux and fuse2'
+
   if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
-    echo ">>> Updating system (pacman -Syu)"
+    printf '%s\n' ' ">>> Updating system (pacman -Syu)'
+
     _run_long_install "System upgrade" sudo pacman -Syu --noconfirm
   else
-    echo ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
+    printf '%s\n' \
+      ' ">>> Skipped system upgrade: sudo pacman' \
+      ' -Syu --noconfirm'
+
   fi
   if _run_long_install "Vim, tmux, and FUSE installation" sudo pacman -S --needed --noconfirm vim tmux fuse2; then
     _run_long_install "Flatpak update" flatpak update -y
   else
-    echo ">>> Steam: vim/tmux/fuse2 package installation failed; continuing."
+    printf '%s\n' \
+      ' ">>> Steam: vim/tmux/fuse2 package insta' \
+      'llation failed; continuing.'
+
   fi
 fi
 
@@ -1238,10 +1508,16 @@ popd
 
 if type -P paru > /dev/null && grep -q '^ID=cachyos' /etc/os-release 2> /dev/null; then
   if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
-    echo ">>> CachyOS with paru detected - updating AUR packages"
+    printf '%s\n' \
+      ' ">>> CachyOS with paru detected - updati' \
+      'ng AUR packages'
+
     _run_long_install "AUR upgrade" paru -Syu --noconfirm
   else
-    echo ">>> Skipped AUR upgrade: paru -Syu --noconfirm"
+    printf '%s\n' \
+      ' ">>> Skipped AUR upgrade: paru -Syu --no' \
+      'confirm'
+
   fi
 fi
 
@@ -1251,7 +1527,10 @@ fi
 # Backs up an existing unit, writes /etc/systemd/system/usb-wake-all.service, and starts it.
 function _install_usb_wake_service() {
   local service_file="/etc/systemd/system/usb-wake-all.service"
-  echo ">>> USB wake: checking systemd and the Linux USB device tree."
+    printf '%s\n' \
+      ' ">>> USB wake: checking systemd and the ' \
+      'Linux USB device tree.'
+
   if ! type -P systemctl > /dev/null || [ ! -d /sys/bus/usb/devices ]; then
     echo ">>> USB wake: systemd and the Linux USB device tree are required." >&2
     return 1
@@ -1259,13 +1538,23 @@ function _install_usb_wake_service() {
   # Keep the first pre-setup unit and the most recent unit for manual recovery.
   if [ -e "$service_file" ]; then
     if [ ! -e "${service_file}.bak_original" ]; then
-      echo ">>> USB wake: saving the original unit to ${service_file}.bak_original."
+    printf '%s\n' \
+      ' ">>> USB wake: saving the original unit ' \
+      'to ${service_file}.bak_original.'
+
       sudo cp -p "$service_file" "${service_file}.bak_original" || return 1
     fi
-    echo ">>> USB wake: saving the current unit to ${service_file}.bak_latest."
+    printf '%s\n' \
+      ' ">>> USB wake: saving the current unit t' \
+      'o ${service_file}.bak_latest.'
+
     sudo cp -p "$service_file" "${service_file}.bak_latest" || return 1
   fi
-  echo ">>> USB wake: writing $service_file; the service applies wake settings now and at boot."
+    printf '%s\n' \
+      ' ">>> USB wake: writing $service_file; th' \
+      'e service applies wake settings now and a' \
+      't boot.'
+
   # systemd needs $$ to pass literal dollar signs through to the shell.
   # Boot-time only: unsupported devices are skipped; later hotplug needs a service restart.
   if ! sudo tee "$service_file" > /dev/null << 'USB_WAKE_SERVICE'
@@ -1284,30 +1573,47 @@ USB_WAKE_SERVICE
   then
     return 1
   fi
-  echo ">>> USB wake: reloading systemd to pick up the unit."
+    printf '%s\n' \
+      ' ">>> USB wake: reloading systemd to pick' \
+      ' up the unit.'
+
   sudo systemctl daemon-reload || return 1
-  echo ">>> USB wake: enabling usb-wake-all.service for future boots and starting it now."
+    printf '%s\n' \
+      ' ">>> USB wake: enabling usb-wake-all.ser' \
+      'vice for future boots and starting it now' \
+      '.'
+
   sudo systemctl enable --now usb-wake-all.service
 }
 
 # Apply the startup choice without another late prompt; declining preserves existing configuration.
 if [ "$DO_USB_WAKE_SETUP" -eq 1 ]; then
   if _install_usb_wake_service; then
-    echo ">>> USB wake: enabled now and at boot for devices exposing power/wakeup."
+    printf '%s\n' \
+      ' ">>> USB wake: enabled now and at boot f' \
+      'or devices exposing power/wakeup.'
+
   else
     echo ">>> USB wake setup failed; review the output above. Continuing setup." >&2
   fi
 else
-  echo ">>> USB wake: skipped by choice; existing wake configuration is unchanged."
+    printf '%s\n' \
+      ' ">>> USB wake: skipped by choice; existi' \
+      'ng wake configuration is unchanged.'
+
 fi
 
 # --- Limine bootloader: set menu timeout + quiet boot ---
 LIMINE_CONF="/boot/limine.conf"
 if [ -f "$LIMINE_CONF" ]; then
-  echo ">>> Limine config found: $LIMINE_CONF"
+    printf '%s\n' ' ">>> Limine config found: $LIMINE_CONF'
+
 
   # Normalize quiet boot directly below the first timeout entry.
-  echo ">>> Limine: setting timeout to 2 with quiet boot"
+    printf '%s\n' \
+      ' ">>> Limine: setting timeout to 2 with q' \
+      'uiet boot'
+
   sudo awk -v timeout=2 '
 		/^[[:space:]]*quiet:/ { next }
 		!done && /^[[:space:]]*timeout:/ { print "timeout: " timeout; print "quiet: yes"; done = 1; next }
@@ -1317,10 +1623,20 @@ if [ -f "$LIMINE_CONF" ]; then
 fi
 
 if [ "$decky_setup_failed" -eq 1 ]; then
-  echo ">>> Decky setup failed earlier; review its output and re-run this script after fixing it."
+    printf '%s\n' \
+      ' ">>> Decky setup failed earlier; review ' \
+      'its output and re-run this script after f' \
+      'ixing it.'
+
 fi
-echo ">>> Done. Launch each .desktop file from Desktop Mode to start installation."
-echo ">>> AppImages live in $APPS_FOLDER/ - run them directly."
+    printf '%s\n' \
+      ' ">>> Done. Launch each .desktop file fro' \
+      'm Desktop Mode to start installation.'
+
+    printf '%s\n' \
+      ' ">>> AppImages live in $APPS_FOLDER/ - r' \
+      'un them directly.'
+
 finish_choice=""
 until _prompt "Finish and exit setup?"; do
   :

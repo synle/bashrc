@@ -106,7 +106,8 @@ function _workspace_terminal_path() {
   ## keys from, so a terminal we can only read is useless to it
   [ -c "$device" ] || return 1
   (: <> "$device") 2> /dev/null || return 1
-  echo "$device"
+    printf '%s\n' ' "$device'
+
 }
 
 # the tmux half of _workspace_attach, split out so the caller can hand it a
@@ -148,7 +149,10 @@ function _workspace_attach() {
 # public builder ends here rather than calling _workspace_attach directly.
 function _workspace_attach_unless_detached() {
   if is_truthy "$1"; then
-    echo "workspace: '$2' left running detached - workspace_open $2 to attach"
+    printf '%s\n' \
+      ' "workspace: \'$2\' left running detached' \
+      ' - workspace_open $2 to attach'
+
     return 0
   fi
   _workspace_attach "$2"
@@ -176,7 +180,8 @@ function _workspace_resolve_config() {
     "$PWD/$name.json" \
     "$WORKSPACE_CONFIG_FOLDER/$name.json"; do
     if [ -f "$candidate" ]; then
-      echo "$candidate"
+    printf '%s\n' ' "$candidate'
+
       return 0
     fi
   done
@@ -222,7 +227,8 @@ function _workspace_pane_body() {
   if [ -n "$cmd" ] && [ "$closing" = "true" ]; then
     body="$body; "'exit "$_workspace_command_status"'
   fi
-  echo "$body"
+    printf '%s\n' ' "$body'
+
 }
 
 # apply a finished window's layout and pane focus. $1 = window id (empty = no
@@ -667,7 +673,8 @@ JSON_EOF
   command chmod 755 "$sh_target"
   echo "workspace_sample_json: launcher written to $sh_target" >&2
 
-  echo "$target"
+    printf '%s\n' ' "$target'
+
 }
 
 # snapshot a live session back into a config - the cheap knockoff of `tmuxp freeze`
@@ -791,7 +798,8 @@ function workspace_freeze() {
     return 1
   fi
   printf '%s\n' "$json" > "$out" || return 1
-  echo "$out"
+    printf '%s\n' ' "$out'
+
 }
 
 # export the current (or named) session to ~/tmux_workspace_<stamp>.json
@@ -847,7 +855,8 @@ function workspace_export() {
   json=$(workspace_freeze ${session:+"$session"}) || return 1
   printf '%s\n' "$json" | jq --arg name "$name" '.session = $name' > "$out" || return 1
   [ -z "${TMUX:-}" ] || tmux display-message "Workspace exported: $out (session $name)"
-  echo "$out"
+    printf '%s\n' ' "$out'
+
 }
 
 # attach to an already-running session by exact name, or pick one from a list
@@ -952,12 +961,19 @@ function workspace_close_all() {
   local sessions
   sessions=$(tmux list-sessions -F '#{session_name}' 2> /dev/null)
   if [ -z "$sessions" ]; then
-    echo "workspace_close_all: no tmux sessions running"
+    printf '%s\n' \
+      ' "workspace_close_all: no tmux sessions r' \
+      'unning'
+
     return 0
   fi
 
   ## destructive and unrecoverable - always show the list before asking
-  echo "workspace_close_all: about to kill $(echo "$sessions" | wc -l | tr -d ' ') session(s):"
+    printf '%s\n' \
+      ' "workspace_close_all: about to kill $(ec' \
+      'ho "$sessions" | wc -l | tr -d \' \') ses' \
+      'sion(s):'
+
   echo "$sessions" | sed 's/^/  /'
   if ! is_truthy "$force"; then
     local reply=""
@@ -966,7 +982,8 @@ function workspace_close_all() {
     case "$reply" in
     [yY] | [yY][eE][sS]) ;;
     *)
-      echo "workspace_close_all: aborted"
+    printf '%s\n' ' "workspace_close_all: aborted'
+
       return 1
       ;;
     esac
@@ -1097,7 +1114,10 @@ function workspace_temp_close() {
   local sessions
   sessions=$(tmux list-sessions -F '#{session_name}' 2> /dev/null | command grep "^$_WORKSPACE_TEMP_SESSION")
   if [ -z "$sessions" ]; then
-    echo "workspace_temp_close: no temp sessions running"
+    printf '%s\n' \
+      ' "workspace_temp_close: no temp sessions ' \
+      'running'
+
     return 0
   fi
 
