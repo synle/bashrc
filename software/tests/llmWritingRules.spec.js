@@ -57,6 +57,63 @@ describe("shared milestone status guidance", () => {
   });
 });
 
+describe("shared skill invocation semantics", () => {
+  it("loads workflow instructions inline without treating shell launchers as prerequisites", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions.md"), "utf8");
+    const skills = source.split("## Agent Skills\n", 2)[1].split("\n## ", 1)[0];
+    expect(skills).toContain("**Skill invocation**");
+    expect(skills).toContain("host's skill tool");
+    expect(skills).toContain("canonical `SKILL.md`");
+    expect(skills).toContain("execute inline");
+    expect(skills).toContain("same-named terminal launchers as skill prerequisites");
+    expect(skills).toContain("Starting another agent requires separate authority.");
+    expect(skills).toContain("Native-tool checks and mandatory safety gates remain independent.");
+  });
+
+  it("preserves skill homes, discovery, portability, and ownership while tightening the section", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions.md"), "utf8");
+    const skills = source.split("## Agent Skills\n", 2)[1].split("\n## ", 1)[0];
+    expect(skills).toContain("Repo-local skills win collisions.");
+    expect(skills).toContain("<repo>/.agents/skills/<name>/SKILL.md");
+    expect(skills).toContain("~/.agents/skills/<name>/SKILL.md");
+    expect(skills).toContain("registry-owned sources/deployment");
+    expect(skills).toContain("CLI-native and plugin locations");
+    expect(skills).toContain("preserve content when consolidating");
+    expect(skills).toContain("verified CLI discovery");
+    expect(skills).toContain("never duplicate bodies or overwrite unrelated files");
+    expect(skills).toContain("kebab-case");
+    expect(skills).toContain("`name` and `description`");
+    expect(skills).toContain("what it does and when to use it");
+    expect(skills).toContain(".opencode/commands");
+    expect(skills).toContain("same-commit registration");
+    expect(skills).toContain("per-CLI command lists");
+  });
+
+  it("executes loaded sync steps inline without a same-named shell command and retains the secret gate", () => {
+    const sync = fs.readFileSync(path.join(SOURCE_FOLDER, "skills/sync-pr-branch.md"), "utf8");
+    expect(sync).toContain("Once loaded, execute these steps inline");
+    expect(sync).toContain("Do not probe or invoke a shell command named `sy-sync-pr-branch`");
+    expect(sync).toContain("argument payload, not a shell command");
+    expect(sync).toContain("plus a secret scan of");
+    expect(sync).toContain("git log @{u}..HEAD -p");
+  });
+
+  it("keeps internal sync argument examples separate from terminal commands", () => {
+    const body = fs.readFileSync(path.join(SOURCE_FOLDER, "skills/babysit-pr.md"), "utf8");
+    expect(body.includes("`/sy-sync-pr-branch <PR-URL>")).toBe(false);
+    expect(body.includes("`<PR-URL> workspace=<resolved-checkout> server-side=never report=structured`")).toBe(true);
+  });
+
+  it.each([
+    `${SOURCE_FOLDER}/instructions-pr-workflow.md`,
+    `${SOURCE_FOLDER}/skills/pr-reconciliation-pass.md`,
+    `${SOURCE_FOLDER}/skills/babysit-pr.md`,
+    "software/scripts/advanced/llm/_common/upstream-adapters.common.md",
+  ])("keeps the shared invocation rule explicit at composition seam %s", (sourcePath) => {
+    expect(fs.readFileSync(sourcePath, "utf8")).toContain("**Skill invocation**");
+  });
+});
+
 describe("shared writing checklist", () => {
   it("keeps the canonical short list separate from its complete explanations", () => {
     expect(cleanup).toContain(`## Hard rules\n\n${WRITING_CHECKLIST}\n\n## Checklist details\n`);

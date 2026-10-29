@@ -2,6 +2,14 @@
 
 Argument: $ARGUMENTS — a target plus optional `key=value` options (see Invocation contract).
 
+## Execution mode
+
+Apply shared **Skill invocation** semantics; shared Execution routing still chooses the assigned agent and checkout.
+Once loaded, execute these steps inline in that assigned context. Following this file is reuse of the shared sync algorithm, not a second implementation.
+Do not probe or invoke a shell command named `sy-sync-pr-branch` as an execution prerequisite, or redispatch this already-loaded workflow to itself.
+The terminal wrapper launches another agent session; it is not required for native skill execution.
+Native-tool discovery and the mandatory identity and secret-scan gates remain unchanged.
+
 ## When to use
 
 - A PR is behind its base branch and CI requires "up to date with base" before merging.
@@ -30,8 +38,10 @@ For address-comments + drive-CI-green work, use `/sy-babysit-pr`. This command s
 | `on-conflict=resolve\|stop` | `resolve` | `stop` reports the conflicted files and exits without resolving                                                                                                            |
 | `report=prose\|structured`  | `prose`   | `structured` emits only the machine-readable result block (Step 8)                                                                                                         |
 
-**Delegated invocation** — how another command calls this, e.g. from `/sy-babysit-pr` Step 5:
-`/sy-sync-pr-branch <PR-URL> workspace=$HOME/.worktrees/<owner>/<repo>/<sanitized-branch> server-side=never report=structured`
+**Delegated invocation** — load this skill through the host skill interface or canonical file and apply its steps inline.
+The following is an argument payload, not a shell command:
+`<PR-URL> workspace=<resolved-checkout> server-side=never report=structured`
+Resolve the checkout path in the caller's task context; do not depend on shell-variable expansion by a skill loader.
 
 A delegated run never creates or removes a worktree, never touches the caller's cwd, and always ends by emitting the Step 8 result block.
 

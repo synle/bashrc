@@ -61,6 +61,17 @@ Focused registry, adapter, deployment, writing-rule, rollback, and budget checks
 The earlier full gate remains red only for the known curl formatter failure; no later source or isolated test result is presented as a green full gate.
 Rollback restores the component change before the primary infrastructure change, followed by approved redeployment. Immutable upstream folders are retained rather than deleted automatically.
 
+## Skill invocation hardening
+
+- [x] Define one shared **Skill invocation** rule: load instructions through the host or canonical file and execute inline, without a same-named terminal-launcher prerequisite.
+- [x] Add an explicit sync entry guard and distinguish reusable shared instructions from a second sync implementation.
+- [x] Clarify publication, reconciliation, and babysit handoffs, including argument payloads that are not shell commands.
+- [x] Preserve mandatory native-tool, identity, and secret-scan checks; no scanner dependency or automatic installation was added.
+- [x] Keep terminal wrappers unchanged for authorized human launches and distinguish same-agent execution from `SY_SKILL_INLINE` transport.
+- [x] Preserve existing skill-home, discovery, portability, collision, and ownership rules while keeping the always-loaded character budget.
+- [x] Observe invocation/source-contract regressions fail before the guidance fix, then pass after; preserve terminal dispatcher behavior and the instruction budget.
+- [ ] Verify the original agent behavior after approved deployment and a fresh client session; source checks do not prove model compliance.
+
 ## Shared PR publication pipeline
 
 The creation skills are retired, but their required lifecycle remains in the shared PR instructions. The user corrected stage 2 to remove Placeholder.

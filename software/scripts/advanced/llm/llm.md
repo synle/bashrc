@@ -417,6 +417,11 @@ own `webapp/` or any web task.
 
 ### Shell dispatchers (`sy-*` and `<cli>_skill_*` from the terminal)
 
+These are human terminal launchers, not internal agent dependencies. They start an LLM CLI using the configured native or inline transport.
+Inside an assigned agent, shared **Skill invocation** loads the skill instructions and executes them in that context; no same-named shell function or executable is required.
+Do not source profiles or install a skill-named command merely to execute an already-loaded workflow. Native-tool prerequisites and safety gates are separate.
+In workflow guidance, “execute inline” means the assigned agent performs the loaded steps. It does not select wrapper transport through `SY_SKILL_INLINE` or launch a CLI.
+
 Every `_common/v_current/skills/<name>.md` slash command also has matching bash
 functions so the same workflow can run interactively or print output and exit.
 Source: `_common/sy-commands.profile.bash` (sourced via `profile-advanced.sh`).
