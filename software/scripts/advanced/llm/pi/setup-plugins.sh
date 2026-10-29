@@ -5,7 +5,10 @@
 # Install the managed Pi extensions globally. The existing install.sh owns Pi itself;
 # skip when no persistent executable exists, even if a pi shell function is defined.
 pi_binary=$(has_persistent_binary pi) || {
-  echo '>> Skipped Pi plugins: pi binary not installed'
+    printf '%s\n' \
+      ' \'>> Skipped Pi plugins: pi binary not i' \
+      'nstalled'
+
   exit 0
 }
 
@@ -19,7 +22,8 @@ pi_plugins=(
 )
 
 for pi_plugin in "${pi_plugins[@]}"; do
-  echo ">> Installing Pi plugin: $pi_plugin"
+    printf '%s\n' ' ">> Installing Pi plugin: $pi_plugin'
+
   # Invoke the executable path, never the profile function. Do not run dependency
   # lifecycle scripts or let npm consume the bootstrap's remaining heredoc input.
   npm_config_ignore_scripts=true "$pi_binary" install "$pi_plugin" < /dev/null || exit "$?"

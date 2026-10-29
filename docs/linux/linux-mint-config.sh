@@ -3,31 +3,36 @@
 
 # Helper function to remove packages with apt
 removePackageWithApt() {
-  echo "  >> sudo apt remove -y --purge $@"
+    printf '%s\n' ' "  >> sudo apt remove -y --purge $@'
+
   sudo apt remove -y --purge "$@" &> /dev/null
 }
 
 installPackageWithApt() {
-  echo "  >> sudo apt install -y $@"
+    printf '%s\n' ' "  >> sudo apt install -y $@'
+
   sudo apt install -y --fix-missing "$@" &> /dev/null
 }
 
 # Helper function to install packages with Flatpak
 installPackageWithFlatpak() {
-  echo "  >> flatpak install -y $@"
+    printf '%s\n' ' "  >> flatpak install -y $@'
+
   flatpak install -y "$@" &> /dev/null
 }
 
 
 # ====== INSTALL APPLICATIONS ==============================================================================
-echo "Installing applications..."
+    printf '%s\n' ' "Installing applications...'
+
 
 # Add repos and install Brave
 sudo add-apt-repository -y ppa:xubuntu-dev/extras
 curl -fsSL https://dl.brave.com/install.sh | bash
 
 # Install APT packages
-echo "Installing APT packages..."
+    printf '%s\n' ' "Installing APT packages...'
+
 sudo apt update -y && echo "APT update done."
 installPackageWithApt git
 installPackageWithApt vim
@@ -48,10 +53,12 @@ installPackageWithApt imagemagick
 installPackageWithApt vlc
 installPackageWithApt sublime-text
 installPackageWithApt mint-meta-codecs
-echo "APT packages installed."
+    printf '%s\n' ' "APT packages installed.'
+
 
 # ====== FLATPAK APPLICATIONS ==============================================================================
-echo "Installing Flatpak applications..."
+    printf '%s\n' ' "Installing Flatpak applications...'
+
 installPackageWithFlatpak flathub
 installPackageWithFlatpak com.bambulab.BambuStudio
 installPackageWithFlatpak com.discordapp.Discord
@@ -60,10 +67,12 @@ installPackageWithFlatpak org.onlyoffice.desktopeditors
 installPackageWithFlatpak cc.arduino.arduinoide
 installPackageWithFlatpak org.blender.Blender
 installPackageWithFlatpak com.ultimaker.cura
-echo "Flatpak applications installed."
+    printf '%s\n' ' "Flatpak applications installed.'
+
 
 # ====== CLEANUP ==============================================================================
-echo "Removing unused packages..."
+    printf '%s\n' ' "Removing unused packages...'
+
 removePackageWithApt firefox*
 removePackageWithApt thunderbird*
 removePackageWithApt celluloid*
@@ -84,7 +93,8 @@ removePackageWithApt gnome-calendar
 removePackageWithApt webapp-manager
 sudo apt autoremove -y --purge
 sudo apt clean -y
-echo "System cleaned."
+    printf '%s\n' ' "System cleaned.'
+
 
 # ====== WHITESUR THEME INSTALLATION ==============================================================================
 TMPDIR=$(mktemp -d /tmp/whitesur-XXXXXX)
@@ -96,14 +106,19 @@ REPOS=(
   "https://github.com/vinceliuice/WhiteSur-wallpapers.git"
 )
 
-echo "Setting up WhiteSur macOS theme in $TMPDIR..."
+    printf '%s\n' \
+      ' "Setting up WhiteSur macOS theme in $TMP' \
+      'DIR...'
+
 pushd "$TMPDIR" >/dev/null
 for repo in "${REPOS[@]}"; do
   name=$(basename "$repo" .git)
   if [ -d "$name" ]; then
-    echo "Skipping existing repo: $name"
+    printf '%s\n' ' "Skipping existing repo: $name'
+
   else
-    echo "Cloning: $name"
+    printf '%s\n' ' "Cloning: $name'
+
     git clone --depth 1 "$repo"
   fi
 done
@@ -113,20 +128,23 @@ popd
 find "$TMPDIR" -maxdepth 2 -type d -name ".git" -exec rm -rf {} + 2>/dev/null
 
 # Icons
-echo "Installing WhiteSur icons..."
+    printf '%s\n' ' "Installing WhiteSur icons...'
+
 pushd "$TMPDIR/WhiteSur-icon-theme" >/dev/null
 sudo ./install.sh --remove
 sudo ./install.sh
 popd
 
 # Cursors
-echo "Installing WhiteSur cursors..."
+    printf '%s\n' ' "Installing WhiteSur cursors...'
+
 pushd "$TMPDIR/WhiteSur-cursors/" >/dev/null
 sudo ./install.sh
 popd
 
 # GTK Theme
-echo "Installing WhiteSur GTK theme..."
+    printf '%s\n' ' "Installing WhiteSur GTK theme...'
+
 pushd "$TMPDIR/WhiteSur-gtk-theme" >/dev/null
 ./tweaks.sh -g -r
 ./tweaks.sh -f -r
@@ -141,17 +159,20 @@ sudo find /usr/share/icons -maxdepth 1 -type d \( ! -name "default" \) -exec sud
 
 
 # Wallpapers
-echo "Copying wallpapers..."
+    printf '%s\n' ' "Copying wallpapers...'
+
 mkdir -p "$PICDIR/WhiteSur-wallpapers"
 cp -R "$TMPDIR/WhiteSur-wallpapers/"* "$PICDIR/WhiteSur-wallpapers/"
 cp /usr/share/icons/WhiteSur/status@2x/32/start-here.svg "$PICDIR/Apple_logo.svg"
 
 # Refresh caches
-echo "Refreshing caches..."
+    printf '%s\n' ' "Refreshing caches...'
+
 sudo gtk-update-icon-cache -f /usr/share/icons/WhiteSur
 sudo update-icon-caches /usr/share/icons
 sudo update-mime-database /usr/share/mime
-echo "WhiteSur theme installation complete."
+    printf '%s\n' ' "WhiteSur theme installation complete.'
+
 
 # ====== XFCE CONFIG BACKUP/RESTORE ==============================================================================
 TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
@@ -159,22 +180,31 @@ BACKUP_DIR="$HOME/xfce-backup-$TIMESTAMP"
 CONFIG_DIR="$HOME/.config/xfce4"
 TEMP_DIR=$(mktemp -d /tmp/xfce-restore-XXXXXX)
 
-echo "Backing up XFCE configuration..."
+    printf '%s\n' ' "Backing up XFCE configuration...'
+
 if [ -d "$CONFIG_DIR" ]; then
   mkdir -p "$BACKUP_DIR"
   cp -r "$CONFIG_DIR" "$BACKUP_DIR/"
-  echo "XFCE config backed up to $BACKUP_DIR/xfce4"
+    printf '%s\n' \
+      ' "XFCE config backed up to $BACKUP_DIR/xf' \
+      'ce4'
+
 else
-  echo "No XFCE configuration found. Skipping backup."
+    printf '%s\n' \
+      ' "No XFCE configuration found. Skipping b' \
+      'ackup.'
+
 fi
 
-echo "Restoring XFCE configuration..."
+    printf '%s\n' ' "Restoring XFCE configuration...'
+
 pushd "$TEMP_DIR" >/dev/null
 curl -fsSLO https://github.com/synle/bashrc/blob/HEAD/linux/xfce-config.tar.gz?raw=1
 tar -xzf xfce-config.tar.gz -C ~/.config
 popd
 
-echo "Restarting XFCE..."
+    printf '%s\n' ' "Restarting XFCE...'
+
 pkill xfce4-panel
 rm -rf ~/.cache/sessions/*
 sleep 1
@@ -186,13 +216,18 @@ xfconf-query -c xfce4-keyboard-shortcuts -rR
 
 # Cleanup
 # rm -rf "$TEMP_DIR" "$TMPDIR"
-echo "Temporary files removed."
-echo "Setup complete. Backup stored in: $BACKUP_DIR"
+    printf '%s\n' ' "Temporary files removed.'
+
+    printf '%s\n' \
+      ' "Setup complete. Backup stored in: $BACK' \
+      'UP_DIR'
+
 
 
 # ====== Misc ==============================================================================
 # Terminator padding fix
-echo "Applying Terminator padding..."
+    printf '%s\n' ' "Applying Terminator padding...'
+
 GTK_DIR="$HOME/.config/gtk-3.0"
 mkdir -p "$GTK_DIR"
 echo "VteTerminal, vte-terminal {
@@ -200,7 +235,8 @@ echo "VteTerminal, vte-terminal {
 }" > "$GTK_DIR/gtk.css"
 
 # Display fix
-echo "Installing fix-display-home helper..."
+    printf '%s\n' ' "Installing fix-display-home helper...'
+
 sudo bash -c 'cat <<EOF > /usr/bin/fix-display-home
 #!/bin/bash
 xrandr --fb 2160x2720

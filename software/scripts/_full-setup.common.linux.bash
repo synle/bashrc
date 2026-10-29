@@ -16,9 +16,11 @@ function _waitForAptLock() {
   local _dpkg_log="$BASHRC_TEMP_DIR/dpkg-configure.log"
   echo -n ">> Recovering dpkg state >> $_dpkg_log >> "
   if sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a --force-confold < /dev/null >> "$_dpkg_log" 2>&1; then
-    echo "Done"
+    printf '%s\n' ' "Done'
+
   else
-    echo "Error"
+    printf '%s\n' ' "Error'
+
   fi
 
   while ((_locked)) && [ "$_elapsed" -lt "$_max_wait" ]; do
@@ -40,13 +42,17 @@ function _waitForAptLock() {
   done
 
   if ((_locked)); then
-    echo " Timeout (${_max_wait}s) — killing stale $_label processes"
+    printf '%s\n' \
+      ' " Timeout (${_max_wait}s) — killing stal' \
+      'e $_label processes'
+
     sudo killall apt-get &> /dev/null
     sudo killall dpkg &> /dev/null
     sudo rm -f $_lock_files
     sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a --force-confold < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1
   elif [ "$_elapsed" -gt 0 ]; then
-    echo " Released (${_elapsed}s)"
+    printf '%s\n' ' " Released (${_elapsed}s)'
+
   fi
 }
 
@@ -78,12 +84,16 @@ function _waitForDnfLock() {
   done
 
   if ((_locked)); then
-    echo " Timeout (${_max_wait}s) — killing stale $_label processes"
+    printf '%s\n' \
+      ' " Timeout (${_max_wait}s) — killing stal' \
+      'e $_label processes'
+
     sudo killall dnf &> /dev/null
     sudo killall yum &> /dev/null
     sudo rm -f $_lock_files
   elif [ "$_elapsed" -gt 0 ]; then
-    echo " Released (${_elapsed}s)"
+    printf '%s\n' ' " Released (${_elapsed}s)'
+
   fi
 }
 
@@ -105,10 +115,14 @@ function _waitForPacmanLock() {
   done
 
   if [ -f "$_lock_file" ]; then
-    echo " Timeout (${_max_wait}s) — removing stale $_label lock"
+    printf '%s\n' \
+      ' " Timeout (${_max_wait}s) — removing sta' \
+      'le $_label lock'
+
     sudo rm -f "$_lock_file"
   elif [ "$_elapsed" -gt 0 ]; then
-    echo " Released (${_elapsed}s)"
+    printf '%s\n' ' " Released (${_elapsed}s)'
+
   fi
 }
 
@@ -129,16 +143,21 @@ function _waitForPkgLock() {
   local _dpkg_log="$BASHRC_TEMP_DIR/dpkg-configure.log"
   echo -n ">> Recovering dpkg state >> $_dpkg_log >> "
   if DEBIAN_FRONTEND=noninteractive dpkg --configure -a --force-confold < /dev/null >> "$_dpkg_log" 2>&1; then
-    echo "Done"
+    printf '%s\n' ' "Done'
+
   else
-    echo "Error"
+    printf '%s\n' ' "Error'
+
   fi
 
   # `fuser` ships in psmisc, which is NOT installed on a fresh Termux. Without it
   # every probe below would return non-zero and silently report "no lock held",
   # so bail out loudly instead of pretending we waited.
   if ! type -P fuser &> /dev/null; then
-    echo ">> Waiting for $_label lock >> Skipped (fuser missing — install psmisc)"
+    printf '%s\n' \
+      ' ">> Waiting for $_label lock >> Skipped ' \
+      '(fuser missing — install psmisc)'
+
     return
   fi
 
@@ -161,13 +180,17 @@ function _waitForPkgLock() {
   done
 
   if ((_locked)); then
-    echo " Timeout (${_max_wait}s) — killing stale $_label processes"
+    printf '%s\n' \
+      ' " Timeout (${_max_wait}s) — killing stal' \
+      'e $_label processes'
+
     killall apt-get &> /dev/null
     killall dpkg &> /dev/null
     rm -f $_lock_files
     DEBIAN_FRONTEND=noninteractive dpkg --configure -a --force-confold < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1
   elif [ "$_elapsed" -gt 0 ]; then
-    echo " Released (${_elapsed}s)"
+    printf '%s\n' ' " Released (${_elapsed}s)'
+
   fi
 }
 
@@ -177,12 +200,15 @@ function _waitForPkgLock() {
 function _installFnmAndNode() {
   echo -n ">> fnm >> Installing with curl >> "
   if type -P fnm &> /dev/null; then
-    echo "Skipped"
+    printf '%s\n' ' "Skipped'
+
   else
     if curl_bash_install https://fnm.vercel.app/install --skip-shell; then
-      echo "Success"
+    printf '%s\n' ' "Success'
+
     else
-      echo "Error"
+    printf '%s\n' ' "Error'
+
     fi
   fi
   if type -P fnm &> /dev/null || [ -x "$FNM_DIR/fnm" ]; then
@@ -201,9 +227,11 @@ function _installFnmAndNode() {
     if ! fnm ls 2> /dev/null | grep -q -e "v${NODE_JS_VERSION}\." -e "v${NODE_JS_VERSION}$" -e "v${NODE_JS_VERSION} "; then
       echo -n ">> Node $NODE_JS_VERSION >> Installing with fnm >> "
       if fnm install "$NODE_JS_VERSION" > /dev/null 2>&1; then
-        echo "Success"
+    printf '%s\n' ' "Success'
+
       else
-        echo "Error"
+    printf '%s\n' ' "Error'
+
       fi
     fi
     fnm default "$NODE_JS_VERSION" > /dev/null 2>&1
@@ -217,15 +245,18 @@ function _installFnmAndNode() {
 function _installCloudflaredBinary() {
   echo -n ">> cloudflared >> Installing with curl >> "
   if type -P cloudflared &> /dev/null; then
-    echo "Skipped"
+    printf '%s\n' ' "Skipped'
+
     return
   fi
   if curl -fsSL -o /tmp/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
     && sudo install -m 755 /tmp/cloudflared /usr/local/bin/cloudflared \
     && rm -f /tmp/cloudflared; then
-    echo "Success"
+    printf '%s\n' ' "Success'
+
   else
-    echo "Error"
+    printf '%s\n' ' "Error'
+
   fi
 }
 
@@ -234,13 +265,16 @@ function _installCloudflaredBinary() {
 function _installZedEditor() {
   echo -n ">> zed >> Installing with curl >> "
   if type -P zed &> /dev/null; then
-    echo "Skipped"
+    printf '%s\n' ' "Skipped'
+
     return
   fi
   if curl_bash_install https://zed.dev/install.sh; then
-    echo "Success"
+    printf '%s\n' ' "Success'
+
   else
-    echo "Error"
+    printf '%s\n' ' "Error'
+
   fi
 }
 
@@ -291,10 +325,16 @@ function _waitForBackgroundPackages() {
   done
   local _timed_out=0
   if ! ((_all_done)); then
-    echo ">> Background packages still running after ${_max_wait}s, proceeding"
+    printf '%s\n' \
+      ' ">> Background packages still running af' \
+      'ter ${_max_wait}s, proceeding'
+
     _timed_out=1
   else
-    echo ">> Background packages completed (${_elapsed}s)"
+    printf '%s\n' \
+      ' ">> Background packages completed (${_el' \
+      'apsed}s)'
+
   fi
   local _log
   for _log in "${_logs[@]}"; do
@@ -319,9 +359,15 @@ function _waitForBackgroundPackages() {
 
 # configure i2c permissions for display-dj (DDC monitor control) — all Linux distros
 function _configureDisplayDjPermissions() {
-  echo '>> display-dj: Loading i2c-dev kernel module'
+    printf '%s\n' \
+      ' \'>> display-dj: Loading i2c-dev kernel ' \
+      'module'
+
   sudo modprobe i2c-dev &> /dev/null
-  echo '>> display-dj: Adding user to i2c group'
+    printf '%s\n' \
+      ' \'>> display-dj: Adding user to i2c grou' \
+      'p'
+
   sudo usermod -aG i2c ${USER}
 }
 
@@ -336,32 +382,38 @@ function _configureDisableSystemdPowerAndTurboBoost() {
   if ! type -P systemctl &> /dev/null; then return; fi
 
   # Power: Disable Hibernation
-  echo '>> Power: Disable Hibernation'
+    printf '%s\n' ' \'>> Power: Disable Hibernation'
+
   sudo systemctl mask hibernate.target hybrid-sleep.target suspend-then-hibernate.target &> /dev/null
 
   # Power: Lid Close to Shut Down (laptops only, ignored on desktops)
-  echo '>> Power: Lid Close to Shut Down'
+    printf '%s\n' ' \'>> Power: Lid Close to Shut Down'
+
   sudo sed -i 's/^#\?HandleLidSwitch=.*/HandleLidSwitch=poweroff/' /etc/systemd/logind.conf
   sudo sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=poweroff/' /etc/systemd/logind.conf
   sudo sed -i 's/^#\?HandleLidSwitchDocked=.*/HandleLidSwitchDocked=poweroff/' /etc/systemd/logind.conf
 
   # Power: Power Button to Shut Down
-  echo '>> Power: Power Button to Shut Down'
+    printf '%s\n' ' \'>> Power: Power Button to Shut Down'
+
   sudo sed -i 's/^#\?HandlePowerKey=.*/HandlePowerKey=poweroff/' /etc/systemd/logind.conf
 
   # Power: Disable Sleep Button (prevents accidental sleep)
-  echo '>> Power: Disable Sleep Button'
+    printf '%s\n' ' \'>> Power: Disable Sleep Button'
+
   sudo sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=ignore/' /etc/systemd/logind.conf
 
   sudo systemctl restart systemd-logind &> /dev/null
 
   # Power: Disable CPU Turbo Boost (sysfs — works on any Linux, no systemctl needed)
   if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
-    echo ">> Disabling Intel Turbo Boost >>"
+    printf '%s\n' ' ">> Disabling Intel Turbo Boost >>'
+
     echo "1" | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
   fi
   if [ -f /sys/devices/system/cpu/cpufreq/boost ]; then
-    echo ">> Disabling AMD CPU Boost >>"
+    printf '%s\n' ' ">> Disabling AMD CPU Boost >>'
+
     echo "0" | sudo tee /sys/devices/system/cpu/cpufreq/boost
   fi
 }

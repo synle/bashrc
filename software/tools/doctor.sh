@@ -13,25 +13,24 @@
   _fail=0
 
   function _check_pass() {
-    echo "  [PASS] $1"
-    _pass=$((_pass + 1))
-  }
-  function _check_warn() {
-    echo "  [WARN] $1"
-    _warn=$((_warn + 1))
-  }
-  function _check_fail() {
-    echo "  [FAIL] $1"
-    _fail=$((_fail + 1))
-  }
+    printf '%s\n' ' "  [PASS] $1'
 
-  echo "Running diagnostics..."
-  echo ""
+
+    printf '%s\n' \
+      '      'echo "Running diagnostics..."
+echo '\
+'\
+
+      '      '"'\
+'\n
 
   ################################################################################
   # ---- Dependencies ----
   ################################################################################
-  echo "== Dependencies =="
+    printf '%s\n' \
+      '      'echo "== Dependencies =='\
+'\
+
 
   # node
   if type -P node > /dev/null 2>&1; then
@@ -75,12 +74,18 @@
     _check_warn "shfmt not found - shell formatting will be skipped in 'make format'"
   fi
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Node modules ----
   ################################################################################
-  echo "== Node Modules =="
+    printf '%s\n' \
+      '      'echo "== Node Modules =='\
+'\
+
 
   if [ -d "node_modules" ]; then
     _check_pass "node_modules/ exists"
@@ -97,12 +102,18 @@
     fi
   fi
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Build Artifacts ----
   ################################################################################
-  echo "== Build Artifacts =="
+    printf '%s\n' \
+      '      'echo "== Build Artifacts =='\
+'\
+
 
   if [ -d ".build" ]; then
     _build_file_count=$(find .build -type f 2> /dev/null | wc -l | tr -d ' ')
@@ -123,12 +134,18 @@
     _check_warn ".build/ directory missing - run 'make build'"
   fi
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Shell Syntax ----
   ################################################################################
-  echo "== Shell Syntax =="
+    printf '%s\n' \
+      '      'echo "== Shell Syntax =='\
+'\
+
 
   _syntax_errors=0
   for sh_file in software/bootstrap/*.sh; do
@@ -151,12 +168,18 @@
     fi
   done
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Profile & Marker Checks ----
   ################################################################################
-  echo "== Profile & Markers =="
+    printf '%s\n' \
+      '      'echo "== Profile & Markers =='\
+'\
+
 
   BASH_SYLE_PATH="${HOME}/.bash_syle"
 
@@ -200,12 +223,20 @@
     fi
   done
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- build-include Markers ----
   ################################################################################
-  echo "== Build-Include Markers =="
+    printf '%s\n' \
+      '      'echo "== Build-Include Markers '\
+'\
+
+      '      '=='\
+'\n
 
   for target_file in run.sh; do
     if [ -f "$target_file" ]; then
@@ -220,12 +251,20 @@
     fi
   done
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Common Directories & Files ----
   ################################################################################
-  echo "== Common Directories & Files =="
+    printf '%s\n' \
+      '      'echo "== Common Directories & Files '\
+'\
+
+      '      '=='\
+'\n
 
   for _dir in "$HOME/.local/bin" "$HOME/.ssh" "$HOME/.ssh/sockets" "$HOME/.vim/pack/jetpack/opt"; do
     if [ -d "$_dir" ]; then
@@ -243,12 +282,18 @@
     fi
   done
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Permissions ----
   ################################################################################
-  echo "== Permissions =="
+    printf '%s\n' \
+      '      'echo "== Permissions =='\
+'\
+
 
   if [ -d "$HOME/.ssh" ]; then
     _ssh_perm=$(stat -f '%Lp' "$HOME/.ssh" 2> /dev/null || stat -c '%a' "$HOME/.ssh" 2> /dev/null)
@@ -279,12 +324,18 @@
     fi
   fi
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Git Config ----
   ################################################################################
-  echo "== Git Config =="
+    printf '%s\n' \
+      '      'echo "== Git Config =='\
+'\
+
 
   _git_email=$(git config --global user.email 2> /dev/null || true)
   if [ -n "$_git_email" ]; then
@@ -300,12 +351,18 @@
     _check_warn "git user.name not configured"
   fi
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Rollback ----
   ################################################################################
-  echo "== Rollback =="
+    printf '%s\n' \
+      '      'echo "== Rollback =='\
+'\
+
 
   if [ -f "${HOME}/.bash_syle.bak" ]; then
     _bak_size=$(wc -c < "${HOME}/.bash_syle.bak" | tr -d ' ')
@@ -315,12 +372,18 @@
     _check_warn "No rollback backup found (~/.bash_syle.bak) - created on next './run'"
   fi
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Shell Startup ----
   ################################################################################
-  echo "== Shell Startup =="
+    printf '%s\n' \
+      '      'echo "== Shell Startup =='\
+'\
+
 
   _bench_file="${BASHRC_TEMP_ROOT_DIR:-${TMPDIR:-/tmp}/synle/bashrc}/bench_profile.json"
   if [ -f "$_bench_file" ]; then
@@ -334,26 +397,26 @@
     _check_warn "no startup benchmark yet - run 'make bench_profile'"
   fi
 
-  echo ""
+    printf '%s\n' \
+      '      'echo "'\
+'\
+
 
   ################################################################################
   # ---- Summary ----
   ################################################################################
-  echo "==============="
-  echo "  PASS: $_pass  WARN: $_warn  FAIL: $_fail"
-  echo "==============="
+    printf '%s\n' \
+      '      'echo "==============="
+echo "  '\
+'\
+
+      '      'PASS: $_pass  WARN: $_warn  FAIL: '\
+'\
+
+      '      '$_fail"
+echo "==============='\
+'\n
 
   if [ "$_fail" -gt 0 ]; then
-    echo ""
-    echo "Some checks failed. See above for details."
-    exit 1
-  elif [ "$_warn" -gt 0 ]; then
-    echo ""
-    echo "All checks passed with warnings."
-    exit 0
-  else
-    echo ""
-    echo "All checks passed."
-    exit 0
-  fi
-}
+    printf '%s\n' ' "'
+

@@ -7,7 +7,8 @@
 # Bonus: on WSL `npm_install_global` auto-mirrors to the Windows host via
 # `cmd.exe /c npm install -g`, giving a side-by-side install on both sides from a
 # single call. See CLAUDE.md "LLM CLIs" exception for the broader policy.
-echo '> Installing gemini cli'
+    printf '%s\n' ' \'> Installing gemini cli'
+
 npm_install_global @google/gemini-cli@latest gemini
 
 # ensure ~/.gemini directory exists (gemini crashes on first run without it)

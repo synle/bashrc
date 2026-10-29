@@ -38,14 +38,16 @@ function _adb_shell() {
 function _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> setting put $*"
+    printf '%s\n' ' ">>> setting put $*'
+
   _adb_shell settings put "$@" >/dev/null 2>&1
 }
 
 function _restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> setting restore $*"
+    printf '%s\n' ' ">>> setting restore $*'
+
   _adb_shell settings delete "$@" >/dev/null 2>&1
 }
 
@@ -54,7 +56,8 @@ function restore_all_settings() {
     [ -z "$setting_namespace" ] && continue
     _restore_setting "$setting_namespace" "$setting_key"
   done
-  echo ">>> all settings restored to defaults"
+    printf '%s\n' ' ">>> all settings restored to defaults'
+
 }
 
 function _disable_app() {
@@ -62,9 +65,11 @@ function _disable_app() {
   _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $* > Disabled > Success"
+    printf '%s\n' ' ">>> $* > Disabled > Success'
+
   else
-    echo ">>> $* > Disabled > Error"
+    printf '%s\n' ' ">>> $* > Disabled > Error'
+
   fi
 }
 
@@ -75,9 +80,11 @@ function _remove_app() {
   _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $* > Removed > Success"
+    printf '%s\n' ' ">>> $* > Removed > Success'
+
   else
-    echo ">>> $* > Removed > Error"
+    printf '%s\n' ' ">>> $* > Removed > Error'
+
   fi
 }
 
@@ -86,9 +93,11 @@ function _restore_app() {
   _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $* > Restored > Success"
+    printf '%s\n' ' ">>> $* > Restored > Success'
+
   else
-    echo ">>> $* > Restored > Error"
+    printf '%s\n' ' ">>> $* > Restored > Error'
+
   fi
 }
 
@@ -297,7 +306,10 @@ com.android.traceur
 function restore_all_apps() {
   _restore_app_collection "$FIRE_TV_DEBLOAT_SAFE"
   restore_all_settings
-  echo ">>> All Fire TV apps and settings restored"
+    printf '%s\n' \
+      ' ">>> All Fire TV apps and settings resto' \
+      'red'
+
 }
 
 ################################################################################
@@ -323,18 +335,21 @@ function _install_latest_github_apk() {
 
   temp_folder="$(mktemp -d "${TMPDIR:-/tmp}/firetv-apk.XXXXXX")" || return 1
   apk_file="$temp_folder/$app_name.apk"
-  echo ">>> $app_name > Downloading $apk_url"
+    printf '%s\n' ' ">>> $app_name > Downloading $apk_url'
+
   if ! curl -fsSL "$apk_url" -o "$apk_file"; then
     rm -rf "$temp_folder"
     return 1
   fi
 
-  echo ">>> $app_name > Installing"
+    printf '%s\n' ' ">>> $app_name > Installing'
+
   adb install -r "$apk_file"
   install_status=$?
   rm -rf "$temp_folder"
   if [ "$install_status" = "0" ]; then
-    echo ">>> $app_name > Installed > Success"
+    printf '%s\n' ' ">>> $app_name > Installed > Success'
+
   else
     echo ">>> $app_name > Installed > Error" >&2
   fi
@@ -352,7 +367,10 @@ function _configure_personal_dnsfilter() {
   extra_hosts_file="$temp_folder/additionalHosts.txt"
   config_file="$temp_folder/dnsfilter.conf"
 
-  echo ">>> personalDNSfilter > Downloading Amazon blocklist"
+    printf '%s\n' \
+      ' ">>> personalDNSfilter > Downloading Ama' \
+      'zon blocklist'
+
   if ! curl -fsSL "$blocklist_url" -o "$blocklist_file" ||
     ! curl -fsSL "$extra_hosts_url" -o "$extra_hosts_file" ||
     ! curl -fsSL "$config_url" |
@@ -367,7 +385,10 @@ function _configure_personal_dnsfilter() {
     return 1
   fi
 
-  echo ">>> personalDNSfilter > Pushing configuration"
+    printf '%s\n' \
+      ' ">>> personalDNSfilter > Pushing configu' \
+      'ration'
+
   if ! _adb_shell mkdir -p "$remote_folder" ||
     ! adb push "$blocklist_file" "$remote_folder/FILTERHOSTS.TXT" ||
     ! adb push "$extra_hosts_file" "$remote_folder/additionalHosts.txt" ||
@@ -377,10 +398,16 @@ function _configure_personal_dnsfilter() {
   fi
   rm -rf "$temp_folder"
 
-  echo ">>> personalDNSfilter > Starting VPN activity"
+    printf '%s\n' \
+      ' ">>> personalDNSfilter > Starting VPN ac' \
+      'tivity'
+
   _adb_shell am force-stop dnsfilter.android
   _adb_shell am start -n dnsfilter.android/.DNSProxyActivity
-  echo ">>> personalDNSfilter > Approve VPN access on Fire TV if prompted"
+    printf '%s\n' \
+      ' ">>> personalDNSfilter > Approve VPN acc' \
+      'ess on Fire TV if prompted'
+
 }
 
 function install_apps() {
@@ -406,7 +433,8 @@ function install_apps() {
 
 # Check host ADB and optionally connect to a user-provided Fire TV device.
 function _greet_and_connect_adb() {
-  echo ">>> Fire TV ADB setup"
+    printf '%s\n' ' ">>> Fire TV ADB setup'
+
   if ! command -v adb >/dev/null 2>&1; then
     echo ">>> adb not found on host; install Android platform tools first" >&2
     return 1
@@ -419,13 +447,15 @@ function _greet_and_connect_adb() {
   fi
 
   if [ -n "$adb_target" ]; then
-    echo ">>> Reconnecting ADB to $adb_target"
+    printf '%s\n' ' ">>> Reconnecting ADB to $adb_target'
+
     adb disconnect >/dev/null 2>&1 || true
     adb kill-server >/dev/null 2>&1 || true
     adb start-server || return 1
     adb connect "$adb_target" || return 1
   else
-    echo ">>> Using current ADB connection"
+    printf '%s\n' ' ">>> Using current ADB connection'
+
     if ! adb get-state >/dev/null 2>&1; then
       echo ">>> No connected ADB device" >&2
       return 1

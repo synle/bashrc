@@ -7,13 +7,19 @@
 
 # Skip on platforms where the package manager already covers these tools.
 if ((is_os_mac)) || ((is_os_arch_linux)) || ((is_os_steamos)) || ((is_os_android_termux)); then
-  echo ">>> Skipped http-clients: package manager already provides xh + grpcurl"
+    printf '%s\n' \
+      ' ">>> Skipped http-clients: package manag' \
+      'er already provides xh + grpcurl'
+
   exit 0
 fi
 
 # Skip if not running on Linux (no glibc → upstream binaries don't apply).
 if ! ((is_os_ubuntu)) && ! ((is_os_redhat)) && ! ((is_os_chromeos)) && ! ((is_os_windows)); then
-  echo ">>> Skipped http-clients: unsupported platform"
+    printf '%s\n' \
+      ' ">>> Skipped http-clients: unsupported p' \
+      'latform'
+
   exit 0
 fi
 
@@ -23,40 +29,55 @@ case "$_arch" in
 x86_64 | amd64) _xh_arch="x86_64-unknown-linux-musl" _grpcurl_arch="x86_64" ;;
 aarch64 | arm64) _xh_arch="aarch64-unknown-linux-musl" _grpcurl_arch="arm64" ;;
 *)
-  echo ">>> Skipped http-clients: unsupported arch $_arch"
+    printf '%s\n' \
+      ' ">>> Skipped http-clients: unsupported a' \
+      'rch $_arch'
+
   exit 0
   ;;
 esac
 
 # --- xh (https://github.com/ducaale/xh) ---
 if is_force_refresh_stale "$HOME/.local/bin/xh"; then
-  echo ">> Force refresh: removing xh"
+    printf '%s\n' ' ">> Force refresh: removing xh'
+
   rm -f "$HOME/.local/bin/xh"
 fi
 if has_persistent_binary xh &> /dev/null; then
-  echo ">> Skipped xh: already installed at $(has_persistent_binary xh)"
+    printf '%s\n' \
+      ' ">> Skipped xh: already installed at $(h' \
+      'as_persistent_binary xh)'
+
 else
-  echo '>> Installing xh'
+    printf '%s\n' ' \'>> Installing xh'
+
   _xh_url="https://github.com/ducaale/xh/releases/latest/download/xh-${_xh_arch}.tar.gz"
   _xh_tmp=$(mktemp -d)
   if curl -fsSL "$_xh_url" | tar -xz -C "$_xh_tmp" --strip-components=1 \
     && install -m 755 "$_xh_tmp/xh" "$HOME/.local/bin/xh"; then
-    echo ">> xh installed to $HOME/.local/bin/xh"
+    printf '%s\n' ' ">> xh installed to $HOME/.local/bin/xh'
+
   else
-    echo ">> xh install failed"
+    printf '%s\n' ' ">> xh install failed'
+
   fi
   rm -rf "$_xh_tmp"
 fi
 
 # --- grpcurl (https://github.com/fullstorydev/grpcurl) ---
 if is_force_refresh_stale "$HOME/.local/bin/grpcurl"; then
-  echo ">> Force refresh: removing grpcurl"
+    printf '%s\n' ' ">> Force refresh: removing grpcurl'
+
   rm -f "$HOME/.local/bin/grpcurl"
 fi
 if has_persistent_binary grpcurl &> /dev/null; then
-  echo ">> Skipped grpcurl: already installed at $(has_persistent_binary grpcurl)"
+    printf '%s\n' \
+      ' ">> Skipped grpcurl: already installed a' \
+      't $(has_persistent_binary grpcurl)'
+
 else
-  echo '>> Installing grpcurl'
+    printf '%s\n' ' \'>> Installing grpcurl'
+
   # grpcurl release filenames look like: grpcurl_<version>_linux_<arch>.tar.gz
   # Resolve the latest version tag from the GitHub redirect, then build the asset URL.
   _grpcurl_version=$(curl -fsSL -o /dev/null -w '%{url_effective}' \
@@ -67,12 +88,19 @@ else
     _grpcurl_tmp=$(mktemp -d)
     if curl -fsSL "$_grpcurl_url" | tar -xz -C "$_grpcurl_tmp" \
       && install -m 755 "$_grpcurl_tmp/grpcurl" "$HOME/.local/bin/grpcurl"; then
-      echo ">> grpcurl ${_grpcurl_version} installed to $HOME/.local/bin/grpcurl"
+    printf '%s\n' \
+      ' ">> grpcurl ${_grpcurl_version} installe' \
+      'd to $HOME/.local/bin/grpcurl'
+
     else
-      echo ">> grpcurl install failed"
+    printf '%s\n' ' ">> grpcurl install failed'
+
     fi
     rm -rf "$_grpcurl_tmp"
   else
-    echo ">> grpcurl install skipped: could not resolve latest version"
+    printf '%s\n' \
+      ' ">> grpcurl install skipped: could not r' \
+      'esolve latest version'
+
   fi
 fi

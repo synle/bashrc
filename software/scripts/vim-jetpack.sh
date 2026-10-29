@@ -10,12 +10,21 @@
 JETPACK_URL="https://raw.githubusercontent.com/tani/vim-jetpack/master/plugin/jetpack.vim"
 JETPACK_DEST="$HOME/.vim/pack/jetpack/opt/vim-jetpack/plugin/jetpack.vim"
 
-echo ">> Installing vim-jetpack - $JETPACK_URL"
+    printf '%s\n' \
+      ' ">> Installing vim-jetpack - $JETPACK_UR' \
+      'L'
+
 safe_mkdir "$(dirname "$JETPACK_DEST")"
 curl -fsSL "$JETPACK_URL" -o "$JETPACK_DEST"
 
-echo ">> Installing vim plugins via :JetpackSync"
-echo "   Manual fallback: vim -E -s -u ~/.vimrc +JetpackSync +qall"
+    printf '%s\n' \
+      ' ">> Installing vim plugins via :JetpackS' \
+      'ync'
+
+    printf '%s\n' \
+      ' "   Manual fallback: vim -E -s -u ~/.vim' \
+      'rc +JetpackSync +qall'
+
 # Foreground (not `&`) — backgrounding made run.sh return before the plugin
 # clones finished, leaving the plugin folder empty and the fallback colorscheme missing.
 # Keep stderr visible per CLAUDE.md rule on standalone install commands.

@@ -4,7 +4,8 @@
 # Install the shared Base85 module used by the `base85` shell function and `patch_85`.
 # SOURCE software/scripts/bash-base85.profile.bash
 
-echo '> Installing Base85 module'
+    printf '%s\n' ' \'> Installing Base85 module'
+
 WSLENV="${WSLENV:+$WSLENV:}npm_config_ignore_scripts/w" npm_config_ignore_scripts=true \
   npm_install_global "$_BASE85_NPM_PACKAGE" || exit $?
 

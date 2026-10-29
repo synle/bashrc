@@ -3,7 +3,10 @@
 # Prerequisites (Homebrew, curl, unzip) are handled in software/scripts/<os>/_full-setup.sh
 
 if [ "$(echo "${SKIP_SETUP:-}" | tr -d '[:space:]')" = "true" ] || [ "$(echo "${SKIP_SETUP:-}" | tr -d '[:space:]')" = "1" ]; then
-  echo ">> SKIP_SETUP is set, skipping dependency setup"
+    printf '%s\n' \
+      ' ">> SKIP_SETUP is set, skipping dependen' \
+      'cy setup'
+
   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/run.sh | bash
 else
   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/run.sh | bash -s -- --setup

@@ -21,14 +21,16 @@ _adb_shell() {
 _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> setting put $*"
+    printf '%s\n' ' ">>> setting put $*'
+
   _adb_shell settings put "$@" >/dev/null 2>&1
 }
 
 _restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  echo ">>> setting restore $*"
+    printf '%s\n' ' ">>> setting restore $*'
+
   _adb_shell settings delete "$@" >/dev/null 2>&1
 }
 
@@ -37,7 +39,8 @@ restore_all_settings() {
     [ -z "$setting_namespace" ] && continue
     _restore_setting "$setting_namespace" "$setting_key"
   done
-  echo ">>> all settings restored to defaults"
+    printf '%s\n' ' ">>> all settings restored to defaults'
+
 }
 
 # App disable
@@ -46,9 +49,11 @@ _disable_app() {
   _adb_shell pm disable-user --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm disable-user -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $* > Disabled > Success"
+    printf '%s\n' ' ">>> $* > Disabled > Success'
+
   else
-    echo ">>> $* > Disabled > Error"
+    printf '%s\n' ' ">>> $* > Disabled > Error'
+
   fi
 }
 
@@ -59,9 +64,11 @@ _remove_app() {
   _adb_shell pm uninstall -k --user 0 "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm uninstall -k --user 10 "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $* > Removed > Success"
+    printf '%s\n' ' ">>> $* > Removed > Success'
+
   else
-    echo ">>> $* > Removed > Error"
+    printf '%s\n' ' ">>> $* > Removed > Error'
+
   fi
 }
 
@@ -70,9 +77,11 @@ _restore_app() {
   _adb_shell cmd package install-existing "$@" >/dev/null 2>&1 && ok=1
   _adb_shell pm enable "$@" >/dev/null 2>&1 && ok=1
   if [ "$ok" = "1" ]; then
-    echo ">>> $* > Restored > Success"
+    printf '%s\n' ' ">>> $* > Restored > Success'
+
   else
-    echo ">>> $* > Restored > Error"
+    printf '%s\n' ' ">>> $* > Restored > Error'
+
   fi
 }
 
@@ -372,7 +381,8 @@ $DEBLOAT_SAFE")
 
 # Check host ADB and optionally connect to a user-provided Android device.
 _greet_and_connect_adb() {
-  echo ">>> Android ADB setup"
+    printf '%s\n' ' ">>> Android ADB setup'
+
   if ! command -v adb >/dev/null 2>&1; then
     echo ">>> adb not found on host; install Android platform tools first" >&2
     return 1
@@ -385,13 +395,15 @@ _greet_and_connect_adb() {
   fi
 
   if [ -n "$adb_target" ]; then
-    echo ">>> Reconnecting ADB to $adb_target"
+    printf '%s\n' ' ">>> Reconnecting ADB to $adb_target'
+
     adb disconnect >/dev/null 2>&1 || true
     adb kill-server >/dev/null 2>&1 || true
     adb start-server || return 1
     adb connect "$adb_target" || return 1
   else
-    echo ">>> Using current ADB connection"
+    printf '%s\n' ' ">>> Using current ADB connection'
+
     if ! adb get-state >/dev/null 2>&1; then
       echo ">>> No connected ADB device" >&2
       return 1

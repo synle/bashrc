@@ -7,13 +7,19 @@
 
 # Skip on platforms whose package manager already ships these tools.
 if ((is_os_mac)) || ((is_os_arch_linux)) || ((is_os_steamos)) || ((is_os_android_termux)); then
-  echo ">>> Skipped k8s-tools: package manager already provides helm/k9s/stern/kubectx"
+    printf '%s\n' \
+      ' ">>> Skipped k8s-tools: package manager ' \
+      'already provides helm/k9s/stern/kubectx'
+
   exit 0
 fi
 
 # Only run on Linux flavors that match the apt/dnf binary fallback.
 if ! ((is_os_ubuntu)) && ! ((is_os_redhat)) && ! ((is_os_chromeos)) && ! ((is_os_windows)); then
-  echo ">>> Skipped k8s-tools: unsupported platform"
+    printf '%s\n' \
+      ' ">>> Skipped k8s-tools: unsupported plat' \
+      'form'
+
   exit 0
 fi
 
@@ -22,7 +28,10 @@ case "$_arch" in
 x86_64 | amd64) _gh_arch="amd64" ;;
 aarch64 | arm64) _gh_arch="arm64" ;;
 *)
-  echo ">>> Skipped k8s-tools: unsupported arch $_arch"
+    printf '%s\n' \
+      ' ">>> Skipped k8s-tools: unsupported arch' \
+      ' $_arch'
+
   exit 0
   ;;
 esac
@@ -31,13 +40,18 @@ esac
 # Upstream installer is the canonical install path — handles version detection,
 # checksum verification, and dropping the binary on PATH.
 if is_force_refresh_stale "$HOME/.local/bin/helm"; then
-  echo ">> Force refresh: removing helm"
+    printf '%s\n' ' ">> Force refresh: removing helm'
+
   rm -f "$HOME/.local/bin/helm"
 fi
 if has_persistent_binary helm &> /dev/null; then
-  echo ">> Skipped helm: already installed at $(has_persistent_binary helm)"
+    printf '%s\n' \
+      ' ">> Skipped helm: already installed at $' \
+      '(has_persistent_binary helm)'
+
 else
-  echo '>> Installing helm'
+    printf '%s\n' ' \'>> Installing helm'
+
   # USE_SUDO=false + custom install dir keeps it under $HOME/.local/bin (no sudo).
   HELM_INSTALL_DIR="$HOME/.local/bin" USE_SUDO=false \
     curl -fsSL https://raw.githubusercontent.com/helm/helm/HEAD/scripts/get-helm-3 | bash > /dev/null
@@ -45,33 +59,47 @@ fi
 
 # --- k9s (https://github.com/derailed/k9s) ---
 if is_force_refresh_stale "$HOME/.local/bin/k9s"; then
-  echo ">> Force refresh: removing k9s"
+    printf '%s\n' ' ">> Force refresh: removing k9s'
+
   rm -f "$HOME/.local/bin/k9s"
 fi
 if has_persistent_binary k9s &> /dev/null; then
-  echo ">> Skipped k9s: already installed at $(has_persistent_binary k9s)"
+    printf '%s\n' \
+      ' ">> Skipped k9s: already installed at $(' \
+      'has_persistent_binary k9s)'
+
 else
-  echo '>> Installing k9s'
+    printf '%s\n' ' \'>> Installing k9s'
+
   _k9s_url="https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_${_gh_arch}.tar.gz"
   _k9s_tmp=$(mktemp -d)
   if curl -fsSL "$_k9s_url" | tar -xz -C "$_k9s_tmp" \
     && install -m 755 "$_k9s_tmp/k9s" "$HOME/.local/bin/k9s"; then
-    echo ">> k9s installed to $HOME/.local/bin/k9s"
+    printf '%s\n' \
+      ' ">> k9s installed to $HOME/.local/bin/k9' \
+      's'
+
   else
-    echo ">> k9s install failed"
+    printf '%s\n' ' ">> k9s install failed'
+
   fi
   rm -rf "$_k9s_tmp"
 fi
 
 # --- stern (https://github.com/stern/stern) ---
 if is_force_refresh_stale "$HOME/.local/bin/stern"; then
-  echo ">> Force refresh: removing stern"
+    printf '%s\n' ' ">> Force refresh: removing stern'
+
   rm -f "$HOME/.local/bin/stern"
 fi
 if has_persistent_binary stern &> /dev/null; then
-  echo ">> Skipped stern: already installed at $(has_persistent_binary stern)"
+    printf '%s\n' \
+      ' ">> Skipped stern: already installed at ' \
+      '$(has_persistent_binary stern)'
+
 else
-  echo '>> Installing stern'
+    printf '%s\n' ' \'>> Installing stern'
+
   _stern_version=$(curl -fsSL -o /dev/null -w '%{url_effective}' \
     https://github.com/stern/stern/releases/latest 2> /dev/null \
     | sed -E 's@.*/tag/v?@@')
@@ -80,31 +108,49 @@ else
     _stern_tmp=$(mktemp -d)
     if curl -fsSL "$_stern_url" | tar -xz -C "$_stern_tmp" \
       && install -m 755 "$_stern_tmp/stern" "$HOME/.local/bin/stern"; then
-      echo ">> stern ${_stern_version} installed to $HOME/.local/bin/stern"
+    printf '%s\n' \
+      ' ">> stern ${_stern_version} installed to' \
+      ' $HOME/.local/bin/stern'
+
     else
-      echo ">> stern install failed"
+    printf '%s\n' ' ">> stern install failed'
+
     fi
     rm -rf "$_stern_tmp"
   else
-    echo ">> stern install skipped: could not resolve latest version"
+    printf '%s\n' \
+      ' ">> stern install skipped: could not res' \
+      'olve latest version'
+
   fi
 fi
 
 # --- kubectx + kubens (https://github.com/ahmetb/kubectx) ---
 # These are POSIX shell scripts (~10 KB each), no per-arch binary needed.
 if is_force_refresh_stale "$HOME/.local/bin/kubectx"; then
-  echo ">> Force refresh: removing kubectx + kubens"
+    printf '%s\n' \
+      ' ">> Force refresh: removing kubectx + ku' \
+      'bens'
+
   rm -f "$HOME/.local/bin/kubectx" "$HOME/.local/bin/kubens"
 fi
 if has_persistent_binary kubectx &> /dev/null; then
-  echo ">> Skipped kubectx: already installed at $(has_persistent_binary kubectx)"
+    printf '%s\n' \
+      ' ">> Skipped kubectx: already installed a' \
+      't $(has_persistent_binary kubectx)'
+
 else
-  echo '>> Installing kubectx + kubens'
+    printf '%s\n' ' \'>> Installing kubectx + kubens'
+
   if curl -fsSL https://raw.githubusercontent.com/ahmetb/kubectx/HEAD/kubectx -o "$HOME/.local/bin/kubectx" \
     && curl -fsSL https://raw.githubusercontent.com/ahmetb/kubectx/HEAD/kubens -o "$HOME/.local/bin/kubens" \
     && chmod +x "$HOME/.local/bin/kubectx" "$HOME/.local/bin/kubens"; then
-    echo ">> kubectx + kubens installed to $HOME/.local/bin"
+    printf '%s\n' \
+      ' ">> kubectx + kubens installed to $HOME/' \
+      '.local/bin'
+
   else
-    echo ">> kubectx + kubens install failed"
+    printf '%s\n' ' ">> kubectx + kubens install failed'
+
   fi
 fi

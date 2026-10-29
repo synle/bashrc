@@ -136,7 +136,8 @@ function copy() {
         if [ -f "$raw_arg" ]; then
           command cat "$raw_arg"
         else
-          echo "$raw_arg"
+    printf '%s\n' ' "$raw_arg'
+
         fi
       done | _clipboard_save --raw
     fi
@@ -146,7 +147,8 @@ function copy() {
       if [ -f "$arg" ]; then
         command cat "$arg"
       else
-        echo "$arg"
+    printf '%s\n' ' "$arg'
+
       fi
     done | _clipboard_save
   fi

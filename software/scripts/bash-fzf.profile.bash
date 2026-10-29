@@ -238,7 +238,8 @@ function filter_unwanted() {
   local joined
   joined=$(
     IFS='|'
-    echo "${patterns[*]}"
+    printf '%s\n' ' "${patterns[*]}'
+
   )
   command grep -v -E "$joined"
 }
@@ -456,7 +457,10 @@ function _fzf_info_line() {
   *"history>"*) label="commands" ;;
   "> "*) label="completions" ;;
   esac
-  echo "$FZF_MATCH_COUNT of $FZF_TOTAL_COUNT $label"
+    printf '%s\n' \
+      ' "$FZF_MATCH_COUNT of $FZF_TOTAL_COUNT $l' \
+      'abel'
+
 }
 export -f _fzf_info_line
 
@@ -479,7 +483,8 @@ function _fzf_resolve_path() {
   local target="$selection"
   [[ "$target" == \~* ]] && target="$HOME${target#\~}"
   [[ "$target" != /* ]] && target="${base%/}/${target#./}"
-  echo "$target"
+    printf '%s\n' ' "$target'
+
 }
 export -f _fzf_resolve_path
 
@@ -589,7 +594,8 @@ function add_bookmark() {
     printf '%s\n' "$@"
     command cat "$BOOKMARK_SYLE_PATH" 2> /dev/null
   } | sort -u)
-  echo "$content" > "$BOOKMARK_SYLE_PATH"
+    printf '%s\n' ' "$content" > "$BOOKMARK_SYLE_PATH'
+
 }
 
 function add_bookmark_dir() {
@@ -694,7 +700,8 @@ function fuzzy_cd() {
       print_action_summary "$FULL_PATH"
       cd "$FULL_PATH"
     else
-      echo "Path no longer exists: $FULL_PATH"
+    printf '%s\n' ' "Path no longer exists: $FULL_PATH'
+
     fi
   fi
 }

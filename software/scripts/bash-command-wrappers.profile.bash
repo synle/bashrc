@@ -91,9 +91,18 @@
 # su: root shell preserving PATH and env
 function su() {
   if is_help_arg "${1:-}"; then
-    echo "su: root shell preserving \$PATH (sudo -E bash)"
-    echo "  su          open root shell with your env/PATH preserved"
-    echo "  su <args>   fall back to regular su with args"
+    printf '%s\n' \
+      ' "su: root shell preserving \\$PATH (sudo' \
+      ' -E bash)'
+
+    printf '%s\n' \
+      ' "  su          open root shell with your' \
+      ' env/PATH preserved'
+
+    printf '%s\n' \
+      ' "  su <args>   fall back to regular su w' \
+      'ith args'
+
     return
   fi
   if [ $# -eq 0 ]; then
@@ -211,7 +220,8 @@ function pip() {
   elif type -P pip &> /dev/null; then
     _snip_run pip "$@"
   else
-    echo "pip: not installed"
+    printf '%s\n' ' "pip: not installed'
+
   fi
 }
 alias pip3='pip'
@@ -230,16 +240,24 @@ function activate_node() {
     local default_version
     default_version=$(fnm ls 2> /dev/null | grep -i "default" | grep -o "v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
     if [ -n "$default_version" ]; then
-      echo "activate_node: fnm node $default_version ($(fnm exec --using="$default_version" type -P node 2> /dev/null))"
+    printf '%s\n' \
+      ' "activate_node: fnm node $default_versio' \
+      'n ($(fnm exec --using="$default_version" ' \
+      'type -P node 2> /dev/null))'
+
       fnm use "$default_version" &> /dev/null
     fi
   else
     local node_path
     node_path=$(type -P node 2> /dev/null)
     if [ -n "$node_path" ]; then
-      echo "activate_node: node found at $node_path"
+    printf '%s\n' ' "activate_node: node found at $node_path'
+
       if [ -L "$node_path" ]; then
-        echo "activate_node: symlink target $(readlink -f "$node_path")"
+    printf '%s\n' \
+      ' "activate_node: symlink target $(readlin' \
+      'k -f "$node_path")'
+
       fi
     fi
   fi
@@ -321,63 +339,74 @@ function update_lang() {
     return 0
   fi
 
-  echo ">>> Upgrading global language packages"
+    printf '%s\n' ' ">>> Upgrading global language packages'
+
 
   # rust toolchain (rustc/cargo themselves)
   if type -P rustup &> /dev/null; then
-    echo ">> rustup update"
+    printf '%s\n' ' ">> rustup update'
+
     rustup update
   fi
 
   # cargo install-update (requires `cargo install cargo-update` first; skipped if absent)
   if type -P cargo &> /dev/null && cargo install --list 2> /dev/null | grep -q '^cargo-update '; then
-    echo ">> cargo install-update -a"
+    printf '%s\n' ' ">> cargo install-update -a'
+
     cargo install-update -a
   fi
 
   # npm globals
   if type -P npm &> /dev/null; then
-    echo ">> npm update -g"
+    printf '%s\n' ' ">> npm update -g'
+
     npm update -g
   fi
 
   # pnpm globals
   if type -P pnpm &> /dev/null; then
-    echo ">> pnpm update -g"
+    printf '%s\n' ' ">> pnpm update -g'
+
     pnpm update -g
   fi
 
   # yarn v1 globals (yarn berry/v2+ has no `global upgrade`)
   if type -P yarn &> /dev/null && yarn --version 2> /dev/null | grep -q '^1\.'; then
-    echo ">> yarn global upgrade"
+    printf '%s\n' ' ">> yarn global upgrade'
+
     yarn global upgrade
   fi
 
   # bun runtime + globals
   if type -P bun &> /dev/null; then
-    echo ">> bun upgrade"
+    printf '%s\n' ' ">> bun upgrade'
+
     bun upgrade
   fi
 
   # uv tool installs
   if type -P uv &> /dev/null; then
-    echo ">> uv tool upgrade --all"
+    printf '%s\n' ' ">> uv tool upgrade --all'
+
     uv tool upgrade --all
   fi
 
   # pip --user packages (skip system site-packages)
   if type -P pip &> /dev/null; then
-    echo ">> pip user packages"
+    printf '%s\n' ' ">> pip user packages'
+
     local outdated
     outdated=$(pip list --outdated --user 2> /dev/null | awk 'NR>2 {print $1}')
     if [ -n "$outdated" ]; then
       echo "$outdated" | xargs pip install --user --upgrade
     else
-      echo "   (nothing to upgrade)"
+    printf '%s\n' ' "   (nothing to upgrade)'
+
     fi
   fi
 
-  echo ">>> update_lang done"
+    printf '%s\n' ' ">>> update_lang done'
+
 }
 
 ################################################################################
@@ -429,7 +458,8 @@ function blame() {
       cmt="#"
       ;;
     esac
-    echo "$cmt file: $abs"
+    printf '%s\n' ' "$cmt file: $abs'
+
     git blame --line-porcelain -- "$file" 2> /dev/null | command awk -v cmt="$cmt" '
       # SHA header line: "<40+ hex sha> <orig-line> <final-line> [num-lines]" — only first token of a per-line block
       /^[0-9a-f]{40,} / && header == 0 {
@@ -506,7 +536,8 @@ function blame_view() {
     flat=${flat//\\/_}
     out="/tmp/${ts}-${flat}"
     blame "$file" > "$out"
-    echo "blame_view: wrote $out"
+    printf '%s\n' ' "blame_view: wrote $out'
+
     outs+=("$out")
   done
   if [ "${#outs[@]}" -gt 0 ]; then
@@ -680,5 +711,6 @@ function html() {
     echo "html: pandoc exited with $rc" >&2
     return "$rc"
   fi
-  echo "html: wrote $output"
+    printf '%s\n' ' "html: wrote $output'
+
 }

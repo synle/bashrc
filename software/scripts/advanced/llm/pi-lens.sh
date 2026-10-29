@@ -46,4 +46,8 @@ has_persistent_binary pi-lens-mcp > /dev/null || {
   echo '>> pi-lens MCP install failed: executable missing' >&2
   exit 1
 }
-echo ">> TODO: EXPERIMENTAL pi-lens MCP — $PI_LENS_PACKAGE installed; verify client workspace and language-server readiness"
+    printf '%s\n' \
+      ' ">> TODO: EXPERIMENTAL pi-lens MCP — $PI' \
+      '_LENS_PACKAGE installed; verify client wo' \
+      'rkspace and language-server readiness'
+

@@ -10,18 +10,23 @@ _bin=$(has_persistent_binary snip)
 
 # Force refresh: remove existing binary if stale
 if [ -n "$_bin" ] && is_force_refresh_stale "$_bin"; then
-  echo ">> Force refresh: removing snip"
+    printf '%s\n' ' ">> Force refresh: removing snip'
+
   rm -f "$_bin"
   _bin=""
 fi
 
 if [ -n "$_bin" ]; then
-  echo ">> Skipped snip: already installed at $_bin"
+    printf '%s\n' \
+      ' ">> Skipped snip: already installed at $' \
+      '_bin'
+
 else
   # NOTE: snip's installer is POSIX sh (#!/bin/sh); pipe to `sh`, not `bash`.
   # It installs to /usr/local/bin when writable, otherwise $HOME/.local/bin.
   # Supports darwin + linux only — Windows has no release from this installer.
-  echo '>> Installing snip'
+    printf '%s\n' ' \'>> Installing snip'
+
   curl -fsSL https://raw.githubusercontent.com/edouard-claude/snip/master/install.sh | sh > /dev/null
 fi
 

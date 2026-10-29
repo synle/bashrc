@@ -4,13 +4,19 @@
 # software/scripts/windows/_full-setup.sh
 # Windows (WSL) dependencies - drive symlinks, folder setup, WSL2 config
 
-echo ">> Begin setting up dependencies/windows/deps.sh"
+    printf '%s\n' \
+      ' ">> Begin setting up dependencies/window' \
+      's/deps.sh'
+
 sudo -v
 
 ################################################################################
 # --- PowerShell Remote Sign Permission ---
 ################################################################################
-echo '>> Setting up PowerShell Remote Sign Permission'
+    printf '%s\n' \
+      ' \'>> Setting up PowerShell Remote Sign P' \
+      'ermission'
+
 powershell.exe -command "Set-Executionpolicy RemoteSigned -Scope CurrentUser"
 
 ################################################################################
@@ -18,11 +24,13 @@ powershell.exe -command "Set-Executionpolicy RemoteSigned -Scope CurrentUser"
 ################################################################################
 WSL_DRIVES="c d e f g h"
 
-echo '>> WSL mountpoint symlinks'
+    printf '%s\n' ' \'>> WSL mountpoint symlinks'
+
 for drive in $WSL_DRIVES; do
   sudo rm -f "/$drive"
   if [ -d "/mnt/$drive" ]; then
-    echo "  >> WSL mountpoint for /mnt/$drive"
+    printf '%s\n' ' "  >> WSL mountpoint for /mnt/$drive'
+
     sudo ln -s "/mnt/$drive" /
   fi
 done
@@ -33,9 +41,11 @@ done
 D_DRIVE_FOLDERS="Applications Desktop Documents Downloads Games Pictures"
 
 if [ -d "/mnt/d" ]; then
-  echo '  >> Creating folders on /mnt/d'
+    printf '%s\n' ' \'  >> Creating folders on /mnt/d'
+
   for dir in $D_DRIVE_FOLDERS; do
-    echo "      >> /mnt/d/$dir"
+    printf '%s\n' ' "      >> /mnt/d/$dir'
+
     mkdir "/mnt/d/$dir" > /dev/null 2>&1
   done
 fi
@@ -44,7 +54,8 @@ fi
 # --- WSL Config ---
 ################################################################################
 WSL_CONF="/etc/wsl.conf"
-echo ">> Configuring $WSL_CONF"
+    printf '%s\n' ' ">> Configuring $WSL_CONF'
+
 sudo tee "$WSL_CONF" > /dev/null << 'EOF'
 # automount Windows drives with metadata (preserves Linux file permissions on NTFS)
 [automount]
@@ -71,18 +82,36 @@ EOF
 ################################################################################
 # --- PowerShell AudioDeviceCmdlets Module ---
 ################################################################################
-echo ">> Installing PowerShell AudioDeviceCmdlets module (CurrentUser scope)"
+    printf '%s\n' \
+      ' ">> Installing PowerShell AudioDeviceCmd' \
+      'lets module (CurrentUser scope)'
+
 if powershell.exe -Command "Install-Module -Name AudioDeviceCmdlets -Scope CurrentUser -Force" > /dev/null 2>&1; then
-  echo "  >> AudioDeviceCmdlets (CurrentUser) installed successfully"
+    printf '%s\n' \
+      ' "  >> AudioDeviceCmdlets (CurrentUser) i' \
+      'nstalled successfully'
+
 else
-  echo "  >> AudioDeviceCmdlets (CurrentUser) failed to install"
+    printf '%s\n' \
+      ' "  >> AudioDeviceCmdlets (CurrentUser) f' \
+      'ailed to install'
+
 fi
 
-echo ">> Installing PowerShell AudioDeviceCmdlets module (AllUsers scope)"
+    printf '%s\n' \
+      ' ">> Installing PowerShell AudioDeviceCmd' \
+      'lets module (AllUsers scope)'
+
 if powershell.exe -Command "Install-Module -Name AudioDeviceCmdlets -Force" > /dev/null 2>&1; then
-  echo "  >> AudioDeviceCmdlets (AllUsers) installed successfully"
+    printf '%s\n' \
+      ' "  >> AudioDeviceCmdlets (AllUsers) inst' \
+      'alled successfully'
+
 else
-  echo "  >> AudioDeviceCmdlets (AllUsers) failed to install (may need admin)"
+    printf '%s\n' \
+      ' "  >> AudioDeviceCmdlets (AllUsers) fail' \
+      'ed to install (may need admin)'
+
 fi
 
 ################################################################################
@@ -92,7 +121,10 @@ PRINTER_NAME="SyHousePrinter"
 PRINTER_IP=$(grep -i "printer" software/metadata/ip-address.config 2> /dev/null | grep "^[0-9]" | head -1 | cut -d: -f1 | tr -d ' ')
 
 if [ -n "$PRINTER_IP" ]; then
-  echo ">> Setting up printer $PRINTER_NAME at $PRINTER_IP on Windows via PowerShell"
+    printf '%s\n' \
+      ' ">> Setting up printer $PRINTER_NAME at ' \
+      '$PRINTER_IP on Windows via PowerShell'
+
   powershell.exe -NoProfile -Command "
     Remove-Printer -Name '$PRINTER_NAME' -ErrorAction SilentlyContinue
     Remove-PrinterPort -Name 'IP_$PRINTER_IP' -ErrorAction SilentlyContinue
@@ -115,13 +147,20 @@ if [ -n "$PRINTER_IP" ]; then
     if (-not \$added) { Write-Host 'ERROR: No compatible printer driver found' }
   "
 else
-  echo '>> Skipped printer setup: no printer entry found in ip-address.config'
+    printf '%s\n' \
+      ' \'>> Skipped printer setup: no printer e' \
+      'ntry found in ip-address.config'
+
 fi
 
 ################################################################################
 # --- Cleanup ---
 ################################################################################
-echo '>> Cleaning up junk files from Windows mounts (Zone.Identifier, .DS_Store, ._*) - background with 60s timeout'
+    printf '%s\n' \
+      ' \'>> Cleaning up junk files from Windows' \
+      ' mounts (Zone.Identifier, .DS_Store, ._*)' \
+      ' - background with 60s timeout'
+
 (
   find /mnt/c -name "*:Zone.Identifier" -delete &
   find /mnt/c -name ".DS_Store" -delete &

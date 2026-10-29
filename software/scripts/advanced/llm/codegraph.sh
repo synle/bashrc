@@ -11,13 +11,19 @@ CODEGRAPH_PINNED_VERSION='1.6.2'
 export CODEGRAPH_TELEMETRY=0
 
 if ((is_os_android_termux)); then
-  echo '>> CodeGraph skipped: no supported Termux build'
+    printf '%s\n' \
+      ' \'>> CodeGraph skipped: no supported Ter' \
+      'mux build'
+
   exit 0
 fi
 
 codegraph_binary=$(has_persistent_binary codegraph) || codegraph_binary=''
 if [ -n "$codegraph_binary" ] && [ "$("$codegraph_binary" --version)" = "$CODEGRAPH_PINNED_VERSION" ]; then
-  echo ">> CodeGraph $CODEGRAPH_PINNED_VERSION already installed"
+    printf '%s\n' \
+      ' ">> CodeGraph $CODEGRAPH_PINNED_VERSION ' \
+      'already installed'
+
   exit 0
 fi
 

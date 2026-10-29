@@ -73,7 +73,8 @@ function _claude_local_context_tokens() {
     _CLAUDE_LOCAL_CTX_TOKENS="$(_ollama_model_context_length "$ANTHROPIC_BASE_URL" "$model" 2> /dev/null)"
   fi
   [ -n "${_CLAUDE_LOCAL_CTX_TOKENS:-}" ] || return 0
-  echo "$_CLAUDE_LOCAL_CTX_TOKENS"
+    printf '%s\n' ' "$_CLAUDE_LOCAL_CTX_TOKENS'
+
 }
 
 # _claude_is_third_party_endpoint: true when ANTHROPIC_BASE_URL points somewhere that is not Anthropic

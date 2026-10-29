@@ -21,7 +21,8 @@ function is_help_arg() {
 # Mirror of the same function in profile-core.sh — keep the body byte-identical.
 function get_native_arch() {
   if [ "$(uname -s)" = "Darwin" ] && [ "$(sysctl -n hw.optional.arm64 2> /dev/null)" = "1" ]; then
-    echo "arm64"
+    printf '%s\n' ' "arm64'
+
     return 0
   fi
   uname -m
@@ -85,7 +86,8 @@ function find_native_node() {
   local _node
   _node=$(type -P node 2> /dev/null)
   if [ -n "$_node" ] && ! binary_arch_mismatch "$_node"; then
-    echo "$_node"
+    printf '%s\n' ' "$_node'
+
     return 0
   fi
   local _candidate
@@ -97,7 +99,8 @@ function find_native_node() {
     /usr/local/bin/node; do
     [ -x "$_candidate" ] || continue
     binary_arch_mismatch "$_candidate" && continue
-    echo "$_candidate"
+    printf '%s\n' ' "$_candidate'
+
     return 0
   done
   return 1
@@ -284,17 +287,24 @@ function _npm_install_global() {
     _launcher_missing=1
   fi
   if ((_present)) && ! ((_stale)) && ! ((_launcher_missing)) && ! binary_arch_mismatch "$_bin_path"; then
-    echo ">> $pkg >> Installing with npm global >> Skipped (not stale: $_fresh_path)"
+    printf '%s\n' \
+      ' ">> $pkg >> Installing with npm global >' \
+      '> Skipped (not stale: $_fresh_path)'
+
     return 0
   fi
 
   # Remove stale local binary before npm global install
   if [[ -e "$HOME/.local/bin/$bin" || -L "$HOME/.local/bin/$bin" ]]; then
-    echo "  >> Removing existing binary: ~/.local/bin/$bin"
+    printf '%s\n' \
+      ' "  >> Removing existing binary: ~/.local' \
+      '/bin/$bin'
+
     rm -f "$HOME/.local/bin/$bin"
   fi
 
-  echo "  >> npm install -g $pkg ($bin)"
+    printf '%s\n' ' "  >> npm install -g $pkg ($bin)'
+
 
   # 1. Current system install / check
   local _resolved
@@ -307,7 +317,10 @@ function _npm_install_global() {
   local _arch_mismatch=0
   if [ -n "$_resolved" ] && binary_arch_mismatch "$_resolved"; then
     _arch_mismatch=1
-    echo "  >> Reinstalling $bin: $_resolved is not built for $(get_native_arch)"
+    printf '%s\n' \
+      ' "  >> Reinstalling $bin: $_resolved is n' \
+      'ot built for $(get_native_arch)'
+
   fi
 
   # Resolve a natively built node for the install itself — `arch -<native>` cannot help
@@ -316,7 +329,10 @@ function _npm_install_global() {
   _native_node=$(find_native_node) && _native_node_dir=$(dirname "$_native_node")
 
   if ! is_truthy "$always_latest" && [ -n "$_resolved" ] && ! ((_arch_mismatch)) && ! is_force_refresh_stale "$_resolved"; then
-    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+    printf '%s\n' \
+      ' ">> $pkg >> Installing with npm global >' \
+      '> Skipped ($_resolved)'
+
   else
     local _action="Installing"
     [ -n "$_resolved" ] && _action="Refreshing"
@@ -325,9 +341,11 @@ function _npm_install_global() {
       [ -n "$_native_node_dir" ] && export PATH="$_native_node_dir:$PATH"
       run_native npm install -g --prefix "$HOME/.local" "$pkg"
     ) < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
+    printf '%s\n' ' "Success'
+
     else
-      echo "Error"
+    printf '%s\n' ' "Error'
+
     fi
   fi
 
@@ -337,15 +355,20 @@ function _npm_install_global() {
     cmd.exe /c "where $bin" &> /dev/null && _win_present=1
 
     if ! is_truthy "$always_latest" && ((_win_present)) && ! ((IS_FORCE_REFRESH)); then
-      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+    printf '%s\n' \
+      ' ">> $pkg >> Installing with npm global (' \
+      'Windows) >> Skipped'
+
     else
       local _winaction="Installing"
       ((_win_present)) && _winaction="Refreshing"
       echo -n ">> $pkg >> ${_winaction} with npm global (Windows) >> "
       if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
+    printf '%s\n' ' "Success'
+
       else
-        echo "Error"
+    printf '%s\n' ' "Error'
+
       fi
     fi
   fi
@@ -360,7 +383,8 @@ function npm_uninstall_global() {
 
   [ -n "$pkg" ] || return 1
 
-  echo "  >> npm uninstall -g $pkg"
+    printf '%s\n' ' "  >> npm uninstall -g $pkg'
+
   if ! (
     run_native npm uninstall -g --prefix "$HOME/.local" "$pkg"
   ) < /dev/null > /dev/null 2>&1; then
@@ -368,7 +392,8 @@ function npm_uninstall_global() {
   fi
 
   if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    echo "  >> npm uninstall -g $pkg (Windows)"
+    printf '%s\n' ' "  >> npm uninstall -g $pkg (Windows)'
+
     if ! cmd.exe /c "npm uninstall -g $pkg" < /dev/null > /dev/null 2>&1; then
       failed=1
     fi
@@ -391,7 +416,8 @@ function has_persistent_binary() {
   local bin
   bin=$(type -P "$1" 2> /dev/null) || return 1
   [[ "$bin" == /tmp/* ]] && return 1
-  echo "$bin"
+    printf '%s\n' ' "$bin'
+
 }
 
 # sudo <args...> - Wrapper that logs the caller and command before executing sudo.
@@ -408,12 +434,15 @@ function safe_touch() {
   for f in "$@"; do
     if [ ! -e "$f" ]; then
       command touch "$f"
-      echo ">> safe_touch >> $f >> Created"
+    printf '%s\n' ' ">> safe_touch >> $f >> Created'
+
     elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
       sudo chown "$USER" "$f"
-      echo ">> safe_touch >> $f >> Fixed ownership"
+    printf '%s\n' ' ">> safe_touch >> $f >> Fixed ownership'
+
     else
-      echo ">> safe_touch >> $f >> Skipped"
+    printf '%s\n' ' ">> safe_touch >> $f >> Skipped'
+
     fi
   done
 }
@@ -426,9 +455,11 @@ function safe_mkdir() {
     [[ "$f" == -* ]] && continue
     if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
       sudo chown "$USER" "$f"
-      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    printf '%s\n' ' ">> safe_mkdir >> $f >> Fixed ownership'
+
     else
-      echo ">> safe_mkdir >> $f >> OK"
+    printf '%s\n' ' ">> safe_mkdir >> $f >> OK'
+
     fi
   done
 }
@@ -456,12 +487,21 @@ function safe_chown() {
   target_uid=$(id -u "$target_user")
   local f="$1"
   if [ ! -e "$f" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+    printf '%s\n' \
+      ' ">> safe_chown $flags $target_user >> $f' \
+      ' >> Skipped (not found)'
+
   elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+    printf '%s\n' \
+      ' ">> safe_chown $flags $target_user >> $f' \
+      ' >> Skipped (already correct)'
+
   else
     sudo chown $flags "$target_user" "$f"
-    echo ">> safe_chown $flags $target_user >> $f >> Done"
+    printf '%s\n' \
+      ' ">> safe_chown $flags $target_user >> $f' \
+      ' >> Done'
+
   fi
 }
 
@@ -480,12 +520,21 @@ function safe_chmod() {
   local mode="$1"
   local f="$2"
   if [ ! -e "$f" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+    printf '%s\n' \
+      ' ">> safe_chmod $flags $mode >> $f >> Ski' \
+      'pped (not found)'
+
   elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+    printf '%s\n' \
+      ' ">> safe_chmod $flags $mode >> $f >> Ski' \
+      'pped (already correct)'
+
   else
     chmod $flags "$mode" "$f"
-    echo ">> safe_chmod $flags $mode >> $f >> Done"
+    printf '%s\n' \
+      ' ">> safe_chmod $flags $mode >> $f >> Don' \
+      'e'
+
   fi
 }
 
@@ -499,11 +548,17 @@ function safe_chmod() {
 function clean_junk_macosx_files() {
   local target="$1"
   if ! ((is_os_mac)); then
-    echo ">> clean_junk_macosx_files >> $target >> Skipped (not mac)"
+    printf '%s\n' \
+      ' ">> clean_junk_macosx_files >> $target >' \
+      '> Skipped (not mac)'
+
     return 0
   fi
   if [ -z "$target" ] || [ ! -d "$target" ]; then
-    echo ">> clean_junk_macosx_files >> $target >> Skipped (not found)"
+    printf '%s\n' \
+      ' ">> clean_junk_macosx_files >> $target >' \
+      '> Skipped (not found)'
+
     return 0
   fi
   local removed=0
@@ -514,7 +569,10 @@ function clean_junk_macosx_files() {
   if [ "${removed:-0}" -gt 0 ]; then
     find "$target" -name .git -type d -prune -o \( -name .DS_Store -o -name "._*" \) -type f -exec rm -f {} + 2> /dev/null
   fi
-  echo ">> clean_junk_macosx_files >> $target >> Removed ${removed:-0} file(s)"
+    printf '%s\n' \
+      ' ">> clean_junk_macosx_files >> $target >' \
+      '> Removed ${removed:-0} file(s)'
+
 }
 
 # clean_ds_store <path> - Recursively deletes .DS_Store files under a single folder.
@@ -524,11 +582,17 @@ function clean_junk_macosx_files() {
 function clean_ds_store() {
   local target="${1:-.}"
   if ! ((is_os_mac)); then
-    echo ">> clean_ds_store >> $target >> Skipped (not mac)"
+    printf '%s\n' \
+      ' ">> clean_ds_store >> $target >> Skipped' \
+      ' (not mac)'
+
     return 0
   fi
   if [ -z "$target" ] || [ ! -d "$target" ]; then
-    echo ">> clean_ds_store >> $target >> Skipped (not found)"
+    printf '%s\n' \
+      ' ">> clean_ds_store >> $target >> Skipped' \
+      ' (not found)'
+
     return 0
   fi
   local removed=0
@@ -536,14 +600,20 @@ function clean_ds_store() {
   if [ "${removed:-0}" -gt 0 ]; then
     find "$target" -name .git -type d -prune -o -name .DS_Store -type f -exec rm -f {} + 2> /dev/null
   fi
-  echo ">> clean_ds_store >> $target >> Removed ${removed:-0} file(s)"
+    printf '%s\n' \
+      ' ">> clean_ds_store >> $target >> Removed' \
+      ' ${removed:-0} file(s)'
+
 }
 
 # get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
 # Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
 # Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
 function get_github_raw_url() {
-  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
+    printf '%s\n' \
+      ' "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?' \
+      'raw=1'
+
 }
 
 # format_hyperlink <url> [label] - Print a blue HTTP(S)/file URL on terminal stdout.
@@ -597,7 +667,10 @@ function is_force_refresh_stale() {
   ((IS_REFRESH_MODE)) && return 0
   local target="${1:-$BASH_SYLE_PATH}"
   if is_path_stale "$target"; then return 0; fi
-  echo ">> Force refresh skipped (not stale): $target"
+    printf '%s\n' \
+      ' ">> Force refresh skipped (not stale): $' \
+      'target'
+
   return 1
 }
 
@@ -676,7 +749,10 @@ function backup_config_file() {
 
   local latest="${target}.bak_latest"
   if command cmp -s "$target" "$original" 2> /dev/null; then
-    echo "<<< Backup Skipped (latest same as original) $latest"
+    printf '%s\n' \
+      ' "<<< Backup Skipped (latest same as orig' \
+      'inal) $latest'
+
   else
     cp "$target" "$latest" && echo "<<< Backup Created (latest) $latest"
   fi
@@ -713,25 +789,37 @@ function ensure_binary_alias() {
 
   # Canonical already on PATH — done.
   if type -P "$canonical" &> /dev/null; then
-    echo ">> ensure_binary_alias $canonical >> Skipped (already on PATH)"
+    printf '%s\n' \
+      ' ">> ensure_binary_alias $canonical >> Sk' \
+      'ipped (already on PATH)'
+
     return 0
   fi
 
   local target
   target=$(type -P "$installed" 2> /dev/null) || true
   if [ -z "$target" ]; then
-    echo ">> ensure_binary_alias $canonical >> Skipped (no $installed found)"
+    printf '%s\n' \
+      ' ">> ensure_binary_alias $canonical >> Sk' \
+      'ipped (no $installed found)'
+
     return 0
   fi
 
   safe_mkdir "$HOME/.local/bin" > /dev/null
   local link="$HOME/.local/bin/$canonical"
   if [ -e "$link" ] && [ ! -L "$link" ]; then
-    echo ">> ensure_binary_alias $canonical >> Skipped (real file at $link)"
+    printf '%s\n' \
+      ' ">> ensure_binary_alias $canonical >> Sk' \
+      'ipped (real file at $link)'
+
     return 0
   fi
   ln -sf "$target" "$link"
-  echo ">> ensure_binary_alias $canonical >> Linked $link -> $target"
+    printf '%s\n' \
+      ' ">> ensure_binary_alias $canonical >> Li' \
+      'nked $link -> $target'
+
 }
 
 # exit_if_limited_support_os - Exits the script if the current OS is a limited-support
@@ -740,7 +828,8 @@ function exit_if_limited_support_os() {
   local IFS=','
   for os_flag in $LIMITED_SUPPORT_OSES; do
     ((${os_flag:-0})) && {
-      echo ">>> Skipped : Not supported on $os_flag"
+    printf '%s\n' ' ">>> Skipped : Not supported on $os_flag'
+
       exit 0
     }
   done

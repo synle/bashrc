@@ -16,7 +16,8 @@ function _expand_port_args() {
       fi
       seq "$start" "$end"
     elif [[ "$arg" =~ ^[0-9]+$ ]]; then
-      echo "$arg"
+    printf '%s\n' ' "$arg'
+
     else
       echo ">> Invalid port: $arg (must be a number or range like 3000-4000)" >&2
       return 1
@@ -45,19 +46,26 @@ function list_ports() {
     local pids
     pids=$(_find_pid_by_port "$port")
     if [ -n "$pids" ]; then
-      echo "Port $port is in use (PID(s): $(echo "$pids" | tr '\n' ' ')):"
+    printf '%s\n' \
+      ' "Port $port is in use (PID(s): $(echo "$' \
+      'pids" | tr \'\\n\' \' \')):'
+
       if type -P lsof &> /dev/null; then
         lsof -i tcp:"$port" -sTCP:LISTEN 2> /dev/null
       else
         ps -p "$(echo "$pids" | tr '\n' ',')" -o pid,comm 2> /dev/null
       fi
-      echo ""
+    printf '%s\n' ' "'
+
       found=1
     fi
   done <<< "$ports"
 
   if ! ((found)); then
-    echo ">> No processes found on the given ports."
+    printf '%s\n' \
+      ' ">> No processes found on the given port' \
+      's.'
+
   fi
 }
 
@@ -85,7 +93,10 @@ function kill_port() {
   local pids
   pids="$(_find_pid_by_port "$port")"
   if [ -z "$pids" ]; then
-    echo "  > Kill > Port $port > Skipped (nothing running on port)"
+    printf '%s\n' \
+      ' "  > Kill > Port $port > Skipped (nothin' \
+      'g running on port)'
+
     return 0
   fi
   # Send TERM first, then KILL after 1s if still alive — avoids orphaning sockets.
@@ -99,12 +110,19 @@ function kill_port() {
     for pid in $pids; do
       kill -0 $pid 2> /dev/null && kill -9 $pid 2> /dev/null
     done
-    echo "  > Kill > Port $port > Success"
+    printf '%s\n' ' "  > Kill > Port $port > Success'
+
   else
     if [ "$port" -lt 1024 ]; then
-      echo "  > Kill > Port $port > Error (privileged port, sudo may be required)"
+    printf '%s\n' \
+      ' "  > Kill > Port $port > Error (privileg' \
+      'ed port, sudo may be required)'
+
     else
-      echo "  > Kill > Port $port > Error (failed to kill process)"
+    printf '%s\n' \
+      ' "  > Kill > Port $port > Error (failed t' \
+      'o kill process)'
+
     fi
     return 1
   fi
@@ -140,20 +158,27 @@ function kill_ports() {
     fi
   done <<< "$ports"
 
-  echo "The following ports will be targeted:"
+    printf '%s\n' ' "The following ports will be targeted:'
+
   echo -e "$port_list"
 
   if ((needs_sudo)); then
-    echo ">> Warning: some ports are below 1024 and may require admin/sudo to kill."
-    echo ""
+    printf '%s\n' \
+      ' ">> Warning: some ports are below 1024 a' \
+      'nd may require admin/sudo to kill.'
+
+    printf '%s\n' ' "'
+
   fi
 
   if ! prompt_yes_no "Proceed with killing processes on these ports?"; then
-    echo ">> Aborted."
+    printf '%s\n' ' ">> Aborted.'
+
     return 1
   fi
 
-  echo ""
+    printf '%s\n' ' "'
+
   while IFS= read -r port; do
     kill_port "$port"
   done <<< "$ports"
@@ -168,14 +193,16 @@ function portcheck() {
     return 1
   fi
   if _find_pid_by_port "$port" &> /dev/null; then
-    echo "Port $port is in use:"
+    printf '%s\n' ' "Port $port is in use:'
+
     if type -P lsof &> /dev/null; then
       lsof -i tcp:"$port" -sTCP:LISTEN
     else
       ps -p "$(_find_pid_by_port "$port" | tr '\n' ',')" -o pid,comm 2> /dev/null
     fi
   else
-    echo "Port $port is free"
+    printf '%s\n' ' "Port $port is free'
+
   fi
 }
 
@@ -199,6 +226,7 @@ function tunnel() {
   http://* | https://*) ;;
   *) target="http://localhost:$target" ;;
   esac
-  echo ">> Tunneling $target via cloudflared"
+    printf '%s\n' ' ">> Tunneling $target via cloudflared'
+
   command cloudflared tunnel --url "$target"
 }

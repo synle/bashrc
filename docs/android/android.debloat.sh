@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 
 # Samsung debloat: remove bloatware apps and apply setting tweaks.
-echo "> Debloating..."
-echo ">> debloat_settings..."
+    printf '%s\n' ' "> Debloating...'
+
+    printf '%s\n' ' ">> debloat_settings...'
+
 debloat_settings
-echo ">> restore_app_collection > DEBLOAT_IGNORED..."
+    printf '%s\n' \
+      ' ">> restore_app_collection > DEBLOAT_IGN' \
+      'ORED...'
+
 restore_app_collection "$DEBLOAT_IGNORED"
-echo ">> remove_app_collection > DEBLOAT_SAFE..."
+    printf '%s\n' \
+      ' ">> remove_app_collection > DEBLOAT_SAFE' \
+      '...'
+
 remove_app_collection "$DEBLOAT_SAFE"
 # echo ">> remove_app_collection > DEBLOAT_AGGRESSIVE..."
 # remove_app_collection "$DEBLOAT_AGGRESSIVE"

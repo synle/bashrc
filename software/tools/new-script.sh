@@ -30,21 +30,10 @@
   done
 
   if [ -z "$_name" ]; then
-    echo "Usage: make new-script name=<script-name> [os=<os-name>] [type=<js|sh>]"
-    echo ""
-    echo "Examples:"
-    echo "  make new-script name=my-tool"
-    echo "  make new-script name=my-tool type=sh"
-    echo "  make new-script name=my-tool os=mac"
-    echo "  make new-script name=my-tool os=advanced type=sh"
-    echo ""
-    echo "Valid os values:"
-    echo "  advanced, android_termux, arch_linux, chromeos, mac,"
-    echo "  mingw64, redhat, steamos, ubuntu, windows, wsl"
-    echo ""
-    echo "Valid type values: js (default), sh"
-    exit 1
-  fi
+    printf '%s\n' \
+      ' "Usage: make new-script name=<script-nam' \
+      'e> [os=<os-name>] [type=<js|sh>]'
+
 
   # ---- Default type to js ----
   if [ -z "$_type" ]; then
@@ -53,10 +42,8 @@
 
   # ---- Validate type ----
   if [ "$_type" != "js" ] && [ "$_type" != "sh" ]; then
-    echo "Error: Invalid type '$_type'"
-    echo "Valid values: js, sh"
-    exit 1
-  fi
+    printf '%s\n' ' "Error: Invalid type \'$_type\''
+
 
   # ---- Validate OS ----
   _valid_os="advanced android_termux arch_linux chromeos mac mingw64 redhat steamos ubuntu windows wsl"
@@ -69,11 +56,8 @@
       fi
     done
     if [ "$_os_valid" = "false" ]; then
-      echo "Error: Invalid os '$_os'"
-      echo "Valid values: $_valid_os"
-      exit 1
-    fi
-  fi
+    printf '%s\n' ' "Error: Invalid os \'$_os\''
+
 
   # ---- Determine output path ----
   if [ -n "$_os" ]; then
@@ -85,9 +69,8 @@
 
   # ---- Check if file already exists ----
   if [ -f "$_file" ]; then
-    echo "Error: $_file already exists"
-    exit 1
-  fi
+    printf '%s\n' ' "Error: $_file already exists'
+
 
   # ---- Ensure directory exists ----
   mkdir -p "$_dir"
@@ -155,18 +138,8 @@ OUTER
     fi
   fi
 
-  echo "Created: $_file"
-  echo ""
-  echo "Next steps:"
-  if [ "$_type" = "sh" ]; then
-    echo "  1. Edit $_file to implement the script"
-    echo "  2. Test: ./run --files=\"$_name.$_type\""
-    echo "  3. Run: make format"
-  else
-    echo "  1. Edit $_file to implement doWork() and undoWork()"
-    echo "  2. Test: ./run --files=\"$_name.$_type\""
-    echo "  3. Run: make format"
-  fi
+    printf '%s\n' ' "Created: $_file'
+
 
   exit
 }

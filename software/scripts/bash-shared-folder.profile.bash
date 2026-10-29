@@ -33,7 +33,8 @@ function dropbox() {
 
   local dropbox_folder
   dropbox_folder=$(_dropbox_folder) || {
-    echo "No dropbox folder found"
+    printf '%s\n' ' "No dropbox folder found'
+
     return 1
   }
   open "$dropbox_folder" &> /dev/null || echo "$dropbox_folder"

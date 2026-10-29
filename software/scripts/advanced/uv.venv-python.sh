@@ -19,21 +19,27 @@ fi
 
 # Skip if uv is not installed
 ! type -P uv &> /dev/null && {
-  echo ">>> Skipped : uv is not installed"
+    printf '%s\n' ' ">>> Skipped : uv is not installed'
+
   exit 0
 }
 
 # Force refresh: remove existing venv (only if stale)
 if is_force_refresh_stale "$HOME/.venv"; then
-  echo ">> Force refresh: removing ~/.venv"
+    printf '%s\n' ' ">> Force refresh: removing ~/.venv'
+
   rm -rf "$HOME/.venv"
 fi
 
 # Set up Python virtual environment at ~/.venv
 export UV_VENV_CLEAR="1"
 if [ ! -d "$HOME/.venv" ]; then
-  echo '>> Creating Python 3.12 virtual environment at ~/.venv'
+    printf '%s\n' \
+      ' \'>> Creating Python 3.12 virtual enviro' \
+      'nment at ~/.venv'
+
   uv venv --python 3.12 "$HOME/.venv" > /dev/null
 else
-  echo '>> Skipped ~/.venv: already exists'
+    printf '%s\n' ' \'>> Skipped ~/.venv: already exists'
+
 fi

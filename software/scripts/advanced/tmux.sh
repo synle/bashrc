@@ -11,13 +11,31 @@ _tmux_bin=$(has_persistent_binary tmux)
 _tmux_conf="$HOME/.tmux.conf"
 
 if [ -z "$_tmux_bin" ]; then
-  echo ">> Skipped tmux reload: tmux is not installed"
+    printf '%s\n' \
+      ' ">> Skipped tmux reload: tmux is not ins' \
+      'talled'
+
 elif [ ! -f "$_tmux_conf" ]; then
-  echo ">> Skipped tmux reload: $_tmux_conf not found"
+    printf '%s\n' \
+      ' ">> Skipped tmux reload: $_tmux_conf not' \
+      ' found'
+
 elif ! tmux list-sessions > /dev/null 2>&1; then
-  echo ">> Skipped tmux reload: no tmux server running (next server reads $_tmux_conf at start)"
+    printf '%s\n' \
+      ' ">> Skipped tmux reload: no tmux server ' \
+      'running (next server reads $_tmux_conf at' \
+      ' start)'
+
 elif tmux source-file "$_tmux_conf"; then
-  echo ">> Reloaded tmux config into the running server: $_tmux_conf ($(tmux list-sessions 2> /dev/null | wc -l | tr -d ' ') session(s))"
+    printf '%s\n' \
+      ' ">> Reloaded tmux config into the runnin' \
+      'g server: $_tmux_conf ($(tmux list-sessio' \
+      'ns 2> /dev/null | wc -l | tr -d \' \') se' \
+      'ssion(s))'
+
 else
-  echo ">> tmux reload FAILED: tmux source-file $_tmux_conf - see the error above"
+    printf '%s\n' \
+      ' ">> tmux reload FAILED: tmux source-file' \
+      ' $_tmux_conf - see the error above'
+
 fi

@@ -10,8 +10,10 @@
 #     first interactive use, but pre-installing here avoids the cold-start lag)
 #   - `make lint` in this repo and the Zed oxc extension (oxlint)
 
-echo '> Installing oxfmt'
+    printf '%s\n' ' \'> Installing oxfmt'
+
 npm_install_global oxfmt
 
-echo '> Installing oxlint'
+    printf '%s\n' ' \'> Installing oxlint'
+
 npm_install_global oxlint

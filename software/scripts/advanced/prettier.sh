@@ -8,5 +8,6 @@
 #   - the prettier() wrapper in profile-advanced.sh (which also auto-installs on
 #     first interactive use, but pre-installing here avoids the cold-start lag)
 
-echo '> Installing prettier'
+    printf '%s\n' ' \'> Installing prettier'
+
 npm_install_global prettier

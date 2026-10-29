@@ -5,19 +5,24 @@
 
 # Force refresh: remove existing binary if stale
 if is_force_refresh_stale "$HOME/.local/bin/starship"; then
-  echo ">> Force refresh: removing starship"
+    printf '%s\n' ' ">> Force refresh: removing starship'
+
   rm -f "$HOME/.local/bin/starship"
 fi
 
 # Install starship if not already installed
 _bin=$(has_persistent_binary starship)
 if [ -n "$_bin" ]; then
-  echo ">> Skipped starship: already installed at $_bin"
+    printf '%s\n' \
+      ' ">> Skipped starship: already installed ' \
+      'at $_bin'
+
 else
   # NOTE: starship installer requires `sh` not `bash` (it errors with non-POSIX bash).
   # This is an exception to our `curl | bash` convention.
   # NOTE: starship installer requires `sh` not `bash` (it errors with non-POSIX bash).
   # This is an exception to our `curl | bash` convention.
-  echo '>> Installing starship'
+    printf '%s\n' ' \'>> Installing starship'
+
   curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin" > /dev/null
 fi

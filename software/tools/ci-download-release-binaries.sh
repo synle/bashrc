@@ -80,17 +80,15 @@
     IFS='/' read -r owner repo version <<< "$repo_id"
     version="${version:-latest}"
     if [ "$version" = "latest" ]; then
-      echo "https://api.github.com/repos/${owner}/${repo}/releases/latest"
-    else
-      echo "https://api.github.com/repos/${owner}/${repo}/releases/tags/${version}"
-    fi
-  }
+    printf '%s\n' \
+      ' "https://api.github.com/repos/${owner}/$' \
+      '{repo}/releases/latest'
+
 
   # Extracts the repo name from a repo identifier ("owner/repo" or "owner/repo/version").
   # This must match getRepoNameFromId() in index.js.
   function get_repo_name() {
     echo "$1" | cut -d'/' -f2
-  }
 
   # Downloads a file and validates it has non-zero size. Returns 0 on success, 1 on failure.
   function download_and_validate() {
@@ -98,18 +96,8 @@
     local dest="$2"
     mkdir -p "$(dirname "$dest")"
     if ! curl -fsSL -o "$dest" "$url"; then
-      echo "  [FAIL] Download failed: $url"
-      return 1
-    fi
-    local fsize
-    fsize=$(wc -c < "$dest" | tr -d ' ')
-    if [ "$fsize" -eq 0 ]; then
-      echo "  [FAIL] Downloaded file is empty (0 bytes): $(basename "$dest")"
-      return 1
-    fi
-    echo "  [OK] $(basename "$dest") ($(format_size "$fsize"))"
-    return 0
-  }
+    printf '%s\n' ' "  [FAIL] Download failed: $url'
+
 
   # Ensures the rolling cache release exists on $CACHE_REPO and is published.
   # Creates it on first use (prerelease, not "Latest"). Self-heals if the release
@@ -140,33 +128,31 @@
         break
       fi
       if [ "$attempt" -lt 3 ]; then
-        echo "::warning::gh release view $CACHE_TAG attempt $attempt/3 failed (rc=$view_rc): $view_output"
-        sleep $((attempt * 2))
-      fi
-    done
+    printf '%s\n' \
+      ' "::warning::gh release view $CACHE_TAG a' \
+      'ttempt $attempt/3 failed (rc=$view_rc): $' \
+      'view_output'
+
 
     if [ "$view_rc" -eq 0 ]; then
       if [ "$view_output" = "true" ]; then
-        echo ">> $CACHE_REPO release $CACHE_TAG is in draft state — publishing for anonymous access"
-        if ! gh release edit "$CACHE_TAG" --repo "$CACHE_REPO" --draft=false > /dev/null 2>&1; then
-          echo "::warning::Failed to publish draft release $CACHE_TAG — assets will remain private (404 to anonymous curl)"
-        fi
-      fi
-      return 0
-    fi
+    printf '%s\n' \
+      ' ">> $CACHE_REPO release $CACHE_TAG is in' \
+      ' draft state — publishing for anonymous a' \
+      'ccess'
+
 
     if [ "$view_rc" != "404" ]; then
-      echo "::error::gh release view $CACHE_TAG --repo $CACHE_REPO failed 3x (rc=$view_rc); last error: $view_output"
-      return 1
-    fi
+    printf '%s\n' \
+      ' "::error::gh release view $CACHE_TAG --r' \
+      'epo $CACHE_REPO failed 3x (rc=$view_rc); ' \
+      'last error: $view_output'
 
-    echo ">> Creating $CACHE_REPO release $CACHE_TAG (first-time setup)"
-    gh release create "$CACHE_TAG" \
-      --repo "$CACHE_REPO" \
-      --title "$CACHE_TITLE" \
-      --notes "Rolling fallback cache for downloadAssetWithFallback(). Auto-refreshed by software/tools/ci-download-release-binaries.sh on every CI prep run. Not for human consumption." \
-      --prerelease
-  }
+
+    printf '%s\n' \
+      ' ">> Creating $CACHE_REPO release $CACHE_' \
+      'TAG (first-time setup)'
+
 
   # Lists current "<app>__*" asset names on the cache release.
   # Returns one asset name per line (or empty output on no matches / first run).
@@ -215,7 +201,6 @@
   # so the runtime fallback URL matches what we upload.
   function strip_version_from_filename() {
     echo "$1" | sed -E 's/_[0-9]+(\.[0-9]+)+_/_/g'
-  }
 
   # Uploads a single file to the cache release as "<app>__<stripped-basename>".
   # Always overwrites via --clobber, since the stripped name is stable across
@@ -242,9 +227,12 @@
     # ~120 bytes and is exempt — its content is metadata-only and validated
     # separately by callers that read it.
     if [ "$fname" != "version.json" ] && [ "$new_size" -lt "$MIN_ASSET_SIZE_BYTES" ]; then
-      echo "  [SKIP-UPLOAD] $namespaced — local file is $(format_size "$new_size"), below minimum $(format_size "$MIN_ASSET_SIZE_BYTES") (refusing to clobber)"
-      return 2
-    fi
+    printf '%s\n' \
+      ' "  [SKIP-UPLOAD] $namespaced — local fil' \
+      'e is $(format_size "$new_size"), below mi' \
+      'nimum $(format_size "$MIN_ASSET_SIZE_BYTE' \
+      'S") (refusing to clobber)'
+
 
     # Guard 2: if a same-named asset already exists on the release, refuse to
     # overwrite it with one substantially smaller. 50% size drop is the
@@ -256,21 +244,20 @@
     if [ -n "$existing_size" ] && [ "$existing_size" -gt 0 ]; then
       local half_existing=$((existing_size / 2))
       if [ "$new_size" -lt "$half_existing" ]; then
-        echo "  [SKIP-UPLOAD] $namespaced — new size $(format_size "$new_size") is <50% of existing $(format_size "$existing_size") (refusing to clobber known-good asset)"
-        return 2
-      fi
-    fi
+    printf '%s\n' \
+      ' "  [SKIP-UPLOAD] $namespaced — new size ' \
+      '$(format_size "$new_size") is <50% of exi' \
+      'sting $(format_size "$existing_size") (re' \
+      'fusing to clobber known-good asset)'
+
 
     # Stage under the namespaced filename and upload with --clobber.
     local staged="$TEMP_DIR/_upload/$namespaced"
     mkdir -p "$(dirname "$staged")"
     cp -f "$src_file" "$staged"
     if ! gh release upload "$CACHE_TAG" "$staged" --repo "$CACHE_REPO" --clobber > /dev/null; then
-      echo "  [FAIL-UPLOAD] $namespaced"
-      return 1
-    fi
-    return 0
-  }
+    printf '%s\n' ' "  [FAIL-UPLOAD] $namespaced'
+
 
   # Deletes any "<app>__*" asset on the cache release whose name is NOT in the
   # whitespace-separated keep-list. Catches leftover renames between versions
@@ -291,9 +278,8 @@
         continue
       fi
       gh release delete-asset "$CACHE_TAG" "$aname" --repo "$CACHE_REPO" --yes > /dev/null 2>&1 || true
-      echo "  [PURGE] $aname"
-    done <<< "$existing"
-  }
+    printf '%s\n' ' "  [PURGE] $aname'
+
 
   # Processes a single GitHub release: fetch metadata, download eligible assets,
   # validate, and mirror to the cache release if all pass. See file header for full flow.
@@ -309,10 +295,8 @@
     local release_json
     release_json=$(curl -fsSL "$api_url" 2>/dev/null) || true
     if [ -z "$release_json" ]; then
-      echo ""
-      echo ">> $app_name: could not fetch release metadata, skipping"
-      return
-    fi
+    printf '%s\n' ' "'
+
 
     # Step 2: extract version from the release response
     # App name is derived from the repo identifier, not the response body.
@@ -321,10 +305,8 @@
     version=$(echo "$release_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name',''))" 2>/dev/null) || true
 
     if [ -z "$version" ] || [ -z "$app_name" ]; then
-      echo ""
-      echo ">> Could not parse release from: $api_url"
-      return
-    fi
+    printf '%s\n' ' "'
+
 
     # Skip-if-unchanged: compare the upstream version against the cached
     # "<app>__version.json" pointer. If they match, the cache is already up
@@ -335,10 +317,8 @@
     local existing_version
     existing_version=$(get_cached_version "$app_name")
     if [ -n "$existing_version" ] && [ "$existing_version" = "$version" ]; then
-      echo ""
-      echo ">> $app_name $version: already cached (matches version.json pointer), skipping"
-      return
-    fi
+    printf '%s\n' ' "'
+
 
     # Step 3: extract all assets with names, sizes, and download URLs
     local asset_data
@@ -353,10 +333,8 @@ for a in data.get('assets', []):
 " "$MAX_FILE_SIZE" 2>/dev/null) || true
 
     if [ -z "$asset_data" ]; then
-      echo ""
-      echo ">> $app_name $version: no release assets found, skipping"
-      return
-    fi
+    printf '%s\n' ' "'
+
 
     local app_temp="$TEMP_DIR/$app_name"
     local total_count=0
@@ -366,8 +344,11 @@ for a in data.get('assets', []):
 
     mkdir -p "$app_temp"
 
-    echo ""
-    echo ">> $app_name $version"
+    printf '%s\n' \
+      '      'echo ""
+echo ">> $app_name $version'\
+'\
+
 
     # Step 4-5: download eligible assets to temp, skip any over size threshold
     while IFS=$'\t' read -r fname fsize url skip_flag; do
@@ -375,27 +356,53 @@ for a in data.get('assets', []):
       total_count=$((total_count + 1))
       # Step 4: skip assets over the size threshold (pre-download, API-reported size)
       if [ "$skip_flag" = "1" ]; then
-        echo "  [SKIP] $fname ($(format_size "$fsize") > $(format_size "$MAX_FILE_SIZE") threshold)"
-        skip_count=$((skip_count + 1))
-        continue
-      fi
-      # Step 5: download and validate non-empty
-      download_count=$((download_count + 1))
-      if ! download_and_validate "$url" "$app_temp/$fname"; then
-        all_valid=0
-      fi
-    done <<< "$asset_data"
+    printf '%s\n' \
+      '      'echo "  [SKIP] $fname ($(format_size '\
+'\
+
+      '      '"$fsize") > $(format_size "$MAX_FILE_SIZE") '\
+'\
+
+      '      'threshold)"
+skip_count=$((skip_count '\
+'\
+
+      '      '+ 1))
+continue
+fi
+# Step 5: download '\
+'\
+
+      '      'and validate non-empty
+download_count=$((download_count '\
+'\
+
+      '      '+ 1))
+if ! download_and_validate '\
+'\
+
+      '      '"$url" "$app_temp/$fname"; then
+all_valid=0
+fi
+done '\
+'\
+
+      '      '<<< "$asset_data'\
+'\n
 
     if [ "$download_count" -eq 0 ]; then
-      echo "  [SKIP] All $total_count assets exceed size threshold"
-      return
-    fi
+    printf '%s\n' \
+      ' "  [SKIP] All $total_count assets exceed' \
+      ' size threshold'
+
 
     # Step 6: all-or-nothing — if any download failed, preserve prior cache for this app
     if [ "$all_valid" -eq 0 ]; then
-      echo "  [SKIP] Keeping existing cache entries for $app_name — one or more new artifacts invalid"
-      return
-    fi
+    printf '%s\n' \
+      ' "  [SKIP] Keeping existing cache entries' \
+      ' for $app_name — one or more new artifact' \
+      's invalid'
+
 
     # Step 7: all downloads valid — upload them with per-file safety checks,
     # then purge any stale "<app>__*" assets that aren't part of this batch.
@@ -436,14 +443,11 @@ VEOF
       safe_upload_cache_asset "$app_name" "$version_file" || vrc=$?
       if [ "$vrc" -eq 0 ]; then
         keep_list+="${app_name}__version.json "
-        echo "$app_name|version.json|$(wc -c < "$version_file" | tr -d ' ')" >> "$REPORT_FILE"
-      fi
-      purge_stale_cache_assets_except "$app_name" "$keep_list"
-      echo "  [OK] Mirrored $app_name $version to $CACHE_REPO release $CACHE_TAG ($download_count downloaded, $upload_skip_count safe-skipped, $skip_count over-size)"
-    else
-      echo "  [PARTIAL] $upload_fail_count upload(s) failed for $app_name — leaving existing cache intact (no purge, no version.json update)"
-    fi
-  }
+    printf '%s\n' \
+      ' "$app_name|version.json|$(wc -c < "$vers' \
+      'ion_file" | tr -d \' \')" >> "$REPORT_FIL' \
+      'E'
+
 
   ##############################################################################
   # ---- Repos ----
@@ -468,38 +472,21 @@ VEOF
   ##############################################################################
   # ---- Step 8: Summary ----
   ##############################################################################
-  echo ""
-  echo "::group::Release binary cache mirror summary"
+    printf '%s\n' \
+      '      'echo ""
+echo "::group::Release '\
+'\
+
+      '      'binary cache mirror summary'\
+'\n
 
   # Prints the final summary report grouped by app.
   function print_report() {
     if [ ! -s "$REPORT_FILE" ]; then
-      echo "No assets mirrored."
-      return
-    fi
-    local prev_app=""
-    while IFS='|' read -r app fname fsize; do
-      if [ "$app" != "$prev_app" ]; then
-        if [ -n "$prev_app" ]; then
-          echo ""
-        fi
-        # Compute totals for this app
-        local count=0 total=0
-        while IFS='|' read -r a2 f2 s2; do
-          [ "$a2" = "$app" ] || continue
-          count=$((count + 1))
-          total=$((total + s2))
-        done < <(sort "$REPORT_FILE")
-        echo "$app: $count files, $(format_size "$total")"
-        prev_app="$app"
-      fi
-      echo "  $fname ($(format_size "$fsize"))"
-    done < <(sort "$REPORT_FILE")
-  }
+    printf '%s\n' ' "No assets mirrored.'
+
 
   print_report
 
-  echo "::endgroup::"
-  echo ""
-  echo "Release binary cache mirror complete. Cache: https://github.com/$CACHE_REPO/releases/tag/$CACHE_TAG"
-}
+    printf '%s\n' ' "::endgroup::'
+
