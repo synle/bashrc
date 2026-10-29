@@ -48,6 +48,20 @@ describe("shared guidance sentence limit", () => {
   });
 });
 
+describe("shared milestone status guidance", () => {
+  it("requires bounded, explicit progress updates from main agents and subagents", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions.md"), "utf-8");
+    const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
+
+    expect(rendered).toContain("every main agent and subagent sends a status sentence first");
+    expect(rendered).toContain("within 30 words");
+    expect(rendered).toContain("`IN PROGRESS`, `BLOCKED`, or `DONE`");
+    expect(rendered).toContain("2 steps left \u2014 test and inspect diff.");
+    expect(rendered).toContain("Subagents send updates to their parent at start, each phase boundary, and before returning.");
+    expect(rendered).toContain("does not report completion until required results arrive");
+  });
+});
+
 describe("shared writing checklist", () => {
   it("keeps the canonical short list separate from its complete explanations", () => {
     expect(cleanup).toContain(`## Hard rules\n\n${WRITING_CHECKLIST}\n\n## Checklist details\n`);
