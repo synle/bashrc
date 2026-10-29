@@ -564,6 +564,17 @@ These prefix chords cover most day-to-day tmux use and need no mouse. Prefer the
 Workflow patterns built on top of these — scripted workspace sessions, detach/re-attach —
 live in [`docs/tmux.md`](./tmux.md).
 
+### Nested Sync Workspace (`ctrl+a`)
+
+The local nested preparation launcher uses an isolated tmux server with `ctrl+a` as its prefix.
+The outer server keeps its existing prefix and bindings.
+Press and release `ctrl+a`, then use the regular prefix-table key to control the inner session.
+Use `ctrl+a` then a window number to select an inner tab, or `ctrl+a` then `w` for the switcher.
+Use `ctrl+a` then `a` to send a literal Ctrl-a to the application.
+For detaching, use `ctrl+a` then `:` and enter `detach-client`; the configured `d` key splits panes instead.
+Detaching leaves jobs running, and the outer sync command continues waiting for their result.
+This changes only the local nested launcher, not the normal tmux configuration.
+
 ### tmux Right-click Menus
 
 `advanced/tmux.config` replaces tmux's stock right-click menus with short custom ones. A

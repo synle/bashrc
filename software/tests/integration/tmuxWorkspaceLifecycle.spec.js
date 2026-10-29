@@ -83,6 +83,14 @@ describe("workspace close-on-success (native tmux integration)", () => {
     expect(f.exists()).toBe(true);
   });
 
+  it("preserves command failure across sleep_after", async () => {
+    const f = fixture();
+    const result = f.create({ windows: [{ name: "delayed", command: "false", sleep_after: 1, close_on_success: true }] });
+    expect(result.status).toBe(0);
+    await expect.poll(() => f.tmux(["show-options", "-pqv", "-t", "=test:", "@workspace_exit_status"]).stdout.trim(), { timeout: 4000 }).toBe("1");
+    expect(f.exists()).toBe(true);
+  });
+
   it("builds every fast-closing window before allowing commands to exit", async () => {
     const f = fixture();
     const result = f.create({ start_directory: f.folder, close_on_success: true, windows: [

@@ -200,19 +200,27 @@ function _workspace_join_folder() {
 
 # build the shell text one pane runs. $1 = command, $2 = sleep_before seconds,
 # $3 = sleep_after seconds (both already validated digits or empty by jq).
-# Echoes the text, or nothing when there is nothing to run (plain shell).
+# $4 = optional close-on-success boolean; preserves command status across sleep_after.
+# Echoes shell text (string), or nothing for a plain shell; performs no external side effects.
 ## the sleeps run INSIDE the pane, so a delayed pane never holds up the build of
 ## the rest of the session (tmuxp sleeps in the loader and blocks it)
 function _workspace_pane_body() {
-  local cmd="$1" before="$2" after="$3" body=""
+  local cmd="$1" before="$2" after="$3" closing="${4:-false}" body=""
   if [ -n "$before" ] && [ "$before" != "0" ]; then
     body="echo 'workspace: starting in $before seconds'; sleep $before"
   fi
   if [ -n "$cmd" ]; then
-    body="${body:+$body; }$cmd"
+    if [ "$closing" = "true" ]; then
+      body="${body:+$body; }( $cmd ); "'_workspace_command_status=$?'
+    else
+      body="${body:+$body; }$cmd"
+    fi
   fi
   if [ -n "$after" ] && [ "$after" != "0" ]; then
     body="${body:+$body; }sleep $after"
+  fi
+  if [ -n "$cmd" ] && [ "$closing" = "true" ]; then
+    body="$body; "'exit "$_workspace_command_status"'
   fi
   echo "$body"
 }
@@ -457,7 +465,7 @@ function workspace_create() {
     fi
 
     pane_folder=$(_workspace_join_folder "$win_folder" "$f2")
-    body=$(_workspace_pane_body "$f1" "$f3" "$f4")
+    body=$(_workspace_pane_body "$f1" "$f3" "$f4" "$f6")
 
     ## printf %q keeps quotes/apostrophes in the command intact - tmux hands the
     ## string to sh, so an unescaped "it's" would end the quoting early

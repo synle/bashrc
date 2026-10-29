@@ -35,9 +35,9 @@ The shipped `workspace_create` reads a **tmuxp subset** in JSON and depends only
 
 | Level   | Keys                                                                                                                               |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| session | `session` (`session_name`), `start_directory` (`folder`), `active_window`, `windows[]`                                             |
-| window  | `name` (`window_name`), `command`, `start_directory`, `layout`, `focus`, `panes[]`, `sleep_before/after`                           |
-| pane    | command string, `null` / `"pane"` / `"blank"`, or `{ name, shell_command \| command, start_directory, focus, sleep_before/after }` |
+| session | `session` (`session_name`), `start_directory` (`folder`), `active_window`, `windows[]`, `close_on_success`                                             |
+| window  | `name` (`window_name`), `command`, `start_directory`, `layout`, `focus`, `panes[]`, `sleep_before/after`, `close_on_success`                           |
+| pane    | command string, `null` / `"pane"` / `"blank"`, or `{ name, shell_command \| command, start_directory, focus, sleep_before/after, close_on_success }` |
 
 ```json
 {
@@ -75,6 +75,13 @@ The shipped `workspace_create` reads a **tmuxp subset** in JSON and depends only
   pane** around its command (`sleep_before` prints a countdown line first). Unlike tmuxp,
   which sleeps in the loader, the build never waits. On a window, they apply only when it
   has no `panes`.
+- **`close_on_success`** is an optional boolean at session, window, or pane level.
+  It defaults to false and inherits session → window → pane; an explicit false overrides a true parent.
+  True closes a successful command, while failures retain their output and shell.
+  Failed panes expose the command status through `@workspace_exit_status`.
+  The command status survives `sleep_after`; the delay cannot turn failure into success.
+  A private construction barrier prevents fast commands from closing the session before all windows exist.
+  Empty shells remain open, and non-boolean values fail validation before any job starts.
 - Not supported: YAML, `before_script`, `shell_command_before`, `environment`, `options`,
   `window_index`, `suppress_history`, `enter`. Reach for real `tmuxp` for those.
 
