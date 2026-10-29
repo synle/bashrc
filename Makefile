@@ -266,9 +266,13 @@ precommit: lint
 validate: format lint test_unit test_buildconfig build_webapp test_integration_local test_dryrun ci_test_shellcheck
 	make test_profile 2>&1 || { echo "FAIL: test_profile failed — check profile blocks above for syntax errors"; exit 1; }
 
-# Optional static checks only; files is one literal path or a JSON array.
+# Optional static checks; omitted files uses the saved collector list.
+# Explicit files is one literal path or a JSON array.
 # Intentionally not prerequisites of precommit, validate, test_all, or CI.
-.PHONY: validate_shell_agnostic _shell_agnostic_force
+.PHONY: collect_shell_agnostic_files validate_shell_agnostic _shell_agnostic_force
+collect_shell_agnostic_files:
+	node software/tools/collect-shell-agnostic-files.js
+
 _shell_agnostic_force:
 
 validate_shell_agnostic: export SHELL_AGNOSTIC_FILES = $(files)

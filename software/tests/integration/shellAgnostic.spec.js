@@ -41,7 +41,18 @@ function fixture(source, name = "shared.sh") {
  */
 function runCli(args, env = {}) {
   return spawnSync(process.execPath, [cli, ...args], {
-    env: { ...process.env, BASH_ENV: "", ENV: "", HOME: folder, ZDOTDIR: folder, ...env },
+    env: {
+      ...process.env,
+      BASH_ENV: "",
+      ENV: "",
+      HOME: folder,
+      ZDOTDIR: folder,
+      TMPDIR: folder,
+      TMP: folder,
+      TEMP: folder,
+      SHELL_AGNOSTIC_FILES: "",
+      ...env,
+    },
     encoding: "utf8",
     timeout: 15000,
   });
