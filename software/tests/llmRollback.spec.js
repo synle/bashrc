@@ -15,6 +15,30 @@ describe("restored guidance integrity", () => {
     expect(body).toContain("pass=single");
   });
 
+  it.each(["sy-merge", "sy-release", "sy-close-stale-prs"])("keeps active guidance independent of retired utility %s", (name) => {
+    const instructions = fs.readdirSync(SOURCE_FOLDER).filter((entry) => entry.startsWith("instructions") && entry.endsWith(".md"));
+    const skillsFolder = path.join(SOURCE_FOLDER, "skills");
+    const skills = fs.readdirSync(skillsFolder).filter((entry) => entry.endsWith(".md"));
+    const files = [
+      ...instructions.map((entry) => path.join(SOURCE_FOLDER, entry)),
+      ...skills.map((entry) => path.join(skillsFolder, entry)),
+    ].filter((file) => !file.includes(".secret.") && fs.lstatSync(file).isFile());
+    const references = files.filter((file) => fs.readFileSync(file, "utf8").includes(name));
+    expect(references).toEqual([]);
+  });
+
+  it("keeps plain-English synchronization routing and release permission boundaries without retired aliases", () => {
+    const workflow = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-pr-workflow.md"), "utf8");
+    const create = fs.readFileSync(path.join(SOURCE_FOLDER, "skills/create-pr.md"), "utf8");
+    const babysit = fs.readFileSync(path.join(SOURCE_FOLDER, "skills/babysit-pr.md"), "utf8");
+    expect(workflow).toContain("floor/default first");
+    expect(workflow).toContain("upstream default branch last");
+    expect(workflow).toContain("stopped-for-human");
+    expect(workflow).toContain("needs-human");
+    expect(create).toContain("**Release is never automatic.**");
+    expect(babysit).toContain("**Release dispatch is NEVER automatic.**");
+  });
+
   it("includes the active persona source rather than an archived copy", () => {
     const instructions = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions.md"), "utf-8");
     expect(instructions).toContain("<!-- BEGIN software/scripts/advanced/llm/_common/v_current/instructions-persona.md -->");
