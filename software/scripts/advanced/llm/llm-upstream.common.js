@@ -10,11 +10,11 @@ const LLM_UPSTREAM_MAX_RESOURCE_BYTES = 8 * 1024 * 1024;
 
 /**
  * Derive a provider's immutable local installation folder.
- * @param {{id: string, revision: string}} source - Validated provider identity.
+ * @param {{id: string, revision: string, snapshot: string}} source - Validated provider commit and resource-selection identity.
  * @returns {string} Absolute revision folder; performs no IO.
  */
 function getLLMUpstreamSkillFolder(source) {
-  return path.join(LLM_SHARED_UPSTREAM_FOLDER, source.id, source.revision);
+  return path.join(LLM_SHARED_UPSTREAM_FOLDER, source.id, `${source.revision}-${source.snapshot}`);
 }
 
 /**
@@ -55,6 +55,8 @@ function validateLLMUpstreamSkillSources(sources) {
       throw new Error(`Invalid upstream repository: ${source.id}`);
     if (typeof source.revision !== "string" || !/^[0-9a-f]{40}$/.test(source.revision))
       throw new Error(`Upstream revision must be a full immutable commit: ${source.id}`);
+    if (typeof source.snapshot !== "string" || !/^[0-9a-f]{16}$/.test(source.snapshot))
+      throw new Error(`Upstream resource selection must have a pinned snapshot identity: ${source.id}`);
     if (!Array.isArray(source.skills) || source.skills.length === 0 || !Array.isArray(source.files) || source.files.length === 0)
       throw new Error(`Missing upstream skills or files: ${source.id}`);
     /** @type {Set<string>} Resource paths already validated for this provider. */

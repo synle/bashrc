@@ -1677,10 +1677,8 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-babysit-pr": "babysit-pr",
   "sy-babysit-prs": "babysit-prs",
   "sy-clean-instructions": "clean-instructions",
-  "sy-create-pr": "create-pr",
   "sy-debug": "debug",
   "sy-dep-bump": "dep-bump",
-  "sy-draft-pr": "draft-pr",
   "sy-execute-plan": "execute-plan",
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
@@ -1743,6 +1741,9 @@ const LLM_SKILL_MARKERS = [LLM_SKILL_MARKER, "Sy Skill - "];
  * @type {string[]} deployed command names, no extension
  */
 const LLM_COMMAND_RETIRED_NAMES = [
+  // 2026-10-29: PR creation now belongs to shared publication milestones.
+  "sy-create-pr",
+  "sy-draft-pr",
   // 2026-10-29: unused merge, release, and stale-PR utility skills retired.
   "sy-close-stale-prs",
   "sy-merge",

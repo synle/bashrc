@@ -58,7 +58,8 @@ Use these sources instead of maintaining another inventory or registry:
 - `software/scripts/advanced/browser-launch-options.common.js` owns shared Brave, Chrome, and Edge launch options.
 - `theme/sy/_palette_{dark,light}.jsonc` owns foundations and recipes; paired app templates own native-shaped bindings.
 - `software/tools/refresh-llm-upstream-skills.js` owns reviewed provider pins and generates `software/metadata/llm-upstream-skills.common.js` with complete selected-resource inventories and SHA-256 hashes.
-- `software/scripts/advanced/llm/llm-upstream.common.js` installs immutable upstream resources outside client discovery roots before the shared skill deployer publishes Sy adapters.
+- `software/scripts/advanced/llm/llm-upstream.common.js` installs immutable upstream resources outside discovery roots before publishing adapters; cache identity includes commit and selected-resource fingerprint.
+- `_common/v_current/instructions-pr-workflow.md` owns PR creation and all three publication states; its optional upstream description component has no publication authority.
 - `vitest.config.js` owns default-suite discovery and coverage thresholds.
 - `$BASHRC_TEMP_DIR/run_timing.json` records per-script status and timing consumed by CI.
 

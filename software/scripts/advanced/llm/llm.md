@@ -35,14 +35,23 @@ them, so a placeholder there would never expand. The `llmInstructionsSplit.budge
 build on a hardcoded path in a deployed source, on a placeholder that survives resolution,
 and on a deployed doc read with bare `readText`.
 
+### Shared PR creation pipeline
+
+Creation and promotion are owned by `_common/v_current/instructions-pr-workflow.md` → PR publication milestones, not separate creation skills.
+The three author states are draft with WIP and Placeholder, ready for review with WIP only, then validated with neither marker.
+Required CI and approvals still gate merging; no stage transition grants merge or automerge authority.
+The optional installed PR-description writer supplies prose only. Repository templates, payload rules, publication permissions, and the shared lifecycle remain authoritative.
+
 ### Upstream-backed adapters
 
 Selected Sy skills read upstream procedure from immutable local provider folders and retain only their local contracts.
 The generated provider manifest contains no Sy command list; `LLM_COMMAND_DEPLOY_MAP` remains the one command registry.
 
-`llm-upstream.common.js` installs each selected provider revision under the shared LLM home's `upstream/<provider>/<revision>/` before publishing adapters.
+`llm-upstream.common.js` installs each selected provider revision under the shared LLM home's `upstream/<provider>/<revision>-<resource-set>/` before publishing adapters.
 It verifies every resource's size and SHA-256, preserves exact bytes and script modes, and never executes downloaded resources.
-Verified existing revisions work offline. Corrupt, missing, or linked existing resources fail visibly rather than being overwritten or silently replaced.
+The resource-set identity derives from the selected file metadata, so adding a skill at the same upstream commit installs beside the prior selection without overwriting it.
+Existing revision-only cache folders and older selections remain untouched; new adapters use the generated current-selection path.
+Verified existing selections work offline. Corrupt, missing, or linked existing resources fail visibly rather than being overwritten or silently replaced.
 Provider folders are not exposed as native skills, so existing Sy aliases remain the discovery surface.
 
 Adapter source uses generated `UPSTREAM_...` path tokens through `readLLMDocSource` and reads the shared `upstream/ADAPTERS.md` contract.
