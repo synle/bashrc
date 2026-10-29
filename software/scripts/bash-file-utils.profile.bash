@@ -305,7 +305,7 @@ function watch_interval() {
   TTY capture requests FORCE_COLOR for supporting programs; explicit color opt-outs remain honored.
   --no-cache: clear first and run live; never create a temporary cache or notifications.
   Quote commands containing arguments or shell syntax. Press Ctrl+C to stop.
-  Alias: f5 (for example: f5 pr_list).
+  Aliases: f5 (60 seconds), f5_120 (120 seconds). For example: f5 pr_list.
   Examples:
     watch_interval pr_list
     watch_interval 5 'pr_list | head -20'
@@ -435,8 +435,10 @@ function watch_interval() {
   )
 }
 
-# f5: refresh command output with watch_interval (30 seconds by default).
-alias f5=watch_interval
+# f5: refresh command output with watch_interval (60 seconds).
+alias f5='watch_interval 60'
+# f5_120: refresh command output with watch_interval (120 seconds).
+alias f5_120='watch_interval 120'
 
 ################################################################################
 # --- Copy Chain: Internal Helpers ---
