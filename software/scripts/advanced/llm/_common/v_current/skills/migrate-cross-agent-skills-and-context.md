@@ -19,6 +19,11 @@ Before writing or cleaning instructions, skills, or agent definitions, read `<<L
 
 Standardize shared repository context on `AGENTS.md` and reusable skills on `.agents/skills/<name>/SKILL.md`. Crawl the entire repository for guidance and consumers, not just the root's obvious files. Preserve behavior and compatibility; this is a layout migration, not a policy rewrite.
 
+Read `<<LLM_ROOT_FOLDER>>/upstream/ADAPTERS.md` and `<<UPSTREAM_KHASKY>>/skills/awesome-agents-md-generator/SKILL.md` completely.
+Use its Merge-mode evidence gathering and context consolidation only for the AGENTS.md portion of this migration.
+The Sy controller retains scoped skill-folder moves, consumer auditing, source ownership, compatibility links, discovery proof, and the one-local-commit contract.
+Upstream generation does not authorize replacing existing rules, dropping unverified historical knowledge, changing protected generators, or extending scope.
+
 The target is `$ARGUMENTS`; if empty or unexpanded, use the repository named in the request, otherwise the current repository. Default to one repository. Cross-agent portability does not authorize migrating sibling repositories, home-folder configuration, or external symlink targets.
 
 A successful migration with changes produces exactly one new local commit without pushing. An already-migrated repository produces a verified no-op, not an empty commit. An explicit preview-only request performs inventory and planning without edits or a commit.
@@ -42,7 +47,7 @@ A successful migration with changes produces exactly one new local commit withou
 ### Build the migration map
 
 - Map every candidate to a destination, preserved scope, source owner, required adapter, affected consumers, and verification. Resolve collisions before moving files. Deduplicate identical bytes only after the consumer audit; similar text does not prove equivalent rules.
-- Use root `AGENTS.md` for repository-wide context and nested `AGENTS.md` for existing nested scopes. Preserve conditions, ordering, exclusions, named rules, and distinct content when merging. Keep agent identity definitions separate from repository context. Do not flatten nested rules, rename policies, or infer new instructions from examples.
+- Apply upstream Merge-mode verification when consolidating context. Use root `AGENTS.md` for repository-wide context and nested `AGENTS.md` for existing nested scopes. Preserve conditions, ordering, exclusions, named rules, and distinct content when merging. Keep agent identity definitions separate from repository context. Do not flatten nested rules, rename policies, or infer new instructions from examples.
 - Put each portable skill in `.agents/skills/<name>/SKILL.md`; use kebab-case folder names matching frontmatter `name`, with portable `name` and `description` keys. Move the complete folder, including scripts, references, templates, and assets. Rebase relative references where needed. Convert a flat workflow only when its behavior fits a skill; preserve vendor-only invocation metadata in a supporting adapter rather than silently dropping it.
 - Managed corpora keep their generator or registry-owned source. Update that source and its deployment flow only where the repo permits; never hand-edit generated copies or relocate machine-wide deployment sources into repo-local skill folders.
 - Keep one authoritative body. Retain existing valid compatibility links; add relative per-skill symlinks or minimal context adapters only where verified tool discovery requires them. Do not replace an entire existing vendor folder with a symlink or displace unrelated skills. Verify that each adapter loads canonical content; a prose pointer alone is not proof.

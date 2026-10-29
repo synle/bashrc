@@ -99,6 +99,13 @@ describe("upstream adapter bindings", () => {
     ["plan-grill-me", "addy", "interview-me"],
     ["onboard-repo", "khasky", "awesome-agents-md-generator"],
     ["execute-plan", "superpowers", "executing-plans"],
+    ["clean-instructions", "khasky", "awesome-document-style"],
+    ["pr-reconciliation-pass", "steve", "address-pr-comments"],
+    ["triage-ci", "arjun", "devops/ci-pipelines"],
+    ["triage-ci", "superpowers", "systematic-debugging"],
+    ["migrate-cross-agent-skills-and-context", "khasky", "awesome-agents-md-generator"],
+    ["slack-prs", "anthropic", "internal-comms"],
+    ["standup", "anthropic", "internal-comms"],
   ])("renders %s with its installed %s/%s dependency", async (name, providerId, upstreamSkill) => {
     const { common, home, providers } = loadDeployment();
     const provider = providers.find((entry) => entry.id === providerId);
@@ -128,6 +135,23 @@ describe("upstream skill resources", () => {
     expect(fs.readFileSync(path.join(home, "llm/upstream/ADAPTERS.md"), "utf8")).not.toContain("<<LLM_ROOT_FOLDER>>");
   });
 
+  it("preserves nested upstream skill roots and their relative scripts", async () => {
+    const { common, home } = loadDeployment([
+      {
+        ...SOURCE,
+        skills: ["devops/fixture"],
+        files: [
+          { ...SOURCE.files[0], path: "skills/devops/fixture/SKILL.md" },
+          { ...SOURCE.files[1], path: "skills/devops/fixture/scripts/check" },
+        ],
+      },
+    ]);
+    await common.deploySharedLLMUpstreamSkills();
+    const folder = path.join(home, "llm/upstream/fixture", SOURCE.revision, "skills/devops/fixture");
+    expect(fs.readFileSync(path.join(folder, "SKILL.md"), "utf8")).toBe(BODY);
+    expect(fs.readFileSync(path.join(folder, "scripts/check"), "utf8")).toBe(SCRIPT);
+  });
+
   it("reuses verified resources offline without rewriting their identity", async () => {
     const { common, home } = loadDeployment();
     await common.deploySharedLLMUpstreamSkills();
@@ -149,6 +173,7 @@ describe("upstream skill resources", () => {
     ["secret path", { ...SOURCE, files: [{ ...SOURCE.files[0], path: "skills/fixture/a.secret.md" }] }],
     ["mutable revision", { ...SOURCE, revision: "main" }],
     ["invalid repository", { ...SOURCE, repository: "https://example.com/escape" }],
+    ["repository traversal", { ...SOURCE, repository: "../escape" }],
     ["invalid provider", { ...SOURCE, id: "../escape" }],
     ["missing provider", { ...SOURCE, id: undefined }],
     ["negative size", { ...SOURCE, files: [{ ...SOURCE.files[0], bytes: -1 }] }],

@@ -51,7 +51,7 @@ function validateLLMUpstreamSkillSources(sources) {
       throw new Error("Upstream provider id must be unique lowercase kebab-case");
     }
     identities.add(source.id);
-    if (typeof source.repository !== "string" || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(source.repository))
+    if (typeof source.repository !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]*\/[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(source.repository))
       throw new Error(`Invalid upstream repository: ${source.id}`);
     if (typeof source.revision !== "string" || !/^[0-9a-f]{40}$/.test(source.revision))
       throw new Error(`Upstream revision must be a full immutable commit: ${source.id}`);
@@ -82,7 +82,11 @@ function validateLLMUpstreamSkillSources(sources) {
       resources.add(file.path);
     }
     for (const skill of source.skills) {
-      if (typeof skill !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(skill) || !resources.has(`skills/${skill}/SKILL.md`))
+      if (
+        typeof skill !== "string" ||
+        !skill.split("/").every((part) => /^[a-z0-9][a-z0-9-]*$/.test(part)) ||
+        !resources.has(`skills/${skill}/SKILL.md`)
+      )
         throw new Error(`Missing upstream skill body: ${source.id}/${skill}`);
     }
   }
