@@ -74,9 +74,13 @@ describe("generated preview fingerprint metadata", () => {
   ])("retains literal $label changes for ordinary command blocks", async ({ selector, text }) => {
     await renderBlock("docs/example.sh");
     const before = await readCommand(page);
-    await page.$eval(selector, (node, value) => {
-      node.textContent = value;
-    }, text);
+    await page.$eval(
+      selector,
+      (node, value) => {
+        node.textContent = value;
+      },
+      text,
+    );
     const after = await readCommand(page);
     expect(after.blocks[0].hash).not.toBe(before.blocks[0].hash);
   });
