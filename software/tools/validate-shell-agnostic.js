@@ -1,6 +1,7 @@
 /** Optional static shell-portability checks; never executes the input scripts. */
 const fs = require("fs");
 const { spawnSync } = require("child_process");
+const { SHELL_AGNOSTIC_FILES_PATH } = require("./collect-shell-agnostic-files.js");
 
 /** Supported independent checks; Make's pattern target delegates validation here. */
 const RULES = ["quoting", "printf", "options", "syntax"];
@@ -190,15 +191,28 @@ function validateShellFiles(files, rule) {
 }
 
 /**
- * Run the optional Make/CLI entry point; files is a literal path or JSON array.
+ * Run optional checks with explicit paths, environment scope, or the saved JSON list.
  * @returns {void} Writes JSON and sets exit status: 0 clean, 1 findings, 2 invalid/unavailable.
- * @sideEffects Reads selected files and invokes static analyzers; never executes those files.
+ * @sideEffects Reads the saved list when scope is absent, reads source, and invokes static analyzers; never executes source.
  */
 function main() {
   try {
     const [rule = process.env.SHELL_AGNOSTIC_RULE || "all", ...paths] = process.argv.slice(2);
     const scope = process.env.SHELL_AGNOSTIC_FILES || "";
-    const files = paths.length > 0 ? paths : scope.startsWith("[") ? JSON.parse(scope) : scope ? [scope] : [];
+    let files = paths.length > 0 ? paths : scope.startsWith("[") ? JSON.parse(scope) : scope ? [scope] : null;
+    if (files === null) {
+      try {
+        files = JSON.parse(fs.readFileSync(SHELL_AGNOSTIC_FILES_PATH, "utf8"));
+      } catch (error) {
+        if (error.code !== "ENOENT") throw error;
+        throw new Error(
+          `files: saved list missing at ${SHELL_AGNOSTIC_FILES_PATH}; run make collect_shell_agnostic_files or pass an explicit files value.`,
+          {
+            cause: error,
+          },
+        );
+      }
+    }
     const result = validateShellFiles(files, rule);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     if (result.errors) process.exitCode = 2;

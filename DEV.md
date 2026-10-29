@@ -469,8 +469,9 @@ make build_installer       # .build/install-bashrc.sh self-extracting installer
 make test_unit             # vitest, vitest.config.js
 make precommit             # lint + complete default unit suite, dot reporter and failing-test console logs
 make lint                  # oxlint correctness pass (.oxlintrc.json)
-make validate_shell_agnostic files=<file> # optional static portability checks; no script execution
-make validate_shell_agnostic_quoting files=<file> # quoting / printf / options / syntax select one rule
+make collect_shell_agnostic_files # save tracked shell sources to a temporary JSON list
+make validate_shell_agnostic # optional checks using the saved list; files=<file> overrides
+make validate_shell_agnostic_quoting # quoting / printf / options / syntax select one rule
 make test_coverage         # + istanbul; thresholds live in vitest.config.js
 make test_profile          # bash -n / profile invariants
 make test_buildconfig      # inline-snapshot shape (…_update to refresh)
@@ -486,8 +487,15 @@ make bench_profile         # time `bash -i -c exit`; fails if median > budget
 make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, node_modules …
 ```
 
-The optional shell-agnostic targets accept one literal filename or a JSON array through `files`.
-They require ShellCheck and/or shfmt, fail on findings or unavailable analysis, and are not dependencies of existing gates.
+Run `make collect_shell_agnostic_files` from the repository root to save tracked shell sources and print the saved-list path.
+Its direct equivalent is `node software/tools/collect-shell-agnostic-files.js`.
+The collector writes a JSON filename array to `shell-agnostic-files.txt` under the system temporary folder (`/tmp` when `TMPDIR=/tmp`).
+The optional shell-agnostic targets use that list when `files` is omitted or empty.
+An explicit `files` accepts one literal filename or a JSON array and overrides the saved list.
+Run validation from the same repository root with the same temporary-folder configuration; recollect after changing checkouts or tracked files.
+The most recent collection replaces the shared list; missing, malformed, or empty lists fail validation.
+The validators require ShellCheck and/or shfmt and never execute selected scripts.
+Collection and validation are not dependencies of existing gates; findings or unavailable analysis fail validation.
 See [the prioritized shell-validation checklist](TODO_AGNOSITC_SHELL.md) for all rule targets, examples, limits, and the fix/recheck workflow.
 
 The formatter is **oxfmt** (`npm run format`), not prettier, despite the

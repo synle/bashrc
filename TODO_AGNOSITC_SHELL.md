@@ -6,30 +6,28 @@
 
 ## First pass — collect files, validate, and fix
 
-Run this from the repository root, then use the same shell session for the four checklist commands:
+Run this from the repository root:
 
 ```bash
-# Collect tracked shell sources, excluding generated output and PowerShell templates.
-files="$(
-  git ls-files -z -- '*.sh' '*.bash' '*.zsh' |
-    node -e '
-      const fs = require("fs");
-      const files = fs.readFileSync(0, "utf8").split("\0").filter(file =>
-        file &&
-        !file.endsWith(".ps1.bash") &&
-        !/^(\.build|dist|coverage)\//.test(file)
-      );
-      process.stdout.write(JSON.stringify(files));
-    '
-)"
+make collect_shell_agnostic_files
+# Direct equivalent: node software/tools/collect-shell-agnostic-files.js
 ```
 
-- [ ] **Printf vs echo — first priority:** run `make validate_shell_agnostic_printf files="$files"`, replace applicable `echo` usage with fixed-format `printf`, and rerun.
-- [ ] **Quoting:** run `make validate_shell_agnostic_quoting files="$files"`, fix applicable findings, and rerun.
-- [ ] **Shell options:** run `make validate_shell_agnostic_options files="$files"`, review option mutations, fix applicable findings, and rerun.
-- [ ] **POSIX syntax:** run `make validate_shell_agnostic_syntax files="$files"`, fix shared-code violations, and rerun.
+The collector saves a JSON filename array in `shell-agnostic-files.txt` under the system temporary folder and prints its full path.
+For `/tmp`, run `TMPDIR=/tmp make collect_shell_agnostic_files` and use the same `TMPDIR` for validation.
+The selection includes tracked `.sh`, `.bash`, and `.zsh` files, excluding `.build/`, `dist/`, `coverage/`, and `.ps1.bash` templates.
+Untracked files are not included.
 
-The selection contains tracked source files only; untracked files are not included.
+- [ ] **Printf vs echo — first priority:** run `make validate_shell_agnostic_printf`, replace applicable `echo` usage with fixed-format `printf`, and rerun.
+- [ ] **Quoting:** run `make validate_shell_agnostic_quoting`, fix applicable findings, and rerun.
+- [ ] **Shell options:** run `make validate_shell_agnostic_options`, review option mutations, fix applicable findings, and rerun.
+- [ ] **POSIX syntax:** run `make validate_shell_agnostic_syntax`, fix shared-code violations, and rerun.
+
+All four targets and `make validate_shell_agnostic` read the saved list when `files` is omitted or empty.
+No shell variable or shared shell session is required; collection and validation must use the same temporary-folder configuration.
+The saved paths are relative to the repository root; run validators there and recollect after changing checkouts or tracked files.
+The most recent collection replaces the shared temporary list.
+A missing list reports the collection command; malformed or empty lists fail validation.
 Preserve documented interpreter-specific adapters rather than removing required Bash or native zsh behavior merely to obtain a clean POSIX result.
 
 ## TLDR
@@ -46,7 +44,7 @@ Track shared-shell portability one code section at a time, starting with the opt
 ## Priority 0 — validate, fix, and revalidate
 
 Use the four first-pass items above before broader migration work.
-The reference below explains each optional target and how to narrow its explicit `files` scope.
+The reference below explains each optional target and how to override the saved list with an explicit `files` scope.
 
 | Make target                       | What it checks                                                                                                           |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -56,7 +54,8 @@ The reference below explains each optional target and how to narrow its explicit
 | `validate_shell_agnostic_syntax`  | POSIX parsing through shfmt and ShellCheck's non-POSIX diagnostic family.                                                |
 | `validate_shell_agnostic`         | All four checks together.                                                                                                |
 
-Use a real file path after `files=`. This existing export-only partial provides a small smoke-check example:
+An explicit `files=` overrides the saved list and does not require collection.
+This existing export-only partial provides a small smoke-check example:
 
 ```bash
 make validate_shell_agnostic_printf files=software/scripts/bash-env-telemetry.profile.bash
