@@ -25,6 +25,7 @@ Focus paths guide initial reads; inspect adjacent source files when needed to un
 | `https://github.com/SteveVitali/agent-skills`                            | `skills/{implement-spec,self-review,review-pr,address-pr-comments,agent-docs}/`                                | engineering lifecycle, evidence-based completion, fresh-context review, PR workflow, durable build state |
 | `https://github.com/addyosmani/agent-skills`                             | `skills/{test-driven-development,browser-testing-with-devtools,ci-cd-and-automation,code-review-and-quality}/` | production engineering: testing, review, CI/CD, and shipping                                             |
 | `https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering` | `skills/`                                                                                                      | context engineering and agent behavior, complementing planning and workflow skills                       |
+| `https://github.com/obra/superpowers`                                    | `README.md`, `skills/`                                                                                         | test-first implementation, design discovery, debugging, planning, and verification                       |
 
 Resolve current default branch and HEAD every run. Never pin this registry to prior refresh SHAs.
 
