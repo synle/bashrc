@@ -31,8 +31,8 @@ highlight MatchParen guifg=#1e1e1e guibg=#96c6fa gui=underline cterm=underline
 highlight Pmenu guifg=#1e1e1e guibg=#ececec gui=NONE cterm=NONE
 highlight PmenuSel guifg=#1e1e1e guibg=#96c6fa gui=NONE cterm=NONE
 highlight Folded guifg=#5a5a5a guibg=#ececec gui=NONE cterm=NONE
-highlight NonText guifg=#262626 guibg=NONE gui=NONE cterm=NONE
-highlight SpecialKey guifg=#262626 guibg=NONE gui=NONE cterm=NONE
+highlight NonText guifg=#cacaca guibg=NONE gui=NONE cterm=NONE
+highlight SpecialKey guifg=#cacaca guibg=NONE gui=NONE cterm=NONE
 highlight StatusLine guifg=#1e1e1e guibg=#ececec gui=NONE cterm=NONE
 highlight StatusLineNC guifg=#5a5a5a guibg=#ececec gui=NONE cterm=NONE
 highlight TabLine guifg=#1e1e1e guibg=#ececec gui=NONE cterm=NONE

@@ -381,7 +381,8 @@ Keep short configuration checks together, and split expensive behavior into inde
 The Git-default specs copy a private prepared repository per case; copies do not share mutable Git state.
 Before changing convention-specific behavior, read Enforced conventions below for the invariant and owning spec.
 
-The unit runner uses bounded Vitest fork workers and file parallelism. Keep tests independent:
+The unit runner caps file-level Vitest fork workers at two so native fixtures retain their existing deadlines under load.
+Keep tests independent:
 own fixtures and temp folders, no shared mutable state, no order assumptions. Use
 `describe.concurrent` only when a suite has no shared process or filesystem state.
 
@@ -389,7 +390,7 @@ If a native subprocess times out only during the parallel suite, reproduce its s
 A diagnostic complete-suite run can use fewer workers:
 
 ```bash
-npm test -- --maxWorkers=4
+npm test -- --maxWorkers=1
 ```
 
 Keep the original failure evidence. A passing isolated spec does not prove the full suite passed.

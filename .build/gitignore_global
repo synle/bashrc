@@ -39,6 +39,7 @@ coverage/
 .cache/
 .parcel-cache/
 .prettier-cache
+.playwright-mcp/
 
 # Worktrees
 .worktrees/

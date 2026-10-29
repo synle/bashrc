@@ -37,11 +37,11 @@ export default defineConfig({
     },
     reporters: ["verbose"],
     // Run independent files in parallel with bounded fork workers. Forks keep each VM
-    // sandbox isolated, while a cap prevents shell-heavy integrity tests from timing out
-    // under oversubscription. In-file concurrency stays higher for child-process tests.
+    // sandbox isolated. Two workers keep native Git/winget fixtures within their existing
+    // deadlines on loaded hosts; raise --maxWorkers only after measuring contention.
     fileParallelism: true,
     pool: "forks",
-    maxWorkers: Math.max(4, Math.min(8, os.cpus().length)),
+    maxWorkers: Math.max(1, Math.min(2, os.cpus().length)),
     maxConcurrency: Math.max(8, os.cpus().length),
     // Several suites (osDetection, packText, bashHistoryClean) spawn real bash
     // subprocesses. Under full-suite parallelism these routinely exceed vitest's

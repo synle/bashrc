@@ -49,7 +49,7 @@ describe("command snapshots", () => {
           "title": "docs/android/sponsorblock.json",
         },
         {
-          "hash": "65e3bc0ffb5f9d6b4e66fc8d10a59cf8",
+          "hash": "a01430deecc98a5e6955c409a238d236",
           "title": "profile_bashrc_mac.sh",
         },
         {

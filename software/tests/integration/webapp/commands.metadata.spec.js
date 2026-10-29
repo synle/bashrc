@@ -40,15 +40,21 @@ describe("published profile fingerprint metadata", () => {
   it("keeps the fingerprint stable across profile build dates and hidden-line counts", async () => {
     await renderBlock("profile_bashrc_mac.sh");
     const before = await readCommand(page);
-    await page.$eval(".prism-code-block", (node) => { node.textContent = node.textContent.replace("2026-10-27", "2026-10-28"); });
-    await page.$eval(".codeBlockShowMore", (node) => { node.textContent = "Show More (101 more lines)"; });
+    await page.$eval(".prism-code-block", (node) => {
+      node.textContent = node.textContent.replace("2026-10-27", "2026-10-28");
+    });
+    await page.$eval(".codeBlockShowMore", (node) => {
+      node.textContent = "Show More (101 more lines)";
+    });
     expect(await readCommand(page)).toEqual(before);
   });
 
   it("still detects changes to the visible profile command content", async () => {
     await renderBlock("profile_bashrc_mac.sh");
     const before = await readCommand(page);
-    await page.$eval(".prism-code-block", (node) => { node.textContent = node.textContent.replace("hello", "changed"); });
+    await page.$eval(".prism-code-block", (node) => {
+      node.textContent = node.textContent.replace("hello", "changed");
+    });
     const after = await readCommand(page);
     expect(after.blocks[0].title).toBe("profile_bashrc_mac.sh");
     expect(after.blocks[0].hash).not.toBe(before.blocks[0].hash);
@@ -59,7 +65,9 @@ describe("published profile fingerprint metadata", () => {
   it("retains literal date and line-count changes for ordinary command blocks", async () => {
     await renderBlock(".build/inputrc");
     const before = await readCommand(page);
-    await page.$eval(".codeBlockShowMore", (node) => { node.textContent = "Show More (101 more lines)"; });
+    await page.$eval(".codeBlockShowMore", (node) => {
+      node.textContent = "Show More (101 more lines)";
+    });
     const after = await readCommand(page);
     expect(after.blocks[0].hash).not.toBe(before.blocks[0].hash);
   });
