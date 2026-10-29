@@ -54,7 +54,7 @@ describe("command snapshots", () => {
           "title": "docs/game-streaming-moonlight-steamlink.md",
         },
         {
-          "hash": "9103343a4974a871fe22bf3acc4bcc2a",
+          "hash": "ebcc7cb095f96a8457a749384ddfad8b",
           "title": ".build/sublime-text-setup",
         },
         {

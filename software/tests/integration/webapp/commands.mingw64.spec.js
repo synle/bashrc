@@ -21,19 +21,19 @@ describe("command snapshots", () => {
           "title": "Output",
         },
         {
-          "hash": "8d641d61860e71c0e3d0f960b5af94e3",
+          "hash": "d2f652c3439ccc972d9d0281927f0ab0",
           "title": ".build/gitconfig",
         },
         {
-          "hash": "39f664726a856bcccc7eb55af2a2e021",
+          "hash": "e98cc6b5031ea77aea61eb3d61aa8465",
           "title": ".build/ssh-config",
         },
         {
-          "hash": "cfc6c9692d3371056ca087e7522a4bb2",
+          "hash": "68b9dca4ae448b2dee02586add3c63c1",
           "title": ".build/inputrc",
         },
         {
-          "hash": "7db5b839978da6f90116df1fc54e5816",
+          "hash": "f511a4b5a468733093d4b99faa0ef7c8",
           "title": ".build/vimrc",
         },
       ]
