@@ -12,7 +12,8 @@ No skill migration, installation, retirement, deployment, commit, push, merge, o
 
 The 2026-10-29 audit mapped 30 registered Sy skills against all 11 repositories in the [guideline source registry](.agents/skills/refresh-llm-guidance/SKILL.md).
 
-The original audit found 7 first-wave candidates, 7 partial matches, and 16 skills without a verified equivalent. Seven unused skills are now retired, leaving 23 active skills: 7 first-wave, 7 partial, and 9 without a verified equivalent.
+The original audit found 7 first-wave candidates, 7 partial matches, and 16 skills without a verified equivalent. Nine audit skills are now retired, leaving 21 active skills: 7 first-wave, 7 partial, and 7 without a verified equivalent.
+The existing thirteen upstream-backed skill integrations remain; PR creation now belongs to shared publication guidance rather than separate skills.
 
 None establishes a drop-in replacement of the complete remaining Sy contract.
 
@@ -21,7 +22,7 @@ The goal is upstream ownership of workflow bodies, not another locally rewritten
 ## Impact
 
 - **Benefit:** reduce maintenance of generic engineering procedures while preserving familiar Sy entry points.
-- **Scope:** one shared registry/deployment seam, 23 remaining alias decisions, upstream dependencies, and affected compatibility checks.
+- **Scope:** one shared registry/deployment seam, 21 remaining alias decisions, upstream dependencies, and affected compatibility checks.
 - **Tradeoff:** complete elimination of custom workflows requires intentionally retiring capabilities the audited upstreams do not supply.
 - **Measurement:** no runtime, token-cost, or agent-performance improvement has been measured.
 
@@ -60,6 +61,36 @@ Focused registry, adapter, deployment, writing-rule, rollback, and budget checks
 The earlier full gate remains red only for the known curl formatter failure; no later source or isolated test result is presented as a green full gate.
 Rollback restores the component change before the primary infrastructure change, followed by approved redeployment. Immutable upstream folders are retained rather than deleted automatically.
 
+## Shared PR publication pipeline
+
+The creation skills are retired, but their required lifecycle remains in the shared PR instructions. The user corrected stage 2 to remove Placeholder.
+
+| Stage                                             | GitHub state                                         | Title markers     |
+| ------------------------------------------------- | ---------------------------------------------------- | ----------------- |
+| 1. Start work                                     | Draft                                                | WIP + Placeholder |
+| 2. Implementation pushed                          | Ready for review / non-draft                         | WIP only          |
+| 3. Tests, validation, and current feedback pushed | Ready for merge subject to required CI and approvals | Neither           |
+
+- [x] Define one shared placeholder checkpoint, including one empty placeholder commit when needed and supported by the host.
+- [x] Keep the same PR through implementation and validation rather than creating replacements.
+- [x] Remove only Placeholder at implementation promotion; retain WIP until validation/feedback publication.
+- [x] Remove WIP and any residual Placeholder only after successful validation publication.
+- [x] Retain publication authority, local-only behavior, no-stack rules, templates, file-backed payloads, owned-PR memory, and independent CI/human merge gates.
+- [x] Use the pinned optional PR-description component for prose only; it grants no creation, push, readiness, or merge authority.
+- [x] Separate provider resource selections in the cache so adding a skill at the same commit does not overwrite or invalidate an older selection.
+- [ ] Exercise the three transitions on a live authorized PR; static guidance and isolated deployment checks do not prove agent compliance.
+
+The current dependency manifest has six providers and 149 resources. Older revision-only folders and prior resource selections remain untouched.
+Focused registry, retirement, pipeline, resource, writing-rule, and budget checks passed 132 tests.
+
+### Migration from retired creation commands
+
+Use the shared PR publication milestones through normal authorized implementation or PR-creation requests; no replacement Sy creation skill is required.
+Update personal automation that invoked the retired creation commands to use the shared/native publication flow.
+Approved setup and client reload remove managed installed copies; do not hand-edit generated files or remove foreign client artifacts.
+The resource-selection cache layout needs no destructive migration: new selections install beside older folders.
+Live PR transitions and agent compliance remain unverified. The previously recorded unrelated curl full-gate failure is not claimed resolved by these changes.
+
 ## Completed source retirements
 
 The user approved these removals on 2026-10-29. The source bodies are deleted, the live registry no longer exposes them, and their names remain in the retirement registry.
@@ -73,8 +104,10 @@ The user approved these removals on 2026-10-29. The source bodies are deleted, t
 | `sy-merge`                | Shared synchronization guidance now calls the retained branch-sync workflow directly and keeps distinct fork upstream last.                          |
 | `sy-release`              | Creation and babysit callers now require separate explicit release work through the repository's documented process; no automatic release was added. |
 | `sy-close-stale-prs`      | No other active caller was found; explicitly retired by request.                                                                                     |
+| `sy-create-pr`            | Ready/review publication behavior now lives in shared PR publication milestones; active callers no longer reference this alias.                      |
+| `sy-draft-pr`             | Shared placeholder checkpoint owns draft creation, optional empty placeholder commits, and later promotion of the same PR.                           |
 
-- [x] Remove all seven retired live entries, delete their source bodies, and register their names for managed deployment cleanup.
+- [x] Remove all nine retired live entries, delete their source bodies, and register their names for managed deployment cleanup.
 - [x] Remove references to the retired merge/release/stale-PR aliases from active instructions and callers while preserving synchronization order and no-auto-release boundaries.
 - [ ] Deploy through the approved client setup path and reload clients; source retirement alone does not remove previously installed copies.
 
@@ -141,7 +174,7 @@ The mapping below defines the proposed upstream owner and the behavior still req
 
 ### Operational remainder
 
-- [ ] Record a keep, adapt, or retire decision for each of the 9 remaining skills without a verified equivalent.
+- [ ] Record a keep, adapt, or retire decision for each of the 7 remaining skills without a verified equivalent.
 - [ ] Keep deterministic operational behavior in small guarded tools where appropriate rather than reproducing lengthy command procedures in each skill.
 - [ ] Audit every consumer before removing or renaming a skill body, alias, registry entry, or compatibility path.
 - [ ] Preserve uncertain consumers through compatibility; do not delete them because an upstream catalog lacks a matching name.
@@ -195,7 +228,7 @@ A first-wave candidate can replace its workflow core after adaptation. A partial
 | `sy-slack-prs`                              | [anthropics/skills: internal-comms](https://raw.githubusercontent.com/anthropics/skills/ca45fc496a3436251f191354091d557da31c15b5/skills/internal-comms/SKILL.md)                                                                                                                                                                                                    | Use only the communication renderer after a local read-only query supplies verified PRs, author attribution, readiness groups, dependency order, and Slack format. Do not send the draft automatically.                                | Upstream does not discover PRs or implement Sy grouping and author rules.                                                                    |
 | `sy-standup`                                | [anthropics/skills: internal-comms](https://raw.githubusercontent.com/anthropics/skills/ca45fc496a3436251f191354091d557da31c15b5/skills/internal-comms/SKILL.md)                                                                                                                                                                                                    | Reuse update formatting after a local evidence collector resolves time windows, repositories, authors, merged-versus-released state, reviews, and blind spots.                                                                         | Upstream is a writing skill, not a Git/GitHub activity collector.                                                                            |
 
-### 9 remaining skills without a verified behavioral replacement
+### 7 remaining skills without a verified behavioral replacement
 
 Targets shown here are related components, not substitutes for the named Sy operation.
 
@@ -206,8 +239,6 @@ Targets shown here are related components, not substitutes for the named Sy oper
 | `sy-review-prs`       | [SteveVitali/agent-skills: review-pr](https://raw.githubusercontent.com/SteveVitali/agent-skills/e981ec57d487a2c41d416672483b5a4df15b1233/skills/review-pr/SKILL.md)                                                                                                                                                                                                 | Keep or retire discovery, author filtering, ranking, per-repository ownership, and watch budget; delegate one-shot review content upstream.                                                                                          | A single-PR review is not the plural scheduled review workflow.                                                                                 |
 | `sy-list-prs`         | No verified upstream equivalent                                                                                                                                                                                                                                                                                                                                      | Keep as a small read-only tool or retire its custom views; no skill in the audited catalogs was verified to provide the same dashboard.                                                                                              | Cross-repository readiness, thread/check joins, ranking, clustering, and pingpong output remain local behavior.                                 |
 | `sy-list-prs-pending` | No verified upstream equivalent                                                                                                                                                                                                                                                                                                                                      | Keep as a filter over the same read-only PR data tool, or retire the pending-only view.                                                                                                                                              | No verified upstream clustered pending-PR renderer with the Sy placeholder/clear filters.                                                       |
-| `sy-create-pr`        | [arjunprabhulal/agent-skills: pr-descriptions](https://raw.githubusercontent.com/arjunprabhulal/agent-skills/42dd24080fce6d731d00e2a1134f398c3da4171b/skills/docs/pr-descriptions/SKILL.md)                                                                                                                                                                          | Reuse body drafting if useful; keep or retire local publication permissions, default-base checks, template handling, title rules, owned-PR memory, and automerge decisions.                                                          | A description-writing skill does not safely publish a PR or preserve the Sy publication contract.                                               |
-| `sy-draft-pr`         | [arjunprabhulal/agent-skills: pr-descriptions](https://raw.githubusercontent.com/arjunprabhulal/agent-skills/42dd24080fce6d731d00e2a1134f398c3da4171b/skills/docs/pr-descriptions/SKILL.md)                                                                                                                                                                          | Reuse body drafting only; retain or intentionally drop the distinction between ordinary WIP and placeholder draft, including promotion and publication gates.                                                                        | No verified upstream placeholder-first/WIP PR creation workflow.                                                                                |
 | `sy-sync-pr-branch`   | No verified upstream equivalent                                                                                                                                                                                                                                                                                                                                      | Keep one deterministic sync implementation or retire custom ancestry handling; preserve floor/ancestor order, merge-only history, migration checks, and structured result flags.                                                     | No verified upstream skill implements the Sy ancestry, floor, migration, and push contract.                                                     |
 | `sy-loop`             | [obra/superpowers: executing-plans](https://raw.githubusercontent.com/obra/superpowers/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/executing-plans/SKILL.md); [OthmanAdi/planning-with-files: planning-with-files](https://raw.githubusercontent.com/OthmanAdi/planning-with-files/5d29800bf8b919ca9a88ee7885b90050b5cb64ed/skills/planning-with-files/SKILL.md) | Use plan execution plus durable state only if deliberately changing the contract; otherwise keep the bounded machine-checkable controller with iteration cap, stall detection, one writer, shrinking worklist, and success sentinel. | Plan execution and planning persistence are not a generic bounded shrinking-worklist loop; upstream layouts and lifecycle behavior also differ. |
 

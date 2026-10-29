@@ -28,6 +28,8 @@ const RETIRED_UNUSED_SKILLS = [
   "sy-merge",
   "sy-release",
   "sy-close-stale-prs",
+  "sy-create-pr",
+  "sy-draft-pr",
 ];
 
 /**

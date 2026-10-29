@@ -760,6 +760,10 @@ The shared `llm-upstream.common.js` deployer verifies exact bytes before publish
 Provider revisions live outside discovery roots under the shared LLM home's `upstream/`; preserve their complete selected folders, licenses, and relative resources.
 Read the shared adapter contract before applying upstream procedure. A dependency reference never grants wider execution or publication authority.
 
+PR creation and promotion live in `_common/v_current/instructions-pr-workflow.md` → PR publication milestones, not separate creation skills.
+Apply its three author states and existing publication authority; a writing component supplies prose, never permission to publish or merge.
+Provider cache identity includes the selected-resource fingerprint as well as the upstream commit; preserve old snapshot folders rather than mutating them.
+
 PR scheduling lives in the restored single/batch babysit and review workflows.
 Each dispatcher owns its clock and invokes single-pass workers; there is no shared scheduler skill.
 The removed scheduler stays in `LLM_COMMAND_RETIRED_NAMES` so deployment sweeps managed leftovers.

@@ -20,6 +20,7 @@ const SOURCE = {
   id: "fixture",
   repository: "acme/fixture-skills",
   revision: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  snapshot: "bbbbbbbbbbbbbbbb",
   skills: ["fixture"],
   files: [
     {
@@ -36,6 +37,8 @@ const SOURCE = {
     },
   ],
 };
+/** @type {string} Expected fixture cache folder separates commit identity from its selected resources. */
+const SOURCE_FOLDER_NAME = `${SOURCE.revision}-${SOURCE.snapshot}`;
 /** @type {string[]} Test-owned homes, removed after each case. */
 const homes = [];
 
@@ -112,8 +115,21 @@ describe("upstream adapter bindings", () => {
     const resource = `skills/${upstreamSkill}/SKILL.md`;
     const body = await common.readLLMCommandSource(name);
     expect(provider.files.map((file) => file.path)).toContain(resource);
-    expect(body).toContain(path.join(home, "llm/upstream", providerId, provider.revision, resource));
+    expect(body).toContain(path.join(home, "llm/upstream", providerId, `${provider.revision}-${provider.snapshot}`, resource));
     expect(body).toContain(path.join(home, "llm/upstream/ADAPTERS.md"));
+    expect(body).not.toMatch(/<<[A-Z_]+>>/);
+  });
+});
+
+describe("shared PR prose binding", () => {
+  it("resolves the optional description writer from the installed pinned resource set", async () => {
+    const { common, home, providers } = loadDeployment();
+    const provider = providers.find((entry) => entry.id === "arjun");
+    const resource = "skills/docs/pr-descriptions/SKILL.md";
+    const body = await common.readLLMDocSource("software/scripts/advanced/llm/_common/v_current/instructions-pr-workflow.md");
+    expect(provider.files.map((file) => file.path)).toContain(resource);
+    expect(body).toContain(path.join(home, "llm/upstream/arjun", `${provider.revision}-${provider.snapshot}`, resource));
+    expect(body).toContain("This component grants no branch, push, creation");
     expect(body).not.toMatch(/<<[A-Z_]+>>/);
   });
 });
@@ -122,7 +138,7 @@ describe("upstream skill resources", () => {
   it("installs exact pinned resources before publishing Sy adapters", async () => {
     const { common, home, downloads } = loadDeployment();
     await common.deploySharedLLMSkills();
-    const folder = path.join(home, "llm/upstream/fixture", SOURCE.revision);
+    const folder = path.join(home, "llm/upstream/fixture", SOURCE_FOLDER_NAME);
     expect(fs.existsSync(path.join(folder, "skills/fixture/SKILL.md"))).toBe(true);
     expect(fs.readFileSync(path.join(folder, "skills/fixture/SKILL.md"), "utf8")).toBe(BODY);
     expect(fs.readFileSync(path.join(folder, "skills/fixture/scripts/check"), "utf8")).toBe(SCRIPT);
@@ -147,15 +163,53 @@ describe("upstream skill resources", () => {
       },
     ]);
     await common.deploySharedLLMUpstreamSkills();
-    const folder = path.join(home, "llm/upstream/fixture", SOURCE.revision, "skills/devops/fixture");
+    const folder = path.join(home, "llm/upstream/fixture", SOURCE_FOLDER_NAME, "skills/devops/fixture");
     expect(fs.readFileSync(path.join(folder, "SKILL.md"), "utf8")).toBe(BODY);
     expect(fs.readFileSync(path.join(folder, "scripts/check"), "utf8")).toBe(SCRIPT);
+  });
+
+  it("installs an expanded resource selection beside the same upstream revision without overwriting the original", async () => {
+    const originalSource = { ...SOURCE, snapshot: "bbbbbbbbbbbbbbbb" };
+    const { common } = loadDeployment([originalSource]);
+    await common.deploySharedLLMUpstreamSkills();
+    const originalFolder = common.getLLMUpstreamSkillFolder(originalSource);
+    const originalFile = path.join(originalFolder, "skills/fixture/SKILL.md");
+    const originalInode = fs.statSync(originalFile).ino;
+    const expanded = {
+      ...originalSource,
+      snapshot: "cccccccccccccccc",
+      skills: ["fixture", "extra"],
+      files: [...SOURCE.files, { ...SOURCE.files[0], path: "skills/extra/SKILL.md" }],
+    };
+    common.LLM_UPSTREAM_SKILL_SOURCES = [expanded];
+
+    await common.deploySharedLLMUpstreamSkills();
+
+    const expandedFolder = common.getLLMUpstreamSkillFolder(expanded);
+    expect(expandedFolder).not.toBe(originalFolder);
+    expect(fs.readFileSync(path.join(expandedFolder, "skills/extra/SKILL.md"), "utf8")).toBe(BODY);
+    expect(fs.readFileSync(originalFile, "utf8")).toBe(BODY);
+    expect(fs.statSync(originalFile).ino).toBe(originalInode);
+  });
+
+  it("leaves an older revision-only cache untouched when installing the current selection", async () => {
+    const { common, home } = loadDeployment();
+    const legacy = path.join(home, "llm/upstream/fixture", SOURCE.revision);
+    fs.mkdirSync(legacy, { recursive: true });
+    fs.writeFileSync(path.join(legacy, "private.txt"), "Old snapshot content\n");
+    const originalInode = fs.statSync(path.join(legacy, "private.txt")).ino;
+
+    await common.deploySharedLLMUpstreamSkills();
+
+    expect(fs.readFileSync(path.join(legacy, "private.txt"), "utf8")).toBe("Old snapshot content\n");
+    expect(fs.statSync(path.join(legacy, "private.txt")).ino).toBe(originalInode);
+    expect(fs.readFileSync(path.join(home, "llm/upstream/fixture", SOURCE_FOLDER_NAME, "skills/fixture/SKILL.md"), "utf8")).toBe(BODY);
   });
 
   it("reuses verified resources offline without rewriting their identity", async () => {
     const { common, home } = loadDeployment();
     await common.deploySharedLLMUpstreamSkills();
-    const file = path.join(home, "llm/upstream/fixture", SOURCE.revision, "skills/fixture/SKILL.md");
+    const file = path.join(home, "llm/upstream/fixture", SOURCE_FOLDER_NAME, "skills/fixture/SKILL.md");
     const original = fs.statSync(file);
     common.downloadAsset = async () => {
       throw new Error("offline");
@@ -172,6 +226,8 @@ describe("upstream skill resources", () => {
     ["hidden component", { ...SOURCE, files: [{ ...SOURCE.files[0], path: "skills/.hidden/file" }] }],
     ["secret path", { ...SOURCE, files: [{ ...SOURCE.files[0], path: "skills/fixture/a.secret.md" }] }],
     ["mutable revision", { ...SOURCE, revision: "main" }],
+    ["invalid selection", { ...SOURCE, snapshot: "../escape" }],
+    ["missing selection", { ...SOURCE, snapshot: undefined }],
     ["invalid repository", { ...SOURCE, repository: "https://example.com/escape" }],
     ["repository traversal", { ...SOURCE, repository: "../escape" }],
     ["invalid provider", { ...SOURCE, id: "../escape" }],
@@ -198,7 +254,7 @@ describe("upstream skill resources", () => {
 
   it("does not overwrite a corrupt or privately edited installed revision", async () => {
     const { common, home, downloads } = loadDeployment();
-    const folder = path.join(home, "llm/upstream/fixture", SOURCE.revision, "skills/fixture");
+    const folder = path.join(home, "llm/upstream/fixture", SOURCE_FOLDER_NAME, "skills/fixture");
     fs.mkdirSync(folder, { recursive: true });
     fs.writeFileSync(path.join(folder, "SKILL.md"), "Private changes\n");
     await expect(common.deploySharedLLMUpstreamSkills()).rejects.toThrow(/integrity/);
@@ -222,9 +278,9 @@ describe("upstream skill resources", () => {
     const parent = path.join(home, "llm/upstream/fixture");
     const foreign = path.join(home, "missing-foreign");
     fs.mkdirSync(parent, { recursive: true });
-    fs.symlinkSync(foreign, path.join(parent, SOURCE.revision));
+    fs.symlinkSync(foreign, path.join(parent, SOURCE_FOLDER_NAME));
     await expect(common.deploySharedLLMUpstreamSkills()).rejects.toThrow(/symbolic link/);
-    expect(fs.readlinkSync(path.join(parent, SOURCE.revision))).toBe(foreign);
+    expect(fs.readlinkSync(path.join(parent, SOURCE_FOLDER_NAME))).toBe(foreign);
     expect(fs.existsSync(foreign)).toBe(false);
     expect(downloads).toEqual([]);
   });

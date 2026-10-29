@@ -31,7 +31,8 @@ Skill selection alone does not grant publication authority. Honor local-only req
 - Apply loop Phase 0 to enumerate finite, reviewable pieces with dependencies and a machine-checkable baseline before editing.
   Each piece is one loop item; follow dependency order, choosing cheap informative items first when independent.
 - Keep loop state in the selected plan rather than opening a duplicate ledger. Record each piece's implementation and validation checkpoints separately.
-- For authorized PR work, reuse the task's existing owned PR or create a placeholder draft through the available draft-PR workflow.
+- For authorized PR work, reuse the task's existing owned PR or apply **Placeholder checkpoint** in the shared PR publication guidance directly.
+  Create and promote through that single pipeline, not a separate PR-creation skill.
   Share its returned full URL before implementation starts. Keep `Placeholder` and `WIP: DO NOT MERGE` initially.
 - Use one PR unless the authorized plan already specifies independent slices. Apply **No stacked PRs**; never restructure the user's branches implicitly.
 

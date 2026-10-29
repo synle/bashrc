@@ -15,28 +15,51 @@ describe("restored guidance integrity", () => {
     expect(body).toContain("pass=single");
   });
 
-  it.each(["sy-merge", "sy-release", "sy-close-stale-prs"])("keeps active guidance independent of retired utility %s", (name) => {
-    const instructions = fs.readdirSync(SOURCE_FOLDER).filter((entry) => entry.startsWith("instructions") && entry.endsWith(".md"));
-    const skillsFolder = path.join(SOURCE_FOLDER, "skills");
-    const skills = fs.readdirSync(skillsFolder).filter((entry) => entry.endsWith(".md"));
-    const files = [
-      ...instructions.map((entry) => path.join(SOURCE_FOLDER, entry)),
-      ...skills.map((entry) => path.join(skillsFolder, entry)),
-    ].filter((file) => !file.includes(".secret.") && fs.lstatSync(file).isFile());
-    const references = files.filter((file) => fs.readFileSync(file, "utf8").includes(name));
-    expect(references).toEqual([]);
-  });
+  it.each(["sy-merge", "sy-release", "sy-close-stale-prs", "sy-create-pr", "sy-draft-pr"])(
+    "keeps active guidance independent of retired utility %s",
+    (name) => {
+      const instructions = fs.readdirSync(SOURCE_FOLDER).filter((entry) => entry.startsWith("instructions") && entry.endsWith(".md"));
+      const skillsFolder = path.join(SOURCE_FOLDER, "skills");
+      const skills = fs.readdirSync(skillsFolder).filter((entry) => entry.endsWith(".md"));
+      const files = [
+        ...instructions.map((entry) => path.join(SOURCE_FOLDER, entry)),
+        ...skills.map((entry) => path.join(skillsFolder, entry)),
+      ].filter((file) => !file.includes(".secret.") && fs.lstatSync(file).isFile());
+      const references = files.filter((file) => fs.readFileSync(file, "utf8").includes(name));
+      expect(references).toEqual([]);
+    },
+  );
 
   it("keeps plain-English synchronization routing and release permission boundaries without retired aliases", () => {
     const workflow = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-pr-workflow.md"), "utf8");
-    const create = fs.readFileSync(path.join(SOURCE_FOLDER, "skills/create-pr.md"), "utf8");
     const babysit = fs.readFileSync(path.join(SOURCE_FOLDER, "skills/babysit-pr.md"), "utf8");
     expect(workflow).toContain("floor/default first");
     expect(workflow).toContain("upstream default branch last");
     expect(workflow).toContain("stopped-for-human");
     expect(workflow).toContain("needs-human");
-    expect(create).toContain("**Release is never automatic.**");
+    expect(workflow).toContain("**Release is never automatic.**");
     expect(babysit).toContain("**Release dispatch is NEVER automatic.**");
+  });
+
+  it("owns the three PR lifecycle transitions in shared guidance", () => {
+    const workflow = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-pr-workflow.md"), "utf8");
+    const placeholder = workflow.split("\n").find((line) => line.startsWith("- **Placeholder checkpoint**"));
+    const implementation = workflow.split("\n").find((line) => line.startsWith("- **Implementation checkpoint**"));
+    const validation = workflow.split("\n").find((line) => line.startsWith("- **Validation checkpoint**"));
+    expect(placeholder).toBeDefined();
+    expect(placeholder).toContain("one empty placeholder commit");
+    expect(placeholder).toContain("both `WIP` and `Placeholder`");
+    expect(implementation).toContain("remove only `Placeholder`");
+    expect(implementation).toContain("retain `WIP`");
+    expect(validation).toContain("current actionable PR feedback");
+    expect(validation).toContain("remove `WIP` and any remaining `Placeholder`");
+  });
+
+  it("routes plan publication directly through the shared placeholder checkpoint", () => {
+    const execute = fs.readFileSync(path.join(SOURCE_FOLDER, "skills/execute-plan.md"), "utf8");
+    expect(execute).toContain("**Placeholder checkpoint**");
+    expect(execute).not.toContain("available draft-PR workflow");
+    expect(execute).toContain("remove only `Placeholder`");
   });
 
   it("includes the active persona source rather than an archived copy", () => {
