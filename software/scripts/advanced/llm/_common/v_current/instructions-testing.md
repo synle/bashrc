@@ -35,3 +35,12 @@ Honesty from the main instructions governs this file too.
 - Skill evaluations separate trigger accuracy from task success. Compare a revised skill with its previous version on the same realistic prompts. Include should-trigger cases and adjacent near-misses that should not trigger; reserve held-out prompts to detect overfitting. Inspect resulting artifacts and execution traces, not only activation or aggregate scores.
 - Coverage percentage is a smoke detector, not a goal. Never write a test to move the number, never delete a meaningful assertion to hit a threshold.
 - Report passed, failed, errored, and skipped tests separately. A skipped test is not a pass: report its reason, especially when a dependency, browser, network, credential, OS, or external service is unavailable. A required test that cannot run is a failure, not a skip.
+
+## UI screenshot evidence
+
+- Create or reuse an LLM plan in `<<LLM_ROOT_FOLDER>>/plans/` before implementing any user-visible UI change. Follow Plans & Wrap-Ups.
+- After implementation and validation, use Playwright MCP to capture the real running UI when it can reach the app. Capture states that show changed behavior. Never substitute mockups or generated images for screenshots.
+- Save each screenshot beside the original plan as `<plan-stem>.screenshot.<n>.<short_slug>.png`. Use unique one-based numbers and concise lowercase snake_case slugs.
+- Append a final `## UI Screenshots` section to the original plan after its existing content. Embed every capture with a relative Markdown image link and descriptive alt text.
+- Use a local or approved test environment with non-sensitive test data. Follow browser-profile rules in `instructions.md` for authenticated sessions. Never capture secrets or unnecessary personal data.
+- If the app, Playwright MCP, or safe test state is unavailable, record the reason in the original plan and completion report.

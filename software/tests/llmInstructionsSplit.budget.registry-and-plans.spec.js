@@ -65,10 +65,13 @@ const SPLIT_EXPECTATIONS = {
   },
   "testing.md": {
     heading: "# Test Quality",
-    sections: ["## What a test asserts", "## How a test is shaped"],
+    sections: ["## What a test asserts", "## How a test is shaped", "## UI screenshot evidence"],
     leads: [
       "Test behavior, not implementation",
       "A test that passes before the fix is not a regression test",
+      "Create or reuse an LLM plan in `<<LLM_ROOT_FOLDER>>/plans/` before implementing any user-visible UI change",
+      "use Playwright MCP to capture the real running UI",
+      "Save each screenshot beside the original plan as `<plan-stem>.screenshot.<n>.<short_slug>.png`",
       "Assert values, not the absence of an explosion",
       "Don't mock what you don't own",
       "Deterministic or deleted",
@@ -118,11 +121,11 @@ const SPLIT_EXPECTATIONS = {
   // are SUPPOSED to appear in the always-loaded file too. `inlined` turns the
   // not-duplicated assertion off for exactly this file rather than weakening it for
   // all siblings. Why both copies: claude and gemini read only the always-loaded block,
-  // while opencode loads the standalone file as its own rules document — and position
+  // while opencode loads the standalone file as its own rules document -- and position
   // matters for a persona, the smallest and oldest thing in a long context.
-  // Deployed as `~persona.md` so it sorts LAST — see LLM_PERSONA_INSTRUCTION_FILE.
+  // Deployed as `~persona.md` so it sorts LAST -- see LLM_PERSONA_INSTRUCTION_FILE.
   "~persona.md": {
-    heading: "# Persona — Caveman Speak",
+    heading: "# Persona \u2014 Caveman Speak",
     sections: [],
     inlined: true,
     leads: [
@@ -156,7 +159,7 @@ function loadLlmCommon() {
     readJson: () => ({}),
     readText: () => "",
     getOllamaHosts: async () => [{ ip: "127.0.0.1", hostname: "local", tags: [], isDefault: true, isLocal: true }],
-    // The REAL resolver from index.js — never a stub, which would be a second
+    // The REAL resolver from index.js -- never a stub, which would be a second
     // implementation free to disagree with the one that actually deploys. The
     // shared roots are pinned to the sandbox so these assertions never depend on
     // the home layout of whoever ran them.
