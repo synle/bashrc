@@ -11,6 +11,9 @@ const TOOL_TIMEOUT_MS = 5000;
 /** AST output can be considerably larger than its input source. */
 const MAX_TOOL_OUTPUT_BYTES = 16 * 1024 * 1024;
 
+/** Expected analyzer failures that a file batch can report without stopping. */
+class AnalyzerError extends Error {}
+
 /**
  * Run an analyzer on stdin and decode its JSON without executing shell source.
  * @param {string} binary Analyzer executable.
@@ -18,7 +21,7 @@ const MAX_TOOL_OUTPUT_BYTES = 16 * 1024 * 1024;
  * @param {string} source Input shell source.
  * @param {number[]} acceptedStatuses Accepted analyzer exit statuses.
  * @returns {object|object[]} Decoded analyzer output.
- * @throws {Error} Missing tools, timeout, analyzer failure, or invalid JSON.
+ * @throws {AnalyzerError} Missing tools, timeout, analyzer failure, or invalid JSON.
  */
 function analyze(binary, args, source, acceptedStatuses) {
   const result = spawnSync(binary, args, {
@@ -27,13 +30,14 @@ function analyze(binary, args, source, acceptedStatuses) {
     timeout: TOOL_TIMEOUT_MS,
     maxBuffer: MAX_TOOL_OUTPUT_BYTES,
   });
-  if (result.error) throw new Error(`${binary}: ${result.error.code}; install/check the analyzer and retry.`, { cause: result.error });
-  if (!acceptedStatuses.includes(result.status)) throw new Error(`${binary}: ${result.stderr.trim() || "analyzer failed"}`);
+  if (result.error)
+    throw new AnalyzerError(`${binary}: ${result.error.code}; install/check the analyzer and retry.`, { cause: result.error });
+  if (!acceptedStatuses.includes(result.status)) throw new AnalyzerError(`${binary}: ${result.stderr.trim() || "analyzer failed"}`);
   try {
     return JSON.parse(result.stdout);
   } catch (error) {
     if (!(error instanceof SyntaxError)) throw error;
-    throw new Error(`${binary}: expected JSON output; check the installed analyzer version.`, { cause: error });
+    throw new AnalyzerError(`${binary}: expected JSON output; check the installed analyzer version.`, { cause: error });
   }
 }
 
@@ -119,7 +123,8 @@ function commandFindings(tree, rules) {
  * @param {string} source Shell source supplied by the caller.
  * @param {string} rule One supported check, or all.
  * @returns {{code: string, line: number, column: number, message: string}[]} Findings.
- * @throws {Error} Invalid inputs, unsupported syntax, unavailable tools, or malformed analyzer output.
+ * @throws {Error} Invalid source or rule.
+ * @throws {AnalyzerError} Unsupported syntax, unavailable tools, or malformed analyzer output.
  */
 function validateShellSource(source, rule) {
   if (typeof source !== "string") throw new Error("source: expected a string.");
@@ -129,7 +134,7 @@ function validateShellSource(source, rule) {
   if (rules.some((item) => item === "options" || item === "printf" || item === "syntax")) {
     const dialect = rules.includes("syntax") ? "posix" : "bash";
     const tree = analyze("shfmt", ["-ln", dialect, "--to-json"], source, [0]);
-    if (!tree || tree.Type !== "File") throw new Error("shfmt: expected a File syntax tree.");
+    if (!tree || tree.Type !== "File") throw new AnalyzerError("shfmt: expected a File syntax tree.");
     findings.push(...commandFindings(tree, rules));
   }
   if (rules.some((item) => item === "quoting" || item === "printf" || item === "syntax")) {
@@ -139,9 +144,10 @@ function validateShellSource(source, rule) {
       source,
       [0, 1],
     );
-    if (!Array.isArray(diagnostics)) throw new Error("shellcheck: expected a diagnostic array.");
+    if (!Array.isArray(diagnostics)) throw new AnalyzerError("shellcheck: expected a diagnostic array.");
     for (const item of diagnostics) {
-      if (!item || !Number.isInteger(item.code) || typeof item.message !== "string") throw new Error("shellcheck: malformed diagnostic.");
+      if (!item || !Number.isInteger(item.code) || typeof item.message !== "string")
+        throw new AnalyzerError("shellcheck: malformed diagnostic.");
       const selected = item.code < 2000 || rules.some((name) => (DIAGNOSTICS[name] || []).includes(item.code));
       const nonPosix = rules.includes("syntax") && item.code >= 3000 && item.code < 4000;
       if (selected || nonPosix) findings.push({ code: `SC${item.code}`, line: item.line, column: item.column, message: item.message });
@@ -151,26 +157,40 @@ function validateShellSource(source, rule) {
 }
 
 /**
- * Read explicitly selected regular files and return a machine-readable validation result.
+ * Validate every selected regular file, retaining findings and file-level analyzer failures.
  * @param {string[]} files Literal filenames; no shell expansion or recursive discovery.
  * @param {string} rule One supported check, or all.
- * @returns {{ok: boolean, rule: string, checkedFiles: number, findings: object[]}} Validation result.
- * @throws {Error} Missing/invalid scope, sensitive paths, filesystem failures, or analyzer failures.
+ * @returns {{ok: boolean, rule: string, checkedFiles: number, findings: object[], errors?: object[]}} Result; checkedFiles counts distinct attempted files.
+ * @throws {Error} Missing/invalid scope or rule, sensitive paths, filesystem failures, or unexpected errors.
+ * @sideEffects Reads selected files and invokes static analyzers without executing source.
  */
 function validateShellFiles(files, rule) {
   if (!Array.isArray(files) || files.length === 0 || files.some((file) => typeof file !== "string" || file.length === 0)) {
     throw new Error("files: expected a nonempty filename or JSON array of nonempty filenames.");
   }
   const findings = [];
+  const errors = [];
   for (const file of new Set(files)) {
     const sensitive = /\.secret\.|(?:^|[/\\])\.env(?:[./\\]|$)|\.(?:pem|key)$/i;
     if (sensitive.test(file)) throw new Error("files: sensitive paths are not accepted.");
     const resolved = fs.realpathSync(file);
     if (sensitive.test(resolved)) throw new Error("files: resolved sensitive paths are not accepted.");
     if (!fs.statSync(resolved).isFile()) throw new Error("files: each input must be a regular file.");
-    for (const finding of validateShellSource(fs.readFileSync(resolved, "utf8"), rule)) findings.push({ file, ...finding });
+    const source = fs.readFileSync(resolved, "utf8");
+    try {
+      for (const finding of validateShellSource(source, rule)) findings.push({ file, ...finding });
+    } catch (error) {
+      if (!(error instanceof AnalyzerError)) throw error;
+      errors.push({ file, code: "VALIDATION_UNAVAILABLE", message: error.message });
+    }
   }
-  return { ok: findings.length === 0, rule, checkedFiles: new Set(files).size, findings };
+  return {
+    ok: findings.length === 0 && errors.length === 0,
+    rule,
+    checkedFiles: new Set(files).size,
+    findings,
+    ...(errors.length > 0 ? { errors } : {}),
+  };
 }
 
 /**
@@ -185,7 +205,7 @@ function main() {
     const files = paths.length > 0 ? paths : scope.startsWith("[") ? JSON.parse(scope) : scope ? [scope] : [];
     const result = validateShellFiles(files, rule);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    process.exitCode = result.ok ? 0 : 1;
+    process.exitCode = result.errors ? 2 : result.ok ? 0 : 1;
   } catch (error) {
     process.stderr.write(`${JSON.stringify({ ok: false, error: { code: "VALIDATION_UNAVAILABLE", message: error.message } })}\n`);
     process.exitCode = 2;
