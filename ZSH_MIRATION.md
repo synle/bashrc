@@ -102,6 +102,7 @@ New opt-in interactive path:
 Proposed names such as `software/bootstrap/profile-zsh.zsh`, `~/.zsh_syle`, and `~/.zsh_syle_cache` are design placeholders, not existing files or shipped APIs.
 The opt-in setting and durable artifact names must be chosen during implementation.
 Do not publish an executable command using an invented migration flag.
+An isolated `ZDOTDIR` does not suppress global startup files; record any system initialization that affects the trial.
 
 Recommended initialization order:
 
@@ -112,6 +113,9 @@ Recommended initialization order:
 5. Initialize Starship and register prompt/folder hooks without duplicate ownership.
 6. Apply accepted custom keybindings after any integration that changes them.
 7. Load optional suggestion/highlighting plugins only after their separate acceptance checks.
+
+Use native `precmd`/`preexec` hooks for lifecycle work and `chpwd` for folder tracking where their contracts fit.
+Seed initial prompt and folder state explicitly; do not wait for the first folder change.
 
 ## Component inventory and required work
 
@@ -347,7 +351,7 @@ Use observable output and state, not just successful process exit codes.
 | Real terminals          | Verify Ghostty, an editor terminal, and a new tmux pane; do not infer acceptance from isolated child-shell checks.                                 |
 | Rollback                | Restore only migration-owned selections and startup blocks; verify Bash and preexisting state still work.                                          |
 
-Use the repository's [validation cadence](AGENTS.md) and [testing map](DEV.md):
+Use the repository's [validation cadence](./AGENTS.md) and [testing map](./DEV.md):
 
 - Run `/bin/bash -n` for changed Bash sources and the selected zsh interpreter's syntax check for native/generated zsh sources.
 - Reserve zsh `-f` for syntax or intentionally startup-free probes; it is not proof that a managed `.zshrc` loaded successfully.

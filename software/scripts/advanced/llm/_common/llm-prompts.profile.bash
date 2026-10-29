@@ -12,6 +12,7 @@
 #   gemini_list_prompts    / gemini_search_prompts      (defined in gemini.profile.bash)
 #   opencode_list_prompts  / opencode_search_prompts    (defined in opencode.profile.bash)
 #   llm_list_prompts       / llm_search_prompts         (aggregate, defined HERE)
+#   plan_list             / plan_search                (repo-scoped plan files, defined HERE)
 #   llm_search_plans                                    (plan-file picker, defined HERE)
 #
 # Internal contract:
@@ -566,6 +567,89 @@ header, is never part of what Enter copies. Single-CLI pickers such as
 ################################################################################
 # --- Plan artifacts ---
 ################################################################################
+
+# plan_list: list shared plan artifacts for the current repository
+# No arguments. Prints absolute file paths, including sidecars, without reading contents.
+# Resolves the repository name from origin in the current Git checkout or worktree.
+# Returns 0 for an empty list, 1 for missing origin/configuration/folder, or 2 for invalid usage.
+function plan_list() {
+  if is_help_arg "${1:-}"; then
+    echo "plan_list: list shared plan artifacts for the current repository
+  Usage: plan_list
+
+Lists files named <repo>-* in \$LLM_ROOT_FOLDER/plans, including sidecars.
+The repository name comes from the current checkout's origin, not its folder name.
+Prints absolute paths, one per line; an empty list succeeds."
+    return 0
+  fi
+  if [ "$#" -ne 0 ]; then
+    echo "plan_list: takes no arguments; usage: plan_list" >&2
+    return 2
+  fi
+  if [ -z "${LLM_ROOT_FOLDER+x}" ] || [ -z "$LLM_ROOT_FOLDER" ]; then
+    echo "plan_list: LLM_ROOT_FOLDER is not configured" >&2
+    return 1
+  fi
+
+  local plans_folder="${LLM_ROOT_FOLDER}/plans"
+  if [ ! -d "$plans_folder" ]; then
+    echo "plan_list: no plans folder at $plans_folder" >&2
+    return 1
+  fi
+
+  local remote_url repo_name
+  if ! remote_url=$(command git remote get-url origin 2> /dev/null); then
+    echo "plan_list: cannot resolve origin for the current repository" >&2
+    return 1
+  fi
+  remote_url="${remote_url%/}"
+  remote_url="${remote_url%.git}"
+  repo_name="${remote_url##*[/:]}"
+  if [ -z "$repo_name" ]; then
+    echo "plan_list: origin has no repository name" >&2
+    return 1
+  fi
+
+  local plan_file
+  for plan_file in "$plans_folder/$repo_name-"*; do
+    [ -f "$plan_file" ] || continue
+    printf '%s\n' "$plan_file"
+  done
+  return 0
+}
+
+# plan_search: filter current-repository plan filenames by a partial keyword
+# $1 is one nonempty, case-insensitive literal substring; file contents are not read.
+# Calls plan_list and preserves its failures. Prints matching absolute paths, one per line.
+# Returns 0 for no matches or help, 2 for invalid usage; leaves caller shell options unchanged.
+function plan_search() {
+  if is_help_arg "${1:-}"; then
+    echo "plan_search: filter current-repository plan filenames by a partial keyword
+  Usage: plan_search <keyword>
+
+Filters plan_list by a case-insensitive literal substring of each filename.
+Quote keywords containing spaces or shell metacharacters. File contents are not searched.
+An empty result succeeds."
+    return 0
+  fi
+  if [ "$#" -ne 1 ] || [ -z "$1" ]; then
+    echo "plan_search: requires one nonempty keyword; usage: plan_search <keyword>" >&2
+    return 2
+  fi
+
+  local plans
+  plans=$(plan_list) || return "$?"
+  (
+    shopt -s nocasematch
+    local plan_file
+    while IFS= read -r plan_file; do
+      [ -n "$plan_file" ] || continue
+      if [[ "${plan_file##*/}" == *"$1"* ]]; then
+        printf '%s\n' "$plan_file"
+      fi
+    done <<< "$plans"
+  )
+}
 
 # llm_search_plans: fzf-pick a plan file from the shared LLM plans folder, open in vim
 #

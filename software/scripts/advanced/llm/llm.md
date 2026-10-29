@@ -463,6 +463,31 @@ arm, no second array, no edit to any dispatch function — `_sy_exec_prompt` and
 enforced by a test that fails on any CLI name appearing outside the registry
 block (`software/tests/syCommandsDispatcher.spec.js`).
 
+### Repository plan files
+
+`plan_list` lists the current repository's plan files and sidecars from `${LLM_ROOT_FOLDER}/plans`.
+The shared root comes from `software/bootstrap/common-env.sh`; these helpers do not define another root.
+Git resolves `origin` from the current folder, including nested checkout folders and worktrees.
+The remote's repository name selects files with the `<repo>-` prefix, regardless of the local checkout name.
+
+```bash
+plan_list
+plan_search auth
+plan_search "api types"
+```
+
+`plan_search <keyword>` calls `plan_list` and filters filenames by a case-insensitive literal substring.
+It requires exactly one nonempty keyword; quote spaces and shell metacharacters.
+Neither helper reads file contents or opens an editor.
+Both print absolute paths, one per line, and return success with no output when nothing matches.
+Filenames containing newlines are not supported by this line-delimited interface.
+Missing root configuration, plans folder, or origin returns status 1; invalid arguments return status 2.
+The shared filename convention cannot distinguish repositories with the same name under different owners.
+
+Both helpers live in `_common/llm-prompts.profile.bash`, loaded through the existing profile SOURCE marker.
+Each supports `--help`.
+The existing `llm_search_plans` remains an all-repository fuzzy picker that opens selected files in Vim.
+
 ### Memory promotion bridge (Claude → other CLIs)
 
 `memory-bridge.standalone.js` reads each available `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` and its linked Markdown records.
