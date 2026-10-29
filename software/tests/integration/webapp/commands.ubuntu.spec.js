@@ -57,7 +57,7 @@ describe("command snapshots", () => {
           "title": "docs/game-streaming-moonlight-steamlink.md",
         },
         {
-          "hash": "200f2f085cb94e45b7cbb8aad9820131",
+          "hash": "101a0111feedc0a0a20059fefe1eff0d",
           "title": "profile_bashrc_ubuntu.sh",
         },
         {
