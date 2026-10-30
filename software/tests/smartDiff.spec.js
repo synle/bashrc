@@ -1,109 +1,6 @@
 /** Subprocess contracts for smart terminal and editor comparisons. */
 import { describe, expect, it } from "vitest";
-import { spawnSync, execFileSync } from "child_process";
-import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "fs";
-import os from "os";
-import path from "path";
-import { fileURLToPath } from "url";
-
-/** Checkout root containing the canonical profile sources. */
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-/** Core helpers used by the comparison dispatcher. */
-const CORE = readFileSync(path.join(ROOT, "software/bootstrap/profile-core.sh"), "utf8");
-/** Exact advanced section, including aliases and inherited-alias cleanup. */
-const DIFF = readFileSync(path.join(ROOT, "software/bootstrap/profile-advanced.sh"), "utf8")
-  .split("# --- Diff (file diff or git hash compare) ---\n")[1]
-  .split("# SOURCE | software/scripts/bash-git-helpers.profile.bash")[0];
-/** Actual Git executable used only for repository integration cases. */
-const GIT = execFileSync("/bin/bash", ["-c", "type -P git"], { encoding: "utf8" }).trim();
-
-/**
- * Execute the shipped section in Bash 3.2 with isolated executable boundaries.
- * @param {string[]} args - Arguments passed as positional parameters, never interpolated.
- * @param {object} [options] - Backend, invocation, reload, and launcher fixture controls.
- * @param {string[]} [options.binaries] - Available recording executables.
- * @param {string} [options.invocation] - Fixed shell invocation after profile loading.
- * @param {string} [options.backend] - Recorder or real Git repository.
- * @param {number} [options.exitStatus] - Recorder's process status.
- * @param {boolean} [options.hashes] - Create a second commit and compare both full hashes.
- * @param {string} [options.setup] - Fixed shell functions installed before invoking diff.
- * @returns {import("child_process").SpawnSyncReturns<string>} Process output and status.
- * @throws {Error} On fixture creation errors; removes owned fixtures in all cases.
- */
-function runDiff(
-  args,
-  { binaries = ["git", "diff"], invocation = `eval 'diff "$@"'`, backend = "recorder", exitStatus = 0, hashes = false, setup = "" } = {},
-) {
-  const sandbox = mkdtempSync(path.join(os.tmpdir(), "smart-diff-"));
-  let processArgs = args;
-  try {
-    const source = path.join(sandbox, "profile.bash");
-    const aliasSource = path.join(sandbox, "inherited-alias.bash");
-    writeFileSync(
-      source,
-      `${CORE.match(/function is_help_arg\(\) \{[\s\S]*?\n\}/)[0]}\n${CORE.match(/function is_runnable_command\(\) \{[\s\S]*?\n\}/)[0]}\n${DIFF}`,
-    );
-    writeFileSync(aliasSource, "alias diff='command diff --inherited'\n");
-    symlinkSync("/usr/bin/tr", path.join(sandbox, "tr"));
-    for (const binary of binaries) {
-      writeFileSync(path.join(sandbox, binary), `#!/bin/bash\nprintf '%s\\0' "${binary}" "$@"\nexit ${exitStatus}\n`, { mode: 0o755 });
-    }
-    writeFileSync(path.join(sandbox, "left file.txt"), "old line\n");
-    writeFileSync(path.join(sandbox, "right file.txt"), "new line\n");
-    writeFileSync(path.join(sandbox, "-dash.txt"), "new line\n");
-    writeFileSync(path.join(sandbox, "quote'\"\\\n\u2603.txt"), "new line\n");
-    if (backend === "git") {
-      rmSync(path.join(sandbox, "git"));
-      symlinkSync(GIT, path.join(sandbox, "git"));
-      const git = (args) =>
-        execFileSync(GIT, args, {
-          cwd: sandbox,
-          env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
-          stdio: "pipe",
-        });
-      git(["init", "-q"]);
-      git(["add", "left file.txt"]);
-      git(["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "Initial"]);
-      writeFileSync(path.join(sandbox, "left file.txt"), "changed line\n");
-      if (hashes) {
-        git(["add", "left file.txt"]);
-        git(["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "Changed"]);
-        processArgs = [git(["rev-parse", "HEAD~1"]).toString().trim(), git(["rev-parse", "HEAD"]).toString().trim()];
-      }
-    }
-    return spawnSync(
-      "/bin/bash",
-      [
-        "--noprofile",
-        "--norc",
-        "-O",
-        "expand_aliases",
-        "-c",
-        `. "$ALIAS_SOURCE"\n. "$SOURCE"\n. "$SOURCE"\n${setup}\n${invocation}`,
-        "test",
-        ...processArgs,
-      ],
-      {
-        cwd: sandbox,
-        env: {
-          ...process.env,
-          PATH: sandbox,
-          SOURCE: source,
-          ALIAS_SOURCE: aliasSource,
-          BASH_ENV: "/dev/null",
-          GIT_CONFIG_GLOBAL: "/dev/null",
-          GIT_CONFIG_NOSYSTEM: "1",
-          GIT_PAGER: "cat",
-          LC_ALL: "C",
-        },
-        encoding: "utf8",
-        timeout: 5000,
-      },
-    );
-  } finally {
-    rmSync(sandbox, { recursive: true, force: true });
-  }
-}
+import { BASH_SHELLS, runDiff } from "./smartDiff.helpers.js";
 
 describe("smart diff subprocess", () => {
   it.each([
@@ -148,12 +45,15 @@ describe("smart diff subprocess", () => {
     },
   );
 
-  it.each(["-code", "-delta1"])("tries revision mode for a nonexistent second path in %s", (flag) => {
-    const result = runDiff([flag, "left file.txt", "missing"], { binaries: ["code", "git"] });
-    expect(result.status).toBe(1);
-    expect(result.stderr).toBe("diff: revision mode requires a Git-tracked file; current folder is not in a Git working tree.\n");
-    expect(result.stdout).toBe("");
-  });
+  it.each(["-code", "-delta1"].flatMap((flag) => BASH_SHELLS.map((shell) => [flag, shell])))(
+    "tries revision mode for a nonexistent second path in %s under %s",
+    (flag, shell) => {
+      const result = runDiff([flag, "left file.txt", "missing"], { binaries: ["code", "git"], shell });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toBe("diff: revision mode requires a Git-tracked file; current folder is not in a Git working tree.\n");
+      expect(result.stdout).toBe("");
+    },
+  );
 
   it("accepts a deployed editor shell function without a PATH executable", () => {
     const result = runDiff(["-smerge", "left file.txt", "right file.txt"], {

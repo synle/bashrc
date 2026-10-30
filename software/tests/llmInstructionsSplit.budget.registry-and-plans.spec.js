@@ -47,7 +47,12 @@ const SPLIT_EXPECTATIONS = {
     sections: ["## Status sentence", "## Parent and subagent updates"],
     leads: [
       "At task start and every meaningful phase boundary",
-      "Start the sentence with exactly one status",
+      "[<repo>] #<PR> \u00b7 <STATUS> \u00b7 step <N>/<M> - <current step> \u00b7 <details>",
+      "Omit `#<PR>` and its preceding space when no verified PR applies",
+      "Keep the entire step field within `10` words, including `step N/M -`",
+      "`step N/M` conveys progress; do not repeat a separate remaining-step count in details",
+      "If the total is unknown, use `step N/?`",
+      "Use exactly one status",
       "Use `DONE` only after assigned work and required checks pass",
       "Subagents send the same status sentence to their parent",
     ],
