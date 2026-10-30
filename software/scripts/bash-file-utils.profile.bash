@@ -280,7 +280,8 @@ function watch() {
 # Args: optional --no-cache, optional integer seconds (1-86400, default 30), one shell command string.
 # Returns 0 for help, 1 for invalid input, 130/143 on INT/TERM, or a cache/compare/render/sleep failure.
 # First cached stdout/stderr streams live into a private file; later frames stay buffered and redraw only on change.
-# Both private mktemp files are removed on exit; the initial streamed frame is never rendered twice.
+# Both private mktemp files are removed on exit; cleanup ignores further INT/TERM in the owned subshell.
+# The initial streamed frame is never rendered twice.
 # Supported TTY output gets plain status titles and one bell per changed frame, never the first frame.
 # The Updated title lasts at most two seconds within the normal wait; no-cache has no notifications.
 # Cached terminal captures request FORCE_COLOR without overriding explicit color opt-outs.
@@ -352,11 +353,16 @@ function watch_interval() {
       fi
       _output_cache=$(command mktemp "${TMPDIR:-/tmp}/watch_interval.XXXXXX") || return $?
       # Bash 3.2 unwinds locals before EXIT on signals; freeze each safely quoted path now.
-      printf -v _cache_cleanup 'command rm -f -- %q' "$_output_cache"
+      # Pending signals can interrupt EXIT before its first command; signal handlers must also own cleanup.
+      printf -v _cache_cleanup 'trap "" INT TERM; command rm -f -- %q' "$_output_cache"
       trap "$_cache_cleanup" EXIT
+      trap "$_cache_cleanup; exit 130" INT
+      trap "$_cache_cleanup; exit 143" TERM
       _next_cache=$(command mktemp "${TMPDIR:-/tmp}/watch_interval.XXXXXX") || return $?
-      printf -v _cache_cleanup 'command rm -f -- %q %q' "$_output_cache" "$_next_cache"
+      printf -v _cache_cleanup 'trap "" INT TERM; command rm -f -- %q %q' "$_output_cache" "$_next_cache"
       trap "$_cache_cleanup" EXIT
+      trap "$_cache_cleanup; exit 130" INT
+      trap "$_cache_cleanup; exit 143" TERM
       if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then
         _terminal_notifications=1
         if _title_path=$(type -P set_terminal_title); then

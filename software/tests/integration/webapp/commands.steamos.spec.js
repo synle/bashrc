@@ -13,11 +13,11 @@ describe("command snapshots", () => {
     expect(blocks).toMatchInlineSnapshot(`
       [
         {
-          "hash": "b60e4db42a28f9b173d59da31505c9a5",
+          "hash": "8a9089acc4c542727e43734581c5ad35",
           "title": "software/bootstrap/setup.sh",
         },
         {
-          "hash": "414c1c7d28622eaad3bdbceac65df5d4",
+          "hash": "80a3813ab75a1cfc8fe3f8a6d7726c3d",
           "title": "software/scripts/steamos/setup.bash",
         },
         {

@@ -9,8 +9,10 @@ import path from "path";
 const PROFILE = readFileSync("software/scripts/bash-file-utils.profile.bash", "utf8");
 /** Production help predicate required by the watcher. */
 const HELP = readFileSync("software/bootstrap/profile-core.sh", "utf8").match(/^function is_help_arg\(\) \{[\s\S]*?^\}/m)[0];
-/** Native utilities allowed in the isolated PATH, excluding tee for dependency tests. */
-const CORE_TOOLS = spawnSync("/bin/bash", ["-c", "type -P cat mktemp cmp tr rm"], { encoding: "utf8" }).stdout.trim().split("\n");
+/** Native utilities allowed in the isolated PATH, excluding tee and rm for boundary tests. */
+const CORE_TOOLS = spawnSync("/bin/bash", ["-c", "type -P cat mktemp cmp tr"], { encoding: "utf8" }).stdout.trim().split("\n");
+/** Native cleanup executable used after injecting a second terminal signal. */
+const RM = spawnSync("/bin/bash", ["-c", "type -P rm"], { encoding: "utf8" }).stdout.trim();
 /** Python executable resolved before the fixture replaces PATH. */
 const PYTHON = spawnSync("/bin/bash", ["-c", "type -P python3"], { encoding: "utf8" }).stdout.trim();
 /** Native capture utility used rather than mocking byte copying. */
@@ -67,15 +69,25 @@ finally:
  * @param {string} [options.pipefail="on"] - Whether the caller enables pipefail.
  * @param {string} [options.teeSupport="native"] - Native or missing executable.
  * @param {number} [options.teeStatus=0] - Nonzero tee failure injection.
+ * @param {string} [options.cleanupSignal=""] - INT or TERM sent to the owned cleanup process and watcher during cleanup.
  * @returns {object} Process status, displayed bytes, captured baseline, titles, and retained caches.
  * @throws {Error} On fixture failure; always removes the owned sandbox.
  */
-function runStream({ commandMode = "handshake", commandStatus = 0, pipefail = "on", teeSupport = "native", teeStatus = 0 } = {}) {
+function runStream({ commandMode = "handshake", commandStatus = 0, pipefail = "on", teeSupport = "native", teeStatus = 0, cleanupSignal = "" } = {}) {
   const folder = mkdtempSync(path.join(os.tmpdir(), "watch stream's "));
   try {
     const bin = path.join(folder, "bin");
     mkdirSync(bin);
     CORE_TOOLS.forEach((binary) => symlinkSync(binary, path.join(bin, path.basename(binary))));
+    if (cleanupSignal) {
+      writeFileSync(
+        path.join(bin, "rm"),
+        '#!/bin/bash\nprintf "cleanup:%s\\n" "$CLEANUP_SIGNAL"\nkill -s "$CLEANUP_SIGNAL" "$PPID" "$$"\nexec "$REAL_RM" "$@"\n',
+        { mode: 0o755 },
+      );
+    } else {
+      symlinkSync(RM, path.join(bin, "rm"));
+    }
     if (teeStatus !== 0) {
       writeFileSync(path.join(bin, "tee"), '#!/bin/bash\nprintf "tee fixture failed\\n" >&2\nexit "$TEE_STATUS"\n', { mode: 0o755 });
     } else if (teeSupport === "native") {
@@ -115,6 +127,8 @@ eval 'f5 probe'
         TMPDIR: folder,
         COMMAND_MODE: commandMode,
         COMMAND_STATUS: String(commandStatus),
+        CLEANUP_SIGNAL: cleanupSignal,
+        REAL_RM: RM,
         PIPEFAIL_MODE: pipefail,
         TEE_STATUS: String(teeStatus),
         SNAPSHOT: path.join(folder, "snapshot"),
@@ -165,6 +179,13 @@ describe("first cached frame streaming", () => {
     expect(result.stdout).toContain("tee executable required");
     expect(result.stdout).not.toContain("FIRST\n");
     expect(result.titles).toBe("");
+    expect(result.caches).toEqual([]);
+  });
+
+  it.each(["INT", "TERM"])("finishes cache cleanup when a second %s reaches the watcher and cleanup process", (cleanupSignal) => {
+    const result = runStream({ commandMode: "interrupt", cleanupSignal });
+    expect(result.status, result.stdout + result.stderr).toBe(130);
+    expect(result.stdout).toContain(`cleanup:${cleanupSignal}\n`);
     expect(result.caches).toEqual([]);
   });
 

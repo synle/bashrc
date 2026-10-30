@@ -13,7 +13,7 @@ describe("command snapshots", () => {
     expect(blocks).toMatchInlineSnapshot(`
       [
         {
-          "hash": "b60e4db42a28f9b173d59da31505c9a5",
+          "hash": "8a9089acc4c542727e43734581c5ad35",
           "title": "software/bootstrap/setup.sh",
         },
         {
@@ -21,7 +21,7 @@ describe("command snapshots", () => {
           "title": "docs/linux/README.md",
         },
         {
-          "hash": "98af38399b44ba9cbf56ee169f14ddb6",
+          "hash": "b6d35c6c108ff7f3edb0ef8c9b3fd284",
           "title": "docs/linux/linux-mint-config.sh",
         },
         {

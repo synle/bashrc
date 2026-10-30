@@ -13,15 +13,15 @@ describe("command snapshots", () => {
     expect(blocks).toMatchInlineSnapshot(`
       [
         {
-          "hash": "83cbe3addea8ca28429d7cdfc3a9cd91",
+          "hash": "60a2d4007e474c56d70945a7296f0a49",
           "title": "docs/android/firetv.sh",
         },
         {
-          "hash": "ec2c7aa1172085c9463827ee2b63e3ab",
+          "hash": "9b0e437021409a81bbdb216f02be231e",
           "title": "docs/android/firetv.debloat.sh",
         },
         {
-          "hash": "01d43a79d86c2ab311738ff127fe69cc",
+          "hash": "6eb581b6c06c94605c93867df8be5a5b",
           "title": "docs/android/firetv.restore.sh",
         },
       ]

@@ -49,7 +49,7 @@ finally:
 `;
 
 /**
- * Run real shell rendering with owned frames, title recorder, and bounded waits.
+ * Run the configurable watcher directly with owned frames, title recorder, and bounded waits.
  * @param {object} [options] - Literal frame and terminal boundary controls.
  * @param {string[]} [options.frames] - Completed command output for each iteration.
  * @param {number} [options.sleepLimit=4] - Wait calls before the fixture returns 73.
@@ -125,7 +125,7 @@ function probe() {
   command cat "$FRAME_PREFIX.$_count"
   if ((_color)); then printf '\\033[0m'; fi
 }
-eval 'f5 "$@" probe'
+watch_interval "$@" probe
 `,
     );
     const options = {
