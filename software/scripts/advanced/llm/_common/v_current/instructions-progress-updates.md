@@ -7,7 +7,7 @@ At task start and every meaningful phase boundary, the main agent and each subag
 Use this field order, separated by middle dots (`·`):
 
 ```text
-[<repo>] #<PR> · <STATUS> · step <N>/<M> - <current step> · <details>
+[<repo>] #<PR> · <emoji> <STATUS> · step <N>/<M> - <current step> · <details>
 ```
 
 Use the verified repository name; include its owner when needed to distinguish repositories.
@@ -21,11 +21,12 @@ Describe the current action in that field.
 If the total is unknown, use `step N/?` rather than inventing a total.
 Explain changes to the total when scope changes.
 
-Use exactly one status:
+Use exactly one status with its required leading emoji:
 
-- `IN PROGRESS` — work continues.
-- `BLOCKED` — this agent cannot safely continue its assigned work without outside input or an external change.
-- `DONE` — this agent completed its assigned work and required checks.
+- `🟡 IN PROGRESS` — work continues.
+- `🔴 BLOCKED` — this agent cannot safely continue its assigned work without outside input or an external change.
+- `🔴 ERROR` — an attempted action or required check failed; name the failure and next recovery action.
+- `🟢 DONE` — this agent completed its assigned work and required checks.
 
 Include the current phase, completed work, step progress, and next action or blocker across the step field and details.
 Put supporting explanation below the first line when needed to preserve its word limit.
@@ -33,9 +34,10 @@ Put supporting explanation below the first line when needed to preserve its word
 Examples:
 
 ```text
-[widget-store] #42 · IN PROGRESS · step 2/4 - adding snapshot comments · sources reviewed; next document rerun commands.
-[widget-store] #42 · BLOCKED · step 3/4 - running validation · Docker unavailable; start Docker to continue.
-[widget-store] · DONE · step 4/4 - validation complete · comments added; focused checks passed.
+[widget-store] #42 · 🟡 IN PROGRESS · step 2/4 - adding snapshot comments · sources reviewed; next document rerun commands.
+[widget-store] #42 · 🔴 BLOCKED · step 3/4 - running validation · Docker unavailable; start Docker to continue.
+[widget-store] #42 · 🔴 ERROR · step 3/4 - running validation · snapshot assertion failed; inspect source and actual output.
+[widget-store] · 🟢 DONE · step 4/4 - validation complete · comments added; focused checks passed.
 ```
 
 Use `DONE` only after assigned work and required checks pass. State the result and checks. Do not use `DONE` for a partial handoff.
