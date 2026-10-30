@@ -10,6 +10,11 @@ describe("command snapshots", () => {
     const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-steamos");
     expect(blocks).toHaveLength(15);
     expect(errors).toMatchInlineSnapshot(`[]`);
+    // Hashes fingerprint live-fetched rendered source; legitimate source changes can make this snapshot stale.
+    // For hash-only failures, inspect the changed source first; do not accept unexpected content, links, or UI changes.
+    // Refresh: npm run test:integration:local -- --update=all software/tests/integration/webapp/commands.steamos.spec.js
+    // Verify: npm run test:integration:local -- software/tests/integration/webapp/commands.steamos.spec.js
+    // Review every snapshot change; a different hash alone does not prove that the new output is correct.
     expect(blocks).toMatchInlineSnapshot(`
       [
         {

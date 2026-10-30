@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { extractBlocks } from "./profileBlocks.helpers.js";
 
 import { execSync } from "child_process";
 
@@ -76,7 +77,7 @@ const LEGACY_BASH = (() => {
     const pathBash = execSync("command -v bash", { encoding: "utf-8" }).trim();
     if (pathBash && realpathSync(pathBash) === realpathSync(candidate)) return null;
   } catch {
-    // No bash on PATH to compare against — still worth checking /bin/bash.
+    // No bash on PATH to compare against; still worth checking /bin/bash.
   }
   return candidate;
 })();
@@ -100,39 +101,6 @@ function assertMinSize(filePath, minChars) {
 }
 
 describe.skipIf(profileFiles.length === 0)("profile block-level syntax check", () => {
-  /**
-   * Extracts all BEGIN/END blocks from a profile file.
-   * @param {string} content - File content
-   * @returns {Array<{key: string, body: string, lineNumber: number}>}
-   */
-  function extractBlocks(content) {
-    const blocks = [];
-    const lines = content.split("\n");
-    let i = 0;
-    while (i < lines.length) {
-      const beginMatch = lines[i].match(/^# BEGIN (.+)$/);
-      if (beginMatch) {
-        const key = beginMatch[1].trim();
-        const startLine = i + 1;
-        const bodyLines = [];
-        i++;
-        while (i < lines.length) {
-          const endMatch = lines[i].match(/^# END (.+)$/);
-          if (endMatch && endMatch[1].trim() === key) {
-            break;
-          }
-          bodyLines.push(lines[i]);
-          i++;
-        }
-        if (bodyLines.length > 0) {
-          blocks.push({ key, body: bodyLines.join("\n"), lineNumber: startLine + 1 });
-        }
-      }
-      i++;
-    }
-    return blocks;
-  }
-
   profileFiles.forEach((filePath) => {
     const fileName = path.basename(filePath);
     const content = readFileSync(filePath, "utf-8");
@@ -153,7 +121,9 @@ describe.skipIf(profileFiles.length === 0)("profile block-level syntax check", (
     it(`${fileName} - no duplicate BEGIN/END blocks`, () => {
       const seen = {};
       const duplicates = [];
-      for (const { key, lineNumber } of blocks) {
+      // Build includes may repeat inside independent SOURCE sections; managed profile keys must remain unique.
+      for (const { key, lineNumber, isBuildInclude } of blocks) {
+        if (isBuildInclude) continue;
         if (seen[key]) {
           duplicates.push(`"# BEGIN ${key}" appears at line ${seen[key] - 1} and line ${lineNumber - 1}`);
         }
@@ -169,7 +139,7 @@ describe.skipIf(profileFiles.length === 0)("profile block-level syntax check", (
         // Check for null bytes (indicates file corruption / concurrent write)
         if (body.includes("\0")) {
           expect.fail(
-            `Null bytes found in ${fileName} block "${key}" (line ${lineNumber}): block contains ${(body.match(/\0/g) || []).length} null byte(s) — likely file corruption`,
+            `Null bytes found in ${fileName} block "${key}" (line ${lineNumber}): block contains ${(body.match(/\0/g) || []).length} null byte(s) \u2014 likely file corruption`,
           );
           return;
         }
@@ -259,7 +229,7 @@ describe("profile bashrc syntax check", () => {
 
     it(`${path.basename(filePath)} - meets minimum size`, () => {
       const key = path.basename(filePath, ".sh");
-      // debug snapshots (e.g. profile_bashrc_redhat_2-before-cleanup) — match base OS key
+      // debug snapshots (e.g. profile_bashrc_redhat_2-before-cleanup): match base OS key
       const baseKey = key.replace(/_(0-before-run|1-after-bootstrap|2-before-cleanup|3-after-cleanup|4-after-flush)$/, "");
       // skip size check for pre-run and bootstrap snapshots (may be empty or template-only)
       if (baseKey !== key && (key.endsWith("_0-before-run") || key.endsWith("_1-after-bootstrap"))) return;
@@ -269,19 +239,19 @@ describe("profile bashrc syntax check", () => {
   });
 
   it("should find profile files to test", () => {
-    // `.build/profile_bashrc_*.sh` is no longer committed to the repo — each CI
+    // `.build/profile_bashrc_*.sh` is no longer committed to the repo; each CI
     // build job emits its own and the test phase rehydrates `.build/` from
     // the per-OS `profile-build-*` artifacts before running this suite.
     //
     // Soft-skip with a warning when none are present (CI or local). In CI this
     // happens during the bootstrap first run after the migration, when the
-    // upstream artifacts/release haven't been populated yet — failing the test
+    // upstream artifacts/release haven't been populated yet; failing the test
     // suite there would be a false negative since the build phase ran fine,
     // there's just nothing to validate yet. Locally it covers fresh clones
     // where the dev hasn't run `make setup_local_full`.
     if (profileFiles.length === 0) {
       console.warn(
-        "[profileSyntax] No `.build/profile_bashrc_*.sh` found — skipping profile checks. " +
+        "[profileSyntax] No `.build/profile_bashrc_*.sh` found \u2014 skipping profile checks. " +
           "In CI this means the build phase did not produce a profile artifact (check the build jobs). " +
           "Locally, run `make setup_local_full` to generate one for your OS.",
       );
