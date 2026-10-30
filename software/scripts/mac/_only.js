@@ -137,8 +137,9 @@ exec ${_quoteMacShellArgument(executablePath)} "\${browser_flags[@]}" "$@"`;
 /**
  * Creates or refreshes one signed launcher app when its browser is installed.
  * @param {{command: string, displayName: string, appName: string, bundleIdentifier: string, bundlePattern: RegExp, legacyAppName: string, legacyBundleIdentifier: string}} browser - Launcher and migration definition.
- * @returns {Promise<string|null>} Resolved browser executable path, or null when skipped.
- * @throws {Error} If launcher files cannot be written and signed successfully.
+ * @returns {Promise<string|null>} Verified browser executable path, or null when unavailable, unmanaged, or signing fails.
+ * @throws {Error} If launcher files cannot be read or written.
+ * @remarks Writes managed app files; failed signing logs a warning without enabling the launcher or removing its legacy app.
  */
 async function _installMacBrowserLauncher(browser) {
   const installedBrowser = await _resolveMacBrowserBundle(browser);
@@ -180,10 +181,18 @@ async function _installMacBrowserLauncher(browser) {
     `chmod +x ${_quoteMacShellArgument(launcherPath)}`,
     `codesign --force --sign - ${_quoteMacShellArgument(appPath)}`,
     `codesign --verify --deep --strict ${_quoteMacShellArgument(appPath)}`,
-    `printf '%s' ${_quoteMacShellArgument(_MAC_BROWSER_APP_ACTION_MARKER)}`,
+    `printf '\\n%s\\n' ${_quoteMacShellArgument(_MAC_BROWSER_APP_ACTION_MARKER)}`,
   ].join(" && ");
-  const signingOutput = await execBash(signingCommand);
-  if (signingOutput.trim() !== _MAC_BROWSER_APP_ACTION_MARKER) throw new Error(`Could not sign ${browser.appName}.app.`);
+  // Keep tool diagnostics, including stderr, without treating successful codesign chatter as a failure.
+  const signingOutput = await execBash(`( ${signingCommand} ) 2>&1`);
+  if (signingOutput.trim().split("\n").pop() !== _MAC_BROWSER_APP_ACTION_MARKER) {
+    log(
+      ">>> [Warning] Browser launcher signing failed; skipping:",
+      `${browser.appName}.app`,
+      signingOutput || "No signing output captured.",
+    );
+    return null;
+  }
 
   log(`>>> Signed ${browser.appName}.app with shared browser launch options.`);
   return installedBrowser.executablePath;
