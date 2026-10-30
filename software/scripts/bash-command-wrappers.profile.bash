@@ -181,6 +181,8 @@ export -f bat
 ################################################################################
 # --- Python ---
 ################################################################################
+# activate_py: activate an available Python environment when no Python binary is on PATH.
+# Args: none. Returns the activation status; updates PATH and environment in the calling shell.
 function activate_py() {
   type -P python &> /dev/null && return
   if [[ -z "$VIRTUAL_ENV" ]]; then
@@ -191,7 +193,7 @@ function activate_py() {
       "$HOME/venv/bin/activate"
     )
     local venv_activate
-    venv_activate=$(find_path "${venv_candidates[@]}" --file) && safe_source "$venv_activate"
+    venv_activate=$(find_path "${venv_candidates[@]}" --file) && safe_source --reload "$venv_activate"
   fi
 }
 
