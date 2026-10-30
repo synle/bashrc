@@ -73,7 +73,14 @@ finally:
  * @returns {object} Process status, displayed bytes, captured baseline, titles, and retained caches.
  * @throws {Error} On fixture failure; always removes the owned sandbox.
  */
-function runStream({ commandMode = "handshake", commandStatus = 0, pipefail = "on", teeSupport = "native", teeStatus = 0, cleanupSignal = "" } = {}) {
+function runStream({
+  commandMode = "handshake",
+  commandStatus = 0,
+  pipefail = "on",
+  teeSupport = "native",
+  teeStatus = 0,
+  cleanupSignal = "",
+} = {}) {
   const folder = mkdtempSync(path.join(os.tmpdir(), "watch stream's "));
   try {
     const bin = path.join(folder, "bin");

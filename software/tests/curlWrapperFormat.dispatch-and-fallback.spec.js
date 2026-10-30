@@ -12,7 +12,25 @@ const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 
 const PROFILE_ADVANCED = path.join(ROOT_DIR, "software/bootstrap/profile-advanced.sh");
 
-const REQUIRED_TOOLS = ["head", "tail", "tr", "cat", "mktemp", "rm", "cp", "mv", "mkdir", "sed", "awk", "date", "sleep", "wc", "bash"];
+/** Native fixture tools; readlink is required by symlinked formatter launchers. */
+const REQUIRED_TOOLS = [
+  "head",
+  "tail",
+  "tr",
+  "cat",
+  "mktemp",
+  "rm",
+  "cp",
+  "mv",
+  "mkdir",
+  "sed",
+  "awk",
+  "date",
+  "sleep",
+  "wc",
+  "bash",
+  "readlink",
+];
 
 const OPTIONAL_TOOLS = ["timeout"];
 
@@ -27,7 +45,7 @@ function resolveFormatter(name) {
 
   let resolved = "";
   try {
-    // execSync defaults to /bin/sh — dash on Ubuntu CI doesn't support `type -P`. Force bash.
+    // execSync defaults to /bin/sh; dash on Ubuntu CI doesn't support `type -P`. Force bash.
     resolved = execSync(`type -P ${name}`, { encoding: "utf-8", shell: "/bin/bash" }).trim();
   } catch {
     resolved = "";
@@ -94,7 +112,7 @@ beforeEach(() => {
   for (const name of ["prettier", "oxfmt"]) stubFormatter(name);
 
   // Both formatters are Node shims, and _curl_json_body falls back to node when
-  // jq/python3 are absent (they are — the sandbox PATH is hermetic).
+  // jq/python3 are absent because the sandbox PATH is hermetic.
   let nodeBin = "";
   try {
     nodeBin = execSync("type -P node", { encoding: "utf-8", shell: "/bin/bash" }).trim();
@@ -122,7 +140,7 @@ function extractCurlSection() {
 
   let block = src.slice(sectionIdx, endIdx + 1).join("\n");
 
-  // Patch TTY guard — test subprocess is non-TTY, but we need the buffered path.
+  // Patch TTY guard: test subprocess is non-TTY, but we need the buffered path.
   block = block.replace("[ -t 1 ] || {", "false && {");
 
   return block;
