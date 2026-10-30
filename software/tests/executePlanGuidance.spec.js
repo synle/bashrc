@@ -40,12 +40,16 @@ describe("execute-plan guidance", () => {
   });
 
   it("defers ordinary implementation gates without weakening safety or final validation", () => {
-    expect(PR_WORKFLOW).toContain("Do not run formatting, lint, syntax checks, tests, coverage, or the full gate before this push");
-    expect(PR_WORKFLOW).toContain("Do not delay this checkpoint to fix ordinary code or check failures");
-    expect(PR_WORKFLOW).toContain("**Checkpoint safety** and required sync still apply; never bypass hooks");
-    expect(PR_WORKFLOW).toContain(
-      "**Validation checkpoint** \u2014 Format changed files, then run required tests, coverage, and the full gate",
+    const implementation = PR_WORKFLOW.match(/^- \*\*Implementation checkpoint\*\*.*$/m)?.[0];
+    const safety = PR_WORKFLOW.match(/^- \*\*Checkpoint safety\*\*.*$/m)?.[0];
+    const validation = PR_WORKFLOW.match(/^- \*\*Validation checkpoint\*\*.*$/m)?.[0];
+    expect(implementation).toContain(
+      "Do not delay for formatting, lint, syntax checks, test writing/execution, coverage, or the full gate unless repository rules require them before publication",
     );
+    expect(implementation).toContain("Report known failures and unrun checks");
+    expect(implementation).toContain("Checkpoint safety and required sync still apply; never bypass hooks");
+    expect(safety).toContain("If repository rules require full validation before any commit or push, they override early publication");
+    expect(validation).toContain("then format and run required tests, coverage, and the repository gate");
     expect(CORE_RULES).toContain("except authorized implementation-checkpoint commits");
     expect(CORE_RULES).toContain("repository-required pre-commit formatting still wins");
     expect(BODY).toContain(
