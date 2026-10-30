@@ -22,7 +22,7 @@ describe("command snapshots", () => {
           "title": "This is meant for Windows. Your system is detected as a different OS.",
         },
         {
-          "hash": "b60e4db42a28f9b173d59da31505c9a5",
+          "hash": "8a9089acc4c542727e43734581c5ad35",
           "title": "software/bootstrap/setup.sh",
         },
         {

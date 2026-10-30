@@ -175,16 +175,17 @@ describe("interval watcher subprocess", () => {
     expect(result.events).toBe("mktemp\nmktemp\nclear\nsleep:30\nclear\nsleep:30\n");
     expect(result.cacheFiles).toEqual([]);
   });
-
-  it("runs f5 pr_list through both actual aliases with the thirty-second default", () => {
-    const result = runWatcher(["pr_list"], { cycles: 1, invocation: 'f5 "$@"' });
+  it.each([
+    ["f5", "60"],
+    ["f5_120", "120"],
+  ])("runs %s pr_list at its fixed interval", (alias, interval) => {
+    const result = runWatcher(["pr_list"], { cycles: 1, invocation: `${alias} "$@"` });
     expect(result.status, result.stderr).toBe(73);
     expect(result.stderr).toBe("");
     expect(result.stdout).toBe("old screen\n<clear>\nout:1\nerr:1\n");
-    expect(result.events).toBe("mktemp\nmktemp\nclear\nsleep:30\n");
+    expect(result.events).toBe(`mktemp\nmktemp\nclear\nsleep:${interval}\n`);
     expect(result.cacheFiles).toEqual([]);
   });
-
   it.each(["1", "5", "86400"])("uses explicit interval %s without waiting before the first run", (interval) => {
     const result = runWatcher([interval, "probe"], { cycles: 1 });
     expect(result.status, result.stderr).toBe(73);

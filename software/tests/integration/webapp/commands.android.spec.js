@@ -17,19 +17,19 @@ describe("command snapshots", () => {
           "title": "This is meant for Android. Your system is detected as a different OS.",
         },
         {
-          "hash": "b60e4db42a28f9b173d59da31505c9a5",
+          "hash": "8a9089acc4c542727e43734581c5ad35",
           "title": "software/bootstrap/setup.sh",
         },
         {
-          "hash": "1565d2d2c99e6d4c728ce2153b04e284",
+          "hash": "97017f799ed420e3de67fce2b6f9a91f",
           "title": "docs/android/android.debloat.sh",
         },
         {
-          "hash": "fbbb3268024e6d1b07475c72a169a366",
+          "hash": "3bd61488cf21bc4a7a45c9c3f7e44e10",
           "title": "docs/android/android.restore.sh",
         },
         {
-          "hash": "a4bf7f9d28d4d8f74a3e29da0d77675a",
+          "hash": "6e762033e08e34daa766977790c0c0fe",
           "title": "docs/android/android.sh",
         },
         {

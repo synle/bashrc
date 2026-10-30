@@ -651,7 +651,15 @@ file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
   Keep snapshots small and behavior-focused; project relevant fields and normalize only nondeterministic values.
   Preserve explicit scalar, predicate, absence, and round-trip assertions when they express the contract more clearly.
   Keep parameterized cases refreshable without sharing one inline-snapshot location across different expected outputs.
-  Refresh with `npm run test:update -- <spec>` and review every changed expectation before accepting it; never update snapshots to hide failures.
+- **Investigate inline-snapshot failures.** For every `toMatchInlineSnapshot` failure, read the diff and trace actual output to its source, generator, and test setup before changing expectations.
+  Classify the mismatch as a regression, an intended behavior change, a stale snapshot, or nondeterministic input.
+  A hash-only diff is not proof of harmless drift; inspect the content and source revision represented by each changed hash.
+  Refresh stale snapshots when reviewed static or live-generated content legitimately changed; verify titles, links, counts, error states, and behavior remain correct.
+  Fix regressions in code or fixtures instead of accepting their output; never update snapshots to hide failures.
+  Record which source or generator change justifies the refresh in the commit or wrap-up; add an inline comment only for a non-obvious invariant.
+  Use the owning suite's scoped update command from `DEV.md` → Inline snapshots; `npm run test:update -- <spec>` applies only to the default unit suite.
+  Review every changed expectation, preserve ASCII-only test source with Unicode escapes, then rerun the same specs without update mode.
+  If output keeps drifting, investigate its inputs and normalize only nondeterministic metadata; never discard meaningful content or weaken assertions.
 - **Generated `.build/` configuration tests.** Test structured config outputs only; exclude shell-like scripts, archives, binaries, and previews. Group files by application across OS variants, and give each artifact its own `describe(".build/<filename>")` block with its assertions and snapshots.
   Parse JSON/JSONC with `jsonc-parser`; parse `.build/windows-classic-start-menu.xml` and other XML with `fast-xml-parser`; parse YAML with `yaml`; parse TOML with `@iarna/toml`. Snapshot the parsed JavaScript values. Use app-native handling for custom formats; do not treat Ghostty's repeated-key config as standard TOML.
   Snapshot compact objects whole; split large objects into meaningful property groups. For keyboard-binding counts, hard-code each minimum as `floor(0.5 × current count)` and maximum as `ceil(1.5 × current count)` inline. Snapshot representative bindings; never assert exact counts alone.
