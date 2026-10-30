@@ -1,18 +1,73 @@
 /** Mac browser app launcher deployment and migration regression checks. */
 import { spawnSync } from "child_process";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fileSystem,
   getIndexConstant,
+  getIndexFunction,
   mockExecCommands,
   mockFsDirEntries,
   mockFsExistence,
   runScript,
   setMockExecSyncReturn,
+  setSandboxGlobal,
 } from "./setup.js";
 
 const BASH_SYLE_PATH = getIndexConstant("BASH_SYLE_PATH");
 const APP_ACTION_MARKER = "BROWSER_FLAGS_APP_ACTION_OK";
+/** Original owned shell executor, restored after each signing simulation. */
+const originalExecBash = getIndexFunction("execBash");
+/** Original sandbox logger, restored after each diagnostic assertion. */
+const originalLog = getIndexFunction("log");
+
+afterEach(() => {
+  setSandboxGlobal("execBash", originalExecBash);
+  setSandboxGlobal("log", originalLog);
+});
+
+/**
+ * Executes Chrome's generated signing chain with harmless shell tool substitutes.
+ * @param {"sign"|"verify"|"none"} failureStage - Tool phase that should fail, or none.
+ * @returns {import("child_process").SpawnSyncReturns<string>[]} Captured shell results for assertions.
+ * @remarks Replaces the owned shell executor until afterEach restores it; no application files change.
+ */
+function simulateChromeSigning(failureStage) {
+  const results = [];
+  setSandboxGlobal("execBash", async (command, options) => {
+    if (!command.includes("codesign") || !command.includes("'/Applications/Browser Chrome.app'")) {
+      return originalExecBash(command, options);
+    }
+    const result = spawnSync(
+      "/bin/bash",
+      [
+        "--noprofile",
+        "--norc",
+        "-c",
+        `
+      function chmod() { :; }
+      function codesign() {
+        if [ "$1" = --force ]; then
+          printf '%s' 'signing diagnostic' >&2
+          [ "$CODE_SIGN_FAILURE" != sign ]
+        else
+          printf '\\n%s\\n' 'verification diagnostic' >&2
+          [ "$CODE_SIGN_FAILURE" != verify ]
+        fi
+      }
+      ${command}
+    `,
+      ],
+      {
+        encoding: "utf8",
+        env: { ...process.env, BASH_ENV: "", CODE_SIGN_FAILURE: failureStage },
+        timeout: 5000,
+      },
+    );
+    results.push(result);
+    return result.stdout.trim();
+  });
+  return results;
+}
 
 /**
  * Adds installed browser bundle fixtures to the mocked Mac filesystem.
@@ -104,6 +159,75 @@ describe("Mac browser app launchers", () => {
     expect(profile).not.toContain("alias brave=");
     expect(profile).not.toContain("alias chrome=");
     expect(profile).not.toContain("alias edge=");
+  });
+
+  it.each([
+    { stage: "sign", diagnostic: "signing diagnostic" },
+    { stage: "verify", diagnostic: "signing diagnostic\nverification diagnostic" },
+  ])("keeps Mac commands and later browsers when Chrome $stage fails", async ({ stage, diagnostic }) => {
+    installBrowserFixtures([
+      { bundleName: "Google Chrome.app", executableName: "Google Chrome" },
+      { bundleName: "Microsoft Edge.app", executableName: "Microsoft Edge" },
+    ]);
+    const legacyAppPath = installLegacyBrowserLauncherFixture("Chrome With Flags", "local.synle.chrome-with-flags");
+    const legacyLauncher = fileSystem[`${legacyAppPath}/Contents/MacOS/launcher`];
+    setMockExecSyncReturn(APP_ACTION_MARKER);
+    const signingResults = simulateChromeSigning(stage);
+    const log = vi.fn();
+    setSandboxGlobal("log", log);
+
+    await runScript("software/scripts/mac/_only.js");
+
+    expect(signingResults[0].status).toBe(1);
+    expect(log).toHaveBeenCalledWith(">>> [Warning] Browser launcher signing failed; skipping:", "Browser Chrome.app", diagnostic);
+    expect(fileSystem[`${legacyAppPath}/Contents/MacOS/launcher`]).toBe(legacyLauncher);
+    expect(mockExecCommands.some((command) => command.includes("command rm -rf"))).toBe(false);
+    expect(fileSystem["/Applications/Browser Edge.app/Contents/MacOS/launcher"]).toContain("Microsoft Edge.app");
+    const profile = fileSystem[BASH_SYLE_PATH];
+    expect(profile).toContain("# BEGIN mac-system-setup");
+    expect(profile).toContain("'/Applications/Browser Edge.app' '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'");
+    const shell = spawnSync("/bin/bash", ["--noprofile", "--norc"], {
+      input: `shopt -s expand_aliases\n${profile}\nfunction open() { printf '%s\\n' 'UNEXPECTED_OPEN'; }\ntype update\nchrome\n`,
+      encoding: "utf8",
+      env: { ...process.env, BASH_ENV: "" },
+      timeout: 5000,
+    });
+    expect(shell.status).toBe(1);
+    expect(shell.stdout.trim()).toBe("update is aliased to `command brew update && command brew upgrade --greedy && command brew cleanup'");
+    expect(shell.stderr.trim()).toBe("Error: Chrome browser not installed.");
+  });
+
+  it("accepts successful signing diagnostics without skipping the launcher", async () => {
+    installBrowserFixtures([{ bundleName: "Google Chrome.app", executableName: "Google Chrome" }]);
+    const signingResults = simulateChromeSigning("none");
+    const log = vi.fn();
+    setSandboxGlobal("log", log);
+
+    await runScript("software/scripts/mac/_only.js");
+
+    expect(signingResults[0].status).toBe(0);
+    expect(log).toHaveBeenCalledWith(">>> Signed Browser Chrome.app with shared browser launch options.");
+    expect(fileSystem[BASH_SYLE_PATH]).toContain(
+      "'/Applications/Browser Chrome.app' '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'",
+    );
+  });
+
+  it("warns and completes profile registration when signing produces no output", async () => {
+    installBrowserFixtures([{ bundleName: "Google Chrome.app", executableName: "Google Chrome" }]);
+    const log = vi.fn();
+    setSandboxGlobal("log", log);
+
+    await runScript("software/scripts/mac/_only.js");
+
+    expect(log).toHaveBeenCalledWith(
+      ">>> [Warning] Browser launcher signing failed; skipping:",
+      "Browser Chrome.app",
+      "No signing output captured.",
+    );
+    expect(fileSystem[BASH_SYLE_PATH]).toContain(
+      "alias update='command brew update && command brew upgrade --greedy && command brew cleanup'",
+    );
+    expect(fileSystem[BASH_SYLE_PATH]).toContain("# BEGIN mac-system-setup");
   });
 
   it("removes recognized legacy apps only after all Browser replacements sign", async () => {
