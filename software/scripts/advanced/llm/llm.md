@@ -419,7 +419,10 @@ own `webapp/` or any web task.
 
 These are human terminal launchers, not internal agent dependencies. They start an LLM CLI using the configured native or inline transport.
 Inside an assigned agent, shared **Skill invocation** loads the skill instructions and executes them in that context; no same-named shell function or executable is required.
-Do not source profiles or install a skill-named command merely to execute an already-loaded workflow. Native-tool prerequisites and safety gates are separate.
+Do not source profiles or install skill-named commands solely to locate or launch terminal wrappers for already-loaded skills.
+This restriction does not prohibit required shell initialization or ordinary setup functions.
+Follow applicable shell-initialization instructions before task commands.
+Native-tool prerequisites and safety gates remain independent.
 In workflow guidance, “execute inline” means the assigned agent performs the loaded steps. It does not select wrapper transport through `SY_SKILL_INLINE` or launch a CLI.
 
 Every `_common/v_current/skills/<name>.md` slash command also has matching bash
