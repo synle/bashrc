@@ -54,6 +54,7 @@ Use these sources instead of maintaining another inventory or registry:
 - `software/metadata/autocomplete.common.js` owns `DYNAMIC_TOKENS` and `expandSpecMacros`.
 - `software/metadata/script-list.config` is the canonical sorted script list.
 - `software/bootstrap/common-env.sh` owns `LIMITED_SUPPORT_OSES` and `ALL_OS_FLAGS`; build-time includes propagate them into `run.sh`.
+- `software/bootstrap/safe-source.bash` owns source-once loading; its generated common-functions inclusion and `_init.js` startup blocks share the same implementation.
 - `software/tools/build-include.js` owns BEGIN/END expansion and `{{map.key}}` theme bindings.
 - `software/scripts/advanced/browser-launch-options.common.js` owns shared Brave, Chrome, and Edge launch options.
 - `theme/sy/_palette_{dark,light}.jsonc` owns foundations and recipes; paired app templates own native-shaped bindings.

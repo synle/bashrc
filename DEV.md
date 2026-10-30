@@ -235,8 +235,19 @@ Remote-backed refs can be fetched again, but local-only refs have no guaranteed 
 
 ## Local work files
 
-Shell startup loads regular files matching `~/.work_*.bash` through `safe_source` in lexical glob order.
+Profile generation discovers regular files matching `~/.work*.bash` and writes sorted explicit `safe_source` lines inside `BEGIN Sy bash_syle entry point`.
+Runtime discovery remains for files added later, including eligible symlinks, and avoids duplicate calls for known successful sources.
+Requested and resolved `.secret.` paths are excluded before content is read.
 Refresh the profile with `./run` after changing the startup generator; it does not rename existing home files.
+
+`software/bootstrap/safe-source.bash` owns the shared implementation emitted into both startup files and included in `common-functions.bash`.
+`safe_source` tracks successful canonical local paths and URL identities per Bash process.
+Repeated calls return success, skip execution, and print a warning to stderr; failed loads remain retryable.
+The recursion guard prevents a source cycle from repeatedly executing an active script.
+Re-reading helper definitions retains the registry; a new Bash process starts with independent state.
+Use `safe_source --reload <file>` for intentional repeat execution, such as virtual-environment activation.
+
+This startup change does not cause a non-interactive LLM tool to read `.bashrc`; those tools still need their own startup integration.
 
 Each LLM client setup discovers regular instruction documents matching `~/.work_*_instructions.md`.
 For example, `~/.work_acme_instructions.md` becomes a `Custom Work Prompt | ~/.work_acme_instructions.md` HTML BEGIN/END block.

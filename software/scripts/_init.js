@@ -1,11 +1,15 @@
 /** Bootstraps .bash_profile, .bashrc, and assembles .bash_syle with core and advanced profile content.
  * Empty BEGIN/END markers are pre-placed in profile-core.sh and profile-advanced.sh
  * so that later scripts can update blocks in place via registerWithBashSyleProfile.
- * Shell entry points also source matching local work overlays at shell startup.
+ * Shell entry points list discovered work overlays and retain runtime discovery with source-once loading.
  * @returns {Promise<void>} Resolves after writing profiles and startup files.
  * @throws {Error} If profile generation or filesystem writes fail.
  */
 async function doWork() {
+  /** @type {string} Canonical helper definitions; redeclaration preserves per-shell registry state. */
+  const safeSourceContent = await readText`software/bootstrap/safe-source.bash`;
+  if (!safeSourceContent.trim()) throw new Error("Missing shared safe_source bootstrap");
+
   // backup current profile files before any modifications
   await backupProfileFilesToTempDir("before");
 
@@ -75,17 +79,28 @@ ${LINE_BREAK_HASH}
   const bashProfilePath = path.join(BASE_HOMEDIR_LINUX, ".bash_profile");
   const bashrcPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
 
+  /** @type {string[]} Core startup files loaded through the same source-once registry. */
   const entryPointSourceFiles = [BASH_SYLE_COMMON_PATH, ...coreBashProfileFiles, BASH_SYLE_CACHE_PATH];
-  /** @type {string} Startup block; work overlays are discovered by the user's shell, not the installer. */
+  /** @type {string[]} Overlay names known during generation; runtime discovery handles later additions. */
+  const workProfileFiles = findPathList(BASE_HOMEDIR_LINUX, /^\.work.*\.bash$/, { type: "file" })
+    .filter((file) => !file.includes(".secret."))
+    .sort();
+  /** @type {string} Startup block with quoted explicit entries and a late-discovery fallback. */
   const entryPointContent = trimSpacesOnBothEnd(`
     # define safe_source for non-login shells that skip .bash_profile
-    function safe_source() { if ! bash -n "$1" 2>/dev/null; then echo "[Warning] source $1 failed (syntax error)" >&2; return 1; fi; . "$1"; }
-    ${entryPointSourceFiles.map((file) => 'safe_source "' + file + '"').join("\n")}
-    # optional per-machine work overlays: ~/.work_*.bash, sourced in lexical glob order
-    for _sy_work_file in "\$HOME"/.work_*.bash; do
-      [ -f "\$_sy_work_file" ] && safe_source "\$_sy_work_file"
+    ${safeSourceContent}
+    ${entryPointSourceFiles.map((file) => "safe_source '" + file.replace(/'/g, "'\\''") + "'").join("\n")}
+    # work profiles discovered during generation
+    ${workProfileFiles.map((file) => "safe_source '" + file.replace(/'/g, "'\\''") + "'").join("\n")}
+    # runtime discovery also loads eligible work profiles added after generation
+    for _sy_work_file in "\$HOME"/.work*.bash; do
+      case "\$_sy_work_file" in *.secret.*) continue ;; esac
+      [ -f "\$_sy_work_file" ] || continue
+      _sy_work_target="$(_safe_source_resolve "\$_sy_work_file")" || continue
+      _safe_source_contains "\$_sy_work_target" \${_SY_SAFE_SOURCE_LOADED[@]+"\${_SY_SAFE_SOURCE_LOADED[@]}"} && continue
+      safe_source "\$_sy_work_target"
     done
-    unset _sy_work_file
+    unset _sy_work_file _sy_work_target
   `);
 
   // bootstrap .bash_profile (login shells on all platforms) — sources .bashrc
@@ -93,8 +108,8 @@ ${LINE_BREAK_HASH}
   let textContent = await readText`${bashProfilePath}`;
   const bashProfileContent = trimSpacesOnBothEnd(`
     # .bash_profile delegates to .bashrc for all shell init
-    function safe_source() { if ! bash -n "$1" 2>/dev/null; then echo "[Warning] source $1 failed (syntax error)" >&2; return 1; fi; . "$1"; }
-    safe_source "${bashrcPath}"
+    ${safeSourceContent}
+    safe_source '${bashrcPath.replace(/'/g, "'\\''")}'
   `);
   // appendTextBlock (not moveTextBlockToEnd): refresh the block in place when it already
   // exists, so user commands deliberately placed after it keep running after it.

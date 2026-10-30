@@ -241,8 +241,10 @@ Profile registration is buffered: `registerProfileBlock` /
   earlier `sudo`); `safe_mkdir` implies `-p`. Plain `touch`/`mkdir` fine elsewhere.
 - **`safe_chown` / `safe_chmod`** instead of the raw commands — they skip missing and
   already-correct paths. One path per call; `safe_chown [-R] [user] <path>` defaults to `$USER`.
-- **`safe_source`, never `source` / `.`** — it runs `bash -n` first. Don't append
-  `> /dev/null 2>&1`. Exception: the common-env section of `run.sh`, before it exists.
+- **`safe_source`, never `source` / `.`** — `software/bootstrap/safe-source.bash` owns the implementation; regenerate its common-functions inclusion rather than editing that block.
+  It syntax-checks eligible sources and caches successful loads per Bash process; duplicate requests warn and skip.
+  Failed loads remain retryable; use `--reload` only for intentional repeat execution, including environment activation.
+  Do not redirect warnings away. Exception: the common-env section of `run.sh`, before the helper exists.
 - **`has_persistent_binary` (scripts) / `type -P` (shell)** for binary detection — never
   `which` or `command -v`. `has_persistent_binary` excludes `/tmp/` hits so the
   bootstrap node fallback can't short-circuit a real install. Plain `type -P` only in
@@ -876,8 +878,10 @@ Missing, empty, non-file, outside-home, credential-shaped, or `.secret.` sources
 Validate both requested and resolved paths before reading; symlinks cannot bypass these checks.
 Invalid, duplicate, or reversed markers and source bodies containing their own delimiters also leave content unchanged.
 
-Shell startup separately sources `~/.work_*.bash` in lexical glob order through `safe_source`.
-These shell overlays are not instruction documents; agents must never inspect `.secret.` files.
+Profile generation emits sorted explicit source lines for discovered `~/.work*.bash` files inside the managed entry-point block.
+Runtime discovery remains for later additions and skips successful known loads without duplicate warnings.
+Both paths use `safe_source` and exclude requested or resolved `.secret.` files.
+These shell overlays are not instruction documents; source-once state must survive repeated startup definitions.
 Do not add automatic migration or rename logic for legacy local work files.
 
 After corpus changes, run focused instruction/skill registry and budget tests.
