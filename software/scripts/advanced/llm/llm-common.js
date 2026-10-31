@@ -117,6 +117,9 @@ const SHARED_MCP_REGISTRY_PATH = "software/scripts/advanced/llm/_common/mcp-serv
 /** @type {string[]} Supported deployment identities for registry-only client exclusions. */
 const SHARED_MCP_CLIENTS = ["claude", "copilot", "gemini", "opencode", "pi"];
 
+/** @type {string} Reserved native server-name prefix identifying bootstrap-owned MCP entries. */
+const SHARED_MCP_NAME_PREFIX = "sy-";
+
 /**
  * Loads the shared MCP server registry from `_common/mcp-servers.jsonc` and
  * returns the inner `mcpServers` map (an object of `name → server-config`).
@@ -217,16 +220,15 @@ function translateMcpServersForOpencode(servers) {
 }
 
 /**
- * Deploys the shared MCP registry additively into a native client config file.
- * Shared server names override collisions; user-only servers and unrelated keys
- * survive. Removed registry names are not pruned. OpenCode also overlays its
- * generated settings before writing, avoiding a second destructive config write.
- * Backs up before writing; an empty registry with no managed settings is a no-op.
+ * Reconciles bootstrap-owned MCP servers in a native client config file.
+ * Removes every reserved-prefix name and exact bare registry name, including excluded entries.
+ * Adds eligible servers with the reserved prefix; preserves unrelated servers and top-level keys.
+ * OpenCode overlays generated settings in the same backed-up write. No work means no write.
  * @param {string} targetPath - Native user config file to read, back up, and write.
  * @param {Record<string, any>} [managedConfig={}] - Other managed top-level settings.
  * @param {"standard" | "opencode"} [format="standard"] - Native MCP schema.
- * @param {string} [client="all"] - Deployment identity used to apply registry exclusions without deleting existing entries.
- * @returns {Promise<void>} Resolves after deployment or an empty-registry skip.
+ * @param {string} [client="all"] - Deployment identity used to select servers after cleanup.
+ * @returns {Promise<void>} Resolves after reconciliation or a no-change skip.
  * @throws {Error} On unreadable or malformed existing config, unsupported format,
  * backup failure, or write failure. Invalid existing files are never overwritten.
  */
@@ -238,7 +240,8 @@ async function deploySharedMcpServers(targetPath, managedConfig = {}, format = "
   const key = format === "opencode" ? "mcp" : "mcpServers";
   /** @type {Record<string, any>} Resolved standard-shape registry entries. */
   const servers = await loadSharedMcpServers(undefined, client);
-  if (Object.keys(servers).length === 0 && Object.keys(managedConfig).length === 0) return;
+  /** @type {Set<string>} Complete bare inventory, including servers excluded for this client. */
+  const bareNames = new Set(Object.keys(await loadSharedMcpServers()));
 
   /** @type {string} Raw local bytes; readJson's parse-error fallback would lose user data. */
   let content = "";
@@ -262,12 +265,24 @@ async function deploySharedMcpServers(targetPath, managedConfig = {}, format = "
   if (key in existing && (!existing[key] || typeof existing[key] !== "object" || Array.isArray(existing[key]))) {
     throw new TypeError(`MCP configuration ${key} must be an object`);
   }
-  /** @type {Record<string, any>} Existing names first so managed entries win collisions. */
+  /** @type {Record<string, any>} User-owned servers surviving exact-name and reserved-prefix cleanup. */
+  const preserved = Object.fromEntries(
+    Object.entries(existing[key] || {}).filter(([name]) => !name.startsWith(SHARED_MCP_NAME_PREFIX) && !bareNames.has(name)),
+  );
+  /** @type {Record<string, any>} Eligible registry entries keyed by their native owned names. */
+  const namedServers = Object.fromEntries(Object.entries(servers).map(([name, entry]) => [`${SHARED_MCP_NAME_PREFIX}${name}`, entry]));
+  if (
+    Object.keys(servers).length === 0 &&
+    Object.keys(managedConfig).length === 0 &&
+    Object.keys(preserved).length === Object.keys(existing[key] || {}).length
+  )
+    return;
+  /** @type {Record<string, any>} Existing top-level settings with managed settings overlaid. */
   const merged = { ...existing, ...managedConfig };
   if (key in existing || Object.keys(servers).length > 0) {
     merged[key] = {
-      ...existing[key],
-      ...(format === "opencode" ? translateMcpServersForOpencode(servers) : servers),
+      ...preserved,
+      ...(format === "opencode" ? translateMcpServersForOpencode(namedServers) : namedServers),
     };
   }
   log(`>> MCP: deploying ${Object.keys(servers).length} shared server(s):`, targetPath);

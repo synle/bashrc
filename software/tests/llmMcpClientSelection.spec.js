@@ -1,6 +1,6 @@
 /** Client exclusions must not leak registry metadata or mutate native user configuration. */
 import { beforeEach, describe, expect, it } from "vitest";
-import { fetchResponses, fileSystem, getIndexFunction, loadScriptHelpers, setSandboxGlobal } from "./setup.js";
+import { fetchResponses, fileSystem, getIndexFunction, loadScriptHelpers, mockFsExistence, setSandboxGlobal } from "./setup.js";
 
 /** Registry path consumed by the real shared loader. */
 const REGISTRY_PATH = "software/scripts/advanced/llm/_common/mcp-servers.jsonc";
@@ -19,7 +19,7 @@ describe("MCP client selection", () => {
     expect(JSON.parse(fileSystem["/mock/mcp.json"])).toMatchInlineSnapshot(`
       {
         "mcpServers": {
-          "lens": {
+          "sy-lens": {
             "command": "server",
           },
         },
@@ -92,24 +92,46 @@ describe("MCP client selection", () => {
     expect(fileSystem["/mock/mcp.json"]).toBeUndefined();
   });
 
-  it("preserves a user-created excluded entry and writes other eligible servers", async () => {
+  it("removes bare and prefixed excluded entries and writes other eligible servers", async () => {
     fetchResponses[REGISTRY_PATH] = JSON.stringify({
       mcpServers: { lens: { command: "managed", excludeClients: ["pi"] }, other: { command: "server" } },
     });
-    fileSystem["/mock/mcp.json"] = '{"mcpServers":{"lens":{"command":"personal"}}}';
+    fileSystem["/mock/mcp.json"] = '{"mcpServers":{"lens":{"command":"old"},"sy-lens":{"command":"old"}}}';
     await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json", {}, "standard", "pi");
     expect(JSON.parse(fileSystem["/mock/mcp.json"])).toMatchInlineSnapshot(`
       {
         "mcpServers": {
-          "lens": {
-            "command": "personal",
-          },
-          "other": {
+          "sy-other": {
             "command": "server",
           },
         },
       }
     `);
+  });
+
+  it.each(["standard", "opencode"])("cleans excluded-only inventory without adding servers (%s)", async (format) => {
+    fetchResponses[REGISTRY_PATH] = JSON.stringify({
+      mcpServers: { "pi-lens": { command: "managed", excludeClients: ["pi"] } },
+    });
+    const key = format === "opencode" ? "mcp" : "mcpServers";
+    mockFsExistence["/mock/mcp.json"] = true;
+    fileSystem["/mock/mcp.json"] = JSON.stringify({
+      keep: true,
+      [key]: {
+        "pi-lens": { command: "old" },
+        "sy-pi-lens": { command: "old" },
+        "sy-": { command: "old" },
+        "pi-lens-extra": { command: "personal" },
+        captain: { command: "captain" },
+      },
+    });
+    const original = fileSystem["/mock/mcp.json"];
+    await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json", {}, format, "pi");
+    expect(JSON.parse(fileSystem["/mock/mcp.json"])).toEqual({
+      keep: true,
+      [key]: { "pi-lens-extra": { command: "personal" }, captain: { command: "captain" } },
+    });
+    expect(fileSystem["/mock/mcp.json.bak_original"]).toBe(original);
   });
 
   it("retains malformed entry shapes for native consumer validation", async () => {

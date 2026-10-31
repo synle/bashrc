@@ -27,8 +27,8 @@
  *                             settings; the redundant system-theme pair is normalized.
  *   ~/.pi/agent/keybindings.json — managed word-deletion chords merged while
  *                             preserving unrelated user bindings.
- *   ~/.pi/agent/mcp.json — shared MCP servers, merged additively while
- *                             preserving user-only servers and other keys.
+ *   ~/.pi/agent/mcp.json — shared MCP servers reconciled by deploySharedMcpServers;
+ *                             unrelated servers and other keys are preserved.
  *   ~/.pi/agent/agents/ — prior managed PR workers are retired by the common
  *                             cleanup pass; private workers remain unchanged.
  *   ~/.pi/agent/models.json — discovered Ollama providers, selected GitHub
