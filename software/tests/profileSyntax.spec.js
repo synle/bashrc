@@ -48,6 +48,7 @@ const codegraphInstaller = path.join(ROOT_DIR, "software/scripts/advanced/llm/co
 describe("Standalone tool syntax", () => {
   it("parses under both supported shells", () => {
     assertNoSyntaxErrors(codegraphInstaller);
+    assertNoSyntaxErrors(path.join(ROOT_DIR, "software/scripts/advanced/llm/_common/llm-reset.profile.bash"));
     listFiles(path.join(ROOT_DIR, "docs/android/scripts"), (name) => name.endsWith(".sh")).forEach(assertNoSyntaxErrors);
   });
 });

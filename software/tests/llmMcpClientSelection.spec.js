@@ -19,7 +19,7 @@ describe("MCP client selection", () => {
     expect(JSON.parse(fileSystem["/mock/mcp.json"])).toMatchInlineSnapshot(`
       {
         "mcpServers": {
-          "sy-lens": {
+          "sy-mcp-lens": {
             "command": "server",
           },
         },
@@ -96,12 +96,12 @@ describe("MCP client selection", () => {
     fetchResponses[REGISTRY_PATH] = JSON.stringify({
       mcpServers: { lens: { command: "managed", excludeClients: ["pi"] }, other: { command: "server" } },
     });
-    fileSystem["/mock/mcp.json"] = '{"mcpServers":{"lens":{"command":"old"},"sy-lens":{"command":"old"}}}';
+    fileSystem["/mock/mcp.json"] = '{"mcpServers":{"lens":{"command":"old"},"sy-mcp-lens":{"command":"old"}}}';
     await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json", {}, "standard", "pi");
     expect(JSON.parse(fileSystem["/mock/mcp.json"])).toMatchInlineSnapshot(`
       {
         "mcpServers": {
-          "sy-other": {
+          "sy-mcp-other": {
             "command": "server",
           },
         },
@@ -119,8 +119,8 @@ describe("MCP client selection", () => {
       keep: true,
       [key]: {
         "pi-lens": { command: "old" },
-        "sy-pi-lens": { command: "old" },
-        "sy-": { command: "old" },
+        "sy-mcp-pi-lens": { command: "old" },
+        "sy-mcp-": { command: "old" },
         "pi-lens-extra": { command: "personal" },
         captain: { command: "captain" },
       },
@@ -142,5 +142,62 @@ describe("MCP client selection", () => {
         "text": "bad",
       }
     `);
+  });
+
+  it.each(["standard", "opencode"])("matches names case-sensitively and only at exact boundaries (%s)", async (format) => {
+    fetchResponses[REGISTRY_PATH] = JSON.stringify({ mcpServers: { playwright: { command: "managed", excludeClients: ["pi"] } } });
+    const key = format === "opencode" ? "mcp" : "mcpServers";
+    fileSystem["/mock/mcp.json"] = JSON.stringify({
+      [key]: {
+        playwright: { command: "old" },
+        "sy-mcp-playwright": { command: "old" },
+        Playwright: { command: "custom" },
+        "SY-MCP-playwright": { command: "custom" },
+        "sy-MCP-playwright": { command: "custom" },
+        "sy-playwright": { command: "custom" },
+        "playwright-extra": { command: "custom" },
+        "custom-sy-mcp-playwright": { command: "custom" },
+      },
+    });
+    await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json", {}, format, "pi");
+    expect(JSON.parse(fileSystem["/mock/mcp.json"])[key]).toEqual({
+      Playwright: { command: "custom" },
+      "SY-MCP-playwright": { command: "custom" },
+      "sy-MCP-playwright": { command: "custom" },
+      "sy-playwright": { command: "custom" },
+      "playwright-extra": { command: "custom" },
+      "custom-sy-mcp-playwright": { command: "custom" },
+    });
+  });
+
+  it.each(["standard", "opencode"])("writes lowercase managed names while preserving launcher casing (%s)", async (format) => {
+    fetchResponses[REGISTRY_PATH] = JSON.stringify({
+      mcpServers: { PLAYWrite: { command: "CaseSensitiveBinary", args: ["MixedCase"] } },
+    });
+    const key = format === "opencode" ? "mcp" : "mcpServers";
+    fileSystem["/mock/mcp.json"] = JSON.stringify({
+      [key]: { PLAYWrite: { command: "old" }, playwrite: { command: "custom" }, captain: { command: "captain" } },
+    });
+    await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json", {}, format);
+    expect(JSON.parse(fileSystem["/mock/mcp.json"])[key]).toEqual({
+      playwrite: { command: "custom" },
+      captain: { command: "captain" },
+      "sy-mcp-playwrite":
+        format === "opencode"
+          ? { type: "local", command: ["CaseSensitiveBinary", "MixedCase"], enabled: true }
+          : { command: "CaseSensitiveBinary", args: ["MixedCase"] },
+    });
+  });
+
+  it("rejects names that collide after lowercasing without backups or writes", async () => {
+    fetchResponses[REGISTRY_PATH] = JSON.stringify({
+      mcpServers: { Browser: { command: "one" }, browser: { command: "two" } },
+    });
+    fileSystem["/mock/mcp.json"] = '{"mcpServers":{"captain":{"command":"captain"}}}';
+    await expect(getIndexFunction("deploySharedMcpServers")("/mock/mcp.json")).rejects.toThrow(
+      "MCP registry names must be unique after lowercasing",
+    );
+    expect(fileSystem["/mock/mcp.json"]).toBe('{"mcpServers":{"captain":{"command":"captain"}}}');
+    expect(fileSystem["/mock/mcp.json.bak_original"]).toBeUndefined();
   });
 });

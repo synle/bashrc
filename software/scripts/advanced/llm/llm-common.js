@@ -118,7 +118,7 @@ const SHARED_MCP_REGISTRY_PATH = "software/scripts/advanced/llm/_common/mcp-serv
 const SHARED_MCP_CLIENTS = ["claude", "copilot", "gemini", "opencode", "pi"];
 
 /** @type {string} Reserved native server-name prefix identifying bootstrap-owned MCP entries. */
-const SHARED_MCP_NAME_PREFIX = "sy-";
+const SHARED_MCP_NAME_PREFIX = "sy-mcp-";
 
 /**
  * Loads the shared MCP server registry from `_common/mcp-servers.jsonc` and
@@ -221,8 +221,8 @@ function translateMcpServersForOpencode(servers) {
 
 /**
  * Reconciles bootstrap-owned MCP servers in a native client config file.
- * Removes every reserved-prefix name and exact bare registry name, including excluded entries.
- * Adds eligible servers with the reserved prefix; preserves unrelated servers and top-level keys.
+ * Removes every case-sensitive reserved-prefix name and exact bare registry name, including excluded entries.
+ * Adds eligible servers with lowercase reserved-prefix names; preserves unrelated servers and top-level keys.
  * OpenCode overlays generated settings in the same backed-up write. No work means no write.
  * @param {string} targetPath - Native user config file to read, back up, and write.
  * @param {Record<string, any>} [managedConfig={}] - Other managed top-level settings.
@@ -269,8 +269,13 @@ async function deploySharedMcpServers(targetPath, managedConfig = {}, format = "
   const preserved = Object.fromEntries(
     Object.entries(existing[key] || {}).filter(([name]) => !name.startsWith(SHARED_MCP_NAME_PREFIX) && !bareNames.has(name)),
   );
-  /** @type {Record<string, any>} Eligible registry entries keyed by their native owned names. */
-  const namedServers = Object.fromEntries(Object.entries(servers).map(([name, entry]) => [`${SHARED_MCP_NAME_PREFIX}${name}`, entry]));
+  /** @type {Record<string, any>} Eligible registry entries keyed by lowercase native owned names. */
+  const namedServers = Object.fromEntries(
+    Object.entries(servers).map(([name, entry]) => [`${SHARED_MCP_NAME_PREFIX}${name.toLowerCase()}`, entry]),
+  );
+  if (Object.keys(namedServers).length !== Object.keys(servers).length) {
+    throw new TypeError("MCP registry names must be unique after lowercasing");
+  }
   if (
     Object.keys(servers).length === 0 &&
     Object.keys(managedConfig).length === 0 &&
