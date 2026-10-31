@@ -1,4 +1,4 @@
-/** Verifies shared MCP deployment through native setup destinations and safe additive writes. */
+/** Verifies shared MCP deployment through native setup destinations and owned-name reconciliation. */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchResponses, fileSystem, getIndexConstant, getIndexFunction, mockFsExistence, setSandboxGlobal } from "./setup.js";
 
@@ -20,7 +20,15 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
     mockFsExistence[target] = true;
     fileSystem[target] = JSON.stringify({
       customSetting: "kept",
-      [key]: { personal: { command: "personal-server" }, browser: { command: "old-server" } },
+      [key]: {
+        personal: { command: "personal-server" },
+        captain: { command: "captain", args: ["start"] },
+        browser: { command: "old-server" },
+        "sy-browser": { command: "stale-server" },
+        "sy-retired": { command: "retired-server" },
+        "browser-extra": { command: "user-server" },
+        "custom-sy-browser": { command: "user-server" },
+      },
     });
 
     await getIndexFunction("doWork")();
@@ -31,13 +39,19 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
       cli === "opencode"
         ? {
             personal: { command: "personal-server" },
-            browser: { type: "local", command: ["npx", "browser", "--headless"], environment: { MODE: "test" }, enabled: true },
-            docs: { type: "remote", url: "https://example.com/mcp", enabled: true },
+            captain: { command: "captain", args: ["start"] },
+            "browser-extra": { command: "user-server" },
+            "custom-sy-browser": { command: "user-server" },
+            "sy-browser": { type: "local", command: ["npx", "browser", "--headless"], environment: { MODE: "test" }, enabled: true },
+            "sy-docs": { type: "remote", url: "https://example.com/mcp", enabled: true },
           }
         : {
             personal: { command: "personal-server" },
-            browser: { command: "npx", args: ["browser", "--headless"], env: { MODE: "test" } },
-            docs: { type: "http", url: "https://example.com/mcp" },
+            captain: { command: "captain", args: ["start"] },
+            "browser-extra": { command: "user-server" },
+            "custom-sy-browser": { command: "user-server" },
+            "sy-browser": { command: "npx", args: ["browser", "--headless"], env: { MODE: "test" } },
+            "sy-docs": { type: "http", url: "https://example.com/mcp" },
           },
     );
     const first = fileSystem[target];
@@ -52,7 +66,12 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
     mockFsExistence[target] = true;
     fileSystem[target] = JSON.stringify({
       customSetting: "kept",
-      [key]: { personal: { command: "personal-server" }, context7: { command: "old-server" } },
+      [key]: {
+        personal: { command: "personal-server" },
+        context7: { command: "old-server" },
+        "pi-lens": { command: "old-lens" },
+        "sy-pi-lens": { command: "old-lens" },
+      },
     });
 
     await getIndexFunction("doWork")();
@@ -61,20 +80,20 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
     expect(result.customSetting).toBe("kept");
     expect(Object.keys(result[key]).sort()).toEqual(
       cli === "pi"
-        ? ["anydoc", "codegraph", "context7", "personal", "playwright"]
-        : ["anydoc", "codegraph", "context7", "personal", "pi-lens", "playwright"],
+        ? ["personal", "sy-anydoc", "sy-codegraph", "sy-context7", "sy-playwright"]
+        : ["personal", "sy-anydoc", "sy-codegraph", "sy-context7", "sy-pi-lens", "sy-playwright"],
     );
-    expect(result[key]["pi-lens"]).toEqual(
+    expect(result[key]["sy-pi-lens"]).toEqual(
       cli === "pi"
         ? undefined
         : cli === "opencode"
           ? { type: "local", command: ["pi-lens-mcp"], enabled: true }
           : { command: "pi-lens-mcp", args: [] },
     );
-    expect(result[key].codegraph).toEqual(REQUESTED_SERVERS[key].codegraph);
+    expect(result[key]["sy-codegraph"]).toEqual(REQUESTED_SERVERS[key].codegraph);
     expect(result[key].personal).toEqual({ command: "personal-server" });
-    expect(result[key].context7).toEqual(REQUESTED_SERVERS[key].context7);
-    expect(result[key].anydoc).toEqual(REQUESTED_SERVERS[key].anydoc);
+    expect(result[key]["sy-context7"]).toEqual(REQUESTED_SERVERS[key].context7);
+    expect(result[key]["sy-anydoc"]).toEqual(REQUESTED_SERVERS[key].anydoc);
     const first = fileSystem[target];
     await getIndexFunction("doWork")();
     expect(fileSystem[target]).toBe(first);
@@ -91,7 +110,7 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
   it("creates the native config on a first run", async () => {
     loadClient(cli);
     await getIndexFunction("doWork")();
-    expect(JSON.parse(fileSystem[target])[key].browser).toEqual(
+    expect(JSON.parse(fileSystem[target])[key]["sy-browser"]).toEqual(
       cli === "opencode"
         ? { type: "local", command: ["npx", "browser", "--headless"], environment: { MODE: "test" }, enabled: true }
         : { command: "npx", args: ["browser", "--headless"], env: { MODE: "test" } },
@@ -105,6 +124,15 @@ describe.each(CLIENTS)("$cli native MCP deployment", ({ cli, target, key }) => {
     fileSystem[target] = JSON.stringify({ [key]: { personal: { command: "personal-server" } } });
     await getIndexFunction("doWork")();
     expect(JSON.parse(fileSystem[target])[key]).toEqual({ personal: { command: "personal-server" } });
+  });
+
+  it("cleans retired prefixed servers even when the registry is empty", async () => {
+    loadClient(cli);
+    fetchResponses["software/scripts/advanced/llm/_common/mcp-servers.jsonc"] = '{"mcpServers":{}}';
+    mockFsExistence[target] = true;
+    fileSystem[target] = JSON.stringify({ [key]: { "sy-retired": { command: "old" }, captain: { command: "captain" } } });
+    await getIndexFunction("doWork")();
+    expect(JSON.parse(fileSystem[target])[key]).toEqual({ captain: { command: "captain" } });
   });
 });
 
@@ -120,7 +148,7 @@ describe("shared MCP write safety", () => {
     try {
       if (code === "ENOENT") {
         await getIndexFunction("deploySharedMcpServers")("/mock/mcp.json");
-        expect(JSON.parse(fileSystem["/mock/mcp.json"]).mcpServers.browser.command).toBe("npx");
+        expect(JSON.parse(fileSystem["/mock/mcp.json"]).mcpServers["sy-browser"].command).toBe("npx");
       } else {
         await expect(getIndexFunction("deploySharedMcpServers")("/mock/mcp.json")).rejects.toMatchInlineSnapshot(
           { code },

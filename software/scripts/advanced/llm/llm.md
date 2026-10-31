@@ -192,7 +192,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 - **Named agents**: PR worker personas are retired. Keep `LLM_AGENT_DEPLOY_MAP` empty and retain the shared retirement pass in every client setup.
 - **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.
 - **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
-- **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys eligible entries additively and preserves user-only entries. Registry-only `excludeClients` omits named clients and never reaches native configuration. Removing or excluding a name does not delete existing deployed entries.
+- **MCP servers**: edit `_common/mcp-servers.jsonc` with bare names in the standard `mcpServers` shape. Each setup removes all `sy-` names and exact bare registry names before adding eligible servers with `sy-` names. Cleanup includes excluded servers; unrelated names, including `captain`, remain. Registry-only `excludeClients` never reaches native configuration. Dropped prefixed entries disappear on the next setup; obsolete bare names outside the current registry require manual removal.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
 ### Experimental pi-lens MCP
@@ -209,7 +209,8 @@ Node >=22.19.0 is required. npm lifecycle scripts remain disabled; the installer
 that policy through WSLENV for mirrored Windows installs.
 The shared registry enables MCP for Claude, Copilot, Gemini, and OpenCode.
 Pi keeps its native extension; registry exclusions prevent adding duplicate MCP tools.
-Existing user-created Pi MCP entries remain untouched.
+Pi removes existing `sy-` entries and exact bare registry names, including excluded `pi-lens`.
+Other user-created Pi MCP entries remain untouched.
 
 Install and deploy narrowly:
 
@@ -362,8 +363,8 @@ Agents whose shells do not load the advanced profile (including sessions with
 uvx --python 3.12 --from "markitdown[all]" markitdown "input.docx" -o "output.md"
 ```
 
-The shared MCP registry no longer includes MarkItDown. Existing installations use
-additive config merges, so remove only the old `markitdown` entry from these maps
+The shared MCP registry no longer includes MarkItDown. Bare `markitdown` names remain outside its cleanup inventory,
+so remove only the old `markitdown` entry from these maps
 after checking it still launches `markitdown-mcp`:
 
 - `~/.claude/settings.json`: `mcpServers.markitdown`

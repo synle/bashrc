@@ -69,10 +69,9 @@
 //                    Captain `install-plugin-to-copilot` skill if the user
 //                    opts in). This script intentionally leaves them untouched.
 //
-//   ✅ MCP servers — `~/.copilot/mcp-config.json` → `mcpServers` is additively
-//                    merged from the shared `_common/mcp-servers.jsonc` registry
-//                    so the same MCP server list lands in every CLI. User-added
-//                    entries (names not in the registry) are preserved untouched.
+//   ✅ MCP servers — `~/.copilot/mcp-config.json` → `mcpServers` is reconciled
+//                    by deploySharedMcpServers from the shared registry.
+//                    Unrelated server names and settings are preserved.
 
 // --- Keybindings ---
 
