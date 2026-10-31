@@ -1,7 +1,7 @@
 {
   // Source-of-truth MCP server registry for all five LLM CLIs (Claude Code,
   // GitHub Copilot CLI, Google Gemini CLI, OpenCode, Pi). Each named entry below
-  // is deployed with a sy- prefix to each eligible CLI's native MCP config location on the next setup
+  // is deployed with a sy-mcp- prefix to each eligible CLI's native MCP config location on the next setup
   // run via `./run --preset=llm` (or any per-CLI `<cli>/setup.js`).
   //
   // Format: the standard `mcpServers` shape that Claude / Copilot / Gemini / Pi
@@ -18,8 +18,10 @@
   // translated by `deploySharedMcpServers` in llm-common.js — keep
   // entries authored in the standard shape and let the deploy do the rest.
   //
-  // Keep registry names bare. Deployment first removes all sy- names and exact
-  // bare names listed here, including excluded entries, then adds eligible sy- names.
+  // Keep registry names bare. Deployment first removes all sy-mcp- names and exact
+  // bare names listed here, including excluded entries, then adds eligible sy-mcp- names.
+  // Both prefix and exact-name matching are case-sensitive.
+  // New native server names are lowercase; commands, arguments, and values retain casing.
   // Other server names and unrelated settings are preserved.
   // Deploy targets:
   //   Claude   → ~/.claude.json            → mcpServers
@@ -33,7 +35,7 @@
   //
   // Registry-only excludeClients omits named clients and is stripped before deploy.
   // Excluded servers are cleaned but not re-added for that client.
-  // Dropped registry entries are removed through their deployed sy- prefix.
+  // Dropped registry entries are removed through their deployed sy-mcp- prefix.
   // Bare names no longer in the registry require manual removal.
   //
   // Cross-cutting concerns to keep in mind when adding a server:

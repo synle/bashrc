@@ -92,6 +92,29 @@ Run a single one:
 
 Named PR workers are retired; client setup retains their cleanup pass.
 
+### Reset global configuration and instructions
+
+Close the client, then run its reset command and confirm the displayed scope:
+
+```bash
+claude_clear_and_reset_all_settings
+copilot_clear_and_reset_all_settings
+gemini_clear_and_reset_all_settings
+opencode_clear_and_reset_all_settings
+pi_clear_and_reset_all_settings
+```
+
+Each command writes `{}` to global settings, keybinding, model, and MCP JSON files applicable to that client.
+Global instruction Markdown files become empty.
+Claude's mixed `~/.claude.json` retains all state except `mcpServers`, which becomes `{}`.
+MCP reset removes every registration, including Captain.
+Credentials, sessions, shared skills, plugins, and extensions remain.
+Existing files receive unique owner-only `.reset-backup-*` copies beside the originals.
+Symlink targets abort before writes to protect shared guidance and credential stores.
+Restore a file from its adjacent backup to undo its reset.
+Restart the client after reset; rerun its setup script to restore Sy defaults.
+Use `--help` to inspect scope without changing files.
+
 ### Per-turn persona reminders
 
 - Claude Code, Gemini CLI, and Pi receive a short persona reminder before every user-driven agent turn through their documented prompt hooks.
@@ -192,7 +215,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 - **Named agents**: PR worker personas are retired. Keep `LLM_AGENT_DEPLOY_MAP` empty and retain the shared retirement pass in every client setup.
 - **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.
 - **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
-- **MCP servers**: edit `_common/mcp-servers.jsonc` with bare names in the standard `mcpServers` shape. Each setup removes all `sy-` names and exact bare registry names before adding eligible servers with `sy-` names. Cleanup includes excluded servers; unrelated names, including `captain`, remain. Registry-only `excludeClients` never reaches native configuration. Dropped prefixed entries disappear on the next setup; obsolete bare names outside the current registry require manual removal.
+- **MCP servers**: edit `_common/mcp-servers.jsonc` with bare names in the standard `mcpServers` shape. Each setup removes all `sy-mcp-` names and exact bare registry names before adding eligible servers with lowercase `sy-mcp-` names. Both prefix and exact-name matching are case-sensitive. Commands, arguments, and values retain their casing. Names that collide after lowercasing abort deployment before writing. Cleanup includes excluded servers; unrelated names, including `captain`, remain. Registry-only `excludeClients` never reaches native configuration. Dropped prefixed entries disappear on the next setup; obsolete bare names outside the current registry require manual removal.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
 ### Experimental pi-lens MCP
@@ -209,7 +232,7 @@ Node >=22.19.0 is required. npm lifecycle scripts remain disabled; the installer
 that policy through WSLENV for mirrored Windows installs.
 The shared registry enables MCP for Claude, Copilot, Gemini, and OpenCode.
 Pi keeps its native extension; registry exclusions prevent adding duplicate MCP tools.
-Pi removes existing `sy-` entries and exact bare registry names, including excluded `pi-lens`.
+Pi removes existing `sy-mcp-` entries and exact bare registry names, including excluded `pi-lens`.
 Other user-created Pi MCP entries remain untouched.
 
 Install and deploy narrowly:
