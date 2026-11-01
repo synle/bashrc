@@ -73,7 +73,9 @@ function _resolve_stdin_arg() {
   done
 }
 
-# Launch an editor in the background (GUI mode)
+# Launch a GUI editor from its name and candidate binaries; editor_args supplies targets/options.
+# Returns 1 when no binary resolves; otherwise starts a detached process and prints its action summary.
+# Windows VS Code uses the current WSL distribution for native paths, unless a remote is explicit.
 function run_editor() {
   local editor_name="$1"
   shift
@@ -88,24 +90,49 @@ function run_editor() {
   # track opened files for recent file history
   type _track_file &> /dev/null && _track_file "${editor_args[@]}"
 
-  # Split editor_args into the first path-like arg (the display target) and the
-  # remaining flags. Convert any path-like arg through to_windows_path so the actual
-  # invocation works on WSL where the editor binary is the Windows-side process.
-  local converted_args=()
-  local first_path=""
+  # Automatic WSL routing belongs only to Windows VS Code; explicit remote/URI targets win.
+  local auto_wsl_remote=0
+  if ((is_os_windows && is_os_wsl)) && [[ "$editor_name" == "code" ]] && [ -n "${WSL_DISTRO_NAME:-}" ]; then
+    auto_wsl_remote=1
+  fi
+  local arg
+  for arg in "${editor_args[@]}"; do
+    case "$arg" in
+    --remote | --remote=* | --folder-uri | --folder-uri=* | --file-uri | --file-uri=*) auto_wsl_remote=0 ;;
+    esac
+  done
+
+  # Keep Windows conversions for local launches, but Linux absolute paths for a WSL authority.
+  # Classify resolved paths so a relative target on a mounted Windows drive stays local.
+  local converted_args=() wsl_args=() remote_args=()
+  local first_path="" resolved_arg="" wsl_remote=""
   local -a flag_args=()
   for arg in "${editor_args[@]}"; do
-    if [[ "$arg" == /* ]] || [[ "$arg" == .* ]]; then
-      [ -z "$first_path" ] && first_path=$(realpath "$arg")
+    if [[ "$arg" == /* ]] || [[ "$arg" == .* ]] || { ((auto_wsl_remote)) && [ -e "$arg" ]; }; then
+      resolved_arg=$(realpath "$arg" 2> /dev/null) || resolved_arg="$arg"
+      [ -z "$first_path" ] && first_path="$resolved_arg"
       converted_args+=("$(to_windows_path "$arg")")
+      wsl_args+=("$resolved_arg")
+      if ((auto_wsl_remote)); then
+        case "$resolved_arg" in
+        /mnt/[a-zA-Z] | /mnt/[a-zA-Z]/* | /[a-zA-Z] | /[a-zA-Z]/* | [a-zA-Z]:* | //*) ;;
+        /*) wsl_remote="wsl+$WSL_DISTRO_NAME" ;;
+        esac
+      fi
     else
       converted_args+=("$arg")
+      wsl_args+=("$arg")
       flag_args+=("$arg")
     fi
   done
+  if [ -n "$wsl_remote" ]; then
+    remote_args=(--remote "$wsl_remote")
+    converted_args=("${wsl_args[@]}")
+    flag_args=("${remote_args[@]}" "${flag_args[@]}")
+  fi
 
   if ((is_os_windows)); then
-    (nohup "$target_binary" "${converted_args[@]}" > /dev/null 2>&1 &)
+    (nohup "$target_binary" "${remote_args[@]}" "${converted_args[@]}" > /dev/null 2>&1 &)
   else
     # run_native wraps nohup (a real binary, not a shell function) so a GUI editor
     # launched from a Rosetta 2-translated shell on Apple Silicon starts its arm64
