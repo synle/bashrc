@@ -1320,6 +1320,48 @@ if [ -f "$LIMINE_CONF" ]; then
 	' "$LIMINE_CONF" | sudo tee "$LIMINE_CONF.tmp" > /dev/null && sudo mv "$LIMINE_CONF.tmp" "$LIMINE_CONF"
 fi
 
+
+# --- Setting up the icons for SteamOS ---
+_STEAM_ICONS_ARCHIVE="$HOME/Desktop/grid.tar.gz"
+_STEAM_ICONS_EXTRACT_DIR="$HOME/Desktop/grid"
+_STEAM_ICONS_STEAM_PATTERN="$HOME/.local/share/Steam/userdata"
+
+# 1. Check if the tar.gz archive is present on the Desktop
+if [ -f "$_STEAM_ICONS_ARCHIVE" ]; then
+    printf '%s\n' ">>> Steam icons archive found: extracting..."
+    tar -xzf "$_STEAM_ICONS_ARCHIVE" -C "$HOME/Desktop/"
+
+    # 2. Check if the extracted 'grid' folder is present (nested inside)
+    if [ -d "$_STEAM_ICONS_EXTRACT_DIR" ]; then
+        printf '%s\n' ">>> Steam icons folder found. Checking Steam userdata paths..."
+
+        # Check if any valid Steam config directories match the wildcard
+        _STEAM_ICONS_MATCH_FOUND=false
+        for _STEAM_ICONS_TARGET_DIR in "$_STEAM_ICONS_STEAM_PATTERN"/*/config; do
+            if [ -d "$_STEAM_ICONS_TARGET_DIR" ]; then
+                _STEAM_ICONS_MATCH_FOUND=true
+                printf '%s\n' ">>> Copying grid files to: ${_STEAM_ICONS_TARGET_DIR}/grid"
+                mkdir -p "$_STEAM_ICONS_TARGET_DIR/grid"
+                cp -r "$_STEAM_ICONS_EXTRACT_DIR"/* "$_STEAM_ICONS_TARGET_DIR/grid/"
+            fi
+        done
+
+        if [ "$_STEAM_ICONS_MATCH_FOUND" = false ]; then
+            printf '%s\n' ">>> No matching Steam userdata config directories found. Skipping copy."
+        fi
+
+        # 3. Clean up temporary folder
+        printf '%s\n' ">>> Cleaning up temporary folder: ${_STEAM_ICONS_EXTRACT_DIR}"
+        rm -rf "$_STEAM_ICONS_EXTRACT_DIR"
+    else
+        printf '%s\n' ">>> Extracted directory ${_STEAM_ICONS_EXTRACT_DIR} does not exist. Skipping copy and cleanup."
+    fi
+else
+    printf '%s\n' ">>> Steam icons archive not found at ${_STEAM_ICONS_ARCHIVE}. Skipping."
+fi
+
+
+# --- Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then
   printf '%s\n' ">>> Decky setup failed earlier; review its output and re-run this script after fixing it."
 fi
