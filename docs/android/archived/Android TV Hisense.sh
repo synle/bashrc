@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/Core Android TV.sh?raw=1" | bash
-
 function removeApp() {
   # Print action message without altering positional parameters
   (
@@ -70,3 +68,6 @@ removeApp com.hisense.alexa                                # /system/app/HiAlexa
 # removeApp com.hisense.storemode
 # removeApp com.hisense.hitv.hicloud.account
 # removeApp com.jamdeo.tv.mediacenterapplication
+
+
+curl -fsSL "https://raw.githubusercontent.com/synle/bashrc/refs/heads/main/docs/android/archived/Core%20Android%20TV.sh" | bash
