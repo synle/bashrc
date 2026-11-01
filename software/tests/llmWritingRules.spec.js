@@ -55,6 +55,41 @@ describe("shared milestone status guidance", () => {
 
     expect(rendered).toContain("/instructions/progress-updates.md");
   });
+
+  it("starts non-repository updates with the status emoji and no placeholder prefix", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-progress-updates.md"), "utf8");
+    const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
+
+    expect(rendered).toContain("omit the repository/PR prefix and its following separator; start with the status emoji");
+    expect(rendered).toContain("Never invent a repository or PR.");
+    expect(rendered).toContain("\ud83d\udfe1 IN PROGRESS \u00b7 step 2/3 - reviewing local notes \u00b7 notes read; next revise guidance.");
+    expect(rendered).not.toMatch(/\[no repo\]/i);
+    expect(rendered).not.toContain(SENTENCE_LIMIT_TOKEN);
+    expect(rendered).toContain("Outside Git, omit the entire footer, including separators and the `Branch:`, `PR:`, and `Worktree:` rows.");
+  });
+
+  it("places verified worktree context below each update and omits inapplicable PR rows", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-progress-updates.md"), "utf8");
+    const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
+
+    expect(rendered).toContain("append this block below every milestone update and its supporting explanation");
+    expect(rendered).toContain("Include primary checkouts and linked worktrees.");
+    expect(rendered).toContain("---\nBranch: <branch name>\nPR: <verified PR URL>\nWorktree: <absolute worktree root>\n---");
+    expect(rendered).toContain(
+      "Use the verified current branch and absolute root of the worktree executing this assignment, not another checkout.",
+    );
+    expect(rendered).toContain("Include the `PR:` row only when a verified PR URL applies to that worktree and assignment.");
+    expect(rendered).toContain("---\nBranch: feature/snapshot-comments\nWorktree: /workspace/widget-store-snapshot-comments\n---");
+  });
+
+  it("uses muted grey where supported and plain text without terminal escapes otherwise", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-progress-updates.md"), "utf8");
+    const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
+
+    expect(rendered).toContain("Render the separators and metadata in muted grey when the output surface supports color");
+    expect(rendered).toContain("never use red or green for this block");
+    expect(rendered).toContain("Otherwise, use plain text; never add raw ANSI or OSC escapes to agent replies.");
+  });
 });
 
 describe("shared skill invocation semantics", () => {
