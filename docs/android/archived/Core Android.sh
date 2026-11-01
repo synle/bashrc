@@ -1,21 +1,5 @@
 #!/usr/bin/env bash
-function removeApp() {
-  (
-    set -- 'pm uninstall -k --user 0' $@
-    IFS=' '
-    printf '%s\n' "$*"
-  )
-  pm uninstall -k --user 0 $@
-}
 
-function changeSetting() {
-  (
-    set -- 'settings put' $@
-    IFS=' '
-    printf '%s\n' "$*"
-  )
-  settings put $@
-}
 
 ######################################################################################
 ###### prep work
@@ -115,3 +99,55 @@ removeApp com.microsoft.skydrive
 ###### Done
 ######################################################################################
 printf '%s\n' '=== Done Prep work for android shell'
+
+function removeApp() {
+  # Print action message without altering positional parameters
+  (
+    set -- "> Remove:" "$@"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
+  # Check if adb is installed and a device is authorized/connected
+  if command -v adb >/dev/null 2>&1 && adb get-state 1>/dev/null 2>&1; then
+    adb shell pm uninstall "$@" || adb shell pm uninstall -k --user 0 "$@" || adb shell pm uninstall -k --user 10 "$@"
+  elif command -v pm >/dev/null 2>&1; then
+    pm uninstall "$@" || pm uninstall -k --user 0 "$@" || pm uninstall -k --user 10 "$@"
+  else
+    echo "Error: Neither a connected adb session nor local pm command is available." >&2
+    return 1
+  fi
+}
+function restoreApp() {
+  # Print action message without altering positional parameters
+  (
+    set -- "> Restore:" "$@"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
+  # Check if adb is installed and a device is authorized/connected
+  if command -v adb >/dev/null 2>&1 && adb get-state 1>/dev/null 2>&1; then
+    adb shell cmd package install-existing "$@"
+  elif command -v cmd >/dev/null 2>&1; then
+    cmd package install-existing "$@"
+  else
+    echo "Error: Neither a connected adb session nor local cmd command is available." >&2
+    return 1
+  fi
+}
+function changeSetting() {
+  # Print action message without altering positional parameters
+  (
+    set -- "settings put" "$@"
+    IFS=' '
+    printf '%s\n' "$*"
+  )
+  # Check if adb is installed and a device is authorized/connected
+  if command -v adb >/dev/null 2>&1 && adb get-state 1>/dev/null 2>&1; then
+    adb shell settings put "$@"
+  elif command -v settings >/dev/null 2>&1; then
+    settings put "$@"
+  else
+    echo "Error: Neither a connected adb session nor local settings command is available." >&2
+    return 1
+  fi
+}

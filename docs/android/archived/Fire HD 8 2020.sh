@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 function removeApp() {
   (
     set -- 'pm uninstall -k --user 0' $@
@@ -10,12 +11,10 @@ function removeApp() {
   pm uninstall -k --user 0 $@
   cmd appops set $@ RUN_IN_BACKGROUND ignore
 }
-
 # Launcher Hijack
 # https://www.androidpolice.com/2020/07/23/how-to-make-your-amazon-fire-tablet-feel-more-like-stock-android/
 # install a launcher first
 # removeApp com.amazon.firelauncher
-
 ## safe
 removeApp amazon.alexa.tablet
 removeApp com.amazon.alexa.modeswitch
@@ -31,28 +30,23 @@ removeApp jp.co.omronsoft.iwnnime.languagepack.zhcn_az
 removeApp jp.co.omronsoft.iwnnime.languagepack.zhtw_az
 removeApp jp.co.omronsoft.iwnnime.mlaz
 removeApp jp.co.omronsoft.iwnnime.mlazPackage
-
 ### Contacts
 removeApp com.amazon.dp.contacts
 removeApp com.amazon.dp.fbcontacts
 removeApp com.android.contacts
-
 ### Calemndar
 removeApp com.android.calendar
 removeApp com.amazon.photos.importer
-
 ### Map
 removeApp com.amazon.geo.mapsv3.services
 removeApp com.amazon.geo.mapsv3.resources
 removeApp com.amazon.geo.mapsv2
 removeApp com.amazon.geo.client.maps
-
 ### Silk Browser
 removeApp com.amazon.cloud9.systembrowserprovider
 removeApp com.amazon.cloud9.contentservice
 removeApp com.amazon.cloud9
 removeApp com.amazon.cloud9.kids
-
 ### Kindle
 removeApp com.goodreads.kindle
 removeApp com.audible.application.kindle
@@ -66,49 +60,34 @@ removeApp com.amazon.kindle.otter.oobe
 removeApp com.amazon.kindle.unifiedSearch
 removeApp com.amazon.kindle.rdmdeviceadmin
 removeApp com.amazon.kindle
-
 ### Misc
-
 #### Freevee IMDB
 removeApp com.amazon.imdb.tv.mobile.app
-
 #### doc ui
 removeApp com.android.documentsui
-
 #### amazon kids
 removeApp com.amazon.tahoe
-
 #### amazon store
 removeApp com.amazon.venezia
-
 #### calculator
 removeApp com.android.calculator2
-
 #### calendar
 removeApp com.android.calendar
-
 #### email
 removeApp com.android.email
-
 #### maps
 removeApp com.amazon.geo.client.maps
-
 #### amazon offers
 removeApp com.amazon.kindle.kso
-
 #### amazon docs
 removeApp com.amazon.zico
 removeApp com.amazon.csapp
-
 #### amazon alexa
 removeApp com.amazon.dee.app
-
 #### amazon game circle
 removeApp com.amazon.ags.app
-
 #### amazon music
 removeApp com.amazon.mp3
-
 ### Other misc
 removeApp com.amazon.legalsettings
 removeApp com.amazon.device.software.ota
@@ -128,7 +107,6 @@ removeApp com.amazon.windowshop
 removeApp com.amazon.csapp
 removeApp com.amazon.dee.app
 removeApp com.amazon.mp3
-
 ### Could be dangerous packages removed
 removeApp amazon.jackson19
 removeApp amazon.speech.audiostreamproviderservice
