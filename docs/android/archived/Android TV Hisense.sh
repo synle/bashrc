@@ -94,8 +94,9 @@ _changeSetting global transition_animation_scale 0
 _changeSetting global animator_duration_scale 0
 
 # private dns
-_changeSetting global private_dns_mode hostname
-_changeSetting global private_dns_specifier security.cloudflare-dns.com # _changeSetting global private_dns_specifier one.one.one.one
+# _changeSetting global private_dns_mode hostname
+# _changeSetting global private_dns_specifier family.adguard-dns.com
+# _changeSetting global private_dns_specifier security.cloudflare-dns.com # _changeSetting global private_dns_specifier one.one.one.one
 
 # enable auto time and timezone
 _changeSetting global auto_time 1
