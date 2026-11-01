@@ -9,7 +9,6 @@ function removeApp() {
   )
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
-
 function restoreApp() {
   (
     set -- "> Restore:" $@
@@ -18,7 +17,6 @@ function restoreApp() {
   )
   cmd package install-existing $@
 }
-
 #
 removeApp com.facebook.appmanager
 removeApp com.facebook.services
@@ -61,7 +59,6 @@ removeApp com.oneplus.note
 removeApp com.tmobile.m1
 removeApp com.tmobile.pr.mytmobile # my tmobile
 removeApp net.oneplus.forums
-
 # default list
 # android
 # android.autoinstalls.config.oneplus
