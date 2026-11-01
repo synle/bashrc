@@ -191,3 +191,4 @@ _install_latest_github_apk "humblemuzzu/dumbtv" "dumbtv-home.apk" "DumbTV" || re
 
 # remove the old home launcher
 adb shell pm disable-user --user 0 com.google.android.tvlauncher
+adb shell settings put secure enabled_accessibility_services tv.dumbtv.home/tv.dumbtv.home.Guard
