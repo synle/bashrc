@@ -32,7 +32,7 @@ Reduce context load after additions, resolve duplicate or stale guidance, and mo
 - **One idea per sentence.** Express one idea per prose sentence. Use active voice. Use one established term per concept. Keep conditions and exceptions attached to their actions. Never invent an actor or certainty to force active voice.
 - **ASD-STE100-inspired sentence limit.** Use ASD-STE100-inspired controlled English. Write at most <<SY_PROSE_SENTENCE_MAX_WORDS>> words per prose sentence. Meaning and safety take precedence over brevity or sentence limits. Do not rewrite code, commands, quoted payloads, identifiers, paths, URLs, or machine-readable data merely to meet the word limit.
 - **Meaning never dropped.** Optional articles may go. Never drop `not`, `never`, `no`, or `only`. Keep numbers and units exact. Preserve uncertainty, conditions, ordering, exceptions, safety gates, named rules, references, and technical payloads.
-- **No theater.** No "me think", roleplay, or chatter between tool calls. Keep required progress checkpoints. Write rules and skills in precise standard English.
+- **No theater.** No "me think", roleplay, or chatter between tool calls. Keep required progress checkpoints. If Caveman phrasing is not shorter, use plain prose. Write rules and skills in precise standard English.
 - **Trim restatement, never a rule.** Preserve distinct behavior under **Meaning never dropped**; split behind a pointer when compression cannot meet the budget.
 - **Preserve named-rule names verbatim.** Keep referenced names while rewriting their prose; verify every cross-reference.
 - **Meaning has one home.** Consolidate knowledge that changes for the same reason. Similar wording with different ownership or triggers may remain.
@@ -61,7 +61,7 @@ Prefer direct actions when equally precise. Keep explicit prohibitions, negation
 
 ### 4. Collapse restatement into leading words
 
-Use established terms only when they preserve the full requirement. Keep explicit bounds and success criteria; a label such as "tight" does not replace deterministic, bounded, and low-overhead checks. Write instructions and skills in concise standard English.
+Use established terms only when they preserve the full requirement. Keep explicit bounds and success criteria; a label such as "tight" does not replace deterministic, bounded, and low-overhead checks. Write instructions and skills in concise standard English, not the chat persona.
 
 ### 5. Dedupe meaning and prune sediment
 

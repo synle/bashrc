@@ -783,8 +783,35 @@ async function _doOpencodeInstructionsWork() {
 }
 
 /**
+ * Deploys a local plugin that refreshes chat-style context before model calls and compaction.
+ * Mutates context arrays in place so OpenCode's request builder retains the reminder.
+ * Performs no network or permission changes.
+ * @returns {Promise<void>} Resolves after writing the managed plugin.
+ */
+async function _doOpencodePersonaPluginWork() {
+  const targetPath = path.join(getLLMConfigHome(), ".config/opencode/plugins/sy-persona-reminder.js");
+  const content = `/** Reinforces chat style while preserving policy and artifact prose. */
+export default async function () {
+  const reminder = ${JSON.stringify(LLM_PERSONA_REMINDER)};
+  return {
+    "experimental.chat.system.transform": async (_input, output) => {
+      // OpenCode retains the original array after this hook; never replace it.
+      output.system.splice(0, output.system.length, ...output.system.filter((entry) => entry !== reminder));
+      output.system.push(reminder);
+    },
+    "experimental.session.compacting": async (_input, output) => {
+      if (!output.context.includes(reminder)) output.context.push(reminder);
+    },
+  };
+}
+`;
+  await mkdir(path.dirname(targetPath));
+  await writeText(targetPath, content);
+}
+
+/**
  * Configures installed OpenCode: discovered providers, MCP, TUI, instructions,
- * upstream persona installation, command/skill links, retired-agent cleanup, and the existing auth-store link.
+ * persona plugin, command/skill links, retired-agent cleanup, and the existing auth-store link.
  * Omits Ollama providers when discovery returns none; skips if OpenCode is absent.
  * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */
@@ -817,21 +844,13 @@ async function doWork() {
   // self-corrects on the second run.
   await deploySharedLLMInstructions();
 
-  const managedConfig = _buildOpencodeConfig(providerInputs);
-  // Upstream owns plugin registration; preserve its entry across our config refresh.
-  if (fs.existsSync(targetPath)) {
-    const existingConfig = JSON.parse(stripJsoncComments(fs.readFileSync(targetPath, "utf8")));
-    if (existingConfig.plugin !== undefined && !Array.isArray(existingConfig.plugin))
-      throw new TypeError("OpenCode plugin must be an array");
-    managedConfig.plugin = [...new Set([...(existingConfig.plugin ?? []), ...managedConfig.plugin])];
-  }
-  await deploySharedMcpServers(targetPath, managedConfig, "opencode", "opencode");
+  await deploySharedMcpServers(targetPath, _buildOpencodeConfig(providerInputs), "opencode", "opencode");
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();
 
   await _doOpencodeInstructionsWork();
-  retireLLMPersonaArtifact(path.join(getLLMConfigHome(), ".config/opencode/plugins/sy-persona-reminder.js"));
+  await _doOpencodePersonaPluginWork();
 
   await _syncOpencodeCommandSymlinks();
 
@@ -842,5 +861,4 @@ async function doWork() {
 
   // Retire prior managed PR workers while preserving private agent artifacts.
   await deploySharedLLMAgents();
-  await installUpstreamCaveman("opencode");
 }

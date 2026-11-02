@@ -62,9 +62,9 @@ describe("restored guidance integrity", () => {
     expect(execute).toContain("remove only `Placeholder`");
   });
 
-  it("keeps custom persona and archived instruction includes out of active guidance", () => {
+  it("includes the active persona source rather than an archived copy", () => {
     const instructions = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions.md"), "utf-8");
-    expect(instructions).not.toContain("instructions-persona.md");
+    expect(instructions).toContain("<!-- BEGIN software/scripts/advanced/llm/_common/v_current/instructions-persona.md -->");
     expect(instructions).not.toMatch(/<!-- (?:BEGIN|END) software\/scripts\/advanced\/llm\/_common\/v\d/);
   });
 });

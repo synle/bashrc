@@ -115,15 +115,12 @@ Restore a file from its adjacent backup to undo its reset.
 Restart the client after reset; rerun its setup script to restore Sy defaults.
 Use `--help` to inspect scope without changing files.
 
-### Upstream persona integrations
+### Per-turn persona reminders
 
-Client setup calls `installUpstreamCaveman()` using the reviewed revision declared in `llm-common.js`.
-Claude Code, Gemini CLI, OpenCode, and Copilot CLI use the upstream unified installer with explicit client selection.
-Pi receives the upstream `caveman` skill through the skills installer; invoke `/skill:caveman` to activate it for a session.
-This persona-only installation does not activate the Caveman CLI, proxy, compression, or provider routing.
-Upstream controls rules, hook cadence, mode switching, and activation behavior.
-Custom reminders and split persona instructions are retired. Exact local artifacts receive backups under `$LLM_ROOT_FOLDER/retired-persona/`.
-Installer execution is deferred in CI and dry runs. Restart clients after installation; prompt reinforcement does not guarantee model compliance.
+- Claude Code, Gemini CLI, and Pi receive a short persona reminder before every user-driven agent turn through their documented prompt hooks.
+- Copilot CLI receives reminder context at session start and resume. Its user-level command hooks cannot inject context on every prompt; `userPromptTransformed` mutation is supported only by SDK hooks.
+- OpenCode setup deploys `plugins/sy-persona-reminder.js`, which refreshes reminder context before model calls and preserves it during compaction.
+- All reminders point to the same rule: chat progress, status, and completion messages are user replies; only external deliverables are exempt.
 
 Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today.
 
@@ -292,7 +289,7 @@ Local-only requests remain local; publication and watch-loop authority are separ
 No named PR worker personas are deployed. Run the review or babysit skill directly; fan-out workflows select available workers by behavior.
 The agent registry remains empty. Each client setup still calls the shared deployer to retire prior managed artifacts.
 Cleanup preserves foreign files, folders, and links. Restart clients after deployment before checking their discovery inventories.
-Upstream-owned persona integrations remain separate from managed PR workers.
+The chat-style persona and its reminder hooks remain separate and unchanged.
 
 ### OpenCode experimental Code Mode
 
