@@ -943,54 +943,123 @@ async function readLLMDocSource(sourcePath) {
 const LLM_SHARED_INSTRUCTIONS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "instructions");
 /** @type {string} Shared hook helper folder for CLI-specific injected context. */
 const LLM_SHARED_HOOKS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "hooks");
-/** @type {string} Reminder appended before user-facing replies in supported CLIs. */
-const LLM_PERSONA_REMINDER =
-  "Before sending, rewrite every non-exempt user-facing sentence in Caveman Speak, starting with the first sentence. Commentary, status reports, summaries, and task_complete replies count. Resume after tools, compaction, and exempt passages. Keep instructions and skills, code, payloads, and external deliverables in precise standard prose; preserve facts, uncertainty, safety, and exact values.";
-/** @type {string} Source for the shared hook output helper. */
-const LLM_PERSONA_HOOK_HELPER_SOURCE = "software/scripts/advanced/llm/_common/persona-reminder-hook.common.js";
-/** @type {string} Deployed hook output helper path. */
-const LLM_PERSONA_HOOK_HELPER_PATH = path.join(LLM_SHARED_HOOKS_FOLDER, "persona-reminder-hook.js");
+/** @type {string} Retired helper identity used only to remove our prior hooks. */
+const LLM_RETIRED_PERSONA_HELPER_PATH = path.join(LLM_SHARED_HOOKS_FOLDER, "persona-reminder-hook.js");
+/** @type {string} Reviewed immutable upstream installer and skill source. */
+const LLM_CAVEMAN_REVISION = "2e068f735253cce28256744804785f01887d9646";
+/** @type {number} Maximum runtime of one upstream installation in milliseconds. */
+const LLM_CAVEMAN_INSTALL_TIMEOUT_MS = 300000;
 
 /**
- * Adds one hook entry to a settings object's event array without replacing user hooks.
- * Replaces older managed persona hooks, preserves grouped user hooks, and ignores exact duplicates.
- * Mutates only the selected settings hook array; logs and returns false for malformed containers.
- * @param {Record<string, any>} settings - Parsed CLI settings object to update.
- * @param {string} eventName - Hook event key supported by the target CLI.
- * @param {Record<string, any>} entry - Hook entry to upsert.
- * @returns {boolean} True when hook event array was valid and updated or already contained entry.
+ * Removes only hooks referencing our retired helper while retaining grouped foreign hooks.
+ * @param {Record<string, any>} settings - Parsed client settings, mutated in place.
+ * @returns {void} Removes empty managed event arrays; malformed containers throw.
  */
-function mergeLLMHookEntry(settings, eventName, entry) {
-  if (!settings.hooks) settings.hooks = {};
-  if (typeof settings.hooks !== "object" || Array.isArray(settings.hooks)) {
-    log(`>> LLM hook merge skipped — settings.hooks is not an object (${eventName})`);
-    return false;
-  }
-
-  const entries = settings.hooks[eventName] === undefined ? [] : settings.hooks[eventName];
-  if (!Array.isArray(entries)) {
-    log(`>> LLM hook merge skipped — hooks.${eventName} is not an array`);
-    return false;
-  }
-
-  // Managed persona hooks retain their identity when reminder wording changes.
-  // Replace that entry rather than accumulating one hook per deployed revision.
-  const isPersonaEntry = JSON.stringify(entry).includes(LLM_PERSONA_HOOK_HELPER_PATH);
-  const retainedEntries = [];
-  for (const candidate of entries) {
-    if (!isPersonaEntry || !JSON.stringify(candidate).includes(LLM_PERSONA_HOOK_HELPER_PATH)) {
-      retainedEntries.push(candidate);
-      continue;
+function retireLLMPersonaHooks(settings) {
+  if (settings.hooks === undefined) return;
+  if (!settings.hooks || typeof settings.hooks !== "object" || Array.isArray(settings.hooks))
+    throw new TypeError("LLM hooks must be an object");
+  const events = Object.entries(settings.hooks);
+  if (events.some(([, entries]) => !Array.isArray(entries))) throw new TypeError("LLM hook event must be an array");
+  for (const [event, entries] of events) {
+    const retained = [];
+    for (const entry of entries) {
+      if (!JSON.stringify(entry).includes(LLM_RETIRED_PERSONA_HELPER_PATH)) {
+        retained.push(entry);
+      } else if (Array.isArray(entry?.hooks)) {
+        const hooks = entry.hooks.filter((hook) => !JSON.stringify(hook).includes(LLM_RETIRED_PERSONA_HELPER_PATH));
+        if (hooks.length) retained.push({ ...entry, hooks });
+      }
     }
-    if (Array.isArray(candidate?.hooks)) {
-      const hooks = candidate.hooks.filter((hook) => !JSON.stringify(hook).includes(LLM_PERSONA_HOOK_HELPER_PATH));
-      if (hooks.length > 0) retainedEntries.push({ ...candidate, hooks });
-    }
+    if (retained.length) settings.hooks[event] = retained;
+    else delete settings.hooks[event];
   }
-  const serializedEntry = JSON.stringify(entry);
-  if (!retainedEntries.some((candidate) => JSON.stringify(candidate) === serializedEntry)) retainedEntries.push(entry);
-  settings.hooks[eventName] = retainedEntries;
-  return true;
+}
+
+/**
+ * Moves an exact retired artifact outside discovery, retaining user modifications and symlink targets.
+ * @param {string} target - Exact managed artifact path.
+ * @returns {void} Creates a unique backup when present; filesystem failures propagate.
+ */
+function retireLLMPersonaArtifact(target) {
+  if (IS_DRY_RUN) return;
+  try {
+    fs.lstatSync(target);
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
+  const backupFolder = path.join(LLM_SHARED_ROOT_FOLDER, "retired-persona");
+  fs.mkdirSync(backupFolder, { recursive: true });
+  const backup = fs.mkdtempSync(path.join(backupFolder, "artifact-"));
+  fs.renameSync(target, path.join(backup, path.basename(target)));
+  log(">> Retired custom persona artifact; backup:", backup);
+}
+
+/**
+ * Installs upstream-owned persona integrations without activating the CLI, proxy, or provider routing.
+ * @param {"claude"|"copilot"|"gemini"|"opencode"|"pi"} client - Installed target client.
+ * @returns {Promise<void>} Resolves after a successful installer process; rejects failed or timed-out installation.
+ */
+async function installUpstreamCaveman(client) {
+  if (!["claude", "copilot", "gemini", "opencode", "pi"].includes(client)) throw new TypeError("Unsupported Caveman client");
+  const source = `JuliusBrussee/caveman#${LLM_CAVEMAN_REVISION}`;
+  const args =
+    client === "pi"
+      ? [
+          "--yes",
+          "--ignore-scripts",
+          "--package=skills@1.7.5",
+          "--",
+          "skills",
+          "add",
+          source,
+          "--skill",
+          "caveman",
+          "-a",
+          "pi",
+          "-g",
+          "--yes",
+        ]
+      : [
+          "--yes",
+          "--ignore-scripts",
+          "--package=skills@1.7.5",
+          `--package=github:${source}`,
+          "--",
+          "caveman-install",
+          "--only",
+          client,
+          "--non-interactive",
+        ];
+  if (IS_DRY_RUN || IS_CI) {
+    log(">> Upstream Caveman installation deferred:", client, args.join(" "));
+    return;
+  }
+  // Existing execBash discards process failures; installation must preserve them.
+  const quote = (value) => `'${value.replace(/'/g, `'\\''`)}'`;
+  await new Promise((resolve, reject) => {
+    exec(
+      `npm exec ${args.map(quote).join(" ")}`,
+      {
+        timeout: LLM_CAVEMAN_INSTALL_TIMEOUT_MS,
+        maxBuffer: 10 * 1024 * 1024,
+        env: {
+          ...process.env,
+          CAVEMAN_REF: LLM_CAVEMAN_REVISION,
+          npm_config_ignore_scripts: "true",
+          npm_config_allow_git: "root",
+          DO_NOT_TRACK: "1",
+        },
+      },
+      (error, stdout, stderr) => {
+        if (stdout) log(stdout.trim());
+        if (stderr) log(stderr.trim());
+        if (error) reject(new Error(`Upstream Caveman installation failed for ${client}: ${error.code || error.signal}`));
+        else resolve();
+      },
+    );
+  });
 }
 
 /**
@@ -1051,24 +1120,8 @@ const LLM_LEGACY_FOLDERS = [
   { folder: LLM_LEGACY_PLANS_FOLDER, destination: LLM_SHARED_PLANS_FOLDER },
 ];
 
-/**
- * Deployed basename of the persona document. MUST load LAST.
- *
- * Why last: a style directive decays with distance — every token of dense, formal rule
- * prose read after it pulls the reply back toward normal technical English. CLIs that
- * take an ordered instruction list (opencode `instructions: [...]`) load in array
- * order, so whatever sits last is the freshest thing in context. Sorted alphabetically
- * as plain `persona.md` it landed 2nd of 6 with ~40k chars of rules behind it, and the
- * persona stopped sticking.
- *
- * Two guards keep it last, on purpose:
- *   1. The `~` prefix — `~` (0x7e) sorts after every letter, so even a plain `.sort()`
- *      puts it at the end (same `~name` = "runs last" convention as `~cleanup.js`).
- *   2. {@link getSharedLLMInstructionFilePaths} moves it to the end explicitly, so a
- *      future file whose name also sorts late cannot overtake it.
- * @type {string}
- */
-const LLM_PERSONA_INSTRUCTION_FILE = "~persona.md";
+/** @type {string} Retired custom instruction basename, excluded from explicit client loads. */
+const LLM_RETIRED_PERSONA_INSTRUCTION_FILE = "~persona.md";
 
 /**
  * The single registry of instruction files split out of the always-loaded block.
@@ -1090,12 +1143,6 @@ const LLM_SHARED_INSTRUCTION_FILES = {
   "readability.md": "software/scripts/advanced/llm/_common/v_current/instructions-readability.md",
   "review-guardrails.md": "software/scripts/advanced/llm/_common/v_current/instructions-review-guardrails.md",
   "performance.md": "software/scripts/advanced/llm/_common/v_current/instructions-performance.md",
-  // Unlike its siblings, this one is ALSO inlined back into the top of
-  // instructions.md through a BEGIN/END path block, so the always-loaded copy and
-  // the standalone document can never drift. It is here so opencode loads it as a
-  // separate rules document (instructions[]) rather than as ~1% of one 36k blob —
-  // persona is the oldest, smallest thing in context and the first to decay.
-  [LLM_PERSONA_INSTRUCTION_FILE]: "software/scripts/advanced/llm/_common/v_current/instructions-persona.md",
 };
 
 /**
@@ -1275,6 +1322,7 @@ async function deploySharedLLMInstructions() {
   fs.mkdirSync(LLM_SHARED_PR_REVIEWS_FOLDER, { recursive: true });
   fs.mkdirSync(LLM_SHARED_PR_BABYSITS_FOLDER, { recursive: true });
 
+  retireLLMPersonaArtifact(path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, LLM_RETIRED_PERSONA_INSTRUCTION_FILE));
   pruneStaleSharedLLMInstructions();
 
   for (const [targetName, sourcePath] of Object.entries(LLM_SHARED_INSTRUCTION_FILES)) {
@@ -1296,7 +1344,7 @@ async function deploySharedLLMInstructions() {
     await writeText(path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, targetName), wrapped);
   }
 
-  await writeText(LLM_PERSONA_HOOK_HELPER_PATH, await readText`${LLM_PERSONA_HOOK_HELPER_SOURCE}`);
+  retireLLMPersonaArtifact(LLM_RETIRED_PERSONA_HELPER_PATH);
 
   linkSharedLLMInstructions();
 
@@ -1415,25 +1463,18 @@ function pruneStaleSharedLLMInstructions() {
  * Sorted for stable output: an unsorted readdir would reorder the generated config
  * between machines and show up as spurious diffs.
  *
- * The persona file ({@link LLM_PERSONA_INSTRUCTION_FILE}) is then forced to the END.
- * opencode loads `instructions` in array order and the last document read is the one
- * that sticks; the persona placed mid-list decays under the rule prose after it.
- *
  * @returns {string[]} Absolute paths to every `.md` in LLM_SHARED_INSTRUCTIONS_FOLDER,
- *   alphabetical, with the persona file last.
+ *   alphabetical, excluding the retired custom persona.
  */
 function getSharedLLMInstructionFilePaths() {
   if (!fs.existsSync(LLM_SHARED_INSTRUCTIONS_FOLDER)) return [];
 
   try {
-    const isPersona = (entry) => entry === LLM_PERSONA_INSTRUCTION_FILE;
     const entries = fs
       .readdirSync(LLM_SHARED_INSTRUCTIONS_FOLDER)
-      .filter((entry) => entry.endsWith(".md"))
+      .filter((entry) => entry.endsWith(".md") && entry !== LLM_RETIRED_PERSONA_INSTRUCTION_FILE)
       .sort();
-    return [...entries.filter((entry) => !isPersona(entry)), ...entries.filter(isPersona)].map((entry) =>
-      path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, entry),
-    );
+    return entries.map((entry) => path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, entry));
   } catch (e) {
     log(`>> shared instructions: could not list ${LLM_SHARED_INSTRUCTIONS_FOLDER} — ${e.message}`);
     return [];

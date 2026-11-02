@@ -126,26 +126,6 @@ const SPLIT_EXPECTATIONS = {
       "Re-measure after landing",
     ],
   },
-  // The one INLINED split file: persona.md is also pulled back into the top of
-  // instructions.md through a BEGIN/END path block, so unlike its siblings its rules
-  // are SUPPOSED to appear in the always-loaded file too. `inlined` turns the
-  // not-duplicated assertion off for exactly this file rather than weakening it for
-  // all siblings. Why both copies: claude and gemini read only the always-loaded block,
-  // while opencode loads the standalone file as its own rules document -- and position
-  // matters for a persona, the smallest and oldest thing in a long context.
-  // Deployed as `~persona.md` so it sorts LAST -- see LLM_PERSONA_INSTRUCTION_FILE.
-  "~persona.md": {
-    heading: "# Persona \u2014 Caveman Speak",
-    sections: [],
-    inlined: true,
-    leads: [
-      "**No self-reference.**",
-      "**Hold persona every turn.**",
-      "Progress updates, status reports, PR state lists, task summaries, and `task_complete` final messages are replies to the user",
-      "**Never caveman-ify:**",
-      "Both PRs wait on approval. Backend auto-merge armed.",
-    ],
-  },
 };
 
 function loadLlmCommon() {
@@ -233,7 +213,7 @@ describe("shared instruction registry", () => {
     }
   });
 
-  it("should list the persona file last, even behind a name that sorts after it", () => {
+  it("excludes the retired persona file while preserving alphabetical user instructions", () => {
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), "llm-instr-"));
     const original = llm.LLM_SHARED_INSTRUCTIONS_FOLDER;
     try {
@@ -241,21 +221,15 @@ describe("shared instruction registry", () => {
         fs.writeFileSync(path.join(folder, name), "x");
       }
       llm.LLM_SHARED_INSTRUCTIONS_FOLDER = folder;
-      expect(llm.getSharedLLMInstructionFilePaths().map((p) => path.basename(p))).toEqual([
-        "debugging.md",
-        "testing.md",
-        "~~late.md",
-        "~persona.md",
-      ]);
+      expect(llm.getSharedLLMInstructionFilePaths().map((p) => path.basename(p))).toEqual(["debugging.md", "testing.md", "~~late.md"]);
     } finally {
       llm.LLM_SHARED_INSTRUCTIONS_FOLDER = original;
       fs.rmSync(folder, { recursive: true, force: true });
     }
   });
 
-  it("should deploy the persona under a name that sorts after every letter", () => {
-    expect(llm.LLM_PERSONA_INSTRUCTION_FILE).toBe("~persona.md");
-    expect(Object.keys(llm.LLM_SHARED_INSTRUCTION_FILES)).toContain(llm.LLM_PERSONA_INSTRUCTION_FILE);
+  it("does not deploy the retired persona instruction", () => {
+    expect(Object.keys(llm.LLM_SHARED_INSTRUCTION_FILES)).not.toContain("~persona.md");
   });
 });
 

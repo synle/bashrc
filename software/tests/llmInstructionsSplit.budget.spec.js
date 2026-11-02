@@ -111,18 +111,6 @@ const SPLIT_EXPECTATIONS = {
   // while opencode loads the standalone file as its own rules document — and position
   // matters for a persona, the smallest and oldest thing in a long context.
   // Deployed as `~persona.md` so it sorts LAST — see LLM_PERSONA_INSTRUCTION_FILE.
-  "~persona.md": {
-    heading: "# Persona — Caveman Speak",
-    sections: [],
-    inlined: true,
-    leads: [
-      "**No self-reference.**",
-      "**Hold persona every turn.**",
-      "Progress updates, status reports, PR state lists, task summaries, and `task_complete` final messages are replies to the user",
-      "**Never caveman-ify:**",
-      "Both PRs wait on approval. Backend auto-merge armed.",
-    ],
-  },
 };
 
 function loadLlmCommon() {
@@ -171,38 +159,6 @@ const SHARED_FOLDER_RESOLVED = llm.LLM_SHARED_INSTRUCTIONS_FOLDER;
 function countBullets(text) {
   return text.split("\n").filter((line) => /^\s*- /.test(line)).length;
 }
-
-describe("shared CLI hook merge", () => {
-  it("preserves existing event hooks and adds managed reminder only once", () => {
-    const userHook = { hooks: [{ type: "command", command: "user-hook" }] };
-    const managedHook = { hooks: [{ type: "command", command: "persona-hook" }] };
-    const settings = { hooks: { UserPromptSubmit: [userHook] } };
-
-    expect(llm.mergeLLMHookEntry(settings, "UserPromptSubmit", managedHook)).toBe(true);
-    expect(llm.mergeLLMHookEntry(settings, "UserPromptSubmit", managedHook)).toBe(true);
-
-    expect(settings.hooks.UserPromptSubmit).toEqual([userHook, managedHook]);
-  });
-
-  it("rejects malformed event lists without replacing user data", () => {
-    const settings = { hooks: { BeforeAgent: { command: "user-hook" } } };
-
-    expect(llm.mergeLLMHookEntry(settings, "BeforeAgent", { command: "persona-hook" })).toBe(false);
-    expect(settings.hooks.BeforeAgent).toEqual({ command: "user-hook" });
-  });
-
-  it("replaces an older persona reminder while preserving hooks grouped beside it", () => {
-    const userHook = { type: "command", command: "user-hook" };
-    const oldHook = { type: "command", command: "node", args: [llm.LLM_PERSONA_HOOK_HELPER_PATH, "claude", "old reminder"] };
-    const updated = { hooks: [{ ...oldHook, args: [llm.LLM_PERSONA_HOOK_HELPER_PATH, "claude", "new reminder"] }] };
-    const settings = { hooks: { UserPromptSubmit: [{ matcher: "*", hooks: [userHook, oldHook] }] } };
-
-    llm.mergeLLMHookEntry(settings, "UserPromptSubmit", updated);
-    llm.mergeLLMHookEntry(settings, "UserPromptSubmit", updated);
-
-    expect(settings.hooks.UserPromptSubmit).toEqual([{ matcher: "*", hooks: [userHook] }, updated]);
-  });
-});
 
 describe("always-loaded instructions stay within the CLAUDE.md budget", () => {
   it("should keep instructions.md under the char budget", () => {

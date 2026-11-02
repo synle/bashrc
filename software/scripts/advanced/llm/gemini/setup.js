@@ -315,17 +315,7 @@ async function _doGeminiSettingsWork(targetDir) {
   const merged = _deepMerge(clone(GEMINI_MANAGED_SETTINGS), existing);
   await _doGeminiThemeWork(merged);
 
-  mergeLLMHookEntry(merged, "BeforeAgent", {
-    matcher: "*",
-    hooks: [
-      {
-        name: "sy-persona-reminder",
-        type: "command",
-        command: `"${process.execPath}" "${LLM_PERSONA_HOOK_HELPER_PATH}" gemini "${LLM_PERSONA_REMINDER}"`,
-        timeout: 1000,
-      },
-    ],
-  });
+  retireLLMPersonaHooks(merged);
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);
@@ -456,4 +446,5 @@ async function doWork() {
 
   // Retire prior managed PR workers while preserving private agent artifacts.
   await deploySharedLLMAgents();
+  await installUpstreamCaveman("gemini");
 }
