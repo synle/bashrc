@@ -784,7 +784,8 @@ async function _doOpencodeInstructionsWork() {
 
 /**
  * Deploys a local plugin that refreshes chat-style context before model calls and compaction.
- * Uses only documented context arrays; performs no network or permission changes.
+ * Mutates context arrays in place so OpenCode's request builder retains the reminder.
+ * Performs no network or permission changes.
  * @returns {Promise<void>} Resolves after writing the managed plugin.
  */
 async function _doOpencodePersonaPluginWork() {
@@ -794,7 +795,8 @@ export default async function () {
   const reminder = ${JSON.stringify(LLM_PERSONA_REMINDER)};
   return {
     "experimental.chat.system.transform": async (_input, output) => {
-      output.system = output.system.filter((entry) => entry !== reminder);
+      // OpenCode retains the original array after this hook; never replace it.
+      output.system.splice(0, output.system.length, ...output.system.filter((entry) => entry !== reminder));
       output.system.push(reminder);
     },
     "experimental.session.compacting": async (_input, output) => {

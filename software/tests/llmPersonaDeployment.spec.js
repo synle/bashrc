@@ -14,14 +14,16 @@ describe("OpenCode persona reinforcement", () => {
     const context = {};
     vm.runInNewContext(source.replace("export default", "var plugin ="), context);
     const hooks = await context.plugin();
-    const output = { system: ["Repository policy", "User context"] };
+    // OpenCode retains this array when building the model request after the hook.
+    const system = ["Repository policy", "User context"];
+    const output = { system };
 
     await hooks["experimental.chat.system.transform"]({}, output);
-    const reminder = output.system[2];
-    output.system.push("Later context");
+    const reminder = system[2];
+    system.push("Later context");
     await hooks["experimental.chat.system.transform"]({}, output);
 
-    expect(output.system).toEqual(["Repository policy", "User context", "Later context", reminder]);
+    expect(system).toEqual(["Repository policy", "User context", "Later context", reminder]);
     expect(reminder).toContain("Before sending");
     expect(reminder).toContain("instructions and skills");
   });
