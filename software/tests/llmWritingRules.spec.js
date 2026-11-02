@@ -158,7 +158,6 @@ describe("shared writing checklist", () => {
     ["AGENTS.md", `${SOURCE_FOLDER}/skills/clean-instructions.md`],
     [".agents/skills/refresh-llm-guidance/SKILL.md", `${SOURCE_FOLDER}/skills/clean-instructions.md`],
     [`${SOURCE_FOLDER}/instructions.md`, "<<LLM_ROOT_FOLDER>>/skills/sy-clean-instructions/SKILL.md"],
-    [`${SOURCE_FOLDER}/instructions-persona.md`, "<<LLM_ROOT_FOLDER>>/skills/sy-clean-instructions/SKILL.md"],
     [`${SOURCE_FOLDER}/skills/migrate-cross-agent-skills-and-context.md`, "<<LLM_ROOT_FOLDER>>/skills/sy-clean-instructions/SKILL.md"],
   ])("lists every label verbatim and points to full details in %s", (sourceName, checklistPath) => {
     const source = fs.readFileSync(sourceName, "utf-8");
@@ -167,7 +166,7 @@ describe("shared writing checklist", () => {
     expect(source).toContain(`\`${checklistPath}\``);
   });
 
-  it.each(["instructions.md", "instructions-persona.md", "skills/migrate-cross-agent-skills-and-context.md"])(
+  it.each(["instructions.md", "skills/migrate-cross-agent-skills-and-context.md"])(
     "renders a usable full-checklist path in %s",
     (sourceName) => {
       const source = fs.readFileSync(path.join(SOURCE_FOLDER, sourceName), "utf-8");
@@ -201,7 +200,7 @@ describe("guidance cleanup writing checks", () => {
     expect(cleanup).toContain("**No theater.**");
     expect(cleanup).toContain('No "me think", roleplay, or chatter between tool calls.');
     expect(cleanup).toContain("Keep required progress checkpoints.");
-    expect(cleanup).toContain("If Caveman phrasing is not shorter, use plain prose.");
+    expect(cleanup).not.toContain("Caveman phrasing");
     expect(cleanup).toContain("Write rules and skills in precise standard English.");
   });
 });

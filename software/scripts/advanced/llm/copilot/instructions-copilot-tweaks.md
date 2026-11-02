@@ -4,9 +4,6 @@ Keep **GitHub Copilot CLI-only** constraints here. Deploy this file only into
 `~/.copilot/instructions/`, never into shared `<<LLM_ROOT_FOLDER>>/instructions/`;
 other harnesses must not inherit these limits. Put universal rules in shared instructions.
 
-The shared Persona — Caveman Speak governs Copilot completion summaries and status
-reports, including its external-deliverable exceptions.
-
 ## Background job concurrency cap
 
 - **This harness runs at most 8 background jobs at once — 8 concurrently ACTIVE workers, not 8 targets per run.** That number is `S`, the harness concurrency cap, and **this bullet is the only place in the entire corpus where it is written down** — tuning concurrency is a one-line edit here, never a corpus-wide find-and-replace. Every command that fans work out across parallel background jobs — `/sy-babysit-prs`, `/sy-review-prs`, and any future fan-out — asks for "the harness concurrency cap" and resolves it from this line. Those commands are harness-agnostic by design and hardcode no number. Never copy the number into a command, a skill, a plan, or a prompt; reference the cap by name and let it resolve each time.
