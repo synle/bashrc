@@ -115,12 +115,14 @@ Restore a file from its adjacent backup to undo its reset.
 Restart the client after reset; rerun its setup script to restore Sy defaults.
 Use `--help` to inspect scope without changing files.
 
-### Per-turn persona reminders
+### Persona modes and lifecycle
 
-- Claude Code, Gemini CLI, and Pi receive a short persona reminder before every user-driven agent turn through their documented prompt hooks.
-- Copilot CLI receives reminder context at session start and resume. Its user-level command hooks cannot inject context on every prompt; `userPromptTransformed` mutation is supported only by SDK hooks.
-- OpenCode setup deploys `plugins/sy-persona-reminder.js`, which refreshes reminder context before model calls and preserves it during compaction.
-- All reminders point to the same rule: chat progress, status, and completion messages are user replies; only external deliverables are exempt.
+Default Caveman Speak is terse but grammatical. Complete prompts `/ultracave` or `/caveman ultra` enable stripped grammar.
+Use `/caveman`, `/caveman off`, or `/caveman status` to activate, disable, or inspect the mode where native commands are supported.
+Plain prompts “caveman mode”, “ultracave mode”, and “stop caveman” work through the managed adapters.
+OpenCode injects full active rules before requests; Pi appends hidden guidance after history and refreshes it after compaction.
+Claude uses session-scoped state for SessionStart, SubagentStart, and UserPromptSubmit. Gemini imports canonical mode context without custom BeforeAgent injection.
+Copilot keeps session-start reinforcement. No adapter rewrites code or outputs, and model compliance remains unverified.
 
 Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today.
 

@@ -11,13 +11,11 @@
  *                             load are loaded here too. Managed block is upserted
  *                             between BEGIN/END markers; user content outside is
  *                             preserved.
- *   ~/.pi/agent/APPEND_SYSTEM.md — short tail-position persona reminder added
- *                             directly to Pi's system prompt on every run,
- *                             reinforcing the caveman response style separately
- *                             from the long AGENTS.md corpus.
- *   ~/.pi/agent/extensions/sy-persona-reminder.js — structured run guideline
- *                             and one owned persona section refreshed before
- *                             each model request, including tool follow-ups.
+ *   ~/.pi/agent/APPEND_SYSTEM.md — short base-system persona reminder; Pi places
+ *                             this before project context and skills.
+ *   ~/.pi/agent/extensions/sy-persona-reminder.js — full active rules in a hidden
+ *                             tail message, session mode persistence, and explicit
+ *                             post-compaction refresh.
  *   ~/.pi/agent/settings.json — merge of managed defaults (`defaultTools`,
  *                             `quietStartup`, `terminal.imageWidthCells`,
  *                             `terminal.showTerminalProgress`, `terminal.hyperlinks`,
@@ -48,22 +46,11 @@
 
 /**
  * Short persona reminder appended through ~/.pi/agent/APPEND_SYSTEM.md.
- * Tail placement matters: Pi appends this directly to the system prompt after
- * its larger instruction corpus, which keeps the response style more salient.
+ * Pi places this addendum before project context and skills. The extension owns
+ * current-turn tail placement and active mode resolution.
  * @type {string}
  */
 const PI_APPEND_SYSTEM_CONTENT = `${LLM_PERSONA_REMINDER}\n`;
-
-/**
- * Self-delimiting request-level reminder with a concrete chat example. The shared
- * reminder owns policy and exemptions; the example illustrates ordinary status prose.
- * @type {string}
- */
-const PI_PERSONA_REQUEST_REMINDER = `<sy_persona_reminder>
-${LLM_PERSONA_REMINDER}
-
-Chat-status example: "Backup complete. Eight files verified. Active rules unchanged."
-</sy_persona_reminder>`;
 
 /**
  * Headers required by the GitHub Copilot IDE-authenticated API.
@@ -409,42 +396,48 @@ async function _doPiAppendSystemWork(agentDir) {
 }
 
 /**
- * Writes a Pi extension with a run guideline and one owned system section before
- * every model request. Existing prompt content, tools, and transcript order survive;
+ * Writes a Pi extension with session modes and hidden guidance before each model
+ * request and after compaction. Existing prompt content, tools, and transcript order survive;
  * no replies are rewritten and no additional model calls are requested.
  * @param {string} agentDir - Target pi agent folder.
  * @returns {Promise<void>} Resolves after writing the generated extension; IO errors propagate.
  */
 async function _doPiPersonaExtensionWork(agentDir) {
   const targetPath = path.join(agentDir, "extensions", "sy-persona-reminder.js");
+  const rules = await getLLMPersonaRules();
   const content = `/** Registers request-level persona reinforcement without rewriting replies or replacing the prompt.
  * @param {import("@earendil-works/pi-coding-agent").ExtensionAPI} pi - Pi extension API.
  * @returns {void} Registers lifecycle handlers; performs no startup IO.
  */
 export default function (pi) {
-  /** @type {string} Shared chat-style policy, including prose exemptions. */
-  const PERSONA_REMINDER = ${JSON.stringify(LLM_PERSONA_REMINDER)};
-  /** @type {string} Self-delimiting reminder rendered after other leading system sections. */
-  const REQUEST_REMINDER = ${JSON.stringify(PI_PERSONA_REQUEST_REMINDER)};
+  const createRuntime = ${createLLMPersonaRuntime.toString()};
+  const persona = createRuntime(${JSON.stringify(rules)});
+  let session = "default";
+
+  pi.on("session_start", (_event, ctx) => {
+    session = ctx.sessionManager.getSessionId();
+    const saved = ctx.sessionManager.getBranch().filter((entry) => entry.type === "custom" && entry.customType === "sy-persona-mode").at(-1);
+    if (saved) persona.restore(session, saved.data.mode);
+  });
 
   pi.on("before_agent_start", (event) => {
-    const guidelines = event.systemPromptOptions.promptGuidelines;
-    if (!guidelines.includes(PERSONA_REMINDER)) guidelines.push(PERSONA_REMINDER);
+    const result = persona.update(session, event.messageType === "user" ? event.prompt : "");
+    if (result.changed) pi.appendEntry("sy-persona-mode", { mode: result.mode });
+    return { message: { customType: "sy-persona-guidance", content: persona.context(session), display: false, details: { mode: result.mode } } };
   });
 
   pi.on("context_with_system", (event) => {
-    const system = event.messages[0];
-    // Do not manufacture or reorder system/tool state in a nonstandard transcript.
-    if (system?.role !== "system") return;
-
-    // Replace only our section, moving it last without mutating reusable context.
-    const { sy_persona_reminder: previousReminder, ...sections } = system.sections ?? {};
+    if (event.messages[0]?.role !== "system") return;
     return {
-      messages: [
-        { ...system, sections: { ...sections, sy_persona_reminder: REQUEST_REMINDER } },
-        ...event.messages.slice(1),
-      ],
+    messages: event.messages.filter((entry) => entry.customType !== "sy-persona-guidance").concat({
+      role: "custom", customType: "sy-persona-guidance", content: persona.context(session), display: false, timestamp: Date.now(),
+    }),
     };
+  });
+
+  pi.on("session_compact", () => {
+    pi.appendEntry("sy-persona-mode", { mode: persona.mode(session) });
+    pi.sendMessage({ customType: "sy-persona-guidance", content: persona.context(session), display: false });
   });
 }
 `;

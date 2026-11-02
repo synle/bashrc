@@ -943,13 +943,23 @@ async function readLLMDocSource(sourcePath) {
 const LLM_SHARED_INSTRUCTIONS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "instructions");
 /** @type {string} Shared hook helper folder for CLI-specific injected context. */
 const LLM_SHARED_HOOKS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "hooks");
+// SOURCE software/scripts/advanced/llm/_common/persona-runtime.common.js
+
 /** @type {string} Reminder appended before user-facing replies in supported CLIs. */
 const LLM_PERSONA_REMINDER =
-  "Before sending, rewrite every non-exempt user-facing sentence in Caveman Speak, starting with the first sentence. Commentary, status reports, summaries, and task_complete replies count. Resume after tools, compaction, and exempt passages. Keep instructions and skills, code, payloads, and external deliverables in precise standard prose; preserve facts, uncertainty, safety, and exact values.";
+  "Use terse grammatical Caveman Speak when active. Keep articles and auxiliaries when they improve clarity; stripped grammar belongs only to ultracave. Preserve facts, uncertainty, safety, code, quotations, and external deliverables. Respect explicit mode switches.";
 /** @type {string} Source for the shared hook output helper. */
 const LLM_PERSONA_HOOK_HELPER_SOURCE = "software/scripts/advanced/llm/_common/persona-reminder-hook.common.js";
 /** @type {string} Deployed hook output helper path. */
 const LLM_PERSONA_HOOK_HELPER_PATH = path.join(LLM_SHARED_HOOKS_FOLDER, "persona-reminder-hook.js");
+
+/** @returns {Promise<{caveman: string, ultracave: string}>} Canonical deployed rules with placeholders resolved. */
+async function getLLMPersonaRules() {
+  return {
+    caveman: (await readLLMDocSource("software/scripts/advanced/llm/_common/v_current/instructions-persona.md")).trim(),
+    ultracave: (await readLLMDocSource("software/scripts/advanced/llm/_common/v_current/instructions-persona-ultracave.md")).trim(),
+  };
+}
 
 /**
  * Adds one hook entry to a settings object's event array without replacing user hooks.
@@ -1090,6 +1100,7 @@ const LLM_SHARED_INSTRUCTION_FILES = {
   "readability.md": "software/scripts/advanced/llm/_common/v_current/instructions-readability.md",
   "review-guardrails.md": "software/scripts/advanced/llm/_common/v_current/instructions-review-guardrails.md",
   "performance.md": "software/scripts/advanced/llm/_common/v_current/instructions-performance.md",
+  "persona-ultracave.md": "software/scripts/advanced/llm/_common/v_current/instructions-persona-ultracave.md",
   // Unlike its siblings, this one is ALSO inlined back into the top of
   // instructions.md through a BEGIN/END path block, so the always-loaded copy and
   // the standalone document can never drift. It is here so opencode loads it as a
@@ -1297,6 +1308,11 @@ async function deploySharedLLMInstructions() {
   }
 
   await writeText(LLM_PERSONA_HOOK_HELPER_PATH, await readText`${LLM_PERSONA_HOOK_HELPER_SOURCE}`);
+  await writeText(
+    path.join(LLM_SHARED_HOOKS_FOLDER, "persona-runtime.js"),
+    await readText`software/scripts/advanced/llm/_common/persona-runtime.common.js`,
+  );
+  await writeJson(path.join(LLM_SHARED_HOOKS_FOLDER, "persona-rules.json"), await getLLMPersonaRules());
 
   linkSharedLLMInstructions();
 
