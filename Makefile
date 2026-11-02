@@ -70,15 +70,22 @@ setup_local_conditional:
 # Run all formatting steps
 format: format_build_include format_ci_binaries format_script_indexes format_jsdocs format_spec_cleanup format_shell format_prettier build_autocomplete_specs
 
-# Format shell files with shfmt
+# Format tracked shell sources; exclude generated/protected files and non-shell templates.
 format_shell:
 	if ! type -P shfmt > /dev/null 2>&1; then
 	  printf '%s\n' 'shfmt not found. Skipping shell formatting.'
 	  exit 0
 	fi
-	shfmt -w -i $(TAB_SIZE) -bn -sr \
-	  $$(find software/bootstrap software/scripts \( -name '*.sh' -o -name '*.bash' \) ! -name '*.ps1.bash') \
-	  ./*.sh
+	git ls-files -z -- '*.sh' '*.bash' \
+	  ':!*.ps1.bash' ':!.build/**' ':!assets/**' ':!dist/**' ':!coverage/**' \
+	  ':!software/scripts/advanced/llm/_common/v1/**' \
+	  ':!software/scripts/advanced/llm/_common/v2/**' \
+	  ':!software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash' \
+	  | while IFS= read -r -d '' shell_file; do
+	    if ! shfmt -w -i $(TAB_SIZE) -bn -sr "$$shell_file"; then
+	      printf 'Shell formatting failed: %s (see shfmt diagnostic above). Continuing.\n' "$$shell_file" >&2
+	    fi
+	  done
 
 # Process BEGIN/END block markers
 format_build_include:
@@ -637,4 +644,3 @@ rollback:
 	fi
 	cp ~/.bash_syle.bak ~/.bash_syle
 	printf '%s\n' "Restored ~/.bash_syle from backup. Run 'source ~/.bash_syle' to reload."
-

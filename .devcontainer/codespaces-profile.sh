@@ -10,4 +10,4 @@ alias patch='apply'
 # Clean up redundant dotfiles clone to save disk space.
 # GitHub clones the dotfiles repo to this path when running install.sh,
 # but the repo already exists at /workspaces/bashrc in this codespace.
-rm -rf /workspaces/.codespaces/.persistedshare/dotfiles &>/dev/null
+rm -rf /workspaces/.codespaces/.persistedshare/dotfiles &> /dev/null

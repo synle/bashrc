@@ -628,6 +628,24 @@ function commit_empty_trigger_deploy() {
   git push -u origin "$temp_branch_name" > /dev/null 2>&1
 }
 
+# gogitroot: cd to the nearest enclosing Git worktree root.
+# Args: none (or --help). Returns Git/cd status; failures preserve the current folder.
+# Side effects: prints an action summary and updates PWD/OLDPWD on success.
+function gogitroot() {
+  if is_help_arg "${1:-}"; then
+    printf '%s\n' "gogitroot: cd to the nearest enclosing Git worktree root
+  Usage: gogitroot
+  Alias: goroot
+  Outside a Git worktree, reports an error without changing folders."
+    return 0
+  fi
+  local root_folder
+  root_folder="$(command git rev-parse --show-toplevel)" || return "$?"
+  print_action_summary "$root_folder" cd
+  builtin cd -- "$root_folder"
+}
+alias goroot=gogitroot
+
 # cd to git home directory ($MY_GIT_HOME or ~/git)
 function gogit() {
   if is_help_arg "${1:-}"; then
@@ -751,6 +769,8 @@ function godownload() {
     cd "$@"
   fi
 }
+
+alias godown=godownload
 
 ################################################################################
 # --- Git Worktrees ---

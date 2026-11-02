@@ -1320,46 +1320,72 @@ if [ -f "$LIMINE_CONF" ]; then
 	' "$LIMINE_CONF" | sudo tee "$LIMINE_CONF.tmp" > /dev/null && sudo mv "$LIMINE_CONF.tmp" "$LIMINE_CONF"
 fi
 
-
 # --- Setting up the icons for SteamOS ---
-_STEAM_ICONS_ARCHIVE="$HOME/Desktop/grid.tar.gz"
+_STEAM_ICONS_ARCHIVE=""
+for _STEAM_ICONS_CANDIDATE in "$HOME/Desktop"/grid*.tar.gz; do
+  [ -f "$_STEAM_ICONS_CANDIDATE" ] || continue
+  if [ -z "$_STEAM_ICONS_ARCHIVE" ] || [ "$_STEAM_ICONS_CANDIDATE" -nt "$_STEAM_ICONS_ARCHIVE" ]; then
+    _STEAM_ICONS_ARCHIVE="$_STEAM_ICONS_CANDIDATE"
+  fi
+done
 _STEAM_ICONS_EXTRACT_DIR="$HOME/Desktop/grid"
 _STEAM_ICONS_STEAM_PATTERN="$HOME/.local/share/Steam/userdata"
 
-# 1. Check if the tar.gz archive is present on the Desktop
-if [ -f "$_STEAM_ICONS_ARCHIVE" ]; then
-    printf '%s\n' ">>> Steam icons archive found: extracting..."
-    tar -xzf "$_STEAM_ICONS_ARCHIVE" -C "$HOME/Desktop/"
+# Select by modification time, including the original grid.tar.gz without a timestamp.
+if [ -n "$_STEAM_ICONS_ARCHIVE" ]; then
+  printf '>>> Steam icons archive found: %s. Extracting...\n' "$_STEAM_ICONS_ARCHIVE"
+  tar -xzf "$_STEAM_ICONS_ARCHIVE" -C "$HOME/Desktop/" || exit 1
 
-    # 2. Check if the extracted 'grid' folder is present (nested inside)
-    if [ -d "$_STEAM_ICONS_EXTRACT_DIR" ]; then
-        printf '%s\n' ">>> Steam icons folder found. Checking Steam userdata paths..."
+  # 2. Check if the extracted 'grid' folder is present (nested inside)
+  if [ -d "$_STEAM_ICONS_EXTRACT_DIR" ]; then
+    printf '%s\n' ">>> Steam icons folder found. Checking Steam userdata paths..."
 
-        # Check if any valid Steam config directories match the wildcard
-        _STEAM_ICONS_MATCH_FOUND=false
-        for _STEAM_ICONS_TARGET_DIR in "$_STEAM_ICONS_STEAM_PATTERN"/*/config; do
-            if [ -d "$_STEAM_ICONS_TARGET_DIR" ]; then
-                _STEAM_ICONS_MATCH_FOUND=true
-                printf '%s\n' ">>> Copying grid files to: ${_STEAM_ICONS_TARGET_DIR}/grid"
-                mkdir -p "$_STEAM_ICONS_TARGET_DIR/grid"
-                cp -r "$_STEAM_ICONS_EXTRACT_DIR"/* "$_STEAM_ICONS_TARGET_DIR/grid/"
-            fi
-        done
+    # Check if any valid Steam config directories match the wildcard
+    _STEAM_ICONS_MATCH_FOUND=false
+    for _STEAM_ICONS_TARGET_DIR in "$_STEAM_ICONS_STEAM_PATTERN"/*/config; do
+      if [ -d "$_STEAM_ICONS_TARGET_DIR" ]; then
+        _STEAM_ICONS_MATCH_FOUND=true
+        printf '%s\n' ">>> Copying grid files to: ${_STEAM_ICONS_TARGET_DIR}/grid"
+        mkdir -p "$_STEAM_ICONS_TARGET_DIR/grid"
+        cp -r "$_STEAM_ICONS_EXTRACT_DIR"/* "$_STEAM_ICONS_TARGET_DIR/grid/"
+      fi
+    done
 
-        if [ "$_STEAM_ICONS_MATCH_FOUND" = false ]; then
-            printf '%s\n' ">>> No matching Steam userdata config directories found. Skipping copy."
-        fi
-
-        # 3. Clean up temporary folder
-        printf '%s\n' ">>> Cleaning up temporary folder: ${_STEAM_ICONS_EXTRACT_DIR}"
-        rm -rf "$_STEAM_ICONS_EXTRACT_DIR"
-    else
-        printf '%s\n' ">>> Extracted directory ${_STEAM_ICONS_EXTRACT_DIR} does not exist. Skipping copy and cleanup."
+    if [ "$_STEAM_ICONS_MATCH_FOUND" = false ]; then
+      printf '%s\n' ">>> No matching Steam userdata config directories found. Skipping copy."
     fi
+
+    # Keep the Desktop source for the dated backup below and later reruns.
+  else
+    printf '%s\n' ">>> Extracted directory ${_STEAM_ICONS_EXTRACT_DIR} does not exist. Skipping copy."
+  fi
 else
-    printf '%s\n' ">>> Steam icons archive not found at ${_STEAM_ICONS_ARCHIVE}. Skipping."
+  printf '>>> No Steam icons archive matching %s/grid*.tar.gz. Skipping restore.\n' "$HOME/Desktop"
 fi
 
+# --- Backing up the icons for SteamOS ---
+if [ -d "$_STEAM_ICONS_EXTRACT_DIR" ]; then
+  _STEAM_ICONS_BACKUP_BASE="$HOME/Desktop/grid-$(command date +%Y-%m-%d)"
+  _STEAM_ICONS_BACKUP="$_STEAM_ICONS_BACKUP_BASE.tar.gz"
+  _STEAM_ICONS_BACKUP_NUMBER=0
+  while [ -e "$_STEAM_ICONS_BACKUP" ] || [ -L "$_STEAM_ICONS_BACKUP" ]; do
+    _STEAM_ICONS_BACKUP_NUMBER=$((_STEAM_ICONS_BACKUP_NUMBER + 1))
+    _STEAM_ICONS_BACKUP="$_STEAM_ICONS_BACKUP_BASE-$_STEAM_ICONS_BACKUP_NUMBER.tar.gz"
+  done
+  printf '>>> Backing up Steam icons to: %s\n' "$_STEAM_ICONS_BACKUP"
+  # Exclusive creation also protects an existing backup if another setup races this run.
+  if (
+    set -o noclobber
+    tar -czf - -C "$HOME/Desktop" grid > "$_STEAM_ICONS_BACKUP"
+  ); then
+    printf '>>> Steam icons backup saved: %s\n' "$_STEAM_ICONS_BACKUP"
+  else
+    printf '>>> Steam icons backup failed: %s. Desktop grid retained; archive may be incomplete.\n' "$_STEAM_ICONS_BACKUP" >&2
+    exit 1
+  fi
+else
+  printf '>>> Steam icons folder not found at %s. Skipping backup.\n' "$_STEAM_ICONS_EXTRACT_DIR"
+fi
 
 # --- Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then
