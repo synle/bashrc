@@ -441,7 +441,7 @@ Profile registration is buffered: `registerProfileBlock` /
 - Zed keymaps use `-`, not `+` (`alt-q`).
 - `EDITOR_CONFIGS` in `software/index.js` is the single source for ignored folders and
   binary file extensions.
-- Original config backups (`*.bak_original`) belong in editor and fuzzy-picker
+- Config backups (`*.bak_original`, `*.bak_latest`, and `*.bak_*`) belong in editor and fuzzy-picker
   ignored files. Ollama `/api/tags` requests bypass the URL disk cache so provider
   registration always checks live host inventory.
 - Makefile uses `.ONESHELL`; escape shell `$` as `$$`. A target's helper script matches
@@ -926,6 +926,10 @@ same commit.
 `run.sh` exports `IS_SETUP=0|1` during its pre-scan so emitted `.sh` scripts see the same
 setup intent as Node. Its `node | tee | bash | tee` pipeline must preserve every
 `PIPESTATUS` entry; otherwise a generated-shell failure becomes a false-success exit.
+Before closeout, `run.sh` formats existing `~/.*.bash`, `~/.*.sh`, `~/.bashrc`, and `~/.bash_profile` files with `shfmt -w -i 2 -bn -sr` when available.
+The same loop formats generated `.bash_syle`, `.bash_syle_common`, and `.bash_syle_cache` files through their configured path variables.
+Unmatched globs and `.secret.` files are skipped.
+Dry runs skip formatting. Formatting failures return nonzero without replacing an earlier pipeline failure.
 
 ### 14.1 Validation cadence — fast local gate, heavier suites in CI
 

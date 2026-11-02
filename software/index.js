@@ -694,6 +694,8 @@ const EDITOR_CONFIGS = {
     "*.suo", // Visual Studio user options
     "*.swp", // Vim swap file
     "*.bak_original", // Original config backups written by backupConfigFile()
+    "*.bak_latest", // Latest config backups written by backupConfigFile()
+    "*.bak_*", // Other named backup variants
 
     // Lint/build caches
     ".eslintcache", // ESLint cache
@@ -932,6 +934,8 @@ const EDITOR_CONFIGS = {
     "\\.swo$", // vim swap file (companion to .swp)
     "\\.swp$", // vim swap file
     "\\.bak_original$", // Original config backups written by backupConfigFile()
+    "\\.bak_latest$", // Latest config backups written by backupConfigFile()
+    "\\.bak_[^/]*$", // Other named backup variants (filename only)
     "\\.wasm$",
   ],
   /**
