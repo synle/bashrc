@@ -68,6 +68,22 @@ const CREATE_PATCH = `
 `;
 
 describe("Git patch creation integration", () => {
+  it("uses the worktree root for generated apply instructions while preserving the nested caller folder", () => {
+    const root = fs.realpathSync(folder);
+    fs.mkdirSync(path.join(folder, "nested"));
+    const result = shell(`${CREATE_PATCH}
+      function copy() { :; }
+      function _git_patch_temp_file() { printf '%s\\n' "$ROOT/.git/export.patch"; }
+      function print_action_summary() { printf 'SUMMARY:%s:%s\\n' "$1" "$3"; }
+      ROOT="$(git rev-parse --show-toplevel)"
+      builtin cd nested
+      _git_patch_create plain 1 || exit
+      test "$PWD" = "$ROOT/nested" && printf 'caller preserved\\n'`);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(`SUMMARY:--run-folder=${root}:git_patch_apply\n`);
+    expect(result.stdout).toContain("caller preserved\n");
+  });
+
   it.each(["clean", "unstaged", "staged and unstaged", "declined clipboard"])(
     "exports only committed changes and preserves repository state with %s work",
     (state) => {

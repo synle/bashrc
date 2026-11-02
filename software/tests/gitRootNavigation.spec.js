@@ -47,6 +47,14 @@ function navigate(operation) {
 }
 
 describe("Git root navigation", () => {
+  it("returns the absolute root without moving the caller", () => {
+    const result = navigate(`builtin cd "$HOME/outer repo/a/b"
+      root="$(_git_root_folder)" || exit
+      test "$root" = "$HOME/outer repo" && test "$PWD" = "$HOME/outer repo/a/b" && printf 'root resolved\\n'`);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toBe("root resolved\n");
+  });
+
   it.each(["gogitroot", "goroot"])("%s returns from a nested folder and preserves OLDPWD", (name) => {
     const result = navigate(`builtin cd "$HOME/outer repo/a/b"
       ${name} || exit
