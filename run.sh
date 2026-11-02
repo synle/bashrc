@@ -949,6 +949,36 @@ else
   printf '%s\n' "[Skip] Node is not installed — skipping main script."
 fi
 
+# --- Format shell startup files ---
+# Keep user startup files readable after installer changes; dry runs never format them.
+_format_startup_files=1
+if is_truthy "${IS_DRY_RUN:-0}"; then
+  _format_startup_files=0
+fi
+for arg in "$@"; do
+  case "$arg" in
+  --dryrun | -dryrun | --dry-run | -dry-run) _format_startup_files=0 ;;
+  esac
+done
+if ((_format_startup_files)); then
+  if type -P shfmt > /dev/null 2>&1; then
+    printf '%s\n' '>> Formatting shell startup files'
+    for _startup_file in "$HOME"/.*.bash "$HOME"/.*.sh "$HOME/.bashrc" "$HOME/.bash_profile" \
+      "$BASH_SYLE_PATH" "$BASH_SYLE_COMMON_PATH" "$BASH_SYLE_CACHE_PATH"; do
+      case "$_startup_file" in *.secret.*) continue ;; esac
+      [ -f "$_startup_file" ] || continue
+      shfmt -w -i 2 -bn -sr "$_startup_file" || {
+        _format_status=$?
+        printf '[Error] Failed to format %s\n' "$_startup_file" >&2
+        [ "$_run_status" -ne 0 ] || _run_status=$_format_status
+      }
+    done
+  else
+    printf '%s\n' '[Skip] shfmt is not installed — skipping startup-file formatting.'
+  fi
+fi
+unset _format_startup_files _startup_file _format_status
+
 _run_end_epoch=$(date +%s)
 _run_end_time=$(date '+%Y-%m-%d %H:%M:%S')
 _run_duration=$((_run_end_epoch - _run_start_epoch))

@@ -136,6 +136,22 @@ describe("constants", () => {
     expect(EDITOR_CONFIGS.ignoredFiles).toContain("*.bak_original");
   });
 
+  it.each(["*.bak_latest", "*.bak_*"])("hides backup glob %s in editors", (pattern) => {
+    expect(EDITOR_CONFIGS.ignoredFiles).toContain(pattern);
+  });
+
+  it.each([
+    ["settings.json.bak_original", true],
+    ["settings.json.bak_latest", true],
+    ["settings.json.bak_custom", true],
+    ["settings.json.bak_", true],
+    ["settings.json", false],
+    ["settings.json.bak", false],
+    ["settings.jsonXbak_custom", false],
+  ])("matches fuzzy backup exclusion for %s: %s", (filename, excluded) => {
+    expect(EDITOR_CONFIGS.ignoredFilesRegex.some((pattern) => new RegExp(pattern).test(filename))).toBe(excluded);
+  });
+
   it("should have ignoredFoldersRegex as compilable regex strings with canonical entries", () => {
     expect(Array.isArray(EDITOR_CONFIGS.ignoredFoldersRegex)).toBe(true);
     expect(EDITOR_CONFIGS.ignoredFoldersRegex.length).toBeGreaterThan(20);
