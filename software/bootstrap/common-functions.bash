@@ -538,6 +538,7 @@ function safe_touch() {
 
 # safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
 # current user for any resulting dir inside $HOME that is owned by root.
+# Reports ownership repairs; successful folder creation and existing folders stay silent.
 function safe_mkdir() {
   command mkdir -p "$@"
   for f in "$@"; do
@@ -545,8 +546,6 @@ function safe_mkdir() {
     if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
       sudo chown "$USER" "$f"
       printf '%s\n' ">> safe_mkdir >> $f >> Fixed ownership"
-    else
-      printf '%s\n' ">> safe_mkdir >> $f >> OK"
     fi
   done
 }
