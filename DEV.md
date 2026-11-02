@@ -95,6 +95,12 @@ The backup also runs when Desktop `grid` exists without an input archive.
 Extraction or backup failures stop setup with an error; source icons remain available.
 
 Close Steam before changing shortcuts. The script records a private `steamos-setup.*` log on the Desktop.
+Setup registers every top-level `~/Applications/*.AppImage` in Steam, making it executable when needed.
+Before downloads, setup moves legacy `~/Apps/*.AppImage` files into `~/Applications` without replacing existing destination files.
+It removes `~/Apps` only when empty; conflicts and unrelated files remain in the legacy folder with diagnostics.
+Moonlight and ProtonUp-Qt downloads use `~/Applications`; the final AppImage registration pass retains their existing Steam titles and collections.
+Shortcut titles use filenames without `.AppImage`; `ES-DE.AppImage` retains the title `ES-DE Emulation Station`.
+An existing `~/Applications/ES-DE.AppImage` skips the EmuDeck installer download.
 Before downloads, it asks whether to clear user-defined non-Steam shortcuts, install Decky, upgrade the system, and enable USB wake-up.
 The final completion acknowledgment remains at the end.
 Long pacman, Flatpak, and paru operations capture stdout/stderr in a private `sy-log-<UTC-start-time>-steamos-setup-output.<unique>.txt` file.

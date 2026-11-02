@@ -93,7 +93,7 @@ afterEach(() => {
 describe("SteamOS setup", () => {
   it("installs SteamTinkerLaunch dependencies before shortcuts are added", () => {
     const dependencySetup = setupSource.indexOf("if ! _install_steamtinkerlaunch_dependencies");
-    const firstShortcut = setupSource.indexOf('_add_steam_shortcut "Moonlight"');
+    const firstShortcut = setupSource.indexOf("# --- Applications AppImages ---");
 
     expect(setupSource).toContain("sudo pacman -S --needed --noconfirm xdotool xorg-xwininfo yad");
     expect(setupSource).toContain("SteamTinkerLaunch requires Yad 7.2 or newer");
@@ -259,8 +259,82 @@ describe("SteamOS setup", () => {
     expect(fs.existsSync(invokedPath)).toBe(false);
   });
 
-  it("registers the EmuDeck-installed ES-DE AppImage under the requested Steam name", () => {
-    expect(setupSource).toContain('_add_steam_shortcut "ES-DE Emulation Station" "/home/deck/Applications/ES-DE.AppImage"');
+  it("moves legacy AppImages and removes the empty Apps folder on repeat setup", () => {
+    const home = createSandbox();
+    fs.mkdirSync(path.join(home, "Apps"));
+    fs.mkdirSync(path.join(home, "Applications"));
+    fs.writeFileSync(path.join(home, "Apps/Other App.AppImage"), "legacy app");
+    const migration = setupSource.split("# --- Legacy AppImage migration ---", 2)[1].split("# Install or confirm Flatpak Brave", 1)[0];
+    const result = spawnSync("/bin/bash", ["-c", `APPS_FOLDER="$HOME/Applications"\n${migration}\n${migration}`], {
+      encoding: "utf-8",
+      env: { ...process.env, HOME: home },
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(fs.readFileSync(path.join(home, "Applications/Other App.AppImage"), "utf-8")).toBe("legacy app");
+    expect(fs.existsSync(path.join(home, "Apps"))).toBe(false);
+  });
+
+  it("preserves conflicting AppImages and unrelated legacy files", () => {
+    const home = createSandbox();
+    fs.mkdirSync(path.join(home, "Apps"));
+    fs.mkdirSync(path.join(home, "Applications"));
+    fs.writeFileSync(path.join(home, "Apps/Existing.AppImage"), "legacy app");
+    fs.writeFileSync(path.join(home, "Applications/Existing.AppImage"), "current app");
+    fs.writeFileSync(path.join(home, "Apps/notes.txt"), "keep");
+    const migration = setupSource.split("# --- Legacy AppImage migration ---", 2)[1].split("# Install or confirm Flatpak Brave", 1)[0];
+    const result = spawnSync("/bin/bash", ["-c", `APPS_FOLDER="$HOME/Applications"\n${migration}`], {
+      encoding: "utf-8",
+      env: { ...process.env, HOME: home },
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toContain("destination exists; keeping legacy file");
+    expect(fs.readFileSync(path.join(home, "Apps/Existing.AppImage"), "utf-8")).toBe("legacy app");
+    expect(fs.readFileSync(path.join(home, "Applications/Existing.AppImage"), "utf-8")).toBe("current app");
+    expect(fs.readFileSync(path.join(home, "Apps/notes.txt"), "utf-8")).toBe("keep");
+  });
+
+  it("registers AppImages last with established titles and collections", () => {
+    const home = createSandbox();
+    const applications = path.join(home, "Applications");
+    fs.mkdirSync(applications);
+    fs.writeFileSync(path.join(applications, "ES-DE.AppImage"), "app");
+    fs.writeFileSync(path.join(applications, "Other App.AppImage"), "app");
+    fs.writeFileSync(path.join(applications, "Moonlight.AppImage"), "app");
+    fs.writeFileSync(path.join(applications, "ProtonUp-Qt.AppImage"), "app");
+    fs.writeFileSync(path.join(applications, "notes.txt"), "ignore");
+    fs.mkdirSync(path.join(applications, "Folder.AppImage"));
+    const registration = setupSource
+      .split("# --- Applications AppImages ---", 2)[1]
+      .split("# --- Done - Final clean up and confirmation ---", 1)[0];
+    const result = spawnSync(
+      "/bin/bash",
+      [
+        "-c",
+        `APPS_FOLDER="$HOME/Applications"\nfunction _add_steam_shortcut() { printf '%s|%s|%s\\n' "$1" "\${2##*/}" "$3"; }\n${registration}`,
+      ],
+      { encoding: "utf-8", env: { ...process.env, HOME: home } },
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toBe(
+      "ES-DE Emulation Station|ES-DE.AppImage|\nMoonlight|Moonlight.AppImage|Streaming,Apps\nOther App|Other App.AppImage|\nProtonUp-Qt|ProtonUp-Qt.AppImage|Utilities,Apps\n",
+    );
+    expect(setupSource.indexOf("# --- Applications AppImages ---")).toBeGreaterThan(
+      setupSource.indexOf("# --- Backing up the icons for SteamOS ---"),
+    );
+  });
+
+  it("does not register an unmatched AppImage glob when Applications is missing", () => {
+    const home = createSandbox();
+    const registration = setupSource
+      .split("# --- Applications AppImages ---", 2)[1]
+      .split("# --- Done - Final clean up and confirmation ---", 1)[0];
+    const result = spawnSync(
+      "/bin/bash",
+      ["-c", `APPS_FOLDER="$HOME/Applications"\nfunction _add_steam_shortcut() { printf '%s\\n' unexpected; }\n${registration}`],
+      { encoding: "utf-8", env: { ...process.env, HOME: home } },
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toBe("");
   });
 
   it("updates an existing app shortcut by name and removes same-name duplicates", () => {
@@ -275,7 +349,7 @@ describe("SteamOS setup", () => {
         { name: "Moonlight", fields: { Exe: '"/duplicate/Moonlight.AppImage"' } },
       ]),
     );
-    const newExecutable = path.join(home, "Apps/Moonlight.AppImage");
+    const newExecutable = path.join(home, "Applications/Moonlight.AppImage");
     fs.mkdirSync(path.dirname(newExecutable), { recursive: true });
     fs.writeFileSync(newExecutable, "app\n", { mode: 0o755 });
 

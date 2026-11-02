@@ -197,8 +197,28 @@ if ! sudo -v; then
 fi
 
 DESKTOP_FOLDER="$HOME/Desktop"
-APPS_FOLDER="$HOME/Apps"
+APPS_FOLDER="$HOME/Applications"
 mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
+
+# --- Legacy AppImage migration ---
+# Move only top-level legacy AppImages without overwriting destination files; remove only an empty legacy folder.
+if [ -d "$HOME/Apps" ] && [ ! -L "$HOME/Apps" ]; then
+  for legacy_appimage in "$HOME/Apps/"*.AppImage; do
+    [ -f "$legacy_appimage" ] || continue
+    appimage_destination="$APPS_FOLDER/${legacy_appimage##*/}"
+    if [ -e "$appimage_destination" ] || [ -L "$appimage_destination" ]; then
+      printf '>>> AppImage migration: destination exists; keeping legacy file: %s\n' "$legacy_appimage" >&2
+      continue
+    fi
+    if ! mv -n "$legacy_appimage" "$appimage_destination"; then
+      printf '>>> AppImage migration failed: %s\n' "$legacy_appimage" >&2
+      exit 1
+    fi
+  done
+  if ! rmdir "$HOME/Apps"; then
+    printf '%s\n' ">>> AppImage migration: keeping ~/Apps; folder is not empty or could not be removed." >&2
+  fi
+fi
 
 # Install or confirm Flatpak Brave before downloads and Steam shortcut setup.
 # No arguments. Returns nonzero if Flatpak is missing or installation fails; installs the user-scoped app.
@@ -224,9 +244,14 @@ else
 fi
 
 # --- EmuDeck ---
-printf '%s\n' ">>> Downloading EmuDeck installer to $DESKTOP_FOLDER/"
-curl -fsSL "https://www.emudeck.com/EmuDeck.desktop" -o "$DESKTOP_FOLDER/EmuDeck.desktop"
-chmod +x "$DESKTOP_FOLDER/EmuDeck.desktop"
+# Reuse the existing ES-DE installation instead of downloading its bootstrap installer again.
+if [ -f "$APPS_FOLDER/ES-DE.AppImage" ]; then
+  printf '%s\n' ">>> ES-DE AppImage already present; skipping EmuDeck installer download."
+else
+  printf '%s\n' ">>> Downloading EmuDeck installer to $DESKTOP_FOLDER/"
+  curl -fsSL "https://www.emudeck.com/EmuDeck.desktop" -o "$DESKTOP_FOLDER/EmuDeck.desktop"
+  chmod +x "$DESKTOP_FOLDER/EmuDeck.desktop"
+fi
 
 # --- SponsorBlock config (vendor-verified export for the YouTube blocker) ---
 printf '%s\n' ">>> Downloading SponsorBlock config to $DESKTOP_FOLDER/sponsporblock.json"
@@ -1183,24 +1208,17 @@ fi
 # --- Moonlight (AppImage) ---
 MOONLIGHT_VERSION="6.2.0"
 printf '%s\n' ">>> Downloading Moonlight AppImage to $APPS_FOLDER/Moonlight.AppImage"
-if curl -fsSL "https://github.com/moonlight-stream/moonlight-qt/releases/download/v$MOONLIGHT_VERSION/Moonlight-$MOONLIGHT_VERSION-x86_64.AppImage" \
+if ! curl -fsSL "https://github.com/moonlight-stream/moonlight-qt/releases/download/v$MOONLIGHT_VERSION/Moonlight-$MOONLIGHT_VERSION-x86_64.AppImage" \
   -o "$APPS_FOLDER/Moonlight.AppImage"; then
-  _add_steam_shortcut "Moonlight" "$APPS_FOLDER/Moonlight.AppImage" "Streaming,Apps"
-else
-  printf '%s\n' ">>> Steam: skipping Moonlight; AppImage download failed."
+  printf '%s\n' ">>> Moonlight AppImage download failed."
 fi
 
 # --- ProtonUp-Qt (AppImage) ---
 printf '%s\n' ">>> Downloading ProtonUp-Qt AppImage to $APPS_FOLDER/ProtonUp-Qt.AppImage"
-if curl -fsSL "https://github.com/DavidoTek/ProtonUp-Qt/releases/download/v2.16.0/ProtonUp-Qt-2.16.0-x86_64.AppImage" \
+if ! curl -fsSL "https://github.com/DavidoTek/ProtonUp-Qt/releases/download/v2.16.0/ProtonUp-Qt-2.16.0-x86_64.AppImage" \
   -o "$APPS_FOLDER/ProtonUp-Qt.AppImage"; then
-  _add_steam_shortcut "ProtonUp-Qt" "$APPS_FOLDER/ProtonUp-Qt.AppImage" "Utilities,Apps"
-else
-  printf '%s\n' ">>> Steam: skipping ProtonUp-Qt; AppImage download failed."
+  printf '%s\n' ">>> ProtonUp-Qt AppImage download failed."
 fi
-
-# --- ES-DE Emulation Station (installed by EmuDeck) ---
-_add_steam_shortcut "ES-DE Emulation Station" "/home/deck/Applications/ES-DE.AppImage"
 
 # --- Brave dependencies ---
 if type -P pacman > /dev/null; then
@@ -1386,6 +1404,24 @@ if [ -d "$_STEAM_ICONS_EXTRACT_DIR" ]; then
 else
   printf '>>> Steam icons folder not found at %s. Skipping backup.\n' "$_STEAM_ICONS_EXTRACT_DIR"
 fi
+
+# --- Applications AppImages ---
+# Register after all downloads and installation steps, preserving established titles and collections.
+# The shared shortcut helper makes files executable; failed registrations do not block remaining apps.
+for appimage in "$APPS_FOLDER/"*.AppImage; do
+  [ -f "$appimage" ] || continue
+  appimage_name="${appimage##*/}"
+  appimage_name="${appimage_name%.AppImage}"
+  appimage_collections=""
+  case "$appimage_name" in
+  ES-DE) appimage_name="ES-DE Emulation Station" ;;
+  Moonlight) appimage_collections="Streaming,Apps" ;;
+  ProtonUp-Qt) appimage_collections="Utilities,Apps" ;;
+  esac
+  if ! _add_steam_shortcut "$appimage_name" "$appimage" "$appimage_collections"; then
+    printf '%s\n' ">>> Steam: could not register Applications AppImage: $appimage" >&2
+  fi
+done
 
 # --- Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then
