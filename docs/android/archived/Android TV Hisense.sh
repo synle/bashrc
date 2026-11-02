@@ -7,9 +7,9 @@ function _removeApp() {
     printf '%s\n' "$*"
   )
   # Check if adb is installed and a device is authorized/connected
-  if command -v adb >/dev/null 2>&1 && adb get-state 1>/dev/null 2>&1; then
+  if command -v adb > /dev/null 2>&1 && adb get-state 1> /dev/null 2>&1; then
     adb shell pm uninstall "$@" || adb shell pm uninstall -k --user 0 "$@" || adb shell pm uninstall -k --user 10 "$@"
-  elif command -v pm >/dev/null 2>&1; then
+  elif command -v pm > /dev/null 2>&1; then
     pm uninstall "$@" || pm uninstall -k --user 0 "$@" || pm uninstall -k --user 10 "$@"
   else
     echo "Error: Neither a connected adb session nor local pm command is available." >&2
@@ -24,9 +24,9 @@ function __restoreApp() {
     printf '%s\n' "$*"
   )
   # Check if adb is installed and a device is authorized/connected
-  if command -v adb >/dev/null 2>&1 && adb get-state 1>/dev/null 2>&1; then
+  if command -v adb > /dev/null 2>&1 && adb get-state 1> /dev/null 2>&1; then
     adb shell cmd package install-existing "$@"
-  elif command -v cmd >/dev/null 2>&1; then
+  elif command -v cmd > /dev/null 2>&1; then
     cmd package install-existing "$@"
   else
     echo "Error: Neither a connected adb session nor local cmd command is available." >&2
@@ -41,9 +41,9 @@ function _changeSetting() {
     printf '%s\n' "$*"
   )
   # Check if adb is installed and a device is authorized/connected
-  if command -v adb >/dev/null 2>&1 && adb get-state 1>/dev/null 2>&1; then
+  if command -v adb > /dev/null 2>&1 && adb get-state 1> /dev/null 2>&1; then
     adb shell settings put "$@"
-  elif command -v settings >/dev/null 2>&1; then
+  elif command -v settings > /dev/null 2>&1; then
     settings put "$@"
   else
     echo "Error: Neither a connected adb session nor local settings command is available." >&2
@@ -162,18 +162,18 @@ _removeApp com.google.android.youtube
 _removeApp com.android.printspooler
 _removeApp com.pandora.android.atv
 # Group 1: telemetry, ACR and tracking
-_removeApp android.autoinstalls.config.hisense.xiaoyushan   # silent partner-app auto-installs
-_removeApp com.google.android.feedback                      # crash/feedback uploader
-_removeApp com.google.android.partnersetup                  # partner referral tracking
+_removeApp android.autoinstalls.config.hisense.xiaoyushan # silent partner-app auto-installs
+_removeApp com.google.android.feedback                    # crash/feedback uploader
+_removeApp com.google.android.partnersetup                # partner referral tracking
 _removeApp com.google.android.tv.bugreportsender
-_removeApp com.hisense.evservice                            # codePath /system/app/acr: automatic content recognition
-_removeApp com.hisense.service.message                      # /system/app/HiMsgService: Hisense push messages
+_removeApp com.hisense.evservice       # codePath /system/app/acr: automatic content recognition
+_removeApp com.hisense.service.message # /system/app/HiMsgService: Hisense push messages
 # Group 2: promo content, retail and commercial modes, Hisense preloads
-_removeApp com.google.android.tvrecommendations             # recommendation rows
-_removeApp com.mstar.android.tv.disclaimercustomization     # /system/product/app/VendorDisclaimer: store disclaimer
-_removeApp com.hisense.tv.b2b                               # /system/app/HisenseB2B: hotel/commercial mode
-_removeApp net.vidaatv.hisense.android.tv                   # "Hisense Channels", VIDAA free ad-supported channels
-_removeApp com.hisense.alexa                                # /system/app/HiAlexa
+_removeApp com.google.android.tvrecommendations         # recommendation rows
+_removeApp com.mstar.android.tv.disclaimercustomization # /system/product/app/VendorDisclaimer: store disclaimer
+_removeApp com.hisense.tv.b2b                           # /system/app/HisenseB2B: hotel/commercial mode
+_removeApp net.vidaatv.hisense.android.tv               # "Hisense Channels", VIDAA free ad-supported channels
+_removeApp com.hisense.alexa                            # /system/app/HiAlexa
 # Hisense ULED 4K Premium 75U6G (xiaoyushan)
 # cautious
 # _removeApp com.hisense.favkey
@@ -184,7 +184,6 @@ _removeApp com.hisense.alexa                                # /system/app/HiAlex
 # _removeApp com.hisense.storemode
 # _removeApp com.hisense.hitv.hicloud.account
 # _removeApp com.jamdeo.tv.mediacenterapplication
-
 
 # --- Install apps ---
 _install_latest_github_apk "humblemuzzu/dumbtv" "dumbtv-home.apk" "DumbTV" || return 1

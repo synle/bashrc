@@ -89,6 +89,11 @@ Missing startup files are not created. Existing `update` aliases are preserved, 
 Open a new Bash session to load the alias. It reruns the complete interactive setup, including its shortcut-clearing prompt; it is not package-update-only.
 Later definitions from sourced profiles can override it, including the managed SteamOS profile's existing pacman `update` alias.
 
+Steam icon restoration selects the newest Desktop `grid*.tar.gz` by modification time, including plain `grid.tar.gz`.
+It retains Desktop `grid` and then backs it up as `grid-YYYY-MM-DD.tar.gz`, adding a numeric suffix on same-day reruns.
+The backup also runs when Desktop `grid` exists without an input archive.
+Extraction or backup failures stop setup with an error; source icons remain available.
+
 Close Steam before changing shortcuts. The script records a private `steamos-setup.*` log on the Desktop.
 Before downloads, it asks whether to clear user-defined non-Steam shortcuts, install Decky, upgrade the system, and enable USB wake-up.
 The final completion acknowledgment remains at the end.
@@ -528,7 +533,16 @@ npx oxfmt --write AGENTS.md DEV.md ARCHITECTURE.md
 For a changed Markdown include directive, `node software/tools/build-include.js <target.md>` regenerates only that target.
 Edit the directive or included source, never the generated body; verify a second run makes no changes.
 
+`make format_shell` applies these shfmt settings to tracked `.sh` and `.bash` sources, including tools, documentation scripts, and hidden folders.
+It excludes generated/protected artifacts, frozen guidance snapshots, PowerShell templates, and the unrendered autocomplete skeleton.
+Filenames containing spaces remain single arguments.
+Shell formatting is best-effort: missing shfmt skips the step; individual failures print the filename and analyzer diagnostic, then continue without failing CI.
+
 ## Native navigation
+
+`gogitroot` (alias `goroot`) returns to the nearest enclosing Git worktree root, including nested repositories and linked worktrees.
+Outside a Git worktree, it returns Git's error without changing folders.
+`godown` aliases `godownload`, including its optional subfolder argument.
 
 `cd` tries native Bash navigation first, preserving exact paths, options, `CDPATH`, symlinks, previous-folder behavior, HOME, and failure status.
 Missing paths use fuzzy matching from their longest existing folder prefix, including parent-relative paths and absolute paths expanded from `~/`.
