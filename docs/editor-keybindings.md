@@ -841,17 +841,23 @@ prevents the picker from receiving it.
 
 ### Clipboard
 
-| Key                                   | Action                                                                                                              |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `,c`                                  | Copy buffer (or selection) to system clipboard                                                                      |
-| `,x`                                  | Cut line/selection (`+clipboard` when available)                                                                    |
-| `p` (normal), `ctrl+v` (insert), `,v` | Paste clipboard image as `@<path>` (saved to Desktop), else paste text with trailing `\r`, `\n`, and spaces removed |
-| `ctrl+q` (insert)                     | Insert next key literally (vim's stock `ctrl+v`)                                                                    |
+| Key                                   | Action                                                                                                                                           |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `,c`                                  | Copy buffer (or selection) to system clipboard                                                                                                   |
+| `,x`                                  | Cut line/selection (`+clipboard` when available)                                                                                                 |
+| `p` (normal), `ctrl+v` (insert), `,v` | Paste clipboard image as `@<path>` (saved under `$SY_ROOT_FOLDER/.syle_clipboard`), else paste text with trailing `\r`, `\n`, and spaces removed |
+| `ctrl+q` (insert)                     | Insert next key literally (vim's stock `ctrl+v`)                                                                                                 |
 
 `ctrl+v` image paste exists for prompts edited in vim via an AI CLI's `ctrl+g`: the image is
 saved by `~/.local/bin/save_clipboard_image` (`software/scripts/clipboard-image.js`) and its
 path inserted. Mapped only when that tool exists. Windows Terminal likely takes `ctrl+v`
 before vim sees it, so there it stays the terminal's text paste.
+
+Images default to `$SY_ROOT_FOLDER/.syle_clipboard`; a non-empty `CLIPBOARD_IMAGE_FOLDER` overrides the image destination.
+Shell text history lives in the `plain/` subfolder.
+Copy and paste never prune history.
+Run `syle_clipboard_cleanup [per-type=10] [total=20]` separately to retain the newest files by modified time.
+Cleanup applies both limits and excludes custom image destinations, unrelated files, subfolders, and symlinks.
 
 ---
 
