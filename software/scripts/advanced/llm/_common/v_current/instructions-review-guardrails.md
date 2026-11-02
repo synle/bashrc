@@ -11,7 +11,7 @@ Honesty from the main instructions governs this file too.
 
 ## Review-Derived Guardrails
 
-- **Concrete failure or question.** A finding names the input or state, traces the reachable bad behavior, checks surrounding guards, and gives one correction. If that path cannot be constructed, ask a question instead of asserting a defect.
+- **Concrete failure or question.** A finding names the input or state, traces the reachable bad behavior, checks surrounding guards, and gives one correction. Compare with the base revision; label pre-existing defects separately from regressions. If that path cannot be constructed, ask a question instead of asserting a defect.
 - **Review expected absences.** Before reading hunks, list required artifacts — migration, test, logging, rollback, docs, config — and investigate missing ones.
 - **Review one concern per sweep.** Check correctness across the affected files, then security, then design and simplification; keep mechanical checks separate. A focused pass must still trace connected code, not treat each file as an isolated checklist.
 - **Paired operations are one contract.** When changing acquire/release, encode/decode, setup/teardown, subscribe/unsubscribe, or another paired operation, read its partner even outside the diff and check success and error paths. Compare constraints held in different layers too — a validator's bound must fit the stored field and its encoding.
