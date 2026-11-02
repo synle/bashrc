@@ -13,8 +13,8 @@ const deckySource =
   "\n_bootstrap_decky_loader_plugins_themes\n";
 /** Editor/browser installer block, including its original temporary-folder cleanup. */
 const editorSource = setupSource
-  .split("# --- Browser Extensions + tmux/vim (via the synle/bashrc installer) ---")[1]
-  .split("\nif type -P paru")[0];
+  .split("# --- Browser Extensions + editors (via the synle/bashrc installer) ---")[1]
+  .split("# --- Remove Kate ---")[0];
 /** Test-owned temporary roots, removed even after assertion failure. */
 const folders = [];
 
@@ -25,7 +25,11 @@ afterEach(() => {
 describe("SteamOS unattended installer delegation (Bash subprocess)", () => {
   it.each([
     ["Decky", deckySource, "--files=software/scripts/decky-and-css-loader.standalone.js"],
-    ["editors and browser extensions", editorSource, "--files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack"],
+    [
+      "editors and browser extensions",
+      editorSource,
+      "--files=url-porter,skippy-ff,software/scripts/advanced/lsp/zed.js,software/scripts/advanced/zed.js,tmux,vim-config,vim-jetpack",
+    ],
   ])("passes --skip-prompt to %s on two consecutive runs", (_name, source, selector) => {
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-selector-prompt-"));
     folders.push(folder);
@@ -48,6 +52,7 @@ function curl() {
   done
   return 1
 }
+function wait() { return 0; }
 ${source}
 ${source}
 `,

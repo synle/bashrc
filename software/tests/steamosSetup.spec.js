@@ -113,7 +113,7 @@ describe("SteamOS setup", () => {
     expect(flatpakInstall).toBeLessThan(emudeckDownload);
     expect(braveShortcut).toBeGreaterThan(flatpakInstall);
     expect(disneyShortcut).toBeGreaterThan(flatpakInstall);
-    expect(setupSource).not.toContain("--file-forwarding");
+    expect(addShortcutSource).not.toContain("--file-forwarding");
     expect(setupSource).not.toContain("pacman -S --needed --noconfirm brave-bin");
     expect(setupSource).not.toContain("flatpak remote-add");
     expect(setupSource).not.toContain("pacman -S --needed --noconfirm flatpak");
@@ -264,7 +264,7 @@ describe("SteamOS setup", () => {
     fs.mkdirSync(path.join(home, "Apps"));
     fs.mkdirSync(path.join(home, "Applications"));
     fs.writeFileSync(path.join(home, "Apps/Other App.AppImage"), "legacy app");
-    const migration = setupSource.split("# --- Legacy AppImage migration ---", 2)[1].split("# Install or confirm Flatpak Brave", 1)[0];
+    const migration = setupSource.split("# --- Legacy AppImage migration ---", 2)[1].split("# --- Zed background installation ---", 1)[0];
     const result = spawnSync("/bin/bash", ["-c", `APPS_FOLDER="$HOME/Applications"\n${migration}\n${migration}`], {
       encoding: "utf-8",
       env: { ...process.env, HOME: home },
@@ -281,7 +281,7 @@ describe("SteamOS setup", () => {
     fs.writeFileSync(path.join(home, "Apps/Existing.AppImage"), "legacy app");
     fs.writeFileSync(path.join(home, "Applications/Existing.AppImage"), "current app");
     fs.writeFileSync(path.join(home, "Apps/notes.txt"), "keep");
-    const migration = setupSource.split("# --- Legacy AppImage migration ---", 2)[1].split("# Install or confirm Flatpak Brave", 1)[0];
+    const migration = setupSource.split("# --- Legacy AppImage migration ---", 2)[1].split("# --- Zed background installation ---", 1)[0];
     const result = spawnSync("/bin/bash", ["-c", `APPS_FOLDER="$HOME/Applications"\n${migration}`], {
       encoding: "utf-8",
       env: { ...process.env, HOME: home },
@@ -305,7 +305,7 @@ describe("SteamOS setup", () => {
     fs.mkdirSync(path.join(applications, "Folder.AppImage"));
     const registration = setupSource
       .split("# --- Applications AppImages ---", 2)[1]
-      .split("# --- Done - Final clean up and confirmation ---", 1)[0];
+      .split("# --- KDE favorites and taskbar pins ---", 1)[0];
     const result = spawnSync(
       "/bin/bash",
       [
@@ -327,7 +327,7 @@ describe("SteamOS setup", () => {
     const home = createSandbox();
     const registration = setupSource
       .split("# --- Applications AppImages ---", 2)[1]
-      .split("# --- Done - Final clean up and confirmation ---", 1)[0];
+      .split("# --- KDE favorites and taskbar pins ---", 1)[0];
     const result = spawnSync(
       "/bin/bash",
       ["-c", `APPS_FOLDER="$HOME/Applications"\nfunction _add_steam_shortcut() { printf '%s\\n' unexpected; }\n${registration}`],

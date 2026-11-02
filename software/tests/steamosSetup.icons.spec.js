@@ -9,7 +9,7 @@ import path from "path";
 const ICONS = fs
   .readFileSync("software/scripts/steamos/setup.bash", "utf8")
   .split("# --- Setting up the icons for SteamOS ---")[1]
-  .split("# --- Done - Final clean up and confirmation ---")[0];
+  .split("# --- Applications AppImages ---")[0];
 /** Owned fixture folders removed after each test. */
 const folders = [];
 

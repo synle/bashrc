@@ -220,6 +220,14 @@ if [ -d "$HOME/Apps" ] && [ ! -L "$HOME/Apps" ]; then
   fi
 fi
 
+# --- Zed background installation ---
+# Install the official Linux bundle concurrently; join before Zed configuration and desktop registration.
+(
+  set -o pipefail
+  curl -fsSL --connect-timeout 15 --max-time 120 https://zed.dev/install.sh | sh
+) < /dev/null &
+ZED_INSTALL_PID=$!
+
 # Install or confirm Flatpak Brave before downloads and Steam shortcut setup.
 # No arguments. Returns nonzero if Flatpak is missing or installation fails; installs the user-scoped app.
 function _install_flatpak_brave_prerequisite() {
@@ -1250,13 +1258,27 @@ else
   printf '%s\n' ">>> Steam: Brave shortcuts skipped; Flatpak Brave prerequisite is missing. Continuing setup." >&2
 fi
 
-# --- Browser Extensions + tmux/vim (via the synle/bashrc installer) ---
-# Installs url-porter + skippy-ff Chrome extensions, plus tmux and vim config.
+# --- Browser Extensions + editors (via the synle/bashrc installer) ---
+# Join the background install before deploying both Zed configuration scripts.
+if ! wait "$ZED_INSTALL_PID"; then
+  printf '%s\n' ">>> Zed installation failed; review installer output." >&2
+fi
+if [ -x "$HOME/.local/zed.app/bin/zed" ]; then
+  mkdir -p "$HOME/.config/zed"
+fi
+# Installs url-porter + skippy-ff Chrome extensions, both Zed scripts, plus tmux and vim config.
 tmp=$(mktemp -d) && pushd "$tmp" \
   && curl -fsSL "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" -o run
-chmod +x run && ./run --skip-prompt --files=url-porter,skippy-ff,tmux,vim-config,vim-jetpack
+chmod +x run && ./run --skip-prompt --files=url-porter,skippy-ff,software/scripts/advanced/lsp/zed.js,software/scripts/advanced/zed.js,tmux,vim-config,vim-jetpack
 rm -rf "$tmp"
 popd
+
+# --- Remove Kate ---
+if type -P pacman > /dev/null && pacman -Q kate > /dev/null 2>&1; then
+  if ! _run_long_install "Kate removal" sudo pacman -R --noconfirm kate; then
+    printf '%s\n' ">>> Kate removal failed; review package log." >&2
+  fi
+fi
 
 if type -P paru > /dev/null && grep -q '^ID=cachyos' /etc/os-release 2> /dev/null; then
   if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
@@ -1422,6 +1444,213 @@ for appimage in "$APPS_FOLDER/"*.AppImage; do
     printf '%s\n' ">>> Steam: could not register Applications AppImage: $appimage" >&2
   fi
 done
+
+# --- KDE favorites and taskbar pins ---
+# Create durable desktop entries and update the live KDE session through its public D-Bus interfaces.
+# No arguments. Returns nonzero on launcher, database, or D-Bus failure; preserves existing same-name launchers and pins.
+function _configure_kde_launchers() {
+  local dbus_binary candidate
+  for candidate in qdbus6 qdbus-qt6 qdbus qdbus-qt5; do
+    if type -P "$candidate" > /dev/null; then
+      dbus_binary="$candidate"
+      break
+    fi
+  done
+  if [ -z "$dbus_binary" ] || ! type -P python3 > /dev/null; then
+    printf '%s\n' ">>> KDE favorites/pins: Python and qdbus required; re-run in Desktop Mode." >&2
+    return 1
+  fi
+  python3 - "$dbus_binary" << 'KDE_LAUNCHERS_PY'
+import configparser
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import sqlite3
+import subprocess
+import sys
+from urllib.parse import unquote, urlparse
+
+home = Path.home()
+data = Path(os.environ.get("XDG_DATA_HOME", home / ".local/share"))
+applications = data / "applications"
+applications.mkdir(parents=True, exist_ok=True)
+icons = data / "icons/steamos-setup"
+icons.mkdir(parents=True, exist_ok=True)
+dbus = sys.argv[1]
+agent = "org.kde.plasma.favorites.applications"
+link_path = "/ActivityManager/Resources/Linking"
+link_interface = "org.kde.ActivityManager.Resources.Linking"
+desktop_roots = [applications, home / ".local/share/flatpak/exports/share/applications", Path("/var/lib/flatpak/exports/share/applications")]
+desktop_roots += [Path(root) / "applications" for root in os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(":")]
+
+
+def desktop_entry(path):
+    """Read one desktop entry without interpolation; return its fields or an empty mapping when absent."""
+    parser = configparser.ConfigParser(interpolation=None, strict=False)
+    parser.optionxform = str
+    parser.read(path, encoding="utf-8")
+    return dict(parser["Desktop Entry"]) if parser.has_section("Desktop Entry") else {}
+
+
+def call(service, path, method, *args):
+    """Call a session D-Bus method with literal arguments and a deadline; raise on failure."""
+    return subprocess.run([dbus, service, path, method, *args], check=True, capture_output=True, text=True, timeout=30).stdout.strip()
+
+
+def persistent_icon(icon):
+    """Copy absolute icons into durable user storage; retain theme names and return the persisted reference."""
+    source = Path(icon)
+    if not source.is_absolute():
+        return icon
+    if not source.is_file():
+        raise ValueError(f"launcher icon missing: {source}")
+    identity = hashlib.sha256(str(source).encode("utf-8")).hexdigest()[:12]
+    destination = icons / (identity + "-" + source.name)
+    if source.parent == icons:
+        return str(source)
+    if source.resolve() != destination.resolve():
+        shutil.copy2(source, destination)
+    return str(destination)
+
+
+try:
+    catalog = {}
+    by_name = {}
+    for root in desktop_roots:
+        for path in sorted(root.glob("*.desktop")):
+            fields = desktop_entry(path)
+            if fields.get("Hidden") == "true":
+                continue
+            if path.name in catalog:
+                continue
+            catalog[path.name] = (path, fields)
+            name = fields.get("Name", "").casefold()
+            if name:
+                by_name.setdefault(name, path.name)
+
+    # Desktop Exec field codes are literal; HOME is resolved before writing the entry.
+    desired = [
+        ("Brave", "com.brave.Browser.desktop", "/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=brave --file-forwarding com.brave.Browser @@u %U @@", "com.brave.Browser", True),
+        ("Zed", "dev.zed.Zed.desktop", f'"{home}/.local/zed.app/bin/zed" %U', str(home / ".local/zed.app/share/icons/hicolor/512x512/apps/zed.png"), True),
+        ("Konsole", "org.kde.konsole.desktop", "konsole", "utilities-terminal", True),
+        ("EmuDeck", "steamos-setup-emudeck.desktop", f'"{home}/Applications/EmuDeck.AppImage"', "applications-games", False),
+        ("ES-DE AppImage", "steamos-setup-es-de.desktop", f'"{home}/Emulation/tools/launchers/es-de/es-de.sh"', "applications-games", False),
+    ]
+    resolved = []
+    for name, desktop_id, executable, icon, pin in desired:
+        aliases = {name.casefold()}
+        if name == "ES-DE AppImage":
+            aliases.update(["es-de", "es-de emulation station", "emulationstation desktop edition"])
+        existing = next((by_name[alias] for alias in sorted(aliases) if alias in by_name), None)
+        if existing:
+            desktop_id = existing
+            path, fields = catalog[desktop_id]
+            # Keep native launcher identity and all vendor fields; persist absolute icons before pinning.
+            icon = fields.get("Icon", icon)
+            stable_icon = persistent_icon(icon)
+            if stable_icon != icon:
+                local = applications / desktop_id
+                if local.exists():
+                    original = local.read_text(encoding="utf-8")
+                else:
+                    original = path.read_text(encoding="utf-8")
+                updated = original.replace("Icon=" + icon + "\n", "Icon=" + stable_icon + "\n", 1)
+                if local.exists():
+                    backup = Path(str(local) + ".bak_original")
+                    if not backup.exists():
+                        shutil.copy2(local, backup)
+                    shutil.copy2(local, str(local) + ".bak_latest")
+                local.write_text(updated, encoding="utf-8")
+                catalog[desktop_id] = (local, desktop_entry(local))
+        else:
+            program = executable.split('"')[1] if executable.startswith('"') else executable.split()[0]
+            if not (Path(program).is_file() if program.startswith("/") else shutil.which(program)):
+                print(f">>> KDE: skipping {name}; program missing: {program}", file=sys.stderr)
+                continue
+            icon = persistent_icon(icon)
+            path = applications / desktop_id
+            content = f"[Desktop Entry]\nType=Application\nName={name}\nExec={executable}\nIcon={icon}\nTerminal=false\n"
+            with path.open("x", encoding="utf-8") as output:
+                output.write(content)
+            catalog[desktop_id] = (path, desktop_entry(path))
+        resolved.append({"name": name, "id": desktop_id, "aliases": sorted(aliases), "pin": pin})
+
+    # Refresh KDE's application cache before Activity Manager resolves the desktop IDs.
+    cache = next((shutil.which(tool) for tool in ["kbuildsycoca6", "kbuildsycoca5"] if shutil.which(tool)), None)
+    if not cache:
+        raise ValueError("kbuildsycoca required to refresh launcher metadata")
+    subprocess.run([cache], check=True, timeout=60)
+    database = data / "kactivitymanagerd/resources/database"
+    if not database.is_file():
+        raise ValueError("Activity Manager database unavailable; run setup in Desktop Mode")
+    with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as connection:
+        linked = [row[0] for row in connection.execute("SELECT targettedResource FROM ResourceLink WHERE initiatingAgent = ?", (agent,))]
+
+    def resource_name(resource):
+        """Resolve a favorite resource to its desktop display name; return an empty name for unknown resources."""
+        if resource.startswith("applications:"):
+            item = catalog.get(resource[13:])
+            return item[1].get("Name", "").casefold() if item else ""
+        path = Path(unquote(urlparse(resource).path)) if resource.startswith("file:") else Path(resource)
+        return desktop_entry(path).get("Name", "").casefold() if path.is_file() else ""
+
+    favorite_names = {resource_name(resource) for resource in linked}
+    for app in resolved:
+        resource = "applications:" + app["id"]
+        if favorite_names.intersection(app["aliases"]):
+            print(f">>> KDE favorite already present: {app['name']}")
+            continue
+        if call("org.kde.ActivityManager", link_path, link_interface + ".IsResourceLinkedToActivity", agent, resource, ":global") != "true":
+            call("org.kde.ActivityManager", link_path, link_interface + ".LinkResourceToActivity", agent, resource, ":global")
+        if call("org.kde.ActivityManager", link_path, link_interface + ".IsResourceLinkedToActivity", agent, resource, ":global") != "true":
+            raise ValueError(f"favorite readback failed: {app['name']}")
+        favorite_names.update(app["aliases"])
+
+    names = {desktop_id: fields.get("Name", "").casefold() for desktop_id, (_, fields) in catalog.items()}
+    script = "var desired = " + json.dumps([app for app in resolved if app["pin"]]) + "; var names = " + json.dumps(names) + ";\n" + r'''
+var managers = 0;
+panels().forEach(function(panel) {
+    panel.widgets().forEach(function(widget) {
+        if (widget.type !== "org.kde.plasma.icontasks" && widget.type !== "org.kde.plasma.taskmanager") return;
+        managers++;
+        widget.currentConfigGroup = ["General"];
+        var value = widget.readConfig("launchers", []);
+        var launchers = Array.isArray(value) ? value.slice() : (value ? String(value).split(",") : []);
+        desired.forEach(function(app) {
+            var exists = launchers.some(function(url) {
+                var id = String(url).replace(/^applications:/, "");
+                if (String(url).indexOf("file:") === 0) id = decodeURIComponent(String(url).split("/").pop());
+                if (String(url).indexOf("preferred:") === 0) id = defaultApplication(String(url).replace(/^preferred:\/\//, ""), true);
+                var name = names[id] || "";
+                return id === app.id || app.aliases.indexOf(name) !== -1;
+            });
+            if (!exists) launchers.push("applications:" + app.id);
+        });
+        if (JSON.stringify(launchers) !== JSON.stringify(Array.isArray(value) ? value : (value ? String(value).split(",") : []))) {
+            widget.writeConfig("launchers", launchers);
+            widget.reloadConfig();
+        }
+        var readback = widget.readConfig("launchers", []);
+        if (JSON.stringify(readback) !== JSON.stringify(launchers) && String(readback) !== launchers.join(",")) throw new Error("Task Manager pin readback failed");
+    });
+});
+if (!managers) throw new Error("No Task Manager widget found");
+print("KDE taskbar pins verified: " + managers + " task manager(s)");
+'''
+    output = call("org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script)
+    if "KDE taskbar pins verified:" not in output:
+        raise ValueError("Plasma did not confirm taskbar pin readback: " + output)
+    print(output)
+except (OSError, ValueError, configparser.Error, sqlite3.Error, subprocess.SubprocessError) as error:
+    print(f">>> KDE favorites/pins failed: {error}", file=sys.stderr)
+    sys.exit(1)
+KDE_LAUNCHERS_PY
+}
+if ! _configure_kde_launchers; then
+  printf '%s\n' ">>> KDE launcher setup incomplete; re-run in Desktop Mode after fixing output above." >&2
+fi
 
 # --- Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then
