@@ -8,6 +8,8 @@ import { fileSystem, getIndexConstant, runScript, setSandboxGlobal } from "../se
 
 /** Sandbox destination used by the real generator. */
 const HOME = getIndexConstant("BASE_HOMEDIR_LINUX");
+/** Native Vim startup and syntax deadline, including slower target hosts. */
+const VIM_TIMEOUT_MS = 30000;
 
 beforeEach(() => {
   setSandboxGlobal("is_os_windows", false);
@@ -61,7 +63,7 @@ async function probeVim(size, commands = []) {
   const result = spawnSync("vim", ["-N", "-u", vimrc, "-i", "NONE", "-n", "-es", "-V1", "-S", script], {
     env: { ...process.env, HOME: folder },
     encoding: "utf-8",
-    timeout: 5000,
+    timeout: VIM_TIMEOUT_MS,
   });
   expect(result.error, result.stderr).toBeUndefined();
   expect(result.status, result.stderr).toBe(0);
