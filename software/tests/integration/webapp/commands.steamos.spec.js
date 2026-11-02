@@ -22,7 +22,7 @@ describe("command snapshots", () => {
           "title": "software/bootstrap/setup.sh",
         },
         {
-          "hash": "80a3813ab75a1cfc8fe3f8a6d7726c3d",
+          "hash": "c110837cc78cbb8812a9ca908294de35",
           "title": "software/scripts/steamos/setup.bash",
         },
         {
