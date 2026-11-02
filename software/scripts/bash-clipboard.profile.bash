@@ -8,14 +8,14 @@
 #   wayland: wl-copy / wl-paste
 #   x11: xclip -selection clipboard
 #   fallback: folder-only (no native clipboard)
-# all copies are saved to ~/.bash_syle_copies/ (last 10 entries)
+# all copies are saved under the shared personal root; cleanup is independent.
 # input is piped through unwrap() first so the clipboard never holds
 # terminal-wrapped paragraphs.
 ################################################################################
 
-_CLIPBOARD_DIR=~/.bash_syle_copies
-_CLIPBOARD_MAX=10
-mkdir -p "$_CLIPBOARD_DIR"
+# Text history lives separately from PNG images in the clipboard parent.
+_CLIPBOARD_DIR="$SY_ROOT_FOLDER/.syle_clipboard/plain"
+safe_mkdir "$_CLIPBOARD_DIR"
 
 if ((is_os_mac)); then
   _COPY_CMD="pbcopy"
@@ -75,7 +75,7 @@ function _normalize_patch_headers() {
 }
 
 # save stdin to clipboard history folder + native clipboard (if available)
-# prunes entries beyond _CLIPBOARD_MAX
+# Retention is handled separately by syle_clipboard_cleanup.
 # pass --raw to bypass unwrap and preserve stdin byte-for-byte (the format-patch
 # patch header normalization still applies — see _normalize_patch_headers)
 function _clipboard_save() {
@@ -94,9 +94,6 @@ function _clipboard_save() {
   else
     $filter | _normalize_patch_headers > "$clip_file"
   fi
-  command ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | tail -n +$((_CLIPBOARD_MAX + 1)) | while read -r f; do
-    rm -f "$_CLIPBOARD_DIR/$f"
-  done
 }
 
 # copy: stdin or files/strings into clipboard + history
@@ -177,7 +174,7 @@ function paste() {
         paste file1 file2      forward to /usr/bin/paste (merge lines)
     "
   elif [ "$1" = "list" ]; then
-    command ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -n "$_CLIPBOARD_MAX"
+    command ls -1t "$_CLIPBOARD_DIR" 2> /dev/null
   elif [ -f "$_CLIPBOARD_DIR/$1" ]; then
     command cat "$_CLIPBOARD_DIR/$1"
   else
