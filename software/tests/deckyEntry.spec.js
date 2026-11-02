@@ -73,12 +73,15 @@ describe("standard opt-in Decky script consumer", () => {
     );
     expect(requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(19);
     expect(fs.existsSync(path.join(folder, "software/scripts/decky-and-css-loader.standalone.js"))).toBe(true);
-    expect(fs.readdirSync(path.join(folder, "assets/steamos/decky_loader_plugins"))).toHaveLength(18);
-    expect(
-      requireModule(path.join(folder, "software/scripts/decky/decky-packages.common.js")).resolvePackages(
-        requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages,
-      ),
-    ).toHaveLength(19);
+    // Version refreshes retain prior ZIPs; selected archive counts belong to resolved pins.
+    expect(fs.readdirSync(path.join(folder, "assets/steamos/decky_loader_plugins"))).toEqual(
+      expect.arrayContaining(["HueSync_v3.9.0.zip", "HueSync_v3.10.0.zip"]),
+    );
+    const pins = requireModule(path.join(folder, "software/scripts/decky/decky-packages.common.js")).resolvePackages(
+      requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages,
+    );
+    expect(pins).toHaveLength(19);
+    expect(pins.filter((pin) => pin.local_path)).toHaveLength(18);
   });
   it("stages loadable Node modules and pins, then invokes their emitted install entry through Bash", async () => {
     const { folder, bash } = await emit();

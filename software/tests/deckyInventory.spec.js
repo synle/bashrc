@@ -68,13 +68,13 @@ describe("compact Decky repository inventory", () => {
     expect(pins.find((p) => p.name === "ProtonDB Badges").version).toBe("1.3.4");
     expect(pins.find((p) => p.name === "HueSync")).toMatchInlineSnapshot(`
       {
-        "local_path": "assets/steamos/decky_loader_plugins/HueSync_v3.9.0.zip",
+        "local_path": "assets/steamos/decky_loader_plugins/HueSync_v3.10.0.zip",
         "name": "HueSync",
-        "path": "decky_plugin/HueSync_v3.9.0.zip",
+        "path": "decky_plugin/HueSync_v3.10.0.zip",
         "root": "HueSync",
-        "sha256": "7510c96ed22278a914a3aae591c2393ff4e25812a765d1d633f77baa8a593e1f",
-        "source": "assets/steamos/decky_loader_plugins/HueSync_v3.9.0.zip",
-        "version": "3.9.0",
+        "sha256": "99d66d71209e9a6744bc178380132dfb316d788161c5c6270a5f24541a92fc37",
+        "source": "assets/steamos/decky_loader_plugins/HueSync_v3.10.0.zip",
+        "version": "3.10.0",
       }
     `);
     expect(pins.find((p) => p.name === "Centered Home")).toMatchInlineSnapshot(`
