@@ -37,11 +37,12 @@ describe.each(CLIENTS)("$cli instruction-source migration", ({ cli, helper, fold
 
       await getIndexFunction(helper)(folder);
 
+      const guidance = cli === "gemini" ? "current guidance\n\n@./sy-persona/caveman.md\n@./sy-persona/ultracave.md" : "current guidance";
       const expected = prepend
-        ? `${block(CURRENT_MARKER, "current guidance")}\nuser preface\n\nuser ending\n`
-        : `user preface\n\nuser ending\n\n${block(CURRENT_MARKER, "current guidance")}`;
+        ? `${block(CURRENT_MARKER, guidance)}\nuser preface\n\nuser ending\n`
+        : `user preface\n\nuser ending\n\n${block(CURRENT_MARKER, guidance)}`;
       // An existing current block is updated in place except Copilot's intentional prepend.
-      const expectedInPlace = `user preface\n\n${block(CURRENT_MARKER, "current guidance")}\nuser ending\n`;
+      const expectedInPlace = `user preface\n\n${block(CURRENT_MARKER, guidance)}\nuser ending\n`;
       // writeText normalizes surrounding whitespace; compare every nonempty line in order.
       expect(fileSystem[target].split("\n").filter(Boolean)).toEqual(
         (marker === CURRENT_MARKER && !prepend ? expectedInPlace : expected).split("\n").filter(Boolean),

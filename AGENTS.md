@@ -871,12 +871,14 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
     `getSharedLLMInstructionFilePaths()` forces it to the end
     (`LLM_PERSONA_INSTRUCTION_FILE`). Mid-list, the rule prose after it drowns the voice.
 
-Persona reinforcement uses `LLM_PERSONA_REMINDER` in `llm-common.js`. CLI hooks and
-Pi's prompt extension consume that single reminder. OpenCode setup deploys
-`plugins/sy-persona-reminder.js`: its system-transform hook moves one reminder to
-the tail before model requests, and its compaction hook preserves the reminder in
-summary context. Restart OpenCode after deployment; existing sessions retain loaded
-configuration. These cues improve persistence, not guaranteed model compliance.
+Persona mode resolution uses `_common/persona-runtime.common.js` and canonical `instructions-persona*.md` sources.
+Default Caveman prose is grammatical; ultracave requires explicit activation.
+OpenCode receives full active rules per request. Pi receives a hidden tail message and explicit post-compaction refresh.
+Claude session and subagent hooks load full rules and prompt hooks resolve mode switches. Gemini loads mode context instead of a prompt reminder.
+Copilot retains session-start reinforcement.
+`LLM_PERSONA_REMINDER` remains the Copilot session-start reminder.
+Restart clients after deployment; existing sessions retain loaded configuration.
+These adapters reinforce instructions but do not guarantee model compliance.
 
 **Work instructions and path-keyed blocks refresh on every deploy.** After upserting the common block, all five clients call `refreshPathKeyedBlocks()` in `llm-common.js`.
 It discovers `~/.work_*_instructions.md` in lexical order and appends `Custom Work Prompt | ~/filename` HTML BEGIN/END blocks.

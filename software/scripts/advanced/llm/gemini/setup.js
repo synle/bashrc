@@ -315,17 +315,14 @@ async function _doGeminiSettingsWork(targetDir) {
   const merged = _deepMerge(clone(GEMINI_MANAGED_SETTINGS), existing);
   await _doGeminiThemeWork(merged);
 
-  mergeLLMHookEntry(merged, "BeforeAgent", {
-    matcher: "*",
-    hooks: [
-      {
-        name: "sy-persona-reminder",
-        type: "command",
-        command: `"${process.execPath}" "${LLM_PERSONA_HOOK_HELPER_PATH}" gemini "${LLM_PERSONA_REMINDER}"`,
-        timeout: 1000,
-      },
-    ],
-  });
+  // Gemini now loads canonical mode context instead of our per-prompt reminder.
+  if (Array.isArray(merged.hooks?.BeforeAgent)) {
+    merged.hooks.BeforeAgent = merged.hooks.BeforeAgent.flatMap((entry) => {
+      if (!Array.isArray(entry.hooks)) return [entry];
+      const hooks = entry.hooks.filter((hook) => !String(hook.command ?? "").includes(LLM_PERSONA_HOOK_HELPER_PATH));
+      return hooks.length ? [{ ...entry, hooks }] : [];
+    });
+  }
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);
@@ -356,6 +353,11 @@ async function _doGeminiInstructionsWork(targetDir) {
 
   /** @type {string} The markdown source for the managed engineering principles block. */
   const sourceContent = await getLLMCustomInstructions();
+  const personaRules = await getLLMPersonaRules();
+  const personaFolder = path.join(targetDir, "sy-persona");
+  await mkdir(personaFolder);
+  await writeText(path.join(personaFolder, "caveman.md"), personaRules.caveman);
+  await writeText(path.join(personaFolder, "ultracave.md"), personaRules.ultracave);
 
   /** @type {string} Existing GEMINI.md content (empty if file is missing). */
   let existing = "";
@@ -373,7 +375,16 @@ async function _doGeminiInstructionsWork(targetDir) {
   // insertMode: "append" creates the block when GEMINI.md is brand new or the markers are missing.
   // Refresh existing path-keyed blocks and append newly discovered ~/.work_*_instructions.md sources.
   const merged =
-    refreshPathKeyedBlocks(replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append")).trim() + "\n";
+    refreshPathKeyedBlocks(
+      replaceBlock(
+        existing,
+        LLM_INSTRUCTIONS_MARKER,
+        sourceContent + "\n\n@./sy-persona/caveman.md\n@./sy-persona/ultracave.md",
+        "<!--",
+        " -->",
+        "append",
+      ),
+    ).trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

@@ -354,15 +354,16 @@ async function _doSettingsWork(targetDir) {
   if (merged.model === "claude-opus-4-7[1m]") merged.model = CLAUDE_MANAGED_SETTINGS.model;
   merged.theme = await _doClaudeTheme(targetDir, existing.theme);
 
-  mergeLLMHookEntry(merged, "UserPromptSubmit", {
-    hooks: [
-      {
-        type: "command",
-        command: process.execPath,
-        args: [LLM_PERSONA_HOOK_HELPER_PATH, "claude", LLM_PERSONA_REMINDER],
-      },
-    ],
-  });
+  for (const event of ["SessionStart", "SubagentStart", "UserPromptSubmit"])
+    mergeLLMHookEntry(merged, event, {
+      hooks: [
+        {
+          type: "command",
+          command: process.execPath,
+          args: [LLM_PERSONA_HOOK_HELPER_PATH, "claude", LLM_PERSONA_REMINDER, event],
+        },
+      ],
+    });
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);

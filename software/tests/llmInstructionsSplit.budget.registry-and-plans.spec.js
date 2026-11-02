@@ -31,6 +31,11 @@ const CHAR_BUDGET = 39500;
 const instructions = fs.readFileSync(INSTRUCTIONS_PATH, "utf-8");
 
 const SPLIT_EXPECTATIONS = {
+  "persona-ultracave.md": {
+    heading: "# Persona \u2014 ultracave",
+    sections: [],
+    leads: ["Use stricter compression only while ultracave mode is explicitly active."],
+  },
   "pr-workflow.md": {
     heading: "# PR & Source Control Workflow",
     sections: ["## Branches, titles, commits", "## Reviewing and babysitting"],

@@ -790,17 +790,37 @@ async function _doOpencodeInstructionsWork() {
  */
 async function _doOpencodePersonaPluginWork() {
   const targetPath = path.join(getLLMConfigHome(), ".config/opencode/plugins/sy-persona-reminder.js");
+  const rules = await getLLMPersonaRules();
+  const runtime = createLLMPersonaRuntime.toString();
   const content = `/** Reinforces chat style while preserving policy and artifact prose. */
 export default async function () {
-  const reminder = ${JSON.stringify(LLM_PERSONA_REMINDER)};
+  const createRuntime = ${runtime};
+  const persona = createRuntime(${JSON.stringify(rules)});
+  const previous = new Map();
   return {
-    "experimental.chat.system.transform": async (_input, output) => {
-      // OpenCode retains the original array after this hook; never replace it.
-      output.system.splice(0, output.system.length, ...output.system.filter((entry) => entry !== reminder));
-      output.system.push(reminder);
+    "chat.message": async (input, output) => {
+      const prompt = output.parts.filter((part) => part.type === "text").map((part) => part.text).join("\\n");
+      const result = persona.update(input.sessionID, prompt);
+      if (result.status) output.parts.push({ type: "text", text: "Current persona mode: " + result.mode + ". Report this without switching modes." });
     },
-    "experimental.session.compacting": async (_input, output) => {
+    "experimental.chat.system.transform": async (input, output) => {
+      const id = input.sessionID ?? "default";
+      const reminder = persona.context(id);
+      const old = previous.get(id);
+      // OpenCode retains the original array after this hook; never replace it.
+      output.system.splice(0, output.system.length, ...output.system.filter((entry) => entry !== old && entry !== reminder));
+      output.system.push(reminder);
+      previous.set(id, reminder);
+    },
+    "experimental.session.compacting": async (input, output) => {
+      const reminder = persona.context(input.sessionID ?? "default");
       if (!output.context.includes(reminder)) output.context.push(reminder);
+    },
+    event: async ({ event }) => {
+      if (event.type === "session.deleted") {
+        persona.forget(event.properties.info.id);
+        previous.delete(event.properties.info.id);
+      }
     },
   };
 }
