@@ -69,6 +69,7 @@ it("persists launcher icons and adds favorites and pins only once by name", () =
   fs.mkdirSync(path.join(home, ".local/zed.app/share/icons/hicolor/512x512/apps"), { recursive: true });
   fs.writeFileSync(path.join(home, ".local/zed.app/share/icons/hicolor/512x512/apps/zed.png"), "zed icon");
   fs.writeFileSync(path.join(home, ".local/zed.app/bin/zed"), "zed", { mode: 0o755 });
+  fs.writeFileSync(path.join(home, "Applications/Ghostty.AppImage"), "ghostty", { mode: 0o755 });
   fs.writeFileSync(path.join(home, "Applications/EmuDeck.AppImage"), "emu");
   fs.writeFileSync(path.join(home, "Emulation/tools/launchers/es-de/es-de.sh"), "esde");
   fs.writeFileSync(path.join(bin, "konsole"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
@@ -122,10 +123,16 @@ fs.writeFileSync(file, JSON.stringify(state));
       "applications:custom-brave.desktop",
       "applications:dev.zed.Zed.desktop",
       "applications:org.kde.konsole.desktop",
+      "applications:steamos-setup-ghostty.desktop",
       "applications:steamos-setup-emudeck.desktop",
       "applications:steamos-setup-es-de.desktop",
     ],
-    launchers: ["applications:custom-brave.desktop", "applications:dev.zed.Zed.desktop", "applications:org.kde.konsole.desktop"],
+    launchers: [
+      "applications:custom-brave.desktop",
+      "applications:dev.zed.Zed.desktop",
+      "applications:org.kde.konsole.desktop",
+      "applications:steamos-setup-ghostty.desktop",
+    ],
     writes: 1,
   });
   expect(fs.readFileSync(path.join(apps, "custom-brave.desktop"), "utf8")).toContain("Exec=custom-brave");
@@ -133,6 +140,9 @@ fs.writeFileSync(file, JSON.stringify(state));
   expect(persistedIcon).toHaveLength(1);
   expect(fs.readFileSync(path.join(home, ".local/share/icons/steamos-setup", persistedIcon[0]), "utf8")).toBe("zed icon");
   expect(fs.readFileSync(path.join(apps, "dev.zed.Zed.desktop"), "utf8")).toContain(`Exec="${home}/.local/zed.app/bin/zed" %U`);
+  expect(fs.readFileSync(path.join(apps, "steamos-setup-ghostty.desktop"), "utf8")).toBe(
+    `[Desktop Entry]\nType=Application\nName=Ghostty\nExec="${home}/Applications/Ghostty.AppImage"\nIcon=utilities-terminal\nTerminal=false\n`,
+  );
   expect(fs.readFileSync(path.join(apps, "steamos-setup-es-de.desktop"), "utf8")).toContain(
     `Exec="${home}/Emulation/tools/launchers/es-de/es-de.sh"`,
   );

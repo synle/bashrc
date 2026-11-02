@@ -1213,6 +1213,29 @@ if ! _install_steamtinkerlaunch_dependencies || ! _install_steamtinkerlaunch; th
   printf '%s\n' ">>> Steam shortcuts need SteamTinkerLaunch; fix installation output above and re-run setup."
 fi
 
+# --- Ghostty (AppImage) ---
+# Requested x86_64 nightly build; update this pin if upstream replaces the tip asset.
+GHOSTTY_VERSION="1.4.1-main+a7e8e4d"
+if [ -s "$APPS_FOLDER/Ghostty.AppImage" ]; then
+  printf '%s\n' ">>> Ghostty AppImage already present; skipping download."
+else
+  printf '%s\n' ">>> Downloading Ghostty AppImage to $APPS_FOLDER/Ghostty.AppImage"
+  # Keep partial downloads outside the existing *.AppImage registration pass.
+  if ghostty_download=$(mktemp "$APPS_FOLDER/.ghostty-download.XXXXXX"); then
+    if ! curl -fsSL --connect-timeout 15 --max-time 120 \
+      "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/tip/Ghostty-$GHOSTTY_VERSION-x86_64.AppImage" \
+      -o "$ghostty_download" || [ ! -s "$ghostty_download" ] || ! mv "$ghostty_download" "$APPS_FOLDER/Ghostty.AppImage"; then
+      printf '%s\n' ">>> Ghostty AppImage download or preparation failed." >&2
+    fi
+    rm -f "$ghostty_download"
+  else
+    printf '%s\n' ">>> Ghostty AppImage download or preparation failed; could not create a temporary file." >&2
+  fi
+fi
+if [ -s "$APPS_FOLDER/Ghostty.AppImage" ] && ! chmod a+x "$APPS_FOLDER/Ghostty.AppImage"; then
+  printf '%s\n' ">>> Ghostty AppImage executable preparation failed." >&2
+fi
+
 # --- Moonlight (AppImage) ---
 MOONLIGHT_VERSION="6.2.0"
 printf '%s\n' ">>> Downloading Moonlight AppImage to $APPS_FOLDER/Moonlight.AppImage"
@@ -1535,6 +1558,7 @@ try:
         ("Brave", "com.brave.Browser.desktop", "/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=brave --file-forwarding com.brave.Browser @@u %U @@", "com.brave.Browser", True),
         ("Zed", "dev.zed.Zed.desktop", f'"{home}/.local/zed.app/bin/zed" %U', str(home / ".local/zed.app/share/icons/hicolor/512x512/apps/zed.png"), True),
         ("Konsole", "org.kde.konsole.desktop", "konsole", "utilities-terminal", True),
+        ("Ghostty", "steamos-setup-ghostty.desktop", f'"{home}/Applications/Ghostty.AppImage"', "utilities-terminal", True),
         ("EmuDeck", "steamos-setup-emudeck.desktop", f'"{home}/Applications/EmuDeck.AppImage"', "applications-games", False),
         ("ES-DE AppImage", "steamos-setup-es-de.desktop", f'"{home}/Emulation/tools/launchers/es-de/es-de.sh"', "applications-games", False),
     ]

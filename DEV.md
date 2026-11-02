@@ -98,12 +98,16 @@ Close Steam before changing shortcuts. The script records a private `steamos-set
 Setup registers every top-level `~/Applications/*.AppImage` in Steam, making it executable when needed.
 Before downloads, setup moves legacy `~/Apps/*.AppImage` files into `~/Applications` without replacing existing destination files.
 It removes `~/Apps` only when empty; conflicts and unrelated files remain in the legacy folder with diagnostics.
-Moonlight and ProtonUp-Qt downloads use `~/Applications`; the final AppImage registration pass retains their existing Steam titles and collections.
+Ghostty, Moonlight, and ProtonUp-Qt downloads use `~/Applications`; the final AppImage registration pass retains established Steam titles and collections.
+Ghostty uses the requested x86_64 nightly build `1.4.1-main+a7e8e4d`, installed as `~/Applications/Ghostty.AppImage` with executable permissions.
+A nonempty existing Ghostty AppImage skips download; reruns repair executable permissions and reuse existing launcher entries.
+Failed or empty Ghostty downloads never reach the AppImage registration pass.
+The versioned Ghostty URL uses the mutable `tip` release tag; update the pin if upstream replaces that asset.
 Shortcut titles use filenames without `.AppImage`; `ES-DE.AppImage` retains the title `ES-DE Emulation Station`.
 An existing `~/Applications/ES-DE.AppImage` skips the EmuDeck installer download.
 Zed installs through its official installer in the background; setup waits before running both Zed configuration scripts alongside browser extensions and tmux/vim.
 Kate removal uses `sudo pacman -R --noconfirm kate` only when installed.
-KDE favorites include Brave, Zed, Konsole, EmuDeck, and ES-DE AppImage; taskbar pins include only Brave, Zed, and Konsole.
+KDE favorites include Brave, Zed, Konsole, Ghostty, EmuDeck, and ES-DE AppImage; taskbar pins include Brave, Zed, Konsole, and Ghostty.
 Existing same-name entries are reused; favorites and taskbar pins are checked before additions.
 New desktop entries use the requested executable paths and arguments; existing launch commands remain unchanged.
 Absolute launcher icons are copied into persistent user icon storage; theme icons retain their installed theme references.
