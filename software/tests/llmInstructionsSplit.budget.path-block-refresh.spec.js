@@ -111,6 +111,18 @@ const SPLIT_EXPECTATIONS = {
   // while opencode loads the standalone file as its own rules document — and position
   // matters for a persona, the smallest and oldest thing in a long context.
   // Deployed as `~persona.md` so it sorts LAST — see LLM_PERSONA_INSTRUCTION_FILE.
+  "~persona.md": {
+    heading: "# Persona — Caveman Speak",
+    sections: [],
+    inlined: true,
+    leads: [
+      "**No self-reference.**",
+      "**Hold persona every turn.**",
+      "Progress updates, status reports, PR state lists, task summaries, and `task_complete` final messages are replies to the user",
+      "**Never caveman-ify:**",
+      "Both PRs wait on approval. Backend auto-merge armed.",
+    ],
+  },
 };
 
 function loadLlmCommon() {

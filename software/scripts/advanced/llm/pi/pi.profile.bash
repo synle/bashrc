@@ -49,7 +49,8 @@ Files inside ~/.pi/agent/ worth knowing about:
                     models.json entry.
   AGENTS.md       - user-level engineering rules (sourced from
                     software/scripts/advanced/llm/_common/v_current/instructions.md).
-  caveman skill   - upstream persona skill; invoke /skill:caveman per session.
+  APPEND_SYSTEM.md - short tail-position system-prompt reminder that
+                    reinforces caveman reply style every run.
   auth.json       - provider credential store (OAuth tokens from /login),
                     0600. Not opened here.
 

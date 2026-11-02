@@ -11,8 +11,13 @@
  *                             load are loaded here too. Managed block is upserted
  *                             between BEGIN/END markers; user content outside is
  *                             preserved.
- *   Upstream caveman skill — installed through the supported skills installer;
- *                             invoke the skill to activate it for a session.
+ *   ~/.pi/agent/APPEND_SYSTEM.md — short tail-position persona reminder added
+ *                             directly to Pi's system prompt on every run,
+ *                             reinforcing the caveman response style separately
+ *                             from the long AGENTS.md corpus.
+ *   ~/.pi/agent/extensions/sy-persona-reminder.js — structured run guideline
+ *                             and one owned persona section refreshed before
+ *                             each model request, including tool follow-ups.
  *   ~/.pi/agent/settings.json — merge of managed defaults (`defaultTools`,
  *                             `quietStartup`, `terminal.imageWidthCells`,
  *                             `terminal.showTerminalProgress`, `terminal.hyperlinks`,
@@ -40,6 +45,25 @@
 
 // SOURCE software/scripts/advanced/llm/llm-common.js
 // SOURCE software/scripts/advanced/editor.common.js
+
+/**
+ * Short persona reminder appended through ~/.pi/agent/APPEND_SYSTEM.md.
+ * Tail placement matters: Pi appends this directly to the system prompt after
+ * its larger instruction corpus, which keeps the response style more salient.
+ * @type {string}
+ */
+const PI_APPEND_SYSTEM_CONTENT = `${LLM_PERSONA_REMINDER}\n`;
+
+/**
+ * Self-delimiting request-level reminder with a concrete chat example. The shared
+ * reminder owns policy and exemptions; the example illustrates ordinary status prose.
+ * @type {string}
+ */
+const PI_PERSONA_REQUEST_REMINDER = `<sy_persona_reminder>
+${LLM_PERSONA_REMINDER}
+
+Chat-status example: "Backup complete. Eight files verified. Active rules unchanged."
+</sy_persona_reminder>`;
 
 /**
  * Headers required by the GitHub Copilot IDE-authenticated API.
@@ -370,6 +394,66 @@ async function _doPiInstructionsWork(agentDir) {
 }
 
 /**
+ * Deploys one pi APPEND_SYSTEM.md, a short tail-position persona reminder
+ * added directly to Pi's system prompt on every run.
+ * @param {string} agentDir - Target pi agent folder.
+ * @returns {Promise<void>}
+ */
+async function _doPiAppendSystemWork(agentDir) {
+  const targetPath = path.join(agentDir, "APPEND_SYSTEM.md");
+
+  log(">> pi Append System:", targetPath);
+
+  await backupConfigFile(targetPath);
+  await writeText(targetPath, PI_APPEND_SYSTEM_CONTENT);
+}
+
+/**
+ * Writes a Pi extension with a run guideline and one owned system section before
+ * every model request. Existing prompt content, tools, and transcript order survive;
+ * no replies are rewritten and no additional model calls are requested.
+ * @param {string} agentDir - Target pi agent folder.
+ * @returns {Promise<void>} Resolves after writing the generated extension; IO errors propagate.
+ */
+async function _doPiPersonaExtensionWork(agentDir) {
+  const targetPath = path.join(agentDir, "extensions", "sy-persona-reminder.js");
+  const content = `/** Registers request-level persona reinforcement without rewriting replies or replacing the prompt.
+ * @param {import("@earendil-works/pi-coding-agent").ExtensionAPI} pi - Pi extension API.
+ * @returns {void} Registers lifecycle handlers; performs no startup IO.
+ */
+export default function (pi) {
+  /** @type {string} Shared chat-style policy, including prose exemptions. */
+  const PERSONA_REMINDER = ${JSON.stringify(LLM_PERSONA_REMINDER)};
+  /** @type {string} Self-delimiting reminder rendered after other leading system sections. */
+  const REQUEST_REMINDER = ${JSON.stringify(PI_PERSONA_REQUEST_REMINDER)};
+
+  pi.on("before_agent_start", (event) => {
+    const guidelines = event.systemPromptOptions.promptGuidelines;
+    if (!guidelines.includes(PERSONA_REMINDER)) guidelines.push(PERSONA_REMINDER);
+  });
+
+  pi.on("context_with_system", (event) => {
+    const system = event.messages[0];
+    // Do not manufacture or reorder system/tool state in a nonstandard transcript.
+    if (system?.role !== "system") return;
+
+    // Replace only our section, moving it last without mutating reusable context.
+    const { sy_persona_reminder: previousReminder, ...sections } = system.sections ?? {};
+    return {
+      messages: [
+        { ...system, sections: { ...sections, sy_persona_reminder: REQUEST_REMINDER } },
+        ...event.messages.slice(1),
+      ],
+    };
+  });
+}
+`;
+
+  await mkdir(path.dirname(targetPath));
+  await writeText(targetPath, content);
+}
+
+/**
  * Deploys collapsed tool output through Pi's UI API; no persisted setting exists.
  * Session startup and tool boundaries restore the preference after manual expansion.
  * @param {string} agentDir - Target Pi agent folder.
@@ -398,7 +482,7 @@ export default function (pi) {
 
 /**
  * Orchestrates Pi setup: settings, keybindings, native MCP, Ollama providers, shared instructions,
- * upstream persona skill, collapsed tool output, shared skills, and retired-agent cleanup.
+ * APPEND_SYSTEM persona reinforcement, collapsed tool output, shared skills, and retired-agent cleanup.
  * Skips entirely when pi is not installed.
  * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */
@@ -426,13 +510,12 @@ async function doWork() {
   // when unchanged.
   await deploySharedLLMInstructions();
   await _doPiInstructionsWork(piAgentDir);
-  retireLLMPersonaArtifact(path.join(piAgentDir, "APPEND_SYSTEM.md"));
-  retireLLMPersonaArtifact(path.join(piAgentDir, "extensions", "sy-persona-reminder.js"));
+  await _doPiAppendSystemWork(piAgentDir);
+  await _doPiPersonaExtensionWork(piAgentDir);
   await _doPiToolOutputExtensionWork(piAgentDir);
 
   // Skills are written once to $LLM_ROOT_FOLDER/skills and symlinked into
   // ~/.agents/skills, which pi scans by default — no pi-local copy or slot.
   await deploySharedLLMSkills();
   await deploySharedLLMAgents();
-  await installUpstreamCaveman("pi");
 }

@@ -354,7 +354,15 @@ async function _doSettingsWork(targetDir) {
   if (merged.model === "claude-opus-4-7[1m]") merged.model = CLAUDE_MANAGED_SETTINGS.model;
   merged.theme = await _doClaudeTheme(targetDir, existing.theme);
 
-  retireLLMPersonaHooks(merged);
+  mergeLLMHookEntry(merged, "UserPromptSubmit", {
+    hooks: [
+      {
+        type: "command",
+        command: process.execPath,
+        args: [LLM_PERSONA_HOOK_HELPER_PATH, "claude", LLM_PERSONA_REMINDER],
+      },
+    ],
+  });
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);
@@ -428,5 +436,4 @@ async function doWork() {
 
   // Retire prior managed PR workers while preserving private agent artifacts.
   await deploySharedLLMAgents();
-  await installUpstreamCaveman("claude");
 }

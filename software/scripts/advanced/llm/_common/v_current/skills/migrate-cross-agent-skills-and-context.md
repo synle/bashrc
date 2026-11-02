@@ -1,6 +1,6 @@
 [Sy] Migrate a repository's agent context and skills to AGENTS.md and .agents/skills while preserving rules, scope, and discovery. Use when consolidating vendor-specific guidance into one cross-agent source.
 
-Preserve required checkpoints, exact output formats, and standard prose for deliverables.
+**Response style.** Read `<<LLM_ROOT_FOLDER>>/instructions/~persona.md` before replying. Preserve required checkpoints, exact output formats, and standard prose for deliverables.
 
 Before writing or cleaning instructions, skills, or agent definitions, read `<<LLM_ROOT_FOLDER>>/skills/sy-clean-instructions/SKILL.md` (`clean-instructions.md`) for the full checklist.
 

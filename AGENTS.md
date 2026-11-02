@@ -815,7 +815,7 @@ Keep all prior worker names in `LLM_AGENT_RETIRED_NAMES` and retain `deployShare
 - Preserve foreign files, folders, and symlinks. Remove client regular files only when their body carries a managed marker.
 - Use the existing shared cleanup helpers; never remove an entire client agents folder.
 - Shared skills select available workers by behavior, not retired names.
-- Worker retirement preserves foreign persona integrations.
+- Worker retirement does not remove the chat-style persona or its hooks.
 - Destination and native-format metadata remain for cleanup compatibility; deployment details live in `llm.md`.
 
 ### 13.3 The shared LLM home folder — `~/_extra/ai_llm/`
@@ -863,11 +863,20 @@ Everything LLM tooling owns outside a checkout lives under one root, created by
     `LLM_SHARED_INSTRUCTION_LINK_FOLDERS` (renamed to that folder's `suffix`, e.g.
     copilot's `.instructions.md` glob); non-symlink entries untouched. Claude/Gemini
     absent deliberately (they'd always-load and blow the budget).
-    Persona integrations are installed through the reviewed upstream installer by `installUpstreamCaveman()` in `llm-common.js`.
-    Do not reintroduce custom persona instructions, reminder hooks, or output rewriting.
-    Pi uses the upstream skill-only path and requires invocation; the proxy/runtime package is outside this installation scope.
-    Retired custom artifacts are backed up outside discovery. Preserve foreign hooks and upstream-owned files when refreshing shared guidance.
-    Restart clients after deployment; existing sessions retain loaded configuration.
+  - `~persona.md` is the one split file also inlined back into `instructions.md` (BEGIN
+    block filled by `make format_build_include`; `inlined: true` in
+    `SPLIT_EXPECTATIONS`). `instructions.md` closes with a short **Persona Check**
+    section — last thing read. It MUST also load last in opencode's ordered
+    `instructions: [...]`: the `~` prefix sorts after every letter, and
+    `getSharedLLMInstructionFilePaths()` forces it to the end
+    (`LLM_PERSONA_INSTRUCTION_FILE`). Mid-list, the rule prose after it drowns the voice.
+
+Persona reinforcement uses `LLM_PERSONA_REMINDER` in `llm-common.js`. CLI hooks and
+Pi's prompt extension consume that single reminder. OpenCode setup deploys
+`plugins/sy-persona-reminder.js`: its system-transform hook moves one reminder to
+the tail before model requests, and its compaction hook preserves the reminder in
+summary context. Restart OpenCode after deployment; existing sessions retain loaded
+configuration. These cues improve persistence, not guaranteed model compliance.
 
 **Work instructions and path-keyed blocks refresh on every deploy.** After upserting the common block, all five clients call `refreshPathKeyedBlocks()` in `llm-common.js`.
 It discovers `~/.work_*_instructions.md` in lexical order and appends `Custom Work Prompt | ~/filename` HTML BEGIN/END blocks.
