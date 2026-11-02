@@ -628,6 +628,12 @@ function commit_empty_trigger_deploy() {
   git push -u origin "$temp_branch_name" > /dev/null 2>&1
 }
 
+# _git_root_folder: print the absolute root of the nearest enclosing Git worktree.
+# Args: none. Returns Git status; diagnostics go to stderr. Does not change folders.
+function _git_root_folder() {
+  command git rev-parse --show-toplevel
+}
+
 # gogitroot: cd to the nearest enclosing Git worktree root.
 # Args: none (or --help). Returns Git/cd status; failures preserve the current folder.
 # Side effects: prints an action summary and updates PWD/OLDPWD on success.
@@ -640,7 +646,7 @@ function gogitroot() {
     return 0
   fi
   local root_folder
-  root_folder="$(command git rev-parse --show-toplevel)" || return "$?"
+  root_folder="$(_git_root_folder)" || return "$?"
   print_action_summary "$root_folder" cd
   builtin cd -- "$root_folder"
 }
@@ -1766,6 +1772,7 @@ function git_patch_create() {
 
 # _git_patch_create: generate once, then encode before all transports when requested.
 # $1 is plain/base64; $2 is count (default 1). Both formats carry one subject preview per patch.
+# Uses the shared worktree root for generated apply commands without changing folders.
 # Returns nonzero on generation, encoding, or clipboard failure; preserves repository state.
 function _git_patch_create() {
   local format="$1"
@@ -1788,7 +1795,7 @@ function _git_patch_create() {
   fi
 
   local repo_root
-  if ! repo_root=$(git rev-parse --show-toplevel 2> /dev/null); then
+  if ! repo_root=$(_git_root_folder 2> /dev/null); then
     printf '%s\n' "git_patch_create: not a git repository." >&2
     return 1
   fi
