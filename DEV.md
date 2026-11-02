@@ -101,6 +101,13 @@ It removes `~/Apps` only when empty; conflicts and unrelated files remain in the
 Moonlight and ProtonUp-Qt downloads use `~/Applications`; the final AppImage registration pass retains their existing Steam titles and collections.
 Shortcut titles use filenames without `.AppImage`; `ES-DE.AppImage` retains the title `ES-DE Emulation Station`.
 An existing `~/Applications/ES-DE.AppImage` skips the EmuDeck installer download.
+Zed installs through its official installer in the background; setup waits before running both Zed configuration scripts alongside browser extensions and tmux/vim.
+Kate removal uses `sudo pacman -R --noconfirm kate` only when installed.
+KDE favorites include Brave, Zed, Konsole, EmuDeck, and ES-DE AppImage; taskbar pins include only Brave, Zed, and Konsole.
+Existing same-name entries are reused; favorites and taskbar pins are checked before additions.
+New desktop entries use the requested executable paths and arguments; existing launch commands remain unchanged.
+Absolute launcher icons are copied into persistent user icon storage; theme icons retain their installed theme references.
+KDE integration requires a running Desktop Mode session, Python, qdbus, and kbuildsycoca; failed readback prints an incomplete-setup diagnostic.
 Before downloads, it asks whether to clear user-defined non-Steam shortcuts, install Decky, upgrade the system, and enable USB wake-up.
 The final completion acknowledgment remains at the end.
 Long pacman, Flatpak, and paru operations capture stdout/stderr in a private `sy-log-<UTC-start-time>-steamos-setup-output.<unique>.txt` file.

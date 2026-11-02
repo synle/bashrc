@@ -28,8 +28,8 @@ function extractSetupSection(source, startMarker, endMarker) {
 
 /** Prompt definition without account validation or installation side effects. */
 const promptSource = extractSetupSection(setupSource, "function _prompt()", "# Validate the invoking account");
-/** Initial choices and authentication, stopping before the first installer function. */
-const choicesSource = extractSetupSection(setupSource, "# Steam must be fully closed", "function _install_flatpak_brave_prerequisite()");
+/** Initial choices and authentication, stopping before background installation starts. */
+const choicesSource = extractSetupSection(setupSource, "# Steam must be fully closed", "# --- Zed background installation ---");
 
 // Cleanup owns only folders created by this spec, including on assertion failure.
 afterEach(() => {
