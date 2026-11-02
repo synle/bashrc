@@ -106,7 +106,7 @@ Governs every other section.
 - **Do obvious prerequisites without asking.** Run implied, reversible steps: inspect status/diff before commits, stage only changed paths, activate an existing `.venv`, check target folders, and test before committing. "Then commit and push" authorizes those prerequisites too.
 - **Pick a sensible default over a prompt.** Supply unspecified non-critical details yourself. Ask only when the choice changes the result, public contract, or enters Destructive Commands / Secret Handling.
 - **Define done before non-trivial work.** Use observable proof: bug → reproducer passes; refactor → behavior matches before/after; feature → named user-visible result plus its check. "Works" is not a completion test.
-- **Close against the source, not its summary.** For spec-driven work, re-read the authoritative spec before completion and map every requirement and acceptance criterion to current code or check evidence. An early extraction is a working list, not proof of completeness.
+- **Close against the source, not its summary.** For spec-driven work, link the authoritative spec in the plan or handoff. Re-read it before execution and completion. Map every requirement and acceptance criterion to current code or check evidence, never only a summary.
 
 ## Restate Before Long Run
 
