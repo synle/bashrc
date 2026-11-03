@@ -112,6 +112,9 @@ Existing same-name entries are reused; favorites and taskbar pins are checked be
 New desktop entries use the requested executable paths and arguments; existing launch commands remain unchanged.
 Absolute launcher icons are copied into persistent user icon storage; theme icons retain their installed theme references.
 KDE integration requires a running Desktop Mode session, Python, qdbus, and kbuildsycoca; failed readback prints an incomplete-setup diagnostic.
+Favorite calls use the `org.kde.ActivityManager.ResourcesLinking` interface at `/ActivityManager/Resources/Linking`; D-Bus failures retain their diagnostic output.
+Steam `[DEBUG]` messages are silent unless `DEBUG=1`; normal progress, errors, and SteamTinkerLaunch output remain visible.
+Use `DEBUG=1 /bin/bash software/scripts/steamos/setup.bash` or export `DEBUG=1` before running setup to enable them.
 Before downloads, it asks whether to clear user-defined non-Steam shortcuts, install Decky, upgrade the system, and enable USB wake-up.
 The final completion acknowledgment remains at the end.
 Long pacman, Flatpak, and paru operations capture stdout/stderr in a private `sy-log-<UTC-start-time>-steamos-setup-output.<unique>.txt` file.
