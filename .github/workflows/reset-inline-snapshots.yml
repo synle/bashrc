@@ -1,0 +1,122 @@
+name: Reset Inline Snapshots
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: reset-inline-snapshots
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      changed: ${{ steps.patch.outputs.changed }}
+      base-sha: ${{ steps.patch.outputs.base-sha }}
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - uses: ./.github/actions/ci-install-chrome
+      - name: Restore published primary profiles
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/snapshot-profiles"
+          gh release download binary-cache --pattern 'bashrc-profile__profile_bashrc_ubuntu.sh' --pattern 'bashrc-profile__profile_bashrc_mac.sh' --dir "$RUNNER_TEMP/snapshot-profiles"
+          for os in ubuntu mac; do
+            cp "$RUNNER_TEMP/snapshot-profiles/bashrc-profile__profile_bashrc_${os}.sh" ".build/profile_bashrc_${os}.sh"
+          done
+      - name: Reset all inline snapshots
+        run: npm run resetTestSnapshots
+      - name: Format changed test specs
+        run: |
+          git diff -z --name-only -- ':(glob)software/tests/**/*.spec.js' | while IFS= read -r -d '' file; do
+            npx oxfmt --write "$file"
+          done
+      - name: Verify refreshed snapshots without update mode
+        run: |
+          npm test
+          npm run test:profile
+          npm run test:buildconfig
+          npm run test:integration
+      - name: Prepare test-only patch
+        id: patch
+        run: |
+          printf 'base-sha=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git diff --binary -- ':(glob)software/tests/**/*.spec.js' > "$RUNNER_TEMP/inline-snapshots.patch"
+          if [ -s "$RUNNER_TEMP/inline-snapshots.patch" ]; then
+            printf '%s\n' 'changed=true' >> "$GITHUB_OUTPUT"
+          else
+            printf '%s\n' 'changed=false' >> "$GITHUB_OUTPUT"
+            printf '%s\n' 'No inline snapshot changes; no branch or pull request created.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload snapshot patch
+        if: steps.patch.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: inline-snapshots
+          path: ${{ runner.temp }}/inline-snapshots.patch
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: refresh
+    if: needs.refresh.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout tested base
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.refresh.outputs.base-sha }}
+      - name: Download snapshot patch
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: inline-snapshots
+          path: ${{ runner.temp }}
+      - name: Commit snapshots and open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          branch="automation/reset-inline-snapshots-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git switch -c "$branch"
+          git apply --index --include='software/tests/*.spec.js' "$RUNNER_TEMP/inline-snapshots.patch"
+          if git diff --cached --quiet; then
+            printf '%s\n' 'No inline snapshot changes; no branch pushed or pull request created.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Refresh inline snapshots' -m 'Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>'
+          git push origin "HEAD:refs/heads/$branch"
+          body="$RUNNER_TEMP/inline-snapshots-pr.md"
+          trap 'rm -f "$body"' EXIT
+          printf '%s\n' '## Summary' '' '- Refresh inline snapshots using the existing all-suite reset command.' '- Review expectation changes against intended behavior before merging.' '' '## Test plan' '' '- Passed `npm run resetTestSnapshots`.' '- Passed unit, profile, buildconfig, and live integration suites without update mode.' '- Generated configurations and cached profiles are not included in this PR.' > "$body"
+          gh pr create --repo "$GH_REPO" --base "$DEFAULT_BRANCH" --head "$branch" --title '[bashrc] Refresh inline snapshots' --body-file "$body" > "$RUNNER_TEMP/inline-snapshots-pr-url.txt"
+          printf 'Pull request: %s\n' "$(< "$RUNNER_TEMP/inline-snapshots-pr-url.txt")" >> "$GITHUB_STEP_SUMMARY"
