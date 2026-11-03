@@ -112,15 +112,14 @@ async function doWork() {
         printf '[%s:%s]' "\$result" "\$node_ver"
       }
 
-      # update starship env vars before each prompt render
-      # must be defined after starship init so it doesn't get overwritten
+      # Update prompt fields after Starship initialization; retain IP cache updates in this shell.
+      # Takes no arguments, exports display fields, and returns the final export status.
       function _starship_preexec() {
         export STARSHIP_LOCAL_TIME="$(_starship_time)"
         export STARSHIP_UTC_TIME="$(_starship_time 'UTC')"
-        local ip_addresses
-        ip_addresses="$(ifconfig2)"
+        ifconfig2 > /dev/null
         # Keep machine-facing ifconfig2 output unchanged; space only the prompt list.
-        export STARSHIP_IP_ADDR="\${ip_addresses//,/, }"
+        export STARSHIP_IP_ADDR="\${_ifconfig2_cache//,/, }"
         export STARSHIP_SHORT_PWD="$(shorter_pwd_path)"
         # disabled: python/node path:version info (uncomment to re-enable)
         # local _py_info
