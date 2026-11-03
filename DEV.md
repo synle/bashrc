@@ -352,7 +352,26 @@ Refresh existing inline snapshots with Vitest's one-shot update mode:
 npm run test:update -- software/tests/piSettingsDeployment.spec.js # one spec (preferred)
 npm run test:update                                             # all default-suite snapshots
 npm run test:buildconfig:update                                 # generated-config snapshots, separate suite
+npm run resetTestSnapshots                                      # unit + profile + buildconfig + live integration
+make resetTestSnapshots                                         # proxy for the all-suite npm command
+npm run resetTestSnapshots:unit                                 # default unit suite
+npm run resetTestSnapshots:profile                              # assembled profile suite
+npm run resetTestSnapshots:buildconfig                          # generated-config suite
+npm run resetTestSnapshots:integration                          # native + live browser/URL integration
+npm run resetTestSnapshots:integration:local                    # native + local browser integration
 ```
+
+The all-suite reset runs sequentially and stops on the first failed suite.
+Live integration covers all integration specs; the local variant excludes live URL reachability and requires an existing webapp build in `dist/`.
+Profile and build-config suites require their existing generated artifacts.
+Pass a spec filter to a type-specific command with `-- <spec>`.
+
+When adding a test suite type, follow `AGENTS.md` → Snapshot command parity in the same change:
+
+- Add `resetTestSnapshots:<type>` to `package.json`, invoking that suite with snapshot update mode.
+- Include its snapshot coverage in `resetTestSnapshots`; an existing equivalent suite may cover an alternate execution mode without duplicate execution.
+- Keep `make resetTestSnapshots` delegating to `npm run resetTestSnapshots`.
+- Document the command, required artifacts or services, and any alternate mode covered by an equivalent suite here.
 
 These commands rewrite expectations in test source; they do not delete tests or reset fixtures.
 Inspect every snapshot diff against the intended behavior, then rerun without update mode before committing.

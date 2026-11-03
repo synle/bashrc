@@ -651,6 +651,10 @@ file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
   Keep snapshots small and behavior-focused; project relevant fields and normalize only nondeterministic values.
   Preserve explicit scalar, predicate, absence, and round-trip assertions when they express the contract more clearly.
   Keep parameterized cases refreshable without sharing one inline-snapshot location across different expected outputs.
+- **Snapshot command parity.** Every new test suite type must add a matching `resetTestSnapshots:<type>` npm script in the same change.
+  Include its snapshot coverage in the aggregate `resetTestSnapshots` command; an existing equivalent suite may cover an alternate execution mode without running duplicate tests.
+  Keep `make resetTestSnapshots` as a proxy to the aggregate npm script.
+  Document the new command, prerequisites, and alternate-mode coverage in `DEV.md` → Inline snapshots.
 - **Investigate inline-snapshot failures.** For every `toMatchInlineSnapshot` failure, read the diff and trace actual output to its source, generator, and test setup before changing expectations.
   Classify the mismatch as a regression, an intended behavior change, a stale snapshot, or nondeterministic input.
   A hash-only diff is not proof of harmless drift; inspect the content and source revision represented by each changed hash.

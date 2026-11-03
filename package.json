@@ -14,6 +14,12 @@
     "test:profile": "vitest run --config vitest.profile.config.js",
     "test:buildconfig": "vitest run --config vitest.buildconfig.config.js",
     "test:buildconfig:update": "vitest run --config vitest.buildconfig.config.js --update",
+    "resetTestSnapshots": "npm run resetTestSnapshots:unit && npm run resetTestSnapshots:profile && npm run resetTestSnapshots:buildconfig && npm run resetTestSnapshots:integration",
+    "resetTestSnapshots:unit": "npm run test -- --update=all",
+    "resetTestSnapshots:profile": "npm run test:profile -- --update=all",
+    "resetTestSnapshots:buildconfig": "npm run test:buildconfig -- --update=all",
+    "resetTestSnapshots:integration": "npm run test:integration -- --update=all",
+    "resetTestSnapshots:integration:local": "npm run test:integration:local -- --update=all",
     "format:check": "oxfmt --check .",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix ."
