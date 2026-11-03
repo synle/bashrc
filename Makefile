@@ -241,6 +241,11 @@ test_buildconfig:
 test_buildconfig_update:
 	npm run test:buildconfig:update
 
+# Refresh snapshots in every test suite through the shared npm entry point.
+.PHONY: resetTestSnapshots
+resetTestSnapshots:
+	npm run resetTestSnapshots
+
 # Run dry-run setup test (JS scripts only, no file writes or installs).
 # Gates on run.sh's exit code plus per-script "error" statuses in run_timing.json
 # (software/tools/check-dryrun-results.js), not on grepping log text.

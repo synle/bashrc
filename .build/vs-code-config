@@ -1,4 +1,4 @@
-// AUTO-GENERATED - DO NOT EDIT [2026-10-31]
+// AUTO-GENERATED - DO NOT EDIT [2026-11-03]
 // 
 // VS Code settings.json (drop into <Code>/User/)
 // ################################################################################
@@ -1705,6 +1705,8 @@
     "*.suo": true,
     "*.swp": true,
     "*.bak_original": true,
+    "*.bak_latest": true,
+    "*.bak_*": true,
     ".eslintcache": true,
     "*.stylelintcache": true,
     "*.tsbuildinfo": true,
@@ -1855,6 +1857,8 @@
     "*.suo": true,
     "*.swp": true,
     "*.bak_original": true,
+    "*.bak_latest": true,
+    "*.bak_*": true,
     ".eslintcache": true,
     "*.stylelintcache": true,
     "*.tsbuildinfo": true,

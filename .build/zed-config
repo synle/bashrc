@@ -1,4 +1,4 @@
-// AUTO-GENERATED - DO NOT EDIT [2026-10-31]
+// AUTO-GENERATED - DO NOT EDIT [2026-11-03]
 // 
 // Zed settings.json
 // ################################################################################
@@ -351,6 +351,8 @@
     "*.suo",
     "*.swp",
     "*.bak_original",
+    "*.bak_latest",
+    "*.bak_*",
     ".eslintcache",
     "*.stylelintcache",
     "*.tsbuildinfo",
