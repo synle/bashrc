@@ -369,6 +369,20 @@ Live integration covers all integration specs; the local variant excludes live U
 Profile and build-config suites require their existing generated artifacts.
 Pass a spec filter to a type-specific command with `-- <spec>`.
 
+**Actions → Reset Inline Snapshots → Run workflow** provides the manual default-branch repair path.
+Select the repository default branch (`main` or `master`); dispatches on other branches skip the refresh job.
+The action installs locked dependencies and Chrome, restores published Ubuntu/macOS profiles, and calls `npm run resetTestSnapshots`.
+It then reruns all four suites without update mode; a failed suite or missing required release asset prevents publication.
+Generated configuration inputs come from the checked-out default branch, while profile inputs come from the current `binary-cache` release.
+Only changed tracked `software/tests/**/*.spec.js` files enter the repair commit; generated artifacts remain outside the pull request.
+Each changed run opens a regular pull request from `automation/reset-inline-snapshots-<run-id>-<attempt>` against the detected default branch.
+An unchanged run creates no remote branch or pull request.
+
+Repository Actions settings must allow GitHub Actions to create pull requests.
+The action uses `GITHUB_TOKEN`; GitHub may require **Approve workflows to run** on the generated PR before its CI starts.
+Review every changed expectation against intended behavior before merging; this action does not diagnose regressions or merge its PR.
+If PR creation fails after the push, the run log retains the branch name for manual recovery.
+
 When adding a test suite type, follow `AGENTS.md` → Snapshot command parity in the same change:
 
 - Add `resetTestSnapshots:<type>` to `package.json`, invoking that suite with snapshot update mode.
