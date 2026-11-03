@@ -30,10 +30,11 @@ const EMPTY_SHORTCUTS = Buffer.from("\x00shortcuts\x00\x08\x08", "binary");
  * @param {string} helper - URL helper to invoke.
  * @param {string} title - Shortcut title.
  * @param {string} url - Website URL.
+ * @param {string} debugSetup - Shell assignment controlling local or exported DEBUG.
  * @returns {object} Process result and sandbox paths for inspecting persisted effects.
  * @throws {Error} If temporary fixture creation fails.
  */
-function runShortcut(helper, title, url) {
+function runShortcut(helper, title, url, debugSetup = "unset DEBUG") {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-url-"));
   sandboxes.push(home);
   const binFolder = path.join(home, "bin");
@@ -50,6 +51,7 @@ function runShortcut(helper, title, url) {
     [
       "-c",
       `${shortcutSource}
+${debugSetup}
 function pgrep() { return 1; }
 # Isolate the owned registration adapter; keep real VDF lookup, update, and replacement.
 function _steamtinkerlaunch_add() {
@@ -79,6 +81,15 @@ afterEach(() => {
 });
 
 describe("SteamOS URL shortcut protocols", () => {
+  it.each(["DEBUG=1", "export DEBUG=1"])("shows shell and Python diagnostics with %s", (debugSetup) => {
+    const { result } = runShortcut("_upsert_url_steam_shortcut", "Plex", "https://example.com", debugSetup);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("[DEBUG] Steam URL upsert: Plex; preflight");
+    expect(result.stdout).toContain("[DEBUG] Steam URL upsert: parsed 1 entries; matching title count 1");
+    expect(result.stderr).toContain("[DEBUG] Steam shortcuts: parsed 1 entries for title lookup");
+    expect(result.stderr).toContain("[DEBUG] Steam shortcuts: exact title match");
+  });
+
   it.each([
     ["Brave", "Brave\thttps://synle.github.io/fav/?tv"],
     ["Apple TV+", "Apple TV+\thttps://tv.apple.com/"],
@@ -133,6 +144,7 @@ describe("SteamOS URL shortcut protocols", () => {
     const { result, home, shortcutsPath } = runShortcut(helper, "Plex", url);
 
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    expect(result.stdout + result.stderr).not.toContain("[DEBUG]");
     expect(fs.readFileSync(path.join(home, "registration-args"), "utf-8")).toBe(
       `--appname=Plex\n--exepath=/usr/bin/flatpak\n--startdir=/usr/bin/\n--launchoptions=${launchoptions}\n--tags=Streaming,Apps\n`,
     );

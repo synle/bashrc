@@ -317,7 +317,7 @@ function _steam_shortcuts_file() {
     ) >&2
     return 1
   fi
-  printf '%s\n' "[DEBUG] Steam shortcuts: account ${accounts[0]##*/}; userdata $steam_userdata" >&2
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam shortcuts: account ${accounts[0]##*/}; userdata $steam_userdata" >&2
   printf '%s\n' "${accounts[0]}/config/shortcuts.vdf"
 }
 
@@ -505,20 +505,21 @@ function _steam_shortcut_exists() {
   if ! shortcuts=$(_steam_shortcuts_file); then
     return 2
   fi
-  printf '%s\n' "[DEBUG] Steam shortcuts: checking $mode match in $shortcuts" >&2
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam shortcuts: checking $mode match in $shortcuts" >&2
   if [ -e "$shortcuts" ] && [ ! -f "$shortcuts" ]; then
     printf '%s\n' ">>> Steam: shortcut data is not a regular file: $shortcuts" >&2
     return 2
   fi
   if [ ! -e "$shortcuts" ]; then
-    printf '%s\n' "[DEBUG] Steam shortcuts: no shortcuts.vdf yet" >&2
+    [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam shortcuts: no shortcuts.vdf yet" >&2
     return 1
   fi
   if ! type -P python3 > /dev/null; then
     printf '%s\n' ">>> Steam: python3 required to inspect shortcuts.vdf." >&2
     return 2
   fi
-  python3 - "$shortcuts" "$mode" "$target" << 'PY'
+  DEBUG="${DEBUG:-}" python3 - "$shortcuts" "$mode" "$target" << 'PY'
+import os
 import sys
 
 try:
@@ -566,7 +567,8 @@ try:
     if offset != len(data) or "shortcuts" not in root or not isinstance(root["shortcuts"], dict):
         raise ValueError("invalid Steam shortcut structure")
     mode, target = sys.argv[2:4]
-    print(f"[DEBUG] Steam shortcuts: parsed {len(root['shortcuts'])} entries for {mode} lookup", file=sys.stderr)
+    if os.environ.get("DEBUG") == "1":
+        print(f"[DEBUG] Steam shortcuts: parsed {len(root['shortcuts'])} entries for {mode} lookup", file=sys.stderr)
     if mode not in ("path", "title"):
         raise ValueError("invalid shortcut lookup mode")
     for shortcut in root["shortcuts"].values():
@@ -577,12 +579,15 @@ try:
         if not isinstance(executable, str) or not isinstance(title, str):
             raise ValueError("invalid Steam shortcut fields")
         if mode == "path" and executable.strip('"') == target:
-            print("[DEBUG] Steam shortcuts: exact executable match", file=sys.stderr)
+            if os.environ.get("DEBUG") == "1":
+                print("[DEBUG] Steam shortcuts: exact executable match", file=sys.stderr)
             sys.exit(0)
         if mode == "title" and title == target:
-            print("[DEBUG] Steam shortcuts: exact title match", file=sys.stderr)
+            if os.environ.get("DEBUG") == "1":
+                print("[DEBUG] Steam shortcuts: exact title match", file=sys.stderr)
             sys.exit(0)
-    print(f"[DEBUG] Steam shortcuts: no {mode} match", file=sys.stderr)
+    if os.environ.get("DEBUG") == "1":
+        print(f"[DEBUG] Steam shortcuts: no {mode} match", file=sys.stderr)
     sys.exit(1)
 except (OSError, UnicodeError, ValueError) as error:
     print(f">>> Steam: cannot inspect shortcuts.vdf: {error}", file=sys.stderr)
@@ -624,10 +629,10 @@ function _configure_steamtinkerlaunch_account() {
 # Run SteamTinkerLaunch for the verified account after checking executable exists.
 # Arguments: addnonsteamgame options including --exepath=<executable>.
 # Returns 1 on preflight failure, otherwise the command's exit status; updates account config/cache.
-# Logs phases, exit status, and elapsed seconds to stderr without dumping raw arguments.
+# Logs phases, exit status, and elapsed seconds to stderr only with DEBUG=1, without dumping raw arguments.
 function _steamtinkerlaunch_add() {
   local shortcuts account_folder account_id argument executable_path="" status started_seconds
-  printf '%s\n' "[DEBUG] SteamTinkerLaunch add: validating executable" >&2
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] SteamTinkerLaunch add: validating executable" >&2
   for argument in "$@"; do
     case "$argument" in
     --exepath=*) executable_path=${argument#--exepath=} ;;
@@ -638,26 +643,26 @@ function _steamtinkerlaunch_add() {
     return 1
   fi
 
-  printf '%s\n' "[DEBUG] SteamTinkerLaunch add: resolving Steam account" >&2
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] SteamTinkerLaunch add: resolving Steam account" >&2
   if ! shortcuts=$(_steam_shortcuts_file); then
     printf '%s\n' ">>> SteamTinkerLaunch add: account resolution failed; command not started" >&2
     return 1
   fi
   account_folder=${shortcuts%/config/shortcuts.vdf}
   account_id=${account_folder##*/}
-  printf '%s\n' "[DEBUG] SteamTinkerLaunch add: preparing account config and refreshing path cache" >&2
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] SteamTinkerLaunch add: preparing account config and refreshing path cache" >&2
   if ! _configure_steamtinkerlaunch_account "$account_id"; then
     printf '%s\n' ">>> SteamTinkerLaunch add: account config or path-cache refresh failed; command not started" >&2
     return 1
   fi
-  printf '%s\n' "[DEBUG] SteamTinkerLaunch add: starting addnonsteamgame; command output follows" >&2
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] SteamTinkerLaunch add: starting addnonsteamgame; command output follows" >&2
   started_seconds=$SECONDS
   if steamtinkerlaunch addnonsteamgame "$@"; then
     status=0
   else
     status=$?
   fi
-  printf '[DEBUG] SteamTinkerLaunch add: command finished; exit status %s; elapsed %ss\n' "$status" "$((SECONDS - started_seconds))" >&2
+  [ "${DEBUG:-}" != 1 ] || printf '[DEBUG] SteamTinkerLaunch add: command finished; exit status %s; elapsed %ss\n' "$status" "$((SECONDS - started_seconds))" >&2
   return "$status"
 }
 
@@ -835,7 +840,7 @@ function _add_steam_shortcut() {
   local name="$1" executable="$2" collections="${3:-}" registered_exepath="${4:-$2}" startdir="${5:-}" launchoptions="${6:-}" status
   local -a shortcut_args=()
 
-  printf '%s\n' "[DEBUG] Steam add: $name; executable $executable; registered $registered_exepath; collections ${collections:-none}"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam add: $name; executable $executable; registered $registered_exepath; collections ${collections:-none}"
   if [[ "$executable" == *.AppImage ]] && [ -f "$executable" ] && [ ! -x "$executable" ]; then
     printf '%s\n' ">>> Steam: making $name AppImage executable: $executable"
     if ! chmod +x "$executable"; then
@@ -849,7 +854,7 @@ function _add_steam_shortcut() {
   fi
   _steam_shortcut_exists title "$name"
   status=$?
-  printf '%s\n' "[DEBUG] Steam add: $name title lookup status $status"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam add: $name title lookup status $status"
   if [ "$status" -eq 0 ]; then
     if pgrep -x steam > /dev/null 2>&1; then
       printf '%s\n' ">>> Steam: skipping $name; exit Steam before updating shortcuts, then re-run setup."
@@ -870,7 +875,7 @@ function _add_steam_shortcut() {
     printf '%s\n' ">>> Steam: skipping $name; exit Steam before adding shortcuts, then re-run setup."
     return 1
   fi
-  printf '%s\n' "[DEBUG] Steam add: $name prerequisites passed; invoking SteamTinkerLaunch"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam add: $name prerequisites passed; invoking SteamTinkerLaunch"
   if [ -n "$startdir" ]; then
     shortcut_args+=("--startdir=$startdir")
   fi
@@ -901,7 +906,7 @@ function _add_steam_shortcut() {
 function _add_url_steam_shortcut() {
   local title="$1" url="$2" flatpak_executable launchoptions status
 
-  printf '%s\n' "[DEBUG] Steam URL add: $title; checking existing title"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam URL add: $title; checking existing title"
   if [ -z "$title" ] || [[ "$url" != http://* && "$url" != https://* ]]; then
     printf '%s\n' ">>> Steam: skipping URL shortcut; title and HTTP or HTTPS URL required."
     return 1
@@ -921,7 +926,7 @@ function _add_url_steam_shortcut() {
   launchoptions="\"run\" \"--command=brave\" \"com.brave.Browser\" \"--ozone-platform=x11\" \"--disable-smooth-scrolling\" \"--kiosk\" \"$url\""
   _steam_shortcut_exists title "$title"
   status=$?
-  printf '%s\n' "[DEBUG] Steam URL add: $title title lookup status $status"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam URL add: $title title lookup status $status"
   if [ "$status" -eq 0 ]; then
     if pgrep -x steam > /dev/null 2>&1; then
       printf '%s\n' ">>> Steam: skipping $title; exit Steam before updating shortcuts, then re-run setup."
@@ -942,7 +947,7 @@ function _add_url_steam_shortcut() {
     printf '%s\n' ">>> Steam: skipping $title; exit Steam before adding shortcuts, then re-run setup."
     return 1
   fi
-  printf '%s\n' "[DEBUG] Steam URL add: $title prerequisites passed; Flatpak $flatpak_executable"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam URL add: $title prerequisites passed; Flatpak $flatpak_executable"
   printf '%s\n' ">>> Steam: adding $title in Brave ($url) to collections: Streaming,Apps"
   if ! _steamtinkerlaunch_add --appname="$title" --exepath="/usr/bin/flatpak" --startdir="/usr/bin/" \
     --launchoptions="$launchoptions" --tags="Streaming,Apps"; then
@@ -962,7 +967,7 @@ function _add_url_steam_shortcut() {
 function _upsert_url_steam_shortcut() {
   local title="$1" url="$2" shortcuts backup status
 
-  printf '%s\n' "[DEBUG] Steam URL upsert: $title; preflight"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam URL upsert: $title; preflight"
   if [ -z "$title" ] || [[ "$url" != http://* && "$url" != https://* ]]; then
     printf '%s\n' ">>> Steam: skipping URL shortcut; title and HTTP or HTTPS URL required."
     return 1
@@ -979,10 +984,10 @@ function _upsert_url_steam_shortcut() {
     printf '%s\n' ">>> Steam: skipping $title; regular shortcuts.vdf required."
     return 1
   fi
-  printf '%s\n' "[DEBUG] Steam URL upsert: $title; target $shortcuts"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam URL upsert: $title; target $shortcuts"
   _steam_shortcut_exists title "$title"
   status=$?
-  printf '%s\n' "[DEBUG] Steam URL upsert: $title title lookup status $status"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam URL upsert: $title title lookup status $status"
   if [ "$status" -eq 1 ]; then
     _add_url_steam_shortcut "$title" "$url"
     return $?
@@ -992,13 +997,13 @@ function _upsert_url_steam_shortcut() {
     return 1
   fi
   backup=$(mktemp "${shortcuts}.backup.XXXXXX") || return 1
-  printf '%s\n' "[DEBUG] Steam URL upsert: $title; backup $backup"
+  [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam URL upsert: $title; backup $backup"
   if ! cp -p "$shortcuts" "$backup"; then
     printf '%s\n' ">>> Steam: failed to back up $shortcuts; skipping $title."
     return 1
   fi
   printf '%s\n' ">>> Steam: backing up shortcuts to $backup; replacing entries titled $title"
-  if ! python3 - "$shortcuts" "$backup" "$title" << 'PY'
+  if ! DEBUG="${DEBUG:-}" python3 - "$shortcuts" "$backup" "$title" << 'PY'
 import os
 import stat
 import sys
@@ -1069,7 +1074,8 @@ try:
         original = source.read()
     entries = parse(original)
     retained = [entry for entry in entries if entry[0] != title]
-    print(f"[DEBUG] Steam URL upsert: parsed {len(entries)} entries; matching title count {len(entries) - len(retained)}")
+    if os.environ.get("DEBUG") == "1":
+        print(f"[DEBUG] Steam URL upsert: parsed {len(entries)} entries; matching title count {len(entries) - len(retained)}")
     if len(retained) == len(entries):
         raise ValueError("title disappeared before replacement")
     # Keep the surviving entry bytes intact; renumber only the outer numeric keys.
@@ -1081,7 +1087,8 @@ try:
         result += b"\0" + str(index).encode() + b"\0" + raw[len(old_prefix):]
     result += b"\x08\x08"
     parse(result)
-    print(f"[DEBUG] Steam URL upsert: validated {len(retained)} retained entries")
+    if os.environ.get("DEBUG") == "1":
+        print(f"[DEBUG] Steam URL upsert: validated {len(retained)} retained entries")
     if os.path.islink(path):
         raise ValueError("shortcut file became a symlink")
     with open(path, "rb") as source:
@@ -1109,7 +1116,7 @@ PY
     return 1
   fi
   if ! _add_url_steam_shortcut "$title" "$url"; then
-    printf '%s\n' "[DEBUG] Steam URL upsert: $title add failed; restoring backup"
+    [ "${DEBUG:-}" != 1 ] || printf '%s\n' "[DEBUG] Steam URL upsert: $title add failed; restoring backup"
     printf '%s\n' ">>> Steam: re-add failed; restoring $shortcuts from $backup"
     cp -p "$backup" "$shortcuts" || printf '%s\n' ">>> Steam: restore failed; recover manually from $backup" >&2
     return 1
@@ -1504,7 +1511,7 @@ icons.mkdir(parents=True, exist_ok=True)
 dbus = sys.argv[1]
 agent = "org.kde.plasma.favorites.applications"
 link_path = "/ActivityManager/Resources/Linking"
-link_interface = "org.kde.ActivityManager.Resources.Linking"
+link_interface = "org.kde.ActivityManager.ResourcesLinking"
 desktop_roots = [applications, home / ".local/share/flatpak/exports/share/applications", Path("/var/lib/flatpak/exports/share/applications")]
 desktop_roots += [Path(root) / "applications" for root in os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(":")]
 
@@ -1518,8 +1525,11 @@ def desktop_entry(path):
 
 
 def call(service, path, method, *args):
-    """Call a session D-Bus method with literal arguments and a deadline; raise on failure."""
-    return subprocess.run([dbus, service, path, method, *args], check=True, capture_output=True, text=True, timeout=30).stdout.strip()
+    """Return a session D-Bus reply with a deadline; raise ValueError with captured diagnostics on command failure."""
+    result = subprocess.run([dbus, service, path, method, *args], capture_output=True, text=True, timeout=30)
+    if result.returncode != 0:
+        raise ValueError(f"{method} failed (exit {result.returncode}): {result.stderr.strip() or result.stdout.strip() or 'no D-Bus diagnostic'}")
+    return result.stdout.strip()
 
 
 def persistent_icon(icon):

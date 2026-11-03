@@ -94,6 +94,14 @@ it("persists launcher icons and adds favorites and pins only once by name", () =
 const fs = require("fs"), vm = require("vm");
 const args = process.argv.slice(2), file = process.env.KDE_STATE;
 const state = JSON.parse(fs.readFileSync(file));
+if (args[0] === "org.kde.ActivityManager" &&
+    (args[1] !== "/ActivityManager/Resources/Linking" ||
+     !["org.kde.ActivityManager.ResourcesLinking.IsResourceLinkedToActivity",
+       "org.kde.ActivityManager.ResourcesLinking.LinkResourceToActivity"].includes(args[2]) ||
+     args[3] !== "org.kde.plasma.favorites.applications" || args[5] !== ":global")) {
+  process.stderr.write("Cannot find '" + args[2] + "' in object " + args[1]);
+  process.exit(1);
+}
 if (args[2].endsWith("IsResourceLinkedToActivity")) process.stdout.write(String(state.favorites.includes(args[4])));
 else if (args[2].endsWith("LinkResourceToActivity")) state.favorites.push(args[4]);
 else {
@@ -146,4 +154,31 @@ fs.writeFileSync(file, JSON.stringify(state));
   expect(fs.readFileSync(path.join(apps, "steamos-setup-es-de.desktop"), "utf8")).toContain(
     `Exec="${home}/Emulation/tools/launchers/es-de/es-de.sh"`,
   );
+
+  // The original interface typo must fail against KDE's contract without changing saved favorites or pins.
+  const before = fs.readFileSync(state, "utf8");
+  const unfixed = spawnSync(
+    "/bin/bash",
+    [
+      "-c",
+      `${source.replace('link_interface = "org.kde.ActivityManager.ResourcesLinking"', 'link_interface = "org.kde.ActivityManager.Resources.Linking"')}\n_configure_kde_launchers`,
+    ],
+    {
+      encoding: "utf8",
+      timeout: 15000,
+      env: {
+        ...process.env,
+        HOME: home,
+        XDG_DATA_HOME: path.join(home, ".local/share"),
+        XDG_DATA_DIRS: path.join(home, "empty"),
+        PATH: `${bin}:${process.env.PATH}`,
+        KDE_STATE: state,
+      },
+    },
+  );
+  expect(unfixed.status).toBe(1);
+  expect(unfixed.stderr).toContain(
+    "org.kde.ActivityManager.Resources.Linking.IsResourceLinkedToActivity failed (exit 1): Cannot find 'org.kde.ActivityManager.Resources.Linking.IsResourceLinkedToActivity' in object /ActivityManager/Resources/Linking",
+  );
+  expect(fs.readFileSync(state, "utf8")).toBe(before);
 });

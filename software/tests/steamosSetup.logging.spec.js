@@ -17,11 +17,11 @@ const sandboxes = [];
 
 /**
  * Run the registration wrapper in an isolated home with controlled command output.
- * @param {object} options Scenario overrides for command status, preflight, and repetitions.
+ * @param {object} options Scenario overrides for command status, preflight, repetitions, and DEBUG.
  * @returns {object} Process output and paths for checking forwarded arguments and side effects.
  * @throws {Error} If fixture creation fails; creates temporary files cleaned after each test.
  */
-function runRegistration({ exitStatus = 0, preflight = "", missingExecutable = false, calls = 1 } = {}) {
+function runRegistration({ exitStatus = 0, preflight = "", missingExecutable = false, calls = 1, debug = "1" } = {}) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-logging-"));
   sandboxes.push(home);
   const binFolder = path.join(home, "bin");
@@ -54,7 +54,7 @@ ${Array.from({ length: calls }, () => '_steamtinkerlaunch_add "$@"').join("\n")}
       `--exepath=${executable}`,
       "--launchoptions=https://private.example/?token=not-a-real-secret",
     ],
-    { encoding: "utf-8", env: { ...process.env, HOME: home, PATH: `${binFolder}:${process.env.PATH}` } },
+    { encoding: "utf-8", env: { ...process.env, HOME: home, PATH: `${binFolder}:${process.env.PATH}`, DEBUG: debug } },
   );
   return { ...result, home, executable, argumentsPath };
 }
@@ -64,6 +64,13 @@ afterEach(() => {
 });
 
 describe("SteamOS shortcut registration diagnostics (subprocess)", () => {
+  it.each([null, "", "0", "true", "2"])("hides debug output with DEBUG=%s while retaining command output", (debug) => {
+    const result = runRegistration({ debug: debug ?? undefined, preflight: debug === null ? "unset DEBUG" : "", exitStatus: 17 });
+    expect(result.status).toBe(17);
+    expect(result.stdout).toBe("command stdout\n");
+    expect(result.stderr).toBe("command stderr\n");
+  });
+
   it.each([0, 17, 127])("reports command exit status %i and preserves output and arguments", (exitStatus) => {
     const result = runRegistration({ exitStatus });
 
