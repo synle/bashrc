@@ -38,6 +38,44 @@ printf '%s' hello</pre>
 }
 
 describe("generated preview fingerprint metadata", () => {
+  it("normalizes formatter-sensitive line counts only for explicitly selected source titles", async () => {
+    await renderBlock("software/scripts/steamos/setup.bash");
+    const before = await readCommand(page, ["software/scripts/steamos/setup.bash"]);
+    await page.$eval(".codeBlockShowMore", (node) => {
+      node.textContent = "Show More (98 more lines)";
+    });
+    expect(await readCommand(page, ["software/scripts/steamos/setup.bash"])).toEqual(before);
+  });
+
+  it.each([
+    { label: "date", selector: ".prism-code-block", text: "# AUTO-GENERATED - DO NOT EDIT [2026-10-28]\nprintf '%s' hello" },
+    { label: "command", selector: ".prism-code-block", text: "# AUTO-GENERATED - DO NOT EDIT [2026-10-27]\nprintf '%s' changed" },
+    { label: "title", selector: ".codeBlockBanner > div", text: "different/setup.bash" },
+  ])("retains $label changes when source line-count metadata is normalized", async ({ selector, text }) => {
+    await renderBlock("software/scripts/steamos/setup.bash");
+    const before = await readCommand(page, ["software/scripts/steamos/setup.bash"]);
+    await page.$eval(
+      selector,
+      (node, value) => {
+        node.textContent = value;
+      },
+      text,
+    );
+    const after = await readCommand(page, ["software/scripts/steamos/setup.bash"]);
+    expect(after.blocks[0].hash).not.toBe(before.blocks[0].hash);
+    expect(after.errors).toEqual([]);
+    expect(after.empty).toEqual([]);
+  });
+
+  it("keeps literal line-count changes for titles absent from the explicit allowlist", async () => {
+    await renderBlock("docs/example.sh");
+    const before = await readCommand(page, ["software/scripts/steamos/setup.bash"]);
+    await page.$eval(".codeBlockShowMore", (node) => {
+      node.textContent = "Show More (98 more lines)";
+    });
+    expect((await readCommand(page, ["software/scripts/steamos/setup.bash"])).blocks[0].hash).not.toBe(before.blocks[0].hash);
+  });
+
   it.each([
     { title: "profile_bashrc_mac.sh", commentPrefix: "#" },
     { title: ".build/gitconfig", commentPrefix: "#" },
