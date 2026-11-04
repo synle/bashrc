@@ -89,6 +89,11 @@ Missing startup files are not created. Existing `update` aliases are preserved, 
 Open a new Bash session to load the alias. It reruns the complete interactive setup, including its shortcut-clearing prompt; it is not package-update-only.
 Later definitions from sourced profiles can override it, including the managed SteamOS profile's existing pacman `update` alias.
 
+Before final confirmation, setup moves top-level regular files containing the exact, case-sensitive text `- Update -` from `~/Emulation/roms/switch` into its `dlc` subfolder.
+Hidden matching files are included; folders, symbolic links, nested files, and nonmatching files remain unchanged.
+Setup creates `dlc` only when needed and skips an absent ROM folder.
+Existing destination entries remain untouched with a diagnostic; failed moves, failed folder creation, or a symlinked `dlc` stop setup.
+
 Steam icon restoration selects the newest Desktop `grid*.tar.gz` by modification time, including plain `grid.tar.gz`.
 It retains Desktop `grid` and then backs it up as `grid-YYYY-MM-DD.tar.gz`, adding a numeric suffix on same-day reruns.
 The backup also runs when Desktop `grid` exists without an input archive.
@@ -99,10 +104,10 @@ Setup registers every top-level `~/Applications/*.AppImage` in Steam, making it 
 Before downloads, setup moves legacy `~/Apps/*.AppImage` files into `~/Applications` without replacing existing destination files.
 It removes `~/Apps` only when empty; conflicts and unrelated files remain in the legacy folder with diagnostics.
 Ghostty, Moonlight, and ProtonUp-Qt downloads use `~/Applications`; the final AppImage registration pass retains established Steam titles and collections.
-Ghostty uses the requested x86_64 nightly build `1.4.1-main+a7e8e4d`, installed as `~/Applications/Ghostty.AppImage` with executable permissions.
+Ghostty uses the pinned x86_64 stable release `1.4.0`, installed as `~/Applications/Ghostty.AppImage` with executable permissions.
 A nonempty existing Ghostty AppImage skips download; reruns repair executable permissions and reuse existing launcher entries.
 Failed or empty Ghostty downloads never reach the AppImage registration pass.
-The versioned Ghostty URL uses the mutable `tip` release tag; update the pin if upstream replaces that asset.
+The Ghostty URL uses the versioned `v1.4.0` release tag instead of `tip`, whose nightly publications replace versioned asset filenames.
 Shortcut titles use filenames without `.AppImage`; `ES-DE.AppImage` retains the title `ES-DE Emulation Station`.
 An existing `~/Applications/ES-DE.AppImage` skips the EmuDeck installer download.
 Zed installs through its official installer in the background; setup waits before running both Zed configuration scripts alongside browser extensions and tmux/vim.
@@ -400,6 +405,7 @@ Each `commands.<name>.spec.js` clicks its command and checks the exact main-body
 Content entries snapshot the banner title and MD5 of rendered `innerText.trim()`; link groups retain nested labels and literal `href` values without URL hashing.
 Hidden form-data children remain counted and fingerprinted by their IDs. Browser platform and viewport are fixed for reproducible OS warnings and layout.
 Snapshots describe the current collapsed UI, not complete downloaded source files. Published profile headers and fetched content changes require intentional review.
+The SteamOS command spec serves its setup script from the real checkout while retaining other downloads, so unpublished edits cannot fingerprint an older remote script.
 The Windows command currently records a missing published Windows Terminal artifact as an explicit error-state snapshot, not successful source loading.
 Local integration serves actual published profiles when the webapp-only build omits them; no synthetic profile content is substituted.
 

@@ -60,7 +60,7 @@ ${registration}`,
   );
 }
 
-it("installs the requested nightly AppImage executable under Applications", () => {
+it("installs the tagged stable AppImage instead of a disappearing nightly asset", () => {
   const home = createHome();
   const result = install(home);
   const executable = path.join(home, "Applications/Ghostty.AppImage");
@@ -71,7 +71,7 @@ it("installs the requested nightly AppImage executable under Applications", () =
   expect(fs.readFileSync(executable, "utf8")).toBe("#!/bin/sh");
   expect(fs.statSync(executable).mode & 0o111).toBe(0o111);
   expect(fs.readFileSync(path.join(home, "download-args"), "utf8").split("\n")).toContain(
-    "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/tip/Ghostty-1.4.1-main+a7e8e4d-x86_64.AppImage",
+    "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/v1.4.0/Ghostty-1.4.0-x86_64.AppImage",
   );
   fs.unlinkSync(path.join(home, "download-args"));
   const rerun = install(home, "22");
