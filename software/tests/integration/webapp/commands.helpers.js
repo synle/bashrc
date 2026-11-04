@@ -33,9 +33,11 @@ export function commandBrowser() {
 /**
  * Observe direct body children, retaining content while normalizing generated-artifact build dates and hidden-line counts.
  * @param {import("puppeteer").Page} page - The actual application page.
+ * @param {string[]} [lineCountTitles=[]] Additional exact source titles whose formatter-sensitive hidden-line counts are metadata.
  * @returns {Promise<{blocks: object[], errors: string[], empty: string[]}>} Visible fingerprints and explicit loading/error observations.
+ * @throws {Error} When browser DOM evaluation fails.
  */
-export async function readCommand(page) {
+export async function readCommand(page, lineCountTitles = []) {
   const observed = await page.$eval("#mainBodyContainer", (container) => {
     const children = [...container.children];
     return {
@@ -62,12 +64,15 @@ export async function readCommand(page) {
     ...observed,
     blocks: observed.blocks.map((block) => {
       if ("links" in block) return block;
-      // Generated assets change metadata at publish time; keep their actual visible content fingerprinted.
-      const text = /^(?:profile_bashrc_[a-z_]+\.sh$|\.build\/)/.test(block.title)
-        ? block.text
-            .replace(/^((?:#|\/\/) AUTO-GENERATED - DO NOT EDIT) \[\d{4}-\d{2}-\d{2}\]$/m, "$1 [<build-date>]")
-            .replace(/Show More \(\d+ more lines?\)/g, "Show More (<line-count> more lines)")
-        : block.text;
+      // Build dates belong only to generated assets; source line counts require explicit caller opt-in.
+      const generated = /^(?:profile_bashrc_[a-z_]+\.sh$|\.build\/)/.test(block.title);
+      let text = block.text;
+      if (generated) {
+        text = text.replace(/^((?:#|\/\/) AUTO-GENERATED - DO NOT EDIT) \[\d{4}-\d{2}-\d{2}\]$/m, "$1 [<build-date>]");
+      }
+      if (generated || lineCountTitles.includes(block.title)) {
+        text = text.replace(/Show More \(\d+ more lines?\)/g, "Show More (<line-count> more lines)");
+      }
       return { title: block.title, hash: createHash("md5").update(text).digest("hex") };
     }),
   };
@@ -77,9 +82,11 @@ export async function readCommand(page) {
  * Click one actual command and wait until downloads and rendered fingerprints settle.
  * @param {import("puppeteer").Page} page - Private browser page.
  * @param {string} command - Literal data-nav-idx of the command to select.
+ * @param {string[]} [lineCountTitles=[]] Exact additional source titles whose hidden-line count metadata is normalized.
  * @returns {Promise<{blocks: object[], errors: string[], empty: string[]}>} Settled observations; assertions reject empty bodies and unfinished code blocks.
+ * @throws {Error} When browser operations fail or content does not settle; removes temporary request listeners before rejection.
  */
-export async function selectCommand(page, command) {
+export async function selectCommand(page, command, lineCountTitles = []) {
   const pending = new Set();
   const started = (request) => pending.add(request);
   const finished = (request) => pending.delete(request);
@@ -97,7 +104,7 @@ export async function selectCommand(page, command) {
     await expect
       .poll(
         async () => {
-          const current = await readCommand(page);
+          const current = await readCommand(page, lineCountTitles);
           const fingerprint = JSON.stringify(current);
           const settled = pending.size === 0 && current.empty.length === 0 && current.blocks.length > 0 && fingerprint === previous;
           previous = fingerprint;
@@ -106,7 +113,7 @@ export async function selectCommand(page, command) {
         { timeout: BROWSER_TIMEOUT, interval: 200 },
       )
       .toBe(true);
-    const result = await readCommand(page);
+    const result = await readCommand(page, lineCountTitles);
     expect(result.empty).toEqual([]);
     return result;
   } finally {

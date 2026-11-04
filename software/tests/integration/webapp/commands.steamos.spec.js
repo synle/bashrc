@@ -21,11 +21,11 @@ describe("command snapshots", () => {
         : request.continue();
       response.catch((error) => requestErrors.push(error.message));
     });
-    const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-steamos");
+    const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-steamos", [STEAMOS_SETUP_PATH]);
     expect(requestErrors).toEqual([]);
     expect(blocks).toHaveLength(15);
     expect(errors).toMatchInlineSnapshot(`[]`);
-    // Hashes fingerprint rendered source, using this checkout for SteamOS; legitimate source changes can make this snapshot stale.
+    // The full source is checked below; formatter versions may change hidden-line counts without changing this preview.
     // For hash-only failures, inspect the changed source first; do not accept unexpected content, links, or UI changes.
     // Refresh: npm run test:integration:local -- --update=all software/tests/integration/webapp/commands.steamos.spec.js
     // Verify: npm run test:integration:local -- software/tests/integration/webapp/commands.steamos.spec.js
@@ -37,7 +37,7 @@ describe("command snapshots", () => {
           "title": "software/bootstrap/setup.sh",
         },
         {
-          "hash": "a7c6e5174970749e3d64015d59de0e8f",
+          "hash": "274273ad07625221746b0a4d73f05cf3",
           "title": "software/scripts/steamos/setup.bash",
         },
         {
@@ -127,5 +127,29 @@ describe("command snapshots", () => {
         },
       ]
     `);
+    await browser.page.$$eval(
+      ".codeBlockWrapper",
+      (wrappers, title) => {
+        const wrapper = wrappers.find((node) => node.querySelector(".codeBlockBanner > div:first-child")?.textContent.trim() === title);
+        wrapper.querySelector(".codeBlockShowMore").click();
+      },
+      STEAMOS_SETUP_PATH,
+    );
+    await expect
+      .poll(
+        () =>
+          browser.page.$$eval(
+            ".codeBlockWrapper",
+            (wrappers, title) => {
+              const wrapper = wrappers.find(
+                (node) => node.querySelector(".codeBlockBanner > div:first-child")?.textContent.trim() === title,
+              );
+              return wrapper.querySelector(".prism-code-block").textContent;
+            },
+            STEAMOS_SETUP_PATH,
+          ),
+        { timeout: 10000 },
+      )
+      .toBe(source.trim());
   }, 90000);
 });
