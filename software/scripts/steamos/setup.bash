@@ -1221,8 +1221,8 @@ if ! _install_steamtinkerlaunch_dependencies || ! _install_steamtinkerlaunch; th
 fi
 
 # --- Ghostty (AppImage) ---
-# Requested x86_64 nightly build; update this pin if upstream replaces the tip asset.
-GHOSTTY_VERSION="1.4.1-main+a7e8e4d"
+# Pin the stable x86_64 release; rolling tip builds replace their versioned filenames.
+GHOSTTY_VERSION="1.4.0"
 if [ -s "$APPS_FOLDER/Ghostty.AppImage" ]; then
   printf '%s\n' ">>> Ghostty AppImage already present; skipping download."
 else
@@ -1230,7 +1230,7 @@ else
   # Keep partial downloads outside the existing *.AppImage registration pass.
   if ghostty_download=$(mktemp "$APPS_FOLDER/.ghostty-download.XXXXXX"); then
     if ! curl -fsSL --connect-timeout 15 --max-time 120 \
-      "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/tip/Ghostty-$GHOSTTY_VERSION-x86_64.AppImage" \
+      "https://github.com/pkgforge-dev/ghostty-appimage/releases/download/v$GHOSTTY_VERSION/Ghostty-$GHOSTTY_VERSION-x86_64.AppImage" \
       -o "$ghostty_download" || [ ! -s "$ghostty_download" ] || ! mv "$ghostty_download" "$APPS_FOLDER/Ghostty.AppImage"; then
       printf '%s\n' ">>> Ghostty AppImage download or preparation failed." >&2
     fi
@@ -1685,6 +1685,44 @@ KDE_LAUNCHERS_PY
 if ! _configure_kde_launchers; then
   printf '%s\n' ">>> KDE launcher setup incomplete; re-run in Desktop Mode after fixing output above." >&2
 fi
+
+# --- Switch update files ---
+# Move matching top-level regular files, including hidden files; preserve existing destination entries.
+# No arguments. Creates dlc only when needed; failed folder creation or moves stop setup.
+# Keep glob options and temporary variables inside this subshell; do not follow file or dlc symlinks.
+(
+  # Source ROM folder and its update-file destination.
+  switch_roms_folder="$HOME/Emulation/roms/switch"
+  switch_dlc_folder="$switch_roms_folder/dlc"
+  [ -d "$switch_roms_folder" ] || exit 0
+  if [ -L "$switch_dlc_folder" ]; then
+    printf '%s\n' ">>> Switch updates: dlc must not be a symbolic link: $switch_dlc_folder" >&2
+    exit 1
+  fi
+  shopt -s nullglob dotglob
+  for switch_update_file in "$switch_roms_folder/"*"- Update -"*; do
+    [ -f "$switch_update_file" ] && [ ! -L "$switch_update_file" ] || continue
+    switch_update_destination="$switch_dlc_folder/${switch_update_file##*/}"
+    if [ -e "$switch_update_destination" ] || [ -L "$switch_update_destination" ]; then
+      printf '>>> Switch updates: destination exists; keeping source: %s\n' "$switch_update_file" >&2
+      continue
+    fi
+    if ! mkdir -p "$switch_dlc_folder"; then
+      printf '>>> Switch updates: could not create dlc folder: %s\n' "$switch_dlc_folder" >&2
+      exit 1
+    fi
+    if ! mv -n "$switch_update_file" "$switch_dlc_folder/"; then
+      printf '>>> Switch update move failed: %s\n' "$switch_update_file" >&2
+      exit 1
+    fi
+    # mv -n may succeed without moving when another writer creates the destination.
+    if [ -e "$switch_update_file" ] || [ -L "$switch_update_file" ]; then
+      printf '>>> Switch updates: destination exists; keeping source: %s\n' "$switch_update_file" >&2
+    else
+      printf '>>> Switch update moved: %s\n' "$switch_update_destination"
+    fi
+  done
+) || exit 1
 
 # --- Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then

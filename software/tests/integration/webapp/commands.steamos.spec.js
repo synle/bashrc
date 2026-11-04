@@ -1,16 +1,31 @@
 /** Real browser fingerprints for the Setup Steamos command and every direct body child. */
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "fs";
 import { commandBrowser, selectCommand } from "./commands.helpers.js";
+
+/** Own source served from this checkout so unpublished edits cannot fingerprint a different remote revision. */
+const STEAMOS_SETUP_PATH = "software/scripts/steamos/setup.bash";
 
 /** A dedicated browser session prevents command state leaking across spec files. */
 const browser = commandBrowser();
 
 describe("command snapshots", () => {
   it("Setup Steamos keeps its current block titles, content, links, and count", async () => {
+    const source = readFileSync(STEAMOS_SETUP_PATH, "utf8");
+    const requestErrors = [];
+    await browser.page.setRequestInterception(true);
+    // Keep the real renderer and all other downloads; only this owned source comes from the checked-out revision.
+    browser.page.on("request", (request) => {
+      const response = request.url().endsWith(`/${STEAMOS_SETUP_PATH}`)
+        ? request.respond({ status: 200, contentType: "text/plain", headers: { "access-control-allow-origin": "*" }, body: source })
+        : request.continue();
+      response.catch((error) => requestErrors.push(error.message));
+    });
     const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-steamos");
+    expect(requestErrors).toEqual([]);
     expect(blocks).toHaveLength(15);
     expect(errors).toMatchInlineSnapshot(`[]`);
-    // Hashes fingerprint live-fetched rendered source; legitimate source changes can make this snapshot stale.
+    // Hashes fingerprint rendered source, using this checkout for SteamOS; legitimate source changes can make this snapshot stale.
     // For hash-only failures, inspect the changed source first; do not accept unexpected content, links, or UI changes.
     // Refresh: npm run test:integration:local -- --update=all software/tests/integration/webapp/commands.steamos.spec.js
     // Verify: npm run test:integration:local -- software/tests/integration/webapp/commands.steamos.spec.js
@@ -22,7 +37,7 @@ describe("command snapshots", () => {
           "title": "software/bootstrap/setup.sh",
         },
         {
-          "hash": "d2a85b5b2f05863252e8566c03f9a5fa",
+          "hash": "a7c6e5174970749e3d64015d59de0e8f",
           "title": "software/scripts/steamos/setup.bash",
         },
         {
