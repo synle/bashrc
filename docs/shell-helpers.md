@@ -94,6 +94,51 @@ Regression coverage lives in `software/tests/nativeCd.spec.js` and `software/tes
 These shortcuts are explicit aliases, not generated command variants.
 Long listings use native timestamps and permission columns.
 
+## Image compression
+
+`image_compress` compresses individual PNG/JPG/JPEG files or recursively processes a folder, preserving relative paths.
+It requires Node.js and the `sharp` executable from [sharp-cli](https://github.com/vseventer/sharp-cli).
+Use Bash on macOS or WSL, and Git Bash on native Windows; this is not a PowerShell function.
+Dependencies are not installed automatically.
+
+```bash
+image_compress --purge=no photo.jpg                          # retain photo.jpg; create photo.converted.jpg
+image_compress --quality=85 --purge=0 photos compressed       # retain sources; mirror images into compressed/
+image_compress --outputFormat=png --purge=no photo.jpg        # create photo.converted.png
+image_compress --outputFormat=jpg --autoOrient=y photos out  # convert recursively, then remove successful sources
+image_compress --help
+```
+
+| Option                              | Default        | Meaning                                                                       |
+| ----------------------------------- | -------------- | ----------------------------------------------------------------------------- |
+| `--quality=0-100`                   | JPG 82; PNG 85 | Lossy encoder quality; zero maps to the encoder minimum of one.               |
+| `--compression=0-9`                 | 9              | PNG zlib compression level; ignored for JPEG.                                 |
+| `--purge=value`                     | true           | Replace sources in place, or remove them after successful output publication. |
+| `--autoOrient=value`                | true           | Apply EXIF orientation before encoding.                                       |
+| `--outputFormat=preserve\|jpg\|png` | preserve       | Keep the input extension or convert to the chosen format.                     |
+
+Both booleans use the global `is_truthy`: `1`, `true`, `y`, and `yes` enable them, case-insensitively; other values disable them.
+Options also accept separate values and must precede the input. Use `--` before a leading-dash input.
+An explicit output always names a folder, including for a single source file.
+
+**The default is destructive:** `--purge=true` replaces or deletes original images after successful lossy encoding.
+Without an output folder, purge replaces the source; a format change writes the new extension and removes the old file.
+Without purge or an output folder, names gain `.converted` before their preserved or chosen extension.
+With an output folder, names remain ordinary filenames and nested folders mirror the input structure.
+PNG uses palette reduction, so it is not lossless. JPEG conversion flattens transparency onto white. Sharp strips metadata by default.
+Compression may increase file size; repeated lossy conversion can reduce quality further. Keep backups when using purge.
+
+The command preflights existing destinations and name collisions before encoding; it never intentionally overwrites a separate existing destination.
+Each image is staged beside its destination; encoding failures retain the source and remove staging files.
+Detected source changes also prevent replacement or purge. The command is not a lock against arbitrary concurrent filesystem writers.
+Successful earlier conversions remain when a later file fails; the batch returns nonzero for any failure.
+Each encoder invocation has a two-minute deadline.
+Recursive scans skip symlinks, protected `.secret.` paths, previously converted images, and the explicit output subtree.
+Direct symlink inputs and outputs are rejected; parent aliases such as macOS `/var` are resolved to physical paths.
+
+The function is included in the standard profile; refresh with `./run` and open a fresh shell.
+Contract tests live in `software/tests/imageCompress*.spec.js`; their owned encoder fixture verifies command arguments and filesystem behavior, not compression quality.
+
 ## Worktree listing
 
 `worktree_list` lists primary and linked worktrees without changing Git state or querying remote services.
