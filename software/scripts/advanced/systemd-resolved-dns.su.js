@@ -1,4 +1,4 @@
-/** Bootstrap systemd-resolved with Cloudflare Family DNS and Quad9 fallback once, then restart the resolver service. */
+/** Bootstrap systemd-resolved with Quad9 DNS and Cloudflare Family fallback once, then restart the resolver service. */
 
 /** Existing systemd-resolved configuration; absent files are never created. @type {string} */
 const RESOLVED_DNS_CONFIG_PATH = "/etc/systemd/resolved.conf";
@@ -7,10 +7,11 @@ const RESOLVED_DNS_BOOTSTRAP_MARKER = "# Sy Bootstrap DNS Cloudflare DNS with Fa
 /** Requested resolver addresses; Quad9 provides threat blocking plus ECS, not family filtering. @type {string} */
 const RESOLVED_DNS_BOOTSTRAP_BLOCK = `${RESOLVED_DNS_BOOTSTRAP_MARKER}
 [Resolve]
-# Primary: Cloudflare Family (Malware + Family Content Filter)
-DNS=1.1.1.3 1.0.0.3 2606:4700:4700::1113 2606:4700:4700::1003
-# Fallback: Quad9 (Malware blocking + ECS; no family content filter)
-FallbackDNS=9.9.9.11 149.112.112.11 2620:fe::11`;
+# Primary: Quad9 (Malware & Phishing Threat Blocking + ECS; no family content filter)
+DNS=9.9.9.11 149.112.112.11 2620:fe::11
+
+# Fallback: Cloudflare Family Filter (Malware Blocking + Family Safe)
+FallbackDNS=1.1.1.3 1.0.0.3 2606:4700:4700::1113 2606:4700:4700::1003`;
 
 /**
  * Back up unmarked resolver configuration, disable all prior settings, and apply the selected DNS block.

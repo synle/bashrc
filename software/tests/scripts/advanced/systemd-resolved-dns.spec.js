@@ -13,10 +13,11 @@ const CONFIG_PATH = "/etc/systemd/resolved.conf";
 /** Resolver block prescribed by the request, with an accurate Quad9 label. @type {string} */
 const DNS_BLOCK = `# Sy Bootstrap DNS Cloudflare DNS with Family Filter
 [Resolve]
-# Primary: Cloudflare Family (Malware + Family Content Filter)
-DNS=1.1.1.3 1.0.0.3 2606:4700:4700::1113 2606:4700:4700::1003
-# Fallback: Quad9 (Malware blocking + ECS; no family content filter)
-FallbackDNS=9.9.9.11 149.112.112.11 2620:fe::11`;
+# Primary: Quad9 (Malware & Phishing Threat Blocking + ECS; no family content filter)
+DNS=9.9.9.11 149.112.112.11 2620:fe::11
+
+# Fallback: Cloudflare Family Filter (Malware Blocking + Family Safe)
+FallbackDNS=1.1.1.3 1.0.0.3 2606:4700:4700::1113 2606:4700:4700::1003`;
 
 /**
  * Load the installer with owned IO boundaries represented by private fixture state.
