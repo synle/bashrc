@@ -126,21 +126,33 @@ describe("SteamOS long package output (Bash subprocess)", () => {
   });
 
   it.each([
-    { status: 0, flatpakCalls: "update\n-y\nupdate\n-y\n" },
-    { status: 17, flatpakCalls: "" },
-  ])("installs Python YAML noninteractively on reruns with pacman status $status", ({ status, flatpakCalls }) => {
-    const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-python-yaml-"));
+    {
+      status: 0,
+      expectedStatus: 0,
+      argumentsText:
+        "-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\np7zip\n-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\np7zip\n",
+    },
+    {
+      status: 17,
+      expectedStatus: 1,
+      argumentsText: "-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\np7zip\n",
+    },
+  ])("installs required tools without confirmation on reruns with pacman status $status", ({ status, expectedStatus, argumentsText }) => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-required-tools-"));
     folders.push(home);
     fs.mkdirSync(path.join(home, "bin"));
-    fs.writeFileSync(path.join(home, "flatpak-arguments"), "");
     fs.writeFileSync(path.join(home, "bin/pacman"), `#!/bin/bash\nprintf '%s\\n' "$@" >> "$HOME/arguments"\nexit ${status}\n`, {
       mode: 0o755,
     });
-    fs.writeFileSync(path.join(home, "bin/flatpak"), '#!/bin/bash\nprintf \'%s\\n\' "$@" >> "$HOME/flatpak-arguments"\n', { mode: 0o755 });
-    const dependencies = source.split("# --- Brave dependencies ---")[1].split("# --- Brave and URL shortcuts")[0];
+    const dependencies = source.split("# --- BEGIN - Required system dependencies ---")[1].split("# --- BEGIN - Shell update alias ---")[0];
     const result = spawnSync(
       "/bin/bash",
-      ["--noprofile", "--norc", "-c", `${logger}\nfunction sudo() { "$@"; }\nDO_SYSTEM_UPGRADE=0\n${dependencies}\n${dependencies}`],
+      [
+        "--noprofile",
+        "--norc",
+        "-c",
+        `${logger}\nfunction sudo() { [ "$1" = -v ] && return 0; "$@"; }\nfunction _prompt() { exit 99; }\n${dependencies}\n${dependencies}`,
+      ],
       {
         encoding: "utf8",
         timeout: 5000,
@@ -148,10 +160,47 @@ describe("SteamOS long package output (Bash subprocess)", () => {
       },
     );
 
-    expect(result.status, result.stderr).toBe(0);
-    expect(fs.readFileSync(path.join(home, "arguments"), "utf8")).toBe(
-      "-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\n-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\n",
-    );
-    expect(fs.readFileSync(path.join(home, "flatpak-arguments"), "utf8")).toBe(flatpakCalls);
+    expect(result.status, result.stderr).toBe(expectedStatus);
+    expect(fs.readFileSync(path.join(home, "arguments"), "utf8")).toBe(argumentsText);
+    expect(result.stdout).not.toContain("Skipped system upgrade");
   });
+
+  it.each([
+    { system: 0, flatpak: 0, pacmanStatus: 0, calls: "" },
+    { system: 0, flatpak: 1, pacmanStatus: 0, calls: "flatpak:update -y\n" },
+    { system: 1, flatpak: 0, pacmanStatus: 0, calls: "pacman:-Syu --noconfirm\n" },
+    { system: 1, flatpak: 1, pacmanStatus: 0, calls: "pacman:-Syu --noconfirm\nflatpak:update -y\n" },
+    { system: 1, flatpak: 1, pacmanStatus: 17, calls: "pacman:-Syu --noconfirm\nflatpak:update -y\n" },
+  ])(
+    "separates system=$system and Flatpak=$flatpak choices with pacman status $pacmanStatus",
+    ({ system, flatpak, pacmanStatus, calls }) => {
+      const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-upgrade-choices-"));
+      folders.push(home);
+      fs.writeFileSync(path.join(home, "calls"), "");
+      const upgrades = source.split("# --- BEGIN - Optional system upgrades ---")[1].split("# --- END - Optional Flatpak updates ---")[0];
+      const result = spawnSync(
+        "/bin/bash",
+        [
+          "--noprofile",
+          "--norc",
+          "-c",
+          `${logger}
+function sudo() { "$@"; }
+function pacman() { printf 'pacman:%s\\n' "$*" >> "$HOME/calls"; return ${pacmanStatus}; }
+function flatpak() { printf 'flatpak:%s\\n' "$*" >> "$HOME/calls"; }
+DO_SYSTEM_UPGRADE=${system}
+DO_FLATPAK_UPGRADE=${flatpak}
+${upgrades}`,
+        ],
+        {
+          encoding: "utf8",
+          timeout: 5000,
+          env: { ...process.env, HOME: home, BASHRC_TEMP_ROOT_DIR: home, BASH_ENV: "" },
+        },
+      );
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(fs.readFileSync(path.join(home, "calls"), "utf8")).toBe(calls);
+    },
+  );
 });

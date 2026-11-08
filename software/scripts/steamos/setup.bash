@@ -10,6 +10,7 @@
 # Fixed site URLs open directly in kiosk mode; do not use "--app=" or URI forwarding.
 STEAMOS_SCRIPT_FOLDER="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+# --- BEGIN - Setup diagnostics ---
 # Print a yes/no prompt with only the default choice in red; read from /dev/tty.
 # $1: prompt text; $2: optional default (Y or N; defaults to N).
 # Return 0 for Yes, 1 for No, invalid input, or unavailable terminal/input.
@@ -101,7 +102,28 @@ function _run_long_install() {
 
 _start_steamos_setup_log || exit 1
 
-# --- Shell update alias ---
+# --- END - Setup diagnostics ---
+
+# --- BEGIN - Required system dependencies ---
+# Install prerequisites on every run before optional prompts, downloads, or application setup.
+# No opt-in or package confirmation; stop if authentication or required installation fails.
+if ! sudo -v; then
+  printf '%s\n' ">>> SteamOS setup stopped: sudo authentication failed." >&2
+  exit 1
+fi
+if ! type -P pacman > /dev/null; then
+  printf '%s\n' ">>> SteamOS setup stopped: pacman is required to install system tools." >&2
+  exit 1
+fi
+printf '%s\n' ">>> Installing required tools: vim, tmux, fuse2, python-yaml and p7zip"
+if ! _run_long_install "Required system tools" sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml p7zip; then
+  printf '%s\n' ">>> SteamOS setup stopped: required tool installation failed; review package log." >&2
+  exit 1
+fi
+
+# --- END - Required system dependencies ---
+
+# --- BEGIN - Shell update alias ---
 # Append the setup alias only to existing Bash startup files without a direct update alias.
 # No arguments. Returns nonzero on read, backup, or append failure; never creates startup files.
 # Saves original/latest backups and logs each add or skip; existing aliases remain untouched.
@@ -152,6 +174,9 @@ if ! _register_setup_update_alias; then
   printf '%s\n' ">>> Shell update alias setup incomplete; review the output above. Continuing setup." >&2
 fi
 
+# --- END - Shell update alias ---
+
+# --- BEGIN - Initial setup choices ---
 # Steam must be fully closed before setup changes its shortcut database.
 if ! type -P pgrep > /dev/null; then
   printf '%s\n' ">>> Steam setup: cannot check whether Steam is running; pgrep is unavailable." >&2
@@ -159,48 +184,53 @@ if ! type -P pgrep > /dev/null; then
 fi
 
 while pgrep -x steam > /dev/null 2>&1; do
-  if ! _prompt "Steam is open. Close Steam now, then answer Yes to recheck; No aborts setup." Y; then
+  if ! _prompt "Steam is open. Close Steam now, then answer Yes to recheck; No aborts setup." Y; then # --- prompt - Steam shortcuts ---
     printf '%s\n' ">>> Steam setup stopped. Close Steam and re-run setup." >&2
     exit 1
   fi
 done
 
-if _prompt "Clear all user-defined non-Steam shortcuts from the active Steam account?" Y; then
+if _prompt "Clear all user-defined non-Steam shortcuts from the active Steam account?" Y; then # --- prompt - Steam shortcuts ---
   CLEAR_USER_STEAM_SHORTCUTS=1
 else
   CLEAR_USER_STEAM_SHORTCUTS=0
 fi
 
-if _prompt "Install Decky Loader, plugins, and CSS Loader themes?"; then
+if _prompt "Install Decky Loader, plugins, and CSS Loader themes?"; then # --- prompt - Decky Loader + plugins + CSS Loader themes ---
   DO_DECKY_SETUP=1
 else
   DO_DECKY_SETUP=0
 fi
 
-if _prompt "Run system upgrade (sudo pacman -Syu / paru -Syu)?"; then
+if _prompt "Run system upgrade (sudo pacman -Syu / paru -Syu)?"; then # --- prompt - Optional system upgrades ---
   DO_SYSTEM_UPGRADE=1
 else
   DO_SYSTEM_UPGRADE=0
 fi
 
-# Collect the late USB choice before any downloads or long installation steps.
-if _prompt "Enable wake-up for all supported USB devices (may cause accidental wake-ups)?" Y; then
+if _prompt "Run Flatpak update (flatpak update)?" Y; then # --- prompt - Optional Flatpak updates ---
+  DO_FLATPAK_UPGRADE=1
+else
+  DO_FLATPAK_UPGRADE=0
+fi
+
+# Collect the late USB choice before optional upgrades or application installation.
+if _prompt "Enable wake-up for all supported USB devices (may cause accidental wake-ups)?" Y; then # --- prompt - USB wake-up ---
   DO_USB_WAKE_SETUP=1
 else
   DO_USB_WAKE_SETUP=0
 fi
 
-# Authenticate before downloads and installation; cached credentials may avoid a prompt.
-if ! sudo -v; then
-  printf '%s\n' ">>> SteamOS setup stopped: sudo authentication failed." >&2
-  exit 1
-fi
+# --- END - Initial setup choices ---
 
+# --- BEGIN - Application folders ---
 DESKTOP_FOLDER="$HOME/Desktop"
 APPS_FOLDER="$HOME/Applications"
 mkdir -p "$DESKTOP_FOLDER" "$APPS_FOLDER"
 
-# --- Legacy AppImage migration ---
+# --- END - Application folders ---
+
+# --- BEGIN - Legacy AppImage migration ---
 # Move only top-level legacy AppImages without overwriting destination files; remove only an empty legacy folder.
 if [ -d "$HOME/Apps" ] && [ ! -L "$HOME/Apps" ]; then
   for legacy_appimage in "$HOME/Apps/"*.AppImage; do
@@ -220,7 +250,9 @@ if [ -d "$HOME/Apps" ] && [ ! -L "$HOME/Apps" ]; then
   fi
 fi
 
-# --- Zed background installation ---
+# --- END - Legacy AppImage migration ---
+
+# --- BEGIN - Zed background installation ---
 # Install the official Linux bundle concurrently; join before Zed configuration and desktop registration.
 (
   set -o pipefail
@@ -228,6 +260,9 @@ fi
 ) < /dev/null &
 ZED_INSTALL_PID=$!
 
+# --- END - Zed background installation ---
+
+# --- BEGIN - Brave prerequisite ---
 # Install or confirm Flatpak Brave before downloads and Steam shortcut setup.
 # No arguments. Returns nonzero if Flatpak is missing or installation fails; installs the user-scoped app.
 function _install_flatpak_brave_prerequisite() {
@@ -251,7 +286,9 @@ else
   printf '%s\n' ">>> Flatpak Brave setup failed; continuing with the remaining SteamOS setup." >&2
 fi
 
-# --- EmuDeck ---
+# --- END - Brave prerequisite ---
+
+# --- BEGIN - EmuDeck ---
 # Reuse the existing ES-DE installation instead of downloading its bootstrap installer again.
 if [ -f "$APPS_FOLDER/ES-DE.AppImage" ]; then
   printf '%s\n' ">>> ES-DE AppImage already present; skipping EmuDeck installer download."
@@ -261,12 +298,16 @@ else
   chmod +x "$DESKTOP_FOLDER/EmuDeck.desktop"
 fi
 
-# --- SponsorBlock config (vendor-verified export for the YouTube blocker) ---
+# --- END - EmuDeck ---
+
+# --- BEGIN - SponsorBlock config (vendor-verified export for the YouTube blocker) ---
 printf '%s\n' ">>> Downloading SponsorBlock config to $DESKTOP_FOLDER/sponsporblock.json"
 curl -fsSL "https://raw.githubusercontent.com/synle/bashrc/HEAD/assets/steamos/sponsporblock.json" \
   -o "$DESKTOP_FOLDER/sponsporblock.json"
 
-# --- Decky Loader + plugins + CSS Loader themes ---
+# --- END - SponsorBlock config (vendor-verified export for the YouTube blocker) ---
+
+# --- BEGIN - Decky Loader + plugins + CSS Loader themes ---
 # Delegate the opt-in Decky installation to the standard bootstrap, which supplies Node.js.
 # Returns its exit status; writes only a private temporary installer before delegation.
 function _bootstrap_decky_loader_plugins_themes() {
@@ -291,7 +332,9 @@ function _bootstrap_decky_loader_plugins_themes() {
   printf '%s\n' ">>> Decky bootstrap: finished with status $status."
   return "$status"
 }
-# --- Steam shortcuts ---
+# --- END - Decky Loader + plugins + CSS Loader themes ---
+
+# --- BEGIN - Steam shortcuts ---
 # Locate the single local Steam account's shortcut file.
 # Prints path; returns nonzero if the account cannot be identified safely.
 function _steam_shortcuts_file() {
@@ -1220,7 +1263,9 @@ if ! _install_steamtinkerlaunch_dependencies || ! _install_steamtinkerlaunch; th
   printf '%s\n' ">>> Steam shortcuts need SteamTinkerLaunch; fix installation output above and re-run setup."
 fi
 
-# --- Ghostty (AppImage) ---
+# --- END - Steam shortcuts ---
+
+# --- BEGIN - Ghostty (AppImage) ---
 # Pin the stable x86_64 release; rolling tip builds replace their versioned filenames.
 GHOSTTY_VERSION="1.4.0"
 if [ -s "$APPS_FOLDER/Ghostty.AppImage" ]; then
@@ -1243,7 +1288,9 @@ if [ -s "$APPS_FOLDER/Ghostty.AppImage" ] && ! chmod a+x "$APPS_FOLDER/Ghostty.A
   printf '%s\n' ">>> Ghostty AppImage executable preparation failed." >&2
 fi
 
-# --- Moonlight (AppImage) ---
+# --- END - Ghostty (AppImage) ---
+
+# --- BEGIN - Moonlight (AppImage) ---
 MOONLIGHT_VERSION="6.2.0"
 printf '%s\n' ">>> Downloading Moonlight AppImage to $APPS_FOLDER/Moonlight.AppImage"
 if ! curl -fsSL "https://github.com/moonlight-stream/moonlight-qt/releases/download/v$MOONLIGHT_VERSION/Moonlight-$MOONLIGHT_VERSION-x86_64.AppImage" \
@@ -1251,30 +1298,36 @@ if ! curl -fsSL "https://github.com/moonlight-stream/moonlight-qt/releases/downl
   printf '%s\n' ">>> Moonlight AppImage download failed."
 fi
 
-# --- ProtonUp-Qt (AppImage) ---
+# --- END - Moonlight (AppImage) ---
+
+# --- BEGIN - ProtonUp-Qt (AppImage) ---
 printf '%s\n' ">>> Downloading ProtonUp-Qt AppImage to $APPS_FOLDER/ProtonUp-Qt.AppImage"
 if ! curl -fsSL "https://github.com/DavidoTek/ProtonUp-Qt/releases/download/v2.16.0/ProtonUp-Qt-2.16.0-x86_64.AppImage" \
   -o "$APPS_FOLDER/ProtonUp-Qt.AppImage"; then
   printf '%s\n' ">>> ProtonUp-Qt AppImage download failed."
 fi
 
-# --- Brave dependencies ---
-if type -P pacman > /dev/null; then
-  printf '%s\n' ">>> Installing vim, tmux, fuse2 and python-yaml"
-  if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
-    printf '%s\n' ">>> Updating system (pacman -Syu)"
-    _run_long_install "System upgrade" sudo pacman -Syu --noconfirm
-  else
-    printf '%s\n' ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
-  fi
-  if _run_long_install "Vim, tmux, FUSE, and Python YAML installation" sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml; then
-    _run_long_install "Flatpak update" flatpak update -y
-  else
-    printf '%s\n' ">>> Steam: vim/tmux/fuse2/python-yaml package installation failed; continuing."
-  fi
+# --- END - ProtonUp-Qt (AppImage) ---
+
+# --- BEGIN - Optional system upgrades ---
+if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
+  printf '%s\n' ">>> Updating system (pacman -Syu)"
+  _run_long_install "System upgrade" sudo pacman -Syu --noconfirm
+else
+  printf '%s\n' ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
+fi
+# --- END - Optional system upgrades ---
+
+# --- BEGIN - Optional Flatpak updates ---
+if [ "$DO_FLATPAK_UPGRADE" -eq 1 ]; then
+  _run_long_install "Flatpak update" flatpak update -y
+else
+  printf '%s\n' ">>> Skipped Flatpak update: flatpak update -y"
 fi
 
-# --- Brave and URL shortcuts (Flatpak prerequisite installed at startup) ---
+# --- END - Optional Flatpak updates ---
+
+# --- BEGIN - Brave and URL shortcuts (Flatpak prerequisite installed at startup) ---
 if [ "$BRAVE_FLATPAK_READY" -eq 1 ] && type -P flatpak > /dev/null; then
   _add_url_steam_shortcut "Brave" "https://synle.github.io/fav/?tv"
   _add_url_steam_shortcut "Netflix" "https://www.netflix.com/"
@@ -1288,7 +1341,9 @@ else
   printf '%s\n' ">>> Steam: Brave shortcuts skipped; Flatpak Brave prerequisite is missing. Continuing setup." >&2
 fi
 
-# --- Browser Extensions + editors (via the synle/bashrc installer) ---
+# --- END - Brave and URL shortcuts (Flatpak prerequisite installed at startup) ---
+
+# --- BEGIN - Browser Extensions + editors (via the synle/bashrc installer) ---
 # Join the background install before deploying both Zed configuration scripts.
 if ! wait "$ZED_INSTALL_PID"; then
   printf '%s\n' ">>> Zed installation failed; review installer output." >&2
@@ -1303,13 +1358,18 @@ chmod +x run && ./run --skip-prompt --files=url-porter,skippy-ff,software/script
 rm -rf "$tmp"
 popd
 
-# --- Remove Kate ---
+# --- END - Browser Extensions + editors (via the synle/bashrc installer) ---
+
+# --- BEGIN - Remove Kate ---
 if type -P pacman > /dev/null && pacman -Q kate > /dev/null 2>&1; then
   if ! _run_long_install "Kate removal" sudo pacman -R --noconfirm kate; then
     printf '%s\n' ">>> Kate removal failed; review package log." >&2
   fi
 fi
 
+# --- END - Remove Kate ---
+
+# --- BEGIN - Optional AUR upgrades ---
 if type -P paru > /dev/null && grep -q '^ID=cachyos' /etc/os-release 2> /dev/null; then
   if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
     printf '%s\n' ">>> CachyOS with paru detected - updating AUR packages"
@@ -1319,7 +1379,9 @@ if type -P paru > /dev/null && grep -q '^ID=cachyos' /etc/os-release 2> /dev/nul
   fi
 fi
 
-# --- USB wake-up ---
+# --- END - Optional AUR upgrades ---
+
+# --- BEGIN - USB wake-up ---
 # Install a boot-time service enabling wake-up on USB devices that expose power/wakeup.
 # No arguments. Returns nonzero on backup, write, reload, or enable failure.
 # Backs up an existing unit, writes /etc/systemd/system/usb-wake-all.service, and starts it.
@@ -1375,7 +1437,9 @@ else
   printf '%s\n' ">>> USB wake: skipped by choice; existing wake configuration is unchanged."
 fi
 
-# --- Limine bootloader: set menu timeout + quiet boot ---
+# --- END - USB wake-up ---
+
+# --- BEGIN - Limine bootloader: set menu timeout + quiet boot ---
 LIMINE_CONF="/boot/limine.conf"
 if [ -f "$LIMINE_CONF" ]; then
   printf '%s\n' ">>> Limine config found: $LIMINE_CONF"
@@ -1390,7 +1454,9 @@ if [ -f "$LIMINE_CONF" ]; then
 	' "$LIMINE_CONF" | sudo tee "$LIMINE_CONF.tmp" > /dev/null && sudo mv "$LIMINE_CONF.tmp" "$LIMINE_CONF"
 fi
 
-# --- Setting up the icons for SteamOS ---
+# --- END - Limine bootloader: set menu timeout + quiet boot ---
+
+# --- BEGIN - Setting up the icons for SteamOS ---
 _STEAM_ICONS_ARCHIVE=""
 for _STEAM_ICONS_CANDIDATE in "$HOME/Desktop"/grid*.tar.gz; do
   [ -f "$_STEAM_ICONS_CANDIDATE" ] || continue
@@ -1433,7 +1499,9 @@ else
   printf '>>> No Steam icons archive matching %s/grid*.tar.gz. Skipping restore.\n' "$HOME/Desktop"
 fi
 
-# --- Backing up the icons for SteamOS ---
+# --- END - Setting up the icons for SteamOS ---
+
+# --- BEGIN - Backing up the icons for SteamOS ---
 if [ -d "$_STEAM_ICONS_EXTRACT_DIR" ]; then
   _STEAM_ICONS_BACKUP_BASE="$HOME/Desktop/grid-$(command date +%Y-%m-%d)"
   _STEAM_ICONS_BACKUP="$_STEAM_ICONS_BACKUP_BASE.tar.gz"
@@ -1457,7 +1525,9 @@ else
   printf '>>> Steam icons folder not found at %s. Skipping backup.\n' "$_STEAM_ICONS_EXTRACT_DIR"
 fi
 
-# --- Applications AppImages ---
+# --- END - Backing up the icons for SteamOS ---
+
+# --- BEGIN - Applications AppImages ---
 # Register after all downloads and installation steps, preserving established titles and collections.
 # The shared shortcut helper makes files executable; failed registrations do not block remaining apps.
 for appimage in "$APPS_FOLDER/"*.AppImage; do
@@ -1475,7 +1545,9 @@ for appimage in "$APPS_FOLDER/"*.AppImage; do
   fi
 done
 
-# --- KDE favorites and taskbar pins ---
+# --- END - Applications AppImages ---
+
+# --- BEGIN - KDE favorites and taskbar pins ---
 # Create durable desktop entries and update the live KDE session through its public D-Bus interfaces.
 # No arguments. Returns nonzero on launcher, database, or D-Bus failure; preserves existing same-name launchers and pins.
 function _configure_kde_launchers() {
@@ -1567,7 +1639,7 @@ try:
     desired = [
         ("Brave", "com.brave.Browser.desktop", "/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=brave --file-forwarding com.brave.Browser @@u %U @@", "com.brave.Browser", True),
         ("Zed", "dev.zed.Zed.desktop", f'"{home}/.local/zed.app/bin/zed" %U', str(home / ".local/zed.app/share/icons/hicolor/512x512/apps/zed.png"), True),
-        ("Konsole", "org.kde.konsole.desktop", "konsole", "utilities-terminal", True),
+        # ("Konsole", "org.kde.konsole.desktop", "konsole", "utilities-terminal", True),  # Do not add Konsole to favorites or taskbar pins.
         ("Ghostty", "steamos-setup-ghostty.desktop", f'"{home}/Applications/Ghostty.AppImage"', "utilities-terminal", True),
         ("EmuDeck", "steamos-setup-emudeck.desktop", f'"{home}/Applications/EmuDeck.AppImage"', "applications-games", False),
         ("ES-DE AppImage", "steamos-setup-es-de.desktop", f'"{home}/Emulation/tools/launchers/es-de/es-de.sh"', "applications-games", False),
@@ -1686,7 +1758,9 @@ if ! _configure_kde_launchers; then
   printf '%s\n' ">>> KDE launcher setup incomplete; re-run in Desktop Mode after fixing output above." >&2
 fi
 
-# --- Switch update files ---
+# --- END - KDE favorites and taskbar pins ---
+
+# --- BEGIN - Switch update files ---
 # Move matching top-level regular files, including hidden files; preserve existing destination entries.
 # No arguments. Creates dlc only when needed; failed folder creation or moves stop setup.
 # Keep glob options and temporary variables inside this subshell; do not follow file or dlc symlinks.
@@ -1726,13 +1800,16 @@ fi
   done
 ) || exit 1
 
-# --- Done - Final clean up and confirmation ---
+# --- END - Switch update files ---
+
+# --- BEGIN - Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then
   printf '%s\n' ">>> Decky setup failed earlier; review its output and re-run this script after fixing it."
 fi
 printf '%s\n' ">>> Done. Launch each .desktop file from Desktop Mode to start installation."
 printf '%s\n' ">>> AppImages live in $APPS_FOLDER/ - run them directly."
 finish_choice=""
-until _prompt "Finish and exit setup?"; do
+until _prompt "Finish and exit setup?"; do # --- prompt - Done - Final clean up and confirmation ---
   :
 done
+# --- END - Done - Final clean up and confirmation ---

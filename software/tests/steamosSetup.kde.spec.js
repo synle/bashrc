@@ -8,7 +8,7 @@ import { spawnSync } from "child_process";
 /** Production KDE launcher function, excluding its automatic invocation. */
 const source = fs
   .readFileSync("software/scripts/steamos/setup.bash", "utf8")
-  .split("# --- KDE favorites and taskbar pins ---")[1]
+  .split("# --- BEGIN - KDE favorites and taskbar pins ---")[1]
   .split("\nif ! _configure_kde_launchers;")[0];
 /** Owned temporary roots. */
 const roots = [];
@@ -16,7 +16,7 @@ afterEach(() => roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: t
 
 it("removes installed Kate noninteractively and skips an absent package", () => {
   const setup = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
-  const removal = setup.split("# --- Remove Kate ---")[1].split("\nif type -P paru")[0];
+  const removal = setup.split("# --- BEGIN - Remove Kate ---")[1].split("\nif type -P paru")[0];
   const result = spawnSync(
     "/bin/bash",
     [
@@ -39,7 +39,7 @@ ${removal}
 
 it("joins the background Zed installer before deploying editor configuration", () => {
   const setup = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
-  const install = setup.split("# --- Zed background installation ---")[1].split("# Install or confirm Flatpak Brave")[0];
+  const install = setup.split("# --- BEGIN - Zed background installation ---")[1].split("# Install or confirm Flatpak Brave")[0];
   const result = spawnSync(
     "/bin/bash",
     [
@@ -130,19 +130,14 @@ fs.writeFileSync(file, JSON.stringify(state));
     favorites: [
       "applications:custom-brave.desktop",
       "applications:dev.zed.Zed.desktop",
-      "applications:org.kde.konsole.desktop",
       "applications:steamos-setup-ghostty.desktop",
       "applications:steamos-setup-emudeck.desktop",
       "applications:steamos-setup-es-de.desktop",
     ],
-    launchers: [
-      "applications:custom-brave.desktop",
-      "applications:dev.zed.Zed.desktop",
-      "applications:org.kde.konsole.desktop",
-      "applications:steamos-setup-ghostty.desktop",
-    ],
+    launchers: ["applications:custom-brave.desktop", "applications:dev.zed.Zed.desktop", "applications:steamos-setup-ghostty.desktop"],
     writes: 1,
   });
+  expect(fs.existsSync(path.join(apps, "org.kde.konsole.desktop"))).toBe(false);
   expect(fs.readFileSync(path.join(apps, "custom-brave.desktop"), "utf8")).toContain("Exec=custom-brave");
   const persistedIcon = fs.readdirSync(path.join(home, ".local/share/icons/steamos-setup"));
   expect(persistedIcon).toHaveLength(1);

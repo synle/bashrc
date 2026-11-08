@@ -21,10 +21,10 @@ const installerSource = setupSource
   .split("\nif ! _install_steamtinkerlaunch_dependencies", 1)[0];
 
 const addShortcutSource = setupSource
-  .split("# --- Steam shortcuts ---", 2)[1]
+  .split("# --- BEGIN - Steam shortcuts ---", 2)[1]
   .split("\n# Install SteamTinkerLaunch runtime dependencies before invoking it.", 1)[0];
 
-const shortcutCleanupSource = setupSource.split("# --- Steam shortcuts ---", 2)[1].split("\ndecky_setup_failed=0", 1)[0];
+const shortcutCleanupSource = setupSource.split("# --- BEGIN - Steam shortcuts ---", 2)[1].split("\ndecky_setup_failed=0", 1)[0];
 
 const sandboxes = [];
 

@@ -8,9 +8,11 @@ import path from "path";
 /** Setup source read without executing host provisioning. */
 const setup = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
 /** Ghostty download block, empty until the installation behavior exists. */
-const download = (setup.split("# --- Ghostty (AppImage) ---")[1] || "").split("# --- Moonlight (AppImage) ---")[0];
+const download = (setup.split("# --- BEGIN - Ghostty (AppImage) ---")[1] || "").split("# --- BEGIN - Moonlight (AppImage) ---")[0];
 /** Existing AppImage registration pass, excluding KDE configuration. */
-const registration = setup.split("# --- Applications AppImages ---")[1].split("# --- KDE favorites and taskbar pins ---")[0];
+const registration = setup
+  .split("# --- BEGIN - Applications AppImages ---")[1]
+  .split("# --- BEGIN - KDE favorites and taskbar pins ---")[0];
 /** Test-owned temporary homes. */
 const roots = [];
 

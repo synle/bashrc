@@ -117,7 +117,8 @@ The folder is mode `700`; the log is mode `600`. Temporary download work is remo
 SteamOS setup also retains its private Desktop `steamos-setup.XXXXXX` stdout/stderr log with timestamp, identity, OS/kernel, Bash version, and source checksum.
 Streamed setup cannot record a source checksum.
 
-SteamOS collects operational yes/no choices, including USB wake-up, before downloads and installation.
+SteamOS installs required pacman tools without confirmation immediately after account validation, logging, and sudo authentication.
+It then collects operational yes/no choices, including independent system/Flatpak upgrades and USB wake-up, before downloads and application installation.
 The final completion acknowledgment remains at the end.
 Only long pacman, Flatpak, and paru operations redirect stdout/stderr to one private per-run file:
 `sy-log-<UTC-start-time>-steamos-setup-output.<unique>.txt`.
