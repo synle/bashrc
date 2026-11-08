@@ -2130,7 +2130,7 @@ function diff() {
 function pdiff() {
   local diff_args=() option_ended=0
   while [ "$#" -gt 0 ]; do
-    if ((! option_ended)) && is_help_arg "$1"; then
+    if ((!option_ended)) && is_help_arg "$1"; then
       printf '%s\n' "pdiff: compare clipboard contents with a file
   Usage: pdiff [diff options] file
   Clipboard is left; file is right. Leading options/selectors match diff.

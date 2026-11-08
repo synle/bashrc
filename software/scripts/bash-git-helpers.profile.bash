@@ -208,7 +208,7 @@ function purge_branches_and_tags() {
   branches=$(command git for-each-ref --format='%(refname:strip=2)' refs/heads/) || return 1
   tags=$(command git for-each-ref --format='%(refname:strip=2)' refs/tags/) || return 1
   printf '%s\n' "-> keeping default branch '$default_branch'"
-  if ((! dry_run)); then
+  if ((!dry_run)); then
     command git checkout "$default_branch" || return 1
   fi
   while IFS= read -r branch; do
