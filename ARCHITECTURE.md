@@ -113,7 +113,8 @@ Keep its title/URL inventory in the script, not a second registry.
 Compact entries reference trusted ZIPs in `assets/steamos/decky_loader_plugins/`; the shared package module derives hashes, native roots, kinds, and theme IDs.
 Rich HTTPS/hash entries remain supported. The self-extracting installer includes approved ZIPs, and cache recovery cannot override their derived hashes.
 Every installation reapplies selected archive members, restarts `plugin_loader.service`, and verifies it is active without removing unrelated plugins/settings.
-SteamOS collects operational choices before installation; only verbose package-manager operations redirect output to a timestamped private temporary log.
+SteamOS installs required pacman tools after account validation/logging and sudo authentication, before optional choices or application work.
+System and Flatpak updates have independent prompts; only verbose package-manager operations redirect output to a timestamped private temporary log.
 
 ## Profile Assembly
 

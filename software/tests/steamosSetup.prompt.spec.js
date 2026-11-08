@@ -9,12 +9,12 @@ import path from "path";
 const setupSource = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
 /** Decky installer function and explicit invocation for isolated execution. */
 const deckySource =
-  setupSource.split("# --- Decky Loader + plugins + CSS Loader themes ---")[1].split("# --- Steam shortcuts ---")[0] +
+  setupSource.split("# --- BEGIN - Decky Loader + plugins + CSS Loader themes ---")[1].split("# --- BEGIN - Steam shortcuts ---")[0] +
   "\n_bootstrap_decky_loader_plugins_themes\n";
 /** Editor/browser installer block, including its original temporary-folder cleanup. */
 const editorSource = setupSource
-  .split("# --- Browser Extensions + editors (via the synle/bashrc installer) ---")[1]
-  .split("# --- Remove Kate ---")[0];
+  .split("# --- BEGIN - Browser Extensions + editors (via the synle/bashrc installer) ---")[1]
+  .split("# --- BEGIN - Remove Kate ---")[0];
 /** Test-owned temporary roots, removed even after assertion failure. */
 const folders = [];
 

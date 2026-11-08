@@ -15,7 +15,9 @@ const preflightSource = setupSource.slice(
   setupSource.indexOf("\n_start_steamos_setup_log || exit 1"),
 );
 /** Decky delegates to the standard bootstrap, which supplies Node. */
-const deckySource = setupSource.split("# --- Decky Loader + plugins + CSS Loader themes ---")[1].split("# --- Steam shortcuts ---")[0];
+const deckySource = setupSource
+  .split("# --- BEGIN - Decky Loader + plugins + CSS Loader themes ---")[1]
+  .split("# --- BEGIN - Steam shortcuts ---")[0];
 /** Test-owned temporary homes. */
 const homes = [];
 

@@ -48,7 +48,15 @@ Run it from the checkout root in Desktop Mode/Konsole as the normal desktop user
 /bin/bash software/scripts/steamos/setup.bash
 ```
 
-After validating the invoking account, setup checks existing `~/.bashrc` and `~/.bash_profile` files independently.
+After account validation and diagnostic logging, setup authenticates sudo and always installs required system tools before optional prompts, downloads, or application work.
+
+```bash
+sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml p7zip
+```
+
+There is no yes/no prompt or package confirmation for required tools; existing sudo authentication may still request a password.
+Missing pacman, failed authentication, or required installation failure stops setup before later work.
+Setup then checks existing `~/.bashrc` and `~/.bash_profile` files independently.
 For each file without an active direct `alias update=` definition, it saves original/latest backups and appends:
 
 ```bash
@@ -82,10 +90,10 @@ The Ghostty URL uses the versioned `v1.4.0` release tag instead of `tip`, whose 
 Shortcut titles use filenames without `.AppImage`; `ES-DE.AppImage` retains the title `ES-DE Emulation Station`.
 An existing `~/Applications/ES-DE.AppImage` skips the EmuDeck installer download.
 Zed installs through its official installer in the background; setup waits before running both Zed configuration scripts alongside browser extensions and tmux/vim.
-Setup installs `vim`, `tmux`, `fuse2`, and `python-yaml` with `sudo pacman -S --needed --noconfirm`.
 Python YAML satisfies DeckyPlumber's Python dependency; its separate running InputPlumber prerequisite remains the user's responsibility.
 Kate removal uses `sudo pacman -R --noconfirm kate` only when installed.
-KDE favorites include Brave, Zed, Konsole, Ghostty, EmuDeck, and ES-DE AppImage; taskbar pins include Brave, Zed, Konsole, and Ghostty.
+KDE favorites include Brave, Zed, Ghostty, EmuDeck, and ES-DE AppImage; taskbar pins include Brave, Zed, and Ghostty.
+The Konsole selection remains commented out; setup does not add it to favorites or taskbar pins and does not remove existing entries.
 Existing same-name entries are reused; favorites and taskbar pins are checked before additions.
 New desktop entries use the requested executable paths and arguments; existing launch commands remain unchanged.
 Absolute launcher icons are copied into persistent user icon storage; theme icons retain their installed theme references.
@@ -93,7 +101,12 @@ KDE integration requires a running Desktop Mode session, Python, qdbus, and kbui
 Favorite calls use the `org.kde.ActivityManager.ResourcesLinking` interface at `/ActivityManager/Resources/Linking`; D-Bus failures retain their diagnostic output.
 Steam `[DEBUG]` messages are silent unless `DEBUG=1`; normal progress, errors, and SteamTinkerLaunch output remain visible.
 Use `DEBUG=1 /bin/bash software/scripts/steamos/setup.bash` or export `DEBUG=1` before running setup to enable them.
-Before downloads, it asks whether to clear user-defined non-Steam shortcuts, install Decky, upgrade the system, and enable USB wake-up.
+After required installation and before downloads, setup asks whether to clear user-defined shortcuts, install Decky, upgrade the system, update Flatpak, and enable USB wake-up.
+The system-upgrade prompt controls only `sudo pacman -Syu --noconfirm` and the existing conditional CachyOS `paru -Syu --noconfirm` call.
+A separate Flatpak-update prompt sits directly below it, defaults to Yes, and controls only `flatpak update -y`.
+Neither upgrade choice gates required installation or Brave installation.
+Every named setup section has matching `# --- BEGIN - <section> ---` and `# --- END - <section> ---` markers.
+Each yes/no call includes `# --- prompt - <section> ---` on the same line to identify its execution section.
 The final completion acknowledgment remains at the end.
 Long pacman, Flatpak, and paru operations capture stdout/stderr in a private `sy-log-<UTC-start-time>-steamos-setup-output.<unique>.txt` file.
 Its temporary root uses `BASHRC_TEMP_ROOT_DIR`, then `TMPDIR`, then `/tmp`; short progress, failure status, and log location remain visible.

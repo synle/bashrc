@@ -8,8 +8,8 @@ import path from "path";
 /** Production restore and backup sections without interactive provisioning. */
 const ICONS = fs
   .readFileSync("software/scripts/steamos/setup.bash", "utf8")
-  .split("# --- Setting up the icons for SteamOS ---")[1]
-  .split("# --- Applications AppImages ---")[0];
+  .split("# --- BEGIN - Setting up the icons for SteamOS ---")[1]
+  .split("# --- BEGIN - Applications AppImages ---")[0];
 /** Owned fixture folders removed after each test. */
 const folders = [];
 

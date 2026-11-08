@@ -21,10 +21,10 @@ const installerSource = setupSource
   .split("\nif ! _install_steamtinkerlaunch_dependencies", 1)[0];
 
 const addShortcutSource = setupSource
-  .split("# --- Steam shortcuts ---", 2)[1]
+  .split("# --- BEGIN - Steam shortcuts ---", 2)[1]
   .split("\n# Install SteamTinkerLaunch runtime dependencies before invoking it.", 1)[0];
 
-const shortcutCleanupSource = setupSource.split("# --- Steam shortcuts ---", 2)[1].split("\ndecky_setup_failed=0", 1)[0];
+const shortcutCleanupSource = setupSource.split("# --- BEGIN - Steam shortcuts ---", 2)[1].split("\ndecky_setup_failed=0", 1)[0];
 
 const sandboxes = [];
 
@@ -93,7 +93,7 @@ afterEach(() => {
 describe("SteamOS setup", () => {
   it("installs SteamTinkerLaunch dependencies before shortcuts are added", () => {
     const dependencySetup = setupSource.indexOf("if ! _install_steamtinkerlaunch_dependencies");
-    const firstShortcut = setupSource.indexOf("# --- Applications AppImages ---");
+    const firstShortcut = setupSource.indexOf("# --- BEGIN - Applications AppImages ---");
 
     expect(setupSource).toContain("sudo pacman -S --needed --noconfirm xdotool xorg-xwininfo yad");
     expect(setupSource).toContain("SteamTinkerLaunch requires Yad 7.2 or newer");
@@ -264,7 +264,9 @@ describe("SteamOS setup", () => {
     fs.mkdirSync(path.join(home, "Apps"));
     fs.mkdirSync(path.join(home, "Applications"));
     fs.writeFileSync(path.join(home, "Apps/Other App.AppImage"), "legacy app");
-    const migration = setupSource.split("# --- Legacy AppImage migration ---", 2)[1].split("# --- Zed background installation ---", 1)[0];
+    const migration = setupSource
+      .split("# --- BEGIN - Legacy AppImage migration ---", 2)[1]
+      .split("# --- BEGIN - Zed background installation ---", 1)[0];
     const result = spawnSync("/bin/bash", ["-c", `APPS_FOLDER="$HOME/Applications"\n${migration}\n${migration}`], {
       encoding: "utf-8",
       env: { ...process.env, HOME: home },
@@ -281,7 +283,9 @@ describe("SteamOS setup", () => {
     fs.writeFileSync(path.join(home, "Apps/Existing.AppImage"), "legacy app");
     fs.writeFileSync(path.join(home, "Applications/Existing.AppImage"), "current app");
     fs.writeFileSync(path.join(home, "Apps/notes.txt"), "keep");
-    const migration = setupSource.split("# --- Legacy AppImage migration ---", 2)[1].split("# --- Zed background installation ---", 1)[0];
+    const migration = setupSource
+      .split("# --- BEGIN - Legacy AppImage migration ---", 2)[1]
+      .split("# --- BEGIN - Zed background installation ---", 1)[0];
     const result = spawnSync("/bin/bash", ["-c", `APPS_FOLDER="$HOME/Applications"\n${migration}`], {
       encoding: "utf-8",
       env: { ...process.env, HOME: home },
@@ -304,8 +308,8 @@ describe("SteamOS setup", () => {
     fs.writeFileSync(path.join(applications, "notes.txt"), "ignore");
     fs.mkdirSync(path.join(applications, "Folder.AppImage"));
     const registration = setupSource
-      .split("# --- Applications AppImages ---", 2)[1]
-      .split("# --- KDE favorites and taskbar pins ---", 1)[0];
+      .split("# --- BEGIN - Applications AppImages ---", 2)[1]
+      .split("# --- BEGIN - KDE favorites and taskbar pins ---", 1)[0];
     const result = spawnSync(
       "/bin/bash",
       [
@@ -318,16 +322,16 @@ describe("SteamOS setup", () => {
     expect(result.stdout).toBe(
       "ES-DE Emulation Station|ES-DE.AppImage|\nMoonlight|Moonlight.AppImage|Streaming,Apps\nOther App|Other App.AppImage|\nProtonUp-Qt|ProtonUp-Qt.AppImage|Utilities,Apps\n",
     );
-    expect(setupSource.indexOf("# --- Applications AppImages ---")).toBeGreaterThan(
-      setupSource.indexOf("# --- Backing up the icons for SteamOS ---"),
+    expect(setupSource.indexOf("# --- BEGIN - Applications AppImages ---")).toBeGreaterThan(
+      setupSource.indexOf("# --- BEGIN - Backing up the icons for SteamOS ---"),
     );
   });
 
   it("does not register an unmatched AppImage glob when Applications is missing", () => {
     const home = createSandbox();
     const registration = setupSource
-      .split("# --- Applications AppImages ---", 2)[1]
-      .split("# --- KDE favorites and taskbar pins ---", 1)[0];
+      .split("# --- BEGIN - Applications AppImages ---", 2)[1]
+      .split("# --- BEGIN - KDE favorites and taskbar pins ---", 1)[0];
     const result = spawnSync(
       "/bin/bash",
       ["-c", `APPS_FOLDER="$HOME/Applications"\nfunction _add_steam_shortcut() { printf '%s\\n' unexpected; }\n${registration}`],

@@ -8,8 +8,8 @@ import path from "path";
 /** Production move block only, without interactive provisioning or final confirmation. */
 const MOVE_UPDATES = fs
   .readFileSync("software/scripts/steamos/setup.bash", "utf8")
-  .split("# --- Switch update files ---")[1]
-  .split("# --- Done - Final clean up and confirmation ---")[0];
+  .split("# --- BEGIN - Switch update files ---")[1]
+  .split("# --- BEGIN - Done - Final clean up and confirmation ---")[0];
 /** Temporary homes owned by this spec and removed after each test. */
 const homes = [];
 
