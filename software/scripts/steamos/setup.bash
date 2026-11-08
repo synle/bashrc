@@ -118,8 +118,8 @@ if ! type -P pacman > /dev/null; then
   printf '%s\n' ">>> SteamOS setup stopped: pacman is required to install system tools." >&2
   exit 1
 fi
-printf '%s\n' ">>> Installing required tools: vim, tmux, fuse2, python-yaml and p7zip"
-if ! _run_long_install "Required system tools" sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml p7zip; then
+printf '%s\n' ">>> Installing required tools: vim, tmux, fuse2, python-yaml, python-pip and p7zip"
+if ! _run_long_install "Required system tools" sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml python-pip p7zip; then
   printf '%s\n' ">>> SteamOS setup stopped: required tool installation failed; review package log." >&2
   exit 1
 fi
@@ -1804,6 +1804,13 @@ fi
 ) || exit 1
 
 # --- END - Switch update files ---
+
+# --- BEGIN - Decky Plumber pyyaml ---
+if [ -d "$HOME/homebrew/plugins/decky-plumber" ]; then
+  printf '%s\n' ">>> Installing pyyaml for Decky Plumber plugin."
+  sudo python3 -m pip install --target "$HOME/homebrew/plugins/decky-plumber" pyyaml &>/dev/null &
+fi
+# --- END - Decky Plumber pyyaml ---
 
 # --- BEGIN - Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then
