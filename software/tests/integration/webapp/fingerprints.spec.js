@@ -46,8 +46,10 @@ describe("browser fingerprint sensitivity", () => {
 
   it("observes a missing direct main-body child", async () => {
     await selectCommand(browser.page, "command-option-setup-mac");
-    expect((await readCommand(browser.page)).blocks).toHaveLength(14);
+    const before = (await readCommand(browser.page)).blocks;
     await browser.page.$eval("#mainBodyContainer", (body) => body.firstElementChild.remove());
-    expect((await readCommand(browser.page)).blocks).toHaveLength(13);
+    const after = (await readCommand(browser.page)).blocks;
+    expect(after).toEqual(before.slice(1));
+    expect(after).not.toEqual(before);
   });
 });

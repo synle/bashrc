@@ -75,13 +75,23 @@ describe("getOllamaHosts", () => {
   it("counts a host tagged only OLLAMA_DEFAULT_SERVER as a server", async () => {
     fetchResponses[CONFIG_PATH] = "192.0.2.40: box-a | OLLAMA_REMOTE\n192.0.2.41: box-b | OLLAMA_DEFAULT_SERVER";
     const hosts = await getIndexFunction("getOllamaHosts")();
-    expect(hosts.map((h) => h.ip)).toEqual(["192.0.2.41", "192.0.2.40", "127.0.0.1"]);
+    expect(hosts.map((h) => h.ip)).toMatchInlineSnapshot(`
+      [
+        "192.0.2.41",
+        "192.0.2.40",
+        "127.0.0.1",
+      ]
+    `);
   });
 
   it("uses the first OLLAMA_DEFAULT_SERVER when several are tagged", async () => {
     fetchResponses[CONFIG_PATH] =
       "192.0.2.50: box-a | OLLAMA_REMOTE | OLLAMA_DEFAULT_SERVER\n192.0.2.51: box-b | OLLAMA_REMOTE | OLLAMA_DEFAULT_SERVER";
     const hosts = await getIndexFunction("getOllamaHosts")();
-    expect(hosts.filter((h) => h.isDefault).map((h) => h.ip)).toEqual(["192.0.2.50"]);
+    expect(hosts.filter((h) => h.isDefault).map((h) => h.ip)).toMatchInlineSnapshot(`
+      [
+        "192.0.2.50",
+      ]
+    `);
   });
 });

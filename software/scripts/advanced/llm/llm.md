@@ -443,6 +443,11 @@ own `webapp/` or any web task.
 
 ### Shell dispatchers (`sy-*` and `<cli>_skill_*` from the terminal)
 
+The OpenCode wrapper defaults omitted Bash tool timeouts to 20 minutes through `OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS=1200000`.
+The installed OpenCode 1.19.5 binary reads this flag; explicit caller environment overrides and per-tool-call timeouts retain precedence.
+The wrapper keeps the default local to its invocation, including readable-file prompts, without changing the parent environment.
+Reload the managed shell profile and restart OpenCode for new launches to inherit it; direct executable launches bypass the wrapper.
+
 These are human terminal launchers, not internal agent dependencies. They start an LLM CLI using the configured native or inline transport.
 Inside an assigned agent, shared **Skill invocation** loads the skill instructions and executes them in that context; no same-named shell function or executable is required.
 Do not source profiles or install skill-named commands solely to locate or launch terminal wrappers for already-loaded skills.

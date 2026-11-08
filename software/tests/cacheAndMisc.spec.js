@@ -16,8 +16,6 @@ const emitBash = getIndexFunction("emitBash");
 const echo = getIndexFunction("echo");
 const execBashSync = getIndexFunction("execBashSync");
 
-// ---- cacheInMemory / getCachedValue ----
-
 describe("cacheInMemory", () => {
   it("should cache and return the result of the async callback", async () => {
     const key = `test-cache-${Date.now()}`;
@@ -75,8 +73,6 @@ describe("getCachedValue", () => {
   });
 });
 
-// ---- consolidateHosts ----
-
 describe("consolidateHosts", () => {
   it("should add www-prefixed variants", () => {
     const result = consolidateHosts(["example.com"]);
@@ -115,8 +111,6 @@ describe("consolidateHosts", () => {
     expect(result).toContain("www.b.org");
   });
 });
-
-// ---- _isDangerousPath ----
 
 describe("_isDangerousPath", () => {
   it("should return true for root path", () => {
@@ -165,19 +159,28 @@ describe("_isDangerousPath", () => {
   });
 });
 
-// ---- readList / readSet ----
-
 describe("readList", () => {
   it("should read a file and return a list of lines", async () => {
     fetchResponses["software/scripts/list-test.txt"] = "alpha\nbeta\ncharlie";
     const result = await readList`software/scripts/list-test.txt`;
-    expect(result).toEqual(["alpha", "beta", "charlie"]);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "alpha",
+        "beta",
+        "charlie",
+      ]
+    `);
   });
 
   it("should filter out comment lines", async () => {
     fetchResponses["software/scripts/list-comments.txt"] = "alpha\n# comment\nbeta\n// another";
     const result = await readList`software/scripts/list-comments.txt`;
-    expect(result).toEqual(["alpha", "beta"]);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "alpha",
+        "beta",
+      ]
+    `);
   });
 
   it("should return empty array for missing file", async () => {
@@ -190,13 +193,24 @@ describe("readSet", () => {
   it("should read a file and return a deduplicated list", async () => {
     fetchResponses["software/scripts/set-test.txt"] = "alpha\nbeta\nalpha\ncharlie";
     const result = await readSet`software/scripts/set-test.txt`;
-    expect(result).toEqual(["alpha", "beta", "charlie"]);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "alpha",
+        "beta",
+        "charlie",
+      ]
+    `);
   });
 
   it("should filter out comment lines", async () => {
     fetchResponses["software/scripts/set-comments.txt"] = "alpha\n# comment\nbeta";
     const result = await readSet`software/scripts/set-comments.txt`;
-    expect(result).toEqual(["alpha", "beta"]);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "alpha",
+        "beta",
+      ]
+    `);
   });
 
   it("should return empty array for missing file", async () => {
@@ -204,8 +218,6 @@ describe("readSet", () => {
     expect(result).toEqual([]);
   });
 });
-
-// ---- _isRefreshTarget ----
 
 describe("_isRefreshTarget", () => {
   // Note: REFRESH_FILES is empty in the test sandbox (no --refresh= flag),
@@ -215,8 +227,6 @@ describe("_isRefreshTarget", () => {
     expect(_isRefreshTarget("software/scripts/fzf.js")).toBe(false);
   });
 });
-
-// ---- writeConfigToFile ----
 
 describe("writeConfigToFile", () => {
   it("should write JSON config to basePath/fileName", async () => {
@@ -237,8 +247,6 @@ describe("writeConfigToFile", () => {
   });
 });
 
-// ---- echo / emitBash ----
-
 describe("echo", () => {
   it("should not throw", () => {
     expect(() => echo("test message")).not.toThrow();
@@ -255,15 +263,11 @@ describe("emitBash", () => {
   });
 });
 
-// ---- execBashSync ----
-
 describe("execBashSync", () => {
   it("should not throw when executing a command", () => {
     expect(() => execBashSync("echo hello")).not.toThrow();
   });
 });
-
-// ---- isBashSyleStale ----
 
 describe("isBashSyleStale", () => {
   it("should return true when BASH_SYLE_PATH does not exist", () => {

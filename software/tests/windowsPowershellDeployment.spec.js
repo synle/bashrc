@@ -24,7 +24,6 @@ describe("PowerShell 7 Terminal launch", () => {
     expect(modern.commandline).not.toContain("Set-Location");
     expect(modern.hidden).toBe(false);
     expect(settings.defaultProfile).toBe(modern.guid);
-    expect(settings.profiles.list).toHaveLength(2);
     expect(settings.profiles.list[1]).toMatchInlineSnapshot(`
       {
         "adjustIndistinguishableColors": "always",
@@ -79,7 +78,18 @@ describe("PowerShell 7 Terminal launch", () => {
     ];
     const { settings } = await configureTerminal(profiles);
     expect(settings.defaultProfile).toBe("legacy");
-    expect(settings.profiles.list).toHaveLength(2);
+    expect(settings.profiles.list.map(({ name, commandline }) => ({ name, commandline }))).toMatchInlineSnapshot(`
+      [
+        {
+          "commandline": "powershell.exe",
+          "name": "Powershell v5",
+        },
+        {
+          "commandline": "pwsh.exe -NoLogo",
+          "name": "Custom shell",
+        },
+      ]
+    `);
     // Managed appearance may add fields without changing this user's shell identity.
     expect(settings.profiles.list[1]).toMatchInlineSnapshot(`
       {
@@ -139,8 +149,14 @@ describe("PowerShell 7 Terminal launch", () => {
     "uses inbox powershell.exe when modern discovery fails and legacy command was %s",
     async (commandline) => {
       const { settings } = await configureTerminal([{ guid: "legacy", name: "Windows PowerShell", commandline }]);
-      expect(settings.profiles.list).toHaveLength(1);
-      expect(settings.profiles.list[0].commandline).toBe("powershell.exe");
+      expect(settings.profiles.list.map(({ name, commandline }) => ({ name, commandline }))).toMatchInlineSnapshot(`
+        [
+          {
+            "commandline": "powershell.exe",
+            "name": "Powershell v5",
+          },
+        ]
+      `);
       expect(settings.defaultProfile).toBe("legacy");
     },
   );

@@ -8,7 +8,6 @@ const browser = commandBrowser();
 describe("command snapshots", () => {
   it("Test Full Run live keeps its current block titles, content, links, and count", async () => {
     const { blocks, errors } = await selectCommand(browser.page, "command-option-test-full-run-live");
-    expect(blocks).toHaveLength(3);
     expect(errors).toMatchInlineSnapshot(`[]`);
     expect(blocks).toMatchInlineSnapshot(`
       [

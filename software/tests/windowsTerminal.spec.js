@@ -24,7 +24,6 @@ describe("Windows Terminal generated settings", () => {
       binaries,
       executable,
     );
-    expect(settings.profiles.list).toHaveLength(2);
     expect(settings.profiles.list[0]).toEqual({
       name: "Powershell v7",
       guid: "{91c9f255-5190-4a5e-9ee5-d05d36dece87}",

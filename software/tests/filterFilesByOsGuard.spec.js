@@ -39,7 +39,12 @@ describe("_filterFilesByOsGuard", () => {
       ],
       () => {
         const result = _filterFilesByOsGuard(["mac/iterm.js", "windows/windows-terminal.js", "wsl/something.js", "advanced/ghostty.js"]);
-        expect(result).toEqual(["mac/iterm.js", "advanced/ghostty.js"]);
+        expect(result).toMatchInlineSnapshot(`
+          [
+            "mac/iterm.js",
+            "advanced/ghostty.js",
+          ]
+        `);
       },
     );
   });
@@ -52,7 +57,11 @@ describe("_filterFilesByOsGuard", () => {
       ],
       () => {
         const result = _filterFilesByOsGuard(["mac/iterm.js"]);
-        expect(result).toEqual(["mac/iterm.js"]);
+        expect(result).toMatchInlineSnapshot(`
+          [
+            "mac/iterm.js",
+          ]
+        `);
       },
     );
   });
@@ -65,7 +74,14 @@ describe("_filterFilesByOsGuard", () => {
       ],
       () => {
         const result = _filterFilesByOsGuard(["git.js", "vim-config.js", "advanced/vs-code.js", "terminator.js"]);
-        expect(result).toEqual(["git.js", "vim-config.js", "advanced/vs-code.js", "terminator.js"]);
+        expect(result).toMatchInlineSnapshot(`
+          [
+            "git.js",
+            "vim-config.js",
+            "advanced/vs-code.js",
+            "terminator.js",
+          ]
+        `);
       },
     );
   });
@@ -73,7 +89,11 @@ describe("_filterFilesByOsGuard", () => {
   it("normalizes leading software/scripts/ prefix before matching", () => {
     withOsPaths([[false, "software/scripts/windows"]], () => {
       const result = _filterFilesByOsGuard(["software/scripts/windows/windows-terminal.js", "software/scripts/git.js"]);
-      expect(result).toEqual(["software/scripts/git.js"]);
+      expect(result).toMatchInlineSnapshot(`
+        [
+          "software/scripts/git.js",
+        ]
+      `);
     });
   });
 
@@ -102,14 +122,33 @@ describe("_filterFilesByProfile", () => {
   const files = ["abc.js", "abc.personal.js", "abc.work.js", "tool.sh", "tool.personal.sh", "tool.work.sh"];
 
   it("keeps common and personal scripts on a personal profile", () => {
-    expect(_filterFilesByProfile(files, false)).toEqual(["abc.js", "abc.personal.js", "tool.sh", "tool.personal.sh"]);
+    expect(_filterFilesByProfile(files, false)).toMatchInlineSnapshot(`
+      [
+        "abc.js",
+        "abc.personal.js",
+        "tool.sh",
+        "tool.personal.sh",
+      ]
+    `);
   });
 
   it("keeps common and work scripts on a work profile", () => {
-    expect(_filterFilesByProfile(files, true)).toEqual(["abc.js", "abc.work.js", "tool.sh", "tool.work.sh"]);
+    expect(_filterFilesByProfile(files, true)).toMatchInlineSnapshot(`
+      [
+        "abc.js",
+        "abc.work.js",
+        "tool.sh",
+        "tool.work.sh",
+      ]
+    `);
   });
 
   it("does not classify incidental profile words as suffixes", () => {
-    expect(_filterFilesByProfile(["personal-tools.js", "work-helper.sh"], true)).toEqual(["personal-tools.js", "work-helper.sh"]);
+    expect(_filterFilesByProfile(["personal-tools.js", "work-helper.sh"], true)).toMatchInlineSnapshot(`
+      [
+        "personal-tools.js",
+        "work-helper.sh",
+      ]
+    `);
   });
 });

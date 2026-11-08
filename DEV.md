@@ -151,7 +151,7 @@ See the [testing reference](docs/development-testing.md#testing) for suite comma
 ### Inline snapshots
 
 Review changed source and output before refreshing expectations; never accept a regression to make a snapshot pass.
-See [scoped refresh commands and browser fingerprints](docs/development-testing.md#inline-snapshots).
+See [collection assertions, scoped refresh commands, and browser fingerprints](docs/development-testing.md#inline-snapshots).
 
 ### Vitest configs
 

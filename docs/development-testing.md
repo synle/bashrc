@@ -42,6 +42,16 @@ Snapshot only relevant fields and normalize nondeterministic values such as temp
 Keep explicit assertions for scalar values, predicates, absence, and round-trip behavior when they communicate intent better.
 Use distinct snapshot locations when parameterized cases produce different output.
 
+Use inline snapshots for stable arrays and ordered field projections, including short title or command lists.
+Replace incidental collection counts with snapshots of the relevant collection, not snapshots of `.length`.
+When a complete collection snapshot already exists, remove its redundant count assertion.
+Preserve explicit limits, byte/width contracts, rejection/no-effect checks, and equality to original inputs or previous outputs.
+Sort inventory or set-like arrays before snapshotting; sort projected records by their stable identity key without mutating the source collection.
+Preserve meaningful order for source lines, navigation, command arguments, ranking, and execution sequences.
+
+For example, snapshot `blocks.slice(-4).map((block) => block.title)` instead of comparing it with a handwritten title array.
+An existing `expect(blocks).toMatchInlineSnapshot(...)` already checks the block count, contents, and order.
+
 Refresh existing inline snapshots with Vitest's one-shot update mode:
 
 ```bash
@@ -89,7 +99,7 @@ Never accept updated snapshots merely to silence a regression.
 
 Browser integration specs live in `software/tests/integration/webapp/` without a filename prefix.
 `app.spec.js` snapshots all trimmed command labels with an explicit Mac browser model; `navigation.linux.spec.js` separately checks Ubuntu-first Linux ordering.
-Each `commands.<name>.spec.js` clicks its command and checks the exact main-body child count.
+Each `commands.<name>.spec.js` clicks its command and snapshots every direct main-body child, including their exact count and order.
 Content entries snapshot the banner title and MD5 of rendered `innerText.trim()`; link groups retain nested labels and literal `href` values without URL hashing.
 Hidden form-data children remain counted and fingerprinted by their IDs. Browser platform and viewport are fixed for reproducible OS warnings and layout.
 Snapshots describe the current collapsed UI, not complete downloaded source files. Published profile headers and fetched content changes require intentional review.

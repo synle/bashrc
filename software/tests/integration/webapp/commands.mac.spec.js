@@ -8,8 +8,14 @@ const browser = commandBrowser();
 describe("command snapshots", () => {
   it("Setup Mac keeps its current block titles, content, links, and count", async () => {
     const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-mac");
-    expect(blocks).toHaveLength(16);
-    expect(blocks.slice(-4).map((block) => block.title)).toEqual(["OTHER APPLICATIONS", "link-group", "DNS DOCS / PROFILE", "link-group"]);
+    expect(blocks.slice(-4).map((block) => block.title)).toMatchInlineSnapshot(`
+      [
+        "OTHER APPLICATIONS",
+        "link-group",
+        "DNS DOCS / PROFILE",
+        "link-group",
+      ]
+    `);
     expect(errors).toMatchInlineSnapshot(`[]`);
     // Hashes fingerprint live-fetched rendered source; legitimate source changes can make this snapshot stale.
     // For hash-only failures, inspect the changed source first; do not accept unexpected content, links, or UI changes.

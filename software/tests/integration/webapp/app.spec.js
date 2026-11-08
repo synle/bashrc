@@ -75,7 +75,6 @@ describe("webapp integration test", () => {
         await page.waitForSelector('[data-testid="tab-navigation"]', { timeout: 10000 });
 
         const tabLabels = await page.$$eval(COMMAND_SELECTOR, (buttons) => buttons.map((button) => button.textContent.trim()));
-        expect(tabLabels).toHaveLength(15);
         expect(tabLabels).toMatchInlineSnapshot(`
           [
             "Setup Mac",

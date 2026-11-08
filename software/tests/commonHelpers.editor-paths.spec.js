@@ -170,21 +170,33 @@ describe("_getVSCodePaths", () => {
     const editor = loadEditorCommonWithDirs({
       "/mock/home/.config": ["Code", "opencode"],
     });
-    expect(editor._getVSCodePaths()).toEqual(["/mock/home/.config/Code"]);
+    expect(editor._getVSCodePaths()).toMatchInlineSnapshot(`
+      [
+        "/mock/home/.config/Code",
+      ]
+    `);
   });
 
   it("should find Code - Insiders in ~/.config (Linux Insiders build)", () => {
     const editor = loadEditorCommonWithDirs({
       "/mock/home/.config": ["Code - Insiders", "opencode"],
     });
-    expect(editor._getVSCodePaths()).toEqual(["/mock/home/.config/Code - Insiders"]);
+    expect(editor._getVSCodePaths()).toMatchInlineSnapshot(`
+      [
+        "/mock/home/.config/Code - Insiders",
+      ]
+    `);
   });
 
   it("should find Code in macOS Library/Application Support", () => {
     const editor = loadEditorCommonWithDirs({
       "/mock/home/Library/Application Support": ["Code", "Sublime Text", "opencode"],
     });
-    expect(editor._getVSCodePaths()).toEqual(["/mock/home/Library/Application Support/Code"]);
+    expect(editor._getVSCodePaths()).toMatchInlineSnapshot(`
+      [
+        "/mock/home/Library/Application Support/Code",
+      ]
+    `);
   });
 
   it("should not match VSCodium or other Code-suffixed/prefixed folders", () => {

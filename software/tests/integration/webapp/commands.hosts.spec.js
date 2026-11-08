@@ -8,7 +8,6 @@ const browser = commandBrowser();
 describe("command snapshots", () => {
   it("Setup Etc Hosts keeps its current block titles, content, links, and count", async () => {
     const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-etc-hosts");
-    expect(blocks).toHaveLength(1);
     expect(errors).toMatchInlineSnapshot(`[]`);
     expect(blocks).toMatchInlineSnapshot(`
       [
