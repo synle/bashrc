@@ -8,6 +8,9 @@
 # Target: /usr/bin/flatpak | Start In: /usr/bin/
 # The Brave tile opens Fav through the same kiosk URL launcher as the other sites.
 # Fixed site URLs open directly in kiosk mode; do not use "--app=" or URI forwarding.
+# This manual entry point also targets Arch-derived handheld installations.
+# Export identity for child installers; the explicit override survives run.sh detection.
+export is_os_steamos=1 _IS_OS_STEAMOS_OVERRIDE=1
 STEAMOS_SCRIPT_FOLDER="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- BEGIN - Setup diagnostics ---
@@ -1351,10 +1354,10 @@ fi
 if [ -x "$HOME/.local/zed.app/bin/zed" ]; then
   mkdir -p "$HOME/.config/zed"
 fi
-# Installs url-porter + skippy-ff Chrome extensions, both Zed scripts, plus tmux and vim config.
+# Installs browser extensions, both Zed scripts, tmux/vim config, and aggressive SteamOS DNS.
 tmp=$(mktemp -d) && pushd "$tmp" \
   && curl -fsSL "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh" -o run
-chmod +x run && ./run --skip-prompt --files=url-porter,skippy-ff,software/scripts/advanced/lsp/zed.js,software/scripts/advanced/zed.js,tmux,vim-config,vim-jetpack
+chmod +x run && ./run --skip-prompt --files=url-porter,skippy-ff,software/scripts/advanced/lsp/zed.js,software/scripts/advanced/zed.js,tmux,vim-config,vim-jetpack,systemd-resolved-dns.su.js
 rm -rf "$tmp"
 popd
 

@@ -10,7 +10,7 @@ import { getIndexConstant, getIndexFunction } from "../../setup.js";
 const SCRIPT_PATH = path.resolve("software/scripts/advanced/systemd-resolved-dns.su.js");
 /** Fixed installer target represented only by in-memory fixture data. @type {string} */
 const CONFIG_PATH = "/etc/systemd/resolved.conf";
-/** Resolver block prescribed by the request, with an accurate Quad9 label. @type {string} */
+/** Unchanged default resolver block with an accurate Quad9 label. @type {string} */
 const DNS_BLOCK = `# Sy Bootstrap DNS Cloudflare DNS with Family Filter
 [Resolve]
 # Primary: Quad9 (Malware & Phishing Threat Blocking + ECS; no family content filter)
@@ -18,6 +18,15 @@ DNS=9.9.9.11 149.112.112.11 2620:fe::11
 
 # Fallback: Cloudflare Family Filter (Malware Blocking + Family Safe)
 FallbackDNS=1.1.1.3 1.0.0.3 2606:4700:4700::1113 2606:4700:4700::1003`;
+
+/** Exact aggressive resolver block requested for SteamOS and WSL. @type {string} */
+const AGGRESSIVE_DNS_BLOCK = `# Sy Bootstrap DNS Cloudflare DNS with Family Filter
+[Resolve]
+# Primary: AdGuard Family Protection (Ad/Tracker Blocking + Malware + Family Safe) | DoH: family.adguard-dns.com
+DNS=94.140.14.15 94.140.15.16 2a10:50c0::bad1:ff 2a10:50c0::bad2:ff
+
+# Fallback: CleanBrowsing Family Filter (Strict Parental Control + SafeSearch + Malware) | DoH: family-filter-dns.cleanbrowsing.org
+FallbackDNS=185.228.168.168 185.228.169.168 2a0d:2a00:1:: 2a0d:2a00:2::`;
 
 /**
  * Load the installer with owned IO boundaries represented by private fixture state.
@@ -30,6 +39,8 @@ function fixture(content = "") {
   const effects = { backups: [], writes: [], commands: [], logs: [] };
   const context = vm.createContext({
     IS_DRY_RUN: false,
+    is_os_steamos: false,
+    is_os_wsl: false,
     EXEC_DEFAULT_TIMEOUT_MS: getIndexConstant("EXEC_DEFAULT_TIMEOUT_MS"),
     EXEC_MAX_TIMEOUT_MS: getIndexConstant("EXEC_MAX_TIMEOUT_MS"),
     global: { is_os_mac: 0, is_os_windows: 0, is_os_android_termux: 0 },
@@ -114,6 +125,33 @@ ${DNS_BLOCK}`);
     expect(context.content).toBe(DNS_BLOCK);
   });
 
+  it.each([
+    [true, false],
+    [false, true],
+    [true, true],
+  ])("deploys aggressive DNS once; SteamOS=%s WSL=%s", async (steamos, wsl) => {
+    const { context, effects, run } = fixture();
+    context.is_os_steamos = steamos;
+    context.is_os_wsl = wsl;
+    context.global.is_os_windows = Number(wsl);
+    await run();
+    await run();
+    expect(context.content).toBe(AGGRESSIVE_DNS_BLOCK);
+    expect(effects.backups).toEqual([{ target: CONFIG_PATH, content: "" }]);
+    expect(effects.writes).toEqual([{ target: CONFIG_PATH, content: AGGRESSIVE_DNS_BLOCK }]);
+    expect(effects.commands).toEqual([{ command: "systemctl restart systemd-resolved", options: { timeout: 30000 } }]);
+  });
+
+  it("backs up and comments prior settings before installing the aggressive SteamOS group", async () => {
+    const original = "# Existing comment\n[Resolve]\nDNS=192.0.2.1";
+    const { context, effects, run } = fixture(original);
+    context.is_os_steamos = true;
+    await run();
+    expect(context.content).toBe(`# Existing comment\n# [Resolve]\n# DNS=192.0.2.1\n\n${AGGRESSIVE_DNS_BLOCK}`);
+    expect(effects.backups).toEqual([{ target: CONFIG_PATH, content: original }]);
+    expect(effects.commands).toEqual([{ command: "systemctl restart systemd-resolved", options: { timeout: 30000 } }]);
+  });
+
   it("normalizes CRLF without leaving carriage returns in the deployed configuration", async () => {
     const { context, run } = fixture("# Original\r\n[Resolve]\r\nDNS=192.0.2.2");
     await run();
@@ -128,9 +166,10 @@ ${DNS_BLOCK}`);
     expect([effects.backups, effects.writes, effects.commands]).toEqual([[], [], []]);
   });
 
-  it("skips the old marker even when its resolver values differ", async () => {
+  it.each([false, true])("skips the old marker even when resolver values differ; SteamOS=%s", async (steamos) => {
     const original = "# Sy Bootstrap DNS Cloudflare DNS with Family Filter\n[Resolve]\nDNS=1.1.1.3\nFallbackDNS=1.1.1.2";
     const { context, effects, run } = fixture(original);
+    context.is_os_steamos = steamos;
     await run();
     expect(context.content).toBe(original);
     expect([effects.backups, effects.writes, effects.commands]).toEqual([[], [], []]);

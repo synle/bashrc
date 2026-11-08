@@ -591,6 +591,8 @@ providers. Keep manual helpers available unless their invocation itself would be
   so containerized Linux runners can't leak `is_os_ubuntu=1` onto Arch/RHEL/SteamOS. New
   OS flags go above it; `is_os_windows` / `is_os_wsl` stay below (WSL Ubuntu legitimately
   sets both).
+- **Manual SteamOS identity** — preserve the explicit platform override through both installer delegations.
+  Read `docs/steamos-setup.md` → SteamOS manual setup for the override and DNS-selection contracts.
 - **Never assume a binary exists** — `hasBinary()` / `has_persistent_binary` first.
 - **Quote paths.** Windows and macOS paths contain spaces.
 - **Required binaries must not install in the background** — nothing from the `required`

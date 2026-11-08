@@ -551,6 +551,11 @@ is_os_mingw64=0 && _detect_os --name "msys, cygwin" --path "/mingw64" && is_os_m
 is_os_android_termux=0 && _detect_os --env "TERMUX_VERSION" --path "/data/data/com.termux" && is_os_android_termux=1
 is_os_arch_linux=0 && _detect_os --name "arch, steamos" --bin "pacman" && is_os_arch_linux=1
 is_os_steamos=0 && _detect_os --name "steamos" && is_os_steamos=1
+# Manual SteamOS setup can identify Arch-derived handhelds before flags are persisted.
+# Only explicit 0/1 overrides are honored; unset or invalid values retain detection.
+case "${_IS_OS_STEAMOS_OVERRIDE:-}" in
+0 | 1) is_os_steamos="$_IS_OS_STEAMOS_OVERRIDE" ;;
+esac
 is_os_redhat=0 && _detect_os --name "fedora, rhel, centos, rocky, alma" --bin "dnf, yum" && is_os_redhat=1
 # is_os_ubuntu MUST come last among Linux distro flags so a host-kernel
 # /proc/version match can't override a real arch/redhat/etc. detection.

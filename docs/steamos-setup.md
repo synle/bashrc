@@ -89,7 +89,15 @@ Failed or empty Ghostty downloads never reach the AppImage registration pass.
 The Ghostty URL uses the versioned `v1.4.0` release tag instead of `tip`, whose nightly publications replace versioned asset filenames.
 Shortcut titles use filenames without `.AppImage`; `ES-DE.AppImage` retains the title `ES-DE Emulation Station`.
 An existing `~/Applications/ES-DE.AppImage` skips the EmuDeck installer download.
-Zed installs through its official installer in the background; setup waits before running both Zed configuration scripts alongside browser extensions and tmux/vim.
+Zed installs through its official installer in the background; setup waits before running both Zed configuration scripts alongside browser extensions, tmux/vim, and DNS configuration.
+Setup exports `is_os_steamos=1` and `_IS_OS_STEAMOS_OVERRIDE=1` to both shared-installer calls, including on Arch-derived handheld installations.
+`run.sh` accepts only `0` or `1` for that explicit override before persisting OS flags; unset or invalid values retain normal detection.
+`systemd-resolved-dns.su.js` uses private `_shouldUseAggressiveDNSHosts()` to select `DNS_GROUP_ADBLOCKING_AGGRESSIVE` when SteamOS or WSL is enabled.
+The aggressive group uses the requested AdGuard Family primary addresses and CleanBrowsing Family fallback addresses, including IPv6.
+Other supported systems retain `DNS_GROUP_DEFAULT`, with Quad9 primary and Cloudflare Family fallback addresses; native Windows remains unsupported.
+DoH hostnames are informational comments, not encrypted-DNS configuration.
+DNS setup remains one-time: absent configuration files and configurations carrying the existing Sy marker are left unchanged.
+Unmarked existing configurations receive backups before replacement and a resolver-service restart; restart failures propagate.
 Python YAML satisfies DeckyPlumber's Python dependency; its separate running InputPlumber prerequisite remains the user's responsibility.
 Kate removal uses `sudo pacman -R --noconfirm kate` only when installed.
 KDE favorites include Brave, Zed, Ghostty, EmuDeck, and ES-DE AppImage; taskbar pins include Brave, Zed, and Ghostty.
