@@ -24,6 +24,7 @@ describe("command snapshots", () => {
     const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-steamos", [STEAMOS_SETUP_PATH]);
     expect(requestErrors).toEqual([]);
     expect(blocks).toHaveLength(15);
+    expect(blocks.slice(0, 2).map((block) => block.title)).toEqual(["software/scripts/steamos/setup.bash", "software/bootstrap/setup.sh"]);
     expect(errors).toMatchInlineSnapshot(`[]`);
     // The full source is checked below; formatter versions may change hidden-line counts without changing this preview.
     // For hash-only failures, inspect the changed source first; do not accept unexpected content, links, or UI changes.
@@ -33,12 +34,12 @@ describe("command snapshots", () => {
     expect(blocks).toMatchInlineSnapshot(`
       [
         {
-          "hash": "8a9089acc4c542727e43734581c5ad35",
-          "title": "software/bootstrap/setup.sh",
-        },
-        {
           "hash": "274273ad07625221746b0a4d73f05cf3",
           "title": "software/scripts/steamos/setup.bash",
+        },
+        {
+          "hash": "8a9089acc4c542727e43734581c5ad35",
+          "title": "software/bootstrap/setup.sh",
         },
         {
           "hash": "7a2570d84a170b0c465e5ae49eded2cb",
