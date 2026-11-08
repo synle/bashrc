@@ -149,12 +149,13 @@ PC is unavailable. Keep host shortcuts if you still use them there.
 
 ## Decky package bundle
 
-[`software/metadata/decky-packages.json`](../../software/metadata/decky-packages.json) owns the exact Loader version and all ten plugin/nine theme selections.
+[`software/metadata/decky-packages.json`](../../software/metadata/decky-packages.json) owns the exact Loader version and all plugin/theme selections.
 Compact entries require only `path`, `name`, and `version`.
 Their hand-picked ZIPs live in [`decky_loader_plugins/`](decky_loader_plugins/); the shared runtime derives trusted hashes, native roots, kinds, and theme IDs.
 Rich HTTPS/hash entries remain supported. Selection and version authority stays in JSON, not this attribution section.
 Decky-Framegen uses a verified upstream release URL and SHA-256 because its ZIP exceeds GitHub's 100 MiB normal-file limit.
 It joins the generated release bundle without adding an oversized Git object or requiring Git LFS.
+DeckyPlumber uses a repository ZIP repacked from its verified stable release tarball with unchanged file contents and permissions.
 
 The generated `steamos-decky__bundle.zip` contains `metadata.json`, `decky_plugin/<name>_v<version>.zip`, and `decky_css_loader/<name>_v<version>.zip`.
 The self-extracting installer also includes repository ZIPs. Generated bundles are not committed.
@@ -191,6 +192,7 @@ These links preserve provenance only; they do not define another package-selecti
 - [CSS Loader](https://github.com/DeckThemes/SDH-CssLoader)
 - [Decky LSFG-VK](https://github.com/xXJSONDeruloXx/decky-lsfg-vk)
 - [Decky-Framegen](https://github.com/xXJSONDeruloXx/Decky-Framegen)
+- [DeckyPlumber](https://github.com/aarron-lee/DeckyPlumber)
 
 ## Misc — repo root
 

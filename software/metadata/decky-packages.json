@@ -99,6 +99,11 @@
       "source": "https://github.com/xXJSONDeruloXx/Decky-Framegen",
       "url": "https://github.com/xXJSONDeruloXx/Decky-Framegen/releases/download/v0.17/Decky-Framegen.zip",
       "sha256": "3300b617e3d979b483d03f995c75c829d6d54beaa4ac8dfae300c2560e4fc60f"
+    },
+    {
+      "path": "assets/steamos/decky_loader_plugins/DeckyPlumber_v0.1.8.zip",
+      "name": "DeckyPlumber",
+      "version": "0.1.8"
     }
   ]
 }

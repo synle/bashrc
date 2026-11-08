@@ -71,15 +71,16 @@ describe("standard opt-in Decky script consumer", () => {
     expect(requireModule(path.join(folder, "software/scripts/decky/decky-runtime.common.js")).CACHE_URL).toBe(
       "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
     );
-    expect(requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(19);
+    expect(requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(20);
     expect(fs.existsSync(path.join(folder, "software/scripts/decky-and-css-loader.standalone.js"))).toBe(true);
     // Only selected archives are required; optional prior versions do not determine the selection count.
     expect(fs.readdirSync(path.join(folder, "assets/steamos/decky_loader_plugins"))).toContain("HueSync_v3.10.0.zip");
     const pins = requireModule(path.join(folder, "software/scripts/decky/decky-packages.common.js")).resolvePackages(
       requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages,
     );
-    expect(pins).toHaveLength(19);
-    expect(pins.filter((pin) => pin.local_path)).toHaveLength(18);
+    expect(pins).toHaveLength(20);
+    expect(pins.filter((pin) => pin.local_path)).toHaveLength(19);
+    expect(pins.find((pin) => pin.name === "DeckyPlumber").version).toBe("0.1.8");
   });
   it("stages loadable Node modules and pins, then invokes their emitted install entry through Bash", async () => {
     const { folder, bash } = await emit();
@@ -91,7 +92,7 @@ describe("standard opt-in Decky script consumer", () => {
     expect(requireModule(runtime).CACHE_URL).toBe(
       "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
     );
-    expect(requireModule(path.join(stage, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(19);
+    expect(requireModule(path.join(stage, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(20);
     // Test-owned elevation seam still resolves actual repository archives through the staged package module.
     fs.writeFileSync(
       runtime,
@@ -104,7 +105,7 @@ describe("standard opt-in Decky script consumer", () => {
     );
     const result = spawnSync("/bin/bash", ["-c", bash], { encoding: "utf8", timeout: 15000 });
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toBe("19 resolved selected packages\n");
+    expect(result.stdout).toBe("20 resolved selected packages\n");
   });
   it("propagates a failed emitted installer as a nonzero Bash result", async () => {
     const { folder, bash } = await emit();

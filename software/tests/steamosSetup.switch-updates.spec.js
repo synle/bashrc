@@ -192,11 +192,11 @@ describe("Switch update files", () => {
     expect(fs.readFileSync(path.join(roms, "Game - Update - 1.nsp"), "utf8")).toBe("incoming");
   });
 
-  it("reports a failed move and retains the source", () => {
+  it.each([0, 7])("rejects a move that leaves its source without a destination despite status %i", (status) => {
     const { home, roms, dlc } = fixture();
     fs.writeFileSync(path.join(roms, "Game - Update - 1.nsp"), "incoming");
 
-    const result = runMoves(home, "function mv() { return 7; }");
+    const result = runMoves(home, `function mv() { return ${status}; }`);
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Switch update move failed:");
@@ -205,13 +205,14 @@ describe("Switch update files", () => {
     expect(fs.readdirSync(dlc)).toEqual([]);
   });
 
-  it("preserves a destination created between the conflict check and move", () => {
+  it.each([0, 1])("preserves a racing destination when no-clobber exits %i", (status) => {
     const { home, roms, dlc } = fixture();
     fs.writeFileSync(path.join(roms, "Game - Update - 1.nsp"), "incoming");
 
     const result = runMoves(
       home,
-      'function mv() { printf "%s" "racing writer" > "$HOME/Emulation/roms/switch/dlc/Game - Update - 1.nsp"; command mv "$@"; }',
+      // BSD and GNU versions disagree on whether a no-clobber skip exits zero.
+      `function mv() { printf "%s" "racing writer" > "$HOME/Emulation/roms/switch/dlc/Game - Update - 1.nsp"; command mv "$@"; return ${status}; }`,
     );
 
     expect(result.status, result.stderr).toBe(0);
@@ -221,11 +222,14 @@ describe("Switch update files", () => {
     expect(fs.readFileSync(path.join(dlc, "Game - Update - 1.nsp"), "utf8")).toBe("racing writer");
   });
 
-  it("does not nest an update inside a destination folder created just before the move", () => {
+  it.each([0, 1])("does not nest an update in a racing folder when no-clobber exits %i", (status) => {
     const { home, roms, dlc } = fixture();
     fs.writeFileSync(path.join(roms, "Game - Update - 1.nsp"), "incoming");
 
-    const result = runMoves(home, 'function mv() { mkdir "$HOME/Emulation/roms/switch/dlc/Game - Update - 1.nsp"; command mv "$@"; }');
+    const result = runMoves(
+      home,
+      `function mv() { mkdir "$HOME/Emulation/roms/switch/dlc/Game - Update - 1.nsp"; command mv "$@"; return ${status}; }`,
+    );
 
     expect(result.status, result.stderr).toBe(0);
     expect(result.stderr).toContain("destination exists; keeping source:");

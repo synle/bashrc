@@ -124,4 +124,34 @@ describe("SteamOS long package output (Bash subprocess)", () => {
     expect(result.stdout).not.toContain("flatpak verbose");
     expect(result.stderr).not.toContain("flatpak error stream");
   });
+
+  it.each([
+    { status: 0, flatpakCalls: "update\n-y\nupdate\n-y\n" },
+    { status: 17, flatpakCalls: "" },
+  ])("installs Python YAML noninteractively on reruns with pacman status $status", ({ status, flatpakCalls }) => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-python-yaml-"));
+    folders.push(home);
+    fs.mkdirSync(path.join(home, "bin"));
+    fs.writeFileSync(path.join(home, "flatpak-arguments"), "");
+    fs.writeFileSync(path.join(home, "bin/pacman"), `#!/bin/bash\nprintf '%s\\n' "$@" >> "$HOME/arguments"\nexit ${status}\n`, {
+      mode: 0o755,
+    });
+    fs.writeFileSync(path.join(home, "bin/flatpak"), '#!/bin/bash\nprintf \'%s\\n\' "$@" >> "$HOME/flatpak-arguments"\n', { mode: 0o755 });
+    const dependencies = source.split("# --- Brave dependencies ---")[1].split("# --- Brave and URL shortcuts")[0];
+    const result = spawnSync(
+      "/bin/bash",
+      ["--noprofile", "--norc", "-c", `${logger}\nfunction sudo() { "$@"; }\nDO_SYSTEM_UPGRADE=0\n${dependencies}\n${dependencies}`],
+      {
+        encoding: "utf8",
+        timeout: 5000,
+        env: { ...process.env, HOME: home, BASHRC_TEMP_ROOT_DIR: home, PATH: `${home}/bin:${process.env.PATH}`, BASH_ENV: "" },
+      },
+    );
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(fs.readFileSync(path.join(home, "arguments"), "utf8")).toBe(
+      "-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\n-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\n",
+    );
+    expect(fs.readFileSync(path.join(home, "flatpak-arguments"), "utf8")).toBe(flatpakCalls);
+  });
 });

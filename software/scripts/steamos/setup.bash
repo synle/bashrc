@@ -1260,17 +1260,17 @@ fi
 
 # --- Brave dependencies ---
 if type -P pacman > /dev/null; then
-  printf '%s\n' ">>> Installing vim, tmux and fuse2"
+  printf '%s\n' ">>> Installing vim, tmux, fuse2 and python-yaml"
   if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
     printf '%s\n' ">>> Updating system (pacman -Syu)"
     _run_long_install "System upgrade" sudo pacman -Syu --noconfirm
   else
     printf '%s\n' ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
   fi
-  if _run_long_install "Vim, tmux, and FUSE installation" sudo pacman -S --needed --noconfirm vim tmux fuse2; then
+  if _run_long_install "Vim, tmux, FUSE, and Python YAML installation" sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml; then
     _run_long_install "Flatpak update" flatpak update -y
   else
-    printf '%s\n' ">>> Steam: vim/tmux/fuse2 package installation failed; continuing."
+    printf '%s\n' ">>> Steam: vim/tmux/fuse2/python-yaml package installation failed; continuing."
   fi
 fi
 
@@ -1711,16 +1711,18 @@ fi
       printf '>>> Switch updates: could not create dlc folder: %s\n' "$switch_dlc_folder" >&2
       exit 1
     fi
-    if ! mv -n "$switch_update_file" "$switch_dlc_folder/"; then
+    switch_move_status=0
+    mv -n "$switch_update_file" "$switch_dlc_folder/" || switch_move_status=$?
+    # GNU/BSD no-clobber exit statuses differ; a preserved source and destination prove a conflict.
+    if [ -f "$switch_update_file" ] && [ ! -L "$switch_update_file" ] && { [ -e "$switch_update_destination" ] || [ -L "$switch_update_destination" ]; }; then
+      printf '>>> Switch updates: destination exists; keeping source: %s\n' "$switch_update_file" >&2
+      continue
+    fi
+    if [ "$switch_move_status" -ne 0 ] || [ -e "$switch_update_file" ] || [ -L "$switch_update_file" ]; then
       printf '>>> Switch update move failed: %s\n' "$switch_update_file" >&2
       exit 1
     fi
-    # mv -n may succeed without moving when another writer creates the destination.
-    if [ -e "$switch_update_file" ] || [ -L "$switch_update_file" ]; then
-      printf '>>> Switch updates: destination exists; keeping source: %s\n' "$switch_update_file" >&2
-    else
-      printf '>>> Switch update moved: %s\n' "$switch_update_destination"
-    fi
+    printf '>>> Switch update moved: %s\n' "$switch_update_destination"
   done
 ) || exit 1
 

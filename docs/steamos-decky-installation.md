@@ -35,9 +35,9 @@ The runtime rejects root and mismatched HOME before creating logs or downloading
 }
 ```
 
-This example shows one entry; the canonical inventory retains all ten plugins and nine themes.
+This example shows one entry; the canonical inventory retains all selected plugins and themes.
 Versions are hand-picked repository versions, not automatic upstream-latest selections.
-Eighteen selected archives live in `assets/steamos/decky_loader_plugins/`; Decky-Framegen uses a pinned upstream release archive.
+Selected repository archives live in `assets/steamos/decky_loader_plugins/`; Decky-Framegen uses a pinned upstream release archive.
 That folder is the only approved source for compact entries requiring `path`, `name`, and `version`.
 
 The runtime derives SHA-256, actual native archive root, plugin/theme kind, and theme ID from trusted repository bytes.
@@ -56,6 +56,11 @@ Its rich entry pins the exact release URL, native root, version, and independent
 No Git LFS or oversized Git object is required. Existing Decky LSFG-VK remains selected as a separate plugin.
 After installation, open Decky-Framegen and choose **Setup OptiScaler Mod**, then configure each game according to upstream guidance.
 The installer does not enable frame generation or patch games automatically.
+
+DeckyPlumber requires a running InputPlumber service and Python YAML, as documented by its [upstream prerequisites](https://github.com/aarron-lee/DeckyPlumber).
+Manual SteamOS setup installs `python-yaml` alongside its other pacman prerequisites.
+The package installer does not install, enable, or configure InputPlumber.
+Its repository ZIP preserves the compiled stable release tarball's file contents and executable permissions.
 
 ## Exact Loader version
 
