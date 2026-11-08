@@ -107,25 +107,6 @@ _start_steamos_setup_log || exit 1
 
 # --- END - Setup diagnostics ---
 
-# --- BEGIN - Required system dependencies ---
-# Install prerequisites on every run before optional prompts, downloads, or application setup.
-# No opt-in or package confirmation; stop if authentication or required installation fails.
-if ! sudo -v; then
-  printf '%s\n' ">>> SteamOS setup stopped: sudo authentication failed." >&2
-  exit 1
-fi
-if ! type -P pacman > /dev/null; then
-  printf '%s\n' ">>> SteamOS setup stopped: pacman is required to install system tools." >&2
-  exit 1
-fi
-printf '%s\n' ">>> Installing required tools: vim, tmux, fuse2, python-yaml, python-pip and p7zip"
-if ! _run_long_install "Required system tools" sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml python-pip p7zip; then
-  printf '%s\n' ">>> SteamOS setup stopped: required tool installation failed; review package log." >&2
-  exit 1
-fi
-
-# --- END - Required system dependencies ---
-
 # --- BEGIN - Shell update alias ---
 # Append the setup alias only to existing Bash startup files without a direct update alias.
 # No arguments. Returns nonzero on read, backup, or append failure; never creates startup files.
@@ -205,12 +186,6 @@ else
   DO_DECKY_SETUP=0
 fi
 
-if _prompt "Run system upgrade (sudo pacman -Syu / paru -Syu)?"; then # --- prompt - Optional system upgrades ---
-  DO_SYSTEM_UPGRADE=1
-else
-  DO_SYSTEM_UPGRADE=0
-fi
-
 if _prompt "Run Flatpak update (flatpak update)?" Y; then # --- prompt - Optional Flatpak updates ---
   DO_FLATPAK_UPGRADE=1
 else
@@ -225,6 +200,52 @@ else
 fi
 
 # --- END - Initial setup choices ---
+
+#############################################
+# --- Main Code begins here ---
+#############################################
+
+# --- BEGIN - Required system dependencies ---
+# Install prerequisites on every run before optional prompts, downloads, or application setup.
+# No opt-in or package confirmation; stop if authentication or required installation fails.
+if ! sudo -v; then
+  printf '%s\n' ">>> SteamOS setup stopped: sudo authentication failed." >&2
+  exit 1
+fi
+if ! type -P pacman > /dev/null; then
+  printf '%s\n' ">>> SteamOS setup stopped: pacman is required to install system tools." >&2
+  exit 1
+fi
+
+printf '%s\n' ">>> Installing required tools: vim tmux fuse2 python-yaml python-pip p7zip syncthing"
+sudo pacman -Syyu --noconfirm --needed
+sudo pacman -Syyu --noconfirm --needed vim tmux fuse2 python-yaml python-pip p7zip syncthing
+
+# --- BEGIN - Syncthing ---
+printf '%s\n' ">>> Syncthing: enabling systemd service for user $USER"
+sudo systemctl enable --now syncthing@$USER.service 2>/dev/null || true
+printf '%s\n' ">>> Syncthing: user systemd service status check"
+systemctl --user enable --now syncthing.service 2>/dev/null || true
+systemctl --user status syncthing.service --no-pager || true
+printf '%s\n' ">>> Syncthing: enabling lingering for $USER (service runs without active session)"
+sudo loginctl enable-linger --show-format '{{.Lingering}}' "$USER" 2>/dev/null || true
+# --- END - Syncthing ---
+
+# --- BEGIN - Decky Plumber pyyaml ---
+if [ -d "$HOME/homebrew/plugins/decky-plumber" ]; then
+  printf '%s\n' ">>> Installing pyyaml for Decky Plumber plugin."
+  sudo python3 -m pip install --target "$HOME/homebrew/plugins/decky-plumber" pyyaml &>/dev/null &
+fi
+# --- END - Decky Plumber pyyaml ---
+# --- BEGIN - Remove Kate ---
+if type -P pacman > /dev/null && pacman -Q kate > /dev/null 2>&1; then
+  if ! _run_long_install "Kate removal" sudo pacman -R --noconfirm kate; then
+    printf '%s\n' ">>> Kate removal failed; review package log." >&2
+  fi
+fi
+
+# --- END - Remove Kate ---
+# --- END - Required system dependencies ---
 
 # --- BEGIN - Application folders ---
 DESKTOP_FOLDER="$HOME/Desktop"
@@ -1312,15 +1333,6 @@ fi
 
 # --- END - ProtonUp-Qt (AppImage) ---
 
-# --- BEGIN - Optional system upgrades ---
-if [ "$DO_SYSTEM_UPGRADE" -eq 1 ]; then
-  printf '%s\n' ">>> Updating system (pacman -Syu)"
-  _run_long_install "System upgrade" sudo pacman -Syu --noconfirm
-else
-  printf '%s\n' ">>> Skipped system upgrade: sudo pacman -Syu --noconfirm"
-fi
-# --- END - Optional system upgrades ---
-
 # --- BEGIN - Optional Flatpak updates ---
 if [ "$DO_FLATPAK_UPGRADE" -eq 1 ]; then
   _run_long_install "Flatpak update" flatpak update -y
@@ -1362,15 +1374,6 @@ rm -rf "$tmp"
 popd
 
 # --- END - Browser Extensions + editors (via the synle/bashrc installer) ---
-
-# --- BEGIN - Remove Kate ---
-if type -P pacman > /dev/null && pacman -Q kate > /dev/null 2>&1; then
-  if ! _run_long_install "Kate removal" sudo pacman -R --noconfirm kate; then
-    printf '%s\n' ">>> Kate removal failed; review package log." >&2
-  fi
-fi
-
-# --- END - Remove Kate ---
 
 # --- BEGIN - Optional AUR upgrades ---
 if type -P paru > /dev/null && grep -q '^ID=cachyos' /etc/os-release 2> /dev/null; then
@@ -1804,32 +1807,6 @@ fi
 ) || exit 1
 
 # --- END - Switch update files ---
-
-# --- BEGIN - Decky Plumber pyyaml ---
-if [ -d "$HOME/homebrew/plugins/decky-plumber" ]; then
-  printf '%s\n' ">>> Installing pyyaml for Decky Plumber plugin."
-  sudo python3 -m pip install --target "$HOME/homebrew/plugins/decky-plumber" pyyaml &>/dev/null &
-fi
-# --- END - Decky Plumber pyyaml ---
-
-# --- BEGIN - Syncthing ---
-if ! type -P pacman > /dev/null; then
-  printf '%s\n' ">>> Syncthing setup: skipping; pacman not available."
-else
-  printf '%s\n' ">>> Syncthing: installing syncthing package"
-  if _run_long_install "Syncthing install" sudo pacman -S --needed --noconfirm syncthing; then
-    printf '%s\n' ">>> Syncthing: enabling systemd service for user $USER"
-    sudo systemctl enable --now syncthing@$USER.service 2>/dev/null || true
-    printf '%s\n' ">>> Syncthing: user systemd service status check"
-    systemctl --user enable --now syncthing.service 2>/dev/null || true
-    systemctl --user status syncthing.service --no-pager || true
-    printf '%s\n' ">>> Syncthing: enabling lingering for $USER (service runs without active session)"
-    sudo loginctl enable-linger --show-format '{{.Lingering}}' "$USER" 2>/dev/null || true
-  else
-    printf '%s\n' ">>> Syncthing install failed; continuing without Syncthing setup." >&2
-  fi
-fi
-# --- END - Syncthing ---
 
 # --- BEGIN - Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then
