@@ -8,7 +8,6 @@ const browser = commandBrowser();
 describe("command snapshots", () => {
   it("Test Custom Run keeps its current block titles, content, links, and count", async () => {
     const { blocks, errors } = await selectCommand(browser.page, "command-option-test-custom-run");
-    expect(blocks).toHaveLength(6);
     expect(errors).toMatchInlineSnapshot(`[]`);
     expect(blocks).toMatchInlineSnapshot(`
       [
@@ -21,7 +20,7 @@ describe("command snapshots", () => {
           "title": "SCRIPTS TO RUN",
         },
         {
-          "hash": "030a270be9e7436d7dbf854f99bc3b4a",
+          "hash": "5c90964077f382262a657addbd12b3e5",
           "title": "scriptToRunOptions",
         },
         {

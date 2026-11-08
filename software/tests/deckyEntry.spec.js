@@ -71,15 +71,128 @@ describe("standard opt-in Decky script consumer", () => {
     expect(requireModule(path.join(folder, "software/scripts/decky/decky-runtime.common.js")).CACHE_URL).toBe(
       "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
     );
-    expect(requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(20);
+    expect(
+      requireModule(path.join(folder, "software/metadata/decky-packages.json"))
+        .decky_packages.map(({ name }) => name)
+        .sort(),
+    ).toMatchInlineSnapshot(`
+      [
+        "AutoFlatpaks",
+        "CSS Loader",
+        "Centered Home",
+        "Clean Gameview",
+        "Decky LSFG-VK",
+        "Decky-Framegen",
+        "DeckyPlumber",
+        "EmuDecky",
+        "Faster Transition Animations",
+        "HLTB for Deck",
+        "HueSync",
+        "Mini Carousel",
+        "No Home Edge Fade",
+        "No Home Recent Text",
+        "No Home Text",
+        "Obsidian",
+        "ProtonDB Badges",
+        "Round",
+        "SteamGridDB",
+        "Volume Boost",
+      ]
+    `);
     expect(fs.existsSync(path.join(folder, "software/scripts/decky-and-css-loader.standalone.js"))).toBe(true);
     // Only selected archives are required; optional prior versions do not determine the selection count.
     expect(fs.readdirSync(path.join(folder, "assets/steamos/decky_loader_plugins"))).toContain("HueSync_v3.10.0.zip");
     const pins = requireModule(path.join(folder, "software/scripts/decky/decky-packages.common.js")).resolvePackages(
       requireModule(path.join(folder, "software/metadata/decky-packages.json")).decky_packages,
     );
-    expect(pins).toHaveLength(20);
-    expect(pins.filter((pin) => pin.local_path)).toHaveLength(19);
+    expect(
+      pins
+        .map(({ name, local_path }) => ({ name, repositoryArchive: local_path !== undefined }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "name": "AutoFlatpaks",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Centered Home",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Clean Gameview",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "CSS Loader",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Decky LSFG-VK",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Decky-Framegen",
+          "repositoryArchive": false,
+        },
+        {
+          "name": "DeckyPlumber",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "EmuDecky",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Faster Transition Animations",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "HLTB for Deck",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "HueSync",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Mini Carousel",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "No Home Edge Fade",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "No Home Recent Text",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "No Home Text",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Obsidian",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "ProtonDB Badges",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Round",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "SteamGridDB",
+          "repositoryArchive": true,
+        },
+        {
+          "name": "Volume Boost",
+          "repositoryArchive": true,
+        },
+      ]
+    `);
     expect(pins.find((pin) => pin.name === "DeckyPlumber").version).toBe("0.1.8");
   });
   it("stages loadable Node modules and pins, then invokes their emitted install entry through Bash", async () => {
@@ -92,7 +205,34 @@ describe("standard opt-in Decky script consumer", () => {
     expect(requireModule(runtime).CACHE_URL).toBe(
       "https://github.com/synle/bashrc/releases/download/binary-cache/steamos-decky__bundle.zip",
     );
-    expect(requireModule(path.join(stage, "software/metadata/decky-packages.json")).decky_packages).toHaveLength(20);
+    expect(
+      requireModule(path.join(stage, "software/metadata/decky-packages.json"))
+        .decky_packages.map(({ name }) => name)
+        .sort(),
+    ).toMatchInlineSnapshot(`
+      [
+        "AutoFlatpaks",
+        "CSS Loader",
+        "Centered Home",
+        "Clean Gameview",
+        "Decky LSFG-VK",
+        "Decky-Framegen",
+        "DeckyPlumber",
+        "EmuDecky",
+        "Faster Transition Animations",
+        "HLTB for Deck",
+        "HueSync",
+        "Mini Carousel",
+        "No Home Edge Fade",
+        "No Home Recent Text",
+        "No Home Text",
+        "Obsidian",
+        "ProtonDB Badges",
+        "Round",
+        "SteamGridDB",
+        "Volume Boost",
+      ]
+    `);
     // Test-owned elevation seam still resolves actual repository archives through the staged package module.
     fs.writeFileSync(
       runtime,

@@ -8,7 +8,6 @@ const browser = commandBrowser();
 describe("platform-specific navigation", () => {
   it("keeps Ubuntu first for a Linux browser", async () => {
     const labels = await browser.page.$$eval(COMMAND_SELECTOR, (buttons) => buttons.map((button) => button.textContent.trim()));
-    expect(labels).toHaveLength(15);
     expect(labels).toMatchInlineSnapshot(`
       [
         "Setup Ubuntu",

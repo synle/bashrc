@@ -72,14 +72,34 @@ describe("AI CLI keymap parity — HOME → BOL, END → EOL across all 4 tools"
       const bindings = await getIndexFunction("_loadGeminiManagedKeybindings")(isOsMac);
       const homeKeys = bindings.filter((b) => b.command === "cursor.home").map((b) => b.key);
       const endKeys = bindings.filter((b) => b.command === "cursor.end").map((b) => b.key);
-      expect(homeKeys, `Gemini (mac=${isOsMac}): cursor.home chord set`).toEqual(["ctrl+a", "home"]);
-      expect(endKeys, `Gemini (mac=${isOsMac}): cursor.end chord set`).toEqual(["ctrl+e", "end"]);
+      expect(homeKeys, `Gemini (mac=${isOsMac}): cursor.home chord set`).toMatchInlineSnapshot(`
+        [
+          "ctrl+a",
+          "home",
+        ]
+      `);
+      expect(endKeys, `Gemini (mac=${isOsMac}): cursor.end chord set`).toMatchInlineSnapshot(`
+        [
+          "ctrl+e",
+          "end",
+        ]
+      `);
     }
   });
 
   it("OpenCode: input_line_home includes ctrl+a and home; input_line_end includes ctrl+e and end", async () => {
     const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(false);
-    expect(keybinds.input_line_home.split(",")).toEqual(["ctrl+a", "home"]);
-    expect(keybinds.input_line_end.split(",")).toEqual(["ctrl+e", "end"]);
+    expect(keybinds.input_line_home.split(",")).toMatchInlineSnapshot(`
+      [
+        "ctrl+a",
+        "home",
+      ]
+    `);
+    expect(keybinds.input_line_end.split(",")).toMatchInlineSnapshot(`
+      [
+        "ctrl+e",
+        "end",
+      ]
+    `);
   });
 });

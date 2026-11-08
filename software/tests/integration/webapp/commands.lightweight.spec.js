@@ -8,7 +8,6 @@ const browser = commandBrowser();
 describe("command snapshots", () => {
   it("Setup Lightweight Profile keeps its current block titles, content, links, and count", async () => {
     const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-lightweight-profile");
-    expect(blocks).toHaveLength(1);
     expect(errors).toMatchInlineSnapshot(`[]`);
     expect(blocks).toMatchInlineSnapshot(`
       [

@@ -135,8 +135,7 @@ describe("SteamOS setup fixture boundaries", () => {
     const sections = [...setupSource.matchAll(/^# --- BEGIN - (.+) ---\n[\s\S]*?^# --- END - \1 ---$/gm)];
     const markers = [...setupSource.matchAll(/^# --- (?:BEGIN|END) - .+ ---$/gm)];
 
-    expect(sections).toHaveLength(29);
-    expect(markers).toHaveLength(58);
+    expect(markers.length).toBe(sections.length * 2);
     expect(sections.map((section) => section[1])).toMatchInlineSnapshot(`
       [
         "Setup diagnostics",
@@ -175,16 +174,17 @@ describe("SteamOS setup fixture boundaries", () => {
   it("links every yes/no prompt to its named execution section", () => {
     const prompts = setupSource.split("\n").filter((line) => /^\s*(?:if|until)\b.*_prompt\s/.test(line));
 
-    expect(prompts).toHaveLength(7);
-    expect(prompts.map((line) => line.match(/# --- prompt - (.+) ---$/)?.[1])).toEqual([
-      "Steam shortcuts",
-      "Steam shortcuts",
-      "Decky Loader + plugins + CSS Loader themes",
-      "Optional system upgrades",
-      "Optional Flatpak updates",
-      "USB wake-up",
-      "Done - Final clean up and confirmation",
-    ]);
+    expect(prompts.map((line) => line.match(/# --- prompt - (.+) ---$/)?.[1])).toMatchInlineSnapshot(`
+      [
+        "Steam shortcuts",
+        "Steam shortcuts",
+        "Decky Loader + plugins + CSS Loader themes",
+        "Optional system upgrades",
+        "Optional Flatpak updates",
+        "USB wake-up",
+        "Done - Final clean up and confirmation",
+      ]
+    `);
   });
 
   it("excludes installer code after the ending marker", () => {

@@ -98,14 +98,24 @@ describe("getAcpAgentInputs > binary resolution", () => {
       copilot: "/mock/home/.local/bin/copilot",
     });
     const agents = await zed.getAcpAgentInputs();
-    expect(agents.map((a) => a.id)).toEqual(["claude", "opencode", "copilot"]);
+    expect(agents.map((a) => a.id)).toMatchInlineSnapshot(`
+      [
+        "claude",
+        "opencode",
+        "copilot",
+      ]
+    `);
     expect(agents.find((a) => a.id === "opencode").binaryPath).toBe("/mock/home/.local/bin/opencode");
   });
 
   it("drops agents whose CLI is not installed", async () => {
     const zed = loadZedWithBinaries({ opencode: "/mock/home/.local/bin/opencode" });
     const agents = await zed.getAcpAgentInputs();
-    expect(agents.map((a) => a.id)).toEqual(["opencode"]);
+    expect(agents.map((a) => a.id)).toMatchInlineSnapshot(`
+      [
+        "opencode",
+      ]
+    `);
   });
 
   it("rejects a /tmp/ hit so a bootstrap copy never gets baked into settings.json", async () => {
@@ -120,7 +130,7 @@ describe("getAcpAgentInputs > binary resolution", () => {
   });
 });
 
-// ---- Theme contrast: zed-color-{dark,light}.jsonc ----
+// --- Theme contrast: zed-color-{dark,light}.jsonc ---
 //
 // Zed paints text ON every `*.background` / fill key, so a fill that matches its own foreground
 // (or a border color reused as a fill) renders invisible text. These checks flatten each fill

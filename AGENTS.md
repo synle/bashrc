@@ -650,8 +650,13 @@ file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
   `make validate` runs `test_integration_local`; explicit live/local integration targets and CI retain the heavier checks.
   Moving tests does not fix their subprocess deadlines or resource-isolation defects.
 - **Prefer inline snapshots.** Use `toMatchInlineSnapshot` for stable structured output instead of `toMatchObject`, external `toMatchSnapshot`, or bulky literal-object assertions.
+  Include stable arrays and ordered field projections instead of handwritten `toEqual([...])` expectations or incidental `toHaveLength` checks.
+  Snapshot the relevant collection, not only its length; a complete collection snapshot also verifies cardinality, so remove counts that duplicate it.
+  Sort inventory or set-like arrays by name before snapshotting; sort projected records by their stable identity key without mutating the source collection.
+  Preserve order when source lines, navigation, command arguments, ranking, or execution sequences make it part of the tested contract.
   Keep snapshots small and behavior-focused; project relevant fields and normalize only nondeterministic values.
   Preserve explicit scalar, predicate, absence, and round-trip assertions when they express the contract more clearly.
+  Keep explicit retention limits, byte/width contracts, input-preservation relationships, and generated-keybinding bounds; do not snapshot binaries merely to replace a length check.
   Keep parameterized cases refreshable without sharing one inline-snapshot location across different expected outputs.
 - **Snapshot command parity.** Every new test suite type must add a matching `resetTestSnapshots:<type>` npm script in the same change.
   Include its snapshot coverage in the aggregate `resetTestSnapshots` command; an existing equivalent suite may cover an alternate execution mode without running duplicate tests.

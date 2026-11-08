@@ -22,6 +22,11 @@ function opencode() {
   local OPENCODE_EXPERIMENTAL_CODE_MODE="${OPENCODE_EXPERIMENTAL_CODE_MODE:-1}"
   export OPENCODE_EXPERIMENTAL_CODE_MODE
 
+  # OpenCode 1.19.5 reads this process flag for Bash calls without an explicit timeout.
+  # Keep caller overrides and avoid changing the parent shell's environment.
+  local OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS="${OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS:-1200000}"
+  export OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS
+
   # Single-arg + arg is a readable file -> pipe contents in as the prompt.
   if [ "$#" -eq 1 ] && [ -f "$1" ] && [ -r "$1" ]; then
     command opencode --prompt "$(command cat "$1")"
