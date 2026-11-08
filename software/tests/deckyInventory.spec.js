@@ -58,11 +58,11 @@ afterEach(() => {
 });
 
 describe("compact Decky repository inventory", () => {
-  it("resolves all 19 selections while deriving trusted metadata from the 18 repository archives", () => {
+  it("resolves all 20 selections while deriving trusted metadata from the 19 repository archives", () => {
     const pins = packages.resolvePackages(inventory.decky_packages);
-    expect(pins).toHaveLength(19);
+    expect(pins).toHaveLength(20);
     expect(pins.filter((p) => p.theme_id)).toHaveLength(9);
-    expect(pins.filter((p) => !p.theme_id)).toHaveLength(10);
+    expect(pins.filter((p) => !p.theme_id)).toHaveLength(11);
     expect(pins.find((p) => p.name === "Decky LSFG-VK").version).toBe("0.14.4");
     expect(pins.find((p) => p.name === "HLTB for Deck").version).toBe("2.0.12");
     expect(pins.find((p) => p.name === "ProtonDB Badges").version).toBe("1.3.4");
@@ -89,6 +89,26 @@ describe("compact Decky repository inventory", () => {
         "version": "1.3",
       }
     `);
+  });
+
+  it("resolves the compiled DeckyPlumber release with its original executable permission", () => {
+    const selection = inventory.decky_packages.find((p) => p.name === "DeckyPlumber");
+    const [pin] = packages.resolvePackages([selection]);
+    const members = zip.readZip(fs.readFileSync(selection.path));
+
+    expect(pin).toMatchInlineSnapshot(`
+      {
+        "local_path": "assets/steamos/decky_loader_plugins/DeckyPlumber_v0.1.8.zip",
+        "name": "DeckyPlumber",
+        "path": "decky_plugin/DeckyPlumber_v0.1.8.zip",
+        "root": "DeckyPlumber",
+        "sha256": "027fe82e3d59c7bc8221ed2d60fb3e7e47db11dfdc8f7494ae3f21a5b67d6919",
+        "source": "assets/steamos/decky_loader_plugins/DeckyPlumber_v0.1.8.zip",
+        "version": "0.1.8",
+      }
+    `);
+    expect(members.get("DeckyPlumber/dist/index.js").read()).toHaveLength(847251);
+    expect(members.get("DeckyPlumber/backend/entrypoint.sh").mode & 0o777).toBe(0o755);
   });
 
   it("pins the verified Framegen stable archive without committing the oversized ZIP", () => {

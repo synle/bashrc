@@ -62,7 +62,8 @@ Later definitions from sourced profiles can override it, including the managed S
 Before final confirmation, setup moves top-level regular files containing the exact, case-sensitive text `- Update -` from `~/Emulation/roms/switch` into its `dlc` subfolder.
 Hidden matching files are included; folders, symbolic links, nested files, and nonmatching files remain unchanged.
 Setup creates `dlc` only when needed and skips an absent ROM folder.
-Existing destination entries remain untouched with a diagnostic; failed moves, failed folder creation, or a symlinked `dlc` stop setup.
+Existing destination entries remain untouched with a diagnostic, including entries created during a no-clobber move regardless of GNU/BSD skip status.
+Failed moves without a preserved conflict, failed folder creation, or a symlinked `dlc` stop setup.
 
 Steam icon restoration selects the newest Desktop `grid*.tar.gz` by modification time, including plain `grid.tar.gz`.
 It retains Desktop `grid` and then backs it up as `grid-YYYY-MM-DD.tar.gz`, adding a numeric suffix on same-day reruns.
@@ -81,6 +82,8 @@ The Ghostty URL uses the versioned `v1.4.0` release tag instead of `tip`, whose 
 Shortcut titles use filenames without `.AppImage`; `ES-DE.AppImage` retains the title `ES-DE Emulation Station`.
 An existing `~/Applications/ES-DE.AppImage` skips the EmuDeck installer download.
 Zed installs through its official installer in the background; setup waits before running both Zed configuration scripts alongside browser extensions and tmux/vim.
+Setup installs `vim`, `tmux`, `fuse2`, and `python-yaml` with `sudo pacman -S --needed --noconfirm`.
+Python YAML satisfies DeckyPlumber's Python dependency; its separate running InputPlumber prerequisite remains the user's responsibility.
 Kate removal uses `sudo pacman -R --noconfirm kate` only when installed.
 KDE favorites include Brave, Zed, Konsole, Ghostty, EmuDeck, and ES-DE AppImage; taskbar pins include Brave, Zed, Konsole, and Ghostty.
 Existing same-name entries are reused; favorites and taskbar pins are checked before additions.
