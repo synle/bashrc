@@ -1484,10 +1484,13 @@ function GenericNotesDom({ osFlag }) {
 
 /**
  * macOS setup notes page. Renders the bootstrap script, README, font/git/SSH/inputrc/vim configs,
- * SponsorBlock settings, common editor setup for macOS, and links to other useful applications.
- * @returns {React.ReactElement} The macOS setup notes section.
+ * SponsorBlock settings, common editor setup, application links, and Quad9 DNS documentation/profiles for macOS and iOS.
+ * @returns {React.ReactElement} The macOS setup notes section; links do not install DNS profiles.
  */
 function MacNotesDom() {
+  /** Vendor DoH ECS profile shared by macOS and iOS; expires January 19, 2027. @type {string} */
+  const quad9ProfileUrl = "https://docs.quad9.net/assets/mobileconfig/Quad9_Secured_DNS_over_HTTPS_ECS_20260119.mobileconfig";
+
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_mac" />
@@ -1505,6 +1508,22 @@ function MacNotesDom() {
       {/* Mac */}
       <div className="form-label">Other Applications</div>
       <div className="link-group">{CommonOtherAppDom}</div>
+
+      <div className="form-label">DNS Docs / Profile</div>
+      <div className="link-group">
+        <LinkButton block href="https://docs.quad9.net/Setup_Guides/MacOS/Big_Sur_and_later_%28Encrypted%29/" rel="noopener noreferrer">
+          Mac Quad9 DNS Doc
+        </LinkButton>
+        <LinkButton block href={quad9ProfileUrl} rel="noopener noreferrer">
+          Mac Quad9 DNS Profile
+        </LinkButton>
+        <LinkButton block href="https://docs.quad9.net/Setup_Guides/iOS/iOS_14_and_later_%28Encrypted%29/" rel="noopener noreferrer">
+          iOS Quad9 DNS Doc
+        </LinkButton>
+        <LinkButton block href={quad9ProfileUrl} rel="noopener noreferrer">
+          iOS Quad9 DNS Profile
+        </LinkButton>
+      </div>
     </>
   );
 }
@@ -1540,17 +1559,16 @@ function LinuxNotesDom({ osFlag }) {
 }
 
 /**
- * SteamOS / Steam Deck setup notes page. Renders the standard Linux setup content
- * plus the Steam Deck-specific `software/scripts/steamos/setup.bash` helper that downloads Decky Loader,
- * Decky Lossless Scaling (lsfg-vk), and EmuDeck installers to ~/Desktop/.
- * @returns {React.ReactElement} The SteamOS setup notes section.
+ * SteamOS / Steam Deck setup notes page. Shows the manual SteamOS setup script before the general bootstrap,
+ * followed by the standard Linux documentation, configuration, and application links.
+ * @returns {React.ReactElement} The SteamOS setup notes section; displayed scripts are not executed.
  */
 function SteamOSNotesDom() {
   return (
     <>
-      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <TargetSystemOSWarningDom targetDomString="is_os_steamos" />
       <DynamicTextArea path="/software/scripts/steamos/setup.bash" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/docs/linux/README.md" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />

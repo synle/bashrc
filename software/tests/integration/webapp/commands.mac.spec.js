@@ -8,7 +8,8 @@ const browser = commandBrowser();
 describe("command snapshots", () => {
   it("Setup Mac keeps its current block titles, content, links, and count", async () => {
     const { blocks, errors } = await selectCommand(browser.page, "command-option-setup-mac");
-    expect(blocks).toHaveLength(14);
+    expect(blocks).toHaveLength(16);
+    expect(blocks.slice(-4).map((block) => block.title)).toEqual(["OTHER APPLICATIONS", "link-group", "DNS DOCS / PROFILE", "link-group"]);
     expect(errors).toMatchInlineSnapshot(`[]`);
     // Hashes fingerprint live-fetched rendered source; legitimate source changes can make this snapshot stale.
     // For hash-only failures, inspect the changed source first; do not accept unexpected content, links, or UI changes.
@@ -102,6 +103,31 @@ describe("command snapshots", () => {
             {
               "hash": "https://download.battle.net/en-us/?product=bnetdesk",
               "title": "BATTLE NET",
+            },
+          ],
+          "title": "link-group",
+        },
+        {
+          "hash": "466fa039cd2893eb0d213c14683603c2",
+          "title": "DNS DOCS / PROFILE",
+        },
+        {
+          "links": [
+            {
+              "hash": "https://docs.quad9.net/Setup_Guides/MacOS/Big_Sur_and_later_%28Encrypted%29/",
+              "title": "MAC QUAD9 DNS DOC",
+            },
+            {
+              "hash": "https://docs.quad9.net/assets/mobileconfig/Quad9_Secured_DNS_over_HTTPS_ECS_20260119.mobileconfig",
+              "title": "MAC QUAD9 DNS PROFILE",
+            },
+            {
+              "hash": "https://docs.quad9.net/Setup_Guides/iOS/iOS_14_and_later_%28Encrypted%29/",
+              "title": "IOS QUAD9 DNS DOC",
+            },
+            {
+              "hash": "https://docs.quad9.net/assets/mobileconfig/Quad9_Secured_DNS_over_HTTPS_ECS_20260119.mobileconfig",
+              "title": "IOS QUAD9 DNS PROFILE",
             },
           ],
           "title": "link-group",
