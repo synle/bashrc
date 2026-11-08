@@ -167,13 +167,6 @@ if ! type -P pgrep > /dev/null; then
   exit 1
 fi
 
-while pgrep -x steam > /dev/null 2>&1; do
-  if ! _prompt "Steam is open. Close Steam now, then answer Yes to recheck; No aborts setup." Y; then # --- prompt - Steam shortcuts ---
-    printf '%s\n' ">>> Steam setup stopped. Close Steam and re-run setup." >&2
-    exit 1
-  fi
-done
-
 if _prompt "Clear all user-defined non-Steam shortcuts from the active Steam account?" Y; then # --- prompt - Steam shortcuts ---
   CLEAR_USER_STEAM_SHORTCUTS=1
 else
@@ -205,9 +198,7 @@ fi
 # --- Main Code begins here ---
 #############################################
 
-# --- BEGIN - Required system dependencies ---
-# Install prerequisites on every run before optional prompts, downloads, or application setup.
-# No opt-in or package confirmation; stop if authentication or required installation fails.
+# --- BEGIN - Sudo Check ---
 if ! sudo -v; then
   printf '%s\n' ">>> SteamOS setup stopped: sudo authentication failed." >&2
   exit 1
@@ -216,6 +207,17 @@ if ! type -P pacman > /dev/null; then
   printf '%s\n' ">>> SteamOS setup stopped: pacman is required to install system tools." >&2
   exit 1
 fi
+# --- END - Sudo Check ---
+
+# --- BEGIN - Required system dependencies ---
+# Install prerequisites on every run before optional prompts, downloads, or application setup.
+# No opt-in or package confirmation; stop if authentication or required installation fails.
+while pgrep -x steam > /dev/null 2>&1; do
+  if ! _prompt "Steam is open. Close Steam now, then answer Yes to recheck; No aborts setup." Y; then # --- prompt - Steam shortcuts ---
+    printf '%s\n' ">>> Steam setup stopped. Close Steam and re-run setup." >&2
+    exit 1
+  fi
+done
 
 printf '%s\n' ">>> Installing required tools: vim tmux fuse2 python-yaml python-pip p7zip syncthing"
 sudo pacman -Syyu --noconfirm --needed

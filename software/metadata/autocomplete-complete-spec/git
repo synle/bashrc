@@ -87,10 +87,10 @@ ds|__git_files__,__git_diff_flags__
 d|__git_files__,__git_diff_flags__
 f
 f2
+fap
 fap2
 fapr2
 fapr|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
-fap|__git_remotes__
 fetch|__git_remotes__,--all,--prune,-p,--tags,--no-tags,--force,-f,--depth,--shallow-since,--dry-run
 fix-identity2
 fix-identity|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
