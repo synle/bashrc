@@ -1812,6 +1812,25 @@ if [ -d "$HOME/homebrew/plugins/decky-plumber" ]; then
 fi
 # --- END - Decky Plumber pyyaml ---
 
+# --- BEGIN - Syncthing ---
+if ! type -P pacman > /dev/null; then
+  printf '%s\n' ">>> Syncthing setup: skipping; pacman not available."
+else
+  printf '%s\n' ">>> Syncthing: installing syncthing package"
+  if _run_long_install "Syncthing install" sudo pacman -S --needed --noconfirm syncthing; then
+    printf '%s\n' ">>> Syncthing: enabling systemd service for user $USER"
+    sudo systemctl enable --now syncthing@$USER.service 2>/dev/null || true
+    printf '%s\n' ">>> Syncthing: user systemd service status check"
+    systemctl --user enable --now syncthing.service 2>/dev/null || true
+    systemctl --user status syncthing.service --no-pager || true
+    printf '%s\n' ">>> Syncthing: enabling lingering for $USER (service runs without active session)"
+    sudo loginctl enable-linger --show-format '{{.Lingering}}' "$USER" 2>/dev/null || true
+  else
+    printf '%s\n' ">>> Syncthing install failed; continuing without Syncthing setup." >&2
+  fi
+fi
+# --- END - Syncthing ---
+
 # --- BEGIN - Done - Final clean up and confirmation ---
 if [ "$decky_setup_failed" -eq 1 ]; then
   printf '%s\n' ">>> Decky setup failed earlier; review its output and re-run this script after fixing it."
