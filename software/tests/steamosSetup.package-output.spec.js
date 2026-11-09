@@ -142,7 +142,11 @@ describe("SteamOS long package output (Bash subprocess)", () => {
     fs.writeFileSync(path.join(home, "bin/pacman"), `#!/bin/bash\nprintf '%s\\n' "$@" >> "$HOME/arguments"\nexit ${status}\n`, {
       mode: 0o755,
     });
-    const dependencies = extractSetupSection(source, "# --- BEGIN - Required system dependencies ---", "# --- END - Required system dependencies ---");
+    const dependencies = extractSetupSection(
+      source,
+      "# --- BEGIN - Required system dependencies ---",
+      "# --- END - Required system dependencies ---",
+    );
     const result = spawnSync(
       "/bin/bash",
       [

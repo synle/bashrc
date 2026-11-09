@@ -177,7 +177,6 @@ describe("SteamOS setup fixture boundaries", () => {
       ]
     `);
   });
-
 });
 
 describe("SteamOS startup prompts (subprocess)", () => {
