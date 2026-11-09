@@ -4,19 +4,25 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { extractSetupSection } from "./steamosSetup.sections.js";
 
 /** Actual delegation blocks; exclude unrelated system provisioning. */
 const setupSource = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
 /** Actual startup identity exports, without interactive provisioning. @type {string} */
-const platformSource = setupSource.split("# --- BEGIN - Setup diagnostics ---")[0];
+const platformSource = extractSetupSection(setupSource, "export is_os_steamos=1", "# --- BEGIN - Setup diagnostics ---");
 /** Decky installer function and explicit invocation for isolated execution. */
 const deckySource =
-  setupSource.split("# --- BEGIN - Decky Loader + plugins + CSS Loader themes ---")[1].split("# --- BEGIN - Steam shortcuts ---")[0] +
-  "\n_bootstrap_decky_loader_plugins_themes\n";
+  extractSetupSection(
+    setupSource,
+    "# --- BEGIN - Decky Loader + plugins + CSS Loader themes ---",
+    "# --- END - Decky Loader + plugins + CSS Loader themes ---",
+  ) + "\n_bootstrap_decky_loader_plugins_themes\n";
 /** Editor/browser installer block, including its original temporary-folder cleanup. */
-const editorSource = setupSource
-  .split("# --- BEGIN - Browser Extensions + editors (via the synle/bashrc installer) ---")[1]
-  .split("# --- BEGIN - Remove Kate ---")[0];
+const editorSource = extractSetupSection(
+  setupSource,
+  "# --- BEGIN - Browser Extensions + editors (via the synle/bashrc installer) ---",
+  "# --- END - Browser Extensions + editors (via the synle/bashrc installer) ---",
+);
 /** Test-owned temporary roots, removed even after assertion failure. */
 const folders = [];
 
@@ -70,6 +76,8 @@ ${source}
         env: {
           ...process.env,
           BASH_ENV: "",
+          ENV: "",
+          HOME: folder,
           is_os_steamos: "0",
           _IS_OS_STEAMOS_OVERRIDE: "",
           TMPDIR: folder,
