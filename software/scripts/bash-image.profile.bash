@@ -277,3 +277,6 @@ try {
 _IMAGE_COMPRESS_JS_
   command node -e "$image_js" -- "$quality" "$compression" "$purge" "$auto_orient" "$output_format" "$1" "${2:-}" "$shell_binary"
 }
+
+# Compress at quality 70 and replace originals after successful encoding, preserving formats.
+alias image_compress_and_purge='image_compress --quality=70 --compression=9 --purge=true --outputFormat=preserve'

@@ -4,19 +4,23 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { spawnSync } from "child_process";
+import { extractSetupSection } from "./steamosSetup.sections.js";
 
 /** Production KDE launcher function, excluding its automatic invocation. */
-const source = fs
-  .readFileSync("software/scripts/steamos/setup.bash", "utf8")
-  .split("# --- BEGIN - KDE favorites and taskbar pins ---")[1]
-  .split("\nif ! _configure_kde_launchers;")[0];
+const source = extractSetupSection(
+  fs.readFileSync("software/scripts/steamos/setup.bash", "utf8"),
+  "# --- BEGIN - KDE favorites and taskbar pins ---",
+  "\nif ! _configure_kde_launchers;",
+);
 /** Owned temporary roots. */
 const roots = [];
 afterEach(() => roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true })));
 
 it("removes installed Kate noninteractively and skips an absent package", () => {
   const setup = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
-  const removal = setup.split("# --- BEGIN - Remove Kate ---")[1].split("\nif type -P paru")[0];
+  const removal = extractSetupSection(setup, "# --- BEGIN - Remove Kate ---", "# --- END - Remove Kate ---");
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-kate-"));
+  roots.push(home);
   const result = spawnSync(
     "/bin/bash",
     [
@@ -31,7 +35,7 @@ INSTALLED=1
 ${removal}
 `,
     ],
-    { encoding: "utf8" },
+    { encoding: "utf8", timeout: 5000, env: { ...process.env, HOME: home, BASH_ENV: "", ENV: "" } },
   );
   expect(result.status, result.stderr).toBe(0);
   expect(result.stdout).toBe("Kate removal\nsudo\npacman\n-R\n--noconfirm\nkate\n");
@@ -39,7 +43,9 @@ ${removal}
 
 it("joins the background Zed installer before deploying editor configuration", () => {
   const setup = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
-  const install = setup.split("# --- BEGIN - Zed background installation ---")[1].split("# Install or confirm Flatpak Brave")[0];
+  const install = extractSetupSection(setup, "# --- BEGIN - Zed background installation ---", "# --- END - Zed background installation ---");
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-zed-"));
+  roots.push(home);
   const result = spawnSync(
     "/bin/bash",
     [
@@ -50,7 +56,7 @@ ${install}
 wait "$ZED_INSTALL_PID"
 `,
     ],
-    { encoding: "utf8" },
+    { encoding: "utf8", timeout: 5000, env: { ...process.env, HOME: home, BASH_ENV: "", ENV: "" } },
   );
   expect(result.status).toBe(19);
   expect(setup.indexOf('wait "$ZED_INSTALL_PID"')).toBeLessThan(setup.indexOf("--files=url-porter,skippy-ff"));

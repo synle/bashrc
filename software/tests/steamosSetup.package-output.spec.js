@@ -4,11 +4,12 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { extractSetupSection } from "./steamosSetup.sections.js";
 
 /** Only the real logging helper executes; no system provisioning is sourced. */
 const source = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
 /** Bounded helper source, ending before account preflight invocation. */
-const logger = source.slice(source.indexOf("function _run_long_install()"), source.indexOf("\n_start_steamos_setup_log || exit 1"));
+const logger = extractSetupSection(source, "function _run_long_install()", "\n_start_steamos_setup_log || exit 1");
 /** Test-owned temporary roots, removed after every subprocess. */
 const folders = [];
 
@@ -109,10 +110,7 @@ describe("SteamOS long package output (Bash subprocess)", () => {
       '#!/bin/bash\nprintf "%s\\n" "$@" > "$HOME/arguments"\necho "flatpak verbose"\necho "flatpak error stream" >&2\n',
       { mode: 0o755 },
     );
-    const prerequisite = source.slice(
-      source.indexOf("function _install_flatpak_brave_prerequisite()"),
-      source.indexOf("\nBRAVE_FLATPAK_READY=0"),
-    );
+    const prerequisite = extractSetupSection(source, "function _install_flatpak_brave_prerequisite()", "\nBRAVE_FLATPAK_READY=0");
     const result = spawnSync("/bin/bash", ["-c", `${logger}\n${prerequisite}\n_install_flatpak_brave_prerequisite`], {
       encoding: "utf8",
       timeout: 5000,
@@ -130,12 +128,12 @@ describe("SteamOS long package output (Bash subprocess)", () => {
       status: 0,
       expectedStatus: 0,
       argumentsText:
-        "-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\np7zip\n-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\np7zip\n",
+        "-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\npython-pip\np7zip\nsyncthing\n-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\npython-pip\np7zip\nsyncthing\n",
     },
     {
       status: 17,
       expectedStatus: 1,
-      argumentsText: "-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\np7zip\n",
+      argumentsText: "-S\n--needed\n--noconfirm\nvim\ntmux\nfuse2\npython-yaml\npython-pip\np7zip\nsyncthing\n",
     },
   ])("installs required tools without confirmation on reruns with pacman status $status", ({ status, expectedStatus, argumentsText }) => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-required-tools-"));
@@ -144,7 +142,7 @@ describe("SteamOS long package output (Bash subprocess)", () => {
     fs.writeFileSync(path.join(home, "bin/pacman"), `#!/bin/bash\nprintf '%s\\n' "$@" >> "$HOME/arguments"\nexit ${status}\n`, {
       mode: 0o755,
     });
-    const dependencies = source.split("# --- BEGIN - Required system dependencies ---")[1].split("# --- BEGIN - Shell update alias ---")[0];
+    const dependencies = extractSetupSection(source, "# --- BEGIN - Required system dependencies ---", "# --- END - Required system dependencies ---");
     const result = spawnSync(
       "/bin/bash",
       [
@@ -177,7 +175,10 @@ describe("SteamOS long package output (Bash subprocess)", () => {
       const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-upgrade-choices-"));
       folders.push(home);
       fs.writeFileSync(path.join(home, "calls"), "");
-      const upgrades = source.split("# --- BEGIN - Optional system upgrades ---")[1].split("# --- END - Optional Flatpak updates ---")[0];
+      const upgrades =
+        extractSetupSection(source, "# --- BEGIN - Optional system upgrades ---", "# --- END - Optional system upgrades ---") +
+        "\n" +
+        extractSetupSection(source, "# --- BEGIN - Optional Flatpak updates ---", "# --- END - Optional Flatpak updates ---");
       const result = spawnSync(
         "/bin/bash",
         [

@@ -5,33 +5,22 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
+import { extractSetupSection } from "./steamosSetup.sections.js";
 
 /** Manual setup source; only pre-installation sections execute in this spec. */
 const setupSource = fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/steamos/setup.bash"), "utf8");
 /** Test-owned homes and executable folders removed after each subprocess test. */
 const workspaces = [];
 
-/**
- * Extract a bounded setup section, rejecting missing or reordered markers before execution.
- * @param {string} source Shell source to inspect.
- * @param {string} startMarker First included marker.
- * @param {string} endMarker First excluded marker.
- * @returns {string} Source strictly between the verified boundaries, including the start marker.
- * @throws {Error} If either marker is missing or the end does not follow the start.
- */
-function extractSetupSection(source, startMarker, endMarker) {
-  const start = source.indexOf(startMarker);
-  const end = source.indexOf(endMarker);
-  if (start < 0 || end <= start) throw new Error("Invalid SteamOS setup fixture boundaries");
-  return source.slice(start, end);
-}
-
 /** Prompt definition without account validation or installation side effects. */
 const promptSource = extractSetupSection(setupSource, "function _prompt()", "# Validate the invoking account");
 /** Account preflight and required installation, excluding startup-file edits and optional choices. */
 const requiredSource = extractSetupSection(setupSource, "_start_steamos_setup_log || exit 1", "# --- BEGIN - Shell update alias ---");
-/** Initial choices, stopping before background installation starts. */
-const choicesSource = extractSetupSection(setupSource, "# Steam must be fully closed", "# --- BEGIN - Zed background installation ---");
+/** Initial choices and folder setup, excluding unrelated provisioning and downloads. */
+const choicesSource =
+  extractSetupSection(setupSource, "# --- BEGIN - Initial setup choices ---", "# --- END - Initial setup choices ---") +
+  "\n" +
+  extractSetupSection(setupSource, "# --- BEGIN - Application folders ---", "# --- END - Application folders ---");
 
 // Cleanup owns only folders created by this spec, including on assertion failure.
 afterEach(() => {
@@ -157,6 +146,8 @@ describe("SteamOS setup fixture boundaries", () => {
         "Optional Flatpak updates",
         "Brave and URL shortcuts (Flatpak prerequisite installed at startup)",
         "Browser Extensions + editors (via the synle/bashrc installer)",
+        "Syncthing",
+        "Decky Plumber pyyaml",
         "Remove Kate",
         "Optional AUR upgrades",
         "USB wake-up",
@@ -187,13 +178,6 @@ describe("SteamOS setup fixture boundaries", () => {
     `);
   });
 
-  it("excludes installer code after the ending marker", () => {
-    expect(extractSetupSection("before\nstart\necho safe\nend\ncurl installer", "start", "end")).toBe("start\necho safe\n");
-  });
-
-  it.each(["end only", "start only", "end before start", ""])('rejects invalid boundaries in "%s"', (source) => {
-    expect(() => extractSetupSection(source, "start", "end")).toThrow("Invalid SteamOS setup fixture boundaries");
-  });
 });
 
 describe("SteamOS startup prompts (subprocess)", () => {
@@ -213,6 +197,9 @@ describe("SteamOS startup prompts (subprocess)", () => {
   });
 
   it("installs required tools before optional prompts or application setup", () => {
+    expect(setupSource.indexOf("# --- END - Required system dependencies ---")).toBeLessThan(
+      setupSource.indexOf("# --- BEGIN - Shell update alias ---"),
+    );
     const result = runChoices(0);
 
     expect(result.status, result.stderr).toBe(0);
@@ -220,8 +207,8 @@ describe("SteamOS startup prompts (subprocess)", () => {
     expect(result.stdout.split("\n")).toEqual([
       "account verified",
       "sudo:-v",
-      ">>> Installing required tools: vim, tmux, fuse2, python-yaml and p7zip",
-      "install:sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml p7zip",
+      ">>> Installing required tools: vim, tmux, fuse2, python-yaml, python-pip, p7zip and syncthing",
+      "install:sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml python-pip p7zip syncthing",
       "choice:Clear all user-defined non-Steam shortcuts from the active Steam account?",
       "choice:Install Decky Loader, plugins, and CSS Loader themes?",
       "choice:Run system upgrade (sudo pacman -Syu / paru -Syu)?",
@@ -261,7 +248,7 @@ describe("SteamOS startup prompts (subprocess)", () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("required tool installation failed");
-    expect(result.stdout).toContain("install:sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml p7zip");
+    expect(result.stdout).toContain("install:sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml python-pip p7zip syncthing");
     expect(result.stdout).not.toContain("choice:");
     expect(result.stdout).not.toContain("folders created");
     expect(result.stdout).not.toContain("ready for installation");

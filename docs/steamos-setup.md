@@ -51,7 +51,7 @@ Run it from the checkout root in Desktop Mode/Konsole as the normal desktop user
 After account validation and diagnostic logging, setup authenticates sudo and always installs required system tools before optional prompts, downloads, or application work.
 
 ```bash
-sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml p7zip
+sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml python-pip p7zip syncthing
 ```
 
 There is no yes/no prompt or package confirmation for required tools; existing sudo authentication may still request a password.
