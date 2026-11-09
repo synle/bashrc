@@ -150,8 +150,18 @@ See the [testing reference](docs/development-testing.md#testing) for suite comma
 
 ### Inline snapshots
 
-Review changed source and output before refreshing expectations; never accept a regression to make a snapshot pass.
-See [collection assertions, scoped refresh commands, and browser fingerprints](docs/development-testing.md#inline-snapshots).
+When a test on `main` fails, check the first failure for a snapshot content-hash mismatch.
+Review the changed source and rendered output; a different hash alone does not prove that the snapshot is stale.
+If an intended source change explains the mismatch and behavior remains correct, refresh the snapshots instead of changing application code:
+
+```bash
+make resetTestSnapshots
+```
+
+This target refreshes every suite and requires their generated artifacts and live integration prerequisites.
+Review every changed expectation, then rerun the affected suites without update mode.
+Do not reset snapshots to hide regressions or unexplained hash changes.
+See [prerequisites, scoped refresh commands, and browser fingerprints](docs/development-testing.md#inline-snapshots).
 
 ### Vitest configs
 
