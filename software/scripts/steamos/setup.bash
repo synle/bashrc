@@ -107,6 +107,25 @@ _start_steamos_setup_log || exit 1
 
 # --- END - Setup diagnostics ---
 
+# --- BEGIN - Required system dependencies ---
+# Install prerequisites on every run before optional prompts, downloads, or application setup.
+# No opt-in or package confirmation; stop if authentication or required installation fails.
+if ! sudo -v; then
+  printf '%s\n' ">>> SteamOS setup stopped: sudo authentication failed." >&2
+  exit 1
+fi
+if ! type -P pacman > /dev/null; then
+  printf '%s\n' ">>> SteamOS setup stopped: pacman is required to install system tools." >&2
+  exit 1
+fi
+printf '%s\n' ">>> Installing required tools: vim, tmux, fuse2, python-yaml, python-pip, p7zip and syncthing"
+if ! _run_long_install "Required system tools" sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml python-pip p7zip syncthing; then
+  printf '%s\n' ">>> SteamOS setup stopped: required tool installation failed; review package log." >&2
+  exit 1
+fi
+
+# --- END - Required system dependencies ---
+
 # --- BEGIN - Shell update alias ---
 # Append the setup alias only to existing Bash startup files without a direct update alias.
 # No arguments. Returns nonzero on read, backup, or append failure; never creates startup files.
@@ -206,25 +225,6 @@ else
 fi
 
 # --- END - Initial setup choices ---
-
-# --- BEGIN - Required system dependencies ---
-# Install prerequisites on every run before optional prompts, downloads, or application setup.
-# No opt-in or package confirmation; stop if authentication or required installation fails.
-if ! sudo -v; then
-  printf '%s\n' ">>> SteamOS setup stopped: sudo authentication failed." >&2
-  exit 1
-fi
-if ! type -P pacman > /dev/null; then
-  printf '%s\n' ">>> SteamOS setup stopped: pacman is required to install system tools." >&2
-  exit 1
-fi
-printf '%s\n' ">>> Installing required tools: vim, tmux, fuse2, python-yaml, python-pip, p7zip and syncthing"
-if ! _run_long_install "Required system tools" sudo pacman -S --needed --noconfirm vim tmux fuse2 python-yaml python-pip p7zip syncthing; then
-  printf '%s\n' ">>> SteamOS setup stopped: required tool installation failed; review package log." >&2
-  exit 1
-fi
-
-# --- END - Required system dependencies ---
 
 # --- BEGIN - Application folders ---
 DESKTOP_FOLDER="$HOME/Desktop"
@@ -1365,18 +1365,18 @@ popd
 
 # --- BEGIN - Syncthing ---
 printf '%s\n' ">>> Syncthing: enabling systemd service for user $USER"
-sudo systemctl enable --now syncthing@$USER.service 2>/dev/null || true
+sudo systemctl enable --now syncthing@$USER.service 2> /dev/null || true
 printf '%s\n' ">>> Syncthing: user systemd service status check"
-systemctl --user enable --now syncthing.service 2>/dev/null || true
+systemctl --user enable --now syncthing.service 2> /dev/null || true
 systemctl --user status syncthing.service --no-pager || true
 printf '%s\n' ">>> Syncthing: enabling lingering for $USER (service runs without active session)"
-sudo loginctl enable-linger --show-format '{{.Lingering}}' "$USER" 2>/dev/null || true
+sudo loginctl enable-linger --show-format '{{.Lingering}}' "$USER" 2> /dev/null || true
 # --- END - Syncthing ---
 
 # --- BEGIN - Decky Plumber pyyaml ---
 if [ -d "$HOME/homebrew/plugins/decky-plumber" ]; then
   printf '%s\n' ">>> Installing pyyaml for Decky Plumber plugin."
-  sudo python3 -m pip install --target "$HOME/homebrew/plugins/decky-plumber" pyyaml &>/dev/null &
+  sudo python3 -m pip install --target "$HOME/homebrew/plugins/decky-plumber" pyyaml &> /dev/null &
 fi
 # --- END - Decky Plumber pyyaml ---
 # --- BEGIN - Remove Kate ---

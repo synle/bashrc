@@ -43,7 +43,11 @@ ${removal}
 
 it("joins the background Zed installer before deploying editor configuration", () => {
   const setup = fs.readFileSync("software/scripts/steamos/setup.bash", "utf8");
-  const install = extractSetupSection(setup, "# --- BEGIN - Zed background installation ---", "# --- END - Zed background installation ---");
+  const install = extractSetupSection(
+    setup,
+    "# --- BEGIN - Zed background installation ---",
+    "# --- END - Zed background installation ---",
+  );
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "steamos-zed-"));
   roots.push(home);
   const result = spawnSync(
