@@ -219,20 +219,20 @@ describe("work shell startup", () => {
   });
 
   it.each([
-    ["", 1, "[Warning] safe_source full runtime unavailable\n"],
-    ["if then\n", 1, "[Warning] safe_source bootstrap validation failed\n"],
-    ["return 7\n", 7, ""],
-  ])("fails closed when the common runtime contains %j", async (common, status, stderr) => {
-    fs.writeFileSync(path.join(home, ".work_once.bash"), "printf 'must not load\\n'\n");
+    ["printf 'bootstrap\\n'\n", 0, "bootstrap\n", ""],
+    ["if then\n", 1, "", "[Warning] safe_source bootstrap validation failed\n"],
+    ["return 7\n", 7, "", ""],
+  ])("validates and sources %j without requiring full runtime helpers", async (common, status, stdout, stderr) => {
     const startup = await renderStartup();
+    const entry = fs.readFileSync(startup, "utf8").match(/# BEGIN Sy bash_syle entry point\n([\s\S]*?)# END Sy bash_syle entry point/)[1];
     fs.writeFileSync(path.join(home, ".bash_syle_common"), common);
-    const result = spawnSync("/bin/bash", ["--noprofile", "--norc", "-c", '. "$STARTUP"'], {
-      env: { ...process.env, HOME: home, STARTUP: startup, BASH_ENV: "" },
+    const result = spawnSync("/bin/bash", ["--noprofile", "--norc", "-c", `${entry}\nsafe_source "$HOME/.bash_syle_common"`], {
+      env: { ...process.env, HOME: home, BASH_ENV: "" },
       encoding: "utf8",
       timeout: 5000,
     });
     expect(result.status).toBe(status);
-    expect(result.stdout).toBe("");
+    expect(result.stdout).toBe(stdout);
     expect(result.stderr).toBe(stderr);
   });
 
