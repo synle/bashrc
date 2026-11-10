@@ -69,6 +69,7 @@ setup_local_conditional:
 
 # Run all formatting steps
 format: format_build_include format_ci_binaries format_script_indexes format_jsdocs format_spec_cleanup format_shell format_prettier build_autocomplete_specs
+	$(MAKE) build_android
 
 # Format tracked shell sources; exclude generated/protected files and non-shell templates.
 format_shell:
@@ -77,7 +78,7 @@ format_shell:
 	  exit 0
 	fi
 	git ls-files -z -- '*.sh' '*.bash' \
-	  ':!*.ps1.bash' ':!.build/**' ':!assets/**' ':!dist/**' ':!coverage/**' \
+	  ':!*.ps1.bash' ':!.build/**' ':!assets/**' ':!dist/**' ':!coverage/**' ':!docs/android/build/**' \
 	  ':!software/scripts/advanced/llm/_common/v1/**' \
 	  ':!software/scripts/advanced/llm/_common/v2/**' \
 	  ':!software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash' \
@@ -126,6 +127,11 @@ lint:
 ################################################################################
 # ---- Build ----
 ################################################################################
+
+# Combine Android and Fire TV shared sources with their debloat/restore entrypoints.
+.PHONY: build_android
+build_android:
+	bash docs/android/build.sh
 
 # Build all default steps (prebuild-hosts, build-configs, host-mappings)
 build: build_prebuild_hosts build_configs build_host_mappings
