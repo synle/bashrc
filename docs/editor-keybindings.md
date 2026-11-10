@@ -337,6 +337,9 @@ forward Delete (`ctrl+fn+delete` on compact keyboards).
 
 Ghostty uses `OS_KEY = cmd` on macOS and `OS_KEY = alt` on Linux.
 `OS_KEY` is a repository placeholder, not a native Ghostty modifier or the Linux Super key.
+`OS_KEY+n` creates a normal Ghostty window with `fullscreen = false`; `F11` still toggles fullscreen manually.
+Non-native fullscreen prevents macOS native tabs from opening, so new windows must not start in that mode.
+Existing fullscreen windows are unchanged; exit fullscreen before creating a tab there.
 Tab shortcuts `OS_KEY+1-9` select tabs 1 through 9; an out-of-range index selects the last tab.
 `OS_KEY+w` closes the current Ghostty tab and all its panes.
 `OS_KEY+q` closes only the current Ghostty window, not other windows.

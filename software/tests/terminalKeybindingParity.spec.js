@@ -79,6 +79,15 @@ describe.each([
     expect(config.split("\n")).toContain(`keybind = ${key}=${action}`);
   });
 
+  it.each([false, true])("starts new windows outside fullscreen (prebuilt: %s)", async (isPrebuilt) => {
+    const config = await getIndexFunction("_buildConfigContent")(isMac, { is_prebuilt_config: isPrebuilt });
+    expect(config.split("\n").filter((line) => /^fullscreen\s*=/.test(line.trim()))).toMatchInlineSnapshot(`
+      [
+        "fullscreen = false",
+      ]
+    `);
+  });
+
   it("keeps quick terminal global with the platform modifier", async () => {
     const config = await getIndexFunction("_buildConfigContent")(isMac, { is_prebuilt_config: true });
     expect(config.split("\n")).toContain(`keybind = global:${modifier}+escape=toggle_quick_terminal`);
