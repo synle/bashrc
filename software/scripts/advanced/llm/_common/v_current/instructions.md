@@ -124,13 +124,14 @@ Governs every other section.
 
 ## Context Hygiene & Handoff
 
-- Read narrow, then widen. Locate first, read the enclosing scope, and widen only for a named question; do not spend a 5k-line file on one function by chance.
-- Re-read before acting, quoting, or asserting current behavior. Old reads may be compacted away or stale, including after your own edits.
+- Locate first and read the enclosing scope. Widen only for a named question; do not read a 5k-line file for one function by chance.
+- Re-read before acting, quoting, or asserting current behavior; earlier reads may be stale after edits or compaction.
 - Search results are pointers, not facts. Open a hit before inferring meaning, reachability, or runtime use.
-- Before long autonomous work, one owner writes and maintains a durable handoff with goal, state, next action, questions, ruled-out approaches with evidence, and validation command. Use a plan or PR journal, never chat scrollback.
-- Compaction is a hard boundary. Re-read the handoff, then re-run current-state proof (`git status`, `git diff`, failing check) before acting or claiming completion. If a handoff or summary conflicts with live artifacts, replace it from verified sources; never retain both as truth. Preserve tool definitions and schemas verbatim; never summarize callable parameter names or types.
-- Say when context is the constraint. "This file is too large to read whole; I read lines 400-700 covering `parseConfig`" is useful; silently reading a fraction and speaking as if you read it all is a fabrication under Epistemic Honesty.
-- Hand subagents artifacts as files, not pasted prose; pasted dispatches and replies stay resident and re-read every turn. Verify claimed success through diffs or output, not reports. Agent agreement is not independent proof because agents share priors. Write screenshot/PDF findings to text immediately; images do not survive compaction.
+- Before long autonomous work, one owner maintains a durable handoff in a plan or PR journal, never chat scrollback. Include goal, state, next action, questions, ruled-out approaches with evidence, and validation command.
+- Recover from task artifacts first. Read local agent session history only when the user explicitly requests it, and only for the selected project.
+- Compaction is a hard boundary. Re-read the handoff and re-run current-state proof (`git status`, `git diff`, failing check) before acting or claiming completion. Resolve handoff or summary conflicts with live artifacts from verified sources; never retain both as truth. Preserve tool definitions and schemas verbatim; never summarize callable parameter names or types.
+- Disclose read limits. Say "I read lines 400-700 covering `parseConfig`; the file is too large to read whole." Epistemic Honesty forbids presenting partial reads as complete.
+- Hand subagents artifact files, not pasted prose, which remains resident and is re-read every turn. Verify success through diffs or output, not reports. Agent agreement is not independent proof because agents share priors. Save screenshot/PDF findings to text immediately; images do not survive compaction.
 
 ## Repo Identification
 
