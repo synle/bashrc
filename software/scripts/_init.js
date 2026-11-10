@@ -83,7 +83,6 @@ ${LINE_BREAK_HASH}
 
   /** @type {string[]} Pinned core files precede lexical, eligible work overlays. */
   const profileSourceFiles = [
-    BASH_SYLE_COMMON_PATH,
     ...coreBashProfileFiles,
     BASH_SYLE_CACHE_PATH,
     ...findPathList(BASE_HOMEDIR_LINUX, /^\.work.*\.bash$/, { type: "file" })
@@ -92,7 +91,7 @@ ${LINE_BREAK_HASH}
   ];
   /** @type {string} Minimal .bashrc loader validates and sources the common profile without requiring full runtime helpers. */
   const entryPointContent = trimSpacesOnBothEnd(`
-    function safe_source() { [[ -f "$1" ]] || { printf '%s\n' '[Warning] safe_source bootstrap validation failed' >&2; return 1; }; . "$1"; }
+    . '${BASH_SYLE_COMMON_PATH}'
   `);
   /** @type {string} Cached manifest; refreshing it affects only later shell starts. */
   const profileSourcesBlock = [
