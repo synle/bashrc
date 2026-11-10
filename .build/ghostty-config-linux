@@ -1,6 +1,6 @@
 # ~/.config/ghostty/config (Linux variant — OS_KEY = alt)
 
-# ---- Typography ----
+# --- Typography ---
 font-family = Fira Code
 font-size = 16
 # Render the regular face in bold by default — matches the user's "heavy" look.
@@ -11,7 +11,7 @@ font-thicken = true
 # 2px of extra vertical space between rows — readable without feeling spread out.
 adjust-cell-height = 2
 
-# ---- Theme (auto-switch with OS appearance, high-contrast both ways) ----
+# --- Theme (auto-switch with OS appearance, high-contrast both ways) ---
 # Sy Dark / Sy Light are written by this script into
 # ~/.config/ghostty/themes/ from theme/sy/ghostty_{dark,light}.jsonc, which are
 # bound to COLOR_MAP in software/tools/build-include.js by inline markers —
@@ -32,7 +32,7 @@ adjust-cell-height = 2
 # so the config never points at a themes/ file that was not written.
 theme = light:Sy Light,dark:Sy Dark
 
-# ---- Shell integration ----
+# --- Shell integration ---
 # Auto-detect bash/zsh/fish.
 #
 # This list MERGES with the defaults, it does not replace them. Verified on
@@ -63,7 +63,10 @@ shell-integration-features = no-cursor,no-sudo,no-title,ssh-env,ssh-terminfo,pat
 # New tabs/splits/windows open in the same cwd as the active pane.
 working-directory = inherit
 
-# ---- Window / Behavior ----
+# --- Window / Behavior ---
+# Start every new window normally; macOS native tabs cannot open in non-native fullscreen.
+# F11 still toggles fullscreen on demand.
+fullscreen = false
 # NOTE: ghostty's scrollback-limit is in BYTES — raw integer only, no
 # "100mb"/"mb" suffix (rejected as invalid). Unlike VS Code / Zed / Windows
 # Terminal, which all take lines. Reusing EDITOR_CONFIGS.terminalScrollback
@@ -119,7 +122,7 @@ resize-overlay = never
 # shader only redraws on terminal updates, not on its own timer.
 custom-shader-animation = false
 
-# ---- Splits (focus visibility) ----
+# --- Splits (focus visibility) ---
 # The fill overlays BOTH glyphs and backgrounds; 0.65 loses readable contrast.
 # Keep a subtle tint plus the divider without washing out inactive ANSI text.
 unfocused-split-opacity = 0.98
@@ -134,7 +137,7 @@ unfocused-split-fill = #808080
 # both light and dark.
 split-divider-color = #6e6e6e
 
-# ---- Cursor ----
+# --- Cursor ---
 # Steady (non-blinking) block — no animation, easier on the eyes.
 cursor-style = block
 cursor-style-blink = false
@@ -142,7 +145,7 @@ cursor-style-blink = false
 cursor-opacity = 1
 
 
-# ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
+# --- Keybindings (managed by software/scripts/advanced/ghostty.js) ---
 keybind = alt+t=new_tab
 keybind = alt+1=goto_tab:1
 keybind = alt+2=goto_tab:2
@@ -155,7 +158,7 @@ keybind = alt+8=goto_tab:8
 keybind = alt+9=goto_tab:9
 keybind = alt+shift+]=next_tab
 keybind = alt+shift+[=previous_tab
-keybind = alt+w=close_tab
+keybind = alt+w=close_surface
 keybind = f2=prompt_tab_title
 keybind = alt+n=new_window
 keybind = alt+q=close_window

@@ -55,7 +55,7 @@ Use these sources instead of maintaining another inventory or registry:
 - `software/metadata/script-list.config` is the canonical sorted script list.
 - `software/bootstrap/common-env.sh` owns `LIMITED_SUPPORT_OSES` and `ALL_OS_FLAGS`; build-time includes propagate them into `run.sh`.
 - `software/bootstrap/safe-source.bash` owns full source-once loading; generated inclusions serve common-functions and `run.sh`, which persists the loader in `~/.bash_syle_common`.
-- `software/bootstrap/profile-sources.bash` owns cached-source rendering and the eight-hour refresh policy; `_init.js` creates the initial block beside the minimal bootstrap entry point.
+- `software/bootstrap/profile-sources.bash` owns cached-source rendering and the eight-hour refresh policy; `_init.js` nests the initial block inside the bootstrap entry point, immediately after the common-profile source command.
 - `software/tools/build-include.js` owns BEGIN/END expansion and `{{map.key}}` theme bindings.
 - `software/scripts/advanced/browser-launch-options.common.js` owns shared Brave, Chrome, and Edge launch options.
 - `theme/sy/_palette_{dark,light}.jsonc` owns foundations and recipes; paired app templates own native-shaped bindings.

@@ -1,7 +1,7 @@
 /** Bootstraps .bash_profile, .bashrc, and assembles .bash_syle with core and advanced profile content.
  * Empty BEGIN/END markers are pre-placed in profile-core.sh and profile-advanced.sh
  * so that later scripts can update blocks in place via registerWithBashSyleProfile.
- * Shell entry points cache ordered profile sources separately from the minimal bootstrap loader.
+ * The .bashrc entry-point block contains the common loader followed by the nested cached profile sources.
  * @returns {Promise<void>} Resolves after writing profiles and startup files.
  * @throws {Error} If profile generation or filesystem writes fail.
  */
@@ -89,10 +89,6 @@ ${LINE_BREAK_HASH}
       .filter((file) => !file.includes(".secret.") && !/[\x00-\x1f\x7f]/.test(file))
       .sort(),
   ];
-  /** @type {string} Minimal .bashrc loader validates and sources the common profile without requiring full runtime helpers. */
-  const entryPointContent = trimSpacesOnBothEnd(`
-    . '${BASH_SYLE_COMMON_PATH}'
-  `);
   /** @type {string} Cached manifest; refreshing it affects only later shell starts. */
   const profileSourcesBlock = [
     `# Refreshed at epoch: ${Math.floor(Date.now() / 1000)}`,
@@ -101,11 +97,13 @@ ${LINE_BREAK_HASH}
     ),
     "refresh_profiles --if-stale",
   ].join("\n");
+  /** @type {string} Common loader followed immediately by the nested cached manifest. */
+  const entryPointContent = ". '" + BASH_SYLE_COMMON_PATH + "'\n" + appendTextBlock("", profileSourcesKey, profileSourcesBlock).trim();
 
   // bootstrap .bash_profile (login shells on all platforms) — sources .bashrc
   log(">> Updating .bash_profile to source .bashrc", bashProfilePath);
   let textContent = await readText`${bashProfilePath}`;
-  /** @type {string} Login startup delegates directly; only .bashrc defines the minimal loader. */
+  /** @type {string} Login startup delegates directly to the managed .bashrc entry point. */
   const bashProfileContent = ". '" + bashrcPath.replace(/'/g, "'\\''") + "'";
   // appendTextBlock (not moveTextBlockToEnd): refresh the block in place when it already
   // exists, so user commands deliberately placed after it keep running after it.
@@ -117,11 +115,6 @@ ${LINE_BREAK_HASH}
   textContent = await readText`${bashrcPath}`;
   // Placement is preserved on re-run; only brand-new files get the block at the bottom.
   textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
-  /** @type {string} Existing dynamic block is removed before placing it immediately after the entry point. */
-  const withoutSources = removeBlock(textContent, profileSourcesKey, "#").trim();
-  /** @type {string} Entry-point closing marker retained at its original position. */
-  const entryEnd = "# END Sy bash_syle entry point";
-  textContent = withoutSources.replace(entryEnd, entryEnd + "\n" + appendTextBlock("", profileSourcesKey, profileSourcesBlock).trim());
   await writeText(bashrcPath, textContent);
 
   // snapshot after bootstrap assembled the template (before other scripts fill it in)
