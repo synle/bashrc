@@ -581,6 +581,33 @@ function workspace_create() {
   _workspace_attach_unless_detached "$detach" "$session"
 }
 
+# set_tmux_title: rename the window containing this shell's tmux pane.
+# Args: title words or --help. Returns 2 for an invalid title, otherwise the tmux status.
+# Side effects: renames only the owning window; silently does nothing outside tmux.
+function set_tmux_title() {
+  if is_help_arg "${1:-}"; then
+    printf '%s\n' 'set_tmux_title: rename the tmux window containing this shell
+Usage: set_tmux_title <title...>
+Joins title words with spaces; rejects empty titles and control characters.
+Outside tmux, does nothing. Does not change the outer terminal title directly.'
+    return 0
+  fi
+  local title="$*" window
+  case "$title" in
+  '' | *[[:cntrl:]]*)
+    printf '%s\n' 'set_tmux_title: expected a nonempty title without control characters' >&2
+    return 2
+    ;;
+  esac
+  [ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ] || return 0
+  has_persistent_binary tmux || {
+    printf '%s\n' 'set_tmux_title: tmux is unavailable' >&2
+    return 1
+  }
+  window="$(command tmux display-message -p -t "$TMUX_PANE" '#{window_id}')" || return $?
+  command tmux rename-window -t "$window" "$title"
+}
+
 # Follow readable log files in basename-named tmux windows through workspace_create.
 # Args: [-last 0-1000000] [-session name] [--detach] [--force] [--] file...
 # Returns 2 for invalid input, otherwise the dependency/config/workspace status.
@@ -589,19 +616,19 @@ function monitor_logs() {
   if is_help_arg "${1:-}"; then
     printf '%s\n' 'monitor_logs: follow one log file per tmux window (alias: tailf)
 Usage: monitor_logs [-last N] [-session NAME] [--detach] [--force] [--] FILE...
-  -last, --last, -n N       initial lines, 0-1000000 (default: 100)
+  -last, --last, -n N       initial lines, 0-1000000 (default: 200)
   -session, --session NAME  letters, digits, underscores, and hyphens only
   --detach                 create or reuse without attaching
   --force                  kill the selected session and rebuild its windows
   --                       treat remaining arguments as filenames
 Default session: tailf_session_<checksum of ordered absolute file paths>.
 Existing sessions follow workspace_create reuse/confirmation rules.
-Each window prints its full path, three ellipses, then tail -n N -f output.
-Headers use white text on red; ellipses use gray. Non-terminal output stays plain.'
+Each window prints its full path, a separator, and the selected line count before following output.
+Headers use white text on yellow; terminal separators use hr. Non-terminal output stays plain.'
     return 0
   fi
 
-  local last=100 max_last=1000000 session="" session_given=0
+  local last=200 max_last=1000000 session="" session_given=0
   local files=() workspace_options=() file folder checksum config follow_command
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -691,11 +718,11 @@ Headers use white text on red; ellipses use gray. Non-terminal output stays plai
     session="tailf_session_${checksum%% *}"
   fi
 
-  # Commands stay self-contained; jq @sh preserves filenames through both shell layers.
+  # Workspace commands load profile helpers; jq @sh preserves filenames through both shell layers.
   follow_command='if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then '
-  follow_command+='printf "\033[1;37;41m%s\033[0m\n" "$file"; '
-  follow_command+='printf "\033[90m...\n...\n...\033[0m\n"; '
-  follow_command+='else printf "%s\n" "$file" "..." "..." "..."; fi; '
+  follow_command+='printf "\033[1;37;43m%s\033[0m\n" "$file"; hr; '
+  follow_command+='else printf "%s\n" "$file" "$LINE_BREAK_HASH"; fi; '
+  follow_command+='printf "Showing the last %s lines; following new output in the foreground.\n" "$last"; '
   follow_command+='command tail -n "$last" -f "$file"'
   config=$(command jq -cn --arg session "$session" --arg last "$last" --arg follow "$follow_command" --args '
     {session: $session, windows: [$ARGS.positional[] | {
