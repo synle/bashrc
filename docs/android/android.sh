@@ -398,3 +398,7 @@ _greet_and_connect_adb() {
 }
 
 _greet_and_connect_adb
+
+# set gboardwu as the default keyboard
+adb shell ime enable dev.jason.com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME
+adb shell ime set dev.jason.com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME
