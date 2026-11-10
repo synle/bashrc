@@ -208,7 +208,7 @@ function purge_branches_and_tags() {
   branches=$(command git for-each-ref --format='%(refname:strip=2)' refs/heads/) || return 1
   tags=$(command git for-each-ref --format='%(refname:strip=2)' refs/tags/) || return 1
   printf '%s\n' "-> keeping default branch '$default_branch'"
-  if ((!dry_run)); then
+  if ((! dry_run)); then
     command git checkout "$default_branch" || return 1
   fi
   while IFS= read -r branch; do
@@ -379,7 +379,8 @@ function _clean_claude_worktrees() {
 # report a short job line instead of re-printing the whole subshell body when cleanup finishes.
 # Keep unindented output live on stdout/stderr so progress lands line by line, not as a buffered dump.
 # The optional worktree cleanup mode defaults to include; skip overrides force_worktrees.
-# Removes cleanup files, stale branches/tags, and optionally Git worktrees; returns git lastd's status.
+# Removes cleanup files, stale branches/tags, and optionally Git worktrees, then garbage-collects.
+# Returns git lastd's status; maintenance runs only after the branch reset has been attempted.
 function _clean_background_tail() {
   local total_steps="$1"
   local repo_root="$2"
@@ -439,6 +440,10 @@ function _clean_background_tail() {
     worktree_clean
   fi
 
+  # Keep explicit garbage collection off the code-update path and after reference cleanup.
+  _log_progress_step "$total_steps" "🧹 Garbage-collecting (if >14d)"
+  git --no-pager gc-if-stale
+
   printf '%s\n' "# ---- ✅ Reset to origin/$default_branch (100% done) ----"
   git --no-pager lastd
 }
@@ -451,6 +456,7 @@ function _clean_background_tail() {
 # Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity).
 # Also deletes stale local branches (squash-merged PRs), branches fully merged into the default
 # branch, local tags that no longer exist on origin, and prunes and removes merged/gone worktrees.
+# Fetches and rebases before file/ref/worktree cleanup; explicit garbage collection runs last.
 # After successful rebase, optionally initializes/syncs CodeGraph quietly in the background.
 # With --force / -f, every worktree is removed instead, skipping the dirty/merged checks.
 # With --background / -b, the slow tail returns early and keeps printing progress below the prompt.
@@ -466,6 +472,7 @@ function clean() {
     - Stashes staged + unstaged + untracked files first; ignored files are NOT included
     - Stops if stashing or backup verification fails; never continues without a clean working tree
     - Recover from stash with: git stash list; git stash pop --index
+    - Fetches and rebases before housekeeping; explicit garbage collection runs last
     - Deletes untracked *.rej files (failed 'git apply' hunk rejects); keeps all other untracked files
     - Deletes nested .DS_Store files (macOS Finder junk)
     - Pins the repo-local user.email to your email used in the last 50 commits (git fix-identity)
@@ -566,9 +573,6 @@ function clean() {
 
   _log_progress_step "$total_steps" "⬇️ Fetching origin"
   git --no-pager clean-and-fetch
-
-  _log_progress_step "$total_steps" "🧹 Garbage-collecting (if >14d)"
-  git --no-pager gc-if-stale
 
   _log_progress_step "$total_steps" "🔧 Resolving default branch"
   local default_branch
