@@ -316,7 +316,8 @@ forward Delete (`ctrl+fn+delete` on compact keyboards).
 | `OS_KEY+shift+[/]` | Prev / next tab                 |        ✅        |  ⚠️  |   ✅    |
 | `OS_KEY+tab`       | Next tab                        |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+shift+tab` | Prev tab                        |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+w`         | Close pane                      |        ✅        |  ✅  |   ✅    |
+| `OS_KEY+w`         | Close pane                      |        ✅        |  ✅  |   ❌    |
+| `OS_KEY+w`         | Close tab and its panes         |        ❌        |  ❌  |   ✅    |
 | `OS_KEY+x`         | Close pane (alt)                |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+q`         | Close window                    |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+n`         | New window                      |        ✅        |  ✅  |   ✅    |
@@ -333,6 +334,13 @@ forward Delete (`ctrl+fn+delete` on compact keyboards).
 | `OS_KEY+;`         | Rename tab (alt)                |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+m`         | Tab / session switcher          |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+p`         | Key palette                     |        ❌        |  ✅  |   ❌    |
+
+Ghostty uses `OS_KEY = cmd` on macOS and `OS_KEY = alt` on Linux.
+`OS_KEY` is a repository placeholder, not a native Ghostty modifier or the Linux Super key.
+Tab shortcuts `OS_KEY+1-9` select tabs 1 through 9; an out-of-range index selects the last tab.
+`OS_KEY+w` closes the current Ghostty tab and all its panes.
+`OS_KEY+q` closes only the current Ghostty window, not other windows.
+The managed configuration disables close confirmation, so these close actions do not prompt.
 
 In Windows Terminal, `alt+t` duplicates the active profile and its last reported
 working folder rather than opening the default profile. `alt+d` (vertical split),
@@ -356,6 +364,11 @@ On macOS, Ghostty's `global:cmd+escape` quick-terminal binding requires Ghostty 
 **System Settings → Privacy & Security → Accessibility**. Without that permission,
 Ghostty does not intercept the chord and the terminal receives it as `ESC[27;9~`.
 Enable Ghostty there, then restart Ghostty or reload its config.
+
+On Linux, global bindings require a desktop portal implementing Global Shortcuts.
+The quick terminal additionally requires a Wayland compositor supporting `wlr-layer-shell-v1`; it does not work on X11 or GNOME.
+Desktop-reserved shortcuts can intercept `alt+escape` before Ghostty receives it.
+See Ghostty's [global-binding requirements](https://ghostty.org/docs/config/reference#keybind) and [quick-terminal limits](https://ghostty.org/docs/config/keybind/reference#toggle_quick_terminal).
 
 ⚠️ `ctrl+1-9` is deliberately **not** bound. A terminal encodes those as legacy control
 characters rather than a distinct chord — `ctrl+1` arrives as a bare `1`, `ctrl+2` as NUL,
@@ -388,6 +401,7 @@ when nothing follows within `escape-time`. If it does not fire, use `OS_KEY+,/.`
 | `OS_KEY+shift+d`     | Split horiz (top/bottom)    |        ✅        |          ✅           |   ✅    |
 | `OS_KEY+'`           | Split horiz (alt)           |        ✅        |          ✅           |   ✅    |
 | `OS_KEY+arrow`       | Navigate panes              |        ✅        |          ✅           |   ✅    |
+| `OS_KEY+[/]`         | Previous / next pane        |        ❌        |          ❌           |   ✅    |
 | `OS_KEY+shift+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+alt+arrow) |   ✅    |
 | `OS_KEY+0`           | Break split into own window |        ❌        |          ✅           |   ❌    |
 | `OS_KEY+shift+1-9`   | Focus pane by number        |        ❌        |          ✅           |   ❌    |
@@ -396,6 +410,13 @@ when nothing follows within `escape-time`. If it does not fire, use `OS_KEY+,/.`
 | `OS_KEY+shift+\`     | Toggle UI (tab bar)         |        ✅        |          ❌           |   ❌    |
 | `OS_KEY+shift+\`     | Toggle split zoom           |        ❌        |          ✅           |   ✅    |
 | `F11`                | Fullscreen                  |        ✅        |          ✅           |   ✅    |
+
+Ghostty explicitly unbinds `OS_KEY+enter` and `OS_KEY+shift+enter` so its macOS defaults cannot trigger fullscreen or split zoom.
+`F11` remains fullscreen, and `OS_KEY+shift+\` remains split zoom.
+Windows Terminal's plain `shift+enter` input mapping is unchanged.
+
+Ghostty consumes `OS_KEY+[/]` for its own panes before tmux receives the chord.
+Use tmux's alternative bindings when navigating inner tmux windows.
 
 tmux zoom is a binary toggle (`resize-pane -Z`) — the pane is either full-window or
 back in its layout slot. There are no zoom levels, so there is deliberately no
@@ -459,20 +480,22 @@ app inside the terminal (tmux, vim, readline — `OS_KEY` is `alt` off macOS) ta
 one. In Ghostty they override two defaults: `OS_KEY+shift+f` (`end_search` — `escape` still
 ends search) and `OS_KEY+shift+v` (`paste_from_selection`).
 
-Ghostty's search chords (`OS_KEY+f` start, `OS_KEY+g` / `OS_KEY+shift+g` next / previous,
-`OS_KEY+e` search selection) come from Ghostty's **own defaults** — search shipped in
-Ghostty 1.3.0 — so they are deliberately absent from `ghostty-keys.common.jsonc`. Binding
-them there would only restate a default we already agree with.
+Ghostty explicitly binds `OS_KEY+f` to start search, `OS_KEY+g` / `OS_KEY+shift+g` to next / previous results, and `OS_KEY+e` to search the selection.
+These match the macOS defaults and add the corresponding Linux Alt shortcuts.
+Search requires Ghostty 1.3.0 or newer; `escape` still ends search.
 
 ### Scrollback
 
-`ctrl+shift+up` / `ctrl+shift+down` scroll the terminal viewport by one page in both
-Windows Terminal and Ghostty. They do not send Page Up/Down to the child application.
-Windows Terminal's default smaller scroll increments on these chords are replaced.
+`shift+up` / `shift+down` scroll the terminal viewport by one page in both Windows Terminal and Ghostty.
+`ctrl+shift+up` / `ctrl+shift+down` perform the same actions.
+These chords do not send Page Up/Down to the child application.
+Ghostty's Shift+Up/Down selection-extension defaults are replaced by scrolling.
+Windows Terminal's smaller Ctrl+Shift+Up/Down scroll increments are replaced by full pages.
 Existing Page Up/Down scrolling shortcuts remain available.
 
-No matching custom binding exists in the repository's Vim, tmux, or LLM CLI keymaps.
-The terminal consumes these chords before applications can use them, including any additional user or plugin bindings.
+Pane resizing remains `OS_KEY+shift+arrow`: Command+Shift on macOS, Alt+Shift on Linux and Windows Terminal.
+Neither scrolling chord includes `OS_KEY`, so it does not conflict with pane resizing.
+The terminal consumes scrolling chords before child applications or plugins receive them.
 Terminal scrolling does not navigate Vim's file or tmux's pane history.
 For tmux history, enter copy mode with `alt+g`, then use `Ctrl+B` / `Ctrl+F` to page up/down; `q` exits.
 
@@ -482,6 +505,8 @@ relocated them because `OS_KEY+arrow` is split navigation here.
 
 | Key                 | Action               | Windows Terminal | tmux | Ghostty |
 | ------------------- | -------------------- | :--------------: | :--: | :-----: |
+| `shift+up`          | Scroll up one page   |        ✅        |  ❌  |   ✅    |
+| `shift+down`        | Scroll down one page |        ✅        |  ❌  |   ✅    |
 | `ctrl+shift+up`     | Scroll up one page   |        ✅        |  ❌  |   ✅    |
 | `ctrl+shift+down`   | Scroll down one page |        ✅        |  ❌  |   ✅    |
 | `OS_KEY+ctrl+up`    | Jump to prev prompt  |        ❌        |  ❌  |   ✅    |
@@ -493,6 +518,7 @@ relocated them because `OS_KEY+arrow` is split navigation here.
 | Key        | Action     | Windows Terminal | tmux | Ghostty |
 | ---------- | ---------- | :--------------: | :--: | :-----: |
 | `OS_KEY+=` | Zoom in    |        ✅        |  ❌  |   ✅    |
+| `OS_KEY++` | Zoom in    |        ❌        |  ❌  |   ✅    |
 | `OS_KEY+-` | Zoom out   |        ✅        |  ❌  |   ✅    |
 | `OS_KEY+0` | Reset zoom |        ✅        |  ❌  |   ✅    |
 

@@ -5,7 +5,7 @@
 //
 // Convention: see docs/editor-keybindings.md → "Terminal Emulators".
 [
-  // ---- Tabs ----
+  // --- Tabs ---
   { "key": "OS_KEY+t", "action": "new_tab" },
   { "key": "OS_KEY+1", "action": "goto_tab:1" },
   { "key": "OS_KEY+2", "action": "goto_tab:2" },
@@ -18,17 +18,19 @@
   { "key": "OS_KEY+9", "action": "goto_tab:9" },
   { "key": "OS_KEY+shift+]", "action": "next_tab" },
   { "key": "OS_KEY+shift+[", "action": "previous_tab" },
-  { "key": "OS_KEY+w", "action": "close_surface" },
+  // Close the whole tab, including its splits, rather than only the focused pane.
+  { "key": "OS_KEY+w", "action": "close_tab" },
   // F2 prompts for a new title for the current tab (matches the common
   // editor/terminal convention where F2 = rename).
   { "key": "f2", "action": "prompt_tab_title" },
 
-  // ---- Window ----
+  // --- Window ---
   { "key": "OS_KEY+n", "action": "new_window" },
-  { "key": "OS_KEY+q", "action": "quit" },
+  // Leave other windows open; quit would close the entire application.
+  { "key": "OS_KEY+q", "action": "close_window" },
   { "key": "global:OS_KEY+escape", "action": "toggle_quick_terminal" },
 
-  // ---- Splits ----
+  // --- Splits ---
   { "key": "OS_KEY+d", "action": "new_split:right" },
   { "key": "OS_KEY+shift+d", "action": "new_split:down" },
   { "key": "OS_KEY+'", "action": "new_split:down" },
@@ -36,16 +38,23 @@
   { "key": "OS_KEY+down", "action": "goto_split:down" },
   { "key": "OS_KEY+left", "action": "goto_split:left" },
   { "key": "OS_KEY+right", "action": "goto_split:right" },
+  { "key": "OS_KEY+[", "action": "goto_split:previous" },
+  { "key": "OS_KEY+]", "action": "goto_split:next" },
   { "key": "OS_KEY+shift+up", "action": "resize_split:up,10" },
   { "key": "OS_KEY+shift+down", "action": "resize_split:down,10" },
   { "key": "OS_KEY+shift+left", "action": "resize_split:left,10" },
   { "key": "OS_KEY+shift+right", "action": "resize_split:right,10" },
   { "key": "OS_KEY+shift+\\", "action": "toggle_split_zoom" },
 
-  // ---- Scrollback / prompts ----
-  // Scroll the terminal viewport; do not send Page Up/Down to the child app.
+  // --- Scrollback / prompts ---
+  // Scroll the viewport, not the child app. Shift+arrows replaces selection extension;
+  // ctrl+shift+arrows remains an alias, separate from OS_KEY+shift+arrows pane resize.
+  { "key": "shift+up", "action": "scroll_page_up" },
+  { "key": "shift+down", "action": "scroll_page_down" },
   { "key": "ctrl+shift+up", "action": "scroll_page_up" },
   { "key": "ctrl+shift+down", "action": "scroll_page_down" },
+  { "key": "OS_KEY+home", "action": "scroll_to_top" },
+  { "key": "OS_KEY+end", "action": "scroll_to_bottom" },
   // Jump the viewport to the previous/next shell prompt — the terminal equivalent
   // of "scroll back to where that build started". Needs shell integration (enabled
   // in ghostty.js) to know where prompts are.
@@ -57,12 +66,13 @@
   { "key": "OS_KEY+ctrl+up", "action": "jump_to_prompt:-1" },
   { "key": "OS_KEY+ctrl+down", "action": "jump_to_prompt:1" },
 
-  // ---- Font Zoom ----
+  // --- Font Zoom ---
   { "key": "OS_KEY+equal", "action": "increase_font_size:1" },
+  { "key": "OS_KEY++", "action": "increase_font_size:1" },
   { "key": "OS_KEY+minus", "action": "decrease_font_size:1" },
   { "key": "OS_KEY+0", "action": "reset_font_size" },
 
-  // ---- Edit ----
+  // --- Edit ---
   // `:mixed` (Ghostty's own default for this chord) puts BOTH plain text and a
   // styled/HTML flavor on the clipboard, so pasting into a rich-text target keeps
   // colors while pasting into a plain one is unchanged. Binding the bare
@@ -71,6 +81,11 @@
   { "key": "OS_KEY+v", "action": "paste_from_clipboard" },
   { "key": "OS_KEY+a", "action": "select_all" },
   { "key": "ctrl+shift+a", "action": "select_all" },
+  // Make macOS-default search chords explicit so the Linux Alt variants exist too.
+  { "key": "OS_KEY+f", "action": "start_search" },
+  { "key": "OS_KEY+g", "action": "navigate_search:next" },
+  { "key": "OS_KEY+shift+g", "action": "navigate_search:previous" },
+  { "key": "OS_KEY+e", "action": "search_selection" },
   // Escape hatch: OS_KEY+shift+<key> does the same thing, for when the plain
   // chord is taken by an app inside the terminal (on Linux OS_KEY is alt, which
   // tmux / vim / readline may want). Overrides two Ghostty defaults:
@@ -89,14 +104,14 @@
   // reads it as yank-pop.
   { "key": "OS_KEY+y", "action": "text:\\x1by" },
 
-  // ---- Line editing ----
+  // --- Line editing ---
   // Match Windows Terminal: Home/End and shell word-deletion shortcuts.
   { "key": "ctrl+a", "action": "csi:H" },
   { "key": "ctrl+e", "action": "csi:F" },
   { "key": "ctrl+backspace", "action": "text:\\x17" },
   { "key": "ctrl+delete", "action": "esc:d" },
 
-  // ---- tmux ctrl twins ----
+  // --- tmux ctrl twins ---
   // ctrl+<key> re-sent as alt+<key> (ESC <key>), so tmux's alt chords also answer
   // to ctrl: ctrl+1-9 = window N, ctrl+shift+1-9 = pane N, ctrl+, / ctrl+. =
   // prev / next window, ctrl+' = split. Needed because the terminal would
@@ -128,7 +143,11 @@
   { "key": "ctrl+.", "action": "text:\\x1b." },
   { "key": "ctrl+'", "action": "text:\\x1b'" },
 
-  // ---- View ----
+  // --- View ---
+  // Omission would retain Ghostty's macOS Enter defaults. Disable both explicitly;
+  // keep F11 fullscreen and OS_KEY+shift+backslash split zoom instead.
+  { "key": "OS_KEY+enter", "action": "unbind" },
+  { "key": "OS_KEY+shift+enter", "action": "unbind" },
   { "key": "f11", "action": "toggle_fullscreen" },
   // OS_KEY+\ toggles the title bar / tab bar (matches Windows Terminal's
   // "show/hide tab bar" gesture). With macos-titlebar-style=tabs the tabs live
