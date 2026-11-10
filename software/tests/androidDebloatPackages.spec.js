@@ -29,13 +29,20 @@ const PROTECTED_PACKAGES = [
   "com.samsung.android.mobileservice",
 ];
 
-/** Requested unused extras belong in the default cleanup collection. */
+/** Requested unused extras and Google-replaced Samsung apps belong in default cleanup. */
 const NEW_REMOVALS = [
   "com.aura.oobe.samsung",
   "com.aura.oobe.samsung.gl",
   "com.samsung.android.livestickers",
   "com.samsung.android.app.settings.bixby",
   "com.samsung.android.samsungpassautofill",
+  "com.samsung.android.calendar",
+  "com.samsung.android.messaging",
+  "com.sec.android.app.clockpackage",
+  "com.samsung.android.visionintelligence",
+  "com.samsung.android.rubin.app",
+  "com.samsung.android.smartcallprovider",
+  "com.samsung.android.authfw",
 ];
 
 /**
@@ -71,6 +78,13 @@ describe("Android debloat package policy", () => {
         "com.samsung.android.livestickers",
         "com.samsung.android.app.settings.bixby",
         "com.samsung.android.samsungpassautofill",
+        "com.samsung.android.calendar",
+        "com.samsung.android.messaging",
+        "com.sec.android.app.clockpackage",
+        "com.samsung.android.visionintelligence",
+        "com.samsung.android.rubin.app",
+        "com.samsung.android.smartcallprovider",
+        "com.samsung.android.authfw",
       ]
     `);
     expect(PROTECTED_PACKAGES.filter((name) => result.stdout.includes(`ADB shell pm uninstall ${name}\n`))).toMatchInlineSnapshot(`[]`);

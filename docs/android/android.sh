@@ -235,19 +235,26 @@ debloat_settings() {
 # WARNING marks lost features; CRITICAL marks lockout, calling, or system UI risks.
 
 # --- Default removal - unused apps and optional features ---
+# Configure and test Google replacements before cleanup; migrate Samsung alarms first.
 DEBLOAT_SAFE="
 # --- Replaceable Apps ---
+com.samsung.android.calendar # Samsung Calendar | [WARNING] Removes Samsung calendar UI and widgets; verify Google Calendar sync first.
+com.samsung.android.messaging # Samsung Messages | [WARNING] Set Google Messages as default and test SMS/MMS/RCS first.
+com.sec.android.app.clockpackage # Samsung Clock | [WARNING] Recreate alarms in Google Clock and test after reboot first.
 com.samsung.android.email.provider # Samsung Email client
 com.samsung.android.service.livedrawing # Live Message animated handwriting
 com.samsung.android.app.reminder # Samsung Reminder tasks and alerts
 com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung credential autofill.
 com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Switch autofill providers first.
+com.samsung.android.authfw # Samsung Pass authentication | [WARNING] Samsung Pass biometric sign-in may stop.
 com.samsung.android.spay # Samsung Wallet | [WARNING] Removes Samsung payments and stored passes.
 com.sec.android.app.popupcalculator # Samsung Calculator
 com.sec.android.app.sbrowser # Samsung Internet browser
 com.samsung.android.app.spage # Samsung Free news and video feed
 com.samsung.android.da.daagent # Dual Messenger | [WARNING] Removes cloned messaging accounts.
 com.samsung.android.smartsuggestions # Samsung contextual suggestions
+com.samsung.android.rubin.app # Customization Service | [WARNING] Removes Samsung personalized suggestions.
+com.samsung.android.smartcallprovider # Smart Call | [WARNING] Removes Hiya caller ID and spam screening.
 com.samsung.android.shortcutbackupservice # Shortcut backup | [WARNING] Removes Samsung shortcut backup support.
 com.microsoft.office.officehubrow # Microsoft 365 document hub
 com.microsoft.skydrive # OneDrive | [WARNING] Stops OneDrive and linked Gallery cloud sync.
@@ -275,6 +282,7 @@ com.samsung.android.bixby.service # Bixby backend services
 com.samsung.android.bixby.wakeup # Hi Bixby hotword detection
 com.samsung.android.app.settings.bixby # Bixby settings
 com.samsung.android.bixbyvision.framework # Bixby Vision camera framework
+com.samsung.android.visionintelligence # Bixby Vision | [WARNING] Removes camera visual search and translation.
 # --- AR and Stickers ---
 com.samsung.android.aremoji # AR Emoji avatars
 com.samsung.android.aremojieditor # AR Emoji avatar editor
@@ -309,13 +317,10 @@ com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe l
 # Protected entries also remain in DEBLOAT_IGNORED; do not enable their removal.
 DEBLOAT_AGGRESSIVE="
 # --- Replacement and System UI Risks ---
-# com.samsung.android.calendar | [WARNING] Samsung Calendar; removes its widgets and calendar UI.
 # com.samsung.android.contacts | [CRITICAL] Samsung Contacts; call/contact integration may break.
-# com.samsung.android.messaging | [WARNING] Samsung Messages; select and test another SMS app first.
 # com.samsung.android.honeyboard | [CRITICAL] Samsung Keyboard; removal can block unlock without a direct-boot replacement.
 # com.touchtype.swiftkey | [CRITICAL] SwiftKey; verify another keyboard works after reboot first.
 # com.samsung.android.dialer | [CRITICAL] Samsung Phone; calling and emergency-call UI may break.
-# com.sec.android.app.clockpackage | [WARNING] Samsung Clock; removes alarms, timers, and clock widgets.
 # com.samsung.android.app.clockpack | [WARNING] Clock style component; fullscreen video breakage reported.
 # com.android.chrome | [WARNING] Chrome; passkeys or WebView dependencies may be affected.
 # com.samsung.android.themestore | [WARNING] Galaxy Themes; theme and wallpaper selection may break.
@@ -327,15 +332,11 @@ DEBLOAT_AGGRESSIVE="
 # com.samsung.android.app.parentalcare | [WARNING] Samsung parental controls; removes on-device restrictions.
 # com.google.android.gms.supervision | [CRITICAL] Family Link; device supervision depends on this package.
 # --- Shared Services and Connectivity ---
-com.samsung.android.visionintelligence # Bixby Vision | [WARNING] Removes camera visual search and translation.
-com.samsung.android.rubin.app # Customization Service | [WARNING] Removes Samsung personalized suggestions.
-com.samsung.android.smartcallprovider # Smart Call | [WARNING] Removes Hiya caller ID and spam screening.
 com.samsung.android.beaconmanager # Nearby device service | [WARNING] Nearby discovery integrations may stop.
 # com.samsung.android.easysetup | [WARNING] Nearby Device Scanning; removes automatic nearby-device setup prompts.
 com.samsung.android.ipsgeofence # Visit In geofencing | [WARNING] Location-triggered Samsung features may stop.
 com.google.android.projection.gearhead # Android Auto | [WARNING] Removes in-car phone projection.
 com.google.ar.core # Google Play Services for AR | [WARNING] AR-dependent apps lose AR features.
-com.samsung.android.authfw # Samsung Pass authentication | [WARNING] Samsung Pass biometric sign-in may stop.
 # --- Used Apps - Keep ---
 # com.sec.android.app.shealth | [WARNING] Samsung Health; keep workouts, sleep tracking, and health sync.
 # com.sec.android.app.voicenote | [WARNING] Voice Recorder; keep recording and transcription.
