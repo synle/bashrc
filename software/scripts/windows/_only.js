@@ -1,4 +1,8 @@
-/** Platform tweaks for Windows - registers WSL / Ubuntu shell config. */
+/**
+ * Register Windows shell tweaks; the shared adb wrapper owns adb.exe routing.
+ * @returns {Promise<void>} Resolves after buffering the Windows profile block.
+ * @throws {Error} If profile registration fails; does not execute the buffered shell.
+ */
 async function doWork() {
   /**
    * Windows mapped drive letters to auto-mount into WSL via drvfs.
@@ -27,7 +31,6 @@ async function doWork() {
       cmd.exe '/C' "$@"
     }
 
-    alias adb='adb.exe'
     alias fastboot='fastboot.exe'
     # update: OS package manager update/upgrade only
     alias update='sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get autoclean && sudo apt-get clean && sudo apt-get autoremove -y'

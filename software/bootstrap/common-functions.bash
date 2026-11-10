@@ -104,7 +104,7 @@ function find_native_node() {
 }
 
 # BEGIN software/bootstrap/safe-source.bash
-# software/bootstrap/safe-source.bash | 6d57d106ef35f6bf41f1ae34afb3959b | 4.6 KB
+# software/bootstrap/safe-source.bash | d5d676efd8d5730650142cd84462f324 | 4.8 KB
 # Shared bootstrap loader; redefining helpers preserves per-process source and recursion state.
 
 # _safe_source_resolve <file>: print a physical absolute filename, resolving at most 40 links.
@@ -143,6 +143,11 @@ function _safe_source_contains() {
     [ "$candidate" != "$identity" ] || return 0
   done
   return 1
+}
+
+# _safe_source_remember <identity>: record a successful canonical path or URL without duplicating registry entries.
+function _safe_source_remember() {
+  _safe_source_contains "$1" ${_SY_SAFE_SOURCE_LOADED[@]+"${_SY_SAFE_SOURCE_LOADED[@]}"} || _SY_SAFE_SOURCE_LOADED+=("$1")
 }
 
 # safe_source: source a syntax-checked script once per Bash process; see --help for usage.
@@ -236,8 +241,8 @@ Protected .secret. paths are never sourced. Failed sources can be retried.'
   . "$target"
   status=$?
   unset '_SY_SAFE_SOURCE_ACTIVE[active_index]'
-  if [ "$status" -eq 0 ] && ! _safe_source_contains "$key" ${_SY_SAFE_SOURCE_LOADED[@]+"${_SY_SAFE_SOURCE_LOADED[@]}"}; then
-    _SY_SAFE_SOURCE_LOADED+=("$key")
+  if [ "$status" -eq 0 ]; then
+    _safe_source_remember "$key"
   fi
   return "$status"
 }

@@ -39,6 +39,11 @@ function _safe_source_contains() {
   return 1
 }
 
+# _safe_source_remember <identity>: record a successful canonical path or URL without duplicating registry entries.
+function _safe_source_remember() {
+  _safe_source_contains "$1" ${_SY_SAFE_SOURCE_LOADED[@]+"${_SY_SAFE_SOURCE_LOADED[@]}"} || _SY_SAFE_SOURCE_LOADED+=("$1")
+}
+
 # safe_source: source a syntax-checked script once per Bash process; see --help for usage.
 # Returns 0 for successful or skipped loads, 2 for invalid arguments, otherwise the failure status.
 function safe_source() {
@@ -130,8 +135,8 @@ Protected .secret. paths are never sourced. Failed sources can be retried.'
   . "$target"
   status=$?
   unset '_SY_SAFE_SOURCE_ACTIVE[active_index]'
-  if [ "$status" -eq 0 ] && ! _safe_source_contains "$key" ${_SY_SAFE_SOURCE_LOADED[@]+"${_SY_SAFE_SOURCE_LOADED[@]}"}; then
-    _SY_SAFE_SOURCE_LOADED+=("$key")
+  if [ "$status" -eq 0 ]; then
+    _safe_source_remember "$key"
   fi
   return "$status"
 }
