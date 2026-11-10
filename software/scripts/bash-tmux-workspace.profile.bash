@@ -581,6 +581,131 @@ function workspace_create() {
   _workspace_attach_unless_detached "$detach" "$session"
 }
 
+# Follow readable log files in basename-named tmux windows through workspace_create.
+# Args: [-last 0-1000000] [-session name] [--detach] [--force] [--] file...
+# Returns 2 for invalid input, otherwise the dependency/config/workspace status.
+# Creates or attaches to a session; --force kills and rebuilds that session.
+function monitor_logs() {
+  if is_help_arg "${1:-}"; then
+    printf '%s\n' 'monitor_logs: follow one log file per tmux window (alias: tailf)
+Usage: monitor_logs [-last N] [-session NAME] [--detach] [--force] [--] FILE...
+  -last, --last, -n N       initial lines, 0-1000000 (default: 100)
+  -session, --session NAME  letters, digits, underscores, and hyphens only
+  --detach                 create or reuse without attaching
+  --force                  kill the selected session and rebuild its windows
+  --                       treat remaining arguments as filenames
+Default session: tailf_session_<checksum of ordered absolute file paths>.
+Existing sessions follow workspace_create reuse/confirmation rules.
+Each window prints its full path, three ellipses, then tail -n N -f output.
+Headers use white text on red; ellipses use gray. Non-terminal output stays plain.'
+    return 0
+  fi
+
+  local last=100 max_last=1000000 session="" session_given=0
+  local files=() workspace_options=() file folder checksum config follow_command
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+    -last | --last | -n | -session | --session)
+      if [ "$#" -lt 2 ]; then
+        printf 'monitor_logs: %s requires a value\n' "$1" >&2
+        return 2
+      fi
+      case "$1" in
+      -last | --last | -n) last="$2" ;;
+      *)
+        session="$2"
+        session_given=1
+        ;;
+      esac
+      shift 2
+      ;;
+    --detach | --force)
+      workspace_options+=("$1")
+      shift
+      ;;
+    --)
+      shift
+      files+=("$@")
+      break
+      ;;
+    -*)
+      printf 'monitor_logs: unknown option: %s\n' "$1" >&2
+      return 2
+      ;;
+    *)
+      files+=("$1")
+      shift
+      ;;
+    esac
+  done
+
+  case "$last" in
+  '' | *[!0-9]*)
+    printf 'monitor_logs: -last must be an integer in 0-%s\n' "$max_last" >&2
+    return 2
+    ;;
+  esac
+  if [ "${#last}" -gt 7 ] || [ "$last" -gt "$max_last" ]; then
+    printf 'monitor_logs: -last must be an integer in 0-%s\n' "$max_last" >&2
+    return 2
+  fi
+  last=$((10#$last))
+  if ((session_given)); then
+    case "$session" in
+    '' | *[!a-zA-Z0-9_-]*)
+      printf '%s\n' 'monitor_logs: session name must contain only letters, digits, underscores, and hyphens' >&2
+      return 2
+      ;;
+    esac
+  fi
+  if [ "${#files[@]}" -eq 0 ]; then
+    printf '%s\n' 'monitor_logs: provide at least one log file' >&2
+    return 2
+  fi
+
+  local index
+  for index in "${!files[@]}"; do
+    file="${files[index]}"
+    case "$file" in
+    *[[:cntrl:]]*)
+      printf '%s\n' 'monitor_logs: filenames must not contain control characters' >&2
+      return 2
+      ;;
+    esac
+    if [ ! -f "$file" ] || [ ! -r "$file" ]; then
+      printf 'monitor_logs: expected a readable regular file: %s\n' "$file" >&2
+      return 2
+    fi
+    case "$file" in
+    /*) ;;
+    *) file="$PWD/$file" ;;
+    esac
+    folder=$(cd -P -- "${file%/*}" && pwd -P) || return 1
+    files[index]="${folder%/}/${file##*/}"
+  done
+
+  _workspace_require || return 1
+  if ((! session_given)); then
+    # NUL delimiters keep differently split filename lists distinct; this is not a security hash.
+    checksum=$(printf '%s\0' "${files[@]}" | command cksum) || return 1
+    session="tailf_session_${checksum%% *}"
+  fi
+
+  # Commands stay self-contained; jq @sh preserves filenames through both shell layers.
+  follow_command='if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then '
+  follow_command+='printf "\033[1;37;41m%s\033[0m\n" "$file"; '
+  follow_command+='printf "\033[90m...\n...\n...\033[0m\n"; '
+  follow_command+='else printf "%s\n" "$file" "..." "..." "..."; fi; '
+  follow_command+='command tail -n "$last" -f "$file"'
+  config=$(command jq -cn --arg session "$session" --arg last "$last" --arg follow "$follow_command" --args '
+    {session: $session, windows: [$ARGS.positional[] | {
+      name: (split("/") | last),
+      command: ("file=" + (. | @sh) + "; last=" + ($last | @sh) + "; " + $follow)
+    }]}
+  ' -- "${files[@]}") || return 1
+  workspace_create - ${workspace_options[@]+"${workspace_options[@]}"} <<< "$config"
+}
+
 # write a sample config named <datetime>.json plus a <datetime>.sh launcher inlining it
 function workspace_sample_json() {
   if is_help_arg "${1:-}"; then
@@ -1133,3 +1258,4 @@ alias wsca="workspace_close_all"
 alias wst="workspace_temp_create"
 alias wsto="workspace_temp_open"
 alias wstc="workspace_temp_close"
+alias tailf="monitor_logs"
