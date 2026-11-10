@@ -102,10 +102,11 @@ A busy automatic refresh skips silently; a busy manual refresh reports the lock 
 Use `refresh_profiles --help` for usage, or rerun `./run` to regenerate the complete startup configuration.
 
 `software/bootstrap/safe-source.bash` owns the full implementation persisted by `run.sh` in `~/.bash_syle_common` and included in `common-functions.bash`.
-Startup files retain a guarded two-line syntax-check-and-source fallback until the common profile installs the full loader.
+The managed `.bash_profile` entry contains only a direct `. '<bashrc>'` command.
+Only `.bashrc` defines the minimal syntax-check-and-source loader, without an outer function-availability check, until the common profile installs the full loader.
 The fallback rejects file symlinks and protected requested or physical-parent paths; full-loader calls retain canonical symlink support.
 `safe_source` tracks successful canonical local paths and URL identities per Bash process.
-Repeated calls return success, skip execution, and print a warning to stderr; failed loads remain retryable.
+Repeated full-loader calls return success, skip execution, and print a warning to stderr; failed loads remain retryable.
 The recursion guard prevents a source cycle from repeatedly executing an active script.
 Re-reading helper definitions retains the registry; a new Bash process starts with independent state.
 Use `safe_source --reload <file>` for intentional repeat execution, such as virtual-environment activation.
