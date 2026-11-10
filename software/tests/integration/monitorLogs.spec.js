@@ -170,10 +170,15 @@ describe("monitor_logs (native tmux integration)", () => {
     await expect
       .poll(() => f.capture("=quoted:"))
       .toBe(`${f.folder}/${name}\n${terminalSeparator}\nShowing the last 200 lines; following new output in the foreground.\nsafe-content`);
-    // Native tmux doubles backslashes in window names, including without workspace_create.
-    expect(f.tmux(["list-windows", "-t", "=quoted", "-F", "#{window_name}"]).stdout.trim()).toBe(
-      "space 'quote';$(touch INJECTED)`touch INJECTED`\\\\\u96ea.log",
-    );
+    // Compare with native tmux rather than assuming a platform-specific backslash representation.
+    expect(f.tmux(["new-session", "-d", "-s", "native", "-n", name]).status).toBe(0);
+    /** Native control bypasses workspace serialization and shell quoting. */
+    const nativeName = f.tmux(["list-windows", "-t", "=native", "-F", "#{window_name}"]);
+    /** Monitored name must match the same tmux binary's native filename handling exactly. */
+    const monitoredName = f.tmux(["list-windows", "-t", "=quoted", "-F", "#{window_name}"]);
+    expect(nativeName.status).toBe(0);
+    expect(monitoredName.status).toBe(0);
+    expect(monitoredName.stdout).toBe(nativeName.stdout);
     expect(fs.existsSync(path.join(f.folder, "INJECTED"))).toBe(false);
   });
 
