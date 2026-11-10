@@ -90,10 +90,10 @@ ${LINE_BREAK_HASH}
       .filter((file) => !file.includes(".secret.") && !/[\x00-\x1f\x7f]/.test(file))
       .sort(),
   ];
-  /** @type {string} Minimal .bashrc loader validates and remembers the common profile that installs the full runtime. */
+  /** @type {string} Minimal .bashrc loader validates and sources the common profile without requiring full runtime helpers. */
   const entryPointContent = trimSpacesOnBothEnd(`
     function safe_source() { [[ -f "$1" && ! -L "$1" && "$1/$(cd -P -- "\${1%/*}" && pwd -P)" != *'.secret.'* ]] && BASH_ENV='' "$BASH" -n "$1" 2> /dev/null || { printf '%s\\n' '[Warning] safe_source bootstrap validation failed' >&2; return 1; };
-      . "$1" || return; declare -F _safe_source_remember > /dev/null || { printf '%s\\n' '[Warning] safe_source full runtime unavailable' >&2; return 1; }; _safe_source_remember "$(_safe_source_resolve "$1")"; }
+      . "$1"; }
   `);
   /** @type {string} Cached manifest; refreshing it affects only later shell starts. */
   const profileSourcesBlock = [
