@@ -24,6 +24,44 @@ The workspace functions described below ship for real in
 | `workspace_temp_open`   | `wsto` | Attach to the shared temp session                            |
 | `workspace_temp_close`  | `wstc` | Kill every temp session                                      |
 
+## Follow multiple log files
+
+`monitor_logs` (alias `tailf`) uses `workspace_create` to open one tmux window per readable log file.
+Each window uses the file's basename, including its extension, as its tab name.
+The window prints the absolute file path in white on a red background, followed by three gray ellipses.
+It then prints the last 100 lines and follows appended content with `tail -f`.
+Non-terminal output and dumb terminals use plain headers.
+
+```bash
+monitor_logs /tmp/sync_backend.log /tmp/sync_ui.log /tmp/sync_docs.log
+tailf -last 200 -session sync_logs /tmp/sync_backend.log /tmp/sync_ui.log
+monitor_logs --detach -session sync_logs /tmp/sync_backend.log
+```
+
+- `-last N`, `--last N`, or `-n N` selects 0–1,000,000 initial lines; zero shows only new content.
+- `-session NAME` or `--session NAME` selects a session containing only letters, digits, underscores, and hyphens.
+- Without a session name, `tailf_session_<checksum>` identifies the ordered list of absolute file paths.
+  The checksum uses NUL-delimited paths, not file content or a timestamp.
+  Repeating that list selects the same session; changing its order selects a different session unless checksums collide.
+- `--detach` creates or reuses the session without attaching.
+- `--` ends option parsing so relative filenames beginning with `-` remain usable.
+- Options may appear before or after files until `--`.
+
+All files must exist and be readable regular files before any window is created.
+Control characters in filenames are rejected; quote filenames containing spaces or shell metacharacters.
+This helper requires the workspace profile, `tmux`, `jq`, and the standard `cksum` utility.
+The workspace profile replaces the old direct `tail -n 500 -f` shortcut with this compatibility alias.
+Core-only shells retain a native `tail -n 100 -f` fallback.
+For native tail options or stdin, call `command tail` directly.
+
+Existing sessions follow `workspace_create` rules: reuse or confirm a rebuild interactively; reuse without a terminal.
+Reuse preserves the running windows, original file list, and initial-line count, even if the new invocation specifies different values.
+**`--force` kills every process in the selected session and recreates its windows.**
+Use it only for a session whose running processes you intend to terminate.
+Detaching leaves the followers running; Ctrl-C stops the follower in the current window.
+
+## Workspace aliases
+
 Aliases are the first letter of each word after `workspace`, with two carve-outs. The bare
 prefix (`ws`, `wst`) is **create**, the primary verb — which is what frees `wsc` for
 `workspace_close`, since `create` and `close` both start with `c`. And `workspace_list` is

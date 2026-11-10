@@ -761,5 +761,6 @@ elif diff --version 2> /dev/null | command grep -q GNU; then
   alias diff="command diff --color=auto"
 fi
 alias lc="wc -l"
-alias tailf="tail -n 500 -f"
+# The workspace profile upgrades this alias when advanced helpers are available.
+alias tailf="tail -n 100 -f"
 alias tailn="tail -n"
