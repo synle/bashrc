@@ -18,8 +18,8 @@
   { "key": "OS_KEY+9", "action": "goto_tab:9" },
   { "key": "OS_KEY+shift+]", "action": "next_tab" },
   { "key": "OS_KEY+shift+[", "action": "previous_tab" },
-  // Close the whole tab, including its splits, rather than only the focused pane.
-  { "key": "OS_KEY+w", "action": "close_tab" },
+  // Close one focused split; its last split closes the tab, and the last tab closes the window.
+  { "key": "OS_KEY+w", "action": "close_surface" },
   // F2 prompts for a new title for the current tab (matches the common
   // editor/terminal convention where F2 = rename).
   { "key": "f2", "action": "prompt_tab_title" },

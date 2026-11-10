@@ -316,8 +316,7 @@ forward Delete (`ctrl+fn+delete` on compact keyboards).
 | `OS_KEY+shift+[/]` | Prev / next tab                 |        ✅        |  ⚠️  |   ✅    |
 | `OS_KEY+tab`       | Next tab                        |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+shift+tab` | Prev tab                        |        ❌        |  ✅  |   ❌    |
-| `OS_KEY+w`         | Close pane                      |        ✅        |  ✅  |   ❌    |
-| `OS_KEY+w`         | Close tab and its panes         |        ❌        |  ❌  |   ✅    |
+| `OS_KEY+w`         | Close pane                      |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+x`         | Close pane (alt)                |        ❌        |  ✅  |   ❌    |
 | `OS_KEY+q`         | Close window                    |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+n`         | New window                      |        ✅        |  ✅  |   ✅    |
@@ -341,7 +340,9 @@ Ghostty uses `OS_KEY = cmd` on macOS and `OS_KEY = alt` on Linux.
 Non-native fullscreen prevents macOS native tabs from opening, so new windows must not start in that mode.
 Existing fullscreen windows are unchanged; exit fullscreen before creating a tab there.
 Tab shortcuts `OS_KEY+1-9` select tabs 1 through 9; an out-of-range index selects the last tab.
-`OS_KEY+w` closes the current Ghostty tab and all its panes.
+`OS_KEY+w` closes only the focused Ghostty split pane using `close_surface`.
+Closing the last pane in a tab closes that tab; closing the last tab closes its window.
+Each press closes one terminal surface, leaving other panes, tabs, and windows open.
 `OS_KEY+q` closes only the current Ghostty window, not other windows.
 The managed configuration disables close confirmation, so these close actions do not prompt.
 

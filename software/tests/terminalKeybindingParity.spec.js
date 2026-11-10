@@ -33,7 +33,6 @@ describe.each([
     ["9", "goto_tab:9"],
     ["shift+[", "previous_tab"],
     ["shift+]", "next_tab"],
-    ["w", "close_tab"],
     ["q", "close_window"],
     ["d", "new_split:right"],
     ["'", "new_split:down"],
@@ -77,6 +76,19 @@ describe.each([
   ])("renders literal %s as %s", async (key, action) => {
     const config = await getIndexFunction("_buildConfigContent")(isMac, { is_prebuilt_config: true });
     expect(config.split("\n")).toContain(`keybind = ${key}=${action}`);
+  });
+
+  it.each([false, true])("closes only the focused surface before its tab or window (prebuilt: %s)", async (isPrebuilt) => {
+    const config = await getIndexFunction("_buildConfigContent")(isMac, { is_prebuilt_config: isPrebuilt });
+    const actions = config
+      .split("\n")
+      .filter((line) => line.startsWith(`keybind = ${modifier}+w=`))
+      .map((line) => line.split("=")[2]);
+    expect(actions).toMatchInlineSnapshot(`
+      [
+        "close_surface",
+      ]
+    `);
   });
 
   it.each([false, true])("starts new windows outside fullscreen (prebuilt: %s)", async (isPrebuilt) => {
