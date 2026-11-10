@@ -127,7 +127,10 @@
     "keys": "alt+right",
   },
   { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
-  // Replace the default small scroll increments with full-page viewport scrolling.
+  // Page the viewport with Shift+Up/Down; keep Ctrl+Shift aliases separate from
+  // Alt+Shift pane resizing. These actions do not send Page Up/Down to child apps.
+  { "command": "scrollUpPage", "keys": "shift+up" },
+  { "command": "scrollDownPage", "keys": "shift+down" },
   { "command": "scrollUpPage", "keys": "ctrl+shift+up" },
   { "command": "scrollDownPage", "keys": "ctrl+shift+down" },
   // Resize panes — alt+shift+arrow (= OS_KEY+shift+arrow). Matches Ghostty's
