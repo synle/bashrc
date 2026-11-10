@@ -1,4 +1,4 @@
-/** Git clean helper pager safety and optional worktree cleanup checks. */
+/** Git clean helper pager safety, deferred maintenance, and optional worktree cleanup checks. */
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "child_process";
 import fs from "fs";
@@ -18,7 +18,7 @@ const cleanSource = profileSource.split("function clean() {", 2)[1].split("\n}\n
 
 /**
  * Runs `clean()` with disposable files, accepted confirmation, and stubbed Git/refresh executables.
- * A FIFO gates refresh completion on cleanup returning, without timing-based assertions.
+ * A FIFO gates refresh completion on cleanup returning; GC output records whether rebase was reached.
  * @param {string[]} args - Arguments passed to `clean`.
  * @param {{codegraph?: boolean, refresh?: boolean, rebaseStatus?: number, refreshStatus?: number}} options - Optional tool and failure scenarios.
  * @returns {string} Captured stdout; fixture files are removed after background jobs finish.
@@ -86,7 +86,11 @@ function git() {
     fi
     return 0
     ;;
-  stash | merge | cherry-pick | am | fix-identity | clean-and-fetch | gc-if-stale | checkout | del)
+  gc-if-stale)
+    [ -f "$CLEAN_TEST_ROOT/rebased" ] && printf '%s\n' TAIL_GC_AFTER_REBASE
+    return 0
+    ;;
+  stash | merge | cherry-pick | am | fix-identity | clean-and-fetch | checkout | del)
     return 0
     ;;
   rev-parse)
@@ -174,7 +178,7 @@ describe("clean git commands", () => {
   it.each([{ args: [] }, { args: ["--background"] }])("includes worktree cleanup by default $args", ({ args }) => {
     const output = runCleanWithStubs(args);
 
-    expect(output).toContain("TAIL_WORKTREE:\n");
+    expect(output).toMatch(/TAIL_WORKTREE:\n[\s\S]*TAIL_GC_AFTER_REBASE\n[\s\S]*TAIL_LASTD/);
     expect(output).not.toMatch(/^\s+->/m);
     expect(output).not.toContain("TAIL_PRUNE");
     expect(output).toContain("TOTAL:17");
@@ -184,7 +188,7 @@ describe("clean git commands", () => {
   it.each([{ args: ["--force"] }, { args: ["-f", "-b"] }])("preserves forced worktree cleanup $args", ({ args }) => {
     const output = runCleanWithStubs(args);
 
-    expect(output).toContain("TAIL_WORKTREE:--force\n");
+    expect(output).toMatch(/TAIL_WORKTREE:--force\n[\s\S]*TAIL_GC_AFTER_REBASE\n[\s\S]*TAIL_LASTD/);
     expect(output).toContain("--force also deletes dirty worktrees; their uncommitted work is NOT backed up");
     expect(output).not.toMatch(/^\s+->/m);
     expect(output).toContain("TAIL_PRUNE");
@@ -205,8 +209,7 @@ describe("clean git commands", () => {
     expect(output).toContain("TOTAL:16");
     expect(output).not.toContain("TOTAL:17");
     expect(output).toContain("TAIL_STALE");
-    expect(output).toContain("TAIL_MERGED");
-    expect(output).toContain("TAIL_LASTD");
+    expect(output).toMatch(/TAIL_MERGED\n[\s\S]*cleanup skipped[^\n]*\n[\s\S]*TAIL_GC_AFTER_REBASE\n[\s\S]*TAIL_LASTD/);
     expect(output).toContain("CLEAN_STATUS:0");
   });
 
