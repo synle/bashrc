@@ -1,6 +1,6 @@
 # ~/.config/ghostty/config (macOS variant — OS_KEY = cmd)
 
-# ---- Typography ----
+# --- Typography ---
 font-family = Fira Code
 font-size = 16
 # Render the regular face in bold by default — matches the user's "heavy" look.
@@ -11,7 +11,7 @@ font-thicken = true
 # 2px of extra vertical space between rows — readable without feeling spread out.
 adjust-cell-height = 2
 
-# ---- Theme (auto-switch with OS appearance, high-contrast both ways) ----
+# --- Theme (auto-switch with OS appearance, high-contrast both ways) ---
 # Sy Dark / Sy Light are written by this script into
 # ~/.config/ghostty/themes/ from theme/sy/ghostty_{dark,light}.jsonc, which are
 # bound to COLOR_MAP in software/tools/build-include.js by inline markers —
@@ -32,7 +32,7 @@ adjust-cell-height = 2
 # so the config never points at a themes/ file that was not written.
 theme = light:Sy Light,dark:Sy Dark
 
-# ---- Shell integration ----
+# --- Shell integration ---
 # Auto-detect bash/zsh/fish.
 #
 # This list MERGES with the defaults, it does not replace them. Verified on
@@ -63,7 +63,10 @@ shell-integration-features = no-cursor,no-sudo,no-title,ssh-env,ssh-terminfo,pat
 # New tabs/splits/windows open in the same cwd as the active pane.
 working-directory = inherit
 
-# ---- Window / Behavior ----
+# --- Window / Behavior ---
+# Start every new window normally; macOS native tabs cannot open in non-native fullscreen.
+# F11 still toggles fullscreen on demand.
+fullscreen = false
 # NOTE: ghostty's scrollback-limit is in BYTES — raw integer only, no
 # "100mb"/"mb" suffix (rejected as invalid). Unlike VS Code / Zed / Windows
 # Terminal, which all take lines. Reusing EDITOR_CONFIGS.terminalScrollback
@@ -119,7 +122,7 @@ resize-overlay = never
 # shader only redraws on terminal updates, not on its own timer.
 custom-shader-animation = false
 
-# ---- Splits (focus visibility) ----
+# --- Splits (focus visibility) ---
 # The fill overlays BOTH glyphs and backgrounds; 0.65 loses readable contrast.
 # Keep a subtle tint plus the divider without washing out inactive ANSI text.
 unfocused-split-opacity = 0.98
@@ -134,13 +137,13 @@ unfocused-split-fill = #808080
 # both light and dark.
 split-divider-color = #6e6e6e
 
-# ---- Cursor ----
+# --- Cursor ---
 # Steady (non-blinking) block — no animation, easier on the eyes.
 cursor-style = block
 cursor-style-blink = false
 # Keep the block fill opaque so cursor-text retains its configured contrast.
 cursor-opacity = 1
-# ---- macOS-specific ----
+# --- macOS-specific ---
 macos-option-as-alt = true
 # Ghostty's macOS defaults rewrite option+arrow into `esc:b` / `esc:f`
 # (readline word-motion), which means a real alt+arrow never reaches the
@@ -160,10 +163,6 @@ keybind = alt+arrow_down=csi:1;3B
 # the fix. Config is identical for both installs either way.
 macos-titlebar-style = tabs
 # <<< GOLDEN_GATE_TIP_HACK <<<
-# Renamed key: `macos-non-native-fullscreen = visible-menu` is the
-# pre-1.2 spelling. Still accepted as a compat alias, but `fullscreen`
-# is the current cross-platform key.
-fullscreen = non-native-visible-menu
 quit-after-last-window-closed = true
 # Disable quake/quick-terminal enter+exit animation. Ghostty docs say 0
 # disables it completely; option is macOS-only.
@@ -172,7 +171,7 @@ quick-terminal-animation-duration = 0
 # alias; `background-blur` takes the same radius in px.
 background-blur = 20
 
-# ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
+# --- Keybindings (managed by software/scripts/advanced/ghostty.js) ---
 keybind = cmd+t=new_tab
 keybind = cmd+1=goto_tab:1
 keybind = cmd+2=goto_tab:2
@@ -185,7 +184,7 @@ keybind = cmd+8=goto_tab:8
 keybind = cmd+9=goto_tab:9
 keybind = cmd+shift+]=next_tab
 keybind = cmd+shift+[=previous_tab
-keybind = cmd+w=close_tab
+keybind = cmd+w=close_surface
 keybind = f2=prompt_tab_title
 keybind = cmd+n=new_window
 keybind = cmd+q=close_window
