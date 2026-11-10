@@ -230,137 +230,163 @@ debloat_settings() {
 # --- App Lists ---
 ################################################################################
 
-# --- Safe to remove - duplicate apps, adware, and unused features ---
+# Package roles follow the community UAD catalog and vendor app listings.
+# Firmware dependencies vary; unverified identifiers stay commented out.
+# WARNING marks lost features; CRITICAL marks lockout, calling, or system UI risks.
+
+# --- Default removal - unused apps and optional features ---
 DEBLOAT_SAFE="
-# --- Duplicate / Replaceable Apps ---
-com.samsung.android.calendar                # Samsung Calendar - lose Samsung calendar app; [Not Needed] if using Google Calendar
-com.samsung.android.calendar.sync          # Samsung Calendar Sync - lose Samsung Calendar cloud sync; [Not Needed] if using Google Calendar
-com.samsung.android.contacts               # Samsung Contacts - lose Samsung contacts app; [Not Needed] if using Google Contacts
-com.samsung.android.email.provider          # Samsung Email - lose Samsung email client; [Not Needed] if using Gmail
-com.samsung.android.messaging               # Samsung Messages - lose default SMS/MMS/RCS; [Not Needed] if using Google Messages
-com.samsung.android.service.livedrawing     # Live Drawing - lose animated handwritten messages in Samsung Messages; [Not Needed] if using Google Messages
-com.samsung.android.honeyboard              # Samsung Keyboard - lose Samsung keyboard; [Not Needed] if using Gboard
-com.samsung.android.app.reminder            # Samsung Reminder - lose Samsung reminders; [Not Needed] if using Google Tasks
-com.samsung.android.samsungpass             # Samsung Pass - lose Samsung biometric autofill; [Not Needed] if using Google Password Manager
-com.samsung.android.spay                    # Samsung Wallet - lose Samsung Pay/NFC tap-to-pay; [Not Needed] if using Google Wallet
-com.sec.android.app.popupcalculator         # Samsung Calculator - lose Samsung calculator app; [Not Needed] if using Google Calculator
-com.sec.android.app.sbrowser                # Samsung Browser - lose Samsung Internet browser; [Not Needed] if using Firefox/Brave
-com.sec.android.daemonapp                   # Samsung Weather - lose Samsung weather app/widget; [Not Needed] if using Google Weather
-com.samsung.android.app.clockpack           # Samsung Clock - lose alarms, timers, stopwatch, world clock; [Not Needed] if using Google Clock
-com.samsung.android.app.spage               # Samsung Free / TV Plus - lose left-swipe news/video feed; [Not Needed] with third-party launchers
-com.samsung.android.da.daagent              # Samsung Daily Agent - lose Samsung Daily left-swipe feed; [Not Needed] with third-party launchers
-com.samsung.android.themestore              # Samsung Theme Store - lose Samsung themes/wallpapers/icons; [Not Needed] with third-party launchers
-com.samsung.android.smartsuggestions        # Smart Suggestions - lose Samsung app suggestions in share menu; [Not Needed] with third-party launchers
-com.samsung.android.shortcutbackupservice   # Shortcut Backup Service - lose home screen layout backup; [Not Needed] with third-party launchers
-com.microsoft.office.officehubrow           # Microsoft Office - lose Office hub; [Not Needed] if using Google Docs/Drive
-com.microsoft.skydrive                      # Microsoft OneDrive - lose OneDrive cloud storage; [Not Needed] if using Google Drive
-com.microsoft.copilot                       # Microsoft Copilot - lose Microsoft AI assistant; [Not Needed] if using Google Gemini
-com.touchtype.swiftkey                      # Microsoft SwiftKey - lose SwiftKey keyboard; [Not Needed] if using Gboard
-# --- Not Needed After Initial Setup ---
-com.samsung.android.easysetup               # Samsung Easy Setup - one-time setup wizard; [Not Needed] after initial setup
-com.sec.android.easyMover                   # Smart Switch - lose phone-to-phone data migration; [Not Needed] after initial setup
-com.google.android.apps.restore             # Google Restore - lose backup restore wizard; [Not Needed] after initial setup
-# --- Junks > Google ---
-com.android.chrome                          # Chrome - lose Chrome browser; use Firefox/Brave
-com.google.android.youtube                  # YouTube - lose YouTube app; use browser or NewPipe
-com.google.android.apps.youtube.music       # YouTube Music - lose YouTube Music app; use Spotify or browser
-com.google.android.apps.magazines           # Google News - lose Google News feed app
-com.google.android.apps.subscriptions.red   # Google One - lose Google One storage management and upsell app
-com.google.android.videos                   # Google TV - lose Google TV/Play Movies app for purchased/rented movies
-com.google.android.feedback                 # Google Feedback - lose Send feedback bug report option inside Google apps
-com.google.android.apps.googleassistant     # Google Assistant - replaced by Gemini; lose legacy Hey Google voice commands
-com.google.android.printservice.recommendation # Google Print Service - lose wireless printer discovery and printing
-com.google.android.apps.tachyon             # Google Meet - lose Google Meet video calling app
-com.google.android.apps.dynamite           # Google Chat - lose Google Chat messaging app
-# --- Junks > Facebook ---
-com.facebook.appmanager                     # Facebook App Manager - lose background Facebook app updates/installs
-com.facebook.appmanager.intel               # Facebook App Manager Intel - lose Facebook background telemetry
-com.facebook.services                       # Facebook Services - lose Facebook background services (login, analytics)
-com.facebook.system                         # Facebook System Services - lose Facebook system-level integration
-# --- Samsung > Bixby ---
-com.samsung.android.app.routines            # Bixby Routines - lose automated routines (if X then Y triggers)
-com.samsung.android.bixby.agent             # Bixby Agent - lose Bixby voice assistant and voice commands
-com.samsung.android.bixby.service           # Bixby Service - lose Bixby backend processing
-com.samsung.android.bixby.wakeup            # Bixby Voice Wake-up - lose Hi Bixby hotword detection and voice wake
-com.samsung.android.bixbyvision.framework   # Bixby Vision Framework - lose camera-based object/text recognition in Samsung Camera
-# --- Samsung > AR / Stickers ---
-com.samsung.android.aremoji                 # AR Emoji - lose animated avatar creation from selfies
-com.samsung.android.aremojieditor           # AR Emoji Editor - lose avatar customization (outfits, accessories)
-com.samsung.android.ardrawing               # AR Doodle - lose drawing/doodling on faces in camera viewfinder
-com.samsung.android.app.camera.sticker.facearavatar.preload # Stickers - lose preloaded face stickers in Samsung Camera
-com.sec.android.mimage.avatarstickers       # AR Emoji Stickers - lose auto-generated emoji sticker packs in keyboard
-com.samsung.android.arzone                  # AR Zone - lose AR hub (AR Emoji, Deco Pic, Quick Measure)
-com.samsung.android.stickercenter           # Sticker Center - lose downloadable sticker packs for Samsung Keyboard
-com.samsung.android.intelligenceservice     # Samsung AI Writing Assist - lose sparkle icon in text selection toolbar
-com.samsung.android.app.storyline            # Samsung Storyline - lose auto-generated photo/video highlight reels
-# --- Bloat / Adware / Promos ---
-com.mygalaxy.service                        # Samsung marketing layer - lose Samsung account promotional notifications
-com.samsung.android.app.samsungmall         # Samsung Shop - lose in-device Samsung store/deals app
-com.samsung.android.tvplus                  # Samsung TV Plus - lose free ad-supported streaming TV channels
-com.samsung.android.voc                     # Samsung Members - lose Samsung support/community app and diagnostics
-com.samsung.sree                            # Samsung Global Goals - lose lock screen charity ads and widget
-com.samsung.android.app.social              # Samsung What's New - lose Samsung promotional/feature update notifications
-com.samsung.android.app.tips                # Samsung Tips - lose tutorial pop-ups and feature discovery prompts
-# [KEEP] com.samsung.android.app.sharelive   # Share Live - keep because it powers the Quick Share tile
-com.samsung.android.app.dressroom           # Samsung Dressing Room - lose AR virtual clothes try-on; Samsung shopping gimmick
-com.samsung.android.app.parentalcare        # Samsung Parental Controls - lose Samsung built-in parental controls
-com.google.android.gms.supervision          # Family Link - lose parental controls on this device; [Not Needed] if managing family access online
-# --- Samsung > Games ---
-com.samsung.android.game.gamehome           # Game Launcher - lose game folder, performance stats, and Do Not Disturb during games
-com.samsung.android.game.gametools          # Game Booster - lose in-game FPS counter, screenshot tools, and performance tuning overlay
-# --- Samsung > Misc ---
-com.samsung.android.svoiceime               # Samsung Voice Input - lose Samsung voice-to-text; Google voice typing still works
-com.samsung.android.app.ledcoverdream       # LED Cover Service - lose LED case notifications; useless without Samsung LED cover
-# --- Samsung > Edge Panels ---
-com.samsung.android.app.cocktailbarservice  # Edge Panels service - lose all edge swipe panels (core service)
-com.samsung.android.app.taskedge            # Tasks Edge panel - lose task/to-do list in Edge Panel sidebar
-com.samsung.android.app.clipboardedge       # Clipboard Edge panel - lose clipboard history in Edge Panel sidebar
-com.samsung.android.app.appsedge            # Apps Edge panel - lose app shortcuts in Edge Panel sidebar
-# --- Samsung > Kids ---
-com.samsung.android.kidsinstaller           # Samsung Kids Installer - lose ability to set up Samsung Kids mode
-com.sec.android.app.kidshome                # Samsung Kids Home - lose Kids Mode launcher and child-safe environment
-# --- Samsung / Google: Digital Wellbeing ---
-com.samsung.android.forest                  # Samsung Focus Mode - lose Samsung focus/do-not-disturb scheduling
-com.samsung.android.wellbeing               # Samsung Digital Wellbeing - lose screen time dashboard, app timers
-com.google.android.apps.wellbeing           # Google Digital Wellbeing - lose screen time stats, Focus Mode tiles
+# --- Replaceable Apps ---
+com.samsung.android.email.provider # Samsung Email client
+com.samsung.android.service.livedrawing # Live Message animated handwriting
+com.samsung.android.app.reminder # Samsung Reminder tasks and alerts
+com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung credential autofill.
+com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Switch autofill providers first.
+com.samsung.android.spay # Samsung Wallet | [WARNING] Removes Samsung payments and stored passes.
+com.sec.android.app.popupcalculator # Samsung Calculator
+com.sec.android.app.sbrowser # Samsung Internet browser
+com.samsung.android.app.spage # Samsung Free news and video feed
+com.samsung.android.da.daagent # Dual Messenger | [WARNING] Removes cloned messaging accounts.
+com.samsung.android.smartsuggestions # Samsung contextual suggestions
+com.samsung.android.shortcutbackupservice # Shortcut backup | [WARNING] Removes Samsung shortcut backup support.
+com.microsoft.office.officehubrow # Microsoft 365 document hub
+com.microsoft.skydrive # OneDrive | [WARNING] Stops OneDrive and linked Gallery cloud sync.
+# --- Migration and Restore ---
+com.sec.android.easyMover # Smart Switch | [WARNING] Removes phone-to-phone data migration.
+com.google.android.apps.restore # Google restore wizard | [WARNING] Removes Google backup restore setup.
+# --- Google Apps ---
+com.google.android.youtube # YouTube video app
+com.google.android.apps.youtube.music # YouTube Music player
+com.google.android.apps.magazines # Google News reader
+com.google.android.apps.subscriptions.red # Google One storage management
+com.google.android.videos # Google TV movies and shows
+com.google.android.feedback # Google feedback and crash reporting
+com.google.android.apps.googleassistant # Assistant shortcut | [WARNING] Removes the standalone Assistant entrypoint.
+com.google.android.printservice.recommendation # Print service recommendations; not the print spooler
+com.google.android.apps.tachyon # Google Meet video calling
+com.google.android.apps.dynamite # Google Chat messaging
+# --- Facebook ---
+com.facebook.appmanager # Meta app updates
+com.facebook.services # Meta background service integration
+com.facebook.system # Meta app installer
+# --- Bixby ---
+com.samsung.android.bixby.agent # Bixby Voice | [WARNING] Removes Bixby voice and button integration.
+com.samsung.android.bixby.service # Bixby backend services
+com.samsung.android.bixby.wakeup # Hi Bixby hotword detection
+com.samsung.android.app.settings.bixby # Bixby settings
+com.samsung.android.bixbyvision.framework # Bixby Vision camera framework
+# --- AR and Stickers ---
+com.samsung.android.aremoji # AR Emoji avatars
+com.samsung.android.aremojieditor # AR Emoji avatar editor
+com.samsung.android.ardrawing # AR Doodle camera drawings
+com.samsung.android.app.camera.sticker.facearavatar.preload # Preloaded camera avatar stickers
+com.sec.android.mimage.avatarstickers # My Emoji sticker packs
+com.samsung.android.arzone # AR camera feature hub
+com.samsung.android.stickercenter # Camera sticker downloads
+com.samsung.android.livestickers # DECO PIC camera filters and stickers
+# --- Promotions and Optional Apps ---
+com.aura.oobe.samsung # AppCloud recommended-app installer
+com.aura.oobe.samsung.gl # AppCloud regional installer
+com.mygalaxy.service # My Galaxy regional content service
+com.samsung.android.tvplus # Samsung TV Plus ad-supported streaming
+com.samsung.android.voc # Samsung Members | [WARNING] Removes support and device diagnostics.
+com.samsung.sree # Global Goals donation ads and wallpapers
+com.samsung.android.app.tips # Samsung feature tutorials
+# --- Games and Accessories ---
+com.samsung.android.game.gamehome # Gaming Hub | [WARNING] Removes the game library hub.
+com.samsung.android.game.gametools # Game Booster | [WARNING] Removes in-game tools and recording.
+com.samsung.android.svoiceime # Samsung voice input | [WARNING] Removes Samsung voice typing.
+com.samsung.android.app.ledcoverdream # LED cover effects | [WARNING] Removes compatible LED case features.
+# --- Optional Edge Panels ---
+com.samsung.android.app.taskedge # Tasks Edge | [WARNING] Removes Edge task shortcuts.
+com.samsung.android.app.clipboardedge # Clipboard Edge | [WARNING] Removes the clipboard panel.
+# --- Samsung Kids ---
+com.samsung.android.kidsinstaller # Samsung Kids installer
+com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe launcher.
 "
 
-# --- Aggressive - may have system-level ties, review before running ---
+# --- Cautious / aggressive - commented entries are opt-in only ---
+# Protected entries also remain in DEBLOAT_IGNORED; do not enable their removal.
 DEBLOAT_AGGRESSIVE="
-# --- Aggressive > TO BE REVIEWED: Move to DEBLOAT_SAFE once verified safe ---
-com.samsung.android.visionintelligence      # Bixby Vision - lose camera-based search, translate, and shopping lens
-# --- Aggressive > Samsung: System Services / Frameworks ---
-com.samsung.android.rubin.app               # Samsung Customization Service - lose personalized recommendations; [Not Needed] with third-party launchers
-com.samsung.android.mobileservice           # Samsung Experience Service - lose Samsung account sync; [Not Needed] if using Google account/Play Store
-com.samsung.android.smartcallprovider       # Hiya / Smart Call - lose caller ID spam detection and business name lookup
-# --- Aggressive > Samsung: Location / Beacon ---
-com.samsung.android.beaconmanager           # Beacon Manager - lose automatic Bluetooth device discovery and nearby pairing prompts
-com.samsung.android.ipsgeofence             # Samsung Location SDK - lose Samsung-specific geofencing (SmartThings automations)
-# --- Aggressive > Samsung: DeX ---
-com.samsung.android.mdx                     # Samsung DeX - lose desktop mode when connecting to monitor/TV
-com.samsung.android.mdx.kit                 # Samsung DeX Kit - lose DeX window management on external displays
-com.samsung.android.mdx.quickpanel          # Samsung DeX Quick Panel - lose DeX taskbar quick settings
-# --- Aggressive > Duplicate / Replaceable Apps ---
-com.samsung.android.dialer                  # Samsung Dialer - lose default phone app, call recording; install Google Phone first
-# --- Aggressive > Google: System-tied ---
-com.google.android.projection.gearhead      # Android Auto - lose in-car projection (maps, calls, music on car display)
-com.google.ar.core                          # Google AR Core - lose AR in apps (Maps Live View, Snapchat lenses)
-# --- Aggressive > TO BE REVIEWED: Additional apps ---
-com.samsung.android.authfw                  # Samsung Auth Framework - lose Samsung biometric auth for Samsung apps
+# --- Replacement and System UI Risks ---
+# com.samsung.android.calendar | [WARNING] Samsung Calendar; removes its widgets and calendar UI.
+# com.samsung.android.contacts | [CRITICAL] Samsung Contacts; call/contact integration may break.
+# com.samsung.android.messaging | [WARNING] Samsung Messages; select and test another SMS app first.
+# com.samsung.android.honeyboard | [CRITICAL] Samsung Keyboard; removal can block unlock without a direct-boot replacement.
+# com.touchtype.swiftkey | [CRITICAL] SwiftKey; verify another keyboard works after reboot first.
+# com.samsung.android.dialer | [CRITICAL] Samsung Phone; calling and emergency-call UI may break.
+# com.sec.android.app.clockpackage | [WARNING] Samsung Clock; removes alarms, timers, and clock widgets.
+# com.samsung.android.app.clockpack | [WARNING] Clock style component; fullscreen video breakage reported.
+# com.android.chrome | [WARNING] Chrome; passkeys or WebView dependencies may be affected.
+# com.samsung.android.themestore | [WARNING] Galaxy Themes; theme and wallpaper selection may break.
+# com.samsung.android.app.dressroom | [WARNING] Wallpapers; removal can block wallpaper and color-palette changes.
+# com.samsung.android.app.routines | [WARNING] Modes and Routines; removes scheduled and contextual automations.
+# com.samsung.android.app.cocktailbarservice | [WARNING] Edge Panels; removes every Edge panel.
+# com.samsung.android.wellbeing | [WARNING] Digital Wellbeing; removes Samsung app timers and focus features.
+# com.google.android.apps.wellbeing | [WARNING] Digital Wellbeing; removes Google app timers and focus features.
+# com.samsung.android.app.parentalcare | [WARNING] Samsung parental controls; removes on-device restrictions.
+# com.google.android.gms.supervision | [CRITICAL] Family Link; device supervision depends on this package.
+# --- Shared Services and Connectivity ---
+com.samsung.android.visionintelligence # Bixby Vision | [WARNING] Removes camera visual search and translation.
+com.samsung.android.rubin.app # Customization Service | [WARNING] Removes Samsung personalized suggestions.
+com.samsung.android.smartcallprovider # Smart Call | [WARNING] Removes Hiya caller ID and spam screening.
+com.samsung.android.beaconmanager # Nearby device service | [WARNING] Nearby discovery integrations may stop.
+# com.samsung.android.easysetup | [WARNING] Nearby Device Scanning; removes automatic nearby-device setup prompts.
+com.samsung.android.ipsgeofence # Visit In geofencing | [WARNING] Location-triggered Samsung features may stop.
+com.google.android.projection.gearhead # Android Auto | [WARNING] Removes in-car phone projection.
+com.google.ar.core # Google Play Services for AR | [WARNING] AR-dependent apps lose AR features.
+com.samsung.android.authfw # Samsung Pass authentication | [WARNING] Samsung Pass biometric sign-in may stop.
+# --- Used Apps - Keep ---
+# com.sec.android.app.shealth | [WARNING] Samsung Health; keep workouts, sleep tracking, and health sync.
+# com.sec.android.app.voicenote | [WARNING] Voice Recorder; keep recording and transcription.
+# com.microsoft.appmanager | [WARNING] Link to Windows; keep PC calls, messages, and photo access.
+# com.samsung.android.mdx | [WARNING] Link to Windows service; required for Samsung PC integration.
+# com.samsung.android.mdx.kit | [WARNING] MDE framework; shared Quick Share and multi-device connectivity.
+# com.samsung.android.mdx.quickboard | [WARNING] Media output and device controls; quick-panel behavior may break.
+# com.samsung.android.mobileservice | [WARNING] Group Sharing; Samsung account features, including Health, may break.
+# com.samsung.android.dynamiclock | [WARNING] Dynamic Lock Screen; removal also breaks LockStar customization.
+# --- DeX and Multi-Window - Keep ---
+# com.sec.android.app.desktoplauncher | [CRITICAL] DeX Home; removal breaks the desktop launcher.
+# com.sec.android.desktopmode.uiservice | [CRITICAL] DeX system UI; removal breaks desktop mode.
+# com.sec.android.app.dexonpc | [WARNING] DeX for PC; removal disables supported PC connections.
+# com.samsung.android.forest | [CRITICAL] Legacy Digital Wellbeing; removal can crash DeX and its taskbar.
+# com.samsung.android.app.appsedge | [WARNING] Apps Edge; multi-window breakage reported after removal.
+# --- Unverified Identifiers or Roles - Keep Disabled ---
+# com.samsung.android.calendar.sync | [WARNING] Calendar sync role and package identifier (unverified).
+# com.facebook.appmanager.intel | [WARNING] Claimed Meta helper identifier and role (unverified).
+# com.microsoft.copilot | [WARNING] Claimed Copilot identifier (unverified); app listing unavailable.
+# com.samsung.android.intelligenceservice | [WARNING] Intelligence service; firmware-specific feature dependencies (unverified).
+# com.samsung.android.app.storyline | [WARNING] Claimed photo-story package and role (unverified).
+# com.samsung.android.app.samsungmall | [WARNING] Claimed shopping package identifier (unverified).
+# com.samsung.android.app.social | [WARNING] Legacy Samsung social integration; affected features (unverified).
+# com.samsung.android.mdx.quickpanel | [WARNING] Claimed quick-panel identifier (unverified); not confirmed as DeX.
 "
 
-# Packages kept out of every debloat and restore collection.
+# Never removed by either collection; the debloat entrypoint re-enables these apps.
 DEBLOAT_IGNORED="
-com.google.android.apps.docs                         # Google Docs actively used
-com.google.android.apps.docs.editors.sheets          # Google Sheets actively used
-com.google.android.apps.docs.editors.slides          # Google Slides actively used
-com.google.android.apps.nbu.files                    # Google Files actively used
-com.samsung.android.app.galaxyfinder                 # Galaxy Store Finder
-com.samsung.android.app.notes                        # Samsung Notes actively used for S Pen handwriting
-com.samsung.android.app.updatecenter                 # Samsung system app updates
-com.samsung.android.app.watchmanagerstub             # Galaxy Watch pairing stub
-com.samsung.android.scloud                           # Samsung Cloud backup for Samsung Notes
-com.samsung.android.app.sharelive                    # Quick Share tile
+com.google.android.apps.docs # Google Drive
+com.google.android.apps.docs.editors.sheets # Google Sheets
+com.google.android.apps.docs.editors.slides # Google Slides
+com.google.android.apps.nbu.files # Files by Google
+com.samsung.android.app.galaxyfinder # Finder app-drawer search
+com.samsung.android.app.notes # Samsung Notes and S Pen notes
+com.samsung.android.app.updatecenter # Samsung app updates
+com.samsung.android.app.watchmanagerstub # Galaxy Wearable setup stub
+com.samsung.android.scloud # Samsung Cloud and Notes sync
+com.samsung.android.app.sharelive # Quick Share tile
+com.sec.android.app.shealth # Samsung Health
+com.sec.android.app.voicenote # Samsung Voice Recorder
+com.microsoft.appmanager # Link to Windows
+com.samsung.android.mdx # Link to Windows service
+com.samsung.android.mdx.kit # Quick Share and MDE framework
+com.samsung.android.mdx.quickboard # Media output and device controls
+com.samsung.android.mobileservice # Group Sharing and Samsung account features
+com.samsung.android.dynamiclock # Dynamic Lock Screen and LockStar
+com.sec.android.app.desktoplauncher # DeX Home launcher
+com.sec.android.desktopmode.uiservice # DeX system UI
+com.sec.android.app.dexonpc # DeX for PC
+com.samsung.android.forest # Legacy Digital Wellbeing; DeX dependency
+com.samsung.android.app.appsedge # Apps Edge; preserve multi-window support
 "
 
 # Safe is the master collection. Aggressive cannot repeat safe entries.
