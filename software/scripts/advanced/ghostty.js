@@ -115,7 +115,8 @@ function _renderKeybindLines(bindings) {
 
 /**
  * Builds the full Ghostty config text: base settings (font, theme, scrollback, etc.)
- * followed by platform keybindings. Limits transparency/dimming to preserve composed text contrast.
+ * followed by platform keybindings. Starts new windows outside fullscreen so native tabs remain available.
+ * Limits transparency/dimming to preserve composed text contrast.
  * @param {boolean} isOsMac - Render the macOS variant (cmd) when true, Linux (alt) when false.
  * @param {object} [options] - Build options.
  * @param {boolean} [options.is_prebuilt_config] - When true, always name the custom `Sy Dark` /
@@ -143,7 +144,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
   const macOnlyBlock = isOsMac
     ? code`
 
-        # ---- macOS-specific ----
+        # --- macOS-specific ---
         macos-option-as-alt = true
         # Ghostty's macOS defaults rewrite option+arrow into \`esc:b\` / \`esc:f\`
         # (readline word-motion), which means a real alt+arrow never reaches the
@@ -163,10 +164,6 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
         # the fix. Config is identical for both installs either way.
         macos-titlebar-style = tabs
         # <<< GOLDEN_GATE_TIP_HACK <<<
-        # Renamed key: \`macos-non-native-fullscreen = visible-menu\` is the
-        # pre-1.2 spelling. Still accepted as a compat alias, but \`fullscreen\`
-        # is the current cross-platform key.
-        fullscreen = non-native-visible-menu
         quit-after-last-window-closed = true
         # Disable quake/quick-terminal enter+exit animation. Ghostty docs say 0
         # disables it completely; option is macOS-only.
@@ -178,7 +175,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     : "";
 
   return code`
-    # ---- Typography ----
+    # --- Typography ---
     font-family = ${fontFamily}
     font-size = ${fontSize}
     # Render the regular face in bold by default — matches the user's "heavy" look.
@@ -189,7 +186,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # 2px of extra vertical space between rows — readable without feeling spread out.
     adjust-cell-height = 2
 
-    # ---- Theme (auto-switch with OS appearance, high-contrast both ways) ----
+    # --- Theme (auto-switch with OS appearance, high-contrast both ways) ---
     # Sy Dark / Sy Light are written by this script into
     # ~/.config/ghostty/themes/ from theme/sy/ghostty_{dark,light}.jsonc, which are
     # bound to COLOR_MAP in software/tools/build-include.js by inline markers —
@@ -210,7 +207,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # so the config never points at a themes/ file that was not written.
     theme = light:${lightThemeName},dark:${darkThemeName}
 
-    # ---- Shell integration ----
+    # --- Shell integration ---
     # Auto-detect bash/zsh/fish.
     #
     # This list MERGES with the defaults, it does not replace them. Verified on
@@ -241,7 +238,10 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # New tabs/splits/windows open in the same cwd as the active pane.
     working-directory = inherit
 
-    # ---- Window / Behavior ----
+    # --- Window / Behavior ---
+    # Start every new window normally; macOS native tabs cannot open in non-native fullscreen.
+    # F11 still toggles fullscreen on demand.
+    fullscreen = false
     # NOTE: ghostty's scrollback-limit is in BYTES — raw integer only, no
     # "100mb"/"mb" suffix (rejected as invalid). Unlike VS Code / Zed / Windows
     # Terminal, which all take lines. Reusing EDITOR_CONFIGS.terminalScrollback
@@ -297,7 +297,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # shader only redraws on terminal updates, not on its own timer.
     custom-shader-animation = false
 
-    # ---- Splits (focus visibility) ----
+    # --- Splits (focus visibility) ---
     # The fill overlays BOTH glyphs and backgrounds; 0.65 loses readable contrast.
     # Keep a subtle tint plus the divider without washing out inactive ANSI text.
     unfocused-split-opacity = 0.98
@@ -312,7 +312,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # both light and dark.
     split-divider-color = ${GHOSTTY_SPLIT_DIVIDER_COLOR}
 
-    # ---- Cursor ----
+    # --- Cursor ---
     # Steady (non-blinking) block — no animation, easier on the eyes.
     cursor-style = block
     cursor-style-blink = false
@@ -320,7 +320,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     cursor-opacity = 1
     ${macOnlyBlock}
 
-    # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
+    # --- Keybindings (managed by software/scripts/advanced/ghostty.js) ---
     ${_renderKeybindLines(bindings)}
   `;
 }
