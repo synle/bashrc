@@ -767,6 +767,297 @@ function run_files() {
 ################################################################################
 # Populates BASH_SYLE_COMMON_PATH with function definitions + env vars for login shells.
 
+# BEGIN software/bootstrap/safe-source.bash
+# software/bootstrap/safe-source.bash | d5d676efd8d5730650142cd84462f324 | 4.8 KB
+# Shared bootstrap loader; redefining helpers preserves per-process source and recursion state.
+
+# _safe_source_resolve <file>: print a physical absolute filename, resolving at most 40 links.
+# Returns nonzero for inaccessible folders, unreadable links, cycles, or protected paths without reading script contents.
+function _safe_source_resolve() (
+  local target="$1" folder link
+  local links=0 max_links=40
+  case "$target" in
+  /*) ;;
+  *) target="$PWD/$target" ;;
+  esac
+  while :; do
+    case "$target" in *.secret.*) return 1 ;; esac
+    folder="$(cd -P -- "${target%/*}" 2> /dev/null && pwd -P)" || return 1
+    target="$folder/${target##*/}"
+    case "$target" in *.secret.*) return 1 ;; esac
+    if [ ! -L "$target" ]; then
+      printf '%s\n' "$target"
+      return 0
+    fi
+    [ "$links" -lt "$max_links" ] || return 1
+    link="$(command readlink "$target")" || return 1
+    case "$link" in
+    /*) target="$link" ;;
+    *) target="$folder/$link" ;;
+    esac
+    links=$((links + 1))
+  done
+)
+
+# _safe_source_contains <identity> [identities...]: return 0 for a matching identity, otherwise 1.
+function _safe_source_contains() {
+  local identity="$1" candidate
+  shift
+  for candidate; do
+    [ "$candidate" != "$identity" ] || return 0
+  done
+  return 1
+}
+
+# _safe_source_remember <identity>: record a successful canonical path or URL without duplicating registry entries.
+function _safe_source_remember() {
+  _safe_source_contains "$1" ${_SY_SAFE_SOURCE_LOADED[@]+"${_SY_SAFE_SOURCE_LOADED[@]}"} || _SY_SAFE_SOURCE_LOADED+=("$1")
+}
+
+# safe_source: source a syntax-checked script once per Bash process; see --help for usage.
+# Returns 0 for successful or skipped loads, 2 for invalid arguments, otherwise the failure status.
+function safe_source() {
+  if [ "${1:-}" = --help ]; then
+    printf '%s\n' 'safe_source: source a syntax-checked script once per Bash process.
+Usage: safe_source [--reload] <source> [dest]
+Use --reload for intentional repeat execution, such as virtual-environment activation.
+Protected .secret. paths are never sourced. Failed sources can be retried.'
+    return 0
+  fi
+  local reload=0
+  if [ "${1:-}" = --reload ]; then
+    reload=1
+    shift
+  fi
+  if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || [ -z "$1" ]; then
+    printf '%s\n' '[Warning] safe_source expects [--reload] <source> [dest]' >&2
+    return 2
+  fi
+  local src="$1" dest="${2:-}" target="$1" key status active_index syntax_bash
+  case "$src$dest" in
+  *.secret.*)
+    printf '%s\n' '[Warning] safe_source refused a protected path' >&2
+    return 1
+    ;;
+  esac
+  case "$src" in
+  http://* | https://*) key="url:$src" ;;
+  *)
+    key="$(_safe_source_resolve "$src")" || {
+      printf '%s\n' '[Warning] safe_source cannot resolve an eligible local file' >&2
+      return 1
+    }
+    ;;
+  esac
+  if _safe_source_contains "$key" ${_SY_SAFE_SOURCE_ACTIVE[@]+"${_SY_SAFE_SOURCE_ACTIVE[@]}"}; then
+    printf '%s\n' '[Warning] safe_source skipped a recursive source' >&2
+    return 0
+  fi
+  if [ "$reload" -eq 0 ] && _safe_source_contains "$key" ${_SY_SAFE_SOURCE_LOADED[@]+"${_SY_SAFE_SOURCE_LOADED[@]}"}; then
+    case "$key" in
+    url:*) printf '%s\n' '[Warning] safe_source skipped an already loaded URL' >&2 ;;
+    *) printf '[Warning] safe_source skipped already loaded script: %s\n' "$key" >&2 ;;
+    esac
+    return 0
+  fi
+  if [ -n "$dest" ]; then
+    target="$(_safe_source_resolve "$dest")" || {
+      printf '%s\n' '[Warning] safe_source cannot resolve an eligible destination' >&2
+      return 1
+    }
+  fi
+  case "$src" in
+  http://* | https://*)
+    if [ -z "$dest" ]; then
+      target="$(_safe_source_resolve "${TMPDIR:-/tmp}/bashrc_safe_source_$$.sh")" || {
+        printf '%s\n' '[Warning] safe_source cannot resolve an eligible download destination' >&2
+        return 1
+      }
+    fi
+    curl -fsSL -o "$target" "$src" 2> /dev/null || {
+      printf '%s\n' '[Warning] safe_source download failed' >&2
+      return 1
+    }
+    ;;
+  *)
+    [ -n "$dest" ] || target="$key"
+    [ -f "$key" ] || {
+      printf '%s\n' '[Warning] safe_source file not found' >&2
+      return 1
+    }
+    if [ -n "$dest" ] && [ "$key" != "$target" ]; then
+      command cp "$key" "$target" 2> /dev/null || {
+        printf '%s\n' '[Warning] safe_source copy failed' >&2
+        return 1
+      }
+    fi
+    ;;
+  esac
+  syntax_bash=/bin/bash
+  [ -x "$syntax_bash" ] || syntax_bash="$(type -P bash)" || return 1
+  BASH_ENV= "$syntax_bash" -n "$target" 2> /dev/null || {
+    printf '%s\n' '[Warning] safe_source syntax validation failed' >&2
+    return 1
+  }
+  declare -p _SY_SAFE_SOURCE_ACTIVE > /dev/null 2>&1 || _SY_SAFE_SOURCE_ACTIVE=()
+  active_index=${#_SY_SAFE_SOURCE_ACTIVE[@]}
+  _SY_SAFE_SOURCE_ACTIVE[active_index]="$key"
+  . "$target"
+  status=$?
+  unset '_SY_SAFE_SOURCE_ACTIVE[active_index]'
+  if [ "$status" -eq 0 ]; then
+    _safe_source_remember "$key"
+  fi
+  return "$status"
+}
+# END software/bootstrap/safe-source.bash
+
+# BEGIN software/bootstrap/profile-sources.bash
+# software/bootstrap/profile-sources.bash | 5b4037c1038f9f288e33d5c3501baed6 | 6.4 KB
+# Cached startup-source discovery; the full loader owns execution and protected-path checks.
+
+# Hours between successful automatic refreshes; manual refreshes bypass this interval.
+_PROFILE_REFRESH_INTERVAL_HOURS=8
+# Stable marker shared by initial generation and runtime replacement.
+_PROFILE_SOURCES_BLOCK='Sy autogenerated managed profile sources'
+
+# _profile_sources_metadata <file>: validate managed markers and print the cached epoch, or 0 when absent/invalid.
+# Returns nonzero for ambiguous markers without modifying the file.
+function _profile_sources_metadata() {
+  command awk -v key="$_PROFILE_SOURCES_BLOCK" '
+    $0 == "# BEGIN Sy bash_syle entry point" { entry_begin++; entry_start = NR }
+    $0 == "# END Sy bash_syle entry point" { entry_end++; entry_stop = NR }
+    $0 == "# BEGIN " key { begin++; start = NR; inside = 1 }
+    $0 == "# END " key { end++; stop = NR; inside = 0 }
+    inside && /^# Refreshed at epoch: / { stamps++; stamp = substr($0, 23) }
+    END {
+      if (entry_begin != 1 || entry_end != 1 || entry_start >= entry_stop ||
+          begin != end || begin > 1 || (begin && (start <= entry_stop || start >= stop))) exit 1
+      if (stamps != 1 || stamp !~ /^[0-9]+$/ || length(stamp) > 10) stamp = 0
+      printf "%.0f\n", stamp + 0
+    }
+  ' "$1"
+}
+
+# _profile_sources_block <epoch>: print pinned core sources followed by eligible work files in lexical order.
+# Inspects metadata only; excludes protected/control-character paths and never executes discovered files.
+function _profile_sources_block() (
+  local file key quoted
+  local seen=() files=("$BASH_SYLE_COMMON_PATH" "$BASH_SYLE_PATH" "$BASH_SYLE_CACHE_PATH")
+  export LC_ALL=C
+  for file in "$HOME"/.work*.bash; do
+    [ -f "$file" ] || continue
+    case "$file" in *[$'\001'-$'\037'$'\177']*) continue ;; esac
+    key="$(_safe_source_resolve "$file")" || continue
+    _safe_source_contains "$key" ${seen[@]+"${seen[@]}"} && continue
+    seen+=("$key")
+    files+=("$file")
+  done
+  printf '# %s %s\n# Generated by refresh_profiles. Do not edit by hand.\n# Refreshed at epoch: %s\n' BEGIN "$_PROFILE_SOURCES_BLOCK" "$1"
+  for file in "${files[@]}"; do
+    _safe_source_resolve "$file" > /dev/null || return 1
+    quoted=${file//\'/\'\\\'\'}
+    printf "safe_source '%s'" "$quoted"
+    [ "$file" != "$BASH_SYLE_COMMON_PATH" ] || printf '%s' ' || return'
+    printf '\n'
+  done
+  printf 'refresh_profiles --if-stale\n# %s %s\n' END "$_PROFILE_SOURCES_BLOCK"
+)
+
+# refresh_profiles: refresh the cached startup-source list for later shell starts without loading it.
+# Args: [--if-stale]; returns 0 for success/fresh/busy automatic refreshes, 2 for invalid arguments, otherwise 1.
+function refresh_profiles() (
+  if declare -F is_help_arg > /dev/null && is_help_arg "${1:-}"; then
+    printf '%s\n' 'refresh_profiles: refresh the cached startup-source list.
+Usage: refresh_profiles [--if-stale]
+Manual calls always refresh; startup refreshes only after the configured interval.
+Changes apply to later shell starts. Loaded scripts are not rerun.'
+    return 0
+  fi
+  local automatic=0
+  case "$#:${1:-}" in
+  0:) ;;
+  1:--if-stale) automatic=1 ;;
+  *)
+    printf '%s\n' '[Warning] refresh_profiles expects [--if-stale]' >&2
+    return 2
+    ;;
+  esac
+  local target now stamp lock candidate='' snapshot='' block='' syntax_bash candidate_content
+  target="$(_safe_source_resolve "$HOME/.bashrc")" && [ -f "$target" ] || {
+    printf '%s\n' '[Warning] refresh_profiles cannot resolve an eligible startup file' >&2
+    return 1
+  }
+  now="$(command date +%s)" || return 1
+  case "$now" in '' | *[!0-9]*) return 1 ;; esac
+  stamp="$(_profile_sources_metadata "$target")" || {
+    printf '%s\n' '[Warning] refresh_profiles found ambiguous managed markers' >&2
+    return 1
+  }
+  if [ "$automatic" -eq 1 ] && [ "$stamp" -le "$now" ] && [ "$((now - stamp))" -lt "$((_PROFILE_REFRESH_INTERVAL_HOURS * 3600))" ]; then
+    return 0
+  fi
+  lock="$target.profile-refresh.lock"
+  umask 077
+  if ! command mkdir "$lock" 2> /dev/null; then
+    if [ "$automatic" -eq 1 ] && [ -d "$lock" ]; then return 0; fi
+    printf '%s\n' '[Warning] refresh_profiles cannot acquire the refresh lock' >&2
+    return 1
+  fi
+  trap 'command rm -f -- "$candidate" "$snapshot" "$block"; command rmdir -- "$lock"' EXIT
+  trap 'exit 1' HUP INT TERM
+  # Re-read after locking; another shell may already have completed the refresh.
+  stamp="$(_profile_sources_metadata "$target")" || return 1
+  if [ "$automatic" -eq 1 ] && [ "$stamp" -le "$now" ] && [ "$((now - stamp))" -lt "$((_PROFILE_REFRESH_INTERVAL_HOURS * 3600))" ]; then
+    return 0
+  fi
+  candidate="$(command mktemp "$target.refresh.XXXXXX")" || return 1
+  snapshot="$candidate.original"
+  block="$candidate.block"
+  command cp -p "$target" "$snapshot" && command cp -p "$snapshot" "$candidate" || return 1
+  _profile_sources_block "$now" > "$block" || return 1
+  # Environment transport preserves literal backslashes; awk -v would interpret escapes in the filename.
+  if ! _PROFILE_SOURCES_BLOCK_FILE="$block" command awk -v key="$_PROFILE_SOURCES_BLOCK" '
+    function emit(  line, status, file) {
+      file = ENVIRON["_PROFILE_SOURCES_BLOCK_FILE"]
+      while ((status = getline line < file) > 0) print line
+      if (status < 0) exit 1
+      close(file)
+    }
+    FNR == NR { if ($0 == "# BEGIN " key) present = 1; next }
+    $0 == "# BEGIN " key { emit(); skip = 1; next }
+    $0 == "# END " key { skip = 0; next }
+    !skip { print }
+    !present && $0 == "# END Sy bash_syle entry point" { emit() }
+  ' "$snapshot" "$snapshot" > "$candidate"; then
+    printf '%s\n' '[Warning] refresh_profiles could not render the source block' >&2
+    return 1
+  fi
+  # awk terminates records with newlines; preserve an unterminated user-owned final line.
+  if [ "$(
+    command tail -c 1 "$snapshot"
+    printf x
+  )" != $'\nx' ]; then
+    candidate_content="$(
+      command cat "$candidate"
+      printf x
+    )"
+    printf '%s' "${candidate_content%$'\nx'}" > "$candidate" || return 1
+  fi
+  syntax_bash=/bin/bash
+  [ -x "$syntax_bash" ] || syntax_bash="$(type -P bash)" || return 1
+  BASH_ENV='' "$syntax_bash" -n "$candidate" 2> /dev/null || {
+    printf '%s\n' '[Warning] refresh_profiles generated invalid startup syntax' >&2
+    return 1
+  }
+  if [ "$(_safe_source_resolve "$HOME/.bashrc")" != "$target" ] || [ -L "$target" ] || ! command cmp -s "$snapshot" "$target"; then
+    printf '%s\n' '[Warning] refresh_profiles startup file changed; retry is safe' >&2
+    return 1
+  fi
+  command mv -f "$candidate" "$target" || return 1
+)
+# END software/bootstrap/profile-sources.bash
+
 printf '%s\n' '' > "$BASH_SYLE_COMMON_PATH"
 
 printf '%s\n' "
@@ -781,6 +1072,10 @@ declare -f get_home_ip_address >> "$BASH_SYLE_COMMON_PATH"
 declare -f is_truthy >> "$BASH_SYLE_COMMON_PATH"
 declare -f h1 h2 h3 h4 h5 h6 h7 >> "$BASH_SYLE_COMMON_PATH"
 declare -f _detect_gui_flags >> "$BASH_SYLE_COMMON_PATH"
+declare -f _safe_source_resolve _safe_source_contains _safe_source_remember safe_source >> "$BASH_SYLE_COMMON_PATH"
+declare -f _profile_sources_metadata _profile_sources_block refresh_profiles >> "$BASH_SYLE_COMMON_PATH"
+printf '_PROFILE_REFRESH_INTERVAL_HOURS=%s\n' "$_PROFILE_REFRESH_INTERVAL_HOURS" >> "$BASH_SYLE_COMMON_PATH"
+printf "_PROFILE_SOURCES_BLOCK='%s'\n" "$_PROFILE_SOURCES_BLOCK" >> "$BASH_SYLE_COMMON_PATH"
 
 ollama_default_server_ip=""
 code_server_remote_hosts=""
@@ -823,6 +1118,7 @@ export REPO_BRANCH_NAME='$REPO_BRANCH_NAME'
 export BASH_PROFILE_CODE_REPO_RAW_URL='$BASH_PROFILE_CODE_REPO_RAW_URL'
 export BASH_SYLE_PATH='$BASH_SYLE_PATH'
 export BASH_SYLE_COMMON_PATH='$BASH_SYLE_COMMON_PATH'
+export BASH_SYLE_CACHE_PATH='$BASH_SYLE_CACHE_PATH'
 export BASHRC_TEMP_ROOT_DIR='$BASHRC_TEMP_ROOT_DIR'
 export SY_ROOT_FOLDER='$SY_ROOT_FOLDER'
 export LLM_ROOT_FOLDER='$LLM_ROOT_FOLDER'

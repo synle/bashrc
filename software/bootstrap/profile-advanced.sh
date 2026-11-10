@@ -1438,6 +1438,33 @@ alias bs="bash"
 alias vi="vim"
 alias v="vim"
 alias c="command cat"
+
+# --- Android Debug Bridge ---
+# adb: stop the server before forwarding ADB commands.
+# Accepts native arguments; uses adb.exe on Windows when available.
+# Returns 127 when missing, otherwise shutdown or command status; kill-server runs once.
+function adb() {
+  local adb_binary=adb
+  if ((is_os_windows)) && type -P adb.exe > /dev/null 2>&1; then
+    adb_binary=adb.exe
+  fi
+  if ! type -P "$adb_binary" > /dev/null 2>&1; then
+    printf '%s\n' 'adb is not installed' >&2
+    return 127
+  fi
+  if is_help_arg "${1:-}"; then
+    printf '%s\n' 'adb: stop the server before forwarding ADB commands.
+Usage: adb [native arguments...]
+Every call stops the server first; explicit kill-server runs once.
+Shutdown failure stops the requested command. Native help is forwarded.
+Stopping the server can interrupt active ADB sessions.' >&2
+  fi
+  if [ "${1:-}" != kill-server ]; then
+    command "$adb_binary" kill-server || return "$?"
+  fi
+  command "$adb_binary" "$@"
+}
+
 # --- Aliases: Git ---
 # git: default diffs to -w and a bare stash to -u; preserve native arguments and exit status.
 # Accepts Git global options and subcommands. Explicit stash operations stay unchanged.
@@ -2130,7 +2157,7 @@ function diff() {
 function pdiff() {
   local diff_args=() option_ended=0
   while [ "$#" -gt 0 ]; do
-    if ((!option_ended)) && is_help_arg "$1"; then
+    if ((! option_ended)) && is_help_arg "$1"; then
       printf '%s\n' "pdiff: compare clipboard contents with a file
   Usage: pdiff [diff options] file
   Clipboard is left; file is right. Leading options/selectors match diff.
