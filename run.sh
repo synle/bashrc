@@ -1079,7 +1079,7 @@ printf "_PROFILE_SOURCES_BLOCK='%s'\n" "$_PROFILE_SOURCES_BLOCK" >> "$BASH_SYLE_
 
 ollama_default_server_ip=""
 code_server_remote_hosts=""
-if ((! is_work_profile)); then
+if ((!is_work_profile)); then
   ollama_default_server_ip=$(get_ollama_default_server_ip)
   code_server_remote_hosts=$(get_code_server_hosts)
 fi
@@ -1251,64 +1251,6 @@ else
 fi
 
 # --- Format shell startup files ---
-# BEGIN software/bootstrap/format-startup-files.bash
-# software/bootstrap/format-startup-files.bash | 5cc333804210447970b6da65aef8b43d | 2.4 KB
-# Shared startup formatter; run.sh includes this source for local and downloaded runs.
-
-# _format_startup_file <canonical-file>: format shell code, separate BEGIN comments, and trim file boundaries.
-# Requires shfmt and Node. Returns their failure status; writes only changed spacing and preserves file permissions.
-function _format_startup_file() {
-  shfmt -w -i 2 -bn -sr "$1" || return
-  node - "$1" << 'STARTUP_SPACING_JS'
-/** Filesystem access keeps the existing file's permissions and ownership. */
-const fs = require("fs");
-/** The native parser distinguishes comments from quoted and heredoc data. */
-const { execFileSync } = require("child_process");
-/** Canonical eligible filename supplied by the runner. */
-const target = process.argv[2];
-/** Snapshot used both for parsing and the concurrent-writer check. */
-const source = fs.readFileSync(target, "utf8");
-/** Bound syntax-tree output for large generated profiles to 64 MiB. */
-const maxSyntaxTreeBytes = 64 * 1024 * 1024;
-/** Parsed syntax tree uses one-based comment line positions. */
-const tree = JSON.parse(execFileSync("shfmt", ["--to-json"], {
-  input: source,
-  encoding: "utf8",
-  timeout: 10000,
-  maxBuffer: maxSyntaxTreeBytes,
-}));
-/** Zero-based lines containing real BEGIN comments, never shell string data. */
-const beginLines = new Set();
-/**
- * Collect BEGIN comment positions from the native syntax tree.
- * @param {unknown} node Current JSON value; primitives and absent fields are ignored.
- * @returns {void} Adds comment line indexes to beginLines without changing the tree.
- */
-function collectBeginLines(node) {
-  if (node === null || typeof node !== "object") return;
-  if (node.Hash && typeof node.Text === "string" && /^[ \t]*BEGIN(?:[ \t]|$)/.test(node.Text)) {
-    beginLines.add(node.Hash.Line - 1);
-  }
-  for (const child of Object.values(node)) collectBeginLines(child);
-}
-collectBeginLines(tree);
-/** Preserve internal blank lines; trim only after inserting missing separators. */
-const content = source.split("\n").map((line, index, lines) => {
-  if (beginLines.has(index) && /^[ \t]*#/.test(line) && index > 0 && lines[index - 1].trim() !== "") {
-    return "\n" + line;
-  }
-  return line;
-}).join("\n").trim() + "\n";
-if (content !== source) {
-  if (fs.readFileSync(target, "utf8") !== source) {
-    throw new Error("Startup file changed during spacing normalization; retry is safe");
-  }
-  fs.writeFileSync(target, content);
-}
-STARTUP_SPACING_JS
-}
-# END software/bootstrap/format-startup-files.bash
-
 # Keep user startup files readable after installer changes; dry runs never format them.
 _format_startup_files=1
 if is_truthy "${IS_DRY_RUN:-0}"; then
@@ -1326,8 +1268,7 @@ if ((_format_startup_files)); then
       "$BASH_SYLE_PATH" "$BASH_SYLE_COMMON_PATH" "$BASH_SYLE_CACHE_PATH"; do
       case "$_startup_file" in *.secret.*) continue ;; esac
       [ -f "$_startup_file" ] || continue
-      _startup_target="$(_safe_source_resolve "$_startup_file")" || continue
-      _format_startup_file "$_startup_target" || {
+      shfmt -w -i 2 -bn -sr "$_startup_file" || {
         _format_status=$?
         printf '[Error] Failed to format %s\n' "$_startup_file" >&2
         [ "$_run_status" -ne 0 ] || _run_status=$_format_status
@@ -1337,7 +1278,7 @@ if ((_format_startup_files)); then
     printf '%s\n' '[Skip] shfmt is not installed — skipping startup-file formatting.'
   fi
 fi
-unset _format_startup_files _startup_file _startup_target _format_status
+unset _format_startup_files _startup_file _format_status
 
 _run_end_epoch=$(date +%s)
 _run_end_time=$(date '+%Y-%m-%d %H:%M:%S')
