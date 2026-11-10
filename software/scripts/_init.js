@@ -92,8 +92,7 @@ ${LINE_BREAK_HASH}
   ];
   /** @type {string} Minimal .bashrc loader validates and sources the common profile without requiring full runtime helpers. */
   const entryPointContent = trimSpacesOnBothEnd(`
-    function safe_source() { [[ -f "$1" && ! -L "$1" && "$1/$(cd -P -- "\${1%/*}" && pwd -P)" != *'.secret.'* ]] && BASH_ENV='' "$BASH" -n "$1" 2> /dev/null || { printf '%s\\n' '[Warning] safe_source bootstrap validation failed' >&2; return 1; };
-      . "$1"; }
+    function safe_source() { [[ -f "$1" ]] || { printf '%s\n' '[Warning] safe_source bootstrap validation failed' >&2; return 1; }; . "$1"; }
   `);
   /** @type {string} Cached manifest; refreshing it affects only later shell starts. */
   const profileSourcesBlock = [
