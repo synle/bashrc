@@ -948,10 +948,7 @@ setup intent as Node. Its `node | tee | bash | tee` pipeline must preserve every
 `PIPESTATUS` entry; otherwise a generated-shell failure becomes a false-success exit.
 Before closeout, `run.sh` formats existing `~/.*.bash`, `~/.*.sh`, `~/.bashrc`, and `~/.bash_profile` files with `shfmt -w -i 2 -bn -sr` when available.
 The same loop formats generated `.bash_syle`, `.bash_syle_common`, and `.bash_syle_cache` files through their configured path variables.
-`software/bootstrap/format-startup-files.bash` owns final BEGIN-comment spacing and boundary trimming; regenerate its `run.sh` inclusion after changes.
-The formatter uses shfmt's syntax tree to separate real BEGIN comments without changing quoted or heredoc data.
-The spacing pass retains shfmt's internal blank lines, trims file boundaries, and writes exactly one final newline.
-Unmatched globs and protected requested or resolved paths are skipped.
+Unmatched globs and `.secret.` files are skipped.
 Dry runs skip formatting. Formatting failures return nonzero without replacing an earlier pipeline failure.
 
 ### 14.1 Validation cadence — fast local gate, heavier suites in CI
