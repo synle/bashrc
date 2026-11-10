@@ -104,14 +104,11 @@ function find_native_node() {
 }
 
 # BEGIN software/bootstrap/safe-source.bash
-# software/bootstrap/safe-source.bash | a53358d184553b917541656d5585977f | 5.6 KB
-# Canonical safe_source implementation shared by bootstrap and generated entry points.
-# Successful sources are remembered only in this Bash process; no state is exported.
-# Re-reading these definitions preserves the existing success and recursion registries.
+# software/bootstrap/safe-source.bash | 6d57d106ef35f6bf41f1ae34afb3959b | 4.6 KB
+# Shared bootstrap loader; redefining helpers preserves per-process source and recursion state.
 
 # _safe_source_resolve <file>: print a physical absolute filename, resolving at most 40 links.
-# Returns nonzero for inaccessible folders, unreadable links, cycles, or protected paths.
-# Only filesystem metadata is inspected; the caller owns syntax checks and script execution.
+# Returns nonzero for inaccessible folders, unreadable links, cycles, or protected paths without reading script contents.
 function _safe_source_resolve() (
   local target="$1" folder link
   local links=0 max_links=40
@@ -138,8 +135,7 @@ function _safe_source_resolve() (
   done
 )
 
-# _safe_source_contains <identity> [identities...]: return 0 when a registry contains the identity.
-# Reads only arguments and leaves caller state unchanged; returns 1 for an absent identity.
+# _safe_source_contains <identity> [identities...]: return 0 for a matching identity, otherwise 1.
 function _safe_source_contains() {
   local identity="$1" candidate
   shift
@@ -149,15 +145,8 @@ function _safe_source_contains() {
   return 1
 }
 
-# safe_source: source a syntax-checked script once per Bash process.
-# Args: [--reload] <source> [dest]; source is a local path or HTTP(S) URL.
-# Optional dest retains the existing download/copy behavior; --reload repeats successful loads.
-# Local aliases share a canonical identity; URLs retain URL identity even when a temp file is reused.
-# Successful and in-progress identities use non-exported indexed arrays for Bash 3.2 compatibility.
-# Active-source detection prevents recursive initialization, including with --reload.
-# Failed download, copy, validation, and script execution never populate the success registry.
+# safe_source: source a syntax-checked script once per Bash process; see --help for usage.
 # Returns 0 for successful or skipped loads, 2 for invalid arguments, otherwise the failure status.
-# Side effects: optional fetch/copy, execution in the caller's shell, success registration, and skip warnings.
 function safe_source() {
   if [ "${1:-}" = --help ]; then
     printf '%s\n' 'safe_source: source a syntax-checked script once per Bash process.
@@ -223,10 +212,10 @@ Protected .secret. paths are never sourced. Failed sources can be retried.'
     ;;
   *)
     [ -n "$dest" ] || target="$key"
-    if [ ! -f "$key" ]; then
+    [ -f "$key" ] || {
       printf '%s\n' '[Warning] safe_source file not found' >&2
       return 1
-    fi
+    }
     if [ -n "$dest" ] && [ "$key" != "$target" ]; then
       command cp "$key" "$target" 2> /dev/null || {
         printf '%s\n' '[Warning] safe_source copy failed' >&2
@@ -237,13 +226,11 @@ Protected .secret. paths are never sourced. Failed sources can be retried.'
   esac
   syntax_bash=/bin/bash
   [ -x "$syntax_bash" ] || syntax_bash="$(type -P bash)" || return 1
-  if ! BASH_ENV= "$syntax_bash" -n "$target" 2> /dev/null; then
+  BASH_ENV= "$syntax_bash" -n "$target" 2> /dev/null || {
     printf '%s\n' '[Warning] safe_source syntax validation failed' >&2
     return 1
-  fi
-  if ! declare -p _SY_SAFE_SOURCE_ACTIVE > /dev/null 2>&1; then
-    _SY_SAFE_SOURCE_ACTIVE=()
-  fi
+  }
+  declare -p _SY_SAFE_SOURCE_ACTIVE > /dev/null 2>&1 || _SY_SAFE_SOURCE_ACTIVE=()
   active_index=${#_SY_SAFE_SOURCE_ACTIVE[@]}
   _SY_SAFE_SOURCE_ACTIVE[active_index]="$key"
   . "$target"
