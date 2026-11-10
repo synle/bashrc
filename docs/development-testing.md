@@ -236,11 +236,12 @@ make setup                 # = setup_local_full → ./run --setup --force
 make setup_local_profile   # profile refresh only, no dep install
 make setup_prod            # bootstrap from GitHub
 make format                # build_include → ci_binaries → script_indexes → jsdocs
-                           #   → spec_cleanup → shell (shfmt) → oxfmt → autocomplete specs
+                           #   → spec_cleanup → shell (shfmt) → oxfmt → autocomplete specs → build_android
 make format_build_include  # process BEGIN/END markers
 make format_ci_binaries    # regenerate the ci-binary-checks block
 make build_all             # configs, hosts, webapp, postbuild
 make build_installer       # .build/install-bashrc.sh self-extracting installer
+make build_android         # docs/android/build/{android,firetv}_{debloat,restore}.sh standalone host scripts
 make test_unit             # vitest, vitest.config.js
 make precommit             # lint + complete default unit suite, dot reporter and failing-test console logs
 make lint                  # oxlint correctness pass (.oxlintrc.json)

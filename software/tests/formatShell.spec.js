@@ -23,6 +23,8 @@ describe("make format_shell", () => {
         "software/scripts/example.bash",
         "software/scripts/windows/template.ps1.bash",
         ".build/generated.sh",
+        "docs/android/build/android_debloat.sh",
+        "docs/android/build/firetv_restore.sh",
         "assets/example.sh",
         "software/scripts/advanced/llm/_common/v1/frozen.sh",
         "software/scripts/advanced/llm/_common/v2/frozen.bash",

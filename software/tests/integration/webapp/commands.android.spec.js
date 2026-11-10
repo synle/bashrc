@@ -33,7 +33,7 @@ describe("command snapshots", () => {
           "title": "docs/android/android.restore.sh",
         },
         {
-          "hash": "6e762033e08e34daa766977790c0c0fe",
+          "hash": "4e155bdb827620396aaf844a1fa9a914",
           "title": "docs/android/android.sh",
         },
         {

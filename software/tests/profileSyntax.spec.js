@@ -49,6 +49,8 @@ describe("Standalone tool syntax", () => {
   it("parses under both supported shells", () => {
     assertNoSyntaxErrors(codegraphInstaller);
     assertNoSyntaxErrors(path.join(ROOT_DIR, "software/scripts/advanced/llm/_common/llm-reset.profile.bash"));
+    assertNoSyntaxErrors(path.join(ROOT_DIR, "docs/android/build.sh"));
+    listFiles(path.join(ROOT_DIR, "docs/android/build"), (name) => name.endsWith(".sh")).forEach(assertNoSyntaxErrors);
     listFiles(path.join(ROOT_DIR, "docs/android/scripts"), (name) => name.endsWith(".sh")).forEach(assertNoSyntaxErrors);
   });
 });

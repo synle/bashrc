@@ -1,5 +1,43 @@
 # Android Notes
 
+## Standalone Debloat and Restore Scripts
+
+Run the builder from the repository root, or invoke it by its absolute path from another folder:
+
+```bash
+bash docs/android/build.sh
+# Equivalent focused Make target:
+make build_android
+```
+
+`make format` also regenerates these scripts after its formatting steps finish, including when Make runs in parallel.
+The builder combines each shared source with its matching action fragment without executing ADB or downloading apps:
+
+| Shared source | Action fragment      | Generated standalone script |
+| ------------- | -------------------- | --------------------------- |
+| `android.sh`  | `android.debloat.sh` | `build/android_debloat.sh`  |
+| `android.sh`  | `android.restore.sh` | `build/android_restore.sh`  |
+| `firetv.sh`   | `firetv.debloat.sh`  | `build/firetv_debloat.sh`   |
+| `firetv.sh`   | `firetv.restore.sh`  | `build/firetv_restore.sh`   |
+
+Edit the shared sources or action fragments, not the generated scripts.
+Each output is executable and syntax-checked before replacing its previous version.
+You can copy a generated script elsewhere and run it without the source fragments.
+
+Run the selected script from **Bash on your computer**, not inside `adb shell`:
+
+```bash
+bash docs/android/build/android_debloat.sh
+bash docs/android/build/android_restore.sh
+bash docs/android/build/firetv_debloat.sh
+bash docs/android/build/firetv_restore.sh
+```
+
+Choose only the operation intended for your device; these are alternatives, not a sequence.
+Review package lists and settings, connect ADB to the intended device, and complete the backup steps below before cleanup.
+Generation preserves the existing device actions; restore resets managed settings to defaults rather than recovering a prior backup.
+Fire TV debloat retains its network-dependent application installation steps.
+
 https://github.com/synle/bashrc/blob/master/docs/android/android.sh
 
 ## Wireless Debugging
