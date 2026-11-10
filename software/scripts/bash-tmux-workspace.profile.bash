@@ -624,7 +624,7 @@ Usage: monitor_logs [-last N] [-session NAME] [--detach] [--force] [--] FILE...
 Default session: tailf_session_<checksum of ordered absolute file paths>.
 Existing sessions follow workspace_create reuse/confirmation rules.
 Each window prints its full path, a separator, and the selected line count before following output.
-Headers use white text on yellow; terminal separators use hr. Non-terminal output stays plain.'
+Headers use blue text without a background; terminal separators use hr. Non-terminal output stays plain.'
     return 0
   fi
 
@@ -720,7 +720,7 @@ Headers use white text on yellow; terminal separators use hr. Non-terminal outpu
 
   # Workspace commands load profile helpers; jq @sh preserves filenames through both shell layers.
   follow_command='if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then '
-  follow_command+='printf "\033[1;37;43m%s\033[0m\n" "$file"; hr; '
+  follow_command+='printf "\033[0;34m%s\033[0m\n" "$file"; hr; '
   follow_command+='else printf "%s\n" "$file" "$LINE_BREAK_HASH"; fi; '
   follow_command+='printf "Showing the last %s lines; following new output in the foreground.\n" "$last"; '
   follow_command+='command tail -n "$last" -f "$file"'

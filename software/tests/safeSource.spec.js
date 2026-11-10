@@ -99,6 +99,23 @@ describe("safe_source", () => {
     expect(result.stderr).toContain("skipped already loaded script:");
   });
 
+  it("prevents recursive reloads without blocking later explicit reloads", () => {
+    fs.writeFileSync(path.join(home, "script.bash"), "safe_source --reload ./script.bash\nprintf 'loaded\\n'\n");
+    const result = run("safe_source ./script.bash; safe_source --reload ./script.bash");
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe("loaded\nloaded\n");
+    expect(result.stderr).toBe("[Warning] safe_source skipped a recursive source\n[Warning] safe_source skipped a recursive source\n");
+  });
+
+  it("retains variable and folder changes in the caller's shell", () => {
+    fs.mkdirSync(path.join(home, "next"));
+    fs.writeFileSync(path.join(home, "script.bash"), 'LOADED_VALUE=ready\ncd "$HOME/next"\n');
+    const result = run('safe_source ./script.bash; printf "%s:%s\\n" "$LOADED_VALUE" "$PWD"');
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe(`ready:${home}/next\n`);
+    expect(result.stderr).toBe("");
+  });
+
   it("does not export source-once state to a fresh Bash process", () => {
     fs.writeFileSync(path.join(home, "script.bash"), "printf 'loaded\\n'\n");
     const result = run("safe_source ./script.bash; /bin/bash --noprofile --norc -c '. \"$COMMON\"; safe_source ./script.bash'");
@@ -126,7 +143,11 @@ describe("safe_source", () => {
   it("prints inline help without reading files", () => {
     const result = run("safe_source --help");
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("safe_source: source a syntax-checked script once per Bash process.");
+    expect(result.stdout).toBe(`safe_source: source a syntax-checked script once per Bash process.
+Usage: safe_source [--reload] <source> [dest]
+Use --reload for intentional repeat execution, such as virtual-environment activation.
+Protected .secret. paths are never sourced. Failed sources can be retried.
+`);
     expect(result.stderr).toBe("");
   });
 
