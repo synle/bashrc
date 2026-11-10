@@ -65,20 +65,44 @@ describe("shared milestone status guidance", () => {
     expect(rendered).toContain("\ud83d\udfe1 IN PROGRESS \u00b7 step 2/3 - reviewing local notes \u00b7 notes read; next revise guidance.");
     expect(rendered).not.toMatch(/\[no repo\]/i);
     expect(rendered).not.toContain(SENTENCE_LIMIT_TOKEN);
-    expect(rendered).toContain("Outside Git, omit the entire footer, including separators and the `Branch:`, `PR:`, and `Worktree:` rows.");
+    expect(rendered).toContain("Outside Git, omit the entire footer, including separators, metadata rows, and PR links.");
   });
 
-  it("places verified worktree context below each update and omits inapplicable PR rows", () => {
+  it("places verified branch and worktree context before the assignment's PR list", () => {
     const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-progress-updates.md"), "utf8");
     const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
 
     expect(rendered).toContain("append this block below every milestone update and its supporting explanation");
     expect(rendered).toContain("Include primary checkouts and linked worktrees.");
-    expect(rendered).toContain("---\nBranch: <branch name>\nPR: <verified PR URL>\nWorktree: <absolute worktree root>\n---");
+    expect(rendered).toContain(
+      "---\nBranch: <branch name>\nWorktree: <absolute worktree root>\nPRs: <total count>\n- <verified PR URL>\n- <another verified PR URL>\n---",
+    );
+    expect(rendered).not.toContain("\nPR: ");
     expect(rendered).toContain(
       "Use the verified current branch and absolute root of the worktree executing this assignment, not another checkout.",
     );
-    expect(rendered).toContain("Include the `PR:` row only when a verified PR URL applies to that worktree and assignment.");
+  });
+
+  it("lists all verified task PRs across repositories and worktrees with an exact deduplicated count", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-progress-updates.md"), "utf8");
+    const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
+
+    expect(rendered).toContain(
+      "List every verified PR associated with this assignment, including PRs in other repositories or worktrees for the same task.",
+    );
+    expect(rendered).toContain("Place `PRs: <total count>` below `Worktree:`, followed by one complete verified URL per bullet.");
+    expect(rendered).toContain("Deduplicate URLs and set the count to the number of listed PRs.");
+    expect(rendered).toContain("Refresh the list after creating or discovering an associated PR.");
+  });
+
+  it("omits an empty PR list without treating failed discovery as proof of absence", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions-progress-updates.md"), "utf8");
+    const rendered = getIndexFunction("resolveLLMDocPlaceholders")(source);
+
+    expect(rendered).toContain("When no verified PR applies, omit `PRs:` and its bullets.");
+    expect(rendered).toContain(
+      "If discovery fails or remains incomplete, report that gap; do not claim the list is complete or that no PR exists.",
+    );
     expect(rendered).toContain("---\nBranch: feature/snapshot-comments\nWorktree: /workspace/widget-store-snapshot-comments\n---");
   });
 
@@ -89,6 +113,20 @@ describe("shared milestone status guidance", () => {
     expect(rendered).toContain("Render the separators and metadata in muted grey when the output surface supports color");
     expect(rendered).toContain("never use red or green for this block");
     expect(rendered).toContain("Otherwise, use plain text; never add raw ANSI or OSC escapes to agent replies.");
+  });
+});
+
+describe("shared context recovery", () => {
+  it("recovers from task artifacts before consulting explicitly requested same-project session history", () => {
+    const source = fs.readFileSync(path.join(SOURCE_FOLDER, "instructions.md"), "utf8");
+    const context = source.split("## Context Hygiene & Handoff\n", 2)[1].split("\n## ", 1)[0];
+
+    expect(context).toContain("Recover from task artifacts first.");
+    expect(context).toContain(
+      "Read local agent session history only when the user explicitly requests it, and only for the selected project.",
+    );
+    expect(context).toContain("Preserve tool definitions and schemas verbatim; never summarize callable parameter names or types.");
+    expect(context).toContain("Agent agreement is not independent proof because agents share priors.");
   });
 });
 

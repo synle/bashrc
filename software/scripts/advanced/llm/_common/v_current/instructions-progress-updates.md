@@ -50,19 +50,26 @@ Use `BLOCKED` only when this agent cannot proceed on its assignment. Name the ca
 
 When the assignment uses a Git worktree, append this block below every milestone update and its supporting explanation.
 Include primary checkouts and linked worktrees.
-Outside Git, omit the entire footer, including separators and the `Branch:`, `PR:`, and `Worktree:` rows.
+Outside Git, omit the entire footer, including separators, metadata rows, and PR links.
 
 ```text
 ---
 Branch: <branch name>
-PR: <verified PR URL>
 Worktree: <absolute worktree root>
+PRs: <total count>
+- <verified PR URL>
+- <another verified PR URL>
 ---
 ```
 
 Use the verified current branch and absolute root of the worktree executing this assignment, not another checkout.
 For detached HEAD, label `Branch:` as `detached HEAD` instead of inventing a branch.
-Include the `PR:` row only when a verified PR URL applies to that worktree and assignment.
+List every verified PR associated with this assignment, including PRs in other repositories or worktrees for the same task.
+Place `PRs: <total count>` below `Worktree:`, followed by one complete verified URL per bullet.
+Deduplicate URLs and set the count to the number of listed PRs.
+Refresh the list after creating or discovering an associated PR.
+When no verified PR applies, omit `PRs:` and its bullets.
+If discovery fails or remains incomplete, report that gap; do not claim the list is complete or that no PR exists.
 Keep the footer separate from the status sentence and its word limit.
 Render the separators and metadata in muted grey when the output surface supports color; never use red or green for this block.
 Otherwise, use plain text; never add raw ANSI or OSC escapes to agent replies.
