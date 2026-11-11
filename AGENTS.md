@@ -389,7 +389,8 @@ Profile registration is buffered: `registerProfileBlock` /
   Breadth-first search stays capped at 3 levels below the anchor, 20,000 entries, and 2 seconds.
   Shared ignored-folder patterns exclude caches unless their path components are explicit exact matches.
   Unique results navigate directly; ambiguous results show at most five choices and require `/dev/tty`, never pipeline stdin. Keep parent aliases and native completion covered in `software/tests/nativeCd.spec.js` and fuzzy behavior in `software/tests/integration/fuzzyCd.spec.js`.
-- **Native file listing** leaves `ls` unwrapped. Implement `ll` as a native-listing function that pipes through `filter_unwanted` when available.
+- **Native file listing** leaves `ls` unwrapped. Implement `ll` as a native-listing function that pipes through `filter_unwanted_and_gitignored` when available.
+  Keep `filter_unwanted` unchanged; compose its shared patterns with native Git ignore rules, including inheritance, negations, and tracked-file retention.
   Preserve native output without the advanced filter, native failure status, and terminal styling. Keep sorting shortcuts as explicit aliases to `ll`.
   Cover listing behavior in `software/tests/nativeLs.spec.js`.
 - **File search colors** default `LS_COLORS` to native ANSI palette slots in `profile-core.sh`, avoiding fd's fixed vivid fallback.

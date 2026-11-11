@@ -87,9 +87,15 @@ Regression coverage lives in `software/tests/nativeCd.spec.js` and `software/tes
 
 `ls` uses the native executable without an alias, wrapper, or injected arguments.
 `ll` is a function that forwards arguments to native `ls` with long-listing options, readable sizes, and file-type indicators.
-When `filter_unwanted` is available, `ll` pipes output through its shared ignore patterns, hiding metadata such as `.DS_Store` and other matched clutter.
-Other hidden files remain visible unless a shared pattern matches them. Minimal profiles without the advanced filter retain native output.
-The filter operates on output lines, so its patterns can also match folder headers or other listing text.
+When `filter_unwanted_and_gitignored` is available, `ll` pipes output through shared ignore patterns and native Git ignore matching.
+This hides metadata such as `.DS_Store`, other shared clutter, and untracked paths ignored by Git.
+Git honors ancestor and nested `.gitignore` files, negations, `.git/info/exclude`, and configured global excludes. Git filtering retains tracked files.
+Other hidden files remain visible unless a shared pattern or Git rule matches them. Minimal profiles without the advanced helper retain native output.
+Without Git or a containing repository, the new helper still applies shared filtering. The original `filter_unwanted` remains unchanged.
+The helper also accepts plain path lines on stdin: `printf '%s\n' src/app.js generated/cache.txt | filter_unwanted_and_gitignored`.
+Listing mode recognizes standard native long listings, classification suffixes, terminal escapes, and folder headers.
+Unsupported custom listing layouts remain visible rather than guessing filenames. Embedded newlines in filenames are unsupported by these line-based filters.
+Shared patterns can also match folder headers or other listing text.
 Native errors remain nonzero; a successful listing with no retained lines returns zero. Filtering never modifies files.
 
 - `ls_newest` / `ls_newest_first`: newest entries last / first.
