@@ -107,7 +107,9 @@ The SteamOS command spec serves its setup script from the real checkout while re
 It explicitly normalizes the formatter-sensitive hidden-line count, then expands the block and verifies the complete source exactly.
 Other ordinary source titles retain literal line counts unless their caller explicitly opts in; generated-header date normalization remains limited to generated artifacts.
 The Windows command currently records a missing published Windows Terminal artifact as an explicit error-state snapshot, not successful source loading.
-Local integration serves actual published profiles when the webapp-only build omits them; no synthetic profile content is substituted.
+Local integration serves actual published profiles when the webapp-only build omits them.
+If Pages returns HTTP 404, it loads the corresponding canonical `binary-cache` release asset under the same request deadline and content checks.
+Other HTTP failures remain errors; no synthetic profile content is substituted.
 
 ```bash
 npm run test:integration:local -- --update=all software/tests/integration/webapp/commands.wsl.spec.js
