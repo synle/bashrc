@@ -244,6 +244,126 @@ function filter_unwanted() {
 }
 
 ################################################################################
+# --- Git-aware Filtering ---
+# filter_unwanted_and_gitignored: hide shared clutter and paths ignored by Git.
+# Reads path lines, or standard native ls output with --listing <folder>.
+# Returns 0 on success (including empty output), or a filter/Git error; changes no files.
+# Git applies inherited, nested, repository, and global rules while retaining tracked files.
+function filter_unwanted_and_gitignored() {
+  if is_help_arg "${1:-}"; then
+    printf '%s\n' "filter_unwanted_and_gitignored: hide shared clutter and paths ignored by Git
+  Usage: filter_unwanted_and_gitignored [--listing <folder>]
+  Reads paths from stdin; listing mode accepts standard native ls output.
+  Uses normal Git rules, including negations and tracked-file retention.
+  Without Git or a repository, only shared filtering applies. No files are modified."
+    return 0
+  fi
+  local listing=0 folder="$PWD" statuses=() filter_status
+  if [ "${1:-}" = --listing ] && [ "$#" -eq 2 ]; then
+    listing=1
+    folder=$(builtin cd -- "$2" && builtin pwd -P) || return $?
+  elif [ "$#" -ne 0 ]; then
+    printf '%s\n' 'filter_unwanted_and_gitignored: expected no arguments or --listing <folder>' >&2
+    return 2
+  fi
+  if ! type -P git > /dev/null; then
+    if filter_unwanted; then return 0; else filter_status=$?; fi
+    [ "$filter_status" -le 1 ] || return "$filter_status"
+    return 0
+  fi
+  if filter_unwanted | (
+    local line plain candidate target context root status
+    # SGR colors use explicit numeric classes to stay valid in macOS's regex engine.
+    local csi=$'\033''\[[0-9;:]*m'
+    local osc=$'\033''\][^'$'\a\033'']*('$'\a''|'$'\033''\\)'
+    # Only the standard permission/link/owner/group/size/date layout is decoded.
+    # Custom layouts remain visible rather than guessing which text is a filename.
+    local long_prefix='^[-bcdlps][rwxStTs-]{9}[.+@]?[[:space:]]+[0-9]+[[:space:]]+[^[:space:]]+[[:space:]]+[^[:space:]]+[[:space:]]+[0-9.,]+[BKMGTP]?[[:space:]]+[^[:space:]]+[[:space:]]+[0-9]+[[:space:]]+[^[:space:]]+[[:space:]]'
+    while IFS= read -r line || [ -n "$line" ]; do
+      plain="$line"
+      while [[ "$plain" =~ $csi ]]; do plain=${plain/"${BASH_REMATCH[0]}"/}; done
+      while [[ "$plain" =~ $osc ]]; do plain=${plain/"${BASH_REMATCH[0]}"/}; done
+      if ((listing)) && [[ "$plain" = *: ]] && [ -d "${plain%:}" ]; then
+        folder=$(builtin cd -- "${plain%:}" && builtin pwd -P) || return $?
+        printf '%s\n' "$line"
+        continue
+      fi
+      candidate="$plain"
+      if ((listing)) && [[ "$plain" =~ $long_prefix ]]; then
+        candidate=${plain:${#BASH_REMATCH[0]}}
+      fi
+      case "$candidate" in
+      '' | / | . | .. | ./ | ../)
+        printf '%s\n' "$line"
+        continue
+        ;;
+      esac
+      case "$candidate" in
+      /*) target="$candidate" ;;
+      *) target="$folder/$candidate" ;;
+      esac
+      if ((listing)) && [ ! -e "$target" ] && [ ! -L "$target" ]; then
+        candidate=${candidate%% -> *}
+        candidate=${candidate%[/@*=|]}
+        case "$candidate" in
+        /*) target="$candidate" ;;
+        *) target="$folder/$candidate" ;;
+        esac
+        # Directory-only listings print operands relative to the invocation folder.
+        if [ ! -e "$target" ] && [ ! -L "$target" ] && [[ "$candidate" != /* ]]; then
+          target="$PWD/$candidate"
+        fi
+        # Preserve headers, totals, and unsupported layouts verbatim.
+        if [ ! -e "$target" ] && [ ! -L "$target" ]; then
+          printf '%s\n' "$line"
+          continue
+        fi
+      fi
+      case "$target" in
+      *.secret.*)
+        printf '%s\n' "$line"
+        continue
+        ;;
+      esac
+      context=${target%/*}
+      context=${context:-/}
+      while [ ! -d "$context" ] && [ "$context" != / ]; do
+        context=${context%/*}
+        context=${context:-/}
+      done
+      context=$(builtin cd -- "$context" && builtin pwd -P) || return $?
+      case "$context" in
+      *.secret.*)
+        printf '%s\n' "$line"
+        continue
+        ;;
+      esac
+      root="$context"
+      while [ ! -e "$root/.git" ] && [ "$root" != / ]; do
+        root=${root%/*}
+        root=${root:-/}
+      done
+      if [ -e "$root/.git" ]; then
+        # Always query from the worktree root, even when a listed path is Git metadata.
+        if command git -C "$root" check-ignore -q -- "$target" < /dev/null; then
+          continue
+        else
+          status=$?
+          [ "$status" -eq 1 ] || return "$status"
+        fi
+      fi
+      printf '%s\n' "$line"
+    done
+  ); then
+    statuses=("${PIPESTATUS[@]}")
+  else
+    statuses=("${PIPESTATUS[@]}")
+  fi
+  [ "${statuses[0]}" -le 1 ] || return "${statuses[0]}"
+  return "${statuses[1]}"
+}
+
+################################################################################
 # --- Fuzzy List All ---
 # Lists all paths: dirs with trailing /, files without.
 # Used by fuzzy_edit and autocomplete nested tokens.

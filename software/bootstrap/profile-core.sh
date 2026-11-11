@@ -752,29 +752,44 @@ else
 fi
 unalias ll 2> /dev/null || true
 
-# ll: list files with shared unwanted entries hidden.
+# ll: list files with shared clutter and Git-ignored entries hidden.
 # Forwards ls arguments; returns native errors, filter errors, or 0 for an empty result.
 # Uses native output without the advanced filter; never modifies listed files.
 function ll() {
   if is_help_arg "${1:-}"; then
-    printf '%s\n' "ll: list files with shared unwanted entries hidden
+    printf '%s\n' "ll: list files with shared clutter and Git-ignored entries hidden
   Usage: ll [ls options] [file...]
-  Uses native long-listing options and filter_unwanted when available.
+  Uses native long-listing options and filter_unwanted_and_gitignored when available.
   Plain ls remains unfiltered. No files are modified."
     return 0
   fi
-  local options=("${_LL_LS_OPTIONS[@]}") statuses=() color_force="${CLICOLOR_FORCE:-}"
-  if ! declare -F filter_unwanted > /dev/null; then
+  local options=("${_LL_LS_OPTIONS[@]}") statuses=() terminal_output=0
+  local listing_folder=. operand_count=0 argument
+  if ! declare -F filter_unwanted_and_gitignored > /dev/null; then
     command ls "${options[@]}" "$@"
     return $?
   fi
+  # A single folder operand has no native header; multiple operands supply their own.
+  for argument in "$@"; do
+    if [ -e "$argument" ] || [ -L "$argument" ]; then
+      operand_count=$((operand_count + 1))
+      if [ "$operand_count" -eq 1 ] && [ -d "$argument" ]; then
+        listing_folder="$argument"
+      else
+        listing_folder=.
+      fi
+    fi
+  done
   # The pipe hides the final TTY from ls; retain its native terminal styling.
   if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then
     options=("${options[@]/=auto/=always}")
-    color_force=1
+    terminal_output=1
   fi
   # The conditional also permits empty grep output under errexit and pipefail.
-  if CLICOLOR_FORCE="$color_force" command ls "${options[@]}" "$@" | filter_unwanted; then
+  if {
+    if [ "$terminal_output" -eq 1 ]; then export CLICOLOR_FORCE=1; fi
+    command ls "${options[@]}" "$@"
+  } | filter_unwanted_and_gitignored --listing "$listing_folder"; then
     statuses=("${PIPESTATUS[@]}")
   else
     statuses=("${PIPESTATUS[@]}")
