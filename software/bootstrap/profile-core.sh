@@ -740,15 +740,49 @@ function fd_link() {
 
 alias grep='command grep --color=auto'
 # --- Aliases: File Listing (native ls) ---
+# Native long-listing options, refreshed on profile reload for the current binary.
+_LL_LS_OPTIONS=(-lahF)
 if command ls --version 2> /dev/null | command grep -q GNU; then
+  _LL_LS_OPTIONS+=(--color=auto)
   if command ls --help 2> /dev/null | command grep -q -- --hyperlink; then
-    alias ll="command ls -lahF --color=auto --hyperlink=auto"
-  else
-    alias ll="command ls -lahF --color=auto"
+    _LL_LS_OPTIONS+=(--hyperlink=auto)
   fi
 else
-  alias ll="command ls -lahFG"
+  _LL_LS_OPTIONS+=(-G)
 fi
+unalias ll 2> /dev/null || true
+
+# ll: list files with shared unwanted entries hidden.
+# Forwards ls arguments; returns native errors, filter errors, or 0 for an empty result.
+# Uses native output without the advanced filter; never modifies listed files.
+function ll() {
+  if is_help_arg "${1:-}"; then
+    printf '%s\n' "ll: list files with shared unwanted entries hidden
+  Usage: ll [ls options] [file...]
+  Uses native long-listing options and filter_unwanted when available.
+  Plain ls remains unfiltered. No files are modified."
+    return 0
+  fi
+  local options=("${_LL_LS_OPTIONS[@]}") statuses=() color_force="${CLICOLOR_FORCE:-}"
+  if ! declare -F filter_unwanted > /dev/null; then
+    command ls "${options[@]}" "$@"
+    return $?
+  fi
+  # The pipe hides the final TTY from ls; retain its native terminal styling.
+  if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then
+    options=("${options[@]/=auto/=always}")
+    color_force=1
+  fi
+  # The conditional also permits empty grep output under errexit and pipefail.
+  if CLICOLOR_FORCE="$color_force" command ls "${options[@]}" "$@" | filter_unwanted; then
+    statuses=("${PIPESTATUS[@]}")
+  else
+    statuses=("${PIPESTATUS[@]}")
+  fi
+  [ "${statuses[0]}" -eq 0 ] || return "${statuses[0]}"
+  [ "${statuses[1]}" -le 1 ] || return "${statuses[1]}"
+  return 0
+}
 # The base shortcuts keep the interesting entries nearest the prompt.
 # Define both orders directly: repeating -r does not cancel a reversal.
 alias ls_newest="ll -tr"       # newest last
