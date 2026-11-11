@@ -107,14 +107,14 @@ ${LINE_BREAK_HASH}
   const bashProfileContent = ". '" + bashrcPath.replace(/'/g, "'\\''") + "'";
   // appendTextBlock (not moveTextBlockToEnd): refresh the block in place when it already
   // exists, so user commands deliberately placed after it keep running after it.
-  textContent = appendTextBlock(textContent, "Sy bash_syle entry point", bashProfileContent);
+  textContent = appendTextBlock(textContent, "Sy bash_profile - entry point", bashProfileContent);
   await writeText(bashProfilePath, textContent);
 
   // bootstrap .bashrc (interactive non-login shells)
   log(">> Updating .bashrc with bash_syle entry point", bashrcPath);
   textContent = await readText`${bashrcPath}`;
   // Placement is preserved on re-run; only brand-new files get the block at the bottom.
-  textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
+  textContent = appendTextBlock(textContent, "Sy bashrc - entry point", entryPointContent);
   await writeText(bashrcPath, textContent);
 
   // snapshot after bootstrap assembled the template (before other scripts fill it in)
