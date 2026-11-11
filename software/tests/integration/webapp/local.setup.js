@@ -15,7 +15,9 @@ const PROFILE_ASSETS = new Set([
   "/profile_bashrc_redhat.sh",
   "/profile_bashrc_arch_linux.sh",
 ]);
-/** Reuse actual published bytes across browser workers, never synthetic shell fixtures. */
+/** Canonical release retains profiles omitted when an optional OS build fails. */
+const PROFILE_RELEASE_URL = "https://github.com/synle/bashrc/releases/download/binary-cache/";
+/** Reuse actual published or cached release bytes across workers, never synthetic shell fixtures. */
 const profileAssets = new Map();
 
 /** MIME type map for common static file extensions. */
@@ -36,8 +38,9 @@ const MIME_TYPES = {
 let server;
 
 /**
- * Start the local dist server, retaining real published profile responses for assets absent from a webapp-only build.
+ * Start the local dist server, recovering missing published profiles from their canonical release cache on HTTP 404 only.
  * @returns {Promise<void>} Resolves after listening; rejects if dist is absent or the port cannot bind.
+ * @sideEffects Opens the local listener and fetches and caches profiles requested by browser workers.
  * @throws {Error} When the required dist folder does not exist.
  */
 export async function setup() {
@@ -54,13 +57,21 @@ export async function setup() {
         if (!profileAssets.has(urlPath)) {
           profileAssets.set(
             urlPath,
-            fetch(new URL(urlPath.slice(1), PUBLISHED_WEBAPP_URL), { signal: AbortSignal.timeout(30000) }).then(async (response) => {
+            (async () => {
+              // Both sources share one deadline; a missing optional build must not prevent the next build's prep.
+              const signal = AbortSignal.timeout(30000);
+              const asset = urlPath.slice(1);
+              let response = await fetch(new URL(asset, PUBLISHED_WEBAPP_URL), { signal });
+              if (response.status === 404) {
+                await response.body?.cancel();
+                response = await fetch(new URL(`bashrc-profile__${asset}`, PROFILE_RELEASE_URL), { signal });
+              }
               if (!response.ok) throw new Error(`Published profile returned HTTP ${response.status}`);
               const content = await response.text();
               if (!content.startsWith("#") || content.length > 4 * 1024 * 1024)
                 throw new Error("Published profile is not bounded shell content");
               return content;
-            }),
+            })(),
           );
         }
         const content = await profileAssets.get(urlPath);

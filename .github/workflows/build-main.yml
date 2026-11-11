@@ -464,7 +464,8 @@ jobs:
       job-status: ${{ steps.job-status.outputs.status }}
     steps:
       - name: Install dependencies
-        run: pacman -Sy --noconfirm git curl sudo make unzip
+        # Keep installed libraries consistent with refreshed rolling-release package databases.
+        run: pacman -Syu --noconfirm git curl sudo make unzip
       - uses: actions/checkout@v6
       - uses: ./.github/actions/ci-setup
       - uses: ./.github/actions/ci-apply-patches
