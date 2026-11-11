@@ -257,7 +257,7 @@ Profile registration is buffered: `registerProfileBlock` /
   `c="command cat"`.
 - **`((var))` for boolean flags.** Every flag (`is_os_*`, `IS_CI`, `IS_FORCE_REFRESH`)
   is `0`/`1`. Use `IS_CI`, not `$CI`. For user strings use `is_truthy` (`1`, `true`, `y`,
-  `yes`, case-insensitive).
+  `yes`, case-insensitive). `software/bootstrap/help-arg.bash` owns `is_help_arg`; generated inclusions load it before `is_truthy`, and `run.sh` persists both in dependency order.
 - **Never put a literal `(` or `)` in a bash path/glob string** — bash 3.2 parses `*(`,
   `+(`, `?(`, `@(`, `!(` as extglob even inside double quotes. Write
   `"/mnt/c/Program*Files*86*/..."`. Enforced by `pathArrayValidation.spec.js`.

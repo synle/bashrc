@@ -69,7 +69,8 @@ const MIN_CHARS_PROFILE_MAP = {
 
 const MIN_CHARS_BOOTSTRAP = 2200;
 
-const BOOTSTRAP_SIZE_OVERRIDES = { "setup.sh": 400, "common-env.sh": 400, "common-functions.bash": 2000 };
+/** Minimum byte sizes for intentionally small bootstrap components. */
+const BOOTSTRAP_SIZE_OVERRIDES = { "setup.sh": 400, "common-env.sh": 400, "common-functions.bash": 2000, "help-arg.bash": 400 };
 
 const MIN_CHARS_ROOT_SCRIPTS = 1100;
 

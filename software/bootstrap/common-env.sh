@@ -224,7 +224,25 @@ function h5() { printf '\033[0;35m%s\033[0m\n' "$@"; }
 function h6() { printf '\033[0;31m%s\033[0m\n' "$@"; }
 function h7() { printf '\033[90m%s\033[0m\n' "$@"; }
 
-# checks if a value is truthy (1, true, y, yes — case-insensitive)
+# BEGIN software/bootstrap/help-arg.bash
+# software/bootstrap/help-arg.bash | bf16d3cb2cefcf8e3c12e535ffa31c27 | 595 B
+# Shared help predicate for bootstrap, installer scripts, and interactive profiles.
+
+# is_help_arg <arg>: return 0 for a help request, otherwise 1, including missing input.
+# Recognizes help, --help, -help, /help, -h, ?, -?, and /? case-insensitively; prints nothing.
+# Use tr for Bash 3.2 and quote question-mark patterns so they cannot match arbitrary characters.
+function is_help_arg() {
+  local arg
+  arg=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
+  case "$arg" in
+  help | --help | -help | /help | -h | '?' | '-?' | '/?') return 0 ;;
+  *) return 1 ;;
+  esac
+}
+# END software/bootstrap/help-arg.bash
+
+# is_truthy <value>: check 1, true, y, or yes case-insensitively; missing values are false.
+# Returns 0 for truthy values or help requests, otherwise 1; only help prints output.
 function is_truthy() {
   if is_help_arg "${1:-}"; then
     printf '%s\n' "
