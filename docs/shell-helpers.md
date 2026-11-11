@@ -86,13 +86,18 @@ Regression coverage lives in `software/tests/nativeCd.spec.js` and `software/tes
 ## Native file listing
 
 `ls` uses the native executable without an alias, wrapper, or injected arguments.
-`ll` provides a colored native long listing with hidden files, readable sizes, and file-type indicators.
+`ll` is a function that forwards arguments to native `ls` with long-listing options, readable sizes, and file-type indicators.
+When `filter_unwanted` is available, `ll` pipes output through its shared ignore patterns, hiding metadata such as `.DS_Store` and other matched clutter.
+Other hidden files remain visible unless a shared pattern matches them. Minimal profiles without the advanced filter retain native output.
+The filter operates on output lines, so its patterns can also match folder headers or other listing text.
+Native errors remain nonzero; a successful listing with no retained lines returns zero. Filtering never modifies files.
 
 - `ls_newest` / `ls_newest_first`: newest entries last / first.
 - `ls_biggest` / `ls_biggest_first`: largest entries last / first.
 
-These shortcuts are explicit aliases, not generated command variants.
-Long listings use native timestamps and permission columns.
+Sorting shortcuts are explicit aliases to `ll`, not generated command variants.
+Long listings retain native timestamps, permission columns, terminal colors, and supported GNU hyperlinks.
+Use `ll --help` for usage. Refresh the profile with `./run`, then open a fresh shell.
 
 ## Image compression
 
