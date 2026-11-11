@@ -82,11 +82,16 @@ function _prompt_command_add() {
 }
 
 # --- Pre-core Profile Blocks (registerWithBashSyleProfile) ---
-# BEGIN/END | Profile Generated Timestamp
-# BEGIN/END | fnm - fast node manager
-# BEGIN/END | format script
-# BEGIN/END | mac-system-setup
-# BEGIN/END | temporal-cli
+# BEGIN Profile Generated Timestamp
+# END Profile Generated Timestamp
+# BEGIN fnm - fast node manager
+# END fnm - fast node manager
+# BEGIN format script
+# END format script
+# BEGIN mac-system-setup
+# END mac-system-setup
+# BEGIN temporal-cli
+# END temporal-cli
 # SOURCE | PATH dedupe + prune | software/scripts/bash-path-candidate.profile.bash
 
 export EDITOR='vim'
@@ -137,21 +142,14 @@ function format_hyperlink() {
 }
 
 # --- Help-Trigger Helper ---
-# Single source of truth for the "is this arg a --help request?" check used by
-# every user-facing function across the profile. Defined in profile-core (not
-# profile-advanced) so any partial sourced later can rely on it. Keep this
-# function body byte-identical with the copy in common-functions.bash — the
-# pair must accept the same trigger set.
+# Keep standalone profile consumers on the same bootstrap help predicate.
+# BEGIN software/bootstrap/help-arg.bash
+# software/bootstrap/help-arg.bash | bf16d3cb2cefcf8e3c12e535ffa31c27 | 595 B
+# Shared help predicate for bootstrap, installer scripts, and interactive profiles.
 
-# is_help_arg <arg> - returns 0 (success) if arg is a recognized --help trigger
-# Recognizes (case-insensitive):
-#   help, --help, -help, /help    full word, every common prefix style
-#   -h                            short
-#   ?, -?, /?                     DOS / PowerShell short
-# `tr` (not bash 4's ${var,,}) is used so this stays parseable on bash 3.2 —
-# safe_source rejects any partial that fails `bash -n` on macOS's /bin/bash.
-# Single-quote `?` patterns in the case so glob expansion does not match them
-# against any single character.
+# is_help_arg <arg>: return 0 for a help request, otherwise 1, including missing input.
+# Recognizes help, --help, -help, /help, -h, ?, -?, and /? case-insensitively; prints nothing.
+# Use tr for Bash 3.2 and quote question-mark patterns so they cannot match arbitrary characters.
 function is_help_arg() {
   local arg
   arg=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
@@ -160,6 +158,7 @@ function is_help_arg() {
   *) return 1 ;;
   esac
 }
+# END software/bootstrap/help-arg.bash
 
 # --- Last-Run Timestamp Cache ---
 # Single source of truth for every "run this at most once per <interval>" gate

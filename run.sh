@@ -52,7 +52,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | cdda3fd52cdb641bc0bf098c30f5e8ef | 13.1 KB
+# software/bootstrap/common-env.sh | 7f41b6eba9072b3e3d321a784bdb3722 | 14.0 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_OWNER="synle" # GitHub owner of this repo and of personal repos
@@ -277,7 +277,25 @@ function h5() { printf '\033[0;35m%s\033[0m\n' "$@"; }
 function h6() { printf '\033[0;31m%s\033[0m\n' "$@"; }
 function h7() { printf '\033[90m%s\033[0m\n' "$@"; }
 
-# checks if a value is truthy (1, true, y, yes — case-insensitive)
+# BEGIN software/bootstrap/help-arg.bash
+# software/bootstrap/help-arg.bash | bf16d3cb2cefcf8e3c12e535ffa31c27 | 595 B
+# Shared help predicate for bootstrap, installer scripts, and interactive profiles.
+
+# is_help_arg <arg>: return 0 for a help request, otherwise 1, including missing input.
+# Recognizes help, --help, -help, /help, -h, ?, -?, and /? case-insensitively; prints nothing.
+# Use tr for Bash 3.2 and quote question-mark patterns so they cannot match arbitrary characters.
+function is_help_arg() {
+  local arg
+  arg=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
+  case "$arg" in
+  help | --help | -help | /help | -h | '?' | '-?' | '/?') return 0 ;;
+  *) return 1 ;;
+  esac
+}
+# END software/bootstrap/help-arg.bash
+
+# is_truthy <value>: check 1, true, y, or yes case-insensitively; missing values are false.
+# Returns 0 for truthy values or help requests, otherwise 1; only help prints output.
 function is_truthy() {
   if is_help_arg "${1:-}"; then
     printf '%s\n' "
@@ -1069,7 +1087,7 @@ $LINE_BREAK_HASH
 
 declare -f mktemp >> "$BASH_SYLE_COMMON_PATH"
 declare -f get_home_ip_address >> "$BASH_SYLE_COMMON_PATH"
-declare -f is_truthy >> "$BASH_SYLE_COMMON_PATH"
+declare -f is_help_arg is_truthy >> "$BASH_SYLE_COMMON_PATH"
 declare -f h1 h2 h3 h4 h5 h6 h7 >> "$BASH_SYLE_COMMON_PATH"
 declare -f _detect_gui_flags >> "$BASH_SYLE_COMMON_PATH"
 declare -f _safe_source_resolve _safe_source_contains _safe_source_remember safe_source >> "$BASH_SYLE_COMMON_PATH"
@@ -1079,7 +1097,7 @@ printf "_PROFILE_SOURCES_BLOCK='%s'\n" "$_PROFILE_SOURCES_BLOCK" >> "$BASH_SYLE_
 
 ollama_default_server_ip=""
 code_server_remote_hosts=""
-if ((!is_work_profile)); then
+if ((! is_work_profile)); then
   ollama_default_server_ip=$(get_ollama_default_server_ip)
   code_server_remote_hosts=$(get_code_server_hosts)
 fi

@@ -2,9 +2,13 @@
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
-# is_help_arg <arg> - returns 0 (success) if arg is a recognized --help trigger
-# Recognizes (case-insensitive): help, --help, -help, /help, -h, ?, -?, /?
-# Mirror of the same function in profile-core.sh — keep the body byte-identical.
+# BEGIN software/bootstrap/help-arg.bash
+# software/bootstrap/help-arg.bash | bf16d3cb2cefcf8e3c12e535ffa31c27 | 595 B
+# Shared help predicate for bootstrap, installer scripts, and interactive profiles.
+
+# is_help_arg <arg>: return 0 for a help request, otherwise 1, including missing input.
+# Recognizes help, --help, -help, /help, -h, ?, -?, and /? case-insensitively; prints nothing.
+# Use tr for Bash 3.2 and quote question-mark patterns so they cannot match arbitrary characters.
 function is_help_arg() {
   local arg
   arg=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
@@ -13,6 +17,7 @@ function is_help_arg() {
   *) return 1 ;;
   esac
 }
+# END software/bootstrap/help-arg.bash
 
 # get_native_arch - Prints the machine's real CPU architecture (arm64, x86_64, aarch64, ...).
 # On Apple Silicon `uname -m` reports x86_64 whenever the calling process is translated
