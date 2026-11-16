@@ -448,3 +448,4 @@ printf '%s\n' ">> Bootstrapping and Installing apps..."
 install_apps
 
 printf '%s\n' ">>> Fire TV debloat complete"
+
