@@ -1465,7 +1465,7 @@ Stopping the server can interrupt active ADB sessions.' >&2
   command "$adb_binary" "$@"
 }
 
-alias battery_health_android='adb shell dumpsys battery | grep -m 4 -E "level:|Charge counter:|mSavedBatteryAsoc:|mSavedBatteryUsage:" | sed '\''s/^[[:space:]]*//;s/[[:space:]]*$//'\'''
+alias battery_health_android='adb shell dumpsys battery | grep -m 4 -E "level:|Charge counter:|mSavedBatteryAsoc:|mSavedBatteryUsage:" | trim'
 
 # --- Aliases: Git ---
 # git: default diffs to -w and a bare stash to -u; preserve native arguments and exit status.
