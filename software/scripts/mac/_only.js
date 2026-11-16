@@ -304,6 +304,7 @@ async function doWork() {
 
     # get battery health for iPad / iOS
     alias battery_health_ipad_ios='idevicediagnostics ioregentry AppleSmartBattery | grep -A 1 -E "CycleCount|DesignCapacity|NominalChargeCapacity|MaxCapacity" | grep -v '\''^--$'\'' | sed '\''s/^[[:space:]]*//;s/[[:space:]]*$//'\'''
+    alias battery_health_macbook='system_profiler SPPowerDataType | grep -E "Cycle Count|Maximum Capacity|Condition|State of Charge" | sed '\''s/^[[:space:]]*//;s/[[:space:]]*$//'\'''
 
     # update: OS package manager update/upgrade only. \`command brew\` bypasses the
     # brew wrapper (snip), which swallows interactive Y/N prompts and hangs the run.
