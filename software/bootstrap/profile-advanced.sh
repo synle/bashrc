@@ -1449,19 +1449,23 @@ function adb() {
     adb_binary=adb.exe
   fi
   if ! type -P "$adb_binary" > /dev/null 2>&1; then
-    printf '%s\n' 'adb is not installed' >&2
+    printf '%s\n' 'adb is not installed' 1>&2
     return 127
   fi
   if is_help_arg "${1:-}"; then
-    printf '%s\n' 'adb: stop the server before forwarding ADB commands.
+    printf '%s\n' 'adb: stop the server before wireless/network ADB commands.
 Usage: adb [native arguments...]
-Every call stops the server first; explicit kill-server runs once.
-Shutdown failure stops the requested command. Native help is forwarded.
-Stopping the server can interrupt active ADB sessions.' >&2
+Kill-server runs for connect, pair, disconnect, and tcpip.
+Stopping the server can interrupt active ADB sessions.' 1>&2
   fi
-  if [ "${1:-}" != kill-server ]; then
+
+  # Run kill-server only for commands prone to stale connection states
+  case "${1:-}" in
+  connect | pair | disconnect | tcpip)
     command "$adb_binary" kill-server || return "$?"
-  fi
+    ;;
+  esac
+
   command "$adb_binary" "$@"
 }
 

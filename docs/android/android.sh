@@ -1,134 +1,19 @@
 #!/bin/sh
 
 # Samsung Z Fold5 - S24 Ultra - Tab S9 Ultra
-# Shared functions and app lists. Not run directly - use with android.debloat.sh or android.restore.sh.
+# Shared settings and app lists. Not run directly - use with android.debloat.sh or android.restore.sh.
 #
 # Debloat:
-# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=1 https://github.com/synle/bashrc/blob/HEAD/docs/android/android.debloat.sh?raw=1 | sh
+# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android-common.sh?raw=1 \
+#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=1 \
+#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android.debloat.sh?raw=1 | sh
 #
 # Restore:
-# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=1 https://github.com/synle/bashrc/blob/HEAD/docs/android/android.restore.sh?raw=1
-#
-# Settings
-# Tracks applied settings for restore_all_settings. Example: "global window_animation_scale\nsecure long_press_timeout"
-SETTINGS_APPLIED=""
+# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android-common.sh?raw=1 \
+#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=1 \
+#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android.restore.sh?raw=1 | sh
 
-# Run an Android command through the host's connected ADB device.
-_adb_shell() {
-  adb shell "$@"
-}
-
-_put_setting() {
-  SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
-"
-  printf '%s\n' ">>> setting put $*"
-  _adb_shell settings put "$@" > /dev/null 2>&1
-}
-
-_restore_setting() {
-  SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
-"
-  printf '%s\n' ">>> setting restore $*"
-  _adb_shell settings delete "$@" > /dev/null 2>&1
-}
-
-restore_all_settings() {
-  printf '%s\n' "$SETTINGS_APPLIED" | while IFS=' ' read -r setting_namespace setting_key; do
-    [ -z "$setting_namespace" ] && continue
-    _restore_setting "$setting_namespace" "$setting_key"
-  done
-  printf '%s\n' ">>> all settings restored to defaults"
-}
-
-# App disable
-_disable_app() {
-  ok=0
-  _adb_shell pm disable-user --user 0 "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm disable-user -k --user 0 "$@" > /dev/null 2>&1 && ok=1
-  if [ "$ok" = "1" ]; then
-    printf '%s\n' ">>> $* > Disabled > Success"
-  else
-    printf '%s\n' ">>> $* > Disabled > Error"
-  fi
-}
-
-_remove_app() {
-  ok=0
-  _disable_app "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall -k --user 0 "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall -k --user 10 "$@" > /dev/null 2>&1 && ok=1
-  if [ "$ok" = "1" ]; then
-    printf '%s\n' ">>> $* > Removed > Success"
-  else
-    printf '%s\n' ">>> $* > Removed > Error"
-  fi
-}
-
-_restore_app() {
-  ok=0
-  _adb_shell cmd package install-existing "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm enable "$@" > /dev/null 2>&1 && ok=1
-  if [ "$ok" = "1" ]; then
-    printf '%s\n' ">>> $* > Restored > Success"
-  else
-    printf '%s\n' ">>> $* > Restored > Error"
-  fi
-}
-
-# Collection functions - take a newline-delimited string of package names
-# Supports inline comments (# ...) and section headers (lines starting with #)
-_parse_app_name() {
-  printf '%s\n' "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
-}
-
-remove_app_collection() {
-  printf '%s\n' "$1" | while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    case "$line" in \#*) continue ;; esac
-    app=$(_parse_app_name "$line")
-    [ -z "$app" ] && continue
-    _remove_app "$app"
-  done
-}
-
-# Return unique package names, excluding packages from the supplied newline list.
-_normalize_app_collection() {
-  apps=$1
-  excluded=$(printf '%s\n' "$2" | tr '\n' ' ')
-  printf '%s\n' "$apps" | awk -v excluded="$excluded" '
-    function trim(value) {
-      sub(/^[[:space:]]*/, "", value)
-      sub(/[[:space:]]*$/, "", value)
-      return value
-    }
-    BEGIN {
-      count = split(excluded, excluded_apps, "[[:space:]]+")
-      for (position = 1; position <= count; position++) {
-        excluded_app = trim(excluded_apps[position])
-        if (excluded_app != "") excluded_map[excluded_app] = 1
-      }
-    }
-    {
-      sub(/#.*/, "")
-      app = trim($0)
-      if (app != "" && !(app in excluded_map) && !(app in seen)) {
-        seen[app] = 1
-        print app
-      }
-    }
-  '
-}
-
-restore_app_collection() {
-  printf '%s\n' "$1" | while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    case "$line" in \#*) continue ;; esac
-    app=$(_parse_app_name "$line")
-    [ -z "$app" ] && continue
-    _restore_app "$app"
-  done
-}
+# SOURCE docs/android/android-common.sh
 
 ################################################################################
 # --- Setting tweaks ---
@@ -392,8 +277,7 @@ com.samsung.android.app.appsedge # Apps Edge; preserve multi-window support
 
 # Safe is the master collection. Aggressive cannot repeat safe entries.
 DEBLOAT_SAFE=$(_normalize_app_collection "$DEBLOAT_SAFE" "$DEBLOAT_IGNORED")
-DEBLOAT_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$DEBLOAT_IGNORED
-$DEBLOAT_SAFE")
+DEBLOAT_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$(printf '%s\n%s\n' "$DEBLOAT_IGNORED" "$DEBLOAT_SAFE")")
 
 # Check host ADB and optionally connect to a user-provided Android device.
 _greet_and_connect_adb() {

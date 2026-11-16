@@ -1,120 +1,19 @@
 #!/usr/bin/env bash
 
 # Fire TV Stick - debloat and optimize.
-# Shared functions and app lists. Not run directly - use with firetv.debloat.sh or firetv.restore.sh.
-#
-#   Removes 56 apps total:
-#   Shopping & Store: windowshop, alexashopping, shoptv.client
-#   Media Clutter: avod, bueller.photos, photos.importer, bueller.music, mp3, goodreads.kindle,
-#                  kindle.cms, kindle.devicecontrols, ods.kindleconnect, logan
-#   Services & Telemetry: ags.app, alta.h2clientservice, android.service.networkmonitor,
-#                          connectivitydiag, device.crashmanager, device.messaging,
-#                          messaging.sdk.internal.library, messaging.sdk.library, device.sync,
-#                          device.sync.sdk.internal, firebat, ftv.screensaver, hedwig, jackson19,
-#                          kso.blackbird, providers, providers.contentsupport, recess,
-#                          securitysyncclient, sharingservice.android.client.proxy, sync.service,
-#                          tahoe, tmm.tutorial, tv.csapp, tv.forcedotaupdater.v2, tv.fw.metrics,
-#                          tv.legal.notices, tv.livetv, tv.nimh, tv.releasenotes, tv.support, webview
-#   Alexa & Voice: bueller.notification, device.software.ota, device.software.ota.override,
-#                   imbd.tv.android.app, parentalcontrols, kindle.freetime
-#   Non-Amazon: ivona.orchestrator, ivona.tts.oem, svox.pico, documentsui, wallpaperbackup
-#   Disabled (not removed): device.software.ota, pai, zico.app, ism.recommendations,
-#                            kindle.unifiedreader
-#   Settings: animations off, telemetry off, Wi-Fi/BT scanning off, device provisioned
+# Shared settings and app lists. Not run directly - use with firetv.debloat.sh or firetv.restore.sh.
 #
 # Debloat:
-#   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.sh https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.debloat.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/android-common.sh \
+#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.sh \
+#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.debloat.sh | bash
 #
 # Restore:
-#   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.sh https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.restore.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/android-common.sh \
+#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.sh \
+#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.restore.sh | bash
 
-SETTINGS_APPLIED=""
-
-# Run an Android command through the host's connected ADB device.
-function _adb_shell() {
-  adb shell "$@"
-}
-
-function _put_setting() {
-  SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
-"
-  printf '%s\n' ">>> setting put $*"
-  _adb_shell settings put "$@" > /dev/null 2>&1
-}
-
-function _restore_setting() {
-  SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
-"
-  printf '%s\n' ">>> setting restore $*"
-  _adb_shell settings delete "$@" > /dev/null 2>&1
-}
-
-function restore_all_settings() {
-  printf '%s\n' "$SETTINGS_APPLIED" | while IFS=' ' read -r setting_namespace setting_key; do
-    [ -z "$setting_namespace" ] && continue
-    _restore_setting "$setting_namespace" "$setting_key"
-  done
-  printf '%s\n' ">>> all settings restored to defaults"
-}
-
-function _disable_app() {
-  ok=0
-  _adb_shell pm disable-user --user 0 "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm disable-user -k --user 0 "$@" > /dev/null 2>&1 && ok=1
-  if [ "$ok" = "1" ]; then
-    printf '%s\n' ">>> $* > Disabled > Success"
-  else
-    printf '%s\n' ">>> $* > Disabled > Error"
-  fi
-}
-
-function _remove_app() {
-  ok=0
-  _disable_app "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall -k --user 0 "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm uninstall -k --user 10 "$@" > /dev/null 2>&1 && ok=1
-  if [ "$ok" = "1" ]; then
-    printf '%s\n' ">>> $* > Removed > Success"
-  else
-    printf '%s\n' ">>> $* > Removed > Error"
-  fi
-}
-
-function _restore_app() {
-  ok=0
-  _adb_shell cmd package install-existing "$@" > /dev/null 2>&1 && ok=1
-  _adb_shell pm enable "$@" > /dev/null 2>&1 && ok=1
-  if [ "$ok" = "1" ]; then
-    printf '%s\n' ">>> $* > Restored > Success"
-  else
-    printf '%s\n' ">>> $* > Restored > Error"
-  fi
-}
-
-function _parse_app_name() {
-  printf '%s\n' "$1" | sed 's/#.*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
-}
-
-function remove_app_collection() {
-  printf '%s\n' "$1" | while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    case "$line" in \#*) continue ;; esac
-    app=$(_parse_app_name "$line")
-    [ -z "$app" ] && continue
-    _remove_app "$app"
-  done
-}
-
-function _restore_app_collection() {
-  printf '%s\n' "$1" | while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    case "$line" in \#*) continue ;; esac
-    app=$(_parse_app_name "$line")
-    [ -z "$app" ] && continue
-    _restore_app "$app"
-  done
-}
+# SOURCE docs/android/android-common.sh
 
 ################################################################################
 # --- Settings ---
@@ -292,7 +191,7 @@ com.android.traceur
 ################################################################################
 
 function restore_all_apps() {
-  _restore_app_collection "$FIRE_TV_DEBLOAT_SAFE"
+  restore_app_collection "$FIRE_TV_DEBLOAT_SAFE" "FIRE_TV_DEBLOAT_SAFE"
   restore_all_settings
   printf '%s\n' ">>> All Fire TV apps and settings restored"
 }
@@ -308,8 +207,8 @@ function _install_latest_github_apk() {
   app_name="$3"
   release_api="https://api.github.com/repos/$repo/releases/latest"
   apk_url="$(
-    curl -fsSL "$release_api" \
-      | sed -n 's/.*"browser_download_url": "\([^\"]*\.apk\)".*/\1/p' \
+    command curl -fsSL "$release_api" \
+      | command sed -n 's/.*"browser_download_url": "\([^\"]*\.apk\)".*/\1/p' \
       | command grep -m 1 -F "$asset_pattern"
   )"
 
@@ -318,18 +217,18 @@ function _install_latest_github_apk() {
     return 1
   fi
 
-  temp_folder="$(mktemp -d "${TMPDIR:-/tmp}/firetv-apk.XXXXXX")" || return 1
+  temp_folder="$(command mktemp -d "${TMPDIR:-/tmp}/firetv-apk.XXXXXX")" || return 1
   apk_file="$temp_folder/$app_name.apk"
   printf '%s\n' ">>> $app_name > Downloading $apk_url"
-  if ! curl -fsSL "$apk_url" -o "$apk_file"; then
-    rm -rf "$temp_folder"
+  if ! command curl -fsSL "$apk_url" -o "$apk_file"; then
+    command rm -rf "$temp_folder"
     return 1
   fi
 
   printf '%s\n' ">>> $app_name > Installing"
   adb install -r "$apk_file"
   install_status=$?
-  rm -rf "$temp_folder"
+  command rm -rf "$temp_folder"
   if [ "$install_status" = "0" ]; then
     printf '%s\n' ">>> $app_name > Installed > Success"
   else
@@ -344,15 +243,15 @@ function _configure_personal_dnsfilter() {
   extra_hosts_url="https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/data/blocklists/extra-hosts.txt"
   config_url="https://raw.githubusercontent.com/IngoZenz/personaldnsfilter/master/app/src/main/assets/dnsfilter.conf"
   remote_folder="/storage/emulated/0/Android/data/dnsfilter.android/files/PersonalDNSFilter"
-  temp_folder="$(mktemp -d "${TMPDIR:-/tmp}/firetv-dns.XXXXXX")" || return 1
+  temp_folder="$(command mktemp -d "${TMPDIR:-/tmp}/firetv-dns.XXXXXX")" || return 1
   blocklist_file="$temp_folder/FILTERHOSTS.TXT"
   extra_hosts_file="$temp_folder/additionalHosts.txt"
   config_file="$temp_folder/dnsfilter.conf"
 
   printf '%s\n' ">>> personalDNSfilter > Downloading Amazon blocklist"
-  if ! curl -fsSL "$blocklist_url" -o "$blocklist_file" \
-    || ! curl -fsSL "$extra_hosts_url" -o "$extra_hosts_file" \
-    || ! curl -fsSL "$config_url" \
+  if ! command curl -fsSL "$blocklist_url" -o "$blocklist_file" \
+    || ! command curl -fsSL "$extra_hosts_url" -o "$extra_hosts_file" \
+    || ! command curl -fsSL "$config_url" \
     | command sed \
       -e 's#^filterHostsFile = .*#filterHostsFile = FILTERHOSTS.TXT#' \
       -e 's#^filterAutoUpdateURL = .*#filterAutoUpdateURL = https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/wildcard/native.amazon-onlydomains.txt#' \
@@ -360,7 +259,7 @@ function _configure_personal_dnsfilter() {
       -e 's#^filterAutoUpdateURL_categories = .*#filterAutoUpdateURL_categories = Amazon#' \
       -e 's#^filterAutoUpdateURL_switchs = .*#filterAutoUpdateURL_switchs = true#' \
       > "$config_file"; then
-    rm -rf "$temp_folder"
+    command rm -rf "$temp_folder"
     return 1
   fi
 
@@ -369,10 +268,10 @@ function _configure_personal_dnsfilter() {
     || ! adb push "$blocklist_file" "$remote_folder/FILTERHOSTS.TXT" \
     || ! adb push "$extra_hosts_file" "$remote_folder/additionalHosts.txt" \
     || ! adb push "$config_file" "$remote_folder/dnsfilter.conf"; then
-    rm -rf "$temp_folder"
+    command rm -rf "$temp_folder"
     return 1
   fi
-  rm -rf "$temp_folder"
+  command rm -rf "$temp_folder"
 
   printf '%s\n' ">>> personalDNSfilter > Starting VPN activity"
   _adb_shell am force-stop dnsfilter.android
