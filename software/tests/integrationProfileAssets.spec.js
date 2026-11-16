@@ -47,7 +47,7 @@ async function fixture(responses, files = {}) {
     extname: path.extname,
     fileURLToPath,
     PUBLISHED_WEBAPP_URL,
-    existsSync: (file) => file === distFolder || Object.prototype.hasOwnProperty.call(files, file),
+    existsSync: (file) => path.resolve(file) === distFolder || Object.prototype.hasOwnProperty.call(files, file),
     statSync: () => ({ isDirectory: () => false }),
     readFileSync: (file) => files[file],
     createServer(callback) {

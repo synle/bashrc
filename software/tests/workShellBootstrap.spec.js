@@ -215,38 +215,6 @@ describe("work shell startup", () => {
     expect(common).toContain("_PROFILE_REFRESH_INTERVAL_HOURS=8");
   });
 
-  it.each([
-    ["printf 'bootstrap\\n'\n", 0, "bootstrap\n", ""],
-    ["if then\n", 1, "", "[Warning] safe_source bootstrap validation failed\n"],
-    ["return 7\n", 7, "", ""],
-  ])("validates and sources %j without requiring full runtime helpers", async (common, status, stdout, stderr) => {
-    const startup = await renderStartup();
-    const entry = fs.readFileSync(startup, "utf8").match(/# BEGIN Sy bashrc - entry point\n([\s\S]*?)# END Sy bashrc - entry point/)[1];
-    fs.writeFileSync(path.join(home, ".bash_syle_common"), common);
-    const result = spawnSync("/bin/bash", ["--noprofile", "--norc", "-c", `${entry}\nsafe_source "$HOME/.bash_syle_common"`], {
-      env: { ...process.env, HOME: home, BASH_ENV: "" },
-      encoding: "utf8",
-      timeout: 5000,
-    });
-    expect(result.status).toBe(status);
-    expect(result.stdout).toBe(stdout);
-    expect(result.stderr).toBe(stderr);
-  });
-
-  it("rejects a protected bootstrap symlink before validating or executing it", async () => {
-    const startup = await renderStartup();
-    fs.renameSync(path.join(home, ".bash_syle_common"), path.join(home, "private.secret.bash"));
-    fs.symlinkSync("private.secret.bash", path.join(home, ".bash_syle_common"));
-    const result = spawnSync("/bin/bash", ["--noprofile", "--norc", "-c", '. "$STARTUP"'], {
-      env: { ...process.env, HOME: home, STARTUP: startup, BASH_ENV: "" },
-      encoding: "utf8",
-      timeout: 5000,
-    });
-    expect(result.status).toBe(1);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toBe("[Warning] safe_source bootstrap validation failed\n");
-  });
-
   it("automatically refreshes stale discovery for the next shell, not the current snapshot", async () => {
     const startup = await renderStartup();
     fs.writeFileSync(startup, fs.readFileSync(startup, "utf8").replace(/# Refreshed at epoch: [0-9]+/, "# Refreshed at epoch: 0"));

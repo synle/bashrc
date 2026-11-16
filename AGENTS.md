@@ -243,11 +243,11 @@ Profile registration is buffered: `registerProfileBlock` /
   already-correct paths. One path per call; `safe_chown [-R] [user] <path>` defaults to `$USER`.
 - **`safe_source`, never `source` / `.`** — `software/bootstrap/safe-source.bash` owns the full implementation; regenerate its common-functions and `run.sh` inclusions rather than editing those blocks.
   `run.sh` persists the full loader and profile-refresh runtime in `~/.bash_syle_common`.
-  Only `.bashrc` defines the minimal two-line loader, without an outer function-availability check; `.bash_profile` delegates with one direct `. '<bashrc>'` command.
-  The fallback rejects file symlinks and protected requested or physical-parent paths before syntax checking; the full loader retains canonical symlink support.
-  Both loaders remember successful loads without resetting per-process state; duplicate full-loader requests warn and skip.
+  `.bashrc` sources `~/.bash_syle_common` directly; `.bash_profile` delegates with one direct `. '<bashrc>'` command.
+  The full loader rejects file symlinks and protected requested or physical-parent paths before syntax checking and retains canonical symlink support.
+  It remembers successful loads without resetting per-process state; duplicate requests warn and skip.
   Failed loads remain retryable; use `--reload` only for intentional repeat execution, including environment activation.
-  Do not redirect warnings away. Exceptions: the common-env section of `run.sh`, the minimal startup loader, and `.bash_profile` delegation before the full helper exists.
+  Do not redirect warnings away. Exceptions: the common-env section of `run.sh` and `.bash_profile` delegation before the full helper exists.
 - **`has_persistent_binary` (scripts) / `type -P` (shell)** for binary detection — never
   `which` or `command -v`. `has_persistent_binary` excludes `/tmp/` hits so the
   bootstrap node fallback can't short-circuit a real install. Plain `type -P` only in

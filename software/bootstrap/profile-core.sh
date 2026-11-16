@@ -740,14 +740,10 @@ function fd_link() {
 alias grep='command grep --color=auto'
 # --- Aliases: File Listing (native ls) ---
 # Native long-listing options, refreshed on profile reload for the current binary.
-_LL_LS_OPTIONS=(-lahF)
-if command ls --version 2> /dev/null | command grep -q GNU; then
-  _LL_LS_OPTIONS+=(--color=auto)
-  if command ls --help 2> /dev/null | command grep -q -- --hyperlink; then
-    _LL_LS_OPTIONS+=(--hyperlink=auto)
-  fi
-else
-  _LL_LS_OPTIONS+=(-G)
+# BSD ls accepts --color=auto, so color no longer depends on GNU detection.
+_LL_LS_OPTIONS=(-lahF --color=auto)
+if command ls --help 2> /dev/null | command grep -q -- --hyperlink; then
+  _LL_LS_OPTIONS+=(--hyperlink=auto)
 fi
 unalias ll 2> /dev/null || true
 
@@ -762,8 +758,18 @@ function ll() {
   Plain ls remains unfiltered. No files are modified."
     return 0
   fi
-  local options=("${_LL_LS_OPTIONS[@]}") statuses=() terminal_output=0
+  local options=("${_LL_LS_OPTIONS[@]}") statuses=() terminal_output=0 single_column=0
   local listing_folder=. operand_count=0 argument
+  # GNU ls keeps long format when -1 is combined with -l; drop -l so both ls variants honor it.
+  for argument in "$@"; do
+    case "$argument" in
+    --) break ;;
+    -1 | --format=single-column) single_column=1 ;;
+    esac
+  done
+  if [ "$single_column" -eq 1 ]; then
+    options=("${options[@]/#-lahF/-ahF}")
+  fi
   if ! declare -F filter_unwanted_and_gitignored > /dev/null; then
     command ls "${options[@]}" "$@"
     return $?
