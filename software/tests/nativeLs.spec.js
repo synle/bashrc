@@ -198,6 +198,21 @@ describe("native ls subprocess", () => {
     expect(result.stdout).toBe("-dash.txt\nfile with spaces.txt\n");
   });
 
+  it("drops long format when GNU single-column output is requested", () => {
+    const result = runListing(["-1", "--", "file with spaces.txt"], { backend: "gnu", invocation: 'll "$@"' });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout.trim().split("\n")).toMatchInlineSnapshot(`
+      [
+        "-ahF",
+        "--color=auto",
+        "-1",
+        "--",
+        "file with spaces.txt",
+      ]
+    `);
+  });
+
   it("does not force color when native listing output is piped", () => {
     const result = runListing(["noise"], { setup: "unset CLICOLOR_FORCE; export TERM=xterm-256color", invocation: 'll "$@"' });
     expect(result.status).toBe(0);

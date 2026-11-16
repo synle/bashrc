@@ -112,7 +112,7 @@ describe(".build/ghostty-config-linux", () => {
     expect(selectGhosttyKeybindExamples(bindings)).toMatchInlineSnapshot(`
       [
         "keybind = alt+t=new_tab",
-        "keybind = alt+q=quit",
+        "keybind = alt+q=close_window",
         "keybind = alt+c=copy_to_clipboard:mixed",
       ]
     `);
@@ -171,7 +171,7 @@ describe(".build/ghostty-config-mac", () => {
     expect(selectGhosttyKeybindExamples(bindings)).toMatchInlineSnapshot(`
       [
         "keybind = cmd+t=new_tab",
-        "keybind = cmd+q=quit",
+        "keybind = cmd+q=close_window",
         "keybind = cmd+c=copy_to_clipboard:mixed",
       ]
     `);
