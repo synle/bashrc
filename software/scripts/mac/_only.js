@@ -302,6 +302,9 @@ async function doWork() {
     # make: use GNU Make (gmake) for .ONESHELL support (macOS ships Make 3.81)
     if type -P gmake &> /dev/null; then alias make='gmake'; fi
 
+    # get battery health for iPad / iOS
+    alias battery_health_ipad_ios='idevicediagnostics ioregentry AppleSmartBattery | grep -A 1 -E "CycleCount|DesignCapacity|NominalChargeCapacity|MaxCapacity" | grep -v '\''^--$'\'' | sed '\''s/^[[:space:]]*//;s/[[:space:]]*$//'\'''
+
     # update: OS package manager update/upgrade only. \`command brew\` bypasses the
     # brew wrapper (snip), which swallows interactive Y/N prompts and hangs the run.
     # --greedy also upgrades casks that self-update (auto_updates / version :latest).
