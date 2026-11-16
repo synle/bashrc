@@ -34,7 +34,7 @@ afterEach(() => {
 function simulateChromeSigning(failureStage) {
   const results = [];
   setSandboxGlobal("execBash", async (command, options) => {
-    if (!command.includes("codesign") || !command.includes("'/Applications/Browser Chrome.app'")) {
+    if (!command.includes("codesign") || !command.includes("'/Applications/Browser Chrome with Flags.app'")) {
       return originalExecBash(command, options);
     }
     const result = spawnSync(
@@ -126,9 +126,9 @@ describe("Mac browser app launchers", () => {
 
     await runScript("software/scripts/mac/_only.js");
 
-    const braveLauncher = fileSystem["/Applications/Browser Brave.app/Contents/MacOS/launcher"];
-    const chromeLauncher = fileSystem["/Applications/Browser Chrome.app/Contents/MacOS/launcher"];
-    const edgeLauncher = fileSystem["/Applications/Browser Edge.app/Contents/MacOS/launcher"];
+    const braveLauncher = fileSystem["/Applications/Browser Brave with Flags.app/Contents/MacOS/launcher"];
+    const chromeLauncher = fileSystem["/Applications/Browser Chrome with Flags.app/Contents/MacOS/launcher"];
+    const edgeLauncher = fileSystem["/Applications/Browser Edge with Flags.app/Contents/MacOS/launcher"];
     expect(braveLauncher).toContain("exec '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'");
     expect(chromeLauncher).toContain("exec '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'");
     expect(edgeLauncher).toContain("exec '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'");
@@ -138,11 +138,11 @@ describe("Mac browser app launchers", () => {
     expect(edgeLauncher).toContain("msUndersideButton,msEdgeSidebarV2");
     expect(chromeLauncher).toContain("# '--disable-web-security' # Local testing/debugging only:");
     expect(chromeLauncher).not.toMatch(/^\s+'--disable-web-security'/m);
-    expect(fileSystem["/Applications/Browser Chrome.app/Contents/Info.plist"]).toContain("local.synle.browser-chrome");
-    expect(fileSystem["/Applications/Browser Chrome.app/Contents/Info.plist"]).toContain(
+    expect(fileSystem["/Applications/Browser Chrome with Flags.app/Contents/Info.plist"]).toContain("local.synle.browser-chrome");
+    expect(fileSystem["/Applications/Browser Chrome with Flags.app/Contents/Info.plist"]).toContain(
       "<key>CFBundleIconFile</key><string>app.icns</string>",
     );
-    expect(fileSystem["/Applications/Browser Chrome.app/Contents/Resources/app.icns"]).toBe("mock browser icon bytes");
+    expect(fileSystem["/Applications/Browser Chrome with Flags.app/Contents/Resources/app.icns"]).toBe("mock browser icon bytes");
     expect(mockExecCommands.filter((command) => command.includes("codesign --force --sign -"))).toHaveLength(3);
 
     const syntax = spawnSync("/bin/bash", ["-n"], { input: chromeLauncher, encoding: "utf8" });
@@ -153,7 +153,9 @@ describe("Mac browser app launchers", () => {
     expect(profile).toContain("function edge()");
     expect(profile).toContain('open "$launcher_app" --args "$@"');
     expect(profile).toContain('echo "Error: $display_name browser not installed." >&2');
-    expect(profile).toContain("'/Applications/Browser Chrome.app' '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'");
+    expect(profile).toContain(
+      "'/Applications/Browser Chrome with Flags.app' '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'",
+    );
     const profileSyntax = spawnSync("/bin/bash", ["-n"], { input: profile, encoding: "utf8" });
     expect(profileSyntax.status, profileSyntax.stderr).toBe(0);
     expect(profile).not.toContain("alias brave=");
@@ -179,13 +181,19 @@ describe("Mac browser app launchers", () => {
     await runScript("software/scripts/mac/_only.js");
 
     expect(signingResults[0].status).toBe(1);
-    expect(log).toHaveBeenCalledWith(">>> [Warning] Browser launcher signing failed; skipping:", "Browser Chrome.app", diagnostic);
+    expect(log).toHaveBeenCalledWith(
+      ">>> [Warning] Browser launcher signing failed; skipping:",
+      "Browser Chrome with Flags.app",
+      diagnostic,
+    );
     expect(fileSystem[`${legacyAppPath}/Contents/MacOS/launcher`]).toBe(legacyLauncher);
     expect(mockExecCommands.some((command) => command.includes("command rm -rf"))).toBe(false);
-    expect(fileSystem["/Applications/Browser Edge.app/Contents/MacOS/launcher"]).toContain("Microsoft Edge.app");
+    expect(fileSystem["/Applications/Browser Edge with Flags.app/Contents/MacOS/launcher"]).toContain("Microsoft Edge.app");
     const profile = fileSystem[BASH_SYLE_PATH];
     expect(profile).toContain("# BEGIN mac-system-setup");
-    expect(profile).toContain("'/Applications/Browser Edge.app' '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'");
+    expect(profile).toContain(
+      "'/Applications/Browser Edge with Flags.app' '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'",
+    );
     const shell = spawnSync("/bin/bash", ["--noprofile", "--norc"], {
       input: `shopt -s expand_aliases\n${profile}\nfunction open() { printf '%s\\n' 'UNEXPECTED_OPEN'; }\ntype update\nchrome\n`,
       encoding: "utf8",
@@ -206,9 +214,9 @@ describe("Mac browser app launchers", () => {
     await runScript("software/scripts/mac/_only.js");
 
     expect(signingResults[0].status).toBe(0);
-    expect(log).toHaveBeenCalledWith(">>> Signed Browser Chrome.app with shared browser launch options.");
+    expect(log).toHaveBeenCalledWith(">>> Signed Browser Chrome with Flags.app with shared browser launch options.");
     expect(fileSystem[BASH_SYLE_PATH]).toContain(
-      "'/Applications/Browser Chrome.app' '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'",
+      "'/Applications/Browser Chrome with Flags.app' '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'",
     );
   });
 
@@ -221,7 +229,7 @@ describe("Mac browser app launchers", () => {
 
     expect(log).toHaveBeenCalledWith(
       ">>> [Warning] Browser launcher signing failed; skipping:",
-      "Browser Chrome.app",
+      "Browser Chrome with Flags.app",
       "No signing output captured.",
     );
     expect(fileSystem[BASH_SYLE_PATH]).toContain(
@@ -245,9 +253,9 @@ describe("Mac browser app launchers", () => {
 
     await runScript("software/scripts/mac/_only.js");
 
-    expect(fileSystem["/Applications/Browser Brave.app/Contents/MacOS/launcher"]).toContain("Brave Browser.app");
-    expect(fileSystem["/Applications/Browser Chrome.app/Contents/MacOS/launcher"]).toContain("Google Chrome.app");
-    expect(fileSystem["/Applications/Browser Edge.app/Contents/MacOS/launcher"]).toContain("Microsoft Edge.app");
+    expect(fileSystem["/Applications/Browser Brave with Flags.app/Contents/MacOS/launcher"]).toContain("Brave Browser.app");
+    expect(fileSystem["/Applications/Browser Chrome with Flags.app/Contents/MacOS/launcher"]).toContain("Google Chrome.app");
+    expect(fileSystem["/Applications/Browser Edge with Flags.app/Contents/MacOS/launcher"]).toContain("Microsoft Edge.app");
     expect(mockExecCommands.filter((command) => command.includes("command rm -rf"))).toEqual([
       `command rm -rf '${legacyAppPaths[0]}' && test ! -e '${legacyAppPaths[0]}' && printf '%s' '${APP_ACTION_MARKER}'`,
       `command rm -rf '${legacyAppPaths[1]}' && test ! -e '${legacyAppPaths[1]}' && printf '%s' '${APP_ACTION_MARKER}'`,
@@ -273,9 +281,9 @@ describe("Mac browser app launchers", () => {
 
     await runScript("software/scripts/mac/_only.js");
 
-    expect(fileSystem["/Applications/Browser Chrome.app/Contents/MacOS/launcher"]).toContain("Google Chrome.app");
-    expect(fileSystem["/Applications/Browser Brave.app/Contents/MacOS/launcher"]).toBeUndefined();
-    expect(fileSystem["/Applications/Browser Edge.app/Contents/MacOS/launcher"]).toBeUndefined();
+    expect(fileSystem["/Applications/Browser Chrome with Flags.app/Contents/MacOS/launcher"]).toContain("Google Chrome.app");
+    expect(fileSystem["/Applications/Browser Brave with Flags.app/Contents/MacOS/launcher"]).toBeUndefined();
+    expect(fileSystem["/Applications/Browser Edge with Flags.app/Contents/MacOS/launcher"]).toBeUndefined();
     expect(fileSystem[`${legacyAppPath}/Contents/MacOS/launcher`]).toContain("Managed flags-only launcher");
     expect(mockExecCommands.some((command) => command.includes(`command rm -rf '${legacyAppPath}'`))).toBe(false);
   });
