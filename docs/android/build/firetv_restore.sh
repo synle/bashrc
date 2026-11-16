@@ -445,3 +445,4 @@ printf '%s\n' "[2/2] Restoring settings to defaults..."
 restore_all_settings
 
 printf '%s\n' ">>> Fire TV restore complete"
+

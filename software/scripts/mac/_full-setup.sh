@@ -433,7 +433,7 @@ installBrewPackageInBackground sqlite
 # implies `--force` inside installBrewPackage, so it is not repeated.
 installBrewPackageInBackground --cask android-platform-tools
 installBrewPackageInBackground --cask font-jetbrains-mono-nerd-font
-installBrewPackageInBackground libimobiledevice  # checking battery health on iPad
+installBrewPackageInBackground libimobiledevice # checking battery health on iPad
 installBrewPackageInBackground java
 # Register brew's openjdk with macOS java_home registry so /usr/bin/java (the Apple
 # stub that delegates to /usr/libexec/java_home) can locate it. Without this symlink
