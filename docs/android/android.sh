@@ -129,8 +129,6 @@ com.sec.android.app.clockpackage # Samsung Clock | [WARNING] Recreate alarms in 
 com.samsung.android.email.provider # Samsung Email client
 com.samsung.android.service.livedrawing # Live Message animated handwriting
 com.samsung.android.app.reminder # Samsung Reminder tasks and alerts
-com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung credential autofill.
-com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Switch autofill providers first.
 com.samsung.android.authfw # Samsung Pass authentication | [WARNING] Samsung Pass biometric sign-in may stop.
 com.samsung.android.spay # Samsung Wallet | [WARNING] Removes Samsung payments and stored passes.
 com.sec.android.app.popupcalculator # Samsung Calculator
@@ -139,7 +137,6 @@ com.samsung.android.app.spage # Samsung Free news and video feed
 com.samsung.android.da.daagent # Dual Messenger | [WARNING] Removes cloned messaging accounts.
 com.samsung.android.smartsuggestions # Samsung contextual suggestions
 com.samsung.android.rubin.app # Customization Service | [WARNING] Removes Samsung personalized suggestions.
-com.samsung.android.smartcallprovider # Smart Call | [WARNING] Removes Hiya caller ID and spam screening.
 com.samsung.android.shortcutbackupservice # Shortcut backup | [WARNING] Removes Samsung shortcut backup support.
 com.microsoft.office.officehubrow # Microsoft 365 document hub
 com.microsoft.skydrive # OneDrive | [WARNING] Stops OneDrive and linked Gallery cloud sync.
@@ -162,17 +159,17 @@ com.facebook.appmanager # Meta app updates
 com.facebook.services # Meta background service integration
 com.facebook.system # Meta app installer
 # --- Bixby ---
-com.samsung.android.bixby.agent # Bixby Voice | [WARNING] Removes Bixby voice and button integration.
-com.samsung.android.bixby.service # Bixby backend services
-com.samsung.android.bixby.wakeup # Hi Bixby hotword detection
+com.samsung.android.bixby.agent # Bixby Voice | [WARNING] Removes Bixby voice and side-button integration; safe when using Google Assistant or Gemini.
+com.samsung.android.bixby.service # Bixby backend services | [WARNING] Remaining Bixby features stop working alongside the agent.
+com.samsung.android.bixby.wakeup # Hi Bixby hotword | [WARNING] Removes always-listening Hi Bixby; safe when Bixby is unused.
 com.samsung.android.app.settings.bixby # Bixby settings
 com.samsung.android.bixbyvision.framework # Bixby Vision camera framework
 com.samsung.android.visionintelligence # Bixby Vision | [WARNING] Removes camera visual search and translation.
 # --- AR and Stickers ---
-com.samsung.android.aremoji # AR Emoji avatars
+com.samsung.android.aremoji # AR Emoji | [WARNING] Removes Samsung AR Emoji avatars and camera avatar stickers; safe when unused.
 com.samsung.android.aremojieditor # AR Emoji avatar editor
 com.samsung.android.ardrawing # AR Doodle camera drawings
-com.samsung.android.app.camera.sticker.facearavatar.preload # Preloaded camera avatar stickers
+com.samsung.android.app.camera.sticker.facearavatar.preload # Camera face AR sticker preload | [WARNING] Removes preloaded avatar stickers; safe when AR Emoji is unused.
 com.sec.android.mimage.avatarstickers # My Emoji sticker packs
 com.samsung.android.arzone # AR camera feature hub
 com.samsung.android.stickercenter # Camera sticker downloads
@@ -187,14 +184,14 @@ com.samsung.sree # Global Goals donation ads and wallpapers
 com.samsung.android.app.tips # Samsung feature tutorials
 # --- Games and Accessories ---
 com.samsung.android.game.gamehome # Gaming Hub | [WARNING] Removes the game library hub.
-com.samsung.android.game.gametools # Game Booster | [WARNING] Removes in-game tools and recording.
+com.samsung.android.game.gametools # Game Booster | [WARNING] Removes the in-game performance overlay, recording, and touch locks; safe unless you use Game Booster.
 com.samsung.android.svoiceime # Samsung voice input | [WARNING] Removes Samsung voice typing.
 com.samsung.android.app.ledcoverdream # LED cover effects | [WARNING] Removes compatible LED case features.
 # --- Optional Edge Panels ---
 com.samsung.android.app.taskedge # Tasks Edge | [WARNING] Removes Edge task shortcuts.
 com.samsung.android.app.clipboardedge # Clipboard Edge | [WARNING] Removes the clipboard panel.
 # --- Samsung Kids ---
-com.samsung.android.kidsinstaller # Samsung Kids installer
+com.samsung.android.kidsinstaller # Samsung Kids installer | [WARNING] Blocks Samsung Kids setup; safe when Kids mode is unused.
 com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe launcher.
 "
 
@@ -216,12 +213,18 @@ DEBLOAT_AGGRESSIVE="
 # com.google.android.apps.wellbeing | [WARNING] Digital Wellbeing; removes Google app timers and focus features.
 # com.samsung.android.app.parentalcare | [WARNING] Samsung parental controls; removes on-device restrictions.
 # com.google.android.gms.supervision | [CRITICAL] Family Link; device supervision depends on this package.
+# --- Telephony Risks ---
+# com.sec.phone | [CRITICAL] Samsung core telephony (baseband, SIM provisioning, calls); removal can break calling and SIM.
+# com.samsung.android.smartcallprovider | [CRITICAL] Samsung/Hiya caller ID and spam screening; removal can disrupt the Phone app and spam screening.
 # --- Shared Services and Connectivity ---
 com.samsung.android.beaconmanager # Nearby device service | [WARNING] Nearby discovery integrations may stop.
 # com.samsung.android.easysetup | [WARNING] Nearby Device Scanning; removes automatic nearby-device setup prompts.
 com.samsung.android.ipsgeofence # Visit In geofencing | [WARNING] Location-triggered Samsung features may stop.
 com.google.android.projection.gearhead # Android Auto | [WARNING] Removes in-car phone projection.
 com.google.ar.core # Google Play Services for AR | [WARNING] AR-dependent apps lose AR features.
+# --- Account and Autofill Risks ---
+com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass; safe when a third-party password manager (Bitwarden, 1Password, Google Password Manager) replaces it.
+com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; safe when a third-party password manager is your autofill service.
 # --- Used Apps - Keep ---
 # com.sec.android.app.shealth | [WARNING] Samsung Health; keep workouts, sleep tracking, and health sync.
 # com.sec.android.app.voicenote | [WARNING] Voice Recorder; keep recording and transcription.
