@@ -502,14 +502,14 @@ com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe l
 # --- Semi-aggressive - opt-in, reversible with android_restore.sh ---
 # Use only when a replacement is already installed and tested.
 DEBLOAT_SEMI_AGGRESSIVE="
-# --- Credentials and Telephony ---
+# --- Samsung Pass and Autofill ---
 com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass; only when a third-party password manager (Bitwarden, 1Password, or Google Password Manager) already stores your credentials and autofill.
 com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; only when a third-party password manager is your autofill service.
-com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior.
-com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya caller ID and spam screening; only when Google Phone caller ID replaces it.
-# --- Samsung Dialer - disable only with a working replacement dialer ---
+# --- Phone, Dialer, and Calling - disable only with a working replacement dialer ---
 com.samsung.android.dialer # Samsung Phone dialer | [CRITICAL] Outgoing calls, contacts integration, and emergency-call UI; disable only when another dialer handles calls.
 com.samsung.android.incallui # Samsung InCall UI | [CRITICAL] In-call screen for answering and ending calls; disabling can leave calls unroutable without a replacement in-call UI.
+com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya caller ID and spam screening; only when Google Phone caller ID replaces it.
+com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior.
 "
 
 # --- Cautious / aggressive - commented entries are opt-in only ---
