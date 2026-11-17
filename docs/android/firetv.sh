@@ -193,7 +193,7 @@ com.android.traceur
 function restore_all_apps() {
   restore_app_collection "$FIRE_TV_DEBLOAT_SAFE" "FIRE_TV_DEBLOAT_SAFE"
   restore_all_settings
-  printf '%s\n' ">>> All Fire TV apps and settings restored"
+  _log_success ">>> All Fire TV apps and settings restored"
 }
 
 ################################################################################
@@ -213,26 +213,26 @@ function _install_latest_github_apk() {
   )"
 
   if [ -z "$apk_url" ]; then
-    printf '%s\n' ">>> $app_name > APK not found in latest $repo release" >&2
+    _log_error ">>> $app_name > APK not found in latest $repo release"
     return 1
   fi
 
   temp_folder="$(command mktemp -d "${TMPDIR:-/tmp}/firetv-apk.XXXXXX")" || return 1
   apk_file="$temp_folder/$app_name.apk"
-  printf '%s\n' ">>> $app_name > Downloading $apk_url"
+  _log_info ">>> $app_name > Downloading $apk_url"
   if ! command curl -fsSL "$apk_url" -o "$apk_file"; then
     command rm -rf "$temp_folder"
     return 1
   fi
 
-  printf '%s\n' ">>> $app_name > Installing"
+  _log_info ">>> $app_name > Installing"
   adb install -r "$apk_file"
   install_status=$?
   command rm -rf "$temp_folder"
   if [ "$install_status" = "0" ]; then
-    printf '%s\n' ">>> $app_name > Installed > Success"
+    _log_success ">>> $app_name > Installed > Success"
   else
-    printf '%s\n' ">>> $app_name > Installed > Error" >&2
+    _log_error ">>> $app_name > Installed > Error"
   fi
   return "$install_status"
 }
@@ -248,7 +248,7 @@ function _configure_personal_dnsfilter() {
   extra_hosts_file="$temp_folder/additionalHosts.txt"
   config_file="$temp_folder/dnsfilter.conf"
 
-  printf '%s\n' ">>> personalDNSfilter > Downloading Amazon blocklist"
+  _log_info ">>> personalDNSfilter > Downloading Amazon blocklist"
   if ! command curl -fsSL "$blocklist_url" -o "$blocklist_file" \
     || ! command curl -fsSL "$extra_hosts_url" -o "$extra_hosts_file" \
     || ! command curl -fsSL "$config_url" \
@@ -263,7 +263,7 @@ function _configure_personal_dnsfilter() {
     return 1
   fi
 
-  printf '%s\n' ">>> personalDNSfilter > Pushing configuration"
+  _log_info ">>> personalDNSfilter > Pushing configuration"
   if ! _adb_shell mkdir -p "$remote_folder" \
     || ! adb push "$blocklist_file" "$remote_folder/FILTERHOSTS.TXT" \
     || ! adb push "$extra_hosts_file" "$remote_folder/additionalHosts.txt" \
@@ -273,15 +273,15 @@ function _configure_personal_dnsfilter() {
   fi
   command rm -rf "$temp_folder"
 
-  printf '%s\n' ">>> personalDNSfilter > Starting VPN activity"
+  _log_info ">>> personalDNSfilter > Starting VPN activity"
   _adb_shell am force-stop dnsfilter.android
   _adb_shell am start -n dnsfilter.android/.DNSProxyActivity
-  printf '%s\n' ">>> personalDNSfilter > Approve VPN access on Fire TV if prompted"
+  _log_info ">>> personalDNSfilter > Approve VPN access on Fire TV if prompted"
 }
 
 function install_apps() {
   if ! adb get-state > /dev/null 2>&1; then
-    printf '%s\n' ">>> No connected ADB device" >&2
+    _log_error ">>> No connected ADB device"
     return 1
   fi
 
@@ -302,9 +302,9 @@ function install_apps() {
 
 # Check host ADB and optionally connect to a user-provided Fire TV device.
 function _greet_and_connect_adb() {
-  printf '%s\n' ">>> Fire TV ADB setup"
+  _log_section ">>> Fire TV ADB setup"
   if ! command -v adb > /dev/null 2>&1; then
-    printf '%s\n' ">>> adb not found on host; install Android platform tools first" >&2
+    _log_error ">>> adb not found on host; install Android platform tools first"
     return 1
   fi
 
@@ -315,15 +315,15 @@ function _greet_and_connect_adb() {
   fi
 
   if [ -n "$adb_target" ]; then
-    printf '%s\n' ">>> Reconnecting ADB to $adb_target"
+    _log_info ">>> Reconnecting ADB to $adb_target"
     adb disconnect > /dev/null 2>&1 || true
     adb kill-server > /dev/null 2>&1 || true
     adb start-server || return 1
     adb connect "$adb_target" || return 1
   else
-    printf '%s\n' ">>> Using current ADB connection"
+    _log_info ">>> Using current ADB connection"
     if ! adb get-state > /dev/null 2>&1; then
-      printf '%s\n' ">>> No connected ADB device" >&2
+      _log_error ">>> No connected ADB device"
       return 1
     fi
   fi

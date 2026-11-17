@@ -281,9 +281,9 @@ DEBLOAT_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$(printf '
 
 # Check host ADB and optionally connect to a user-provided Android device.
 _greet_and_connect_adb() {
-  printf '%s\n' ">>> Android ADB setup"
+  _log_section ">>> Android ADB setup"
   if ! command -v adb > /dev/null 2>&1; then
-    printf '%s\n' ">>> adb not found on host; install Android platform tools first" >&2
+    _log_error ">>> adb not found on host; install Android platform tools first"
     return 1
   fi
 
@@ -294,15 +294,15 @@ _greet_and_connect_adb() {
   fi
 
   if [ -n "$adb_target" ]; then
-    printf '%s\n' ">>> Reconnecting ADB to $adb_target"
+    _log_info ">>> Reconnecting ADB to $adb_target"
     adb disconnect > /dev/null 2>&1 || true
     adb kill-server > /dev/null 2>&1 || true
     adb start-server || return 1
     adb connect "$adb_target" || return 1
   else
-    printf '%s\n' ">>> Using current ADB connection"
+    _log_info ">>> Using current ADB connection"
     if ! adb get-state > /dev/null 2>&1; then
-      printf '%s\n' ">>> No connected ADB device" >&2
+      _log_error ">>> No connected ADB device"
       return 1
     fi
   fi
