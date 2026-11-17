@@ -132,7 +132,7 @@ _run_app_command() {
     return 0
   fi
   case "$APP_ACTION_OUTPUT" in
-    *Success*) return 0 ;;
+  *Success*) return 0 ;;
   esac
   return 1
 }
@@ -149,9 +149,9 @@ _attempt_app_command() {
 
 # True when the package is installed for user 0.
 _package_installed_for_user() {
-  _package_output=$(_adb_shell pm list packages --user 0 "$1" 2>/dev/null)
+  _package_output=$(_adb_shell pm list packages --user 0 "$1" 2> /dev/null)
   case "$_package_output" in
-    *"package:$1"*) return 0 ;;
+  *"package:$1"*) return 0 ;;
   esac
   return 1
 }
