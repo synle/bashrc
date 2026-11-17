@@ -705,6 +705,24 @@ function lsfa() {
   find "${1:-$PWD}" -mindepth 1 -maxdepth 1 -type f -exec realpath {} \; | sort
 }
 
+# Returns path with $HOME replaced by ~
+to_tilde_path() {
+  local target_path="${1:-$PWD}"
+  printf '%s\n' "${target_path/#$HOME/\~}"
+}
+
+# Returns path relative to current $PWD (falls back to absolute/realpath if outside)
+to_relative_path() {
+  local target_path="${1:-$PWD}"
+  if [[ "$target_path" == "$PWD" ]]; then
+    printf '.\n'
+  elif [[ "$target_path" == "$PWD/"* ]]; then
+    printf '%s\n' "${target_path#$PWD/}"
+  else
+    realpath --relative-to="." "$target_path" 2> /dev/null || printf '%s\n' "$target_path"
+  fi
+}
+
 # rg_link: search with native path hyperlinks when ripgrep supports OSC 8.
 # Arguments and status pass through unchanged; pipes and old binaries keep native output.
 function rg_link() {

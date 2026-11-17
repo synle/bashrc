@@ -131,7 +131,7 @@ lint:
 # Combine Android and Fire TV shared sources with their debloat/restore entrypoints.
 .PHONY: build_android
 build_android:
-	bash docs/android/build.sh
+	bash docs/android/build_android.sh
 
 # Build all default steps (prebuild-hosts, build-configs, host-mappings)
 build: build_prebuild_hosts build_configs build_host_mappings
