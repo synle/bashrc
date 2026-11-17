@@ -499,6 +499,16 @@ com.samsung.android.kidsinstaller # Samsung Kids installer | [WARNING] Blocks Sa
 com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe launcher.
 "
 
+# --- Semi-aggressive - opt-in, reversible with android_restore.sh ---
+# Use only when a replacement is already installed and tested.
+DEBLOAT_SEMI_AGGRESSIVE="
+# --- Credentials and Telephony ---
+com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass; only when a third-party password manager (Bitwarden, 1Password, or Google Password Manager) already stores your credentials and autofill.
+com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; only when a third-party password manager is your autofill service.
+com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior.
+com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya caller ID and spam screening; only when Google Phone caller ID replaces it.
+"
+
 # --- Cautious / aggressive - commented entries are opt-in only ---
 # Protected entries also remain in DEBLOAT_IGNORED; do not enable their removal.
 DEBLOAT_AGGRESSIVE="
@@ -511,18 +521,12 @@ DEBLOAT_AGGRESSIVE="
 # com.samsung.android.app.routines | [WARNING] Modes and Routines; removes scheduled and contextual automations.
 # com.samsung.android.app.cocktailbarservice | [WARNING] Edge Panels; removes every Edge panel.
 # com.google.android.gms.supervision | [CRITICAL] Family Link; device supervision depends on this package.
-# --- Telephony Risks ---
-# com.sec.phone | [CRITICAL] Samsung core telephony (baseband, SIM provisioning, calls); removal can break calling and SIM.
-# com.samsung.android.smartcallprovider | [CRITICAL] Samsung/Hiya caller ID and spam screening; removal can disrupt the Phone app and spam screening.
 # --- Shared Services and Connectivity ---
 com.samsung.android.beaconmanager # Nearby device service | [WARNING] Nearby discovery integrations may stop.
 # com.samsung.android.easysetup | [WARNING] Nearby Device Scanning; removes automatic nearby-device setup prompts.
 com.samsung.android.ipsgeofence # Visit In geofencing | [WARNING] Location-triggered Samsung features may stop.
 com.google.android.projection.gearhead # Android Auto | [WARNING] Removes in-car phone projection.
 com.google.ar.core # Google Play Services for AR | [WARNING] AR-dependent apps lose AR features.
-# --- Account and Autofill Risks ---
-com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass; safe when a third-party password manager (Bitwarden, 1Password, Google Password Manager) replaces it.
-com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; safe when a third-party password manager is your autofill service.
 # --- Used Apps - Keep ---
 # Samsung Quick Share and Link to Windows depend on the mdx and mobileservice entries below; keep them out of DEBLOAT_SAFE.
 # com.sec.android.app.shealth | [WARNING] Samsung Health; keep workouts, sleep tracking, and health sync.
@@ -550,7 +554,7 @@ com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Remo
 # com.samsung.android.mdx.quickpanel | [WARNING] Claimed quick-panel identifier (unverified); not confirmed as DeX.
 "
 
-# Never removed by either collection; the debloat entrypoint re-enables these apps.
+# Never removed by any collection; the debloat entrypoint re-enables these apps.
 DEBLOAT_IGNORED="
 com.google.android.apps.docs # Google Drive
 com.google.android.apps.docs.editors.sheets # Google Sheets
@@ -577,9 +581,10 @@ com.samsung.android.forest # Legacy Digital Wellbeing; DeX dependency
 com.samsung.android.app.appsedge # Apps Edge; preserve multi-window support
 "
 
-# Safe is the master collection. Aggressive cannot repeat safe entries.
+# Safe is the master collection. Later collections cannot repeat earlier ones.
 DEBLOAT_SAFE=$(_normalize_app_collection "$DEBLOAT_SAFE" "$DEBLOAT_IGNORED")
-DEBLOAT_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$(printf '%s\n%s\n' "$DEBLOAT_IGNORED" "$DEBLOAT_SAFE")")
+DEBLOAT_SEMI_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_SEMI_AGGRESSIVE" "$(printf '%s\n%s\n' "$DEBLOAT_IGNORED" "$DEBLOAT_SAFE")")
+DEBLOAT_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$(printf '%s\n%s\n%s\n' "$DEBLOAT_IGNORED" "$DEBLOAT_SAFE" "$DEBLOAT_SEMI_AGGRESSIVE")")
 
 # Check host ADB and optionally connect to a user-provided Android device.
 _greet_and_connect_adb() {
@@ -624,5 +629,6 @@ debloat_settings
 _log_section ">> restore_all_settings..."
 restore_all_settings
 restore_app_collection "$DEBLOAT_SAFE" "DEBLOAT_SAFE"
+restore_app_collection "$DEBLOAT_SEMI_AGGRESSIVE" "DEBLOAT_SEMI_AGGRESSIVE"
 restore_app_collection "$DEBLOAT_AGGRESSIVE" "DEBLOAT_AGGRESSIVE"
 
