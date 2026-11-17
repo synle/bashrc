@@ -450,6 +450,10 @@ com.google.android.apps.googleassistant # Assistant shortcut | [WARNING] Removes
 com.google.android.printservice.recommendation # Print service recommendations; not the print spooler
 com.google.android.apps.tachyon # Google Meet video calling
 com.google.android.apps.dynamite # Google Chat messaging
+# --- Keyboards and Browser ---
+com.samsung.android.honeyboard # Samsung Keyboard | [WARNING] Removes Samsung Keyboard; Gboard remains as the working keyboard.
+com.touchtype.swiftkey # SwiftKey | [WARNING] Removes SwiftKey; Gboard remains as the working keyboard.
+com.android.chrome # Chrome | [WARNING] Removes Chrome; verify in-app browsers and passkeys if Chrome is the WebView provider.
 # --- Facebook ---
 com.facebook.appmanager # Meta app updates
 com.facebook.services # Meta background service integration
@@ -487,6 +491,10 @@ com.samsung.android.app.ledcoverdream # LED cover effects | [WARNING] Removes co
 com.samsung.android.app.taskedge # Tasks Edge | [WARNING] Removes Edge task shortcuts.
 com.samsung.android.app.clipboardedge # Clipboard Edge | [WARNING] Removes the clipboard panel.
 # --- Samsung Kids ---
+# Digital Wellbeing and parental controls are optional; keep only if you use screen-time limits.
+com.samsung.android.wellbeing # Samsung Digital Wellbeing | [WARNING] Removes Samsung app timers and focus modes.
+com.google.android.apps.wellbeing # Google Digital Wellbeing | [WARNING] Removes Google app timers and focus modes.
+com.samsung.android.app.parentalcare # Samsung parental controls | [WARNING] Removes on-device parental restrictions; safe when unused.
 com.samsung.android.kidsinstaller # Samsung Kids installer | [WARNING] Blocks Samsung Kids setup; safe when Kids mode is unused.
 com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe launcher.
 "
@@ -496,18 +504,12 @@ com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe l
 DEBLOAT_AGGRESSIVE="
 # --- Replacement and System UI Risks ---
 # com.samsung.android.contacts | [CRITICAL] Samsung Contacts; call/contact integration may break.
-# com.samsung.android.honeyboard | [CRITICAL] Samsung Keyboard; removal can block unlock without a direct-boot replacement.
-# com.touchtype.swiftkey | [CRITICAL] SwiftKey; verify another keyboard works after reboot first.
 # com.samsung.android.dialer | [CRITICAL] Samsung Phone; calling and emergency-call UI may break.
 # com.samsung.android.app.clockpack | [WARNING] Clock style component; fullscreen video breakage reported.
-# com.android.chrome | [WARNING] Chrome; passkeys or WebView dependencies may be affected.
 # com.samsung.android.themestore | [WARNING] Galaxy Themes; theme and wallpaper selection may break.
 # com.samsung.android.app.dressroom | [WARNING] Wallpapers; removal can block wallpaper and color-palette changes.
 # com.samsung.android.app.routines | [WARNING] Modes and Routines; removes scheduled and contextual automations.
 # com.samsung.android.app.cocktailbarservice | [WARNING] Edge Panels; removes every Edge panel.
-# com.samsung.android.wellbeing | [WARNING] Digital Wellbeing; removes Samsung app timers and focus features.
-# com.google.android.apps.wellbeing | [WARNING] Digital Wellbeing; removes Google app timers and focus features.
-# com.samsung.android.app.parentalcare | [WARNING] Samsung parental controls; removes on-device restrictions.
 # com.google.android.gms.supervision | [CRITICAL] Family Link; device supervision depends on this package.
 # --- Telephony Risks ---
 # com.sec.phone | [CRITICAL] Samsung core telephony (baseband, SIM provisioning, calls); removal can break calling and SIM.
@@ -522,13 +524,14 @@ com.google.ar.core # Google Play Services for AR | [WARNING] AR-dependent apps l
 com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass; safe when a third-party password manager (Bitwarden, 1Password, Google Password Manager) replaces it.
 com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; safe when a third-party password manager is your autofill service.
 # --- Used Apps - Keep ---
+# Samsung Quick Share and Link to Windows depend on the mdx and mobileservice entries below; keep them out of DEBLOAT_SAFE.
 # com.sec.android.app.shealth | [WARNING] Samsung Health; keep workouts, sleep tracking, and health sync.
 # com.sec.android.app.voicenote | [WARNING] Voice Recorder; keep recording and transcription.
 # com.microsoft.appmanager | [WARNING] Link to Windows; keep PC calls, messages, and photo access.
-# com.samsung.android.mdx | [WARNING] Link to Windows service; required for Samsung PC integration.
-# com.samsung.android.mdx.kit | [WARNING] MDE framework; shared Quick Share and multi-device connectivity.
-# com.samsung.android.mdx.quickboard | [WARNING] Media output and device controls; quick-panel behavior may break.
-# com.samsung.android.mobileservice | [WARNING] Group Sharing; Samsung account features, including Health, may break.
+# com.samsung.android.mdx | [WARNING] Core Link to Windows / Multi-Device Experience service; required for Samsung Quick Share and PC integration.
+# com.samsung.android.mdx.kit | [WARNING] Multi-Device Experience framework required for Samsung Quick Share and file transfers.
+# com.samsung.android.mdx.quickboard | [WARNING] Media output and device control bridge; used by Samsung Quick Share and multi-device controls.
+# com.samsung.android.mobileservice | [WARNING] Samsung account sync, cloud connectivity, and group sharing; keep for Samsung Quick Share and account features.
 # com.samsung.android.dynamiclock | [WARNING] Dynamic Lock Screen; removal also breaks LockStar customization.
 # --- DeX and Multi-Window - Keep ---
 # com.sec.android.app.desktoplauncher | [CRITICAL] DeX Home; removal breaks the desktop launcher.
@@ -562,10 +565,10 @@ com.samsung.android.app.sharelive # Quick Share tile
 com.sec.android.app.shealth # Samsung Health
 com.sec.android.app.voicenote # Samsung Voice Recorder
 com.microsoft.appmanager # Link to Windows
-com.samsung.android.mdx # Link to Windows service
-com.samsung.android.mdx.kit # Quick Share and MDE framework
-com.samsung.android.mdx.quickboard # Media output and device controls
-com.samsung.android.mobileservice # Group Sharing and Samsung account features
+com.samsung.android.mdx # Link to Windows service; Samsung Quick Share dependency
+com.samsung.android.mdx.kit # Samsung Quick Share and MDE framework
+com.samsung.android.mdx.quickboard # Media output and device controls; Samsung Quick Share dependency
+com.samsung.android.mobileservice # Group Sharing and Samsung account features; Samsung Quick Share dependency
 com.samsung.android.dynamiclock # Dynamic Lock Screen and LockStar
 com.sec.android.app.desktoplauncher # DeX Home launcher
 com.sec.android.desktopmode.uiservice # DeX system UI
