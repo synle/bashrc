@@ -7,4 +7,5 @@ debloat_settings
 _log_section ">> restore_all_settings..."
 restore_all_settings
 restore_app_collection "$DEBLOAT_SAFE" "DEBLOAT_SAFE"
+restore_app_collection "$DEBLOAT_SEMI_AGGRESSIVE" "DEBLOAT_SEMI_AGGRESSIVE"
 restore_app_collection "$DEBLOAT_AGGRESSIVE" "DEBLOAT_AGGRESSIVE"
