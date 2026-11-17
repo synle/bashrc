@@ -142,16 +142,18 @@ com.microsoft.office.officehubrow # Microsoft 365 document hub
 com.microsoft.skydrive # OneDrive | [WARNING] Stops OneDrive and linked Gallery cloud sync.
 # --- Migration and Restore ---
 com.sec.android.easyMover # Smart Switch | [WARNING] Removes phone-to-phone data migration.
-com.google.android.apps.restore # Google restore wizard | [WARNING] Removes Google backup restore setup.
+com.google.android.apps.restore # Google restore/setup migration helper | [WARNING] Keep if you anticipate restoring a device.
 # --- Google Apps ---
 com.google.android.youtube # YouTube video app
 com.google.android.apps.youtube.music # YouTube Music player
 com.google.android.apps.magazines # Google News reader
 com.google.android.apps.subscriptions.red # Google One storage management
 com.google.android.videos # Google TV movies and shows
-com.google.android.feedback # Google feedback and crash reporting
+com.google.android.feedback # Google feedback reporting
+com.google.android.apps.aiwallpapers # AI wallpaper generation
+com.google.android.adservices.api # Android advertising/privacy sandbox services
 com.google.android.apps.googleassistant # Assistant shortcut | [WARNING] Removes the standalone Assistant entrypoint.
-com.google.android.printservice.recommendation # Print service recommendations; not the print spooler
+com.google.android.printservice.recommendation # Printer service recommendations; not the print spooler
 com.google.android.apps.tachyon # Google Meet video calling
 com.google.android.apps.dynamite # Google Chat messaging
 # --- Keyboards and Browser ---
@@ -192,13 +194,18 @@ com.samsung.android.game.gametools # Game Booster | [WARNING] Removes the in-gam
 com.samsung.android.svoiceime # Samsung voice input | [WARNING] Removes Samsung voice typing.
 com.samsung.android.app.ledcoverdream # LED cover effects | [WARNING] Removes compatible LED case features.
 # --- Optional Edge Panels ---
-com.samsung.android.app.taskedge # Tasks Edge | [WARNING] Removes Edge task shortcuts.
+com.samsung.android.app.taskedge # Apps/Tasks Edge | [WARNING] Removes app-pair shortcuts in the Edge panel.
 com.samsung.android.app.clipboardedge # Clipboard Edge | [WARNING] Removes the clipboard panel.
+# --- System Utilities and Samsung Info ---
+com.samsung.android.warrantycare # Warranty and service information
+com.android.egg # Android Easter egg
+com.android.dreams.basic # Basic screensaver/Daydream functionality
+com.android.dreams.phototable # Photo screensaver
+com.android.traceur # Android System Tracing interface
 # --- Samsung Kids ---
 # Digital Wellbeing and parental controls are optional; keep only if you use screen-time limits.
 com.samsung.android.wellbeing # Samsung Digital Wellbeing | [WARNING] Removes Samsung app timers and focus modes.
 com.google.android.apps.wellbeing # Google Digital Wellbeing | [WARNING] Removes Google app timers and focus modes.
-com.samsung.android.app.parentalcare # Samsung parental controls | [WARNING] Removes on-device parental restrictions; safe when unused.
 com.samsung.android.kidsinstaller # Samsung Kids installer | [WARNING] Blocks Samsung Kids setup; safe when Kids mode is unused.
 com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe launcher.
 "
@@ -206,6 +213,13 @@ com.sec.android.app.kidshome # Samsung Kids | [WARNING] Removes the child-safe l
 # --- Semi-aggressive - opt-in, reversible with android_restore.sh ---
 # Use only when a replacement is already installed and tested.
 DEBLOAT_SEMI_AGGRESSIVE="
+# --- Conditional - TTS engine, unused locales, ambient features, and parental controls ---
+com.samsung.SMT # Samsung Text-to-Speech engine, not the Samsung keyboard | [WARNING] Keep if Samsung TTS is used.
+com.samsung.SMT.lang_es_mx_f00 # Mexican Spanish TTS language data | [WARNING] Removes Mexican Spanish TTS data; only when that locale is unused.
+com.samsung.SMT.lang_es_us_l01 # US Spanish TTS language data | [WARNING] Removes US Spanish TTS data; only when that locale is unused.
+com.samsung.SMT.lang_pt_br_l01 # Brazilian Portuguese TTS language data | [WARNING] Removes Brazilian Portuguese TTS data; only when that locale is unused.
+com.google.android.ambient.streaming # Ambient/display streaming functionality | [WARNING] Removes ambient streaming; safe when Ambient Display is unused.
+com.samsung.android.app.parentalcare # Samsung parental controls | [WARNING] Removes on-device parental restrictions; safe when unused.
 # --- Samsung Pass and Autofill ---
 com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass; only when a third-party password manager (Bitwarden, 1Password, or Google Password Manager) already stores your credentials and autofill.
 com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; only when a third-party password manager is your autofill service.
@@ -223,7 +237,7 @@ DEBLOAT_AGGRESSIVE="
 # com.samsung.android.contacts | [CRITICAL] Samsung Contacts; call/contact integration may break.
 # com.samsung.android.app.clockpack | [WARNING] Clock style component; fullscreen video breakage reported.
 # com.samsung.android.themestore | [WARNING] Galaxy Themes; theme and wallpaper selection may break.
-# com.samsung.android.app.dressroom | [WARNING] Wallpapers; removal can block wallpaper and color-palette changes.
+# com.samsung.android.app.dressroom # Wallpaper/style functionality | [WARNING] Newer Fold references associate it with cover-screen wallpaper management; test first.
 # com.samsung.android.app.routines | [WARNING] Modes and Routines; removes scheduled and contextual automations.
 # com.samsung.android.app.cocktailbarservice | [WARNING] Edge Panels; removes every Edge panel.
 # com.google.android.gms.supervision | [CRITICAL] Family Link; device supervision depends on this package.
