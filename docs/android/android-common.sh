@@ -2,23 +2,73 @@
 
 SETTINGS_APPLIED=""
 
+# --- Logging ---
+_LOG_COLOR_RESET='\033[0m'
+_LOG_COLOR_BLUE='\033[0;34m'
+_LOG_COLOR_GREEN='\033[0;32m'
+_LOG_COLOR_RED='\033[0;31m'
+_LOG_COLOR_GREY='\033[0;90m'
+
+_log_color_enabled() {
+  [ "${TERM:-}" != "dumb" ] && [ -t 1 ]
+}
+
+_log_error_color_enabled() {
+  [ "${TERM:-}" != "dumb" ] && [ -t 2 ]
+}
+
+_log_color() {
+  _log_color_code=$1
+  _log_message=$2
+  if _log_color_enabled; then
+    printf '%b%s%b\n' "$_log_color_code" "$_log_message" "$_LOG_COLOR_RESET"
+  else
+    printf '%s\n' "$_log_message"
+  fi
+}
+
+_log_failure() {
+  _log_color "$_LOG_COLOR_RED" "$1"
+}
+
+_log_section() {
+  _log_color "$_LOG_COLOR_BLUE" "$1"
+}
+
+_log_info() {
+  _log_color "$_LOG_COLOR_GREY" "$1"
+}
+
+_log_success() {
+  _log_color "$_LOG_COLOR_GREEN" "$1"
+}
+
+_log_error() {
+  _log_message=$1
+  if _log_error_color_enabled; then
+    printf '%b%s%b\n' "$_LOG_COLOR_RED" "$_log_message" "$_LOG_COLOR_RESET" >&2
+  else
+    printf '%s\n' "$_log_message" >&2
+  fi
+}
+
 # Run an Android command through the host's connected ADB device.
 # stdin is redirected so ADB never consumes app-collection loop input.
 _adb_shell() {
-  adb shell "$@" </dev/null
+  adb shell "$@" < /dev/null
 }
 
 _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  printf '%s\n' ">>> setting put $*"
+  _log_info ">>> setting put $*"
   _adb_shell settings put "$@" > /dev/null 2>&1
 }
 
 _restore_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
-  printf '%s\n' ">>> setting restore $*"
+  _log_info ">>> setting restore $*"
   _adb_shell settings delete "$@" > /dev/null 2>&1
 }
 
@@ -27,7 +77,7 @@ restore_all_settings() {
     [ -z "$setting_namespace" ] && continue
     _restore_setting "$setting_namespace" "$setting_key"
   done
-  printf '%s\n' ">>> all settings restored to defaults"
+  _log_success ">>> all settings restored to defaults"
 }
 
 # Return unique package names, one per line, excluding supplied package names.
@@ -90,13 +140,19 @@ _restore_app() {
 }
 
 _log_app_action() {
-  app=$1
-  collection_name=$2
-  status=$3
-  action=$4
-  idx=$5
-  total=$6
-  printf '>>> %s > %s > %s > %s > [%s/%s]\n' "$app" "$collection_name" "$status" "$action" "$idx" "$total"
+  _app_action_app=$1
+  _app_action_collection=$2
+  _app_action_status=$3
+  _app_action_name=$4
+  _app_action_idx=$5
+  _app_action_total=$6
+  _app_action_percentage=$((_app_action_idx * 100 / _app_action_total))
+  _app_action_line=$(printf '>>> %s > %s > %s > %s > [%s/%s - %s%%]' "$_app_action_app" "$_app_action_collection" "$_app_action_status" "$_app_action_name" "$_app_action_idx" "$_app_action_total" "$_app_action_percentage")
+  if [ "$_app_action_status" = "Success" ]; then
+    _log_success "$_app_action_line"
+  else
+    _log_failure "$_app_action_line"
+  fi
 }
 
 _run_app_collection_action() {
@@ -107,7 +163,7 @@ _run_app_collection_action() {
   idx=0
   normalized_apps=$(_normalize_app_collection "$apps" "")
 
-  printf '%s\n' ">> ${action}_app_collection > ${collection_name} (${total} apps)..."
+  _log_section ">> ${action}_app_collection > ${collection_name} (${total} apps)..."
 
   if [ -z "$normalized_apps" ]; then
     return 0
@@ -129,7 +185,7 @@ _run_app_collection_action() {
         _log_app_action "$app" "$collection_name" "Error" "Restored" "$idx" "$total"
       fi
     fi
-  done <<EOF
+  done << EOF
 $normalized_apps
 EOF
 }
