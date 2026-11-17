@@ -211,6 +211,9 @@ com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass;
 com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; only when a third-party password manager is your autofill service.
 com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior.
 com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya caller ID and spam screening; only when Google Phone caller ID replaces it.
+# --- Samsung Dialer - disable only with a working replacement dialer ---
+com.samsung.android.dialer # Samsung Phone dialer | [CRITICAL] Outgoing calls, contacts integration, and emergency-call UI; disable only when another dialer handles calls.
+com.samsung.android.incallui # Samsung InCall UI | [CRITICAL] In-call screen for answering and ending calls; disabling can leave calls unroutable without a replacement in-call UI.
 "
 
 # --- Cautious / aggressive - commented entries are opt-in only ---
@@ -218,7 +221,6 @@ com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya cal
 DEBLOAT_AGGRESSIVE="
 # --- Replacement and System UI Risks ---
 # com.samsung.android.contacts | [CRITICAL] Samsung Contacts; call/contact integration may break.
-# com.samsung.android.dialer | [CRITICAL] Samsung Phone; calling and emergency-call UI may break.
 # com.samsung.android.app.clockpack | [WARNING] Clock style component; fullscreen video breakage reported.
 # com.samsung.android.themestore | [WARNING] Galaxy Themes; theme and wallpaper selection may break.
 # com.samsung.android.app.dressroom | [WARNING] Wallpapers; removal can block wallpaper and color-palette changes.
