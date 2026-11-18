@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 
 # Fire TV Stick - debloat and optimize.
-# Shared settings and app lists. Not run directly - use with firetv.debloat.sh or firetv.restore.sh.
+# Shared settings and app lists. Not run directly - use with android-tv-fire.debloat.sh or android-tv-fire.restore.sh.
 #
 # Debloat:
-#   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/android-common.sh \
-#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.sh \
-#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.debloat.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/common-android.sh \
+#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/android-tv-fire.sh \
+#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/android-tv-fire.debloat.sh | bash
 #
 # Restore:
-#   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/android-common.sh \
-#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.sh \
-#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.restore.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/common-android.sh \
+#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/android-tv-fire.sh \
+#     https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/android-tv-fire.restore.sh | bash
 
-# SOURCE docs/android/android-common.sh
+# SOURCE docs/android/common-android.sh
 
 ################################################################################
 # --- Settings ---

@@ -3,14 +3,17 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import { spawnSync } from "child_process";
 
+/** Shared ADB helper source; all ADB commands run through the fixture stub. */
+const COMMON_SOURCE = fs.readFileSync("docs/android/common-android.sh", "utf8");
+
 /** Shared Android source; all ADB commands run through the fixture stub. */
-const ANDROID_SOURCE = fs.readFileSync("docs/android/android.sh", "utf8");
+const ANDROID_SOURCE = fs.readFileSync("docs/android/android-mobile.sh", "utf8");
 
 /** Entrypoints exercise the same collections as a normal cleanup or restore. */
-const DEBLOAT_SOURCE = fs.readFileSync("docs/android/android.debloat.sh", "utf8");
+const DEBLOAT_SOURCE = fs.readFileSync("docs/android/android-mobile.debloat.sh", "utf8");
 
 /** Restore entrypoint must also leave protected package state alone. */
-const RESTORE_SOURCE = fs.readFileSync("docs/android/android.restore.sh", "utf8");
+const RESTORE_SOURCE = fs.readFileSync("docs/android/android-mobile.restore.sh", "utf8");
 
 /** User-selected features and known shared dependencies must never be removed. */
 const PROTECTED_PACKAGES = [
@@ -52,7 +55,7 @@ const NEW_REMOVALS = [
  */
 function runAndroid(entrypoint) {
   return spawnSync("/bin/sh", ["-s"], {
-    input: `adb() { printf 'ADB %s\\n' "$*" >&3; }\nexec 3>&1\n${ANDROID_SOURCE}\n${entrypoint}`,
+    input: `adb() { printf 'ADB %s\\n' "$*" >&3; }\nexec 3>&1\n${COMMON_SOURCE}\n${ANDROID_SOURCE}\n${entrypoint}`,
     env: { ...process.env, BASH_ENV: "/dev/null", ENV: "/dev/null" },
     encoding: "utf8",
     timeout: 5000,
@@ -61,8 +64,8 @@ function runAndroid(entrypoint) {
 }
 
 describe("Android debloat package policy", () => {
-  it("keeps protected integrations out of both normalized removal collections", () => {
-    const result = runAndroid('printf \'%s\\n\' "$DEBLOAT_SAFE" "$DEBLOAT_AGGRESSIVE"');
+  it("keeps protected integrations out of every normalized removal collection", () => {
+    const result = runAndroid('printf \'%s\\n\' "$DEBLOAT_SAFE" "$DEBLOAT_SEMI_AGGRESSIVE" "$DEBLOAT_AGGRESSIVE"');
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("com.samsung.android.smartcallprovider\n");
     expect(PROTECTED_PACKAGES.filter((name) => result.stdout.includes(`\n${name}\n`))).toMatchInlineSnapshot(`[]`);
@@ -100,11 +103,11 @@ describe("Android debloat package policy", () => {
     expect(PROTECTED_PACKAGES.filter((name) => result.stdout.includes(`ADB shell pm enable ${name}\n`))).toMatchInlineSnapshot(`[]`);
   });
 
-  it("keeps high-risk replacement apps out of default cleanup", () => {
+  it("runs active semi-aggressive replacements but keeps commented aggressive apps", () => {
     const result = runAndroid(DEBLOAT_SOURCE);
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).not.toContain("ADB shell pm uninstall com.samsung.android.honeyboard\n");
-    expect(result.stdout).not.toContain("ADB shell pm uninstall com.samsung.android.dialer\n");
+    expect(result.stdout).toContain("ADB shell pm uninstall com.samsung.android.honeyboard\n");
+    expect(result.stdout).toContain("ADB shell pm uninstall com.samsung.android.dialer\n");
     expect(result.stdout).not.toContain("ADB shell pm uninstall com.samsung.android.app.dressroom\n");
     expect(result.stdout).not.toContain("ADB shell pm uninstall com.google.android.gms.supervision\n");
   });

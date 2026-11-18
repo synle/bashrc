@@ -13,12 +13,12 @@ make build_android
 `make format` also regenerates these scripts after its formatting steps finish, including when Make runs in parallel.
 The builder combines each shared source with its matching action fragment without executing ADB or downloading apps:
 
-| Shared source         | Action fragment               | Generated standalone script             |
-| --------------------- | ----------------------------- | --------------------------------------- |
-| `android-mobile.sh`   | `android-mobile.debloat.sh`   | `build/android-mobile_debloat.sh`       |
-| `android-mobile.sh`   | `android-mobile.restore.sh`   | `build/android-mobile_restore.sh`       |
-| `android-tv-fire.sh`  | `android-tv-fire.debloat.sh`  | `build/android-tv-fire_debloat.sh`      |
-| `android-tv-fire.sh`  | `android-tv-fire.restore.sh`  | `build/android-tv-fire_restore.sh`      |
+| Shared source        | Action fragment              | Generated standalone script        |
+| -------------------- | ---------------------------- | ---------------------------------- |
+| `android-mobile.sh`  | `android-mobile.debloat.sh`  | `build/android-mobile_debloat.sh`  |
+| `android-mobile.sh`  | `android-mobile.restore.sh`  | `build/android-mobile_restore.sh`  |
+| `android-tv-fire.sh` | `android-tv-fire.debloat.sh` | `build/android-tv-fire_debloat.sh` |
+| `android-tv-fire.sh` | `android-tv-fire.restore.sh` | `build/android-tv-fire_restore.sh` |
 
 Edit the shared sources or action fragments, not the generated scripts.
 Each output is executable and syntax-checked before replacing its previous version.
