@@ -348,3 +348,100 @@ remove_app_collection() {
 restore_app_collection() {
   _run_app_collection_action "restore" "${2:-collection}" "$1"
 }
+
+# Print the host selection state for one package:
+# "enabled", "disabled", "mixed", or "none".
+_app_links_selection_state() {
+  _adb_shell cmd package get-app-links --user 0 "$1" 2> /dev/null | command tr -d '\r' | command awk '
+    /Selection state:/ { in_selection = 1; next }
+    in_selection && /^[[:space:]]*Enabled:[[:space:]]*$/ { section = "enabled"; next }
+    in_selection && /^[[:space:]]*Disabled:[[:space:]]*$/ { section = "disabled"; next }
+    in_selection && /^[[:space:]]+[^[:space:]]/ {
+      if (section == "enabled") enabled++
+      else if (section == "disabled") disabled++
+    }
+    END {
+      if (enabled > 0 && disabled > 0) print "mixed"
+      else if (enabled > 0) print "enabled"
+      else if (disabled > 0) print "disabled"
+      else print "none"
+    }
+  '
+}
+
+# Enable or reset supported-link handling for every package in a collection.
+# "enable" turns user selection on for all declared hosts; "reset" disables it.
+# The set command does not report domains it could not apply, so verify the
+# resulting selection state before counting a package as handled.
+_run_app_links_action() {
+  _links_action=$1
+  _links_collection=$2
+  _links_apps=$3
+  _links_total=$(_count_app_collection "$_links_apps")
+  _links_idx=0
+  _links_failures=0
+  _links_error_log=""
+  _links_normalized=$(_normalize_app_collection "$_links_apps" "")
+
+  _log_section ">> ${_links_action}_app_links > ${_links_collection} (${_links_total} apps)..."
+
+  if [ -z "$_links_normalized" ]; then
+    return 0
+  fi
+
+  if [ "$_links_action" = "reset" ]; then
+    _links_selected=false
+    _links_want=disabled
+    _links_result="Reset"
+  else
+    _links_selected=true
+    _links_want=enabled
+    _links_result="Enabled"
+  fi
+
+  while IFS= read -r app; do
+    [ -z "$app" ] && continue
+    _links_idx=$((_links_idx + 1))
+    if ! package_exists "$app"; then
+      _log_app_action "$app" "$_links_collection" "Success" "$_APP_RESULT_NOT_FOUND" "$_links_idx" "$_links_total"
+      continue
+    fi
+    APP_ACTION_ERROR=""
+    _attempt_app_command cmd package set-app-links-user-selection --user 0 --package "$app" "$_links_selected" all
+    _links_state=$(_app_links_selection_state "$app")
+    if [ "$_links_state" = "$_links_want" ]; then
+      _log_app_action "$app" "$_links_collection" "Success" "$_links_result" "$_links_idx" "$_links_total"
+      continue
+    fi
+    if [ "$_links_state" = "none" ]; then
+      _log_app_action "$app" "$_links_collection" "Warning" "No supported links" "$_links_idx" "$_links_total"
+      continue
+    fi
+    _links_failures=$((_links_failures + 1))
+    if [ -z "$_links_error_log" ]; then
+      _links_error_log=$(_create_app_action_error_log "app-links")
+    fi
+    if [ -n "$_links_error_log" ]; then
+      _append_app_action_error "$_links_error_log" "$app" "$APP_ACTION_ERROR selection=$_links_state"
+    fi
+    _log_app_action "$app" "$_links_collection" "Error" "Links $_links_state" "$_links_idx" "$_links_total"
+  done << EOF
+$_links_normalized
+EOF
+
+  if [ -n "$_links_error_log" ]; then
+    _log_error ">>> ${_links_failures}/${_links_total} failed; command output: ${_links_error_log}"
+  elif [ "$_links_failures" -gt 0 ]; then
+    _log_error ">>> ${_links_failures}/${_links_total} failed; could not create an error log"
+  fi
+}
+
+# Enable supported app links for the given package collection.
+enable_app_links() {
+  _run_app_links_action "enable" "${2:-collection}" "$1"
+}
+
+# Return supported app links for the given package collection to disabled.
+reset_app_links() {
+  _run_app_links_action "reset" "${2:-collection}" "$1"
+}

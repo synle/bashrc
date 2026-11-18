@@ -322,6 +322,26 @@ com.samsung.android.cidmanager # Samsung Carrier ID manager | [CRITICAL] Needed 
 com.samsung.sdm # Samsung carrier/OMC config provider | [CRITICAL] Needed for eSIM management; disabled carrier config can block eSIM activation.
 "
 
+# --- App Links ---
+# Patched apps keep upstream hosts but not upstream signing keys, so Android
+# domain verification cannot pass. Debloat forces user selection on for these
+# packages; restore returns every declared host to disabled.
+APP_LINKS_PACKAGES="
+# --- Patched Apps ---
+com.reddit.frontpage # Reddit (Morphe patch)
+app.morphe.android.youtube # YouTube (Morphe patch)
+app.morphe.android.apps.youtube.music # YouTube Music (Morphe patch)
+com.google.android.apps.photos # Google Photos
+# --- Common Apps ---
+com.discord # Discord
+com.facebook.katana # Facebook
+com.facebook.orca # Facebook Messenger | [WARNING] Also claims facebook.com hosts; shares them with Facebook.
+com.google.android.calendar # Google Calendar
+com.google.android.gm # Gmail
+com.google.android.apps.maps # Google Maps
+us.zoom.videomeetings # Zoom
+"
+
 # Safe is the master collection. Later collections cannot repeat earlier ones.
 DEBLOAT_SAFE=$(_normalize_app_collection "$DEBLOAT_SAFE" "$DEBLOAT_IGNORED")
 DEBLOAT_SEMI_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_SEMI_AGGRESSIVE" "$(printf '%s\n%s\n' "$DEBLOAT_IGNORED" "$DEBLOAT_SAFE")")

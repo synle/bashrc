@@ -36,6 +36,7 @@ bash docs/android/build/android-tv-fire_restore.sh
 Choose only the operation intended for your device; these are alternatives, not a sequence.
 Review package lists and settings, connect ADB to the intended device, and complete the backup steps below before cleanup.
 Generation preserves the existing device actions; restore resets managed settings to defaults rather than recovering a prior backup.
+Mobile debloat enables supported app links for `APP_LINKS_PACKAGES`; restore returns those hosts to disabled.
 Fire TV debloat retains its network-dependent application installation steps.
 
 https://github.com/synle/bashrc/blob/master/docs/android/android-mobile.sh
