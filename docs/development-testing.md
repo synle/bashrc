@@ -243,7 +243,7 @@ make format_build_include  # process BEGIN/END markers
 make format_ci_binaries    # regenerate the ci-binary-checks block
 make build_all             # configs, hosts, webapp, postbuild
 make build_installer       # .build/install-bashrc.sh self-extracting installer
-make build_android         # docs/android/build/{android,firetv}_{debloat,restore}.sh standalone host scripts
+make build_android         # docs/android/build/{android-mobile,android-tv-fire}_{debloat,restore}.sh standalone host scripts
 make test_unit             # vitest, vitest.config.js
 make precommit             # lint + complete default unit suite, dot reporter and failing-test console logs
 make lint                  # oxlint correctness pass (.oxlintrc.json)

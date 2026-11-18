@@ -1,19 +1,19 @@
 #!/bin/sh
 
 # Samsung Z Fold5 - S24 Ultra - Tab S9 Ultra
-# Shared settings and app lists. Not run directly - use with android.debloat.sh or android.restore.sh.
+# Shared settings and app lists. Not run directly - use with android-mobile.debloat.sh or android-mobile.restore.sh.
 #
 # Debloat:
-# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android-common.sh?raw=1 \
-#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=1 \
-#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android.debloat.sh?raw=1 | sh
+# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/common-android.sh?raw=1 \
+#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android-mobile.sh?raw=1 \
+#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android-mobile.debloat.sh?raw=1 | sh
 #
 # Restore:
-# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android-common.sh?raw=1 \
-#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=1 \
-#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android.restore.sh?raw=1 | sh
+# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/common-android.sh?raw=1 \
+#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android-mobile.sh?raw=1 \
+#   https://github.com/synle/bashrc/blob/HEAD/docs/android/android-mobile.restore.sh?raw=1 | sh
 
-# SOURCE docs/android/android-common.sh
+# SOURCE docs/android/common-android.sh
 
 ################################################################################
 # --- Setting tweaks ---

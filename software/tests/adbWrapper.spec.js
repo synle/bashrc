@@ -1,4 +1,4 @@
-/** Behavioral checks for the profile's server-resetting ADB wrapper. */
+/** Behavioral checks for the profile's network-resetting ADB wrapper. */
 import { describe, it, expect } from "vitest";
 import { spawnSync } from "child_process";
 import { mkdtempSync, readFileSync, writeFileSync, symlinkSync, rmSync } from "fs";
@@ -73,17 +73,19 @@ exit "$ADB_STATUS"
 
 describe("adb profile wrapper", () => {
   it.each([
-    [["usb"], "CALL\n<kill-server>\nCALL\n<usb>\n"],
+    [["usb"], "CALL\n<usb>\n"],
     [["connect", "192.0.2.1:5555"], "CALL\n<kill-server>\nCALL\n<connect>\n<192.0.2.1:5555>\n"],
-    [["devices", "-l"], "CALL\n<kill-server>\nCALL\n<devices>\n<-l>\n"],
+    [["pair", "192.0.2.1:5555", "123456"], "CALL\n<kill-server>\nCALL\n<pair>\n<192.0.2.1:5555>\n<123456>\n"],
+    [["disconnect", "192.0.2.1:5555"], "CALL\n<kill-server>\nCALL\n<disconnect>\n<192.0.2.1:5555>\n"],
+    [["devices", "-l"], "CALL\n<devices>\n<-l>\n"],
     [["tcpip", "5555"], "CALL\n<kill-server>\nCALL\n<tcpip>\n<5555>\n"],
-    [["reconnect"], "CALL\n<kill-server>\nCALL\n<reconnect>\n"],
+    [["reconnect"], "CALL\n<reconnect>\n"],
     [
       ["-s", "device serial", "shell", "printf '%s'", "", "a\\b;$(false)\n\u00e9"],
-      "CALL\n<kill-server>\nCALL\n<-s>\n<device serial>\n<shell>\n<printf '%s'>\n<>\n<a\\b;$(false)\n\u00e9>\n",
+      "CALL\n<-s>\n<device serial>\n<shell>\n<printf '%s'>\n<>\n<a\\b;$(false)\n\u00e9>\n",
     ],
-    [[], "CALL\n<kill-server>\nCALL\n"],
-  ])("stops the server before forwarding %j unchanged", (args, output) => {
+    [[], "CALL\n"],
+  ])("forwards %j with the intended server reset", (args, output) => {
     const result = runWrapper(args);
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toBe(output);
@@ -111,10 +113,10 @@ describe("adb profile wrapper", () => {
     expect(result.stderr).toBe("");
   });
 
-  it("preserves the requested command's failure status after successful shutdown", () => {
+  it("preserves the requested command's failure status", () => {
     const result = runWrapper(["usb"], { status: 7 });
     expect(result.status).toBe(7);
-    expect(result.stdout).toBe("CALL\n<kill-server>\nCALL\n<usb>\n");
+    expect(result.stdout).toBe("CALL\n<usb>\n");
     expect(result.stderr).toBe("");
   });
 
@@ -125,11 +127,11 @@ describe("adb profile wrapper", () => {
     expect(result.stderr).toBe("");
   });
 
-  it("adds wrapper help while still resetting and forwarding native help", () => {
+  it("adds wrapper help while forwarding native help", () => {
     const result = runWrapper(["--help"], { status: 3 });
     expect(result.status).toBe(3);
-    expect(result.stdout).toBe("CALL\n<kill-server>\nCALL\n<--help>\n");
-    expect(result.stderr).toContain("adb: stop the server before forwarding ADB commands");
+    expect(result.stdout).toBe("CALL\n<--help>\n");
+    expect(result.stderr).toContain("adb: stop the server before wireless/network ADB commands");
   });
 
   it("preserves Windows adb.exe routing without an alias bypassing the wrapper", async () => {
@@ -144,7 +146,7 @@ describe("adb profile wrapper", () => {
     await context.doWork();
     const result = runWrapper(["usb"], { binary: "adb.exe", windows: true, profile: `shopt -s expand_aliases\n${profile}` });
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toBe("CALL\n<kill-server>\nCALL\n<usb>\n");
+    expect(result.stdout).toBe("CALL\n<usb>\n");
     expect(result.stderr).toBe("");
   });
 

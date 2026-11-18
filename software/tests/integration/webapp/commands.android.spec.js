@@ -25,16 +25,16 @@ describe("command snapshots", () => {
           "title": "software/bootstrap/setup.sh",
         },
         {
-          "hash": "97017f799ed420e3de67fce2b6f9a91f",
-          "title": "docs/android/android.debloat.sh",
+          "hash": "4a4c050d62116ebd25cba1d1377c81ce",
+          "title": "docs/android/android-mobile.debloat.sh",
         },
         {
-          "hash": "3bd61488cf21bc4a7a45c9c3f7e44e10",
-          "title": "docs/android/android.restore.sh",
+          "hash": "50f92c6f19d8793ccba15395d82af437",
+          "title": "docs/android/android-mobile.restore.sh",
         },
         {
-          "hash": "4e155bdb827620396aaf844a1fa9a914",
-          "title": "docs/android/android.sh",
+          "hash": "0023a05b74f8ed4cfd97bde5cf825501",
+          "title": "docs/android/android-mobile.sh",
         },
         {
           "hash": "94d83862edede417a2c58712e6f75a49",

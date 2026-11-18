@@ -5,7 +5,7 @@
 Run the builder from the repository root, or invoke it by its absolute path from another folder:
 
 ```bash
-bash docs/android/build.sh
+bash docs/android/build_android.sh
 # Equivalent focused Make target:
 make build_android
 ```
@@ -13,12 +13,12 @@ make build_android
 `make format` also regenerates these scripts after its formatting steps finish, including when Make runs in parallel.
 The builder combines each shared source with its matching action fragment without executing ADB or downloading apps:
 
-| Shared source | Action fragment      | Generated standalone script |
-| ------------- | -------------------- | --------------------------- |
-| `android.sh`  | `android.debloat.sh` | `build/android_debloat.sh`  |
-| `android.sh`  | `android.restore.sh` | `build/android_restore.sh`  |
-| `firetv.sh`   | `firetv.debloat.sh`  | `build/firetv_debloat.sh`   |
-| `firetv.sh`   | `firetv.restore.sh`  | `build/firetv_restore.sh`   |
+| Shared source        | Action fragment              | Generated standalone script        |
+| -------------------- | ---------------------------- | ---------------------------------- |
+| `android-mobile.sh`  | `android-mobile.debloat.sh`  | `build/android-mobile_debloat.sh`  |
+| `android-mobile.sh`  | `android-mobile.restore.sh`  | `build/android-mobile_restore.sh`  |
+| `android-tv-fire.sh` | `android-tv-fire.debloat.sh` | `build/android-tv-fire_debloat.sh` |
+| `android-tv-fire.sh` | `android-tv-fire.restore.sh` | `build/android-tv-fire_restore.sh` |
 
 Edit the shared sources or action fragments, not the generated scripts.
 Each output is executable and syntax-checked before replacing its previous version.
@@ -27,10 +27,10 @@ You can copy a generated script elsewhere and run it without the source fragment
 Run the selected script from **Bash on your computer**, not inside `adb shell`:
 
 ```bash
-bash docs/android/build/android_debloat.sh
-bash docs/android/build/android_restore.sh
-bash docs/android/build/firetv_debloat.sh
-bash docs/android/build/firetv_restore.sh
+bash docs/android/build/android-mobile_debloat.sh
+bash docs/android/build/android-mobile_restore.sh
+bash docs/android/build/android-tv-fire_debloat.sh
+bash docs/android/build/android-tv-fire_restore.sh
 ```
 
 Choose only the operation intended for your device; these are alternatives, not a sequence.
@@ -38,7 +38,7 @@ Review package lists and settings, connect ADB to the intended device, and compl
 Generation preserves the existing device actions; restore resets managed settings to defaults rather than recovering a prior backup.
 Fire TV debloat retains its network-dependent application installation steps.
 
-https://github.com/synle/bashrc/blob/master/docs/android/android.sh
+https://github.com/synle/bashrc/blob/master/docs/android/android-mobile.sh
 
 ## Wireless Debugging
 

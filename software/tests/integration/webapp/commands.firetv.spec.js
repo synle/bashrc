@@ -17,16 +17,16 @@ describe("command snapshots", () => {
     expect(blocks).toMatchInlineSnapshot(`
       [
         {
-          "hash": "60a2d4007e474c56d70945a7296f0a49",
-          "title": "docs/android/firetv.sh",
+          "hash": "07cd63169f9da659332a12240c50e322",
+          "title": "docs/android/android-tv-fire.sh",
         },
         {
-          "hash": "9b0e437021409a81bbdb216f02be231e",
-          "title": "docs/android/firetv.debloat.sh",
+          "hash": "754a91d7dbb85222f518e8c706fa3ec9",
+          "title": "docs/android/android-tv-fire.debloat.sh",
         },
         {
-          "hash": "6eb581b6c06c94605c93867df8be5a5b",
-          "title": "docs/android/firetv.restore.sh",
+          "hash": "aaf9164b2364d80e072502ed24787dd8",
+          "title": "docs/android/android-tv-fire.restore.sh",
         },
       ]
     `);
