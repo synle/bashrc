@@ -15,6 +15,12 @@
 
 # SOURCE docs/android/common-android.sh
 
+# Verified default apps for the Samsung phones covered by this list.
+_DEFAULT_IME="com.akshaykadam.pixelboard/com.android.inputmethod.latin.LatinIME"
+_DEFAULT_HOME_COMPONENT="com.teslacoilsw.launcher/.NovaLauncher"
+_DEFAULT_SMS_PACKAGE="com.google.android.apps.messaging"
+_DEFAULT_DIALER_PACKAGE="com.google.android.dialer"
+
 ################################################################################
 # --- Setting tweaks ---
 ################################################################################
@@ -27,26 +33,25 @@ debloat_settings() {
 
   # ---- Performance & Hardware ----
   _put_setting global ram_expand_size_list 0            # Disable RAM Plus (Virtual RAM). Apps killed sooner when RAM is full, but 12GB devices don't need swap.
-  _put_setting global force_gpu_rendering 1             # Force GPU for 2D drawing. Largely no-op on modern One UI. Can cause glitches in some banking/legacy apps.
+  _restore_setting global force_gpu_rendering           # Use the Android default; forcing GPU can glitch banking and legacy apps.
   _put_setting global disable_window_blurs 1            # Disable gaussian blur behind notifications/dialogs. Big performance win, slightly less polished look.
   _put_setting global sem_enhanced_cpu_responsiveness 0 # Disable Samsung CPU boost on touch. Slightly less snappy, better battery life. No harm.
 
   # ---- Connectivity & Scanning ----
-  _put_setting global wifi_scan_always_enabled 0            # Disable Wi-Fi scanning when Wi-Fi is off. Degrades indoor/urban location accuracy (GPS still works).
-  _put_setting global ble_scan_always_enabled 0             # Disable Bluetooth scanning when BT is off. Breaks Find My Device, SmartTag tracking when BT is toggled off.
-  _put_setting global wifi_watchdog_on 0                    # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
-  _put_setting global private_dns_mode hostname             # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
-  _put_setting global private_dns_specifier dns.adguard.com # AdGuard DNS. Blocks ads/trackers at DNS level. Some ad-supported apps/sites may break.
+  _put_setting global wifi_scan_always_enabled 0                # Less background scanning; potentially worse location accuracy.
+  _put_setting global ble_scan_always_enabled 1                 # 1 if using SmartTags; Nearby Bluetooth discovery and device finding.
+  _put_setting global wifi_wakeup_enabled 0                     # Stop Wi-Fi auto-turn-on near saved networks. Manual Wi-Fi toggle needed.
+  _put_setting global wifi_watchdog_on 0                        # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
+  _put_setting global private_dns_mode hostname                 # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
+  _put_setting global private_dns_specifier dns.adguard-dns.com # AdGuard's documented DNS-over-TLS hostname. Blocks ads/trackers at DNS level.
 
   # ---- Privacy & Logging ----
   _put_setting global analytics_enabled 0       # Disable system analytics. No side effects.
   _put_setting global usage_reporting_enabled 0 # Disable usage reporting. No side effects.
 
   # ---- Touch Responsiveness ----
-  # Default: long_press_timeout=400, multi_press_timeout=300
-  # 250 is too aggressive — causes accidental long presses when scrolling
-  # and missed double taps. 325 is a good middle ground: noticeably snappier
-  # than stock without the mis-trigger issues.
+  # Default: long_press_timeout=400, multi_press_timeout=300.
+  # 300/275 trims delays without the accidental long presses or missed double taps seen below 250.
   _put_setting secure long_press_timeout 300  # Faster long press (default 400). Below 300 causes accidental triggers when tap-and-scrolling.
   _put_setting secure multi_press_timeout 275 # Tighter double/triple press window (default 300). Below 250 makes slow double-taps fail to register.
 
@@ -55,12 +60,18 @@ debloat_settings() {
   _put_setting secure accessibility_reduce_motion 1       # Reduce parallax/zoom/motion effects. Some app entrance animations become simple fades.
 
   # ---- Battery & Power ----
-  _put_setting global mobile_data_always_on 0 # Turn off mobile radio when on Wi-Fi. Saves battery. Wi-Fi-to-mobile handoff takes 1-2s longer.
-  _put_setting secure screensaver_enabled 0   # Disable Daydream screensaver. Prevents OLED burn-in while charging/docked.
-  _put_setting secure wake_gesture_enabled 0  # Disable lift-to-wake gesture. Prevents pocket wake-ups, saves battery.
+  _put_setting global mobile_data_always_on 1         # Better network handoff; costs some standby power.
+  _put_setting global stay_on_while_plugged_in 0      # Stop staying awake while charging. Screen follows the normal timeout.
+  _put_setting global app_standby_enabled 1           # Keep App Standby active. Idle apps stay restricted in the background.
+  _put_setting secure screensaver_enabled 0           # Disable Daydream screensaver. Prevents OLED burn-in while charging/docked.
+  _put_setting secure screensaver_activate_on_dock 0  # Stop Daydream auto-start when docked.
+  _put_setting secure screensaver_activate_on_sleep 0 # Stop Daydream auto-start when going to sleep.
+  _put_setting secure wake_gesture_enabled 0          # Disable lift-to-wake gesture. Prevents pocket wake-ups, saves battery.
+  _put_setting system screen_off_timeout 60000        # Screen off after 60s (stock 300s here). Saves battery; locks sooner.
 
   # ---- Notifications & UX ----
   _put_setting global wifi_networks_available_notification_on 0 # Disable "Wi-Fi networks available" notification. No side effects.
+  _restore_setting global heads_up_notifications_enabled        # Use the system-defined banner policy; remove any explicit override.
   _put_setting system sound_effects_enabled 0                   # Disable touch/tap sound effects. No side effects.
   _put_setting system haptic_feedback_enabled 1                 # Enable haptic feedback on taps. Default Samsung behavior. No side effects.
 
@@ -68,7 +79,7 @@ debloat_settings() {
   _put_setting secure lock_screen_allow_private_notifications 0 # Hide notification content on lock screen. Must unlock to read messages. No side effects.
 
   # ---- Privacy: Network ----
-  _put_setting global network_recommendations_enabled 0 # Disable Google Wi-Fi network rating/suggestions. Wi-Fi works the same. No side effects.
+  _put_setting global network_recommendations_enabled 0 # Optional; suppresses Wi-Fi recommendations.
 
   # ---- Safety ----
   _put_setting global data_roaming 1            # Enable cellular data roaming. Keeps data working when traveling abroad. May incur roaming charges.
@@ -104,8 +115,6 @@ debloat_settings() {
   # _put_setting global automatic_power_save_mode 1       # Auto-enable battery saver at low battery. May throttle performance unexpectedly.
   # ---- Display / UX ----
   # _put_setting secure tap_duration_threshold 0.0        # Zero-delay tap registration. May register accidental touches, especially with screen protectors.
-  # _put_setting global heads_up_notifications_enabled 0  # Kill floating notification banners. Must check notification shade manually. Calls still ring.
-  # _put_setting system screen_off_timeout 60000          # Screen off after 60s (default 30s). Drains more battery if you forget to lock.
   # ---- Privacy ----
   # _put_setting secure location_mode 3                   # GPS-only location (no Wi-Fi/cell assist). Most private but slower initial GPS fix.
   # _put_setting global safe_boot_disallowed 1            # Disable safe boot access. Prevents bypassing your setup but harder to troubleshoot.
@@ -218,6 +227,9 @@ com.samsung.SMT # Samsung Text-to-Speech engine, not the Samsung keyboard | [WAR
 com.samsung.SMT.lang_es_mx_f00 # Mexican Spanish TTS language data | [WARNING] Removes Mexican Spanish TTS data; only when that locale is unused.
 com.samsung.SMT.lang_es_us_l01 # US Spanish TTS language data | [WARNING] Removes US Spanish TTS data; only when that locale is unused.
 com.samsung.SMT.lang_pt_br_l01 # Brazilian Portuguese TTS language data | [WARNING] Removes Brazilian Portuguese TTS data; only when that locale is unused.
+com.samsung.android.nmt.apps.t2t.languagepack.kozh # Samsung ko-zh translation language pack (role inferred from package name) | [WARNING] Removes Korean-to-Chinese translation data; only when unused.
+com.samsung.android.bixby.ondevice.enus # Bixby on-device English model | [WARNING] Removes on-device Bixby English processing; only when Bixby is unused.
+com.samsung.android.bixby.ondevice.zhcn # Bixby on-device Chinese model | [WARNING] Removes on-device Bixby Chinese processing; only when Bixby is unused.
 com.google.android.ambient.streaming # Ambient/display streaming functionality | [WARNING] Removes ambient streaming; safe when Ambient Display is unused.
 com.samsung.android.app.parentalcare # Samsung parental controls | [WARNING] Removes on-device parental restrictions; safe when unused.
 # --- Samsung Pass and Autofill ---
@@ -335,8 +347,16 @@ _greet_and_connect_adb() {
   fi
 }
 
-_greet_and_connect_adb
+# Keep the verified defaults after cleanup, restore, and debloat runs.
+set_default_apps() {
+  _log_section ">>> Android default apps"
+  _adb_shell ime enable "$_DEFAULT_IME" > /dev/null 2>&1 || _log_error ">>> could not enable $_DEFAULT_IME"
+  _adb_shell ime set "$_DEFAULT_IME" > /dev/null 2>&1 || _log_error ">>> could not set PixelBoard as the default keyboard"
+  _adb_shell cmd package set-home-activity --user 0 "$_DEFAULT_HOME_COMPONENT" > /dev/null 2>&1 || _log_error ">>> could not set Nova Launcher as the default home app"
+  _adb_shell cmd role add-role-holder --user 0 android.app.role.SMS "$_DEFAULT_SMS_PACKAGE" > /dev/null 2>&1 || _log_error ">>> could not set Google Messages as the default SMS app"
+  _adb_shell cmd role add-role-holder --user 0 android.app.role.DIALER "$_DEFAULT_DIALER_PACKAGE" > /dev/null 2>&1 || _log_error ">>> could not set Google Dialer as the default dialer"
+  _log_success ">>> defaults: Nova Launcher / PixelBoard / Google Messages / Google Dialer"
+}
 
-# set gboardwu as the default keyboard
-adb shell ime enable dev.jason.com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME
-adb shell ime set dev.jason.com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME
+_greet_and_connect_adb
+set_default_apps
