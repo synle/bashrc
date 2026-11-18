@@ -142,10 +142,11 @@ com.samsung.android.authfw # Samsung Pass authentication | [WARNING] Samsung Pas
 com.samsung.android.spay # Samsung Wallet | [WARNING] Removes Samsung payments and stored passes.
 com.sec.android.app.popupcalculator # Samsung Calculator
 com.sec.android.app.sbrowser # Samsung Internet browser
+com.samsung.android.app.sbrowseredge # Samsung Internet Edge integration
 com.samsung.android.app.spage # Samsung Free news and video feed
 com.samsung.android.da.daagent # Dual Messenger | [WARNING] Removes cloned messaging accounts.
 com.samsung.android.smartsuggestions # Samsung contextual suggestions
-com.samsung.android.rubin.app # Customization Service | [WARNING] Removes Samsung personalized suggestions.
+com.samsung.android.rubin.app # Customization Service | [WARNING] Disable if personalized Samsung suggestions aren't needed.
 com.samsung.android.shortcutbackupservice # Shortcut backup | [WARNING] Removes Samsung shortcut backup support.
 com.microsoft.office.officehubrow # Microsoft 365 document hub
 com.microsoft.skydrive # OneDrive | [WARNING] Stops OneDrive and linked Gallery cloud sync.
@@ -181,22 +182,24 @@ com.samsung.android.app.settings.bixby # Bixby settings
 com.samsung.android.bixbyvision.framework # Bixby Vision camera framework
 com.samsung.android.visionintelligence # Bixby Vision | [WARNING] Removes camera visual search and translation.
 # --- AR and Stickers ---
-com.samsung.android.aremoji # AR Emoji | [WARNING] Removes Samsung AR Emoji avatars and camera avatar stickers; safe when unused.
-com.samsung.android.aremojieditor # AR Emoji avatar editor
-com.samsung.android.ardrawing # AR Doodle camera drawings
+com.samsung.android.aremoji # AR Emoji | [WARNING] Disable if unused; removes Samsung AR Emoji avatars and camera avatar stickers.
+com.samsung.android.aremojieditor # AR Emoji editor | [WARNING] Disable if unused; removes AR Emoji editing.
+com.samsung.android.ardrawing # AR Doodle | [WARNING] Disable if unused; removes camera AR drawings.
 com.samsung.android.app.camera.sticker.facearavatar.preload # Camera face AR sticker preload | [WARNING] Removes preloaded avatar stickers; safe when AR Emoji is unused.
-com.sec.android.mimage.avatarstickers # My Emoji sticker packs
-com.samsung.android.arzone # AR camera feature hub
+com.sec.android.mimage.avatarstickers # Avatar stickers | [WARNING] Disable if unused; removes avatar sticker packs.
+com.samsung.android.arzone # AR feature hub | [WARNING] Disable if unused; removes the AR camera feature hub.
 com.samsung.android.stickercenter # Camera sticker downloads
-com.samsung.android.livestickers # DECO PIC camera filters and stickers
+com.samsung.android.livestickers # Camera stickers and filters | [WARNING] Disable if unused.
 # --- Promotions and Optional Apps ---
 com.aura.oobe.samsung # AppCloud recommended-app installer
 com.aura.oobe.samsung.gl # AppCloud regional installer
-com.mygalaxy.service # My Galaxy regional content service
-com.samsung.android.tvplus # Samsung TV Plus ad-supported streaming
-com.samsung.android.voc # Samsung Members | [WARNING] Removes support and device diagnostics.
-com.samsung.sree # Global Goals donation ads and wallpapers
-com.samsung.android.app.tips # Samsung feature tutorials
+com.samsung.android.app.social # Samsung Social
+com.netflix.partner.activation # Netflix activation
+com.mygalaxy.service # My Galaxy | [WARNING] Disable if installed and unused.
+com.samsung.android.tvplus # Samsung TV Plus | [WARNING] Disable if unused.
+com.samsung.android.voc # Samsung Members | [WARNING] Disable if you don't use support/diagnostics.
+com.samsung.sree # Global Goals promotions
+com.samsung.android.app.tips # Samsung tutorials | Disable.
 # --- Games and Accessories ---
 com.samsung.android.game.gamehome # Gaming Hub | [WARNING] Removes the game library hub.
 com.samsung.android.game.gametools # Game Booster | [WARNING] Removes the in-game performance overlay, recording, and touch locks; safe unless you use Game Booster.
@@ -232,6 +235,9 @@ com.samsung.android.bixby.ondevice.enus # Bixby on-device English model | [WARNI
 com.samsung.android.bixby.ondevice.zhcn # Bixby on-device Chinese model | [WARNING] Removes on-device Bixby Chinese processing; only when Bixby is unused.
 com.google.android.ambient.streaming # Ambient/display streaming functionality | [WARNING] Removes ambient streaming; safe when Ambient Display is unused.
 com.samsung.android.app.parentalcare # Samsung parental controls | [WARNING] Removes on-device parental restrictions; safe when unused.
+# --- Conditional Samsung Services ---
+com.samsung.android.mapsagent # Samsung personalization agent | [WARNING] Disable if unused.
+com.sec.android.diagmonagent # Samsung diagnostic reporting | [WARNING] Conditional; test Samsung Members support before disabling.
 # --- Samsung Pass and Autofill ---
 com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass; only when a third-party password manager (Bitwarden, 1Password, or Google Password Manager) already stores your credentials and autofill.
 com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; only when a third-party password manager is your autofill service.
@@ -239,7 +245,6 @@ com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Remo
 com.samsung.android.dialer # Samsung Phone dialer | [CRITICAL] Outgoing calls, contacts integration, and emergency-call UI; disable only when another dialer handles calls.
 com.samsung.android.incallui # Samsung InCall UI | [CRITICAL] In-call screen for answering and ending calls; disabling can leave calls unroutable without a replacement in-call UI.
 com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya caller ID and spam screening; only when Google Phone caller ID replaces it.
-com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior.
 "
 
 # --- Cautious / aggressive - commented entries are opt-in only ---
@@ -311,6 +316,10 @@ com.sec.android.desktopmode.uiservice # DeX system UI
 com.sec.android.app.dexonpc # DeX for PC
 com.samsung.android.forest # Legacy Digital Wellbeing; DeX dependency
 com.samsung.android.app.appsedge # Apps Edge; preserve multi-window support
+# --- eSIM management - keep enabled so Add eSIM and SIM manager can complete ---
+com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior. Needed for sim card
+com.samsung.android.cidmanager # Samsung Carrier ID manager | [CRITICAL] Needed for eSIM management; disabled CID data can hang SIM manager and Add eSIM.
+com.samsung.sdm # Samsung carrier/OMC config provider | [CRITICAL] Needed for eSIM management; disabled carrier config can block eSIM activation.
 "
 
 # Safe is the master collection. Later collections cannot repeat earlier ones.

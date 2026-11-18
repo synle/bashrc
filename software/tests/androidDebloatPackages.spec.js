@@ -122,4 +122,16 @@ describe("Android debloat package policy", () => {
     expect(collections).toContain("# com.sec.android.app.shealth | [WARNING]");
     expect(collections).toContain("# com.microsoft.appmanager | [WARNING]");
   });
+
+  it("marks a package that is not installed as a yellow warning", () => {
+    const result = runAndroid(
+      '_log_color_enabled() { return 0; }\nremove_app_collection "com.example.not-installed" "DEBLOAT_SAFE"',
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(
+      ">>> com.example.not-installed > DEBLOAT_SAFE > Warning > Skipped - package not found > [1/1 - 100%]",
+    );
+    expect(result.stdout).toContain("\u001b[0;33m");
+    expect(result.stdout).not.toContain("\u001b[0;32m");
+  });
 });

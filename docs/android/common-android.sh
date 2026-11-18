@@ -1,11 +1,13 @@
 # Shared Android/Fire TV ADB helpers. Sourced/included by platform scripts.
 
 SETTINGS_APPLIED=""
+_APP_RESULT_NOT_FOUND='Skipped - package not found'
 
 # --- Logging ---
 _LOG_COLOR_RESET='\033[0m'
 _LOG_COLOR_BLUE='\033[0;34m'
 _LOG_COLOR_GREEN='\033[0;32m'
+_LOG_COLOR_YELLOW='\033[0;33m'
 _LOG_COLOR_RED='\033[0;31m'
 _LOG_COLOR_GREY='\033[0;90m'
 
@@ -43,6 +45,10 @@ _log_success() {
   _log_color "$_LOG_COLOR_GREEN" "$1"
 }
 
+_log_warning() {
+  _log_color "$_LOG_COLOR_YELLOW" "$1"
+}
+
 _log_error() {
   _log_message=$1
   if _log_error_color_enabled; then
@@ -58,11 +64,24 @@ _adb_shell() {
   adb shell "$@" < /dev/null
 }
 
+# Apply one setting and warn when the device does not keep the requested value.
+_put_setting_checked() {
+  _namespace=$1
+  _key=$2
+  _value=$3
+  _adb_shell settings put "$_namespace" "$_key" "$_value" > /dev/null 2>&1
+  _actual=$(_adb_shell settings get "$_namespace" "$_key" 2> /dev/null)
+  _actual=${_actual%$'\r'}
+  if [ "$_actual" != "$_value" ]; then
+    _log_error "WARNING: $_key expected=$_value actual=$_actual"
+  fi
+}
+
 _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
   _log_info ">>> setting put $*"
-  _adb_shell settings put "$@" > /dev/null 2>&1
+  _put_setting_checked "$@"
 }
 
 _restore_setting() {
@@ -117,6 +136,12 @@ _count_app_collection() {
 }
 
 _disable_app() {
+  if ! package_exists "$1"; then
+    return 0
+  fi
+  if ! package_enabled "$1"; then
+    return 0
+  fi
   ok=0
   _adb_shell pm disable-user --user 0 "$1" > /dev/null 2>&1 && ok=1
   _adb_shell pm disable-user -k --user 0 "$1" > /dev/null 2>&1 && ok=1
@@ -147,13 +172,14 @@ _attempt_app_command() {
   return 1
 }
 
-# True when the package is installed for user 0.
-_package_installed_for_user() {
-  _package_output=$(_adb_shell pm list packages --user 0 "$1" 2> /dev/null)
-  case "$_package_output" in
-  *"package:$1"*) return 0 ;;
-  esac
-  return 1
+# True when the package is installed for the current user.
+package_exists() {
+  _adb_shell pm list packages "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"
+}
+
+# True when the package is enabled for the current user.
+package_enabled() {
+  _adb_shell pm list packages -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"
 }
 
 # Remove one package for user 0. Sets APP_ACTION_RESULT on success:
@@ -162,6 +188,10 @@ _package_installed_for_user() {
 _remove_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
+    return 0
+  fi
   disabled=0
   _disable_app "$1" > /dev/null 2>&1 && disabled=1
   ok=0
@@ -173,8 +203,8 @@ _remove_app() {
     APP_ACTION_ERROR=""
     return 0
   fi
-  if ! _package_installed_for_user "$1"; then
-    APP_ACTION_RESULT="Already removed"
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
     APP_ACTION_ERROR=""
     return 0
   fi
@@ -189,15 +219,38 @@ _remove_app() {
 _restore_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
-  ok=0
-  _attempt_app_command cmd package install-existing "$1" && ok=1
-  _attempt_app_command pm enable "$1" && ok=1
-  if [ "$ok" = "1" ]; then
-    APP_ACTION_RESULT="Restored"
-    APP_ACTION_ERROR=""
-    return 0
+  any_success=0
+
+  _attempt_app_command cmd package install-existing "$1" && any_success=1
+  _attempt_app_command pm enable "$1" && any_success=1
+
+  _restore_app_users=$(_adb_shell pm list users 2> /dev/null | command tr -d '\r' | command awk -F'[{:]' '/UserInfo\{/ { print $2 }')
+  while IFS= read -r _restore_app_user; do
+    [ -z "$_restore_app_user" ] && continue
+    _attempt_app_command cmd package install-existing --user "$_restore_app_user" "$1" && any_success=1
+    _attempt_app_command pm enable --user "$_restore_app_user" "$1" && any_success=1
+  done << EOF
+$_restore_app_users
+EOF
+
+  if [ -n "$_restore_app_users" ]; then
+    _restore_app_verified=0
+    while IFS= read -r _restore_app_user; do
+      [ -z "$_restore_app_user" ] && continue
+      if _adb_shell pm list packages --user "$_restore_app_user" -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"; then
+        _restore_app_verified=1
+      fi
+    done << EOF
+$_restore_app_users
+EOF
+    [ "$_restore_app_verified" = "1" ] || return 1
+  elif [ "$any_success" != "1" ]; then
+    return 1
   fi
-  return 1
+
+  APP_ACTION_RESULT="Restored"
+  APP_ACTION_ERROR=""
+  return 0
 }
 
 _log_app_action() {
@@ -207,10 +260,15 @@ _log_app_action() {
   _app_action_name=$4
   _app_action_idx=$5
   _app_action_total=$6
+  if [ "$_app_action_status" = "Success" ] && [ "$_app_action_name" = "$_APP_RESULT_NOT_FOUND" ]; then
+    _app_action_status="Warning"
+  fi
   _app_action_percentage=$((_app_action_idx * 100 / _app_action_total))
   _app_action_line=$(printf '>>> %s > %s > %s > %s > [%s/%s - %s%%]' "$_app_action_app" "$_app_action_collection" "$_app_action_status" "$_app_action_name" "$_app_action_idx" "$_app_action_total" "$_app_action_percentage")
   if [ "$_app_action_status" = "Success" ]; then
     _log_success "$_app_action_line"
+  elif [ "$_app_action_status" = "Warning" ]; then
+    _log_warning "$_app_action_line"
   else
     _log_failure "$_app_action_line"
   fi

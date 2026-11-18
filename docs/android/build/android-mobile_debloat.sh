@@ -6,11 +6,13 @@
 # Shared Android/Fire TV ADB helpers. Sourced/included by platform scripts.
 
 SETTINGS_APPLIED=""
+_APP_RESULT_NOT_FOUND='Skipped - package not found'
 
 # --- Logging ---
 _LOG_COLOR_RESET='\033[0m'
 _LOG_COLOR_BLUE='\033[0;34m'
 _LOG_COLOR_GREEN='\033[0;32m'
+_LOG_COLOR_YELLOW='\033[0;33m'
 _LOG_COLOR_RED='\033[0;31m'
 _LOG_COLOR_GREY='\033[0;90m'
 
@@ -48,6 +50,10 @@ _log_success() {
   _log_color "$_LOG_COLOR_GREEN" "$1"
 }
 
+_log_warning() {
+  _log_color "$_LOG_COLOR_YELLOW" "$1"
+}
+
 _log_error() {
   _log_message=$1
   if _log_error_color_enabled; then
@@ -63,11 +69,24 @@ _adb_shell() {
   adb shell "$@" < /dev/null
 }
 
+# Apply one setting and warn when the device does not keep the requested value.
+_put_setting_checked() {
+  _namespace=$1
+  _key=$2
+  _value=$3
+  _adb_shell settings put "$_namespace" "$_key" "$_value" > /dev/null 2>&1
+  _actual=$(_adb_shell settings get "$_namespace" "$_key" 2> /dev/null)
+  _actual=${_actual%$'\r'}
+  if [ "$_actual" != "$_value" ]; then
+    _log_error "WARNING: $_key expected=$_value actual=$_actual"
+  fi
+}
+
 _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
   _log_info ">>> setting put $*"
-  _adb_shell settings put "$@" > /dev/null 2>&1
+  _put_setting_checked "$@"
 }
 
 _restore_setting() {
@@ -122,6 +141,12 @@ _count_app_collection() {
 }
 
 _disable_app() {
+  if ! package_exists "$1"; then
+    return 0
+  fi
+  if ! package_enabled "$1"; then
+    return 0
+  fi
   ok=0
   _adb_shell pm disable-user --user 0 "$1" > /dev/null 2>&1 && ok=1
   _adb_shell pm disable-user -k --user 0 "$1" > /dev/null 2>&1 && ok=1
@@ -152,13 +177,14 @@ _attempt_app_command() {
   return 1
 }
 
-# True when the package is installed for user 0.
-_package_installed_for_user() {
-  _package_output=$(_adb_shell pm list packages --user 0 "$1" 2> /dev/null)
-  case "$_package_output" in
-  *"package:$1"*) return 0 ;;
-  esac
-  return 1
+# True when the package is installed for the current user.
+package_exists() {
+  _adb_shell pm list packages "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"
+}
+
+# True when the package is enabled for the current user.
+package_enabled() {
+  _adb_shell pm list packages -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"
 }
 
 # Remove one package for user 0. Sets APP_ACTION_RESULT on success:
@@ -167,6 +193,10 @@ _package_installed_for_user() {
 _remove_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
+    return 0
+  fi
   disabled=0
   _disable_app "$1" > /dev/null 2>&1 && disabled=1
   ok=0
@@ -178,8 +208,8 @@ _remove_app() {
     APP_ACTION_ERROR=""
     return 0
   fi
-  if ! _package_installed_for_user "$1"; then
-    APP_ACTION_RESULT="Already removed"
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
     APP_ACTION_ERROR=""
     return 0
   fi
@@ -194,15 +224,38 @@ _remove_app() {
 _restore_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
-  ok=0
-  _attempt_app_command cmd package install-existing "$1" && ok=1
-  _attempt_app_command pm enable "$1" && ok=1
-  if [ "$ok" = "1" ]; then
-    APP_ACTION_RESULT="Restored"
-    APP_ACTION_ERROR=""
-    return 0
+  any_success=0
+
+  _attempt_app_command cmd package install-existing "$1" && any_success=1
+  _attempt_app_command pm enable "$1" && any_success=1
+
+  _restore_app_users=$(_adb_shell pm list users 2> /dev/null | command tr -d '\r' | command awk -F'[{:]' '/UserInfo\{/ { print $2 }')
+  while IFS= read -r _restore_app_user; do
+    [ -z "$_restore_app_user" ] && continue
+    _attempt_app_command cmd package install-existing --user "$_restore_app_user" "$1" && any_success=1
+    _attempt_app_command pm enable --user "$_restore_app_user" "$1" && any_success=1
+  done << EOF
+$_restore_app_users
+EOF
+
+  if [ -n "$_restore_app_users" ]; then
+    _restore_app_verified=0
+    while IFS= read -r _restore_app_user; do
+      [ -z "$_restore_app_user" ] && continue
+      if _adb_shell pm list packages --user "$_restore_app_user" -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"; then
+        _restore_app_verified=1
+      fi
+    done << EOF
+$_restore_app_users
+EOF
+    [ "$_restore_app_verified" = "1" ] || return 1
+  elif [ "$any_success" != "1" ]; then
+    return 1
   fi
-  return 1
+
+  APP_ACTION_RESULT="Restored"
+  APP_ACTION_ERROR=""
+  return 0
 }
 
 _log_app_action() {
@@ -212,10 +265,15 @@ _log_app_action() {
   _app_action_name=$4
   _app_action_idx=$5
   _app_action_total=$6
+  if [ "$_app_action_status" = "Success" ] && [ "$_app_action_name" = "$_APP_RESULT_NOT_FOUND" ]; then
+    _app_action_status="Warning"
+  fi
   _app_action_percentage=$((_app_action_idx * 100 / _app_action_total))
   _app_action_line=$(printf '>>> %s > %s > %s > %s > [%s/%s - %s%%]' "$_app_action_app" "$_app_action_collection" "$_app_action_status" "$_app_action_name" "$_app_action_idx" "$_app_action_total" "$_app_action_percentage")
   if [ "$_app_action_status" = "Success" ]; then
     _log_success "$_app_action_line"
+  elif [ "$_app_action_status" = "Warning" ]; then
+    _log_warning "$_app_action_line"
   else
     _log_failure "$_app_action_line"
   fi
@@ -313,6 +371,12 @@ restore_app_collection() {
 
 # SOURCE docs/android/common-android.sh
 
+# Verified default apps for the Samsung phones covered by this list.
+_DEFAULT_IME="com.akshaykadam.pixelboard/com.android.inputmethod.latin.LatinIME"
+_DEFAULT_HOME_COMPONENT="com.teslacoilsw.launcher/.NovaLauncher"
+_DEFAULT_SMS_PACKAGE="com.google.android.apps.messaging"
+_DEFAULT_DIALER_PACKAGE="com.google.android.dialer"
+
 ################################################################################
 # --- Setting tweaks ---
 ################################################################################
@@ -325,26 +389,25 @@ debloat_settings() {
 
   # ---- Performance & Hardware ----
   _put_setting global ram_expand_size_list 0            # Disable RAM Plus (Virtual RAM). Apps killed sooner when RAM is full, but 12GB devices don't need swap.
-  _put_setting global force_gpu_rendering 1             # Force GPU for 2D drawing. Largely no-op on modern One UI. Can cause glitches in some banking/legacy apps.
+  _restore_setting global force_gpu_rendering           # Use the Android default; forcing GPU can glitch banking and legacy apps.
   _put_setting global disable_window_blurs 1            # Disable gaussian blur behind notifications/dialogs. Big performance win, slightly less polished look.
   _put_setting global sem_enhanced_cpu_responsiveness 0 # Disable Samsung CPU boost on touch. Slightly less snappy, better battery life. No harm.
 
   # ---- Connectivity & Scanning ----
-  _put_setting global wifi_scan_always_enabled 0            # Disable Wi-Fi scanning when Wi-Fi is off. Degrades indoor/urban location accuracy (GPS still works).
-  _put_setting global ble_scan_always_enabled 0             # Disable Bluetooth scanning when BT is off. Breaks Find My Device, SmartTag tracking when BT is toggled off.
-  _put_setting global wifi_watchdog_on 0                    # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
-  _put_setting global private_dns_mode hostname             # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
-  _put_setting global private_dns_specifier dns.adguard.com # AdGuard DNS. Blocks ads/trackers at DNS level. Some ad-supported apps/sites may break.
+  _put_setting global wifi_scan_always_enabled 0                # Less background scanning; potentially worse location accuracy.
+  _put_setting global ble_scan_always_enabled 1                 # 1 if using SmartTags; Nearby Bluetooth discovery and device finding.
+  _put_setting global wifi_wakeup_enabled 0                     # Stop Wi-Fi auto-turn-on near saved networks. Manual Wi-Fi toggle needed.
+  _put_setting global wifi_watchdog_on 0                        # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
+  _put_setting global private_dns_mode hostname                 # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
+  _put_setting global private_dns_specifier dns.adguard-dns.com # AdGuard's documented DNS-over-TLS hostname. Blocks ads/trackers at DNS level.
 
   # ---- Privacy & Logging ----
   _put_setting global analytics_enabled 0       # Disable system analytics. No side effects.
   _put_setting global usage_reporting_enabled 0 # Disable usage reporting. No side effects.
 
   # ---- Touch Responsiveness ----
-  # Default: long_press_timeout=400, multi_press_timeout=300
-  # 250 is too aggressive — causes accidental long presses when scrolling
-  # and missed double taps. 325 is a good middle ground: noticeably snappier
-  # than stock without the mis-trigger issues.
+  # Default: long_press_timeout=400, multi_press_timeout=300.
+  # 300/275 trims delays without the accidental long presses or missed double taps seen below 250.
   _put_setting secure long_press_timeout 300  # Faster long press (default 400). Below 300 causes accidental triggers when tap-and-scrolling.
   _put_setting secure multi_press_timeout 275 # Tighter double/triple press window (default 300). Below 250 makes slow double-taps fail to register.
 
@@ -353,12 +416,18 @@ debloat_settings() {
   _put_setting secure accessibility_reduce_motion 1       # Reduce parallax/zoom/motion effects. Some app entrance animations become simple fades.
 
   # ---- Battery & Power ----
-  _put_setting global mobile_data_always_on 0 # Turn off mobile radio when on Wi-Fi. Saves battery. Wi-Fi-to-mobile handoff takes 1-2s longer.
-  _put_setting secure screensaver_enabled 0   # Disable Daydream screensaver. Prevents OLED burn-in while charging/docked.
-  _put_setting secure wake_gesture_enabled 0  # Disable lift-to-wake gesture. Prevents pocket wake-ups, saves battery.
+  _put_setting global mobile_data_always_on 1         # Better network handoff; costs some standby power.
+  _put_setting global stay_on_while_plugged_in 0      # Stop staying awake while charging. Screen follows the normal timeout.
+  _put_setting global app_standby_enabled 1           # Keep App Standby active. Idle apps stay restricted in the background.
+  _put_setting secure screensaver_enabled 0           # Disable Daydream screensaver. Prevents OLED burn-in while charging/docked.
+  _put_setting secure screensaver_activate_on_dock 0  # Stop Daydream auto-start when docked.
+  _put_setting secure screensaver_activate_on_sleep 0 # Stop Daydream auto-start when going to sleep.
+  _put_setting secure wake_gesture_enabled 0          # Disable lift-to-wake gesture. Prevents pocket wake-ups, saves battery.
+  _put_setting system screen_off_timeout 60000        # Screen off after 60s (stock 300s here). Saves battery; locks sooner.
 
   # ---- Notifications & UX ----
   _put_setting global wifi_networks_available_notification_on 0 # Disable "Wi-Fi networks available" notification. No side effects.
+  _restore_setting global heads_up_notifications_enabled        # Use the system-defined banner policy; remove any explicit override.
   _put_setting system sound_effects_enabled 0                   # Disable touch/tap sound effects. No side effects.
   _put_setting system haptic_feedback_enabled 1                 # Enable haptic feedback on taps. Default Samsung behavior. No side effects.
 
@@ -366,7 +435,7 @@ debloat_settings() {
   _put_setting secure lock_screen_allow_private_notifications 0 # Hide notification content on lock screen. Must unlock to read messages. No side effects.
 
   # ---- Privacy: Network ----
-  _put_setting global network_recommendations_enabled 0 # Disable Google Wi-Fi network rating/suggestions. Wi-Fi works the same. No side effects.
+  _put_setting global network_recommendations_enabled 0 # Optional; suppresses Wi-Fi recommendations.
 
   # ---- Safety ----
   _put_setting global data_roaming 1            # Enable cellular data roaming. Keeps data working when traveling abroad. May incur roaming charges.
@@ -402,8 +471,6 @@ debloat_settings() {
   # _put_setting global automatic_power_save_mode 1       # Auto-enable battery saver at low battery. May throttle performance unexpectedly.
   # ---- Display / UX ----
   # _put_setting secure tap_duration_threshold 0.0        # Zero-delay tap registration. May register accidental touches, especially with screen protectors.
-  # _put_setting global heads_up_notifications_enabled 0  # Kill floating notification banners. Must check notification shade manually. Calls still ring.
-  # _put_setting system screen_off_timeout 60000          # Screen off after 60s (default 30s). Drains more battery if you forget to lock.
   # ---- Privacy ----
   # _put_setting secure location_mode 3                   # GPS-only location (no Wi-Fi/cell assist). Most private but slower initial GPS fix.
   # _put_setting global safe_boot_disallowed 1            # Disable safe boot access. Prevents bypassing your setup but harder to troubleshoot.
@@ -431,10 +498,11 @@ com.samsung.android.authfw # Samsung Pass authentication | [WARNING] Samsung Pas
 com.samsung.android.spay # Samsung Wallet | [WARNING] Removes Samsung payments and stored passes.
 com.sec.android.app.popupcalculator # Samsung Calculator
 com.sec.android.app.sbrowser # Samsung Internet browser
+com.samsung.android.app.sbrowseredge # Samsung Internet Edge integration
 com.samsung.android.app.spage # Samsung Free news and video feed
 com.samsung.android.da.daagent # Dual Messenger | [WARNING] Removes cloned messaging accounts.
 com.samsung.android.smartsuggestions # Samsung contextual suggestions
-com.samsung.android.rubin.app # Customization Service | [WARNING] Removes Samsung personalized suggestions.
+com.samsung.android.rubin.app # Customization Service | [WARNING] Disable if personalized Samsung suggestions aren't needed.
 com.samsung.android.shortcutbackupservice # Shortcut backup | [WARNING] Removes Samsung shortcut backup support.
 com.microsoft.office.officehubrow # Microsoft 365 document hub
 com.microsoft.skydrive # OneDrive | [WARNING] Stops OneDrive and linked Gallery cloud sync.
@@ -470,22 +538,24 @@ com.samsung.android.app.settings.bixby # Bixby settings
 com.samsung.android.bixbyvision.framework # Bixby Vision camera framework
 com.samsung.android.visionintelligence # Bixby Vision | [WARNING] Removes camera visual search and translation.
 # --- AR and Stickers ---
-com.samsung.android.aremoji # AR Emoji | [WARNING] Removes Samsung AR Emoji avatars and camera avatar stickers; safe when unused.
-com.samsung.android.aremojieditor # AR Emoji avatar editor
-com.samsung.android.ardrawing # AR Doodle camera drawings
+com.samsung.android.aremoji # AR Emoji | [WARNING] Disable if unused; removes Samsung AR Emoji avatars and camera avatar stickers.
+com.samsung.android.aremojieditor # AR Emoji editor | [WARNING] Disable if unused; removes AR Emoji editing.
+com.samsung.android.ardrawing # AR Doodle | [WARNING] Disable if unused; removes camera AR drawings.
 com.samsung.android.app.camera.sticker.facearavatar.preload # Camera face AR sticker preload | [WARNING] Removes preloaded avatar stickers; safe when AR Emoji is unused.
-com.sec.android.mimage.avatarstickers # My Emoji sticker packs
-com.samsung.android.arzone # AR camera feature hub
+com.sec.android.mimage.avatarstickers # Avatar stickers | [WARNING] Disable if unused; removes avatar sticker packs.
+com.samsung.android.arzone # AR feature hub | [WARNING] Disable if unused; removes the AR camera feature hub.
 com.samsung.android.stickercenter # Camera sticker downloads
-com.samsung.android.livestickers # DECO PIC camera filters and stickers
+com.samsung.android.livestickers # Camera stickers and filters | [WARNING] Disable if unused.
 # --- Promotions and Optional Apps ---
 com.aura.oobe.samsung # AppCloud recommended-app installer
 com.aura.oobe.samsung.gl # AppCloud regional installer
-com.mygalaxy.service # My Galaxy regional content service
-com.samsung.android.tvplus # Samsung TV Plus ad-supported streaming
-com.samsung.android.voc # Samsung Members | [WARNING] Removes support and device diagnostics.
-com.samsung.sree # Global Goals donation ads and wallpapers
-com.samsung.android.app.tips # Samsung feature tutorials
+com.samsung.android.app.social # Samsung Social
+com.netflix.partner.activation # Netflix activation
+com.mygalaxy.service # My Galaxy | [WARNING] Disable if installed and unused.
+com.samsung.android.tvplus # Samsung TV Plus | [WARNING] Disable if unused.
+com.samsung.android.voc # Samsung Members | [WARNING] Disable if you don't use support/diagnostics.
+com.samsung.sree # Global Goals promotions
+com.samsung.android.app.tips # Samsung tutorials | Disable.
 # --- Games and Accessories ---
 com.samsung.android.game.gamehome # Gaming Hub | [WARNING] Removes the game library hub.
 com.samsung.android.game.gametools # Game Booster | [WARNING] Removes the in-game performance overlay, recording, and touch locks; safe unless you use Game Booster.
@@ -516,8 +586,14 @@ com.samsung.SMT # Samsung Text-to-Speech engine, not the Samsung keyboard | [WAR
 com.samsung.SMT.lang_es_mx_f00 # Mexican Spanish TTS language data | [WARNING] Removes Mexican Spanish TTS data; only when that locale is unused.
 com.samsung.SMT.lang_es_us_l01 # US Spanish TTS language data | [WARNING] Removes US Spanish TTS data; only when that locale is unused.
 com.samsung.SMT.lang_pt_br_l01 # Brazilian Portuguese TTS language data | [WARNING] Removes Brazilian Portuguese TTS data; only when that locale is unused.
+com.samsung.android.nmt.apps.t2t.languagepack.kozh # Samsung ko-zh translation language pack (role inferred from package name) | [WARNING] Removes Korean-to-Chinese translation data; only when unused.
+com.samsung.android.bixby.ondevice.enus # Bixby on-device English model | [WARNING] Removes on-device Bixby English processing; only when Bixby is unused.
+com.samsung.android.bixby.ondevice.zhcn # Bixby on-device Chinese model | [WARNING] Removes on-device Bixby Chinese processing; only when Bixby is unused.
 com.google.android.ambient.streaming # Ambient/display streaming functionality | [WARNING] Removes ambient streaming; safe when Ambient Display is unused.
 com.samsung.android.app.parentalcare # Samsung parental controls | [WARNING] Removes on-device parental restrictions; safe when unused.
+# --- Conditional Samsung Services ---
+com.samsung.android.mapsagent # Samsung personalization agent | [WARNING] Disable if unused.
+com.sec.android.diagmonagent # Samsung diagnostic reporting | [WARNING] Conditional; test Samsung Members support before disabling.
 # --- Samsung Pass and Autofill ---
 com.samsung.android.samsungpass # Samsung Pass | [WARNING] Removes Samsung Pass; only when a third-party password manager (Bitwarden, 1Password, or Google Password Manager) already stores your credentials and autofill.
 com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Removes Samsung autofill; only when a third-party password manager is your autofill service.
@@ -525,7 +601,6 @@ com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Remo
 com.samsung.android.dialer # Samsung Phone dialer | [CRITICAL] Outgoing calls, contacts integration, and emergency-call UI; disable only when another dialer handles calls.
 com.samsung.android.incallui # Samsung InCall UI | [CRITICAL] In-call screen for answering and ending calls; disabling can leave calls unroutable without a replacement in-call UI.
 com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya caller ID and spam screening; only when Google Phone caller ID replaces it.
-com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior.
 "
 
 # --- Cautious / aggressive - commented entries are opt-in only ---
@@ -597,6 +672,10 @@ com.sec.android.desktopmode.uiservice # DeX system UI
 com.sec.android.app.dexonpc # DeX for PC
 com.samsung.android.forest # Legacy Digital Wellbeing; DeX dependency
 com.samsung.android.app.appsedge # Apps Edge; preserve multi-window support
+# --- eSIM management - keep enabled so Add eSIM and SIM manager can complete ---
+com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior. Needed for sim card
+com.samsung.android.cidmanager # Samsung Carrier ID manager | [CRITICAL] Needed for eSIM management; disabled CID data can hang SIM manager and Add eSIM.
+com.samsung.sdm # Samsung carrier/OMC config provider | [CRITICAL] Needed for eSIM management; disabled carrier config can block eSIM activation.
 "
 
 # Safe is the master collection. Later collections cannot repeat earlier ones.
@@ -633,11 +712,19 @@ _greet_and_connect_adb() {
   fi
 }
 
-_greet_and_connect_adb
+# Keep the verified defaults after cleanup, restore, and debloat runs.
+set_default_apps() {
+  _log_section ">>> Android default apps"
+  _adb_shell ime enable "$_DEFAULT_IME" > /dev/null 2>&1 || _log_error ">>> could not enable $_DEFAULT_IME"
+  _adb_shell ime set "$_DEFAULT_IME" > /dev/null 2>&1 || _log_error ">>> could not set PixelBoard as the default keyboard"
+  _adb_shell cmd package set-home-activity --user 0 "$_DEFAULT_HOME_COMPONENT" > /dev/null 2>&1 || _log_error ">>> could not set Nova Launcher as the default home app"
+  _adb_shell cmd role add-role-holder --user 0 android.app.role.SMS "$_DEFAULT_SMS_PACKAGE" > /dev/null 2>&1 || _log_error ">>> could not set Google Messages as the default SMS app"
+  _adb_shell cmd role add-role-holder --user 0 android.app.role.DIALER "$_DEFAULT_DIALER_PACKAGE" > /dev/null 2>&1 || _log_error ">>> could not set Google Dialer as the default dialer"
+  _log_success ">>> defaults: Nova Launcher / PixelBoard / Google Messages / Google Dialer"
+}
 
-# set gboardwu as the default keyboard
-adb shell ime enable dev.jason.com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME
-adb shell ime set dev.jason.com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME
+_greet_and_connect_adb
+set_default_apps
 
 # --- source_file: docs/android/android-mobile.debloat.sh ---
 
@@ -645,7 +732,7 @@ adb shell ime set dev.jason.com.google.android.inputmethod.latin/com.android.inp
 _log_section "> Debloating..."
 _log_section ">> debloat_settings..."
 debloat_settings
-restore_app_collection "$DEBLOAT_IGNORED" "DEBLOAT_IGNORED"
 remove_app_collection "$DEBLOAT_SAFE" "DEBLOAT_SAFE"
 remove_app_collection "$DEBLOAT_SEMI_AGGRESSIVE" "DEBLOAT_SEMI_AGGRESSIVE"
 # remove_app_collection "$DEBLOAT_AGGRESSIVE" "DEBLOAT_AGGRESSIVE"
+restore_app_collection "$DEBLOAT_IGNORED" "DEBLOAT_IGNORED"
