@@ -316,7 +316,10 @@ com.sec.android.desktopmode.uiservice # DeX system UI
 com.sec.android.app.dexonpc # DeX for PC
 com.samsung.android.forest # Legacy Digital Wellbeing; DeX dependency
 com.samsung.android.app.appsedge # Apps Edge; preserve multi-window support
+# --- eSIM management - keep enabled so Add eSIM and SIM manager can complete ---
 com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior. Needed for sim card
+com.samsung.android.cidmanager # Samsung Carrier ID manager | [CRITICAL] Needed for eSIM management; disabled CID data can hang SIM manager and Add eSIM.
+com.samsung.sdm # Samsung carrier/OMC config provider | [CRITICAL] Needed for eSIM management; disabled carrier config can block eSIM activation.
 "
 
 # Safe is the master collection. Later collections cannot repeat earlier ones.

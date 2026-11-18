@@ -6,11 +6,13 @@
 # Shared Android/Fire TV ADB helpers. Sourced/included by platform scripts.
 
 SETTINGS_APPLIED=""
+_APP_RESULT_NOT_FOUND='Skipped - package not found'
 
 # --- Logging ---
 _LOG_COLOR_RESET='\033[0m'
 _LOG_COLOR_BLUE='\033[0;34m'
 _LOG_COLOR_GREEN='\033[0;32m'
+_LOG_COLOR_YELLOW='\033[0;33m'
 _LOG_COLOR_RED='\033[0;31m'
 _LOG_COLOR_GREY='\033[0;90m'
 
@@ -46,6 +48,10 @@ _log_info() {
 
 _log_success() {
   _log_color "$_LOG_COLOR_GREEN" "$1"
+}
+
+_log_warning() {
+  _log_color "$_LOG_COLOR_YELLOW" "$1"
 }
 
 _log_error() {
@@ -188,7 +194,7 @@ _remove_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
   if ! package_exists "$1"; then
-    APP_ACTION_RESULT="Skipped - package not found"
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
     return 0
   fi
   disabled=0
@@ -203,7 +209,7 @@ _remove_app() {
     return 0
   fi
   if ! package_exists "$1"; then
-    APP_ACTION_RESULT="Skipped - package not found"
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
     APP_ACTION_ERROR=""
     return 0
   fi
@@ -218,19 +224,38 @@ _remove_app() {
 _restore_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
-  if ! package_exists "$1"; then
-    APP_ACTION_RESULT="Skipped - package not found"
-    return 0
+  any_success=0
+
+  _attempt_app_command cmd package install-existing "$1" && any_success=1
+  _attempt_app_command pm enable "$1" && any_success=1
+
+  _restore_app_users=$(_adb_shell pm list users 2> /dev/null | command tr -d '\r' | command awk -F'[{:]' '/UserInfo\{/ { print $2 }')
+  while IFS= read -r _restore_app_user; do
+    [ -z "$_restore_app_user" ] && continue
+    _attempt_app_command cmd package install-existing --user "$_restore_app_user" "$1" && any_success=1
+    _attempt_app_command pm enable --user "$_restore_app_user" "$1" && any_success=1
+  done << EOF
+$_restore_app_users
+EOF
+
+  if [ -n "$_restore_app_users" ]; then
+    _restore_app_verified=0
+    while IFS= read -r _restore_app_user; do
+      [ -z "$_restore_app_user" ] && continue
+      if _adb_shell pm list packages --user "$_restore_app_user" -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"; then
+        _restore_app_verified=1
+      fi
+    done << EOF
+$_restore_app_users
+EOF
+    [ "$_restore_app_verified" = "1" ] || return 1
+  elif [ "$any_success" != "1" ]; then
+    return 1
   fi
-  ok=0
-  _attempt_app_command cmd package install-existing "$1" && ok=1
-  _attempt_app_command pm enable "$1" && ok=1
-  if [ "$ok" = "1" ]; then
-    APP_ACTION_RESULT="Restored"
-    APP_ACTION_ERROR=""
-    return 0
-  fi
-  return 1
+
+  APP_ACTION_RESULT="Restored"
+  APP_ACTION_ERROR=""
+  return 0
 }
 
 _log_app_action() {
@@ -240,10 +265,15 @@ _log_app_action() {
   _app_action_name=$4
   _app_action_idx=$5
   _app_action_total=$6
+  if [ "$_app_action_status" = "Success" ] && [ "$_app_action_name" = "$_APP_RESULT_NOT_FOUND" ]; then
+    _app_action_status="Warning"
+  fi
   _app_action_percentage=$((_app_action_idx * 100 / _app_action_total))
   _app_action_line=$(printf '>>> %s > %s > %s > %s > [%s/%s - %s%%]' "$_app_action_app" "$_app_action_collection" "$_app_action_status" "$_app_action_name" "$_app_action_idx" "$_app_action_total" "$_app_action_percentage")
   if [ "$_app_action_status" = "Success" ]; then
     _log_success "$_app_action_line"
+  elif [ "$_app_action_status" = "Warning" ]; then
+    _log_warning "$_app_action_line"
   else
     _log_failure "$_app_action_line"
   fi
@@ -571,7 +601,6 @@ com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Remo
 com.samsung.android.dialer # Samsung Phone dialer | [CRITICAL] Outgoing calls, contacts integration, and emergency-call UI; disable only when another dialer handles calls.
 com.samsung.android.incallui # Samsung InCall UI | [CRITICAL] In-call screen for answering and ending calls; disabling can leave calls unroutable without a replacement in-call UI.
 com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya caller ID and spam screening; only when Google Phone caller ID replaces it.
-com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior.
 "
 
 # --- Cautious / aggressive - commented entries are opt-in only ---
@@ -643,6 +672,10 @@ com.sec.android.desktopmode.uiservice # DeX system UI
 com.sec.android.app.dexonpc # DeX for PC
 com.samsung.android.forest # Legacy Digital Wellbeing; DeX dependency
 com.samsung.android.app.appsedge # Apps Edge; preserve multi-window support
+# --- eSIM management - keep enabled so Add eSIM and SIM manager can complete ---
+com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior. Needed for sim card
+com.samsung.android.cidmanager # Samsung Carrier ID manager | [CRITICAL] Needed for eSIM management; disabled CID data can hang SIM manager and Add eSIM.
+com.samsung.sdm # Samsung carrier/OMC config provider | [CRITICAL] Needed for eSIM management; disabled carrier config can block eSIM activation.
 "
 
 # Safe is the master collection. Later collections cannot repeat earlier ones.
@@ -704,3 +737,4 @@ restore_all_settings
 restore_app_collection "$DEBLOAT_SAFE" "DEBLOAT_SAFE"
 restore_app_collection "$DEBLOAT_SEMI_AGGRESSIVE" "DEBLOAT_SEMI_AGGRESSIVE"
 restore_app_collection "$DEBLOAT_AGGRESSIVE" "DEBLOAT_AGGRESSIVE"
+adb reboot
