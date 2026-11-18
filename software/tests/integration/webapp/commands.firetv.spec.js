@@ -17,7 +17,7 @@ describe("command snapshots", () => {
     expect(blocks).toMatchInlineSnapshot(`
       [
         {
-          "hash": "07cd63169f9da659332a12240c50e322",
+          "hash": "c1224ccb515b45f49724c8274f92a293",
           "title": "docs/android/android-tv-fire.sh",
         },
         {
