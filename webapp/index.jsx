@@ -1594,9 +1594,9 @@ function SteamOSNotesDom() {
 function FireTVNotesDom() {
   return (
     <>
-      <DynamicTextArea path="/docs/android/firetv.sh" />
-      <DynamicTextArea path="/docs/android/firetv.debloat.sh" />
-      <DynamicTextArea path="/docs/android/firetv.restore.sh" />
+      <DynamicTextArea path="/docs/android/android-tv-fire.sh" />
+      <DynamicTextArea path="/docs/android/android-tv-fire.debloat.sh" />
+      <DynamicTextArea path="/docs/android/android-tv-fire.restore.sh" />
     </>
   );
 }
@@ -1632,9 +1632,9 @@ function AndroidNotesDom() {
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_android_termux" />
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
-      <DynamicTextArea path="/docs/android/android.debloat.sh" />
-      <DynamicTextArea path="/docs/android/android.restore.sh" />
-      <DynamicTextArea path="/docs/android/android.sh" />
+      <DynamicTextArea path="/docs/android/android-mobile.debloat.sh" />
+      <DynamicTextArea path="/docs/android/android-mobile.restore.sh" />
+      <DynamicTextArea path="/docs/android/android-mobile.sh" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
       <DynamicTextArea path="/docs/android/rvx-yt.txt" />
       <DynamicTextArea path="/docs/android/rvx-yt-music.txt" />
