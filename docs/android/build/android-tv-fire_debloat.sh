@@ -63,11 +63,24 @@ _adb_shell() {
   adb shell "$@" < /dev/null
 }
 
+# Apply one setting and warn when the device does not keep the requested value.
+_put_setting_checked() {
+  _namespace=$1
+  _key=$2
+  _value=$3
+  _adb_shell settings put "$_namespace" "$_key" "$_value" > /dev/null 2>&1
+  _actual=$(_adb_shell settings get "$_namespace" "$_key" 2> /dev/null)
+  _actual=${_actual%$'\r'}
+  if [ "$_actual" != "$_value" ]; then
+    _log_error "WARNING: $_key expected=$_value actual=$_actual"
+  fi
+}
+
 _put_setting() {
   SETTINGS_APPLIED="$SETTINGS_APPLIED$1 $2
 "
   _log_info ">>> setting put $*"
-  _adb_shell settings put "$@" > /dev/null 2>&1
+  _put_setting_checked "$@"
 }
 
 _restore_setting() {
@@ -122,6 +135,12 @@ _count_app_collection() {
 }
 
 _disable_app() {
+  if ! package_exists "$1"; then
+    return 0
+  fi
+  if ! package_enabled "$1"; then
+    return 0
+  fi
   ok=0
   _adb_shell pm disable-user --user 0 "$1" > /dev/null 2>&1 && ok=1
   _adb_shell pm disable-user -k --user 0 "$1" > /dev/null 2>&1 && ok=1
@@ -152,13 +171,14 @@ _attempt_app_command() {
   return 1
 }
 
-# True when the package is installed for user 0.
-_package_installed_for_user() {
-  _package_output=$(_adb_shell pm list packages --user 0 "$1" 2> /dev/null)
-  case "$_package_output" in
-  *"package:$1"*) return 0 ;;
-  esac
-  return 1
+# True when the package is installed for the current user.
+package_exists() {
+  _adb_shell pm list packages "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"
+}
+
+# True when the package is enabled for the current user.
+package_enabled() {
+  _adb_shell pm list packages -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"
 }
 
 # Remove one package for user 0. Sets APP_ACTION_RESULT on success:
@@ -167,6 +187,10 @@ _package_installed_for_user() {
 _remove_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="Skipped - package not found"
+    return 0
+  fi
   disabled=0
   _disable_app "$1" > /dev/null 2>&1 && disabled=1
   ok=0
@@ -178,8 +202,8 @@ _remove_app() {
     APP_ACTION_ERROR=""
     return 0
   fi
-  if ! _package_installed_for_user "$1"; then
-    APP_ACTION_RESULT="Already removed"
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="Skipped - package not found"
     APP_ACTION_ERROR=""
     return 0
   fi
@@ -194,6 +218,10 @@ _remove_app() {
 _restore_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="Skipped - package not found"
+    return 0
+  fi
   ok=0
   _attempt_app_command cmd package install-existing "$1" && ok=1
   _attempt_app_command pm enable "$1" && ok=1
