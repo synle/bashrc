@@ -245,7 +245,6 @@ com.samsung.android.samsungpassautofill # Samsung Pass autofill | [WARNING] Remo
 com.samsung.android.dialer # Samsung Phone dialer | [CRITICAL] Outgoing calls, contacts integration, and emergency-call UI; disable only when another dialer handles calls.
 com.samsung.android.incallui # Samsung InCall UI | [CRITICAL] In-call screen for answering and ending calls; disabling can leave calls unroutable without a replacement in-call UI.
 com.samsung.android.smartcallprovider # Smart Call | [CRITICAL] Samsung/Hiya caller ID and spam screening; only when Google Phone caller ID replaces it.
-com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior.
 "
 
 # --- Cautious / aggressive - commented entries are opt-in only ---
@@ -317,6 +316,7 @@ com.sec.android.desktopmode.uiservice # DeX system UI
 com.sec.android.app.dexonpc # DeX for PC
 com.samsung.android.forest # Legacy Digital Wellbeing; DeX dependency
 com.samsung.android.app.appsedge # Apps Edge; preserve multi-window support
+com.sec.phone # Samsung core telephony | [CRITICAL] Baseband, SIM provisioning, and calling; disabling can break calls and SIM behavior. Needed for sim card
 "
 
 # Safe is the master collection. Later collections cannot repeat earlier ones.
