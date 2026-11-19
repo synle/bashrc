@@ -1,7 +1,11 @@
 # Shared Android/Fire TV ADB helpers. Sourced/included by platform scripts.
 
 SETTINGS_APPLIED=""
+ADB_USERS=""
 _APP_RESULT_NOT_FOUND='Skipped - package not found'
+_APP_RESULT_REMOVED='Removed'
+_APP_RESULT_REMOVED_FOR='Removed for users'
+_APP_RESULT_DISABLED_FOR='Disabled for users'
 
 # --- Logging ---
 _LOG_COLOR_RESET='\033[0m'
@@ -62,6 +66,18 @@ _log_error() {
 # stdin is redirected so ADB never consumes app-collection loop input.
 _adb_shell() {
   adb shell "$@" < /dev/null
+}
+
+_adb_users() {
+  if [ -n "$ADB_USERS" ]; then
+    printf '%s\n' "$ADB_USERS"
+    return 0
+  fi
+  ADB_USERS=$(_adb_shell pm list users 2> /dev/null | command tr -d '\r' | command awk -F'[{:]' '/UserInfo\{/ { print $2 }')
+  if [ -z "$ADB_USERS" ]; then
+    ADB_USERS=0
+  fi
+  printf '%s\n' "$ADB_USERS"
 }
 
 # Apply one setting and warn when the device does not keep the requested value.
@@ -136,16 +152,22 @@ _count_app_collection() {
 }
 
 _disable_app() {
-  if ! package_exists "$1"; then
+  APP_ACTION_DISABLED_USERS=""
+  if ! _package_exists_any_user "$1"; then
     return 0
   fi
-  if ! package_enabled "$1"; then
+  if ! _package_enabled_any_user "$1"; then
     return 0
   fi
-  ok=0
-  _adb_shell pm disable-user --user 0 "$1" > /dev/null 2>&1 && ok=1
-  _adb_shell pm disable-user -k --user 0 "$1" > /dev/null 2>&1 && ok=1
-  [ "$ok" = "1" ]
+  while IFS= read -r _disable_user; do
+    [ -z "$_disable_user" ] && continue
+    if _attempt_app_command pm disable-user --user "$_disable_user" "$1"; then
+      APP_ACTION_DISABLED_USERS=$(_append_action_user "$_disable_user" "$APP_ACTION_DISABLED_USERS")
+    fi
+  done << EOF
+$(_adb_users)
+EOF
+  [ -n "$APP_ACTION_DISABLED_USERS" ]
 }
 
 # Run one package-manager command, storing combined output in APP_ACTION_OUTPUT.
@@ -162,14 +184,41 @@ _run_app_command() {
   return 1
 }
 
-# Run one package-manager command and append its output to APP_ACTION_ERROR on failure.
+# Run one package-manager command and append its command and output to APP_ACTION_ERROR on failure.
 _attempt_app_command() {
   if _run_app_command "$@"; then
     return 0
   fi
-  APP_ACTION_ERROR="$APP_ACTION_ERROR$APP_ACTION_OUTPUT
+  APP_ACTION_ERROR="$APP_ACTION_ERROR$*
+$APP_ACTION_OUTPUT
 "
   return 1
+}
+
+_append_action_user() {
+  _action_user=$1
+  _action_users=$2
+  case " $_action_users " in
+  *" $_action_user "*) printf '%s' "$_action_users" ;;
+  *)
+    if [ -z "$_action_users" ]; then
+      printf '%s' "$_action_user"
+    else
+      printf '%s,%s' "$_action_users" "$_action_user"
+    fi
+    ;;
+  esac
+}
+
+_action_users_csv() {
+  _users_csv=""
+  while IFS= read -r _csv_user; do
+    [ -z "$_csv_user" ] && continue
+    _users_csv=$(_append_action_user "$_csv_user" "$_users_csv")
+  done << EOF
+$(_adb_users)
+EOF
+  printf '%s' "$_users_csv"
 }
 
 # True when the package is installed for the current user.
@@ -182,34 +231,76 @@ package_enabled() {
   _adb_shell pm list packages -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"
 }
 
-# Remove one package for user 0. Sets APP_ACTION_RESULT on success:
-# Removed (uninstalled), Disabled (OEM blocks uninstall, disable worked),
-# or Already removed (not installed for user 0).
+_package_exists_any_user() {
+  _any_user_pkg=$1
+  while IFS= read -r _any_user; do
+    [ -z "$_any_user" ] && continue
+    if _adb_shell pm list packages -u --user "$_any_user" "$_any_user_pkg" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$_any_user_pkg"; then
+      return 0
+    fi
+  done << EOF
+$(_adb_users)
+EOF
+  return 1
+}
+
+_package_enabled_any_user() {
+  _enabled_pkg=$1
+  while IFS= read -r _enabled_user; do
+    [ -z "$_enabled_user" ] && continue
+    if _adb_shell pm list packages -e --user "$_enabled_user" "$_enabled_pkg" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$_enabled_pkg"; then
+      return 0
+    fi
+  done << EOF
+$(_adb_users)
+EOF
+  return 1
+}
+
+# Remove one package for every ADB user. Sets APP_ACTION_RESULT on success:
+# Removed, Removed for users ..., Disabled for users ..., or Skipped.
 _remove_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
-  if ! package_exists "$1"; then
+  APP_ACTION_DISABLED_USERS=""
+  APP_ACTION_REMOVED_USERS=""
+  if ! _package_exists_any_user "$1"; then
     APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
     return 0
   fi
-  disabled=0
-  _disable_app "$1" > /dev/null 2>&1 && disabled=1
-  ok=0
-  _attempt_app_command pm uninstall "$1" && ok=1
-  _attempt_app_command pm uninstall -k --user 0 "$1" && ok=1
-  _attempt_app_command pm uninstall -k --user 10 "$1" && ok=1
-  if [ "$ok" = "1" ]; then
-    APP_ACTION_RESULT="Removed"
+  _disable_app "$1" || true
+  _remove_app_users=$(_adb_users)
+  _remove_current_user=$(printf '%s\n' "$_remove_app_users" | command awk 'NF { print; exit }')
+  if _attempt_app_command pm uninstall "$1"; then
+    APP_ACTION_REMOVED_USERS=$(_append_action_user "$_remove_current_user" "$APP_ACTION_REMOVED_USERS")
+  fi
+  while IFS= read -r _remove_user; do
+    [ -z "$_remove_user" ] && continue
+    if _attempt_app_command pm uninstall -k --user "$_remove_user" "$1"; then
+      APP_ACTION_REMOVED_USERS=$(_append_action_user "$_remove_user" "$APP_ACTION_REMOVED_USERS")
+    fi
+  done << EOF
+$_remove_app_users
+EOF
+  if [ -n "$APP_ACTION_REMOVED_USERS" ] && [ "$APP_ACTION_REMOVED_USERS" = "$(_action_users_csv)" ]; then
+    APP_ACTION_RESULT="$_APP_RESULT_REMOVED"
     APP_ACTION_ERROR=""
     return 0
   fi
-  if ! package_exists "$1"; then
+  if ! _package_exists_any_user "$1"; then
     APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
     APP_ACTION_ERROR=""
     return 0
   fi
-  if [ "$disabled" = "1" ]; then
-    APP_ACTION_RESULT="Disabled"
+  if [ -n "$APP_ACTION_REMOVED_USERS" ] || [ -n "$APP_ACTION_DISABLED_USERS" ]; then
+    APP_ACTION_RESULT=""
+    if [ -n "$APP_ACTION_REMOVED_USERS" ]; then
+      APP_ACTION_RESULT="$_APP_RESULT_REMOVED_FOR $APP_ACTION_REMOVED_USERS"
+    fi
+    if [ -n "$APP_ACTION_DISABLED_USERS" ]; then
+      [ -z "$APP_ACTION_RESULT" ] || APP_ACTION_RESULT="$APP_ACTION_RESULT; "
+      APP_ACTION_RESULT="$APP_ACTION_RESULT$_APP_RESULT_DISABLED_FOR $APP_ACTION_DISABLED_USERS"
+    fi
     APP_ACTION_ERROR=""
     return 0
   fi
@@ -219,34 +310,32 @@ _remove_app() {
 _restore_app() {
   APP_ACTION_ERROR=""
   APP_ACTION_RESULT=""
-  any_success=0
+  if ! _package_exists_any_user "$1"; then
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
+    return 0
+  fi
 
-  _attempt_app_command cmd package install-existing "$1" && any_success=1
-  _attempt_app_command pm enable "$1" && any_success=1
-
-  _restore_app_users=$(_adb_shell pm list users 2> /dev/null | command tr -d '\r' | command awk -F'[{:]' '/UserInfo\{/ { print $2 }')
+  _restore_app_users=$(_adb_users)
+  _attempt_app_command cmd package install-existing "$1"
+  _attempt_app_command pm enable "$1"
   while IFS= read -r _restore_app_user; do
     [ -z "$_restore_app_user" ] && continue
-    _attempt_app_command cmd package install-existing --user "$_restore_app_user" "$1" && any_success=1
-    _attempt_app_command pm enable --user "$_restore_app_user" "$1" && any_success=1
+    _attempt_app_command cmd package install-existing --user "$_restore_app_user" "$1"
+    _attempt_app_command pm enable --user "$_restore_app_user" "$1"
   done << EOF
 $_restore_app_users
 EOF
 
-  if [ -n "$_restore_app_users" ]; then
-    _restore_app_verified=0
-    while IFS= read -r _restore_app_user; do
-      [ -z "$_restore_app_user" ] && continue
-      if _adb_shell pm list packages --user "$_restore_app_user" -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"; then
-        _restore_app_verified=1
-      fi
-    done << EOF
+  _restore_app_verified=0
+  while IFS= read -r _restore_app_user; do
+    [ -z "$_restore_app_user" ] && continue
+    if _adb_shell pm list packages --user "$_restore_app_user" -e "$1" 2> /dev/null | command tr -d '\r' | command grep -Fxq "package:$1"; then
+      _restore_app_verified=1
+    fi
+  done << EOF
 $_restore_app_users
 EOF
-    [ "$_restore_app_verified" = "1" ] || return 1
-  elif [ "$any_success" != "1" ]; then
-    return 1
-  fi
+  [ "$_restore_app_verified" = "1" ] || return 1
 
   APP_ACTION_RESULT="Restored"
   APP_ACTION_ERROR=""

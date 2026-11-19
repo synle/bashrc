@@ -78,9 +78,6 @@ debloat_settings() {
   # ---- Privacy: Lock Screen ----
   _put_setting secure lock_screen_allow_private_notifications 0 # Hide notification content on lock screen. Must unlock to read messages. No side effects.
 
-  # ---- Privacy: Network ----
-  _put_setting global network_recommendations_enabled 0 # Optional; suppresses Wi-Fi recommendations.
-
   # ---- Safety ----
   _put_setting global data_roaming 1            # Enable cellular data roaming. Keeps data working when traveling abroad. May incur roaming charges.
   _put_setting global package_verifier_enable 1 # Ensure Play Protect app scanning stays on. No side effects.
@@ -408,6 +405,7 @@ _greet_and_connect_adb() {
       return 1
     fi
   fi
+  _adb_users > /dev/null
 }
 
 # Keep the verified defaults after cleanup, restore, and debloat runs.

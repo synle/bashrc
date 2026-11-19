@@ -63,12 +63,82 @@ function runAndroid(entrypoint) {
   });
 }
 
+function runAndroidWithExistingPackage(entrypoint, extraCases = "") {
+  return spawnSync("/bin/sh", ["-s"], {
+    input: `adb() {
+  printf 'ADB %s\\n' "$*" >&3
+  case "$*" in
+    ${extraCases}
+    "shell pm list users") printf 'UserInfo{0:Owner:4c13} running\\nUserInfo{11:Work profile:1030} running\\n' ;;
+    "shell pm list packages pkg.remove"|"shell pm list packages -e pkg.remove"|"shell pm list packages -e --user 0 pkg.remove"|"shell pm list packages -e --user 11 pkg.remove"|"shell pm list packages -u --user 0 pkg.remove"|"shell pm list packages -u --user 11 pkg.remove") printf 'package:pkg.remove\\n' ;;
+    "shell pm disable-user --user 0 pkg.remove"|"shell pm disable-user --user 11 pkg.remove") printf 'Success\\n' ;;
+    "shell pm disable-user -k --user 0 pkg.remove"|"shell pm disable-user -k --user 11 pkg.remove") printf 'Unknown package: --user\\n' >&2; return 1 ;;
+  esac
+}
+exec 3>&1
+${COMMON_SOURCE}
+${entrypoint}
+`,
+    env: { ...process.env, BASH_ENV: "/dev/null", ENV: "/dev/null" },
+    encoding: "utf8",
+    timeout: 5000,
+    maxBuffer: 1024 * 1024,
+  });
+}
+
 describe("Android debloat package policy", () => {
   it("keeps protected integrations out of every normalized removal collection", () => {
     const result = runAndroid('printf \'%s\\n\' "$DEBLOAT_SAFE" "$DEBLOAT_SEMI_AGGRESSIVE" "$DEBLOAT_AGGRESSIVE"');
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("com.samsung.android.smartcallprovider\n");
     expect(PROTECTED_PACKAGES.filter((name) => result.stdout.includes(`\n${name}\n`))).toMatchInlineSnapshot(`[]`);
+  });
+
+  it("uses supported disable-user syntax for every ADB user", () => {
+    const result = runAndroidWithExistingPackage("_remove_app pkg.remove");
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout.split("\n").filter((line) => line.includes("pm disable-user"))).toMatchInlineSnapshot(`
+      [
+        "ADB shell pm disable-user --user 0 pkg.remove",
+        "ADB shell pm disable-user --user 11 pkg.remove",
+      ]
+    `);
+  });
+
+  it("reports Removed when every user uninstall succeeds", () => {
+    const result = runAndroidWithExistingPackage(
+      '_remove_app pkg.remove\n_log_app_action pkg.remove DEBLOAT_SEMI_AGGRESSIVE Success "$APP_ACTION_RESULT" 3 16',
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(">>> pkg.remove > DEBLOAT_SEMI_AGGRESSIVE > Success > Removed > [3/16 - 18%]");
+  });
+
+  it("names the users when an app can only be disabled", () => {
+    const result = runAndroidWithExistingPackage(
+      '_remove_app pkg.remove\n_log_app_action pkg.remove DEBLOAT_SEMI_AGGRESSIVE Success "$APP_ACTION_RESULT" 3 16',
+      `
+    "shell pm uninstall pkg.remove") printf 'Failure [failed]\\n' >&2; return 1 ;;
+    "shell pm uninstall -k --user 0 pkg.remove") printf 'Failure [failed]\\n' >&2; return 1 ;;
+    "shell pm uninstall -k --user 11 pkg.remove") printf 'Failure [failed]\\n' >&2; return 1 ;;
+`,
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(">>> pkg.remove > DEBLOAT_SEMI_AGGRESSIVE > Success > Disabled for users 0,11 > [3/16 - 18%]");
+  });
+
+  it("reports removal and disable per user when outcomes differ", () => {
+    const result = runAndroidWithExistingPackage(
+      '_remove_app pkg.remove\n_log_app_action pkg.remove DEBLOAT_SEMI_AGGRESSIVE Success "$APP_ACTION_RESULT" 3 16',
+      `
+    "shell pm disable-user --user 11 pkg.remove") printf 'Error: cannot disable user 11\\n' >&2; return 1 ;;
+    "shell pm uninstall pkg.remove") printf 'Failure [failed]\\n' >&2; return 1 ;;
+    "shell pm uninstall -k --user 0 pkg.remove") printf 'Failure [failed]\\n' >&2; return 1 ;;
+`,
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(
+      ">>> pkg.remove > DEBLOAT_SEMI_AGGRESSIVE > Success > Removed for users 11; Disabled for users 0 > [3/16 - 18%]",
+    );
   });
 
   it("removes requested extras without removing protected integrations", () => {
@@ -124,13 +194,9 @@ describe("Android debloat package policy", () => {
   });
 
   it("marks a package that is not installed as a yellow warning", () => {
-    const result = runAndroid(
-      '_log_color_enabled() { return 0; }\nremove_app_collection "com.example.not-installed" "DEBLOAT_SAFE"',
-    );
+    const result = runAndroid('_log_color_enabled() { return 0; }\nremove_app_collection "com.example.not-installed" "DEBLOAT_SAFE"');
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain(
-      ">>> com.example.not-installed > DEBLOAT_SAFE > Warning > Skipped - package not found > [1/1 - 100%]",
-    );
+    expect(result.stdout).toContain(">>> com.example.not-installed > DEBLOAT_SAFE > Warning > Skipped - package not found > [1/1 - 100%]");
     expect(result.stdout).toContain("\u001b[0;33m");
     expect(result.stdout).not.toContain("\u001b[0;32m");
   });
