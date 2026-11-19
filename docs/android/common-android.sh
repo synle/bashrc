@@ -445,3 +445,108 @@ enable_app_links() {
 reset_app_links() {
   _run_app_links_action "reset" "${2:-collection}" "$1"
 }
+
+# Restrict background processing for one package to reduce battery use.
+_restrict_app_background() {
+  APP_ACTION_ERROR=""
+  APP_ACTION_RESULT=""
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
+    return 0
+  fi
+  any_success=0
+  _attempt_app_command dumpsys deviceidle whitelist "-$1" && any_success=1
+  _attempt_app_command cmd appops set "$1" RUN_IN_BACKGROUND ignore && any_success=1
+  _attempt_app_command cmd appops set "$1" RUN_ANY_IN_BACKGROUND ignore && any_success=1
+  _attempt_app_command am set-standby-bucket "$1" restricted && any_success=1
+  _attempt_app_command am force-stop "$1" && any_success=1
+  if [ "$any_success" != "1" ]; then
+    return 1
+  fi
+  APP_ACTION_RESULT="Restricted"
+  APP_ACTION_ERROR=""
+  return 0
+}
+
+# Restore standard background processing for one package.
+_restore_app_background() {
+  APP_ACTION_ERROR=""
+  APP_ACTION_RESULT=""
+  if ! package_exists "$1"; then
+    APP_ACTION_RESULT="$_APP_RESULT_NOT_FOUND"
+    return 0
+  fi
+  any_success=0
+  _attempt_app_command dumpsys deviceidle whitelist "+$1" && any_success=1
+  _attempt_app_command cmd appops set "$1" RUN_IN_BACKGROUND allow && any_success=1
+  _attempt_app_command cmd appops set "$1" RUN_ANY_IN_BACKGROUND allow && any_success=1
+  _attempt_app_command am set-standby-bucket "$1" active && any_success=1
+  if [ "$any_success" != "1" ]; then
+    return 1
+  fi
+  APP_ACTION_RESULT="Restored"
+  APP_ACTION_ERROR=""
+  return 0
+}
+
+# Restrict or restore background processing for every package in a collection.
+_run_app_background_action() {
+  _bg_action=$1
+  _bg_collection=$2
+  _bg_apps=$3
+  _bg_total=$(_count_app_collection "$_bg_apps")
+  _bg_idx=0
+  _bg_failures=0
+  _bg_error_log=""
+  _bg_normalized=$(_normalize_app_collection "$_bg_apps" "")
+
+  _log_section ">> ${_bg_action}_app_background > ${_bg_collection} (${_bg_total} apps)..."
+
+  if [ -z "$_bg_normalized" ]; then
+    return 0
+  fi
+
+  while IFS= read -r app; do
+    [ -z "$app" ] && continue
+    _bg_idx=$((_bg_idx + 1))
+    if [ "$_bg_action" = "restrict" ]; then
+      if _restrict_app_background "$app"; then
+        _log_app_action "$app" "$_bg_collection" "Success" "$APP_ACTION_RESULT" "$_bg_idx" "$_bg_total"
+        continue
+      fi
+      _bg_status_name="Not restricted"
+    else
+      if _restore_app_background "$app"; then
+        _log_app_action "$app" "$_bg_collection" "Success" "$APP_ACTION_RESULT" "$_bg_idx" "$_bg_total"
+        continue
+      fi
+      _bg_status_name="Not restored"
+    fi
+    _bg_failures=$((_bg_failures + 1))
+    if [ -z "$_bg_error_log" ]; then
+      _bg_error_log=$(_create_app_action_error_log "app-background")
+    fi
+    if [ -n "$_bg_error_log" ]; then
+      _append_app_action_error "$_bg_error_log" "$app" "$APP_ACTION_ERROR"
+    fi
+    _log_app_action "$app" "$_bg_collection" "Error" "$_bg_status_name" "$_bg_idx" "$_bg_total"
+  done << EOF
+$_bg_normalized
+EOF
+
+  if [ -n "$_bg_error_log" ]; then
+    _log_error ">>> ${_bg_failures}/${_bg_total} failed; command output: ${_bg_error_log}"
+  elif [ "$_bg_failures" -gt 0 ]; then
+    _log_error ">>> ${_bg_failures}/${_bg_total} failed; could not create an error log"
+  fi
+}
+
+# Restrict background processing for the given package collection.
+restrict_background_collection() {
+  _run_app_background_action "restrict" "${2:-collection}" "$1"
+}
+
+# Restore background processing for the given package collection.
+restore_background_collection() {
+  _run_app_background_action "restore" "${2:-collection}" "$1"
+}
