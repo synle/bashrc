@@ -342,10 +342,44 @@ com.google.android.apps.maps # Google Maps
 us.zoom.videomeetings # Zoom
 "
 
+# --- Background restriction ---
+# Apps restricted from background execution and Doze-exempt behavior for battery optimization.
+# Debloat applies restrictions; restore returns standard background behavior.
+BACKGROUND_RESTRICTED_PACKAGES="
+# --- Launchers ---
+com.teslacoilsw.launcher # Nova Launcher
+com.teslacoilsw.launcher.prime # Nova Launcher Prime
+# --- Shopping and deals ---
+net.slickdeals.android # Slickdeals
+com.amazon.mShop.android.shopping # Amazon Shopping
+com.ebay.mobile # eBay
+com.costco.app.android # Costco
+com.woot.android.main # Woot!
+# --- Social, professional, and community ---
+com.linkedin.android # LinkedIn
+com.facebook.katana # Facebook
+com.facebook.lite # Facebook Lite
+com.teamblind.blind # Blind / TeamBlind
+com.instagram.barcelona # Threads
+com.zhiliaoapp.musically # TikTok
+com.zhiliaoapp.musically.go # TikTok Lite
+com.reddit.frontpage # Reddit
+com.discord # Discord
+# --- Work, home, and local services ---
+com.appfolio.resident_portal # AppFolio
+com.parentsquare.psapp # ParentSquare
+com.zillow.android.zillowmap # Zillow
+com.yelp.android # Yelp
+com.opentable # OpenTable
+# --- Meetings ---
+us.zoom.videomeetings # Zoom
+"
+
 # Safe is the master collection. Later collections cannot repeat earlier ones.
 DEBLOAT_SAFE=$(_normalize_app_collection "$DEBLOAT_SAFE" "$DEBLOAT_IGNORED")
 DEBLOAT_SEMI_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_SEMI_AGGRESSIVE" "$(printf '%s\n%s\n' "$DEBLOAT_IGNORED" "$DEBLOAT_SAFE")")
 DEBLOAT_AGGRESSIVE=$(_normalize_app_collection "$DEBLOAT_AGGRESSIVE" "$(printf '%s\n%s\n%s\n' "$DEBLOAT_IGNORED" "$DEBLOAT_SAFE" "$DEBLOAT_SEMI_AGGRESSIVE")")
+BACKGROUND_RESTRICTED_PACKAGES=$(_normalize_app_collection "$BACKGROUND_RESTRICTED_PACKAGES" "")
 
 # Check host ADB and optionally connect to a user-provided Android device.
 _greet_and_connect_adb() {
