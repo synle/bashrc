@@ -757,69 +757,50 @@ function fd_link() {
 
 alias grep='command grep --color=auto'
 # --- Aliases: File Listing (native ls) ---
-# Native long-listing options, refreshed on profile reload for the current binary.
-# BSD ls accepts --color=auto, so color no longer depends on GNU detection.
-_LL_LS_OPTIONS=(-lahF --color=auto)
-if command ls --help 2> /dev/null | command grep -q -- --hyperlink; then
-  _LL_LS_OPTIONS+=(--hyperlink=auto)
-fi
 unalias ll 2> /dev/null || true
 
-# ll: list files with shared clutter and Git-ignored entries hidden.
-# Forwards ls arguments; returns native errors, filter errors, or 0 for an empty result.
-# Uses native output without the advanced filter; never modifies listed files.
+# ll: long-format native listing with color; hides clutter when the shared filter is available.
+# Forwards ls arguments; set SHOW_ALL=1 (truthy) to show every entry. Never modifies files.
 function ll() {
-  if is_help_arg "${1:-}"; then
+  if declare -F is_help_arg >/dev/null 2>&1 && is_help_arg "${1:-}"; then
     printf '%s\n' "ll: list files with shared clutter and Git-ignored entries hidden
   Usage: ll [ls options] [file...]
-  Uses native long-listing options and filter_unwanted_and_gitignored when available.
+  Set SHOW_ALL=1 (truthy) to bypass filter_unwanted_and_git_ignore and show all entries.
   Plain ls remains unfiltered. No files are modified."
     return 0
   fi
-  local options=("${_LL_LS_OPTIONS[@]}") statuses=() terminal_output=0 single_column=0
-  local listing_folder=. operand_count=0 argument
-  # GNU ls keeps long format when -1 is combined with -l; drop -l so both ls variants honor it.
-  for argument in "$@"; do
-    case "$argument" in
-    --) break ;;
-    -1 | --format=single-column) single_column=1 ;;
-    esac
-  done
-  if [ "$single_column" -eq 1 ]; then
-    options=("${options[@]/#-lahF/-ahF}")
+
+  local show_all=0
+  if declare -F is_truthy >/dev/null 2>&1 && is_truthy "${SHOW_ALL:-}"; then
+    show_all=1
   fi
-  if ! declare -F filter_unwanted_and_gitignored > /dev/null; then
-    command ls "${options[@]}" "$@"
-    return $?
+
+  local use_filter=0
+  if [ "$show_all" -eq 0 ] && declare -F filter_unwanted_and_git_ignore >/dev/null 2>&1; then
+    use_filter=1
   fi
-  # A single folder operand has no native header; multiple operands supply their own.
-  for argument in "$@"; do
-    if [ -e "$argument" ] || [ -L "$argument" ]; then
-      operand_count=$((operand_count + 1))
-      if [ "$operand_count" -eq 1 ] && [ -d "$argument" ]; then
-        listing_folder="$argument"
-      else
-        listing_folder=.
-      fi
+
+  local -a ls_cmd
+  if command ls --version >/dev/null 2>&1; then
+    # GNU/Linux ls: yellow folders (di=1;33), blue symlinks (ln=1;34), red executables (ex=1;31)
+    ls_cmd=(env "LS_COLORS=di=1;33:ln=1;34:ex=1;31:${LS_COLORS:-}" command ls -lah)
+    if [ "$use_filter" -eq 1 ]; then
+      ls_cmd+=(--color=always)
+    else
+      ls_cmd+=(--color=auto)
     fi
-  done
-  # The pipe hides the final TTY from ls; retain its native terminal styling.
-  if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then
-    options=("${options[@]/=auto/=always}")
-    terminal_output=1
-  fi
-  # The conditional also permits empty grep output under errexit and pipefail.
-  if {
-    if [ "$terminal_output" -eq 1 ]; then export CLICOLOR_FORCE=1; fi
-    command ls "${options[@]}" "$@"
-  } | filter_unwanted_and_gitignored --listing "$listing_folder"; then
-    statuses=("${PIPESTATUS[@]}")
   else
-    statuses=("${PIPESTATUS[@]}")
+    # macOS/BSD ls: char 3 = symlink fg (E = bold blue, e = blue), B = bold red executable
+    local clicolor_var="CLICOLOR=1"
+    [ "$use_filter" -eq 1 ] && clicolor_var="CLICOLOR_FORCE=1"
+    ls_cmd=(env "$clicolor_var" 'LSCOLORS=DxExBxdxbxegedabagacad' command ls -lahG)
   fi
-  [ "${statuses[0]}" -eq 0 ] || return "${statuses[0]}"
-  [ "${statuses[1]}" -le 1 ] || return "${statuses[1]}"
-  return 0
+
+  if [ "$use_filter" -eq 1 ]; then
+    "${ls_cmd[@]}" "$@" | filter_unwanted_and_git_ignore
+  else
+    "${ls_cmd[@]}" "$@"
+  fi
 }
 # The base shortcuts keep the interesting entries nearest the prompt.
 # Define both orders directly: repeating -r does not cancel a reversal.
