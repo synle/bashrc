@@ -36,11 +36,29 @@ function build() {
 /**
  * Execute a payload with device and download boundaries stubbed inside its shell and PATH.
  * @param {string} source Standalone script or original source pair to characterize.
+ * @param {string[]} installedPackages Packages the fake ADB reports as installed.
  * @returns {import("child_process").SpawnSyncReturns<string>} Script status, output, and ADB trace.
  */
-function runPayload(source) {
+function runPayload(source, installedPackages = []) {
   return spawnSync("/bin/bash", ["-s"], {
-    input: `function adb() { printf 'ADB %s\\n' "$*" >&3; }
+    input: `function adb() {
+  printf 'ADB %s\\n' "$*" >&3
+  case "$*" in
+    "shell pm list users") printf 'UserInfo{0:Owner:4c13} running\\n' ;;
+    "shell pm list packages"*|"shell cmd package list packages"*)
+      _adb_list_pkg=""
+      for _adb_arg in "$@"; do
+        case "$_adb_arg" in
+          shell|pm|cmd|package|list|packages|list-packages|-u|-e|-d|-s|-3|-f|-i|-l|--user|[0-9]*) ;;
+          *) _adb_list_pkg=$_adb_arg ;;
+        esac
+      done
+      case "$_adb_list_pkg" in
+        ${installedPackages.join("|") || "no-installed-packages"}) printf 'package:%s\\n' "$_adb_list_pkg" ;;
+      esac
+      ;;
+  esac
+}
 function curl() { return 1; }
 exec 3>&1
 ${source}`,
@@ -161,11 +179,11 @@ describe("Android standalone builder", () => {
   });
 
   it.each([
-    ["android-mobile", "debloat", "ADB shell pm uninstall -k --user 0 com.samsung.android.calendar\n"],
-    ["android-mobile", "restore", "ADB shell cmd package install-existing com.samsung.android.calendar\n"],
-    ["android-tv-fire", "debloat", "ADB shell pm uninstall -k --user 0 com.amazon.windowshop\n"],
-    ["android-tv-fire", "restore", "ADB shell cmd package install-existing com.amazon.windowshop\n"],
-  ])("preserves real %s %s behavior with no device or network access", (platform, action, expectedCommand) => {
+    ["android-mobile", "debloat", "ADB shell pm uninstall -k --user 0 com.samsung.android.calendar\n", "com.samsung.android.calendar"],
+    ["android-mobile", "restore", "ADB shell cmd package install-existing com.samsung.android.calendar\n", "com.samsung.android.calendar"],
+    ["android-tv-fire", "debloat", "ADB shell pm uninstall -k --user 0 com.amazon.windowshop\n", "com.amazon.windowshop"],
+    ["android-tv-fire", "restore", "ADB shell cmd package install-existing com.amazon.windowshop\n", "com.amazon.windowshop"],
+  ])("preserves real %s %s behavior with no device or network access", (platform, action, expectedCommand, installedPackage) => {
     const common = fs.readFileSync(path.join(SOURCE_FOLDER, "common-android.sh"), "utf8");
     const platformSource = fs.readFileSync(path.join(SOURCE_FOLDER, `${platform}.sh`), "utf8");
     const entrypoint = fs.readFileSync(path.join(SOURCE_FOLDER, `${platform}.${action}.sh`), "utf8");
@@ -173,11 +191,13 @@ describe("Android standalone builder", () => {
     fs.writeFileSync(path.join(androidFolder, `${platform}.${action}.sh`), entrypoint);
     const result = build();
     expect(result.status, result.stderr).toBe(0);
-    const baseline = runPayload(`${common}\n${platformSource}\n${entrypoint}`);
-    const generated = runPayload(fs.readFileSync(path.join(androidFolder, "build", `${platform}_${action}.sh`), "utf8"));
+    const source = `${common}\n${platformSource}\n${entrypoint}`;
+    const artifact = fs.readFileSync(path.join(androidFolder, "build", `${platform}_${action}.sh`), "utf8");
+    const baseline = runPayload(source, [installedPackage]);
+    const generated = runPayload(artifact, [installedPackage]);
     expect(baseline.status, baseline.stderr).toBe(0);
     expect(generated.status, generated.stderr).toBe(0);
-    expect(generated.stdout).toContain(expectedCommand);
+    expect(generated.stdout, generated.stderr).toContain(expectedCommand);
     expect(generated.stdout).toBe(baseline.stdout);
     expect(generated.stderr).toBe(baseline.stderr);
   });

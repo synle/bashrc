@@ -89,7 +89,7 @@ Changes apply to later shell starts. Loaded scripts are not rerun.'
     printf '%s\n' '[Warning] refresh_profiles cannot acquire the refresh lock' >&2
     return 1
   fi
-  trap 'command rm -f -- "$candidate" "$snapshot" "$block"; command rmdir -- "$lock"' EXIT
+  trap 'command rm -f -- "$candidate" "$snapshot" "$block"; command rmdir -- "$lock" 2> /dev/null || :' EXIT
   trap 'exit 1' HUP INT TERM
   # Re-read after locking; another shell may already have completed the refresh.
   stamp="$(_profile_sources_metadata "$target")" || return 1

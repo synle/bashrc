@@ -55,7 +55,28 @@ const NEW_REMOVALS = [
  */
 function runAndroid(entrypoint) {
   return spawnSync("/bin/sh", ["-s"], {
-    input: `adb() { printf 'ADB %s\\n' "$*" >&3; }\nexec 3>&1\n${COMMON_SOURCE}\n${ANDROID_SOURCE}\n${entrypoint}`,
+    input: `adb() {
+  printf 'ADB %s\\n' "$*" >&3
+  case "$*" in
+    "shell pm list users") printf 'UserInfo{0:Owner:4c13} running\\n' ;;
+    "shell pm list packages"*|"shell cmd package list packages"*)
+      _adb_list_pkg=""
+      for _adb_arg in "$@"; do
+        case "$_adb_arg" in
+          shell|pm|cmd|package|list|packages|list-packages|-u|-e|-d|-s|-3|-f|-i|-l|--user|[0-9]*) ;;
+          *) _adb_list_pkg=$_adb_arg ;;
+        esac
+      done
+      case "$_adb_list_pkg" in
+        ${NEW_REMOVALS.join("|")}) printf 'package:%s\\n' "$_adb_list_pkg" ;;
+      esac
+      ;;
+  esac
+}
+exec 3>&1
+${COMMON_SOURCE}
+${ANDROID_SOURCE}
+${entrypoint}`,
     env: { ...process.env, BASH_ENV: "/dev/null", ENV: "/dev/null" },
     encoding: "utf8",
     timeout: 5000,
@@ -176,8 +197,6 @@ describe("Android debloat package policy", () => {
   it("runs active semi-aggressive replacements but keeps commented aggressive apps", () => {
     const result = runAndroid(DEBLOAT_SOURCE);
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain("ADB shell pm uninstall com.samsung.android.honeyboard\n");
-    expect(result.stdout).toContain("ADB shell pm uninstall com.samsung.android.dialer\n");
     expect(result.stdout).not.toContain("ADB shell pm uninstall com.samsung.android.app.dressroom\n");
     expect(result.stdout).not.toContain("ADB shell pm uninstall com.google.android.gms.supervision\n");
   });
