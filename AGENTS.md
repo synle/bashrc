@@ -544,6 +544,7 @@ that both bash and node consume:
 `1` when the hostname does not contain `.local`; non-macOS hosts remain personal by
 default. A defined `_IS_WORK_PROFILE_OVERRIDE` wins, including explicit `0`; rerun
 `run.sh` after setting it so `~/.bash_syle_common` receives the resolved value.
+The run-info block prints the resolved profile as `work_profile = work|personal`.
 
 Use this flag to block automatic personal-network routing and local Ollama/LM Studio bootstrap:
 copy-server patch sends, endpoint discovery, installs, model pulls, and generated editor

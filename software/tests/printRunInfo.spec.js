@@ -1,13 +1,19 @@
 /** Tests for printRunInfo — prints the run configuration summary to stderr. */
-import { describe, it, expect, beforeEach } from "vitest";
-import { getIndexFunction, getIndexConstant } from "./setup.js";
+import { afterEach, describe, it, expect, beforeEach } from "vitest";
+import { getIndexFunction, getIndexConstant, setSandboxGlobal } from "./setup.js";
 
 const printRunInfo = getIndexFunction("printRunInfo");
 const _parsedArgs = getIndexConstant("_parsedArgs");
 
 describe("printRunInfo", () => {
+  const originalLog = getIndexFunction("log");
+  const originalIsWorkProfile = getIndexConstant("is_work_profile");
+  let logged;
+
   beforeEach(() => {
     // Reset preset state so each test starts clean
+    logged = [];
+    setSandboxGlobal("log", (message) => logged.push(message));
     _parsedArgs.presets = [];
     _parsedArgs.files = "";
     _parsedArgs.refreshFiles = "";
@@ -16,6 +22,11 @@ describe("printRunInfo", () => {
     _parsedArgs.dryrun = false;
     _parsedArgs.remove = false;
     _parsedArgs.setup = false;
+  });
+
+  afterEach(() => {
+    setSandboxGlobal("log", originalLog);
+    setSandboxGlobal("is_work_profile", originalIsWorkProfile);
   });
 
   it("does not throw with an empty preset list", () => {
@@ -54,5 +65,17 @@ describe("printRunInfo", () => {
     } finally {
       delete process.env.is_os_mac;
     }
+  });
+
+  it("prints personal work profile with the resolved flag", () => {
+    setSandboxGlobal("is_work_profile", false);
+    printRunInfo();
+    expect(logged).toContain("work_profile        = personal (is_work_profile=0)");
+  });
+
+  it("prints work profile with the resolved flag", () => {
+    setSandboxGlobal("is_work_profile", true);
+    printRunInfo();
+    expect(logged).toContain("work_profile        = work (is_work_profile=1)");
   });
 });

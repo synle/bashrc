@@ -6483,6 +6483,7 @@ function printRunInfo() {
     `remove              = ${_parsedArgs.remove}`,
     `presets             = ${_parsedArgs.presets.length ? _parsedArgs.presets.join(",") : "[none]"}`,
     `setup               = ${_parsedArgs.setup}`,
+    `work_profile        = ${is_work_profile ? "work" : "personal"} (is_work_profile=${Number(is_work_profile)})`,
     `os_flags            = ${activeOsFlags || "[none]"}`,
     `gui_flags           = ${[is_gui && "is_gui", is_gui_x11 && "is_gui_x11", is_gui_wayland && "is_gui_wayland"].filter(Boolean).join(",") || "[headless]"}`,
   ];
