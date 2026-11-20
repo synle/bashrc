@@ -2,7 +2,7 @@
 // SOURCE software/scripts/advanced/editor.common.js
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
-////// Constants //////
+// --- Constants ---
 
 /** @type {string} VS Code dark color theme name (resolved from editor.common.js). */
 const VS_CODE_DARK_THEME = VSCODE_DARK_COLOR_THEME;
@@ -80,7 +80,7 @@ const TO_UNINSTALL_EXTENSIONS = list`
   dbaeumer.vscode-eslint
 `;
 
-////// Path Discovery //////
+// --- Path Discovery ---
 
 /**
  * Returns the list of `User/` config directories for every detected VS Code install
@@ -92,7 +92,7 @@ function _getVSCodeUserPaths() {
   return roots.map((r) => path.join(r, "User"));
 }
 
-////// Settings //////
+// --- Settings ---
 
 /**
  * Resolves absolute paths to the globally-installed oxlint / oxfmt binaries for the oxc
@@ -239,7 +239,7 @@ function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_pre
   };
 }
 
-////// Keybindings //////
+// --- Keybindings ---
 
 /**
  * Returns the merged VS Code keybinding array for the given OS, with `OS_KEY` placeholders
@@ -268,7 +268,7 @@ function _getKeyConfigs(commonKeyBindings, windowsKeyBindings, isOsMac) {
   });
 }
 
-////// Extensions Installer Script //////
+// --- Extensions Installer Script ---
 
 /**
  * Builds the bash installer script that first uninstalls every entry in
@@ -307,7 +307,7 @@ done
 `;
 }
 
-////// Devcontainer Sync //////
+// --- Devcontainer Sync ---
 
 /**
  * Updates `.devcontainer/devcontainer.json` so its `customizations.vscode.extensions`
@@ -337,11 +337,12 @@ async function _updateDevcontainerExtensions() {
   log(">>> Synced .devcontainer/devcontainer.json extensions list");
 }
 
-////// Copilot Chat: chatLanguageModels.json //////
+// --- Copilot Chat: chatLanguageModels.json ---
 
 /**
- * Merges discovered Ollama providers into VS Code's `chatLanguageModels.json` — the file
- * Copilot Chat reads to populate its BYOK provider list (Manage Models... UI writes here too).
+ * Merges discovered local LLM providers (Ollama + LM Studio) into VS Code's
+ * `chatLanguageModels.json` — the file Copilot Chat reads to populate its BYOK provider
+ * list (Manage Models... UI writes here too).
  *
  * Schema (observed; not officially documented — see CAVEAT below):
  *   [
@@ -350,20 +351,20 @@ async function _updateDevcontainerExtensions() {
  *   ]
  *
  * Translation rules:
- *   - Reuse the provider ids from `getOllamaProviderInputs()` verbatim as `name`
- *     (`ollama-local` for 127.0.0.1, `ollama-<hostname>` for each OLLAMA_REMOTE host) so VS Code,
- *     opencode, and Zed all label the same backend with the same string.
- *   - `vendor` is hardcoded to `"ollama"` — Copilot Chat's BYOK provider registry keys
- *     Ollama-compatible servers under this exact string.
- *   - `url` strips the trailing `/v1` that `getOllamaProviderInputs` adds for OpenAI-compat
- *     consumers — Copilot Chat hits the native `/api/tags` and `/api/show` endpoints, not
- *     the OpenAI-compat layer, so it wants the root URL.
+ *   - Reuse the provider ids from the shared local LLM inputs verbatim as `name`, so VS
+ *     Code, opencode, and Zed all label the same backend with the same string.
+ *   - Ollama rows use `vendor: "ollama"` and the native root URL (Copilot Chat hits that
+ *     runtime's `/api/tags` and `/api/show` endpoints itself).
+ *   - LM Studio rows use `vendor: "openai"` and keep the `/v1` suffix from discovery —
+ *     LM Studio only speaks the OpenAI-compatible protocol. The BYOK vendor string for
+ *     OpenAI-compatible servers is inferred from the UI's vendor registry, not published
+ *     in a stable spec (same caveat below).
  *
  * Existing-entries policy:
- *   - All `vendor: "ollama"` entries are dropped from the existing array and re-derived from
- *     discovery (we are the source of truth for the Ollama providers).
- *   - Entries with any other `vendor` (Anthropic / OpenAI / Azure / etc. added via the UI)
- *     pass through untouched — we only manage the Ollama subset.
+ *   - All `vendor: "ollama"` entries and managed LM Studio rows (`vendor: "openai"` with a
+ *     `lm-studio-` name) are dropped and re-derived from discovery.
+ *   - Other entries (Anthropic / OpenAI / Azure / etc. added via the UI) pass through
+ *     untouched — we only manage the local LLM subset.
  *
  * CAVEAT: This schema is observed from VS Code's runtime migration of the deprecated
  * `github.copilot.chat.byok.ollamaEndpoint` setting; Microsoft has not published a stable
@@ -371,25 +372,38 @@ async function _updateDevcontainerExtensions() {
  * the file to globalState (SQLite). When that happens, re-derive by capturing a fresh write
  * from the Manage Models... UI and updating this builder.
  *
- * @param {Array<{id: string, baseURL: string}>} providers - From `getOllamaProviderInputs()`.
+ * @param {Array<{id: string, baseURL: string}>} providers - From the shared local LLM provider inputs.
  * @param {Array<object>} [existing=[]] - Existing `chatLanguageModels.json` array (any vendor).
  * @returns {Array<object>} Merged array ready to write to `chatLanguageModels.json`.
  */
 function _buildChatLanguageModels(providers, existing = []) {
-  /** @type {Array<object>} Pass-through entries from non-ollama vendors (e.g. anthropic, openai). */
-  const passthrough = Array.isArray(existing) ? existing.filter((e) => e && e.vendor !== "ollama") : [];
+  /** @type {Array<object>} Entries we do not own (other vendors / hand-written providers). */
+  const passthrough = (Array.isArray(existing) ? existing : []).filter(
+    (e) => e && e.vendor !== "ollama" && !(e.vendor === "openai" && typeof e.name === "string" && e.name.startsWith("lm-studio-")),
+  );
 
-  /** @type {Array<object>} Freshly-derived ollama entries from discovery. */
-  const ollamaEntries = providers.map((p) => ({
-    name: p.id, // ollama-local / ollama-<hostname> — matches opencode + Zed naming convention.
-    vendor: "ollama",
-    url: p.baseURL.replace(/\/v1$/, ""), // Strip OpenAI-compat suffix — Copilot Chat wants native root.
-  }));
+  /** @type {Array<object>} Freshly-derived Ollama entries from discovery. */
+  const ollamaEntries = providers
+    .filter((p) => p.id.startsWith("ollama-"))
+    .map((p) => ({
+      name: p.id,
+      vendor: "ollama",
+      url: p.baseURL.replace(/\/v1$/, ""), // Copilot Chat wants the native root.
+    }));
 
-  return [...passthrough, ...ollamaEntries];
+  /** @type {Array<object>} Freshly-derived LM Studio entries from discovery. */
+  const lmStudioEntries = providers
+    .filter((p) => p.id.startsWith("lm-studio-"))
+    .map((p) => ({
+      name: p.id,
+      vendor: "openai",
+      url: p.baseURL, // Keep /v1 — LM Studio only speaks the OpenAI-compatible protocol.
+    }));
+
+  return [...passthrough, ...ollamaEntries, ...lmStudioEntries];
 }
 
-////// Main Entry Point //////
+// --- Main Entry Point ---
 
 /**
  * Orchestrates VS Code setup: writes settings + keybindings to every detected install
@@ -409,19 +423,17 @@ async function doWork() {
   const commonKeyBindings = (await readJson`software/scripts/advanced/vs-code-keys.common.jsonc`) || [];
   const windowsKeyBindings = (await readJson`software/scripts/advanced/vs-code-keys.windows.jsonc`) || [];
 
-  // --- Ollama BYOK discovery (only for local-deploy; CI prebuilt artifact stays generic) ---
-  // Probe the known home-network Ollama hosts via the shared helper in llm-common.js. We
-  // register EVERY reachable host (not just the first) directly in `chatLanguageModels.json`
-  // below — this is the modern equivalent of the deprecated `github.copilot.chat.byok.
-  // ollamaEndpoint` single-string setting which could only hold one host and stamped a
-  // generic `name: "Ollama"`. Empty array means no host responded, in which case we leave
-  // chatLanguageModels.json alone except for stripping any STALE `vendor: "ollama"` rows
-  // (so a previously-discovered host that's now offline doesn't sit in the UI forever).
-  const ollamaProviders = userPaths.length > 0 ? await getOllamaProviderInputs() : [];
-  if (ollamaProviders.length > 0) {
-    log(`>>> vs-code: Copilot Chat BYOK Ollama providers -> ${ollamaProviders.map((p) => p.id).join(", ")}`);
+  // --- Local LLM BYOK discovery (only for local-deploy; CI prebuilt artifact stays generic) ---
+  // Probe the tagged Ollama and LM Studio hosts via the shared helpers in llm-common.js.
+  // We register EVERY reachable host (not just the first) directly in `chatLanguageModels.json`
+  // below. Empty array means no host responded, in which case we leave
+  // chatLanguageModels.json alone except for stripping stale managed rows (so a
+  // previously-discovered host that's now offline doesn't sit in the UI forever).
+  const localLlmProviders = userPaths.length > 0 ? [...(await getOllamaProviderInputs()), ...(await getLmStudioProviderInputs())] : [];
+  if (localLlmProviders.length > 0) {
+    log(`>>> vs-code: Copilot Chat BYOK local LLM providers -> ${localLlmProviders.map((p) => p.id).join(", ")}`);
   } else if (userPaths.length > 0) {
-    log(">>> vs-code: no reachable Ollama hosts — clearing any stale ollama entries from chatLanguageModels.json");
+    log(">>> vs-code: no reachable local LLM hosts — clearing stale managed entries from chatLanguageModels.json");
   }
 
   // --- Local system: write settings + keybindings + chatLanguageModels into each detected install ---
@@ -437,14 +449,14 @@ async function doWork() {
     await backupConfigFile(keybindingsPath);
     await writeJson(keybindingsPath, localKeybindings);
 
-    // Copilot Chat's BYOK provider list. We rewrite `vendor: "ollama"` rows from discovery
-    // and pass through any other vendors (Anthropic / OpenAI / Azure / etc. added via UI).
+    // Copilot Chat's BYOK provider list. We rewrite managed Ollama/LM Studio rows from
+    // discovery and pass through other vendors (Anthropic / Azure / etc. added via UI).
     // See `_buildChatLanguageModels` JSDoc for the full schema + caveat about Microsoft not
     // publishing a stable spec for this file.
     const chatModelsPath = path.join(userPath, "chatLanguageModels.json");
     const existingChatModels = (await readJson`${chatModelsPath}`) || [];
     const existingArray = Array.isArray(existingChatModels) ? existingChatModels : [];
-    const mergedChatModels = _buildChatLanguageModels(ollamaProviders, existingArray);
+    const mergedChatModels = _buildChatLanguageModels(localLlmProviders, existingArray);
     await backupConfigFile(chatModelsPath);
     await writeJson(chatModelsPath, mergedChatModels);
   }

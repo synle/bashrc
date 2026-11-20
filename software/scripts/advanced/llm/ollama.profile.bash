@@ -179,7 +179,7 @@ function _ollama_model_context_length() {
   return 1
 }
 
-# list_ollama_models: list the models an Ollama endpoint exposes via its /api/tags route
+# list_ollama_models: list the model ids an Ollama endpoint exposes via /v1/models
 #
 # Host defaults to $OLLAMA_DEFAULT_SERVER_IP:$OLLAMA_DEFAULT_SERVER_PORT (see above; falls back to
 # 127.0.0.1:11434 when the config lookup found nothing). Accepts hostnames with or
@@ -205,7 +205,7 @@ or a full URL. Prints one model name per line on stdout."
   printf '%s\n' "Fetching models from $host..." >&2
   # `command curl` bypasses the profile's formatting/HAR curl wrapper so the body
   # reaches grep unmodified and no HAR entry is written for a polling call.
-  command curl -fsS --max-time 5 "$host/api/tags" 2> /dev/null | grep -o '"name": *"[^"]*"' | cut -d'"' -f4
+  command curl -fsS --max-time 5 "$host/v1/models" 2> /dev/null | grep -o '"id": *"[^"]*"' | cut -d'"' -f4
 }
 
 # ollama_ps: show which models are resident, how much of each sits in VRAM, and when they expire

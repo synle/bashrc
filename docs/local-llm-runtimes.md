@@ -119,33 +119,31 @@ python -m vllm.entrypoints.openai.api_server \
   --max-model-len 8192
 ```
 
-Then in `software/scripts/opencode.js`, the URL stays the same; only the model
-discovery shape differs (vLLM exposes `/v1/models` instead of `/api/tags`).
+Current discovery uses `/v1/models` for every local LLM runtime, including Ollama,
+LM Studio, llama-server, and vLLM. The response shape is `{ data: [{ id, ... }] }`.
+The old Ollama-only `/api/tags` shape (`{ models: [{ name, ... }] }`) is no longer
+consumed by setup.
 
 ## Migrating from Ollama
 
-The opencode integration in this repo (`software/scripts/opencode.js`) talks to
-Ollama via two endpoints:
+The shared discovery in `software/scripts/advanced/llm/llm-common.js` now uses one
+model-inventory endpoint for every backend:
 
-1. `GET http://localhost:11434/api/tags` — lists installed models. **Ollama-only
-   shape.** Returns `{ models: [{ name, ... }] }`.
-2. `POST http://localhost:11434/v1/chat/completions` — OpenAI-compatible. Works
-   on Ollama, llama-server, _and_ vLLM.
+1. `GET http://<host>:<port>/v1/models` — lists model ids as `{ data: [{ id, ... }] }`.
+   Ollama serves this on port `11434`; LM Studio serves it on port `1234`.
+2. `POST http://<host>:<port>/v1/chat/completions` — OpenAI-compatible chat. Works
+   on Ollama, LM Studio, llama-server, _and_ vLLM.
 
-So a migration touches `_fetchOpencodeOllamaModels()` only. For llama-server
-and vLLM, switch to the OpenAI-compatible `/v1/models` endpoint, which has the
-shape `{ data: [{ id, ... }] }`.
-
-If you do migrate, the cleanest path is to keep the opencode.js script
-pluggable: detect which backend is up by probing both `/api/tags` and
-`/v1/models`, then format accordingly. That keeps `opencode.json` writes
-correct regardless of which engine you happen to be running.
+LM Studio lists embedding models in `/v1/models` alongside chat models. Discovery
+drops ids containing `embed`, so an embedding model never becomes a chat provider.
+Unreachable hosts and hosts with no usable model are skipped everywhere.
 
 ## RTX 5090 (32 GB) default server — verified notes
 
 > Everything in this section was verified on **2026-08-04** two ways: tag existence
 > and on-disk size from <https://ollama.com/library>, and **pullability + residency
-> against the live daemon** at `$OLLAMA_DEFAULT_SERVER_IP:11434` (`/api/tags`, `/api/pull`).
+> against the live daemon** at `$OLLAMA_DEFAULT_SERVER_IP:11434` (`/api/tags`, `/api/pull`;
+> setup now discovers models through `/v1/models`).
 >
 > **Verify against the daemon, not the website.** A tag being listed on
 > ollama.com/library does _not_ mean the registry will serve it to this box — see
@@ -245,7 +243,7 @@ The "stay on Ollama" advice in this doc has two real exceptions worth knowing:
    memory and ANE offload. Models from the `mlx-community` org on Hugging
    Face are pre-converted. Trade-off: again, you leave the Ollama registry,
    and the `opencode.json` model-discovery step in this repo
-   (`_fetchOpencodeOllamaModels` → `/api/tags`) doesn't apply — point opencode
+   (`_fetchOpenAiCompatibleModelNames` → `/v1/models`) doesn't apply — point opencode
    at the MLX-LM server's OpenAI-compatible endpoint instead.
 
 Both are still **single-user, single-request** runtimes — neither replaces vLLM

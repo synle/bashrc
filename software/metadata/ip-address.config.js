@@ -8,7 +8,16 @@ async function doWork() {
   const hostMappingApiResponse = await readText`${sourcePath}`;
 
   const HOST_SPLIT_REGEX = /[\:,|]/gi;
-  const UNWANTED_KEYWORDS = ["NO_SSH", "OSX_REMOTE", "WINDOWS_REMOTE", "OLLAMA_REMOTE", "OLLAMA_DEFAULT_SERVER", "CODE_SERVER_REMOTE"];
+  const UNWANTED_KEYWORDS = [
+    "NO_SSH",
+    "OSX_REMOTE",
+    "WINDOWS_REMOTE",
+    "OLLAMA_REMOTE",
+    "OLLAMA_DEFAULT_SERVER",
+    "LM_STUDIO_REMOTE",
+    "LM_STUDIO_DEFAULT_SERVER",
+    "CODE_SERVER_REMOTE",
+  ];
 
   const HOSTNAMES_GROUPED_BY_ID = hostMappingApiResponse
     .split("\n")

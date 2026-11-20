@@ -399,7 +399,7 @@ get_home_ip_address() {
 # get_ollama_default_server_ip - Print the IP of the default Ollama server. Hosts are
 # selected by tag in ip-address.config, never by hostname, in this order: the host
 # tagged OLLAMA_DEFAULT_SERVER, the other OLLAMA_REMOTE hosts (file order), then
-# 127.0.0.1. The first one whose /api/tags lists at least one model wins; unreachable
+# 127.0.0.1. The first one whose /v1/models lists at least one model wins; unreachable
 # or model-less hosts are skipped (2s probe each). Prints nothing when none qualify.
 # Mirrors getOllamaHosts() + getReachableOllamaHosts() in index.js / llm-common.js.
 function get_ollama_default_server_ip() {
@@ -422,7 +422,7 @@ function get_ollama_default_server_ip() {
         }
         END { print tagged others " 127.0.0.1" }
     '); do
-    if curl -fsS --max-time 2 "http://$ip:11434/api/tags" 2> /dev/null | grep -q '"name"'; then
+    if curl -fsS --max-time 2 "http://$ip:11434/v1/models" 2> /dev/null | grep -q '"id"'; then
       printf '%s\n' "$ip"
       return 0
     fi

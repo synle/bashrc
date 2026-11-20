@@ -1103,39 +1103,67 @@ async function getHomeHostsByTag(tag) {
 
 /**
  * A tag token in ip-address.config: all-caps with underscores (`NO_SSH`,
- * `WINDOWS_REMOTE`, `OLLAMA_REMOTE`). Hostnames are lowercase, so they never match.
+ * `WINDOWS_REMOTE`, `OLLAMA_REMOTE`, `LM_STUDIO_REMOTE`). Hostnames are lowercase,
+ * so they never match.
  * @type {RegExp}
  */
 const HOME_HOST_TAG_PATTERN = /^[A-Z][A-Z0-9_]*$/;
 
 /**
- * Loopback Ollama host — always the last entry of `getOllamaHosts()`, and the default
- * when ip-address.config tags no remote server.
+ * Loopback host shared by every tagged local LLM runtime — always the last entry of
+ * `getTaggedLlmHosts()`, and the default when ip-address.config tags no remote server.
  * @type {{ip: string, hostname: string, tags: string[]}}
  */
-const OLLAMA_LOCAL_HOST = { ip: "127.0.0.1", hostname: "local", tags: [] };
+const LOCAL_LLM_HOST = { ip: "127.0.0.1", hostname: "local", tags: [] };
 
 /**
- * Every Ollama host this machine may use, default first: remote servers from
- * ip-address.config, then `127.0.0.1`. A remote is a host tagged `OLLAMA_REMOTE` (a host
- * tagged only `OLLAMA_DEFAULT_SERVER` counts too). The default is the host tagged
- * `OLLAMA_DEFAULT_SERVER` (at most one — the first wins, with a warning, if several are
- * tagged), else the first `OLLAMA_REMOTE` in file order, else `127.0.0.1`. Hosts are
- * chosen by tag, never by hostname.
+ * Every host a tagged local LLM runtime may use, default first: remote servers from
+ * ip-address.config, then `127.0.0.1`. A remote carries `remoteTag` (a host tagged only
+ * `defaultTag` counts too). The default carries `defaultTag` (at most one — the first
+ * wins, with a warning, if several are tagged), else the first `remoteTag` in file
+ * order, else `127.0.0.1`. Hosts are chosen by tag, never by hostname.
+ *
+ * @param {string} remoteTag - Tag marking a personal-network server, e.g. `OLLAMA_REMOTE`.
+ * @param {string} defaultTag - Tag marking the preferred server, e.g. `OLLAMA_DEFAULT_SERVER`.
  * @returns {Promise<Array<{ip: string, hostname: string, tags: string[], isDefault: boolean, isLocal: boolean}>>}
  *   Default at index 0, `127.0.0.1` always last (and first when it is the only host).
  */
-async function getOllamaHosts() {
-  const remotes = await getHomeHostsByTag("OLLAMA_REMOTE");
-  const defaults = await getHomeHostsByTag("OLLAMA_DEFAULT_SERVER");
+async function getTaggedLlmHosts(remoteTag, defaultTag) {
+  const remotes = await getHomeHostsByTag(remoteTag);
+  const defaults = await getHomeHostsByTag(defaultTag);
   if (defaults.length > 1) {
-    log(`>> WARN ip-address.config: ${defaults.length} hosts tagged OLLAMA_DEFAULT_SERVER; using ${defaults[0].ip}`);
+    log(`>> WARN ip-address.config: ${defaults.length} hosts tagged ${defaultTag}; using ${defaults[0].ip}`);
   }
   const all = [...remotes];
   for (const d of defaults) if (!all.some((h) => h.ip === d.ip)) all.push(d);
-  const defaultIp = (defaults[0] || all[0] || OLLAMA_LOCAL_HOST).ip;
-  const ordered = [...all.filter((h) => h.ip === defaultIp), ...all.filter((h) => h.ip !== defaultIp), OLLAMA_LOCAL_HOST];
-  return ordered.map((h) => ({ ...h, isDefault: h.ip === defaultIp, isLocal: h === OLLAMA_LOCAL_HOST }));
+  const local = { ...LOCAL_LLM_HOST };
+  const defaultIp = (defaults[0] || all[0] || local).ip;
+  const ordered = [...all.filter((h) => h.ip === defaultIp), ...all.filter((h) => h.ip !== defaultIp), local];
+  return ordered.map((h) => ({ ...h, isDefault: h.ip === defaultIp, isLocal: h === local }));
+}
+
+/** Loopback Ollama host, exposed for callers that need the legacy name. */
+const OLLAMA_LOCAL_HOST = LOCAL_LLM_HOST;
+
+/**
+ * Every Ollama host this machine may use, default first. See {@link getTaggedLlmHosts}.
+ * @returns {Promise<Array<{ip: string, hostname: string, tags: string[], isDefault: boolean, isLocal: boolean}>>}
+ */
+async function getOllamaHosts() {
+  return getTaggedLlmHosts("OLLAMA_REMOTE", "OLLAMA_DEFAULT_SERVER");
+}
+
+/** Loopback LM Studio host, exposed for callers that need the runtime-specific name. */
+const LM_STUDIO_LOCAL_HOST = LOCAL_LLM_HOST;
+
+/**
+ * Every LM Studio host this machine may use, default first. Hosts carrying
+ * `LM_STUDIO_REMOTE` (or only `LM_STUDIO_DEFAULT_SERVER`) come from ip-address.config;
+ * `127.0.0.1` is always appended. See {@link getTaggedLlmHosts}.
+ * @returns {Promise<Array<{ip: string, hostname: string, tags: string[], isDefault: boolean, isLocal: boolean}>>}
+ */
+async function getLmStudioHosts() {
+  return getTaggedLlmHosts("LM_STUDIO_REMOTE", "LM_STUDIO_DEFAULT_SERVER");
 }
 
 // --- OS Flags ---
@@ -4477,8 +4505,9 @@ function _describeRESTErrorBody(body) {
  * when available (Node 18+), else `curl` via execBash. Behavior shared with every GET
  * caller (see {@link _readTextFromURL}): single transport selection, a
  * {@link _URL_FETCH_TIMEOUT_MS} timeout, GitHub token only for api.github.com, rate-limit
- * detection. GET-only: the 5 min disk cache, except Ollama's live `/api/tags`
- * inventory, which must prove current reachability and installed models.
+ * detection. GET-only: the 5 min disk cache, except OpenAI-compatible `/v1/models`
+ * inventory calls (Ollama and LM Studio), which must prove current reachability
+ * and installed models.
  * Non-GET: `data` is sent as a JSON body.
  *
  * Never throws on network/HTTP failure — returns "" and logs one line naming the method,
@@ -4496,7 +4525,7 @@ async function makeRESTAPI(url, method = "GET", data = null) {
   const verb = String(method || "GET").toUpperCase();
   if (!/^[A-Z]+$/.test(verb)) throw new Error(`Invalid HTTP method: ${method}`);
   const isGet = verb === "GET";
-  const useCache = isGet && !/^https?:\/\/[^/]+\/api\/tags\/?(?:\?.*)?$/.test(url);
+  const useCache = isGet && !/^https?:\/\/[^/]+\/v1\/models\/?(?:\?.*)?$/.test(url);
   const bodyText = data === null || data === undefined ? null : JSON.stringify(data);
   if (useCache) {
     const cached = _readUrlCache(url);

@@ -204,7 +204,7 @@ describe("OpenCode Ollama metadata", () => {
     const config = buildOpencodeConfig([
       {
         id: "ollama-local",
-        name: "Ollama·127.0.0.1:11434",
+        name: "Ollama - 127.0.0.1:11434",
         baseURL: "http://127.0.0.1:11434/v1",
         models: [{ name: "glm-4.7-flash" }, { name: "qwen3.8:latest" }],
       },
@@ -229,5 +229,22 @@ describe("OpenCode Ollama metadata", () => {
     expect(config.provider["ol-my-desktop"].models["gpt-oss:20b"].name).toBe("gpt-oss:20b / 192.168.1.45:11434");
     expect(config.agent.local.model).toBe("ol-my-desktop/gpt-oss:20b");
     expect(config.provider["ollama-my-desktop"]).toBeUndefined();
+  });
+
+  it("maps LM Studio providers to the lm- prefix and keeps the /v1 base URL", () => {
+    const buildOpencodeConfig = getIndexFunction("_buildOpencodeConfig");
+    const config = buildOpencodeConfig([
+      {
+        id: "lm-studio-my-desktop",
+        name: "My-desktop - 192.0.2.45:1234",
+        baseURL: "http://192.0.2.45:1234/v1",
+        models: [{ name: "qwen/qwen3.8-27b" }],
+      },
+    ]);
+
+    const provider = config.provider["lm-my-desktop"];
+    expect(provider.options.baseURL).toBe("http://192.0.2.45:1234/v1");
+    expect(provider.models["qwen/qwen3.8-27b"].name).toBe("qwen/qwen3.8-27b / 192.0.2.45:1234");
+    expect(config.provider["lm-studio-my-desktop"]).toBeUndefined();
   });
 });

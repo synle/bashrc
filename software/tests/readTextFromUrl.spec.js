@@ -87,21 +87,30 @@ describe("makeRESTAPI", () => {
   });
 
   it("ignores cached Ollama inventory after a model was removed", async () => {
-    const url = "http://192.0.2.45:11434/api/tags";
+    const url = "http://192.0.2.45:11434/v1/models";
     const cachePath = getIndexFunction("_urlCachePath")(url);
-    fileSystem[cachePath] = '{"models":[{"name":"glm-4.7-flash:q4_K_M"}]}';
+    fileSystem[cachePath] = '{"data":[{"id":"glm-4.7-flash:q4_K_M"}]}';
     mockFsExistence[cachePath] = true;
-    setSandboxGlobal("fetch", async () => fakeResponse(200, '{"models":[{"name":"gemma4:26b"}]}'));
-    expect(await makeRESTAPI(url)).toBe('{"models":[{"name":"gemma4:26b"}]}');
+    setSandboxGlobal("fetch", async () => fakeResponse(200, '{"data":[{"id":"gemma4:26b"}]}'));
+    expect(await makeRESTAPI(url)).toBe('{"data":[{"id":"gemma4:26b"}]}');
   });
 
   it("does not register a cached inventory when the Ollama host is offline", async () => {
-    const url = "http://192.0.2.45:11434/api/tags";
+    const url = "http://192.0.2.45:11434/v1/models";
     const cachePath = getIndexFunction("_urlCachePath")(url);
-    fileSystem[cachePath] = '{"models":[{"name":"glm-4.7-flash:q4_K_M"}]}';
+    fileSystem[cachePath] = '{"data":[{"id":"glm-4.7-flash:q4_K_M"}]}';
     mockFsExistence[cachePath] = true;
     setSandboxGlobal("fetch", async () => fakeResponse(503, "offline"));
     expect(await makeRESTAPI(url)).toBe("");
+  });
+
+  it("ignores cached LM Studio inventory so a local server change is visible", async () => {
+    const url = "http://127.0.0.1:1234/v1/models";
+    const cachePath = getIndexFunction("_urlCachePath")(url);
+    fileSystem[cachePath] = '{"data":[{"id":"stale-model"}]}';
+    mockFsExistence[cachePath] = true;
+    setSandboxGlobal("fetch", async () => fakeResponse(200, '{"data":[{"id":"qwen/qwen3.8-27b"}]}'));
+    expect(await makeRESTAPI(url)).toBe('{"data":[{"id":"qwen/qwen3.8-27b"}]}');
   });
 
   it("returns an empty string on HTTP 500 with a JSON error body", async () => {

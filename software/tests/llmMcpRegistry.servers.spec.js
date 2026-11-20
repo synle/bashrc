@@ -17,9 +17,11 @@ function loadLlmCommon(registryPayload, opts = {}) {
   const source = LLM_COMMON_SOURCE.replace(/^(const|let) /gm, "var ");
   /** @type {string[]} Tagged remote Ollama server IPs, default first. */
   const remoteIps = opts.remoteIps === undefined ? ["192.0.2.45"] : opts.remoteIps;
-  /** @type {Record<string, string[]>} Per-host `/api/tags` model names. */
-  const tagsByHost = opts.tagsByHost || {};
-  /** @type {string[]} Every host actually probed, in probe order - asserted by the discovery tests. */
+  /** @type {string[]} Tagged remote LM Studio server IPs, default first. */
+  const lmStudioIps = opts.lmStudioIps === undefined ? ["192.0.2.45"] : opts.lmStudioIps;
+  /** @type {Record<string, string[]>} Model ids keyed by `host:port`. */
+  const modelsByHost = opts.modelsByHost || {};
+  /** @type {string[]} Every endpoint actually probed, in probe order - asserted by discovery tests. */
   const probedHosts = [];
   /** @type {Record<string, any>} */
   const sandbox = {
@@ -42,11 +44,12 @@ function loadLlmCommon(registryPayload, opts = {}) {
       if (target === "software/scripts/advanced/llm/_common/mcp-servers.jsonc") {
         return registryPayload;
       }
-      const tagsMatch = target.match(/^http:\/\/([^/:]+):\d+\/api\/tags$/);
-      if (tagsMatch) {
-        const host = tagsMatch[1];
-        probedHosts.push(host);
-        return { models: (tagsByHost[host] || []).map((name) => ({ name })) };
+      const modelsMatch = target.match(/^http:\/\/([^/:]+):(\d+)\/v1\/models$/);
+      if (modelsMatch) {
+        const [, host, port] = modelsMatch;
+        const endpoint = `${host}:${port}`;
+        probedHosts.push(endpoint);
+        return { data: (modelsByHost[endpoint] || []).map((id) => ({ id })) };
       }
       return {};
     },
@@ -54,6 +57,17 @@ function loadLlmCommon(registryPayload, opts = {}) {
     getOllamaHosts: async () => [
       ...remoteIps.map((ip, i) => ({ ip, hostname: `my-desktop-${i + 1}`, tags: ["OLLAMA_REMOTE"], isDefault: i === 0, isLocal: false })),
       { ip: "127.0.0.1", hostname: "local", tags: [], isDefault: remoteIps.length === 0, isLocal: true },
+    ],
+    // Mirrors index.js getLmStudioHosts(): tagged remotes (default first), then 127.0.0.1.
+    getLmStudioHosts: async () => [
+      ...lmStudioIps.map((ip, i) => ({
+        ip,
+        hostname: `my-desktop-${i + 1}`,
+        tags: ["LM_STUDIO_REMOTE"],
+        isDefault: i === 0,
+        isLocal: false,
+      })),
+      { ip: "127.0.0.1", hostname: "local", tags: [], isDefault: lmStudioIps.length === 0, isLocal: true },
     ],
   };
   vm.runInNewContext(source, sandbox);
@@ -179,14 +193,14 @@ describe("getOllamaProviderInputs > tagged host discovery", () => {
   it("registers every reachable remote host (default first), then localhost", async () => {
     const sandbox = loadLlmCommon(null, {
       remoteIps: ["192.0.2.45", "192.0.2.46"],
-      tagsByHost: {
-        "192.0.2.45": ["glm-4.7-flash:q4_K_M"],
-        "192.0.2.46": ["qwen2.5-coder:14b"],
-        "127.0.0.1": ["qwen2.5-coder:3b"],
+      modelsByHost: {
+        "192.0.2.45:11434": ["glm-4.7-flash:q4_K_M"],
+        "192.0.2.46:11434": ["qwen2.5-coder:14b"],
+        "127.0.0.1:11434": ["qwen2.5-coder:3b"],
       },
     });
     const providers = await sandbox.getOllamaProviderInputs();
-    expect(sandbox.probedHosts).toEqual(["192.0.2.45", "192.0.2.46", "127.0.0.1"]);
+    expect(sandbox.probedHosts).toEqual(["192.0.2.45:11434", "192.0.2.46:11434", "127.0.0.1:11434"]);
     expect(providers.map((p) => p.id)).toEqual(["ollama-my-desktop-1", "ollama-my-desktop-2", "ollama-local"]);
     expect(providers[0].baseURL).toBe("http://192.0.2.45:11434/v1");
   });
@@ -194,7 +208,7 @@ describe("getOllamaProviderInputs > tagged host discovery", () => {
   it("skips a tagged remote host that serves no models", async () => {
     const sandbox = loadLlmCommon(null, {
       remoteIps: ["192.0.2.45"],
-      tagsByHost: { "127.0.0.1": ["qwen2.5-coder:3b"] },
+      modelsByHost: { "127.0.0.1:11434": ["qwen2.5-coder:3b"] },
     });
     const providers = await sandbox.getOllamaProviderInputs();
     expect(providers.map((p) => p.id)).toEqual(["ollama-local"]);
@@ -203,30 +217,88 @@ describe("getOllamaProviderInputs > tagged host discovery", () => {
   it("skips localhost when it serves no models", async () => {
     const sandbox = loadLlmCommon(null, {
       remoteIps: ["192.0.2.45"],
-      tagsByHost: { "192.0.2.45": ["glm-4.7-flash:q4_K_M"] },
+      modelsByHost: { "192.0.2.45:11434": ["glm-4.7-flash:q4_K_M"] },
     });
     const providers = await sandbox.getOllamaProviderInputs();
     expect(providers.map((p) => p.id)).toEqual(["ollama-my-desktop-1"]);
   });
 
   it("probes localhost only when no host is tagged OLLAMA_REMOTE", async () => {
-    const sandbox = loadLlmCommon(null, { remoteIps: [], tagsByHost: { "127.0.0.1": ["qwen2.5-coder:3b"] } });
+    const sandbox = loadLlmCommon(null, { remoteIps: [], modelsByHost: { "127.0.0.1:11434": ["qwen2.5-coder:3b"] } });
     const providers = await sandbox.getOllamaProviderInputs();
-    expect(sandbox.probedHosts).toEqual(["127.0.0.1"]);
+    expect(sandbox.probedHosts).toEqual(["127.0.0.1:11434"]);
     expect(providers.map((p) => p.id)).toEqual(["ollama-local"]);
   });
 
   it("returns no providers when nothing is reachable", async () => {
-    const sandbox = loadLlmCommon(null, { remoteIps: ["192.0.2.45"], tagsByHost: {} });
+    const sandbox = loadLlmCommon(null, { remoteIps: ["192.0.2.45"], modelsByHost: {} });
     expect(await sandbox.getOllamaProviderInputs()).toEqual([]);
   });
 
   it("returns no providers and probes no endpoints on a work profile", async () => {
     const sandbox = loadLlmCommon(null, {
       isWorkProfile: true,
-      tagsByHost: { "192.0.2.45": ["glm-4.7-flash:q4_K_M"], "127.0.0.1": ["qwen2.5-coder:3b"] },
+      modelsByHost: { "192.0.2.45:11434": ["glm-4.7-flash:q4_K_M"], "127.0.0.1:11434": ["qwen2.5-coder:3b"] },
     });
     expect(await sandbox.getOllamaProviderInputs()).toEqual([]);
+    expect(sandbox.probedHosts).toEqual([]);
+  });
+});
+
+describe("getLmStudioProviderInputs > tagged host discovery", () => {
+  it("registers every reachable remote host (default first), then localhost, on port 1234", async () => {
+    const sandbox = loadLlmCommon(null, {
+      lmStudioIps: ["192.0.2.45", "192.0.2.46"],
+      modelsByHost: {
+        "192.0.2.45:1234": ["qwen/qwen3.8-27b"],
+        "192.0.2.46:1234": ["qwen/qwen3.8-27b"],
+        "127.0.0.1:1234": ["qwen/qwen3.8-27b"],
+      },
+    });
+    const providers = await sandbox.getLmStudioProviderInputs();
+    expect(sandbox.probedHosts).toEqual(["192.0.2.45:1234", "192.0.2.46:1234", "127.0.0.1:1234"]);
+    expect(providers.map((p) => p.id)).toEqual(["lm-studio-my-desktop-1", "lm-studio-my-desktop-2", "lm-studio-local"]);
+    expect(providers[0].baseURL).toBe("http://192.0.2.45:1234/v1");
+    expect(providers[0].models).toEqual([{ name: "qwen/qwen3.8-27b" }]);
+  });
+
+  it("drops embedding models that cannot serve chat completions", async () => {
+    const sandbox = loadLlmCommon(null, {
+      lmStudioIps: [],
+      modelsByHost: {
+        "127.0.0.1:1234": ["qwen/qwen3.8-27b", "text-embedding-nomic-embed-text-v1.5"],
+      },
+    });
+    const providers = await sandbox.getLmStudioProviderInputs();
+    expect(providers.map((p) => p.models)).toEqual([[{ name: "qwen/qwen3.8-27b" }]]);
+  });
+
+  it("skips hosts that are unreachable or serve only embedding models", async () => {
+    const sandbox = loadLlmCommon(null, {
+      lmStudioIps: ["192.0.2.45"],
+      modelsByHost: { "127.0.0.1:1234": ["text-embedding-nomic-embed-text-v1.5"] },
+    });
+    expect(await sandbox.getLmStudioProviderInputs()).toEqual([]);
+  });
+
+  it("probes both runtimes independently when the same host serves them", async () => {
+    const sandbox = loadLlmCommon(null, {
+      modelsByHost: {
+        "192.0.2.45:11434": ["qwen2.5-coder:3b"],
+        "192.0.2.45:1234": ["qwen/qwen3.8-27b"],
+      },
+    });
+    expect((await sandbox.getOllamaProviderInputs()).map((p) => p.id)).toEqual(["ollama-my-desktop-1"]);
+    expect((await sandbox.getLmStudioProviderInputs()).map((p) => p.id)).toEqual(["lm-studio-my-desktop-1"]);
+    expect(sandbox.probedHosts).toEqual(["192.0.2.45:11434", "127.0.0.1:11434", "192.0.2.45:1234", "127.0.0.1:1234"]);
+  });
+
+  it("returns no providers and probes no endpoints on a work profile", async () => {
+    const sandbox = loadLlmCommon(null, {
+      isWorkProfile: true,
+      modelsByHost: { "192.0.2.45:1234": ["qwen/qwen3.8-27b"], "127.0.0.1:1234": ["qwen/qwen3.8-27b"] },
+    });
+    expect(await sandbox.getLmStudioProviderInputs()).toEqual([]);
     expect(sandbox.probedHosts).toEqual([]);
   });
 });

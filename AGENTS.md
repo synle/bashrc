@@ -447,8 +447,13 @@ Profile registration is buffered: `registerProfileBlock` /
 - `EDITOR_CONFIGS` in `software/index.js` is the single source for ignored folders and
   binary file extensions.
 - Config backups (`*.bak_original`, `*.bak_latest`, and `*.bak_*`) belong in editor and fuzzy-picker
-  ignored files. Ollama `/api/tags` requests bypass the URL disk cache so provider
-  registration always checks live host inventory.
+  ignored files. Local LLM host discovery uses tags in `software/metadata/ip-address.config`.
+  Ollama uses `OLLAMA_REMOTE` and `OLLAMA_DEFAULT_SERVER`.
+  LM Studio uses `LM_STUDIO_REMOTE` and `LM_STUDIO_DEFAULT_SERVER`.
+  `127.0.0.1` is always probed last. Only hosts whose
+  `/v1/models` lists at least one chat model are registered; LM Studio embedding models
+  are filtered out. `/v1/models` GETs bypass the URL disk cache so provider registration
+  always checks live host inventory.
 - Makefile uses `.ONESHELL`; escape shell `$` as `$$`. A target's helper script matches
   its name (`format_jsdocs` → `software/tools/format-jsdocs.js`).
 - `install.sh` is the single source for GitHub Codespaces setup; codespace aliases live
@@ -540,7 +545,7 @@ that both bash and node consume:
 default. A defined `_IS_WORK_PROFILE_OVERRIDE` wins, including explicit `0`; rerun
 `run.sh` after setting it so `~/.bash_syle_common` receives the resolved value.
 
-Use this flag to block automatic personal-network routing and local Ollama bootstrap:
+Use this flag to block automatic personal-network routing and local Ollama/LM Studio bootstrap:
 copy-server patch sends, endpoint discovery, installs, model pulls, and generated editor
 providers. Keep manual helpers available unless their invocation itself would be unsafe.
 

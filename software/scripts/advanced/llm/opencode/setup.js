@@ -95,17 +95,17 @@ function _buildOpencodeConfig(providersArray) {
   const providers = {};
   const opencodeProviders = providersArray.map((item) => ({
     ...item,
-    id: item.id.replace(/^ollama-/, "ol-"),
+    id: item.id.replace(/^ollama-/, "ol-").replace(/^lm-studio-/, "lm-"),
   }));
 
   for (const item of opencodeProviders) {
-    // No per-model `limit`: opencode falls back to its own defaults, and Ollama serves
-    // each model at its trained context. `capabilities.tools` is asserted for EVERY
-    // Ollama model:
-    // the OpenAI-compatible endpoint advertises no capability metadata, so opencode
-    // assumes no tool support and offers the model as chat-only — an agent that can
-    // read nothing and run nothing. Ollama itself rejects a tool call a model cannot
-    // make, so over-claiming fails loudly at call time instead of silently at pick time.
+    // No per-model `limit`: opencode falls back to its own defaults, and the local
+    // runtime serves each model at its trained context. `capabilities.tools` is
+    // asserted for EVERY discovered model: the OpenAI-compatible endpoint advertises
+    // no capability metadata, so opencode assumes no tool support and offers the model
+    // as chat-only — an agent that can read nothing and run nothing. The runtime
+    // rejects a tool call a model cannot make, so over-claiming fails loudly at call
+    // time instead of silently at pick time.
     const providerAddress = item.baseURL.replace(/^https?:\/\//, "").replace(/\/v1\/?$/, "");
     const modelsObject = Object.fromEntries(
       item.models.map((m) => {
@@ -832,7 +832,7 @@ export default async function () {
 /**
  * Configures installed OpenCode: discovered providers, MCP, TUI, instructions,
  * persona plugin, command/skill links, retired-agent cleanup, and the existing auth-store link.
- * Omits Ollama providers when discovery returns none; skips if OpenCode is absent.
+ * Omits local LLM providers when discovery returns none; skips if OpenCode is absent.
  * @returns {Promise<void>} Resolves after deployment; MCP validation and IO errors propagate.
  */
 async function doWork() {
@@ -850,9 +850,9 @@ async function doWork() {
   await _ensureOpencodeAuthSymlink();
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
-  const providerInputs = await getOllamaProviderInputs();
+  const providerInputs = [...(await getOllamaProviderInputs()), ...(await getLmStudioProviderInputs())];
   if (providerInputs.length === 0) {
-    log(">> opencode: no reachable Ollama hosts — writing config without provider entries");
+    log(">> opencode: no reachable local LLM hosts — writing config without provider entries");
   }
 
   // Shared on-demand instruction files must exist before the always-loaded block

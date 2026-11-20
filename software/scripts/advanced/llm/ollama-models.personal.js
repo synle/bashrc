@@ -35,11 +35,11 @@ function _exitIfOllamaModelPullUnsupported() {
  */
 async function _fetchInstalledOllamaModels() {
   try {
-    const json = await readJson`${OLLAMA_MODELS_API_URL}/api/tags`;
-    if (!json || !Array.isArray(json.models)) return null;
-    return json.models.map((m) => m && m.name).filter((n) => typeof n === "string" && n);
+    const json = await readJson`${OLLAMA_MODELS_API_URL}/v1/models`;
+    if (!json || !Array.isArray(json.data)) return null;
+    return json.data.map((m) => m && m.id).filter((id) => typeof id === "string" && id);
   } catch (err) {
-    log(">> ollama model pull: /api/tags failed", err);
+    log(">> ollama model pull: /v1/models failed", err);
     return null;
   }
 }

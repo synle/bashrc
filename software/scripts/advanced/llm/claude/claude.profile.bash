@@ -183,7 +183,7 @@ Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
 
   if [ "${SY_CLAUDE_LOCAL_FORCE:-0}" != "1" ] && ! _claude_endpoint_speaks_anthropic "$host"; then
     printf '%s\n' "claude_with_ip_address: $host does not serve the Anthropic Messages API (POST /v1/messages)." >&2
-    if command curl -fsS --max-time 5 "$host/api/tags" > /dev/null 2>&1; then
+    if command curl -fsS --max-time 5 "$host/v1/models" > /dev/null 2>&1; then
       printf '%s\n' "  That host is a plain Ollama daemon. Claude Code cannot talk to it directly." >&2
       printf '%s\n' "  Options:" >&2
       printf '%s\n' "    1. opencode  — already configured against this host: run 'op'" >&2

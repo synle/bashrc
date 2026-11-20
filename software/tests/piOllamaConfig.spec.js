@@ -247,4 +247,37 @@ describe("Pi Ollama provider refresh", () => {
       }
     `);
   });
+
+  it("registers LM Studio providers with their own apiKey and /v1 base URL", async () => {
+    mockFsExistence[PI_MODELS_PATH] = true;
+    fileSystem[PI_MODELS_PATH] = "{}";
+
+    await getIndexFunction("_doPiModelsWork")([
+      {
+        id: "lm-studio-local",
+        name: "LM Studio - 127.0.0.1:1234",
+        baseURL: "http://127.0.0.1:1234/v1",
+        models: [{ name: "qwen/qwen3.8-27b" }],
+      },
+    ]);
+
+    const provider = JSON.parse(fileSystem[PI_MODELS_PATH]).providers["lm-studio-local"];
+    expect(provider).toMatchInlineSnapshot(`
+      {
+        "api": "openai-completions",
+        "apiKey": "lm-studio",
+        "baseUrl": "http://127.0.0.1:1234/v1",
+        "compat": {
+          "supportsDeveloperRole": false,
+          "supportsReasoningEffort": false,
+        },
+        "models": [
+          {
+            "id": "qwen/qwen3.8-27b",
+            "name": "LM Studio - 127.0.0.1:1234 / qwen/qwen3.8-27b",
+          },
+        ],
+      }
+    `);
+  });
 });

@@ -797,19 +797,19 @@ hammering a dead endpoint on every keystroke. For Zed that means
 `zed-config.jsonc`'s `edit_predictions.disabled_globs: ["**/*"]` survives and inline
 predictions stay fully off — deliberately not Zed's cloud Zeta.
 
-Hosts come from [`ip-address.config`](../../../metadata/ip-address.config) by tag, never by machine name: every host tagged `OLLAMA_REMOTE` is a server, and the one tagged `OLLAMA_DEFAULT_SERVER` (at most one) leads — else the first `OLLAMA_REMOTE`. `getOllamaHosts()` in [`software/index.js`](../../../index.js) returns that list with `127.0.0.1` appended; `getReachableOllamaHosts()` in [`llm-common.js`](llm-common.js) keeps only hosts whose `/api/tags` lists at least one model, so an unreachable or empty host (remote or local) is never registered. `run.sh` bakes the same pick into `OLLAMA_DEFAULT_SERVER_IP` for the shell helpers. Example line:
+Hosts come from [`ip-address.config`](../../../metadata/ip-address.config) by tag, never by machine name. Every host tagged `OLLAMA_REMOTE` or `LM_STUDIO_REMOTE` is a server. The host tagged `OLLAMA_DEFAULT_SERVER` or `LM_STUDIO_DEFAULT_SERVER` leads, else the first matching remote. `getOllamaHosts()` and `getLmStudioHosts()` in [`software/index.js`](../../../index.js) append `127.0.0.1`. `getReachableOllamaHosts()` and `getReachableLmStudioHosts()` in [`llm-common.js`](llm-common.js) keep only hosts whose `/v1/models` lists at least one chat model. An unreachable or empty host, remote or local, is never registered. `run.sh` bakes the same Ollama pick into `OLLAMA_DEFAULT_SERVER_IP`. Example line:
 
 ```
-192.168.1.45: my-desktop | WINDOWS_REMOTE | OLLAMA_REMOTE | OLLAMA_DEFAULT_SERVER
+192.168.1.45: my-desktop | WINDOWS_REMOTE | OLLAMA_REMOTE | OLLAMA_DEFAULT_SERVER | LM_STUDIO_REMOTE | LM_STUDIO_DEFAULT_SERVER
 ```
 
 VS Code Copilot Chat reads `~/Library/Application Support/Code/User/chatLanguageModels.json`
 on macOS (Linux equivalent: `~/.config/Code/User/chatLanguageModels.json`). The file's
 schema is observed from VS Code's runtime — Microsoft has not published a stable spec.
 See [`vs-code.js` `_buildChatLanguageModels`](../vs-code.js) JSDoc for the full caveat
-and the merge rules: we own all `vendor: "ollama"` rows and re-derive them from
-discovery on every run; entries from other vendors (Anthropic, OpenAI, Azure, etc.,
-added via the Manage Models... UI) pass through untouched.
+and the merge rules: we own all `vendor: "ollama"` rows and managed LM Studio rows,
+and re-derive them from discovery on every run. Entries from other vendors
+(Anthropic, Azure, etc., added via the Manage Models... UI) pass through untouched.
 
 ### Adding a new model
 

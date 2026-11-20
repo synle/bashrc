@@ -182,7 +182,7 @@ describe("_getSettings -> theme gate", () => {
     );
   });
 
-  // VS Code has no custom theme of ours to install — the customizations *are* the custom
+  // VS Code has no custom theme of ours to install - the customizations *are* the custom
   // theme, so turning the gate off must leave the stock high-contrast themes untouched.
   it("should drop the customizations but keep the built-in theme names when off", () => {
     const vs = loadVsCode({ is_gui: 0 });
@@ -234,18 +234,68 @@ describe("_getSettings -> editor.multiCursorModifier (per-OS)", () => {
   });
 });
 
-// ---- _buildChatLanguageModels: Copilot Chat BYOK Ollama provider registration ----
+// ---- _buildChatLanguageModels: Copilot Chat BYOK local provider registration ----
 //
-// Builds the array written to `<Code>/User/chatLanguageModels.json`. We own all
-// `vendor: "ollama"` rows (re-derived from discovery on every run); rows with any
-// other vendor pass through untouched so UI-added providers (Anthropic / OpenAI /
-// Azure / etc.) survive a setup re-run.
+// Builds the array written to `<Code>/User/chatLanguageModels.json`. We own Ollama rows
+// and managed LM Studio rows (re-derived from discovery on every run). Other vendors
+// pass through untouched so UI-added providers survive a setup re-run.
 
 /**
- * Helper: builds a getOllamaProviderInputs-shaped provider entry for tests. Mirrors the
- * helper in `zed.spec.js` so both test files use the same shape.
- * @param {string} host - The host portion (e.g. "127.0.0.1", or "192.0.2.45" standing in
- *   for the OLLAMA_REMOTE host whose real address lives in
- *   `software/metadata/ip-address.config`).
+ * Helper: builds a discovered local LLM provider entry for tests.
+ * @param {string} id - Provider id from `getOllamaProviderInputs` or `getLmStudioProviderInputs`.
+ * @param {string} baseURL - Provider base URL from discovery.
  * @returns {{id: string, baseURL: string}} Minimal shape `_buildChatLanguageModels` reads.
  */
+function makeChatProvider(id, baseURL) {
+  return { id, baseURL };
+}
+
+describe("_buildChatLanguageModels", () => {
+  it("maps Ollama to the native root URL and LM Studio to the /v1 URL", () => {
+    const vs = loadVsCode();
+    const result = vs._buildChatLanguageModels([
+      makeChatProvider("ollama-my-desktop", "http://192.0.2.45:11434/v1"),
+      makeChatProvider("lm-studio-local", "http://127.0.0.1:1234/v1"),
+    ]);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "name": "ollama-my-desktop",
+          "url": "http://192.0.2.45:11434",
+          "vendor": "ollama",
+        },
+        {
+          "name": "lm-studio-local",
+          "url": "http://127.0.0.1:1234/v1",
+          "vendor": "openai",
+        },
+      ]
+    `);
+  });
+
+  it("drops stale managed rows and preserves UI-added providers", () => {
+    const vs = loadVsCode();
+    const result = vs._buildChatLanguageModels(
+      [makeChatProvider("ollama-local", "http://127.0.0.1:11434/v1")],
+      [
+        { name: "ollama-offline", vendor: "ollama", url: "http://192.0.2.45:11434" },
+        { name: "lm-studio-old", vendor: "openai", url: "http://192.0.2.45:1234/v1" },
+        { name: "ui-added", vendor: "anthropic", url: "https://example.invalid/v1" },
+      ],
+    );
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "name": "ui-added",
+          "url": "https://example.invalid/v1",
+          "vendor": "anthropic",
+        },
+        {
+          "name": "ollama-local",
+          "url": "http://127.0.0.1:11434",
+          "vendor": "ollama",
+        },
+      ]
+    `);
+  });
+});

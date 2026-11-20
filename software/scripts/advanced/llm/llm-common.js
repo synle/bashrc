@@ -295,7 +295,7 @@ async function deploySharedMcpServers(targetPath, managedConfig = {}, format = "
   await writeJson(targetPath, merged);
 }
 
-// --- Ollama Provider Discovery ---
+// --- Local LLM Provider Discovery (Ollama + LM Studio) ---
 
 /**
  * Default Ollama HTTP port (upstream default).
@@ -303,9 +303,19 @@ async function deploySharedMcpServers(targetPath, managedConfig = {}, format = "
  */
 const OLLAMA_PORT = 11434;
 
+/**
+ * Default LM Studio OpenAI-compatible HTTP port (upstream default).
+ * @type {number}
+ */
+const LM_STUDIO_PORT = 1234;
+
 /** Per-run file shared by LLM setup scripts for Ollama discovery results. */
 const OLLAMA_DISCOVERY_CACHE_PATH =
   typeof BASHRC_TEMP_DIR === "string" && BASHRC_TEMP_DIR ? path.join(BASHRC_TEMP_DIR, "llm_ollama_models.json") : "";
+
+/** Per-run file shared by LLM setup scripts for LM Studio discovery results. */
+const LM_STUDIO_DISCOVERY_CACHE_PATH =
+  typeof BASHRC_TEMP_DIR === "string" && BASHRC_TEMP_DIR ? path.join(BASHRC_TEMP_DIR, "llm_lm_studio_models.json") : "";
 
 // --- Ollama Model Inventory (single source of truth) ---
 //
@@ -316,7 +326,7 @@ const OLLAMA_DISCOVERY_CACHE_PATH =
 //   LLM_LOCAL_AGENT_MODELS   opencode `local` agent (tiers largest → smallest)
 //   getOllamaModelsForVram   what ollama-models.personal.js pulls for a given VRAM size
 // A model pulled by hand that is not in a tier still works: opencode and Zed discover
-// it from /api/tags, it just gets no `local` agent slot.
+// it from /v1/models, it just gets no `local` agent slot.
 //
 // Roles:
 //   agent        instruct checkpoints (no `-base`): chat templates + tool calls for
@@ -387,43 +397,70 @@ function getOllamaModelsForVram(vramMib) {
 }
 
 /**
- * Fetches the installed model names from an Ollama host's `/api/tags` endpoint.
- * Mirrors zed.js's `_fetchZedOllamaModels`. Returns an empty array on fetch failure,
- * JSON parse error, or empty list — never throws.
+ * Fetches model ids from an OpenAI-compatible `/v1/models` endpoint. Ollama and LM
+ * Studio both expose `{ data: [{ id, ... }] }` there. Returns an empty array on fetch
+ * failure, JSON parse error, or empty list — never throws.
  *
- * @param {string} host - The Ollama host to query (IP or hostname, no scheme).
- * @returns {Promise<string[]>} Model names (e.g. `["qwen2.5-coder:14b"]`).
+ * @param {string} host - Host to query (IP or hostname, no scheme).
+ * @param {number} port - HTTP port of the OpenAI-compatible endpoint.
+ * @param {string} label - Runtime name used in diagnostics.
+ * @returns {Promise<string[]>} Model ids (e.g. `["qwen2.5-coder:14b"]`).
  */
-async function _fetchOllamaModelNames(host) {
-  const url = `http://${host}:${OLLAMA_PORT}/api/tags`;
-  log(`>> ollama: getting models from ${url} (curl ${url})`);
+async function _fetchOpenAiCompatibleModelNames(host, port, label) {
+  const url = `http://${host}:${port}/v1/models`;
+  log(`>> ${label}: getting models from ${url} (curl ${url})`);
   try {
     const json = await readJson`${url}`;
-    const tags = Array.isArray(json && json.models) ? json.models : [];
-    return tags.map((m) => m && m.name).filter((n) => typeof n === "string" && n);
+    const models = Array.isArray(json && json.data) ? json.data : [];
+    return models.map((m) => m && m.id).filter((id) => typeof id === "string" && id);
   } catch {
     return [];
   }
 }
 
 /**
- * The one reachability rule for Ollama hosts: probes `/api/tags` on every host from
- * `getOllamaHosts()` (index.js — tagged `OLLAMA_REMOTE` servers, default first, then
- * `127.0.0.1`) and keeps only hosts that answer with at least one model. A host that is
+ * Fetches installed model ids from an Ollama host's `/v1/models` endpoint.
+ * @param {string} host - The Ollama host to query (IP or hostname, no scheme).
+ * @returns {Promise<string[]>} Model ids (e.g. `["qwen2.5-coder:14b"]`).
+ */
+async function _fetchOllamaModelNames(host) {
+  return _fetchOpenAiCompatibleModelNames(host, OLLAMA_PORT, "ollama");
+}
+
+/**
+ * Fetches chat model ids from an LM Studio host's `/v1/models` endpoint. LM Studio
+ * lists embedding models beside chat models; those cannot serve chat/completions, so
+ * they are dropped here before any downstream provider is built.
+ * @param {string} host - The LM Studio host to query (IP or hostname, no scheme).
+ * @returns {Promise<string[]>} Chat model ids.
+ */
+async function _fetchLmStudioModelNames(host) {
+  const models = await _fetchOpenAiCompatibleModelNames(host, LM_STUDIO_PORT, "lm studio");
+  return models.filter((id) => !/embed/i.test(id));
+}
+
+/**
+ * The one reachability rule for local LLM hosts: probe each host's `/v1/models`
+ * endpoint and keep only hosts answering with at least one model. A host that is
  * unreachable, or reachable with no models, is skipped and never registered anywhere.
  * Probes are bounded by the `readJson` fetch timeout, so a dead host cannot stall setup.
  * Work profiles return immediately without probing local or personal-network endpoints.
+ *
+ * @param {Array<{ip: string, hostname: string, isDefault: boolean, isLocal: boolean}>} hosts - Candidate hosts, priority order.
+ * @param {number} port - OpenAI-compatible HTTP port.
+ * @param {string} label - Runtime name used in diagnostics.
+ * @param {(host: string) => Promise<string[]>} fetchNames - Model-id fetcher for this runtime.
  * @returns {Promise<Array<{ip: string, hostname: string, isDefault: boolean, isLocal: boolean, models: string[]}>>}
- *   Reachable hosts in `getOllamaHosts()` order; `[]` when none serve a model.
+ *   Reachable hosts in input order; `[]` when none serve a model.
  */
-async function getReachableOllamaHosts() {
+async function _getReachableLlmHosts(hosts, port, label, fetchNames) {
   if (is_work_profile) return [];
 
   const reachable = [];
-  for (const host of await getOllamaHosts()) {
-    const models = await _fetchOllamaModelNames(host.ip);
+  for (const host of hosts) {
+    const models = await fetchNames(host.ip);
     if (models.length === 0) {
-      log(`>> ollama: skipping ${host.hostname} (${host.ip}) — unreachable or no models`);
+      log(`>> ${label}: skipping ${host.hostname} (${host.ip}) — unreachable or no models`);
       continue;
     }
     reachable.push({ ...host, models });
@@ -432,50 +469,109 @@ async function getReachableOllamaHosts() {
 }
 
 /**
- * Discovers reachable Ollama providers and the models they expose, returning input objects
- * shaped for downstream config builders (e.g. opencode's `_buildOpencodeConfig`).
+ * Keeps only Ollama hosts that answer `/v1/models` with at least one model. Hosts come
+ * from `getOllamaHosts()` (index.js — tagged `OLLAMA_REMOTE` servers, default first,
+ * then `127.0.0.1`).
+ * @returns {Promise<Array<{ip: string, hostname: string, isDefault: boolean, isLocal: boolean, models: string[]}>>}
+ *   Reachable hosts in `getOllamaHosts()` order; `[]` when none serve a model.
+ */
+async function getReachableOllamaHosts() {
+  return _getReachableLlmHosts(await getOllamaHosts(), OLLAMA_PORT, "ollama", _fetchOllamaModelNames);
+}
+
+/**
+ * Keeps only LM Studio hosts that answer `/v1/models` with at least one chat model.
+ * Hosts come from `getLmStudioHosts()` (index.js — tagged `LM_STUDIO_REMOTE` servers,
+ * default first, then `127.0.0.1`). An unreachable host is skipped everywhere.
+ * @returns {Promise<Array<{ip: string, hostname: string, isDefault: boolean, isLocal: boolean, models: string[]}>>}
+ *   Reachable hosts in `getLmStudioHosts()` order; `[]` when none serve a model.
+ */
+async function getReachableLmStudioHosts() {
+  return _getReachableLlmHosts(await getLmStudioHosts(), LM_STUDIO_PORT, "lm studio", _fetchLmStudioModelNames);
+}
+
+/**
+ * Builds OpenAI-compatible provider inputs from reachable local-LLM hosts, cached for
+ * one run so every consumer in the same setup sees the same discovery result.
  *
- * One provider entry per host from `getReachableOllamaHosts()`: the remote servers
- * tagged `OLLAMA_REMOTE` in `software/metadata/ip-address.config` (default server
- * first), then `127.0.0.1` — each only when it answers `/api/tags` with at least one
- * model. Unreachable or empty hosts never become a provider.
+ * @param {object} options - Runtime-specific rules.
+ * @param {string} options.label - Runtime name used in diagnostics.
+ * @param {string} options.cachePath - Per-run discovery cache file path.
+ * @param {number} options.port - OpenAI-compatible HTTP port.
+ * @param {string} options.idPrefix - Provider id prefix (`ollama` / `lm-studio`).
+ * @param {(hostname: string, ip: string) => string} options.displayName - Provider label builder.
+ * @param {() => Promise<Array<{ip: string, hostname: string, models: string[]}>>} options.getReachableHosts - Reachability probe.
+ * @returns {Promise<Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>>}
+ *   Empty array when no host is reachable.
+ */
+async function _getLocalLlmProviderInputs({ label, cachePath, port, idPrefix, displayName, getReachableHosts }) {
+  if (cachePath && fs.existsSync(cachePath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cachePath, "utf-8"));
+      if (cached?.version === 1 && Array.isArray(cached.providers)) {
+        log(`>> ${label}: using cached discovery (${cachePath})`);
+        return cached.providers;
+      }
+    } catch (err) {
+      log(`>> ${label}: ignoring invalid discovery cache`, err);
+    }
+  }
+
+  const providers = (await getReachableHosts()).map(({ ip, hostname, models }) => ({
+    id: `${idPrefix}-${hostname}`,
+    name: displayName(hostname, ip),
+    baseURL: `http://${ip}:${port}/v1`,
+    models: models.map((name) => ({ name })),
+  }));
+  for (const p of providers) {
+    log(`>> ${label}: discovered ${p.models.length} model(s) on ${p.id}: ${p.models.map((m) => m.name).join(", ")}`);
+  }
+  if (cachePath) {
+    fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+    fs.writeFileSync(cachePath, JSON.stringify({ version: 1, providers }, null, 2) + "\n");
+  }
+  return providers;
+}
+
+/**
+ * Discovers reachable Ollama providers and the models they expose, returning input
+ * objects shaped for downstream config builders (e.g. opencode's `_buildOpencodeConfig`).
  *
- * No hostname or address is hardcoded: hosts are selected by tag, and a config with no
- * `OLLAMA_REMOTE` host means only localhost is probed. Provider ids and labels come
- * from the hostname written in the config (`ollama-local` for the loopback host).
- *
- * Models are NOT hardcoded either: every reachable host contributes whatever `/api/tags` reports.
+ * Hosts are selected by tag from `software/metadata/ip-address.config`, never by
+ * hostname; a config with no `OLLAMA_REMOTE` host means only localhost is probed.
+ * Every reachable host contributes whatever `/v1/models` reports.
  *
  * @returns {Promise<Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>>}
  *   Empty array if no host is reachable.
  */
 async function getOllamaProviderInputs() {
-  if (OLLAMA_DISCOVERY_CACHE_PATH && fs.existsSync(OLLAMA_DISCOVERY_CACHE_PATH)) {
-    try {
-      const cached = JSON.parse(fs.readFileSync(OLLAMA_DISCOVERY_CACHE_PATH, "utf-8"));
-      if (cached?.version === 1 && Array.isArray(cached.providers)) {
-        log(`>> ollama: using cached discovery (${OLLAMA_DISCOVERY_CACHE_PATH})`);
-        return cached.providers;
-      }
-    } catch (err) {
-      log(">> ollama: ignoring invalid discovery cache", err);
-    }
-  }
+  return _getLocalLlmProviderInputs({
+    label: "ollama",
+    cachePath: OLLAMA_DISCOVERY_CACHE_PATH,
+    port: OLLAMA_PORT,
+    idPrefix: "ollama",
+    displayName: (hostname, ip) => `${hostname.charAt(0).toUpperCase()}${hostname.slice(1)}·${ip}:${OLLAMA_PORT}`,
+    getReachableHosts: getReachableOllamaHosts,
+  });
+}
 
-  const providers = (await getReachableOllamaHosts()).map(({ ip, hostname, models }) => ({
-    id: `ollama-${hostname}`,
-    name: `${hostname.charAt(0).toUpperCase()}${hostname.slice(1)}·${ip}:${OLLAMA_PORT}`,
-    baseURL: `http://${ip}:${OLLAMA_PORT}/v1`,
-    models: models.map((name) => ({ name })),
-  }));
-  for (const p of providers) {
-    log(`>> ollama: discovered ${p.models.length} model(s) on ${p.id}: ${p.models.map((m) => m.name).join(", ")}`);
-  }
-  if (OLLAMA_DISCOVERY_CACHE_PATH) {
-    fs.mkdirSync(path.dirname(OLLAMA_DISCOVERY_CACHE_PATH), { recursive: true });
-    fs.writeFileSync(OLLAMA_DISCOVERY_CACHE_PATH, JSON.stringify({ version: 1, providers }, null, 2) + "\n");
-  }
-  return providers;
+/**
+ * Discovers reachable LM Studio providers and their chat models. Hosts are selected
+ * by the `LM_STUDIO_REMOTE` / `LM_STUDIO_DEFAULT_SERVER` tags from `ip-address.config`,
+ * with `127.0.0.1` always appended. Provider ids use the `lm-studio-` prefix so every
+ * consumer can distinguish them from Ollama providers.
+ * @returns {Promise<Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>>}
+ *   Empty array if no host is reachable or every host only serves embedding models.
+ */
+async function getLmStudioProviderInputs() {
+  return _getLocalLlmProviderInputs({
+    label: "lm studio",
+    cachePath: LM_STUDIO_DISCOVERY_CACHE_PATH,
+    port: LM_STUDIO_PORT,
+    idPrefix: "lm-studio",
+    displayName: (hostname, ip) => `LM Studio (${hostname})·${ip}:${LM_STUDIO_PORT}`,
+    getReachableHosts: getReachableLmStudioHosts,
+  });
 }
 
 /** Returns the Windows user home for WSL setup, or the current home elsewhere. */
@@ -544,7 +640,7 @@ const AUTOCOMPLETE_MODELS = _getOllamaTierModels("autocomplete", "smallestFirst"
  * `getOllamaProviderInputs` use case) is happy to prefer the beefier remote box because
  * its requests are user-initiated and few — different tradeoff, different priority.
  *
- * Within each reachable host, the first model in `preferred` that appears in `/api/tags`
+ * Within each reachable host, the first model in `preferred` that appears in `/v1/models`
  * wins. So a laptop with only `qwen2.5-coder:1.5b-base` uses that; a desktop with all three
  * still picks the smallest (see AUTOCOMPLETE_MODELS rationale above).
  *

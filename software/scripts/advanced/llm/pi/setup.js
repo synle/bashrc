@@ -94,13 +94,13 @@ const PI_MANAGED_SETTINGS = {
 };
 
 /**
- * OpenAI-compatibility flags applied to every discovered Ollama provider. Ollama's
- * OpenAI-compatible endpoint does not understand the `developer` role or
- * `reasoning_effort`, so pi is told to send a plain `system` message instead —
- * mirrors the guidance in pi's own models.md for Ollama/vLLM/SGLang.
+ * OpenAI-compatibility flags applied to every discovered local LLM provider. Ollama
+ * and LM Studio expose OpenAI-compatible endpoints that do not understand the
+ * `developer` role or `reasoning_effort`, so pi sends a plain `system` message instead
+ * — mirrors the guidance in pi's own models.md for Ollama/vLLM/SGLang.
  * @type {{ supportsDeveloperRole: boolean, supportsReasoningEffort: boolean }}
  */
-const PI_OLLAMA_COMPAT = {
+const PI_LOCAL_LLM_COMPAT = {
   supportsDeveloperRole: false,
   supportsReasoningEffort: false,
 };
@@ -134,24 +134,24 @@ function getPiAgentDir(configHome) {
 }
 
 /**
- * Builds the pi models.json `providers` map from the shared Ollama discovery
+ * Builds the pi models.json `providers` map from the shared local LLM discovery
  * inputs. Each provider speaks the OpenAI Completions API; only `id` is required
  * per model for a local server, so the entries stay minimal and pi fills the
  * rest from its own defaults.
- * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providerInputs - Discovered reachable Ollama hosts.
+ * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providerInputs - Discovered reachable Ollama and LM Studio hosts.
  * @returns {Record<string, any>} Map of provider id → pi provider config.
  */
-function _buildPiOllamaProviders(providerInputs) {
+function _buildPiLocalLlmProviders(providerInputs) {
   /** @type {Record<string, any>} */
   const providers = {};
   for (const item of providerInputs) {
     providers[item.id] = {
       baseUrl: item.baseURL,
       api: "openai-completions",
-      // Placeholder — Ollama ignores it, but pi still requires an auth marker
-      // before a model appears in `/model` (documented in models.md).
-      apiKey: "ollama",
-      compat: { ...PI_OLLAMA_COMPAT },
+      // Placeholder — local runtimes ignore it, but pi still requires an auth
+      // marker before a model appears in `/model` (documented in models.md).
+      apiKey: item.id.startsWith("lm-studio-") ? "lm-studio" : "ollama",
+      compat: { ...PI_LOCAL_LLM_COMPAT },
       models: item.models.map((m) => ({ id: m.name, name: `${item.name} / ${m.name}` })),
     };
   }
@@ -267,11 +267,11 @@ async function _doPiKeybindingsWork(agentDir) {
 }
 
 /**
- * Replaces discovered Ollama providers and migrates managed Copilot names and headers to modelOverrides.
+ * Replaces discovered local LLM providers and migrates managed Copilot names and headers to modelOverrides.
  * Preserves custom definitions, explicit overrides, and provider headers without replacing native model capabilities.
- * Always writes the Copilot header configuration, even when no Ollama host is reachable.
+ * Always writes the Copilot header configuration, even when no local LLM host is reachable.
  * @param {string} agentDir - Target pi agent folder.
- * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providerInputs - Discovered reachable Ollama hosts.
+ * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providerInputs - Discovered reachable Ollama and LM Studio hosts.
  * @returns {Promise<void>} Resolves after backing up and writing models.json; write errors propagate.
  */
 async function _doPiModelsWork(agentDir, providerInputs) {
@@ -283,7 +283,7 @@ async function _doPiModelsWork(agentDir, providerInputs) {
   const targetPath = path.join(agentDir, "models.json");
 
   /** @type {Record<string, any>} Providers discovered this run. */
-  const discovered = _buildPiOllamaProviders(providerInputs);
+  const discovered = _buildPiLocalLlmProviders(providerInputs);
   /** @type {Record<string, any>} Managed display names and model headers. */
   const copilotOverrides = _getPiCopilotModelOverrides();
 
@@ -495,7 +495,7 @@ async function doWork() {
   await deploySharedMcpServers(path.join(piAgentDir, "mcp.json"), {}, "standard", "pi");
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
-  const providerInputs = await getOllamaProviderInputs();
+  const providerInputs = [...(await getOllamaProviderInputs()), ...(await getLmStudioProviderInputs())];
   await _doPiModelsWork(piAgentDir, providerInputs);
 
   // Shared on-demand instruction files must exist before the always-loaded

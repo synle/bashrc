@@ -17,7 +17,7 @@ function loadLlmCommon(registryPayload, opts = {}) {
   const source = LLM_COMMON_SOURCE.replace(/^(const|let) /gm, "var ");
   /** @type {string[]} Tagged remote Ollama server IPs, default first. */
   const remoteIps = opts.remoteIps === undefined ? ["192.0.2.45"] : opts.remoteIps;
-  /** @type {Record<string, string[]>} Per-host `/api/tags` model names. */
+  /** @type {Record<string, string[]>} Per-host `/v1/models` model ids. */
   const tagsByHost = opts.tagsByHost || {};
   /** @type {string[]} Every host actually probed, in probe order - asserted by the discovery tests. */
   const probedHosts = [];
@@ -42,11 +42,11 @@ function loadLlmCommon(registryPayload, opts = {}) {
       if (target === "software/scripts/advanced/llm/_common/mcp-servers.jsonc") {
         return registryPayload;
       }
-      const tagsMatch = target.match(/^http:\/\/([^/:]+):\d+\/api\/tags$/);
-      if (tagsMatch) {
-        const host = tagsMatch[1];
+      const modelsMatch = target.match(/^http:\/\/([^/:]+):(\d+)\/v1\/models$/);
+      if (modelsMatch) {
+        const [, host] = modelsMatch;
         probedHosts.push(host);
-        return { models: (tagsByHost[host] || []).map((name) => ({ name })) };
+        return { data: (tagsByHost[host] || []).map((id) => ({ id })) };
       }
       return {};
     },

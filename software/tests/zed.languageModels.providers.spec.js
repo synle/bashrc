@@ -172,4 +172,52 @@ describe("_buildZedLanguageModelsBlock > default_model selection", () => {
   });
 });
 
+/**
+ * Builds an LM Studio provider shaped like `getLmStudioProviderInputs`.
+ * @param {string} host - Host portion, e.g. "127.0.0.1" or "192.0.2.45".
+ * @param {string[]} modelNames - Chat model ids reported by /v1/models.
+ * @returns {object} Provider entry consumed by `_buildZedLanguageModelsBlock`.
+ */
+function makeLmStudioProvider(host, modelNames) {
+  const isLocal = host === "127.0.0.1";
+  return {
+    id: isLocal ? "lm-studio-local" : "lm-studio-my-desktop",
+    name: isLocal ? `Local - ${host}:1234` : `My-desktop - ${host}:1234`,
+    baseURL: `http://${host}:1234/v1`,
+    models: modelNames.map((name) => ({ name })),
+  };
+}
+
+describe("_buildZedLanguageModelsBlock > LM Studio provider", () => {
+  it("registers LM Studio as an openai_compatible provider keyed by its id", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock([makeLmStudioProvider("127.0.0.1", ["qwen/qwen3.8-27b"])]);
+    expect(Object.keys(result.languageModels.openai_compatible)).toEqual(["LM Studio (local)"]);
+    const provider = result.languageModels.openai_compatible["LM Studio (local)"];
+    expect(provider.api_url).toBe("http://127.0.0.1:1234/v1");
+    expect(provider.available_models.map((model) => model.name)).toEqual(["qwen/qwen3.8-27b"]);
+    expect(result.defaultModel).toMatchInlineSnapshot(`
+      {
+        "model": "qwen/qwen3.8-27b",
+        "provider": "LM Studio (local)",
+      }
+    `);
+  });
+
+  it("keeps local Ollama as the default when LM Studio is also reachable", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock([
+      makeProvider("127.0.0.1", ["qwen2.5-coder:3b"]),
+      makeLmStudioProvider("192.0.2.45", ["qwen/qwen3.8-27b"]),
+    ]);
+    expect(Object.keys(result.languageModels.openai_compatible)).toEqual(["LM Studio (my-desktop)"]);
+    expect(result.defaultModel).toMatchInlineSnapshot(`
+      {
+        "model": "qwen2.5-coder:3b",
+        "provider": "ollama",
+      }
+    `);
+  });
+});
+
 // ---- _getZedSettings: agent.default_model merge preserves baseConfig.agent.* ----

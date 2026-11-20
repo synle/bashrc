@@ -9,27 +9,30 @@ const ZED_LIGHT_THEME_FILE = "Sy Light.json";
 
 // --- Agent / LLM auto-config (shared discovery with software/scripts/advanced/llm/opencode/setup.js) ---
 //
-// Pre-registers Ollama LLM providers for Zed's Agent Panel so the dropdown is populated
+// Pre-registers local LLM providers for Zed's Agent Panel so the dropdown is populated
 // the first time the user opens the panel — no manual provider setup required. Discovery
-// is delegated to `getOllamaProviderInputs()` in llm-common.js (single source of truth for
-// reachable hosts + models). We then translate the generic provider inputs into Zed's
-// settings shape: `language_models.ollama` (local, auto_discover) and
-// `language_models.openai_compatible["Ollama (<hostname>)"]` (remote, explicit available_models).
+// is delegated to `getOllamaProviderInputs()` / `getLmStudioProviderInputs()` in
+// llm-common.js (single source of truth for reachable hosts + models). We then translate
+// the generic provider inputs into Zed's settings shape: `language_models.ollama` (local
+// Ollama, auto_discover) and `language_models.openai_compatible["<Runtime> (<hostname>)"]`
+// (every LM Studio host and every remote Ollama host, explicit available_models).
 //
 // Network discovery only runs on the local-deploy code path (never for CI prebuilt artifacts),
 // so the build artifacts uploaded to binary-cache stay generic across machines.
 
 /**
- * Builds the key under `language_models.openai_compatible` for one remote Ollama provider.
- * Per the Zed crate `language_models/src/language_models.rs`
+ * Builds the key under `language_models.openai_compatible` for one OpenAI-compatible
+ * local LLM provider. Per the Zed crate `language_models/src/language_models.rs`
  * (register_openai_compatible_providers L193-L220), the provider_id used by
  * `agent.default_model.provider` is literally this JSON key — so it's stable as long as
  * the hostname in ip-address.config isn't renamed.
- * @param {{id: string}} provider - From getOllamaProviderInputs() (`id` = `ollama-<hostname>`).
- * @returns {string} e.g. `Ollama (my-desktop)`.
+ * @param {{id: string}} provider - From the local LLM provider inputs (`ollama-<hostname>` or `lm-studio-<hostname>`).
+ * @returns {string} e.g. `Ollama (my-desktop)` or `LM Studio (my-desktop)`.
  */
-function _getZedOllamaRemoteKey(provider) {
-  return `Ollama (${provider.id.replace(/^ollama-/, "")})`;
+function _getZedOpenAiCompatibleKey(provider) {
+  const runtime = provider.id.startsWith("lm-studio-") ? "LM Studio" : "Ollama";
+  const prefix = provider.id.startsWith("lm-studio-") ? "lm-studio-" : "ollama-";
+  return `${runtime} (${provider.id.replace(prefix, "")})`;
 }
 
 /**
@@ -86,24 +89,22 @@ function _buildZedAgentServersBlock(agents) {
 
 /**
  * Builds the `language_models` block + `agent.default_model` entry for Zed's settings.json
- * from the generic provider-input array produced by `getOllamaProviderInputs()` in
- * llm-common.js. Translation rules:
+ * from the generic provider-input array produced by `getOllamaProviderInputs()` and
+ * `getLmStudioProviderInputs()` in llm-common.js. Translation rules:
  *
- *   - Loopback provider (baseURL containing 127.0.0.1) becomes `language_models.ollama`
- *     with `auto_discover: true` — Zed's native Ollama provider enumerates models itself,
- *     so we don't pass `available_models` for the local host (saves a re-enumeration).
- *   - Every remote provider becomes a `language_models.openai_compatible[<key>]` entry
- *     (key from `_getZedOllamaRemoteKey`); `openai_compatible` does NOT auto-discover, so we list `available_models`
- *     explicitly from the discovered model names. The remote URL needs the `/v1` suffix
- *     (Ollama exposes both `/api/*` native and `/v1/*` OpenAI-compatible — the
- *     openai_compatible provider needs the latter).
+ *   - Loopback Ollama provider becomes `language_models.ollama` with `auto_discover: true`
+ *     — Zed's native Ollama provider enumerates models itself, so no `available_models`.
+ *   - Every LM Studio provider (including loopback) and every remote Ollama provider
+ *     becomes a `language_models.openai_compatible[<key>]` entry (key from
+ *     `_getZedOpenAiCompatibleKey`); Zed has no native LM Studio provider and
+ *     `openai_compatible` does NOT auto-discover, so models are listed explicitly. The
+ *     provider URL already ends in `/v1` — exactly what `openai_compatible` wants.
  *
  * `default_model` picks the first reachable provider in priority order: local Ollama (if
  * any models found) wins because `provider: "ollama"` is the documented enum value; the
- * remote openai_compatible key is the documented-stable fallback when no local provider
- * responded (per the upstream crate referenced above).
+ * first `openai_compatible` key is the documented-stable fallback.
  *
- * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providers - From getOllamaProviderInputs().
+ * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providers - From the local LLM provider inputs.
  * @returns {{ languageModels: object, defaultModel: ({provider: string, model: string})|null }}
  */
 function _buildZedLanguageModelsBlock(providers) {
@@ -112,26 +113,26 @@ function _buildZedLanguageModelsBlock(providers) {
   /** @type {({provider: string, model: string})|null} */
   let defaultModel = null;
 
-  const localProvider = providers.find((p) => p.baseURL.includes("127.0.0.1"));
-  const remoteProviders = providers.filter((p) => !p.baseURL.includes("127.0.0.1") && p.models.length > 0);
+  const localOllamaProvider = providers.find((p) => p.id.startsWith("ollama-") && p.baseURL.includes("127.0.0.1"));
+  const openAiProviders = providers.filter((p) => p.models.length > 0 && p !== localOllamaProvider);
 
-  if (localProvider) {
+  if (localOllamaProvider) {
     // baseURL from llm-common.js includes the `/v1` OpenAI-compat suffix; Zed's native
     // `ollama` provider talks to the root URL (it calls `/api/tags` etc. itself), so
     // strip the suffix before writing it.
-    const rootUrl = localProvider.baseURL.replace(/\/v1$/, "");
+    const rootUrl = localOllamaProvider.baseURL.replace(/\/v1$/, "");
     languageModels.ollama = { api_url: rootUrl, auto_discover: true };
-    if (localProvider.models.length > 0) {
-      defaultModel = { provider: "ollama", model: localProvider.models[0].name };
+    if (localOllamaProvider.models.length > 0) {
+      defaultModel = { provider: "ollama", model: localOllamaProvider.models[0].name };
     }
   }
 
-  if (remoteProviders.length > 0) {
+  if (openAiProviders.length > 0) {
     languageModels.openai_compatible = Object.fromEntries(
-      remoteProviders.map((p) => [
-        _getZedOllamaRemoteKey(p),
+      openAiProviders.map((p) => [
+        _getZedOpenAiCompatibleKey(p),
         {
-          api_url: p.baseURL, // baseURL already ends in /v1 — exactly what openai_compatible wants.
+          api_url: p.baseURL,
           available_models: p.models.map(({ name }) => ({
             name,
             display_name: name,
@@ -141,11 +142,11 @@ function _buildZedLanguageModelsBlock(providers) {
         },
       ]),
     );
-    // Fall back to the first remote provider (the default Ollama server — providers
-    // arrive default-first) when no local provider responded.
+    // Fall back to the first OpenAI-compatible provider when no local Ollama answered.
+    // Providers arrive default-first, so the preferred server wins.
     if (!defaultModel) {
-      const [first] = remoteProviders;
-      defaultModel = { provider: _getZedOllamaRemoteKey(first), model: first.models[0].name };
+      const [first] = openAiProviders;
+      defaultModel = { provider: _getZedOpenAiCompatibleKey(first), model: first.models[0].name };
     }
   }
 
@@ -178,7 +179,7 @@ async function _getPathZed() {
 /**
  * Builds the merged Zed settings object: starts from zed-config.jsonc and overlays
  * shared EDITOR_CONFIGS values (fonts, tab size, ruler, terminal scrollback, ignored files).
- * Optionally merges in an Ollama `language_models` block + `agent.default_model` produced
+ * Optionally merges in a local LLM `language_models` block + `agent.default_model` produced
  * by `_buildZedLanguageModelsBlock` — only the local-deploy branch in `doWork` passes
  * these (CI prebuilt artifacts skip discovery and never set them).
  * @param {object} baseConfig - Parsed zed-config.jsonc.
@@ -233,14 +234,14 @@ function _getZedSettings(
     file_scan_exclusions: EDITOR_CONFIGS.ignoredFolders.concat(EDITOR_CONFIGS.ignoredFiles),
 
     // --- Agent: preserve dock / tool_permissions from baseConfig and optionally add the
-    // discovered default_model (only set when local Ollama responded).
+    // discovered default_model (only set when a local LLM host responded).
     agent: {
       ...baseConfig.agent,
       ...(defaultModel && { default_model: defaultModel }),
     },
   };
 
-  // Pre-registered Ollama providers (local auto_discover + remote openai_compatible).
+  // Pre-registered local LLM providers (Ollama auto_discover + openai_compatible).
   // Only present in local-deploy writes — CI prebuilt artifacts stay generic.
   if (languageModels) {
     settings.language_models = languageModels;
@@ -385,13 +386,13 @@ async function doWork() {
   if (targetPath) {
     log(">>> Deploying to local Zed install:", targetPath);
 
-    // Pre-register Ollama LLM providers for Zed's Agent Panel. Network discovery only
+    // Pre-register local LLM providers for Zed's Agent Panel. Network discovery only
     // runs here (never for CI prebuilt artifacts) so the build artifacts stay generic.
-    // Delegated to llm-common.js's `getOllamaProviderInputs()` so opencode + zed share
-    // one source of truth for which hosts are reachable + what models they advertise.
-    const providers = await getOllamaProviderInputs();
+    // Delegated to llm-common.js's provider inputs so opencode + zed share one source
+    // of truth for which hosts are reachable + what models they advertise.
+    const providers = [...(await getOllamaProviderInputs()), ...(await getLmStudioProviderInputs())];
     if (providers.length === 0) {
-      log(">>> zed: no reachable Ollama hosts — leaving language_models / agent.default_model unset");
+      log(">>> zed: no reachable local LLM hosts — leaving language_models / agent.default_model unset");
     }
     const { languageModels, defaultModel } = _buildZedLanguageModelsBlock(providers);
 

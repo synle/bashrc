@@ -72,7 +72,7 @@ ollama rm <model-name>
 curl http://127.0.0.1:11434/api/version
 
 # list downloaded models
-curl http://127.0.0.1:11434/api/tags
+curl http://127.0.0.1:11434/v1/models
 ```
 
 ### API Usage (curl examples)
@@ -121,7 +121,7 @@ Claude Code can use Ollama-hosted models as a local tool via its MCP (Model Cont
 
 1. Make sure Ollama is running (`ollama serve` or the desktop app)
 2. Pull a model: `ollama pull <model>` (see `software/scripts/advanced/llm/llm-models.jsonc` for model tags)
-3. Verify it's accessible: `curl http://127.0.0.1:11434/api/tags`
+3. Verify it's accessible: `curl http://127.0.0.1:11434/v1/models`
 
 ### macOS Setup
 
@@ -135,7 +135,7 @@ ollama serve
 ollama pull <model>  # model tags: software/scripts/advanced/llm/llm-models.jsonc
 
 # 3. test the connection
-curl http://127.0.0.1:11434/api/tags
+curl http://127.0.0.1:11434/v1/models
 ```
 
 The Ollama API is available at `http://127.0.0.1:11434`.
@@ -154,7 +154,7 @@ WIN_HOST=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')
 echo "Windows host IP: $WIN_HOST"
 
 # 3. test connectivity from WSL
-curl http://$WIN_HOST:11434/api/tags
+curl http://$WIN_HOST:11434/v1/models
 
 # 4. set the environment variable so tools can find it
 export OLLAMA_HOST="http://$WIN_HOST:11434"
