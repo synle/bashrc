@@ -41,11 +41,11 @@ describe("command snapshots", () => {
           "title": "docs/android/sponsorblock.json",
         },
         {
-          "hash": "540fe49191ea31cc73d4b382dc0e71e0",
+          "hash": "4fe9afc87059ca457fa2c2a985199f0c",
           "title": "docs/android/rvx-yt.txt",
         },
         {
-          "hash": "76463f48346a61ed71d406f289eae42c",
+          "hash": "412055832a4933a279c2ed6ff1fa3293",
           "title": "docs/android/rvx-yt-music.txt",
         },
         {
