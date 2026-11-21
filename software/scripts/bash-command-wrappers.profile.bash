@@ -79,11 +79,12 @@
 #                 Requires pandoc on PATH (brew install pandoc / apt install
 #                 pandoc). Round trip is lossy — list markers, link styles,
 #                 and any markdown-incompatible HTML get normalized.
-# docx          — DOCX -> Markdown via `pandoc -f docx -t gfm-raw_html`. Same
-#                 arg shape and temp-file naming as `html` (prefix `docx-`,
-#                 extension `.md`). Requires pandoc on PATH. One-way only:
-#                 no Markdown -> DOCX writer. Binary DOCX arrives as a file
-#                 argument or piped stdin, not as clipboard text.
+# docx          — Bidirectional DOCX <-> Markdown via pandoc. A .docx input
+#                 yields Markdown (`-f docx -t gfm-raw_html`); a .md input yields
+#                 DOCX (`-f markdown -t docx`). Use --to-docx to force the
+#                 Markdown -> DOCX direction for piped stdin or clipboard.
+#                 Same arg shape as `html`; temp files are prefixed `docx-`
+#                 and end in the target extension. Requires pandoc on PATH.
 #
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
@@ -623,13 +624,14 @@ alias md=marked
 # that has no markdown equivalent is dropped instead of leaking into the
 # output as inline tags.
 #
-# _pandoc_to_markdown: shared pandoc → GFM conversion behind html() and docx().
-# Params: <label> <from-format> <temp-prefix> [input [output]]. Label names the
-# caller in messages; from-format is the pandoc -f value; temp-prefix names the
-# /tmp files. Keeps arg handling and output naming identical for both callers.
-function _pandoc_to_markdown() {
-  local label="$1" from="$2" prefix="$3"
-  shift 3
+# _pandoc_convert: shared pandoc conversion behind html() and docx().
+# Params: <label> <from-format> <to-format> <temp-prefix> <output-ext>
+#         [input [output]]. Label names the caller in messages; from/to are the
+# pandoc -f/-t values; temp-prefix and output-ext name the /tmp files. Keeps arg
+# handling and output naming identical for every direction.
+function _pandoc_convert() {
+  local label="$1" from="$2" to="$3" prefix="$4" ext="$5"
+  shift 5
 
   if ! type -P pandoc &> /dev/null; then
     printf '%s\n' "$label: pandoc is required (brew install pandoc / apt install pandoc / dnf install pandoc)" >&2
@@ -657,14 +659,14 @@ function _pandoc_to_markdown() {
       rm -f "$input"
       return 1
     fi
-    output="/tmp/${prefix}-${rand}-clipboard.md"
+    output="/tmp/${prefix}-${rand}-clipboard.${ext}"
   elif [ $# -eq 1 ]; then
     input="$1"
     if [ ! -f "$input" ]; then
       printf '%s\n' "$label: not a file: $input" >&2
       return 1
     fi
-    output="/tmp/${prefix}-${rand}-$(basename -- "$input").md"
+    output="/tmp/${prefix}-${rand}-$(basename -- "$input").${ext}"
   else
     input="$1"
     output="$2"
@@ -674,7 +676,7 @@ function _pandoc_to_markdown() {
     fi
   fi
 
-  pandoc -f "$from" -t gfm-raw_html -o "$output" "$input"
+  pandoc -f "$from" -t "$to" -o "$output" "$input"
   local rc=$?
   ((input_is_temp)) && rm -f "$input"
   if [ "$rc" -ne 0 ]; then
@@ -698,24 +700,46 @@ function html() {
     - <rand> is the 6-char suffix from mktemp; the date prefix sorts renders chronologically in /tmp."
     return
   fi
-  _pandoc_to_markdown html html html "$@"
+  _pandoc_convert html html gfm-raw_html html md "$@"
 }
 
-# docx: convert DOCX to Markdown via pandoc. Same arg shape and temp-file
-# naming as html(), using prefix `docx-`. Binary DOCX reaches the function as
-# a file argument or piped stdin; clipboard text is not a valid DOCX input.
+# docx: bidirectional DOCX <-> Markdown via pandoc. File inputs pick their
+# direction by extension: .docx means DOCX -> Markdown, .md/.markdown means
+# Markdown -> DOCX. --to-docx forces the latter for piped stdin or clipboard.
 function docx() {
   if is_help_arg "${1:-}"; then
-    printf '%s\n' "docx: convert DOCX to Markdown using \`pandoc -f docx -t gfm-raw_html\`
+    printf '%s\n' "docx: convert between DOCX and Markdown using pandoc
   Usage:
-    cat foo.docx | docx           render piped stdin → /tmp/docx-<YYYY-MM-DD>-<rand>-clipboard.md
     docx input.docx               render input.docx → /tmp/docx-<YYYY-MM-DD>-<rand>-input.docx.md
     docx input.docx output.md     render input.docx → output.md
+    docx input.md                 render input.md → /tmp/docx-<YYYY-MM-DD>-<rand>-input.md.docx
+    docx input.md output.docx     render input.md → output.docx
+    cat input.docx | docx         render piped DOCX → /tmp/docx-<YYYY-MM-DD>-<rand>-clipboard.md
+    cat input.md | docx --to-docx render piped Markdown → /tmp/docx-<YYYY-MM-DD>-<rand>-clipboard.docx
+    docx --to-docx                render clipboard Markdown → /tmp/docx-<YYYY-MM-DD>-<rand>-clipboard.docx
   Notes:
     - Requires pandoc on PATH (brew install pandoc / apt install pandoc).
-    - One-way conversion; no Markdown → DOCX writer.
+    - Direction follows input extension: .docx → Markdown, .md/.markdown → DOCX.
+    - --to-docx forces Markdown → DOCX for piped stdin or clipboard.
     - <rand> is the 6-char suffix from mktemp; the date prefix sorts renders chronologically in /tmp."
     return
   fi
-  _pandoc_to_markdown docx docx docx "$@"
+
+  local to_docx=0
+  if [ "${1:-}" = "--to-docx" ]; then
+    to_docx=1
+    shift
+  fi
+
+  if ((to_docx == 0)) && [ $# -ge 1 ] && [ -f "$1" ]; then
+    case "$1" in
+    *.md | *.markdown) to_docx=1 ;;
+    esac
+  fi
+
+  if ((to_docx)); then
+    _pandoc_convert docx markdown docx docx docx "$@"
+  else
+    _pandoc_convert docx docx gfm-raw_html docx md "$@"
+  fi
 }
