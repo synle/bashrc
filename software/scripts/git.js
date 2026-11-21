@@ -136,7 +136,9 @@ function _getGlobalGitIgnore() {
   return code`
     # OS files
     .DS_Store
+    .DS_Store*
     *.Identifier
+    *.Identifier*
 
     # Editors & Backups
     *.swp

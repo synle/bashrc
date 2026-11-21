@@ -43,9 +43,11 @@ describe(".build/gitignore_global", () => {
     if (warnIfBuildArtifactMissing(filename)) return;
 
     expect(readBuildText(filename)).toMatchInlineSnapshot(`
-      "# OS files
+      "      # OS files
       .DS_Store
+      .DS_Store*
       *.Identifier
+      *.Identifier*
 
       # Editors & Backups
       *.swp

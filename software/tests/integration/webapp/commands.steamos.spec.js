@@ -58,7 +58,7 @@ describe("command snapshots", () => {
           "title": ".build/gitconfig",
         },
         {
-          "hash": "eda1482576eb6a03f03bc1595d4b1a49",
+          "hash": "53503e5619dedafc1ef9deabba981eae",
           "title": ".build/gitignore_global",
         },
         {
