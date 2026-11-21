@@ -288,7 +288,7 @@ describe("list_prs — output shape", () => {
         number: index + 1,
       }),
     );
-    const result = runCli(["--me=1", "--json"], prs, { env: { FAKE_GH_DELAY: "0.05" } });
+    const result = runCli(["--me=1", "--json"], prs, { env: { FAKE_GH_DELAY: "1" } });
     expect(result.ghMaxConcurrency).toBe(3);
   });
 });
