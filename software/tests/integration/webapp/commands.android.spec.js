@@ -41,7 +41,7 @@ describe("command snapshots", () => {
           "title": "docs/android/sponsorblock.json",
         },
         {
-          "hash": "4fe9afc87059ca457fa2c2a985199f0c",
+          "hash": "69319ddc3f2aaac7e67617da876985d7",
           "title": "docs/android/rvx-yt.txt",
         },
         {
