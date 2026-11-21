@@ -1636,8 +1636,8 @@ function AndroidNotesDom() {
       <DynamicTextArea path="/docs/android/android-mobile.restore.sh" />
       <DynamicTextArea path="/docs/android/android-mobile.sh" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
-      <DynamicTextArea path="/docs/android/rvx-yt.txt" />
-      <DynamicTextArea path="/docs/android/rvx-yt-music.txt" />
+      <DynamicTextArea path="/docs/android/rvx-youtube-video.txt" />
+      <DynamicTextArea path="/docs/android/rvx-youtube-music.txt" />
 
       {/* Android */}
       <div className="form-label">Android Applications</div>

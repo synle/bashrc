@@ -41,12 +41,12 @@ describe("command snapshots", () => {
           "title": "docs/android/sponsorblock.json",
         },
         {
-          "hash": "69319ddc3f2aaac7e67617da876985d7",
-          "title": "docs/android/rvx-yt.txt",
+          "hash": "5691da2e64912e08dc0763890affb349",
+          "title": "docs/android/rvx-youtube-video.txt",
         },
         {
-          "hash": "412055832a4933a279c2ed6ff1fa3293",
-          "title": "docs/android/rvx-yt-music.txt",
+          "hash": "038259648b49c0589614f1da01fe0b3e",
+          "title": "docs/android/rvx-youtube-music.txt",
         },
         {
           "hash": "aaf23bb2ba77d651f678364eee226da1",
