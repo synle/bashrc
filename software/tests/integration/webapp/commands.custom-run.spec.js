@@ -20,7 +20,7 @@ describe("command snapshots", () => {
           "title": "SCRIPTS TO RUN",
         },
         {
-          "hash": "0a943c39f3e7625697ed5101ab2e8475",
+          "hash": "434f6a3f43e0f83bca429b7a5d6abd78",
           "title": "scriptToRunOptions",
         },
         {
