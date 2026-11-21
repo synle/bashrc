@@ -79,6 +79,11 @@
 #                 Requires pandoc on PATH (brew install pandoc / apt install
 #                 pandoc). Round trip is lossy — list markers, link styles,
 #                 and any markdown-incompatible HTML get normalized.
+# docx          — DOCX -> Markdown via `pandoc -f docx -t gfm-raw_html`. Same
+#                 arg shape and temp-file naming as `html` (prefix `docx-`,
+#                 extension `.md`). Requires pandoc on PATH. One-way only:
+#                 no Markdown -> DOCX writer. Binary DOCX arrives as a file
+#                 argument or piped stdin, not as clipboard text.
 #
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
@@ -617,6 +622,68 @@ alias md=marked
 # is the gold standard for this direction. We use `gfm-raw_html` so any HTML
 # that has no markdown equivalent is dropped instead of leaking into the
 # output as inline tags.
+#
+# _pandoc_to_markdown: shared pandoc → GFM conversion behind html() and docx().
+# Params: <label> <from-format> <temp-prefix> [input [output]]. Label names the
+# caller in messages; from-format is the pandoc -f value; temp-prefix names the
+# /tmp files. Keeps arg handling and output naming identical for both callers.
+function _pandoc_to_markdown() {
+  local label="$1" from="$2" prefix="$3"
+  shift 3
+
+  if ! type -P pandoc &> /dev/null; then
+    printf '%s\n' "$label: pandoc is required (brew install pandoc / apt install pandoc / dnf install pandoc)" >&2
+    return 1
+  fi
+
+  local input output rand input_is_temp=0
+  # date prefix (YYYY-MM-DD) + 6-char mktemp random suffix so renders sort
+  # chronologically in /tmp and remain unique within the same day.
+  rand="$(date +%Y-%m-%d)-$(mktemp -u "/tmp/${prefix}-XXXXXX" | sed "s|^/tmp/${prefix}-||")"
+
+  if [ $# -eq 0 ]; then
+    # No args — pipe content if stdin is not a TTY, else fall back to clipboard.
+    input=$(mktemp "/tmp/${prefix}-input-XXXXXX") || return 1
+    input_is_temp=1
+    if [ -t 0 ]; then
+      # interactive: pull from clipboard via the universal paste() wrapper
+      paste > "$input"
+    else
+      # piped: capture stdin
+      command cat - > "$input"
+    fi
+    if [ ! -s "$input" ]; then
+      printf '%s\n' "$label: no input (clipboard/stdin was empty)" >&2
+      rm -f "$input"
+      return 1
+    fi
+    output="/tmp/${prefix}-${rand}-clipboard.md"
+  elif [ $# -eq 1 ]; then
+    input="$1"
+    if [ ! -f "$input" ]; then
+      printf '%s\n' "$label: not a file: $input" >&2
+      return 1
+    fi
+    output="/tmp/${prefix}-${rand}-$(basename -- "$input").md"
+  else
+    input="$1"
+    output="$2"
+    if [ ! -f "$input" ]; then
+      printf '%s\n' "$label: not a file: $input" >&2
+      return 1
+    fi
+  fi
+
+  pandoc -f "$from" -t gfm-raw_html -o "$output" "$input"
+  local rc=$?
+  ((input_is_temp)) && rm -f "$input"
+  if [ "$rc" -ne 0 ]; then
+    printf '%s\n' "$label: pandoc exited with $rc" >&2
+    return "$rc"
+  fi
+  printf '%s\n' "$label: wrote $output"
+}
+
 function html() {
   if is_help_arg "${1:-}"; then
     printf '%s\n' "html: convert HTML to Markdown using \`pandoc -f html -t gfm-raw_html\`
@@ -631,56 +698,24 @@ function html() {
     - <rand> is the 6-char suffix from mktemp; the date prefix sorts renders chronologically in /tmp."
     return
   fi
+  _pandoc_to_markdown html html html "$@"
+}
 
-  if ! type -P pandoc &> /dev/null; then
-    printf '%s\n' "html: pandoc is required (brew install pandoc / apt install pandoc / dnf install pandoc)" >&2
-    return 1
+# docx: convert DOCX to Markdown via pandoc. Same arg shape and temp-file
+# naming as html(), using prefix `docx-`. Binary DOCX reaches the function as
+# a file argument or piped stdin; clipboard text is not a valid DOCX input.
+function docx() {
+  if is_help_arg "${1:-}"; then
+    printf '%s\n' "docx: convert DOCX to Markdown using \`pandoc -f docx -t gfm-raw_html\`
+  Usage:
+    cat foo.docx | docx           render piped stdin → /tmp/docx-<YYYY-MM-DD>-<rand>-clipboard.md
+    docx input.docx               render input.docx → /tmp/docx-<YYYY-MM-DD>-<rand>-input.docx.md
+    docx input.docx output.md     render input.docx → output.md
+  Notes:
+    - Requires pandoc on PATH (brew install pandoc / apt install pandoc).
+    - One-way conversion; no Markdown → DOCX writer.
+    - <rand> is the 6-char suffix from mktemp; the date prefix sorts renders chronologically in /tmp."
+    return
   fi
-
-  local input output rand input_is_temp=0
-  # date prefix (YYYY-MM-DD) + 6-char mktemp random suffix so renders sort
-  # chronologically in /tmp and remain unique within the same day.
-  rand="$(date +%Y-%m-%d)-$(mktemp -u "/tmp/html-XXXXXX" | sed 's|^/tmp/html-||')"
-
-  if [ $# -eq 0 ]; then
-    # No args — pipe content if stdin is not a TTY, else fall back to clipboard.
-    input=$(mktemp "/tmp/html-input-XXXXXX") || return 1
-    input_is_temp=1
-    if [ -t 0 ]; then
-      # interactive: pull from clipboard via the universal paste() wrapper
-      paste > "$input"
-    else
-      # piped: capture stdin
-      command cat - > "$input"
-    fi
-    if [ ! -s "$input" ]; then
-      printf '%s\n' "html: no input (clipboard/stdin was empty)" >&2
-      rm -f "$input"
-      return 1
-    fi
-    output="/tmp/html-${rand}-clipboard.md"
-  elif [ $# -eq 1 ]; then
-    input="$1"
-    if [ ! -f "$input" ]; then
-      printf '%s\n' "html: not a file: $input" >&2
-      return 1
-    fi
-    output="/tmp/html-${rand}-$(basename -- "$input").md"
-  else
-    input="$1"
-    output="$2"
-    if [ ! -f "$input" ]; then
-      printf '%s\n' "html: not a file: $input" >&2
-      return 1
-    fi
-  fi
-
-  pandoc -f html -t gfm-raw_html -o "$output" "$input"
-  local rc=$?
-  ((input_is_temp)) && rm -f "$input"
-  if [ "$rc" -ne 0 ]; then
-    printf '%s\n' "html: pandoc exited with $rc" >&2
-    return "$rc"
-  fi
-  printf '%s\n' "html: wrote $output"
+  _pandoc_to_markdown docx docx docx "$@"
 }
