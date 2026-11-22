@@ -117,6 +117,11 @@ async function doWork() {
       function _starship_preexec() {
         export STARSHIP_LOCAL_TIME="$(_starship_time)"
         export STARSHIP_UTC_TIME="$(_starship_time 'UTC')"
+        if ((is_work_profile)); then
+          export STARSHIP_PROFILE_MARKER='W'
+        else
+          export STARSHIP_PROFILE_MARKER='H'
+        fi
         ifconfig2 > /dev/null
         # Keep machine-facing ifconfig2 output unchanged; space only the prompt list.
         export STARSHIP_IP_ADDR="\${_ifconfig2_cache//,/, }"

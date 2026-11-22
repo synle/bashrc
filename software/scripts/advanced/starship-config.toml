@@ -1,5 +1,5 @@
 # Starship prompt config - separated fields in the three-line bashrc layout
-# Line 1: local_time U=utc_time <separator> user <separator> hostname <separator> ip_address
+# Line 1: local_time U=utc_time <separator> user <separator> hostname | H/W <separator> ip_address
 # Line 2: directory <separator> [git_branch] ahead/behind
 # Line 3: bash_version>
 # Bold bright-white U+E0B1 separators use the terminal palette.
@@ -10,6 +10,7 @@ ${env_var.LOCAL_TIME} \
 [U=](bold yellow)${env_var.UTC_TIME}[ \ue0b1 ](bold bright-white)\
 $username[ \ue0b1 ](bold bright-white)\
 $hostname\
+${env_var.PROFILE}\
 ${env_var.IP_ADDR}\
 $fill
 ${env_var.SHORT_PWD}\
@@ -190,6 +191,11 @@ format = "[$env_value](bold green)"
 variable = "STARSHIP_UTC_TIME"
 default = ""
 format = "[$env_value](bold yellow)"
+
+[env_var.PROFILE]
+variable = "STARSHIP_PROFILE_MARKER"
+default = ""
+format = "([ | ](bold bright-white)[$env_value](bold purple))"
 
 [env_var.IP_ADDR]
 variable = "STARSHIP_IP_ADDR"

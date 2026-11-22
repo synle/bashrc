@@ -67,4 +67,36 @@ printf '%s\\n' "$STARSHIP_IP_ADDR"
     expect(result.stderr).toBe("");
     expect(result.stdout).toBe(`192.0.2.10, 198.51.100.20\n${expected}\n`);
   });
+
+  it.each([
+    { profile: "0", marker: "H" },
+    { profile: "1", marker: "W" },
+  ])("exports $marker for is_work_profile=$profile", async ({ profile, marker }) => {
+    fetchResponses["software/scripts/advanced/starship-config.toml"] = "[character]";
+    fileSystem[BASH_SYLE_PATH] = "";
+    await runScript("software/scripts/advanced/starship-config.js");
+
+    const profileBlock = fileSystem[BASH_SYLE_PATH];
+    const hook = profileBlock.slice(
+      profileBlock.indexOf("function _starship_preexec()"),
+      profileBlock.indexOf("starship_precmd_user_func="),
+    );
+    const result = spawnSync("/bin/bash", ["--noprofile", "--norc"], {
+      input: `
+is_work_profile=${profile}
+${hook}
+function ifconfig2() { :; }
+function _starship_time() { printf '%s' '01:00:00PM'; }
+function shorter_pwd_path() { printf '%s' '~/fixture'; }
+_starship_preexec
+printf '%s\\n' "$STARSHIP_PROFILE_MARKER"
+`,
+      env: { PATH: process.env.PATH, BASH_ENV: "" },
+      encoding: "utf8",
+      timeout: 5000,
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toBe(`${marker}\n`);
+  });
 });

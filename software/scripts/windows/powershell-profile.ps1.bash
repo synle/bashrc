@@ -518,6 +518,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
     $env:STARSHIP_UTC_TIME = $utc.ToString("hh:mm:sstt")
     $env:STARSHIP_SHORT_PWD = shorterPwdPath
     $env:STARSHIP_IP_ADDR = Get-CachedNetworkAddress
+    $env:STARSHIP_PROFILE_MARKER = if (<<IS_WORK_PROFILE>> -eq 1) { "W" } else { "H" }
     $env:STARSHIP_BASH_VER = "PS"
     & $global:_original_starship_prompt
   }

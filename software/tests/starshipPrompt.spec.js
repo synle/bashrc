@@ -14,11 +14,12 @@ const hasStarship = spawnSync("starship", ["--version"], { timeout: 10000 }).sta
  * @param {object} options Fixture settings.
  * @param {boolean} [options.repository=false] Whether to create a repository with a known branch.
  * @param {string} [options.ip="192.0.2.10,198.51.100.20"] Network field supplied by the shell.
+ * @param {string} [options.marker="H"] Work-profile marker supplied by the shell.
  * @returns {{output: string, lines: string[]}} Colored output and trimmed, unstyled prompt lines.
  * @throws {Error} If fixture setup or the native renderer fails.
  * @sideEffects Creates and removes a temporary folder; runs Git and Starship subprocesses.
  */
-function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20" } = {}) {
+function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20", marker = "H" } = {}) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "starship-prompt-"));
   const env = {
     PATH: process.env.PATH,
@@ -35,6 +36,7 @@ function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20" } = 
     STARSHIP_LOG: "warn",
     STARSHIP_LOCAL_TIME: "01:44:08PM",
     STARSHIP_UTC_TIME: "08:44:08PM",
+    STARSHIP_PROFILE_MARKER: marker,
     STARSHIP_IP_ADDR: ip,
     STARSHIP_SHORT_PWD: "~/project",
     STARSHIP_BASH_VER: "5.2",
@@ -69,8 +71,13 @@ function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20" } = 
 describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires starship)", () => {
   it("separates identity, network, and Git fields while preserving the input line", () => {
     const { lines } = renderPrompt({ repository: true });
-    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/);
+    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \| H \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/);
     expect(lines.slice(1)).toEqual(["~/project \ue0b1 [prompt-test]", "5.2>"]);
+  });
+
+  it("marks the work profile with W between hostname and network", () => {
+    const { lines } = renderPrompt({ marker: "W" });
+    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \| W \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/);
   });
 
   it("uses bright-white separators distinct from the colored information fields", () => {
@@ -86,6 +93,6 @@ describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires 
 
   it("omits the network separator when the IP field is empty", () => {
     const { lines } = renderPrompt({ ip: "" });
-    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+$/);
+    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \| H$/);
   });
 });
