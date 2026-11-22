@@ -4,10 +4,12 @@
 # Line 3: bash_version> <separator> python <separator> nodejs
 # Bold bright-white U+E0B1 separators use the terminal palette.
 # Unicode escapes preserve the separator in source files without raw private-use glyphs.
+# High-contrast pass: all accent colors use the bright-* palette entries, and the
+# dim modifier on the bash version was removed.
 
 format = """
 ${env_var.LOCAL_TIME} \
-[U=](bold yellow)${env_var.UTC_TIME}[ \ue0b1 ](bold bright-white)\
+[U=](bold bright-yellow)${env_var.UTC_TIME}[ \ue0b1 ](bold bright-white)\
 $username[ \ue0b1 ](bold bright-white)\
 $hostname\
 ${env_var.PROFILE}\
@@ -19,7 +21,8 @@ $git_status\
 $fill
 ${env_var.PROMPT_SYMBOL}${env_var.BASH_VER}\
 $python\
-$nodejs[ \ue0b1 ](bold bright-white)"""
+$nodejs\
+[ ❱ ](bold bright-red)"""
 
 # git command budget per prompt. The perceived "prompt hang" IS this timeout: on a slow
 # repo starship blocks the whole render until the git call is killed, so a bigger number
@@ -36,27 +39,27 @@ add_newline = false
 
 [username]
 show_always = true
-style_user = "bold blue"
-style_root = "bold red"
+style_user = "bold bright-blue"
+style_root = "bold bright-red"
 format = "[$user]($style)"
 
 [hostname]
 ssh_only = false
-style = "bold purple"
+style = "bold bright-purple"
 format = "[$hostname]($style)"
 
 [directory]
 disabled = true
 
 [git_branch]
-style = "bold cyan"
+style = "bold bright-cyan"
 format = "[ \ue0b1 ](bold bright-white)[\\[$branch\\]]($style)"
 
 [git_status]
 # the prompt only renders ahead/behind, so never pay for recursing into submodules -
 # a dirty submodule tree is the usual reason `git status` blows past command_timeout
 ignore_submodules = true
-style = "bold cyan"
+style = "bold bright-cyan"
 format = "[ $ahead_behind]($style)"
 ahead = "+$count"
 behind = "-$count"
@@ -69,12 +72,12 @@ symbol = " "
 # disable modules not needed in prompt
 [nodejs]
 symbol = "⬢ "
-style = "bold green"
+style = "bold bright-yellow"
 format = "[ \ue0b1 ](bold bright-white)[$symbol(${version})]($style)"
 
 [python]
 symbol = "🐍 "
-style = "yellow bold"
+style = "bright-yellow bold"
 pyenv_version_name = true
 detect_env_vars = ["VIRTUAL_ENV"]
 # Shows e.g. " 🐍 3.12.7 (.venv)" on the prompt line.
@@ -89,7 +92,7 @@ min_time = 10000
 show_milliseconds = false
 show_notifications = false
 format = "[ took $duration]($style)"
-style = "bold yellow"
+style = "bold bright-yellow"
 
 [line_break]
 disabled = true
@@ -100,34 +103,34 @@ disabled = true
 [env_var.LOCAL_TIME]
 variable = "STARSHIP_LOCAL_TIME"
 default = ""
-format = "[$env_value](bold green)"
+format = "[$env_value](bold bright-green)"
 
 [env_var.UTC_TIME]
 variable = "STARSHIP_UTC_TIME"
 default = ""
-format = "[$env_value](bold yellow)"
+format = "[$env_value](bold bright-yellow)"
 
 [env_var.PROFILE]
 variable = "STARSHIP_PROFILE_MARKER"
 default = ""
-format = "([ | ](bold bright-white)[$env_value](bold purple))"
+format = "([ | ](bold bright-white)[$env_value](bold bright-purple))"
 
 [env_var.IP_ADDR]
 variable = "STARSHIP_IP_ADDR"
 default = ""
-format = "([ \ue0b1 ](bold bright-white)[$env_value](bold yellow))"
+format = "([ \ue0b1 ](bold bright-white)[$env_value](bold bright-yellow))"
 
 [env_var.SHORT_PWD]
 variable = "STARSHIP_SHORT_PWD"
 default = ""
-format = "[$env_value](bold red)"
+format = "[$env_value](bold bright-red)"
 
 [env_var.PROMPT_SYMBOL]
 variable = "STARSHIP_PROMPT_SYMBOL"
 default = "$"
-format = "[$env_value](bold green)"
+format = "[$env_value](bold bright-green)"
 
 [env_var.BASH_VER]
 variable = "STARSHIP_BASH_VER"
 default = ""
-format = "[$env_value](bold dim white)"
+format = "[$env_value](bold bright-green)"

@@ -76,7 +76,7 @@ describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires 
     const { lines } = renderPrompt({ repository: true });
     expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \| H \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/);
     expect(lines[1]).toBe("~/project \ue0b1 [prompt-test]");
-    expect(lines[2]).toMatch(/^\$5\.2\b.*\ue0b1$/);
+    expect(lines[2]).toMatch(/^\$5\.2\b.* \u2771$/);
   });
 
   it("marks the work profile with W between hostname and network", () => {
@@ -99,7 +99,7 @@ describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires 
   it("omits the branch separator outside a Git repository", () => {
     const { lines } = renderPrompt();
     expect(lines[1]).toBe("~/project");
-    expect(lines[2]).toMatch(/^\$5\.2\b.*\ue0b1$/);
+    expect(lines[2]).toMatch(/^\$5\.2\b.* \u2771$/);
   });
 
   it("omits the network separator when the IP field is empty", () => {
