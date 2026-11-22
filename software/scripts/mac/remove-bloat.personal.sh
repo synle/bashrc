@@ -41,6 +41,32 @@ else
 fi
 
 ################################################################################
+# --- Apple telemetry daemons and background analysis ---
+################################################################################
+
+# System-domain telemetry daemons. Root required. Telemetry only, no visible loss.
+printf '%s\n' "  - Disabling Apple telemetry daemons"
+for label in \
+  com.apple.analyticsd \
+  com.apple.osanalytics.osanalyticshelper \
+  com.apple.SubmitDiagInfo \
+  com.apple.wifianalyticsd; do
+  sudo launchctl bootout "system/$label" 2> /dev/null || true
+  sudo launchctl disable "system/$label" 2> /dev/null || true
+done
+
+# WARNING: loses Live Text, object search, face grouping, and Spotlight web results.
+# Kept personal-only instead of in the shared defaults script.
+printf '%s\n' "  - Disabling photo analysis and Spotlight web agents"
+for label in \
+  com.apple.mediaanalysisd \
+  com.apple.photoanalysisd \
+  com.apple.parsecd; do
+  launchctl bootout "gui/$(id -u)/$label" 2> /dev/null || true
+  launchctl disable "gui/$(id -u)/$label" 2> /dev/null || true
+done
+
+################################################################################
 # --- Microsoft (apps + updater/telemetry daemons) ---
 ################################################################################
 

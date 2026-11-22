@@ -197,6 +197,27 @@ defaults write com.microsoft.autoupdate2 StartDaemonOnAppLaunch -bool false     
 defaults write com.microsoft.autoupdate2 SendAllTelemetryEnabled -bool false     # Opts out of MAU telemetry/diagnostic uploads
 
 ################################################################################
+# --- Apple Telemetry and Ads (user agents) ---
+################################################################################
+# Low risk: telemetry, ad attribution, tips, and search feedback only.
+# `disable` survives login; `bootout` also stops the running instance.
+#   com.apple.ap.adprivacyd        ad attribution
+#   com.apple.ap.promotedcontentd  sponsored App Store/News/Stocks content
+#   com.apple.tipsd                Tips popups and feature suggestions
+#   com.apple.geoanalyticsd        location analytics (Maps/GPS still work)
+#   com.apple.parsec-fbf           Spotlight/Siri usage feedback
+printf '%s\n' '>> Disabling Apple telemetry and promoted-content agents'
+for label in \
+  com.apple.ap.adprivacyd \
+  com.apple.ap.promotedcontentd \
+  com.apple.tipsd \
+  com.apple.geoanalyticsd \
+  com.apple.parsec-fbf; do
+  launchctl bootout "gui/$(id -u)/$label" 2> /dev/null || true
+  launchctl disable "gui/$(id -u)/$label" 2> /dev/null || true
+done
+
+################################################################################
 # --- Restart Affected Services ---
 ################################################################################
 # Only restart shell UI processes. Never Terminal/Mail/Safari: killing Terminal kills
