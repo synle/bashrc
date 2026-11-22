@@ -55,6 +55,29 @@ for label in \
   sudo launchctl disable "system/$label" 2> /dev/null || true
 done
 
+# [LOW] Audio, ecosystem, iCloud, USB-C and SQLite telemetry streams only.
+# Audio playback, iCloud sync and USB-C connections keep working.
+printf '%s\n' "  - Disabling additional Apple telemetry daemons"
+for label in \
+  com.apple.audioanalyticsd \
+  com.apple.ecosystemanalyticsd \
+  com.apple.cloudtelemetryd \
+  com.apple.usbctelemetryd \
+  com.apple.libsqlite3.dbtelemetryd; do
+  sudo launchctl bootout "system/$label" 2> /dev/null || true
+  sudo launchctl disable "system/$label" 2> /dev/null || true
+done
+
+# [LOW for daily use / diagnostics cost] Hang and spin traces disappear when an app
+# or Spotlight (mds) stalls. SIP or macOS updates may reset system-domain disables.
+printf '%s\n' "  - Disabling spindump diagnostics"
+for label in \
+  com.apple.spindump \
+  com.apple.metadata.mds.spindump; do
+  sudo launchctl bootout "system/$label" 2> /dev/null || true
+  sudo launchctl disable "system/$label" 2> /dev/null || true
+done
+
 # WARNING: loses Live Text, object search, face grouping, and Spotlight web results.
 # Kept personal-only instead of in the shared defaults script.
 printf '%s\n' "  - Disabling photo analysis and Spotlight web agents"

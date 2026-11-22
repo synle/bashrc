@@ -218,6 +218,26 @@ for label in \
 done
 
 ################################################################################
+# --- Analytics, feedback and suggestion agents (user agents) ---
+################################################################################
+# [LOW] com.apple.analyticsagent       user-level analytics reports
+# [LOW] com.apple.inputanalyticsd      keyboard/input telemetry; typing and text replacement still work
+# [LOW] com.apple.spindump_agent       user-session hang/spin reports
+# [LOW] com.apple.feedbackd            Feedback Assistant; re-enable before filing AppleSeed/beta reports
+# [MODERATE UX] com.apple.suggestd     loses proactive suggestions in Spotlight, Safari and share sheets
+printf '%s\n' '>> Disabling analytics, feedback and suggestion agents'
+for label in \
+  com.apple.analyticsagent \
+  com.apple.inputanalyticsd \
+  com.apple.spindump_agent \
+  com.apple.feedbackd \
+  com.apple.suggestd; do
+  launchctl bootout "gui/$(id -u)/$label" 2> /dev/null || true
+  launchctl disable "gui/$(id -u)/$label" 2> /dev/null || true
+done
+printf '%s\n' '>> Note: com.apple.suggestd disabled -- no proactive Spotlight/Safari/share-sheet suggestions'
+
+################################################################################
 # --- Restart Affected Services ---
 ################################################################################
 # Only restart shell UI processes. Never Terminal/Mail/Safari: killing Terminal kills
