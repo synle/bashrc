@@ -17,6 +17,7 @@ ${env_var.SHORT_PWD}\
 $git_branch\
 $git_status\
 $python\
+$nodejs\
 $fill
 ${env_var.BASH_VER}[>](bold white) """
 
@@ -73,7 +74,9 @@ symbol = " "
 disabled = true
 
 [nodejs]
-disabled = true
+symbol = "⬢ "
+style = "bold green"
+format = "[$symbol(${version} )]($style)"
 
 [python]
 symbol = "🐍 "
