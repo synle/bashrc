@@ -97,9 +97,9 @@ export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_a
 
 # _detect_work_profile - Classify managed/work machines without changing non-macOS defaults.
 #
-# Default is personal (`0`) on every platform. On macOS only, a hostname without
-# `.local` is treated as a managed/work profile; the normal personal Mac hostname
-# contains `.local`. Set `_IS_WORK_PROFILE_OVERRIDE` to any truthy/falsy value to
+# Default is personal (`0`) on every platform. On macOS only, the lowercased hostname
+# must contain `.local` or `.lan`, or begin with `macbookpro.`, to stay personal.
+# Set `_IS_WORK_PROFILE_OVERRIDE` to any truthy/falsy value to
 # override this dynamic value, then rerun run.sh to refresh ~/.bash_syle_common.
 # The presence check matters: an explicit `0` must override a detected work profile.
 function _detect_work_profile() {
@@ -107,7 +107,10 @@ function _detect_work_profile() {
   if ((${is_os_mac:-0})); then
     local hostname
     hostname=$(command hostname 2> /dev/null | tr '[:upper:]' '[:lower:]')
-    [[ "$hostname" != *".local"* ]] && is_work_profile=1
+    case "$hostname" in
+    *".local"* | *".lan"* | macbookpro.*) is_work_profile=0 ;;
+    *) is_work_profile=1 ;;
+    esac
   fi
 
   if [ -n "${_IS_WORK_PROFILE_OVERRIDE+x}" ]; then
@@ -1112,7 +1115,8 @@ $os_flags
 _detect_gui_flags
 
 # Work profile is detected once per run. Default is 0; on macOS a hostname without
-# .local sets 1. Set _IS_WORK_PROFILE_OVERRIDE before run.sh to override this dynamic value.
+# .local/.lan or a macbookpro. prefix sets 1. Set _IS_WORK_PROFILE_OVERRIDE before
+# run.sh to override this dynamic value.
 export is_work_profile='$is_work_profile'
 
 # Single-quoted, not double: this whole block is one double-quoted printf argument, so an

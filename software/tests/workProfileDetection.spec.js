@@ -1,4 +1,4 @@
-/** Work-profile detection tests for software/bootstrap/common-env.sh. */
+/** Work-profile detection tests for software/bootstrap/common-env.sh and run.sh. */
 import { afterAll, describe, expect, it } from "vitest";
 import { execFileSync } from "child_process";
 import fs from "fs";
@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const COMMON_ENV = path.join(ROOT_DIR, "software/bootstrap/common-env.sh");
+const RUN_SH = path.join(ROOT_DIR, "run.sh");
 const WINDOWS_INIT = path.join(ROOT_DIR, "software/scripts/windows/_init.js");
 const WINDOWS_SETUP = path.join(ROOT_DIR, "software/scripts/windows/_full-setup.ps1.bash");
 const POWERSHELL_PROFILE = path.join(ROOT_DIR, "software/scripts/windows/powershell-profile.ps1.bash");
@@ -16,12 +17,13 @@ fs.writeFileSync(path.join(TEST_BIN, "hostname"), "#!/bin/bash\ncommand printf '
 afterAll(() => fs.rmSync(TEST_BIN, { recursive: true, force: true }));
 
 /**
- * Extracts one top-level Bash function from common-env.sh.
+ * Extracts one top-level Bash function from a shell source file.
+ * @param {string} file - Absolute source file path.
  * @param {string} name - Function name.
  * @returns {string} Function definition.
  */
-function extractFunction(name) {
-  const lines = fs.readFileSync(COMMON_ENV, "utf-8").split("\n");
+function extractFunction(file, name) {
+  const lines = fs.readFileSync(file, "utf-8").split("\n");
   const start = lines.findIndex((line) => line === `function ${name}() {`);
   if (start === -1) throw new Error(`could not locate function ${name}`);
   let depth = 0;
@@ -33,7 +35,8 @@ function extractFunction(name) {
   throw new Error(`could not locate closing brace for ${name}`);
 }
 
-const DETECTOR = extractFunction("_detect_work_profile");
+const DETECTOR = extractFunction(COMMON_ENV, "_detect_work_profile");
+const RUN_SH_DETECTOR = extractFunction(RUN_SH, "_detect_work_profile");
 
 /**
  * Runs the real detector with a controlled OS, hostname, and optional override.
@@ -63,7 +66,19 @@ describe("_detect_work_profile", () => {
     expect(detectWorkProfile({ isMac: true, hostname: "Personal-Mac.LOCAL" })).toBe(0);
   });
 
-  it("treats a macOS hostname without .local as work", () => {
+  it("treats a macOS .lan hostname as personal case-insensitively", () => {
+    expect(detectWorkProfile({ isMac: true, hostname: "office-mini.LAN" })).toBe(0);
+  });
+
+  it("treats a macOS MacBookPro. hostname as personal", () => {
+    expect(detectWorkProfile({ isMac: true, hostname: "MacBookPro.dhcp" })).toBe(0);
+  });
+
+  it("treats the reported MacBookPro.lan hostname as personal", () => {
+    expect(detectWorkProfile({ isMac: true, hostname: "MacBookPro.lan" })).toBe(0);
+  });
+
+  it("treats an unrecognized macOS hostname as work", () => {
     expect(detectWorkProfile({ isMac: true, hostname: "managed.example.com" })).toBe(1);
   });
 
@@ -73,6 +88,10 @@ describe("_detect_work_profile", () => {
 
   it("lets a truthy override enable work profile off macOS", () => {
     expect(detectWorkProfile({ hostname: "personal.local", override: "yes" })).toBe(1);
+  });
+
+  it("keeps the run.sh detector identical to common-env.sh", () => {
+    expect(RUN_SH_DETECTOR).toBe(DETECTOR);
   });
 });
 
