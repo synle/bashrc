@@ -17,9 +17,9 @@ ${env_var.SHORT_PWD}\
 $git_branch\
 $git_status\
 $fill
-${env_var.BASH_VER}[>](bold white)\
+${env_var.PROMPT_SYMBOL}${env_var.BASH_VER}\
 $python\
-$nodejs"""
+$nodejs[ \ue0b1](bold bright-white)"""
 
 # git command budget per prompt. The perceived "prompt hang" IS this timeout: on a slow
 # repo starship blocks the whole render until the git call is killed, so a bigger number
@@ -121,6 +121,11 @@ format = "([ \ue0b1 ](bold bright-white)[$env_value](bold yellow))"
 variable = "STARSHIP_SHORT_PWD"
 default = ""
 format = "[$env_value](bold red)"
+
+[env_var.PROMPT_SYMBOL]
+variable = "STARSHIP_PROMPT_SYMBOL"
+default = "$"
+format = "[$env_value](bold green)"
 
 [env_var.BASH_VER]
 variable = "STARSHIP_BASH_VER"

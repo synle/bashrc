@@ -76,6 +76,11 @@ async function doWork() {
 
       # bash version is static, set once
       export STARSHIP_BASH_VER="$BASH_VERSINFO.$(echo "$BASH_VERSION" | cut -d. -f2)"
+      if [ "$(id -u)" = "0" ]; then
+        export STARSHIP_PROMPT_SYMBOL="#"
+      else
+        export STARSHIP_PROMPT_SYMBOL="$"
+      fi
 
       # run once immediately so the first prompt has values
       _starship_preexec
