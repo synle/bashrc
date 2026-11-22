@@ -1520,9 +1520,11 @@ alias z="zed"
 alias n="node"
 alias y="yarn"
 alias a_node="activate_node"
+alias nodeenv="activate_node"
 
 # --- Aliases: Python ---
 alias a_py="activate_py"
+alias pyenv="activate_py"
 alias pytest="python -m pytest"
 alias pytest-single="python -m pytest -vvl -k"
 alias flake="flake8"
