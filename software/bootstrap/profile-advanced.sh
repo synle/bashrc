@@ -1171,7 +1171,7 @@ function _ensure_npm_binary() {
 alias ..="cd .."
 alias ...="cd ../../"
 alias ....="cd ../../../"
-alias clear='printf "\033[H\033[2J\033[3J"'
+alias clear='printf "\033[H\033[2J"'
 
 # cd: change folders with native Bash behavior and bounded nearby-folder matching.
 # Args: native cd operands. Missing paths search from their longest existing folder prefix.
