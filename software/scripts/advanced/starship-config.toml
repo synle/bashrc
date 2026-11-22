@@ -1,3 +1,4 @@
+#:schema https://starship.rs/config-schema.json
 # Starship prompt config - separated fields in the three-line bashrc layout
 # Line 1: local_time U=utc_time <separator> user <separator> hostname | H/W <separator> ip_address
 # Line 2: directory <separator> [git_branch] ahead/behind
@@ -18,10 +19,16 @@ $fill
 ${env_var.SHORT_PWD}\
 $git_branch\
 $git_status\
+$git_state\
 $fill
 ${env_var.PROMPT_SYMBOL}${env_var.BASH_VER}\
 $python\
 $nodejs\
+$docker_context\
+$jobs\
+$sudo\
+$cmd_duration\
+$status\
 [ ❱ ](bold bright-red)"""
 
 # git command budget per prompt. The perceived "prompt hang" IS this timeout: on a slow
@@ -53,6 +60,8 @@ disabled = true
 
 [git_branch]
 style = "bold bright-cyan"
+truncation_length = 24
+truncation_symbol = "…"
 format = "[ \ue0b1 ](bold bright-white)[\\[$branch\\]]($style)"
 
 [git_status]
@@ -91,8 +100,38 @@ disabled = false
 min_time = 10000
 show_milliseconds = false
 show_notifications = false
-format = "[ took $duration]($style)"
+format = "[ \ue0b1 ](bold bright-white)[took $duration]($style)"
 style = "bold bright-yellow"
+
+[status]
+# Only renders on a non-zero exit code.
+disabled = false
+style = "bold bright-red"
+format = "[ \ue0b1 ](bold bright-white)[✘ $status]($style)"
+
+[jobs]
+# Only renders when there are background jobs.
+symbol = "✦"
+number_threshold = 1
+style = "bold bright-blue"
+format = "[ \ue0b1 ](bold bright-white)[$symbol$number]($style)"
+
+[sudo]
+# Only renders while sudo credentials are cached.
+disabled = false
+symbol = "🔑"
+style = "bold bright-yellow"
+format = "[ \ue0b1 ](bold bright-white)[$symbol]($style)"
+
+[git_state]
+# Only renders mid-rebase, merge, cherry-pick, etc.
+style = "bold bright-red"
+format = "[ \ue0b1 ](bold bright-white)[$state( $progress_current/$progress_total)]($style)"
+
+[docker_context]
+# Only renders in directories with Docker/compose files.
+style = "bold bright-blue"
+format = "[ \ue0b1 ](bold bright-white)[$symbol$context]($style)"
 
 [line_break]
 disabled = true
