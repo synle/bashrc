@@ -1,7 +1,7 @@
 # Starship prompt config - separated fields in the three-line bashrc layout
 # Line 1: local_time U=utc_time <separator> user <separator> hostname | H/W <separator> ip_address
 # Line 2: directory <separator> [git_branch] ahead/behind
-# Line 3: bash_version>
+# Line 3: bash_version> <separator> python <separator> nodejs
 # Bold bright-white U+E0B1 separators use the terminal palette.
 # Unicode escapes preserve the separator in source files without raw private-use glyphs.
 
@@ -16,23 +16,20 @@ $fill
 ${env_var.SHORT_PWD}\
 $git_branch\
 $git_status\
-$python\
-$nodejs\
 $fill
-${env_var.BASH_VER}[>](bold white) """
-
-# disabled: python/node path:version info
-# re-enable by adding ${env_var.PYTHON_INFO} and ${env_var.NODE_INFO} to the format string above
+${env_var.BASH_VER}[>](bold white)\
+$python\
+$nodejs"""
 
 # git command budget per prompt. The perceived "prompt hang" IS this timeout: on a slow
 # repo starship blocks the whole render until the git call is killed, so a bigger number
 # means a longer stall, not more info. Keep it short so the prompt degrades fast (git
 # segment silently drops) instead of freezing the terminal. Real speed comes from
 # core.fsmonitor + core.untrackedCache in software/scripts/git.gitconfig.
-command_timeout = 1000
+command_timeout = 500
 
-# increase directory scan timeout from default 30ms to 100ms
-scan_timeout = 100
+# Increase directory scan timeout from default 30ms to 500ms.
+scan_timeout = 500
 
 # disable default newline at top of prompt
 add_newline = false
@@ -70,122 +67,31 @@ up_to_date = ""
 symbol = " "
 
 # disable modules not needed in prompt
-[package]
-disabled = true
-
 [nodejs]
 symbol = "⬢ "
 style = "bold green"
-format = "[$symbol(${version} )]($style)"
+format = "[ \ue0b1 ](bold bright-white)[$symbol(${version})]($style)"
 
 [python]
 symbol = "🐍 "
 style = "yellow bold"
 pyenv_version_name = true
 detect_env_vars = ["VIRTUAL_ENV"]
-# Shows e.g. "🐍 3.12.7 (.venv) " when a venv is active
-format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+# Shows e.g. " 🐍 3.12.7 (.venv)" on the prompt line.
+format = '[ \ue0b1 ](bold bright-white)[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\))]($style)'
 
-[rust]
-disabled = true
-
-[golang]
-disabled = true
-
-[java]
-disabled = true
-
-[dotnet]
-disabled = true
-
-[ruby]
-disabled = true
-
-[php]
-disabled = true
-
-[lua]
-disabled = true
-
-[perl]
-disabled = true
-
-[swift]
-disabled = true
-
-[kotlin]
-disabled = true
-
-[dart]
-disabled = true
-
-[elixir]
-disabled = true
-
-[elm]
-disabled = true
-
-[erlang]
-disabled = true
-
-[haskell]
-disabled = true
-
-[julia]
-disabled = true
-
-[nim]
-disabled = true
-
-[ocaml]
-disabled = true
-
-[purescript]
-disabled = true
-
-[zig]
-disabled = true
-
-[terraform]
-disabled = true
-
-[vagrant]
-disabled = true
-
-[nix_shell]
-disabled = true
-
-[conda]
-disabled = true
-
-[docker_context]
-disabled = true
-
-[aws]
-disabled = true
-
-[gcloud]
-disabled = true
-
-[azure]
-disabled = true
-
-[kubernetes]
+[package]
 disabled = true
 
 [cmd_duration]
-disabled = true
+disabled = false
+min_time = 10000
+show_milliseconds = false
+show_notifications = false
+format = "[ took $duration]($style)"
+style = "bold yellow"
 
 [line_break]
-disabled = true
-
-[memory_usage]
-disabled = true
-
-[battery]
-disabled = true
-
-[time]
 disabled = true
 
 [character]
@@ -215,16 +121,6 @@ format = "([ \ue0b1 ](bold bright-white)[$env_value](bold yellow))"
 variable = "STARSHIP_SHORT_PWD"
 default = ""
 format = "[$env_value](bold red)"
-
-[env_var.PYTHON_INFO]
-variable = "STARSHIP_PYTHON_INFO"
-default = ""
-format = " [$env_value](bold green)"
-
-[env_var.NODE_INFO]
-variable = "STARSHIP_NODE_INFO"
-default = ""
-format = " [$env_value](bold yellow)"
 
 [env_var.BASH_VER]
 variable = "STARSHIP_BASH_VER"

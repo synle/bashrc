@@ -257,8 +257,8 @@ shell into that drive; first identify the command that produced the error.
 ## Startup time and Starship warnings
 
 Deploying the shared configuration does not prove a startup speed improvement or
-eliminate slow-folder scans. The shared configuration keeps `scan_timeout = 100`
-and `command_timeout = 1000`, with unused language modules disabled. Increasing
+eliminate slow-folder scans. The shared configuration keeps `scan_timeout = 500`
+and `command_timeout = 500`, with unused language modules disabled. Increasing
 those values can lengthen prompt stalls; do not raise them without a measurement
 on the affected folder.
 
