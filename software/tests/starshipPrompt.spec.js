@@ -15,11 +15,12 @@ const hasStarship = spawnSync("starship", ["--version"], { timeout: 10000 }).sta
  * @param {boolean} [options.repository=false] Whether to create a repository with a known branch.
  * @param {string} [options.ip="192.0.2.10,198.51.100.20"] Network field supplied by the shell.
  * @param {string} [options.marker="H"] Work-profile marker supplied by the shell.
+ * @param {string} [options.virtualEnv] Active virtual-environment folder supplied by the shell.
  * @returns {{output: string, lines: string[]}} Colored output and trimmed, unstyled prompt lines.
  * @throws {Error} If fixture setup or the native renderer fails.
  * @sideEffects Creates and removes a temporary folder; runs Git and Starship subprocesses.
  */
-function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20", marker = "H" } = {}) {
+function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20", marker = "H", virtualEnv } = {}) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "starship-prompt-"));
   const env = {
     PATH: process.env.PATH,
@@ -40,6 +41,7 @@ function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20", mar
     STARSHIP_IP_ADDR: ip,
     STARSHIP_SHORT_PWD: "~/project",
     STARSHIP_BASH_VER: "5.2",
+    ...(virtualEnv ? { VIRTUAL_ENV: virtualEnv } : {}),
   };
   try {
     if (repository) {
@@ -78,6 +80,12 @@ describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires 
   it("marks the work profile with W between hostname and network", () => {
     const { lines } = renderPrompt({ marker: "W" });
     expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \| W \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/);
+  });
+
+  it("shows the active virtual environment on the path line", () => {
+    const { lines } = renderPrompt({ virtualEnv: "/home/prompt-user/fixtures/.venv" });
+    expect(lines[1]).toContain("\u{1F40D}");
+    expect(lines[1]).toContain("(.venv)");
   });
 
   it("uses bright-white separators distinct from the colored information fields", () => {

@@ -16,6 +16,7 @@ $fill
 ${env_var.SHORT_PWD}\
 $git_branch\
 $git_status\
+$python\
 $fill
 ${env_var.BASH_VER}[>](bold white) """
 
@@ -75,7 +76,12 @@ disabled = true
 disabled = true
 
 [python]
-disabled = true
+symbol = "🐍 "
+style = "yellow bold"
+pyenv_version_name = true
+detect_env_vars = ["VIRTUAL_ENV"]
+# Shows e.g. "🐍 3.12.7 (.venv) " when a venv is active
+format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
 
 [rust]
 disabled = true
