@@ -19,7 +19,7 @@ $git_status\
 $fill
 ${env_var.PROMPT_SYMBOL}${env_var.BASH_VER}\
 $python\
-$nodejs[ \ue0b1](bold bright-white)"""
+$nodejs[ \ue0b1 ](bold bright-white)"""
 
 # git command budget per prompt. The perceived "prompt hang" IS this timeout: on a slow
 # repo starship blocks the whole render until the git call is killed, so a bigger number
