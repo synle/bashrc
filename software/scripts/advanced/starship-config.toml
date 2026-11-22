@@ -78,7 +78,7 @@ style = "yellow bold"
 pyenv_version_name = true
 detect_env_vars = ["VIRTUAL_ENV"]
 # Shows e.g. " 🐍 3.12.7 (.venv)" on the prompt line.
-format = '[ \ue0b1 ](bold bright-white)[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\))]($style)'
+format = "[ \ue0b1 ](bold bright-white)[${symbol}${pyenv_prefix}(${version} )(\\($virtualenv\\))]($style)"
 
 [package]
 disabled = true
