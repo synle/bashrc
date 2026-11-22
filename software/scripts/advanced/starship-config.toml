@@ -87,18 +87,22 @@ symbol = " "
 
 # disable modules not needed in prompt
 [nodejs]
+disabled = false
 symbol = "⬢ "
 style = "bold bright-yellow"
 format = "[ \ue0b1 ](bold bright-white)[$symbol(${version})]($style)"
 
 [python]
+disabled = false
 symbol = "🐍 "
 style = "bright-yellow bold"
 pyenv_version_name = true
-pyenv_prefix = "pyenv"
-detect_env_vars = ["VIRTUAL_ENV"]
-# Shows e.g. " 🐍 pyenv 3.12.7 (.venv)" on the prompt line.
-format = "[ \ue0b1 ](bold bright-white)[${symbol}${pyenv_prefix}( ${version})( \\($virtualenv\\))]($style)"
+pyenv_prefix = "pyenv "
+detect_files = []
+detect_extensions = []
+detect_folders = []
+detect_env_vars = ["VIRTUAL_ENV", "PYENV_VIRTUAL_ENV"]
+format = "([ \ue0b1 ](bold bright-white)[${symbol}${pyenv_prefix}(\\($virtualenv\\))]($style))"
 
 [package]
 disabled = true
