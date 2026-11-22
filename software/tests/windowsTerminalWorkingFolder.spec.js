@@ -4,6 +4,7 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { getIndexFunction } from "./setup.js";
 
 /** Owned filesystem sandbox; converters are external process boundaries. @type {string} */
 let folder;
@@ -84,6 +85,24 @@ eval "$PROMPT_COMMAND"`
 }
 
 /**
+ * Write the deployed PowerShell profile into the owned sandbox, with build tokens resolved.
+ * @param {string} destination Absolute path for the rendered profile.
+ * @returns {void}
+ * @throws {Error} When a placeholder survives rendering.
+ */
+function writeRenderedProfile(destination) {
+  const template = fs.readFileSync("software/scripts/windows/powershell-profile.ps1.bash", "utf8");
+  const rendered = getIndexFunction("resolvePlaceholders")(template, {
+    MAX_NESTED_DEPTH: 3,
+    IS_WORK_PROFILE: 0,
+  });
+  if (/<<[A-Z_][A-Z0-9_]*>>/.test(rendered)) {
+    throw new Error("Unrendered placeholder in PowerShell profile template");
+  }
+  fs.writeFileSync(destination, rendered);
+}
+
+/**
  * Execute both production PowerShell prompt definitions using its native AST parser.
  * Owned prompt dependencies are fixtures; no system profile is loaded or changed.
  * @param {string} terminal Windows Terminal session marker, or empty for another terminal.
@@ -91,6 +110,8 @@ eval "$PROMPT_COMMAND"`
  * @returns {import('child_process').SpawnSyncReturns<string>} Captured process result.
  */
 function reportPowerShell(terminal, location) {
+  const profilePath = path.join(folder, "powershell-profile.rendered.ps1");
+  writeRenderedProfile(profilePath);
   return spawnSync(
     "pwsh",
     [
@@ -130,7 +151,7 @@ foreach ($name in @('global:prompt', 'prompt')) {
       env: {
         ...process.env,
         WT_SESSION: terminal,
-        TEST_PROFILE: path.resolve("software/scripts/windows/powershell-profile.ps1.bash"),
+        TEST_PROFILE: profilePath,
         TEST_FOLDER: location,
         TEST_SECOND_FOLDER: folder,
       },
