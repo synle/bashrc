@@ -613,6 +613,7 @@ jobs:
       pages: write
       id-token: write
       statuses: write # for mirroring this run as a commit status on the amended SHA
+      actions: read # for polling the Pages artifact before deploy-pages resolves it
     steps:
       - uses: actions/checkout@v6
         # fetch-depth: 0 is REQUIRED here. Default (depth=1) gives a shallow clone
@@ -770,6 +771,26 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist/
+
+      # deploy-pages@v5 resolves the github-pages artifact through the Actions
+      # metadata API. That API can lag the upload finalization by a few seconds;
+      # deploying immediately then fails with "No artifacts named github-pages".
+      - name: Wait for Pages artifact metadata
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 30); do
+            visible=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" \
+              --jq 'any(.artifacts[]; .name == "github-pages")' || printf 'false')
+            if [ "$visible" = "true" ]; then
+              echo "Pages artifact metadata visible after ${attempt} check(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Pages artifact metadata not visible after 60s"
+          exit 1
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push'
