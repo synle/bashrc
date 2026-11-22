@@ -14,13 +14,13 @@ const hasStarship = spawnSync("starship", ["--version"], { timeout: 10000 }).sta
  * @param {object} options Fixture settings.
  * @param {boolean} [options.repository=false] Whether to create a repository with a known branch.
  * @param {string} [options.ip="192.0.2.10,198.51.100.20"] Network field supplied by the shell.
- * @param {string} [options.marker="H"] Work-profile marker supplied by the shell.
+ * @param {string} [options.marker] Profile icon supplied by the shell; defaults to the home icon.
  * @param {string} [options.virtualEnv] Active virtual-environment folder supplied by the shell.
  * @returns {{output: string, lines: string[]}} Colored output and trimmed, unstyled prompt lines.
  * @throws {Error} If fixture setup or the native renderer fails.
  * @sideEffects Creates and removes a temporary folder; runs Git and Starship subprocesses.
  */
-function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20", marker = "H", virtualEnv } = {}) {
+function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20", marker = "\u{1F3E0}", virtualEnv } = {}) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), "starship-prompt-"));
   const env = {
     PATH: process.env.PATH,
@@ -74,20 +74,25 @@ function renderPrompt({ repository = false, ip = "192.0.2.10,198.51.100.20", mar
 describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires starship)", () => {
   it("separates identity, network, Git, and runtime fields while preserving the input line", () => {
     const { lines } = renderPrompt({ repository: true });
-    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \| H \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/);
+    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \u{1F3E0} \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/u);
     expect(lines[1]).toBe("~/project \ue0b1 [prompt-test]");
     expect(lines[2]).toMatch(/^\$5\.2\b.* \u2771$/);
   });
 
-  it("marks the work profile with W between hostname and network", () => {
-    const { lines } = renderPrompt({ marker: "W" });
-    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \| W \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/);
+  it("marks the work profile with a briefcase icon between hostname and network", () => {
+    const { lines } = renderPrompt({ marker: "\u{1F4BC}" });
+    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \u{1F4BC} \ue0b1 192\.0\.2\.10,198\.51\.100\.20$/u);
   });
 
   it("shows the active virtual environment on the prompt line", () => {
     const { lines } = renderPrompt({ virtualEnv: "/home/prompt-user/fixtures/.venv" });
     expect(lines[2]).toContain("\u{1F40D}");
     expect(lines[2]).toContain("(.venv)");
+  });
+
+  it("leaves a single space before the prompt symbol when Python renders", () => {
+    const { lines } = renderPrompt({ virtualEnv: "/home/prompt-user/fixtures/.venv" });
+    expect(lines[2]).toMatch(/\u{1F40D}.*[^ ] \u2771$/u);
   });
 
   it("uses bright-white separators distinct from the colored information fields", () => {
@@ -104,6 +109,6 @@ describe.skipIf(!hasStarship)("Starship prompt rendering (integration; requires 
 
   it("omits the network separator when the IP field is empty", () => {
     const { lines } = renderPrompt({ ip: "" });
-    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \| H$/);
+    expect(lines[0]).toMatch(/^01:44:08PM U=08:44:08PM \ue0b1 [^\ue0b1]+ \ue0b1 [^\ue0b1]+ \u{1F3E0}$/u);
   });
 });

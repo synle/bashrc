@@ -69,8 +69,8 @@ printf '%s\\n' "$STARSHIP_IP_ADDR"
   });
 
   it.each([
-    { profile: "0", marker: "H" },
-    { profile: "1", marker: "W" },
+    { profile: "0", marker: "\u{1F3E0}" },
+    { profile: "1", marker: "\u{1F4BC}" },
   ])("exports $marker for is_work_profile=$profile", async ({ profile, marker }) => {
     fetchResponses["software/scripts/advanced/starship-config.toml"] = "[character]";
     fileSystem[BASH_SYLE_PATH] = "";

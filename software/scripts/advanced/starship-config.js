@@ -63,9 +63,9 @@ async function doWork() {
         export STARSHIP_LOCAL_TIME="$(_starship_time)"
         export STARSHIP_UTC_TIME="$(_starship_time 'UTC')"
         if ((is_work_profile)); then
-          export STARSHIP_PROFILE_MARKER='W'
+          export STARSHIP_PROFILE_MARKER='💼'
         else
-          export STARSHIP_PROFILE_MARKER='H'
+          export STARSHIP_PROFILE_MARKER='🏠'
         fi
         ifconfig2 > /dev/null
         # Keep machine-facing ifconfig2 output unchanged; space only the prompt list.

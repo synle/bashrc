@@ -11,7 +11,7 @@
 format = """
 ${env_var.LOCAL_TIME} \
 [U=](bold bright-yellow)${env_var.UTC_TIME}[ \ue0b1 ](bold bright-white)\
-$username[ \ue0b1 ](bold bright-white)\
+$username$sudo[ \ue0b1 ](bold bright-white)\
 $hostname\
 ${env_var.PROFILE}\
 ${env_var.IP_ADDR}\
@@ -48,6 +48,14 @@ show_always = true
 style_user = "bold bright-blue"
 style_root = "bold bright-red"
 format = "[$user]($style)"
+
+[sudo]
+# Only renders while sudo credentials are cached. Sits after the username,
+# before the separator that leads into the hostname.
+disabled = false
+symbol = "🔑"
+style = "bold bright-yellow"
+format = "[ $symbol]($style)"
 
 [hostname]
 ssh_only = false
@@ -87,9 +95,10 @@ format = "[ \ue0b1 ](bold bright-white)[$symbol(${version})]($style)"
 symbol = "🐍 "
 style = "bright-yellow bold"
 pyenv_version_name = true
+pyenv_prefix = "pyenv"
 detect_env_vars = ["VIRTUAL_ENV"]
-# Shows e.g. " 🐍 3.12.7 (.venv)" on the prompt line.
-format = "[ \ue0b1 ](bold bright-white)[${symbol}${pyenv_prefix}(${version} )(\\($virtualenv\\))]($style)"
+# Shows e.g. " 🐍 pyenv 3.12.7 (.venv)" on the prompt line.
+format = "[ \ue0b1 ](bold bright-white)[${symbol}${pyenv_prefix}( ${version})( \\($virtualenv\\))]($style)"
 
 [package]
 disabled = true
@@ -144,7 +153,7 @@ format = "[$env_value](bold bright-yellow)"
 [env_var.PROFILE]
 variable = "STARSHIP_PROFILE_MARKER"
 default = ""
-format = "([ | ](bold bright-white)[$env_value](bold bright-purple))"
+format = "([ ](bold bright-white)[$env_value](bold bright-purple))"
 
 [env_var.IP_ADDR]
 variable = "STARSHIP_IP_ADDR"
