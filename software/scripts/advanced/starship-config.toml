@@ -105,7 +105,7 @@ disabled = true
 
 [cmd_duration]
 disabled = false
-min_time = 10000
+min_time = 30000
 show_milliseconds = false
 show_notifications = false
 format = "[ \ue0b1 ](bold bright-white)[took $duration]($style)"
