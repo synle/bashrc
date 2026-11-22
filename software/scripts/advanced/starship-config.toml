@@ -26,7 +26,6 @@ $python\
 $nodejs\
 $docker_context\
 $jobs\
-$sudo\
 $cmd_duration\
 $status\
 [ ❱ ](bold bright-red)"""
@@ -115,13 +114,6 @@ symbol = "✦"
 number_threshold = 1
 style = "bold bright-blue"
 format = "[ \ue0b1 ](bold bright-white)[$symbol$number]($style)"
-
-[sudo]
-# Only renders while sudo credentials are cached.
-disabled = false
-symbol = "🔑"
-style = "bold bright-yellow"
-format = "[ \ue0b1 ](bold bright-white)[$symbol]($style)"
 
 [git_state]
 # Only renders mid-rebase, merge, cherry-pick, etc.
