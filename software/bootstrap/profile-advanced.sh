@@ -1384,11 +1384,12 @@ CD_NODE
       return 1
     fi
     printf 'Your keyword matches multiple paths. Choose 1-5 or enter a full path:\n' > /dev/tty
+    hr
     for _cd_index in "${!_cd_matches[@]}"; do
       _cd_decoded=$(command node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString() + String.fromCharCode(1))' "${_cd_matches[$_cd_index]}") || return 1
       _cd_relative="${_cd_decoded%$'\001'}"
       printf -v _cd_display '%q' "${_cd_search_folder%/}/$_cd_relative"
-      printf '%s %s\n' "$((_cd_index + 1))" "$_cd_display" > /dev/tty
+      printf '\e[2m%s %s\e[0m\n' "$((_cd_index + 1))" "$_cd_display" > /dev/tty
     done
     if ! IFS= read -r _cd_choice < /dev/tty; then
       printf '%s\n' "cd: folder selection cancelled" >&2
@@ -2253,8 +2254,9 @@ function search() {
 # --- Rainbow / Visual ---
 ################################################################################
 # _RAINBOW_BLOCK="############"
-_RAINBOW_BLOCK='＃＃＃＃＃＃＃＃'
+_RAINBOW_BLOCK='＃＃＃＃＃＃'
 _RAINBOW_COLORS=(91 93 92 96 94 95 91 96)
+_RAINBOW_COLORS=("${_RAINBOW_COLORS[@]:0:${#_RAINBOW_BLOCK}}")
 
 function rainbow_print() {
   if is_help_arg "${1:-}"; then
