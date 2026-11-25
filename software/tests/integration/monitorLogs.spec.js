@@ -17,8 +17,8 @@ const separatorConfig = coreProfile.match(/^export LINE_BREAK_COUNT=\d+\n[\s\S]*
 const separatorHelpers = fs
   .readFileSync("software/bootstrap/profile-advanced.sh", "utf8")
   .match(/^_RAINBOW_BLOCK=[\s\S]*?^function hr\(\) \{[\s\S]*?^\}/m)[0];
-/** The native hr default prints five eight-character fullwidth rainbow blocks. */
-const terminalSeparator = "\uFF03".repeat(40);
+/** The native hr default prints five six-character fullwidth rainbow blocks. */
+const terminalSeparator = "\uFF03".repeat(30);
 /** Plain output uses the shared eighty-character profile divider. */
 const plainSeparator = "#".repeat(80);
 
@@ -105,7 +105,7 @@ describe("monitor_logs (native tmux integration)", () => {
     for (const pane of panes) {
       await expect.poll(() => f.capture(pane)).toContain("line-205");
       expect(f.capture(pane)).toMatch(
-        /^\/.*\/sync_.*\n\uFF03{40}\nShowing the last 200 lines; following new output in the foreground\.\nline-6\n/,
+        /^\/.*\/sync_.*\n\uFF03{30}\nShowing the last 200 lines; following new output in the foreground\.\nline-6\n/,
       );
       expect(f.capture(pane)).not.toMatch(/^line-5$/m);
     }

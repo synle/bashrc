@@ -12,6 +12,9 @@ const NAVIGATION = readFileSync("software/bootstrap/profile-advanced.sh", "utf8"
   .split("# --- find (fd wrapper) ---")[0];
 /** Production summary and help dependencies, without unrelated startup side effects. */
 const CORE = readFileSync("software/bootstrap/profile-core.sh", "utf8");
+/** Production separator helpers called by the ambiguous-selection prompt. */
+const SEPARATOR_HELPERS = readFileSync("software/bootstrap/profile-advanced.sh", "utf8")
+  .match(/^_RAINBOW_BLOCK=[\s\S]*?^function hr\(\) \{[\s\S]*?^\}/m)[0];
 /** Shared ignore registry consumed by the installed fuzzy picker. */
 const PATTERNS = JSON.stringify(getIndexConstant("EDITOR_CONFIGS").ignoredFoldersRegex);
 /** Real controlling terminal; reply only after the actual selection prompt appears. */
@@ -76,7 +79,7 @@ function navigate(folders, query, options = {}) {
     const helpers = ["is_help_arg", "to_windows_path", "print_action_summary"]
       .map((name) => CORE.match(new RegExp(`^function ${name}\\(\\) \\{[\\s\\S]*?^\\}`, "m"))[0])
       .join("\n");
-    writeFileSync(path.join(folder, "navigation.bash"), `${helpers}\n${NAVIGATION}`);
+    writeFileSync(path.join(folder, "navigation.bash"), `${helpers}\n${SEPARATOR_HELPERS}\n${NAVIGATION}`);
     const script = `START_FOLDER="$PWD"
 . ./navigation.bash
 . ./navigation.bash
@@ -256,7 +259,10 @@ describe.skipIf(process.platform === "win32")("fuzzy cd terminal integration", (
       reply: "1\n",
     });
     expect(result.status).toBe(0);
-    expect(result.output).toContain("1 ./git/hooks\n2 ./gita/hooks\n3 ./git/hook-long\n4 ./git/ahook\n5 ./git/bhook\n");
+    expect(result.output).not.toContain("hr: command not found");
+    expect(result.output).toContain(
+      "\x1b[2m1 ./git/hooks\x1b[0m\n\x1b[2m2 ./gita/hooks\x1b[0m\n\x1b[2m3 ./git/hook-long\x1b[0m\n\x1b[2m4 ./git/ahook\x1b[0m\n\x1b[2m5 ./git/bhook\x1b[0m\n",
+    );
     expect(result.output).not.toContain("6 ./");
     expect(result.output).not.toContain("./git/dhook");
     expect(result.output).toContain("RESULT:/git/hooks\n");
