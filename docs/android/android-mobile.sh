@@ -38,10 +38,13 @@ debloat_settings() {
   _put_setting global sem_enhanced_cpu_responsiveness 0 # Disable Samsung CPU boost on touch. Slightly less snappy, better battery life. No harm.
 
   # ---- Connectivity & Scanning ----
-  _put_setting global wifi_scan_always_enabled 0                # Less background scanning; potentially worse location accuracy.
+  # Delete these overrides instead of writing 0. A missing key leaves the policy
+  # to firmware; a forced 0 slows Wi-Fi reconnection and blocks automatic
+  # Wi-Fi/mobile-data switching. Verify with settings get after a run.
+  _restore_setting global wifi_scan_always_enabled              # Restore default scanning. Forcing 0 slows Wi-Fi reconnection; it only matters when Wi-Fi stays off.
   _put_setting global ble_scan_always_enabled 1                 # 1 if using SmartTags; Nearby Bluetooth discovery and device finding.
-  _put_setting global wifi_wakeup_enabled 0                     # Stop Wi-Fi auto-turn-on near saved networks. Manual Wi-Fi toggle needed.
-  _put_setting global wifi_watchdog_on 0                        # Disable auto Wi-Fi-to-mobile-data switching. May stay on bad Wi-Fi longer, manual switch needed.
+  _restore_setting global wifi_wakeup_enabled                   # Restore default Wi-Fi wakeup. Forcing 0 slows reconnection near saved networks; it only matters when Wi-Fi stays off.
+  _restore_setting global wifi_watchdog_on                      # Restore default watchdog. AOSP key is mostly legacy; One UI also has "Switch to mobile data" under Wi-Fi > Advanced, so check that toggle in the UI.
   _put_setting global private_dns_mode hostname                 # Enable Private DNS (strict mode). All DNS queries encrypted via DNS-over-TLS. No side effects.
   _put_setting global private_dns_specifier dns.adguard-dns.com # AdGuard's documented DNS-over-TLS hostname. Blocks ads/trackers at DNS level.
 
@@ -94,8 +97,13 @@ debloat_settings() {
   _put_setting secure send_security_reports 0           # Stop sending security logs to Samsung. Device Care scans still work locally. No side effects.
 
   # ---- Privacy & Telemetry: Scanning ----
-  _put_setting global nearby_scanning_enabled 0       # Disable Nearby Device beaconing. Lose auto "device found" prompts (Galaxy Buds, SmartTags). Manual pairing still works.
-  _put_setting global adaptive_connectivity_enabled 0 # Stop Google from tracking Wi-Fi quality/location. Wi-Fi works the same. No side effects.
+  _put_setting global nearby_scanning_enabled 0 # Disable Nearby Device beaconing. Lose auto "device found" prompts (Galaxy Buds, SmartTags). Manual pairing still works.
+  # Adaptive connectivity manages Wi-Fi/mobile-data and 4G/5G switching. Do not
+  # force it off; the change is not side-effect free. Delete the key from both
+  # namespaces because some builds store it in secure instead of global, then
+  # confirm with settings get on global and secure.
+  _restore_setting global adaptive_connectivity_enabled # Restore firmware default for Wi-Fi/mobile and 4G/5G switching.
+  _restore_setting secure adaptive_connectivity_enabled # Some builds keep the key in secure; delete that copy too.
 
   # ---- Privacy & Telemetry: Additional ----
   _put_setting global device_provisioned_time 0          # Hide device setup timestamp from telemetry. No side effects.
