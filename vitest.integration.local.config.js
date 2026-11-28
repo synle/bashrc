@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     include: ["software/tests/integration/**/*.spec.js"],
     // Live URL reachability belongs only to the deployed integration suite.
-    exclude: ["software/tests/integration/rawUrls.spec.js"],
+    exclude: ["software/tests/integration/rawUrls.spec.js", "software/tests/integration/favRvxPaths.spec.js"],
     setupFiles: ["software/tests/setup.js"],
     // Bound native and browser processes independently of the fast unit suite.
     maxWorkers: 2,
